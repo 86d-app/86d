@@ -1,0 +1,31 @@
+{
+    "name": "86d",
+    "version": "0.0.2",
+    "description": "86d is the first dynamic commerce platform.",
+    "keywords": [
+        "86d",
+        "commerce"
+    ],
+    "homepage": "https://86d.app",
+    "bugs": {
+        "url": "https://github.com/86d-app/86d/issues"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/86d-app/86d.git",
+        "directory": "packages/cli"
+    },
+    "license": "Apache-2.0",
+    "author": "Isaiah Marc Sanchez",
+    "type": "module",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "files": [
+        "dist"
+    ],
+    "engines": {
+        "node": ">= 18"
+    }
+}
