@@ -1,0 +1,16 @@
+{
+    "name": "86d",
+    "version": "0.0.1",
+    "description": "86d is the first dynamic commerce platform.",
+    "main": "index.js",
+    "scripts": {
+      "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [
+      "86d",
+      "commerce"
+    ],
+    "author": "Isaiah Marc Sanchez <>",
+    "license": "ISC"
+  }
+  
