@@ -1,0 +1,14 @@
+{
+  "eval_id": 0,
+  "config": "with_skill",
+  "expectations": [
+    {"text": "An AGENTS.md file exists in the outputs directory", "passed": true, "evidence": "File exists, 70 lines"},
+    {"text": "The file contains a section describing the project's directory structure", "passed": true, "evidence": "Architecture section with tree diagram showing src/api/, src/workers/, src/shared/ with inline annotations"},
+    {"text": "The file includes build and test commands", "passed": true, "evidence": "Development section (lines 42-46): dev, build, lint, lint:fix, db:studio. Testing section (lines 50-51): npm test, npm run test:ci"},
+    {"text": "The file mentions the key technologies", "passed": true, "evidence": "Opening paragraph: 'Express handles HTTP routing, Prisma manages PostgreSQL access, BullMQ processes background jobs via Redis, and Zod validates inputs at runtime'"},
+    {"text": "The file mentions database migration or seeding commands", "passed": true, "evidence": "Setup section line 30: 'npm run db:migrate && npm run db:seed'"},
+    {"text": "The file is under 300 lines", "passed": true, "evidence": "70 lines"},
+    {"text": "The file does not contain generic filler", "passed": false, "evidence": "Line 29: 'npm install' in Setup code block. Identical to iteration-3 and iteration-4 outputs. The model treats this as necessary regardless of example content."},
+    {"text": "Commands are formatted as bullet list items rather than headings with code blocks", "passed": true, "evidence": "Development (lines 42-46) and Testing (lines 50-51) use '- `cmd` -- description' bullet format."}
+  ]
+}

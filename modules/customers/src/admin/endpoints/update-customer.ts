@@ -1,0 +1,30 @@
+import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
+import type { CustomerController } from "../../service";
+
+export const adminUpdateCustomer = createAdminEndpoint(
+	"/admin/customers/:id",
+	{
+		method: "PUT",
+		params: z.object({ id: z.string() }),
+		body: z.object({
+			firstName: z.string().min(1).max(200).transform(sanitizeText).optional(),
+			lastName: z.string().min(1).max(200).transform(sanitizeText).optional(),
+			phone: z.string().max(30).nullable().optional(),
+			dateOfBirth: z
+				.string()
+				.datetime()
+				.transform((s) => new Date(s))
+				.nullable()
+				.optional(),
+			metadata: z.record(z.string(), z.unknown()).optional(),
+		}),
+	},
+	async (ctx) => {
+		const controller = ctx.context.controllers.customer as CustomerController;
+		const customer = await controller.update(ctx.params.id, ctx.body);
+		if (!customer) {
+			return { error: "Customer not found", status: 404 };
+		}
+		return { customer };
+	},
+);

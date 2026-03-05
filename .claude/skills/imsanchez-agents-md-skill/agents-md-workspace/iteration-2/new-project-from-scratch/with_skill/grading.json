@@ -1,0 +1,14 @@
+{
+  "eval_id": 0,
+  "config": "with_skill",
+  "expectations": [
+    {"text": "An AGENTS.md file exists in the outputs directory", "passed": true, "evidence": "File exists, 65 lines"},
+    {"text": "The file contains a section describing the project's directory structure (src/api, src/workers, src/shared)", "passed": true, "evidence": "Architecture section lists all three with detailed descriptions"},
+    {"text": "The file includes build and test commands", "passed": true, "evidence": "Separate Build, Test, Lint, Database sections with commands"},
+    {"text": "The file mentions the key technologies: TypeScript, Express, Prisma, Redis, BullMQ", "passed": true, "evidence": "Tech stack line includes all five plus Zod, Vitest, Biome"},
+    {"text": "The file mentions database migration or seeding commands", "passed": true, "evidence": "Database section with db:migrate, db:seed, db:studio"},
+    {"text": "The file is under 300 lines", "passed": true, "evidence": "65 lines"},
+    {"text": "The file does not contain generic filler", "passed": true, "evidence": "No 'npm install' or other boilerplate"},
+    {"text": "Commands are formatted as bullet list items (e.g., '- Run `cmd` to do X') rather than headings with code blocks", "passed": false, "evidence": "Uses ```sh code blocks under headings (Build, Test, Lint, Database) instead of bullet list format"}
+  ]
+}

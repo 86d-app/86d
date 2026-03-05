@@ -1,0 +1,42 @@
+{
+  "eval_id": 0,
+  "eval_name": "new-project-from-scratch",
+  "prompt": "Create an AGENTS.md for this project. I want future agents to know how to build, test, and navigate the codebase.",
+  "assertions": [
+    {
+      "id": "file-created",
+      "text": "An AGENTS.md file exists in the outputs directory",
+      "type": "file_exists"
+    },
+    {
+      "id": "has-architecture-section",
+      "text": "The file contains a section describing the project's directory structure (src/api, src/workers, src/shared)",
+      "type": "content_check"
+    },
+    {
+      "id": "has-build-commands",
+      "text": "The file includes build and test commands (e.g., tsc, vitest or the npm script equivalents)",
+      "type": "content_check"
+    },
+    {
+      "id": "has-tech-stack",
+      "text": "The file mentions the key technologies: TypeScript, Express, Prisma, Redis, BullMQ",
+      "type": "content_check"
+    },
+    {
+      "id": "mentions-db-workflow",
+      "text": "The file mentions database migration or seeding commands (prisma migrate, seed)",
+      "type": "content_check"
+    },
+    {
+      "id": "concise",
+      "text": "The file is under 300 lines",
+      "type": "line_count"
+    },
+    {
+      "id": "no-obvious-filler",
+      "text": "The file does not contain generic filler like 'run npm install to install dependencies' or boilerplate that adds no value",
+      "type": "content_check"
+    }
+  ]
+}

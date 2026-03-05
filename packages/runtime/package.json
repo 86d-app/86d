@@ -1,0 +1,33 @@
+{
+	"name": "@86d-app/runtime",
+	"version": "0.0.1",
+	"private": true,
+	"type": "module",
+	"files": [
+		"dist"
+	],
+	"exports": {
+		"./*": "./src/*"
+	},
+	"scripts": {
+		"build": "tsc",
+		"check": "biome check src",
+		"check:fix": "biome check --write src",
+		"clean": "git clean -xdf .cache .turbo dist node_modules",
+		"dev": "tsc",
+		"test": "vitest run",
+		"test:watch": "vitest watch",
+		"typecheck": "tsc --noEmit --emitDeclarationOnly false"
+	},
+	"dependencies": {
+		"@86d-app/core": "workspace:*",
+		"better-call": "1.1.8"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "catalog:",
+		"@prisma/client": "catalog:prisma",
+		"type-fest": "catalog:",
+		"typescript": "catalog:",
+		"vitest": "catalog:vite"
+	}
+}

@@ -1,0 +1,42 @@
+{
+  "eval_id": 1,
+  "eval_name": "update-existing-with-gotchas",
+  "prompt": "We just spent an hour debugging why vitest hangs after tests pass. Turns out the Redis connection pool leaks if you don't call redis.quit() in the test teardown. Also found out the task_assignments table has a DB trigger that syncs to search_index — direct SQL inserts bypass it. Update the AGENTS.md with these gotchas so the next agent doesn't hit the same issues.",
+  "assertions": [
+    {
+      "id": "file-exists",
+      "text": "An updated AGENTS.md file exists in the outputs directory",
+      "type": "file_exists"
+    },
+    {
+      "id": "preserves-existing",
+      "text": "The original content is preserved — the Architecture, Tech stack, and Development sections still exist with their original information",
+      "type": "content_check"
+    },
+    {
+      "id": "redis-gotcha",
+      "text": "The file documents the Redis connection pool leak issue — mentioning redis.quit() and test teardown",
+      "type": "content_check"
+    },
+    {
+      "id": "db-trigger-gotcha",
+      "text": "The file documents the task_assignments DB trigger that syncs to search_index, warning against direct SQL",
+      "type": "content_check"
+    },
+    {
+      "id": "additive-not-rewrite",
+      "text": "The update is additive — new content is added without rewriting or significantly restructuring the existing sections",
+      "type": "content_check"
+    },
+    {
+      "id": "under-50-lines",
+      "text": "The updated file is under 50 lines — the update should be surgical, adding only the gotchas without bloating the file",
+      "type": "line_count"
+    },
+    {
+      "id": "no-duplication",
+      "text": "Each gotcha appears only once — not duplicated across multiple sections (e.g., not both inline and in a separate Gotchas section)",
+      "type": "content_check"
+    }
+  ]
+}

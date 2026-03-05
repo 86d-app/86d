@@ -1,0 +1,12 @@
+{
+  "eval_id": 1,
+  "config": "with_skill",
+  "expectations": [
+    {"text": "An updated AGENTS.md file exists in the outputs directory", "passed": true, "evidence": "File exists, 32 lines"},
+    {"text": "The original content is preserved", "passed": true, "evidence": "Architecture (lines 7-9), Tech stack (line 13), Development (lines 15-21) all intact with original content"},
+    {"text": "The file documents the Redis connection pool leak issue", "passed": true, "evidence": "Lines 23-25: 'Always call redis.quit() in test teardown...the Redis connection pool from src/services/cache.ts leaks open handles...causing vitest to hang indefinitely'"},
+    {"text": "The file documents the task_assignments DB trigger", "passed": true, "evidence": "Lines 29-31: 'task_assignments table has a PostgreSQL trigger that syncs rows to search_index. Direct SQL inserts/updates bypass this trigger — always use Prisma'"},
+    {"text": "The update is additive — not a rewrite", "passed": true, "evidence": "Original content preserved exactly. Redis gotcha added under Test subsection, DB trigger added as new Database section. No restructuring."},
+    {"text": "The file is under 300 lines", "passed": true, "evidence": "32 lines"}
+  ]
+}

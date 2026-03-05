@@ -1,0 +1,126 @@
+"use client";
+
+import { adminComponentLoaders } from "generated/admin-loaders";
+import {
+	Component as ReactComponent,
+	Suspense,
+	useEffect,
+	useState,
+} from "react";
+
+interface AdminModuleRouteClientProps {
+	moduleId: string;
+	component: string;
+	params: Record<string, string>;
+}
+
+interface ErrorBoundaryProps {
+	moduleId: string;
+	children: React.ReactNode;
+}
+
+interface ErrorBoundaryState {
+	error: Error | null;
+}
+
+class AdminModuleErrorBoundary extends ReactComponent<
+	ErrorBoundaryProps,
+	ErrorBoundaryState
+> {
+	constructor(props: ErrorBoundaryProps) {
+		super(props);
+		this.state = { error: null };
+	}
+
+	static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+		return { error };
+	}
+
+	override render() {
+		if (this.state.error) {
+			return (
+				<div className="rounded-md border border-destructive/50 bg-destructive/10 p-4 text-destructive">
+					<p className="font-medium">
+						Module "{this.props.moduleId}" encountered an error
+					</p>
+					<p className="mt-1 text-sm">{this.state.error.message}</p>
+					<button
+						type="button"
+						onClick={() => this.setState({ error: null })}
+						className="mt-3 rounded-md bg-destructive/20 px-3 py-1.5 font-medium text-destructive text-sm transition-colors hover:bg-destructive/30"
+					>
+						Try again
+					</button>
+				</div>
+			);
+		}
+		return this.props.children;
+	}
+}
+
+export function AdminModuleRouteClient({
+	moduleId,
+	component,
+	params,
+}: AdminModuleRouteClientProps) {
+	const [Component, setComponent] = useState<React.ComponentType<{
+		params?: Record<string, string>;
+	}> | null>(null);
+	const [error, setError] = useState<Error | null>(null);
+
+	useEffect(() => {
+		const loader = adminComponentLoaders[moduleId];
+		if (!loader) {
+			setError(new Error(`No admin loader for module: ${moduleId}`));
+			return;
+		}
+		loader()
+			.then((mod) => {
+				const C = (
+					mod as Record<
+						string,
+						React.ComponentType<{ params?: Record<string, string> }>
+					>
+				)[component];
+				if (!C) {
+					setError(
+						new Error(`Component ${component} not found in module ${moduleId}`),
+					);
+					return;
+				}
+				setComponent(() => C);
+			})
+			.catch(setError);
+	}, [moduleId, component]);
+
+	if (error) {
+		return (
+			<div className="rounded-md border border-destructive/50 bg-destructive/10 p-4 text-destructive">
+				<p className="font-medium">Failed to load admin page</p>
+				<p className="mt-1 text-sm">{error.message}</p>
+			</div>
+		);
+	}
+
+	if (!Component) {
+		return (
+			<div className="flex items-center justify-center p-8">
+				<div className="h-8 w-8 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" />
+			</div>
+		);
+	}
+
+	return (
+		<AdminModuleErrorBoundary moduleId={moduleId}>
+			<Suspense
+				fallback={
+					<div className="flex items-center justify-center p-8">
+						<div className="h-8 w-8 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" />
+					</div>
+				}
+			>
+				<Component {...(Object.keys(params).length > 0 ? { params } : {})} />
+			</Suspense>
+		</AdminModuleErrorBoundary>
+	);
+}

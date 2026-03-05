@@ -1,0 +1,14 @@
+{
+  "eval_id": 0,
+  "config": "with_skill",
+  "expectations": [
+    {"text": "An AGENTS.md file exists in the outputs directory", "passed": true, "evidence": "File exists, 69 lines"},
+    {"text": "The file contains a section describing the project's directory structure", "passed": true, "evidence": "Architecture section with tree diagram and bullet descriptions of API, workers, shared"},
+    {"text": "The file includes build and test commands", "passed": true, "evidence": "Development and Testing sections with commands"},
+    {"text": "The file mentions the key technologies", "passed": true, "evidence": "Opening paragraph: 'Express handles HTTP routing, Prisma manages PostgreSQL access, BullMQ processes background jobs via Redis, and Zod validates inputs'"},
+    {"text": "The file mentions database migration or seeding commands", "passed": true, "evidence": "Setup section: 'npm run db:migrate && npm run db:seed', plus db:studio in Development"},
+    {"text": "The file is under 300 lines", "passed": true, "evidence": "69 lines"},
+    {"text": "The file does not contain generic filler", "passed": false, "evidence": "Line 29: 'npm install' in Setup section — the skill explicitly says not to include obvious install instructions"},
+    {"text": "Commands are formatted as bullet list items rather than headings with code blocks", "passed": true, "evidence": "Development (lines 42-46) and Testing (lines 50-51) use '- `cmd` -- description' bullet format. Setup uses a code block but that's a multi-step install sequence, not individual commands."}
+  ]
+}

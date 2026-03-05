@@ -1,0 +1,46 @@
+{
+	"name": "@86d-app/reviews",
+	"version": "0.0.1",
+	"description": "Product reviews and ratings module for 86d commerce platform",
+	"keywords": [
+		"commerce",
+		"reviews",
+		"ratings",
+		"moderation",
+		"86d"
+	],
+	"license": "MIT",
+	"author": "86d <hello@86d.app>",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/esaiasco/86d.git",
+		"directory": "modules/reviews"
+	},
+	"homepage": "https://github.com/esaiasco/86d/tree/main/modules/reviews",
+	"type": "module",
+	"exports": {
+		"./components": "./src/store/components",
+		"./admin-components": "./src/admin/components",
+		"./*": "./src/*"
+	},
+	"scripts": {
+		"build": "tsc",
+		"check": "biome check src",
+		"check:fix": "biome check --write src",
+		"clean": "git clean -xdf .cache .turbo dist node_modules",
+		"dev": "tsc",
+		"test": "vitest run",
+		"test:watch": "vitest watch",
+		"typecheck": "tsc --noEmit --emitDeclarationOnly false"
+	},
+	"dependencies": {
+		"@86d-app/core": "workspace:*"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "catalog:",
+		"@types/mdx": "catalog:mdx",
+		"@types/react": "catalog:react",
+		"typescript": "catalog:",
+		"vitest": "catalog:vite"
+	}
+}

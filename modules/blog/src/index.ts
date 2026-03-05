@@ -1,0 +1,61 @@
+import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
+import { adminEndpoints } from "./admin/endpoints";
+import { toMarkdownBlogListing, toMarkdownBlogPost } from "./markdown";
+import { blogSchema } from "./schema";
+import { createBlogController } from "./service-impl";
+import { storeEndpoints } from "./store/endpoints";
+
+export type { BlogController, BlogPost, PostStatus } from "./service";
+
+export interface BlogOptions extends ModuleConfig {
+	/** Default number of posts per page (default: "20") */
+	postsPerPage?: string;
+}
+
+export default function blog(options?: BlogOptions): Module {
+	return {
+		id: "blog",
+		version: "0.0.1",
+		schema: blogSchema,
+		exports: {
+			read: ["postTitle", "postSlug", "postExcerpt"],
+		},
+		events: {
+			emits: ["blog.published", "blog.unpublished", "blog.deleted"],
+		},
+		init: async (ctx: ModuleContext) => {
+			const controller = createBlogController(ctx.data);
+			return { controllers: { blog: controller } };
+		},
+		endpoints: {
+			store: storeEndpoints,
+			admin: adminEndpoints,
+		},
+		admin: {
+			pages: [
+				{
+					path: "/admin/blog",
+					component: "BlogAdmin",
+					label: "Blog",
+					icon: "Article",
+					group: "Marketing",
+				},
+			],
+		},
+		store: {
+			pages: [
+				{
+					path: "/blog",
+					component: "BlogList",
+					toMarkdown: toMarkdownBlogListing,
+				},
+				{
+					path: "/blog/:slug",
+					component: "BlogPostDetail",
+					toMarkdown: toMarkdownBlogPost,
+				},
+			],
+		},
+		options,
+	};
+}

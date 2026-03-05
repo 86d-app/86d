@@ -1,0 +1,23 @@
+import { createAdminEndpoint, z } from "@86d-app/core";
+import type { AnalyticsController } from "../../service";
+
+export const getSalesByProductEndpoint = createAdminEndpoint(
+	"/admin/analytics/sales-by-product",
+	{
+		method: "GET",
+		query: z.object({
+			limit: z.coerce.number().int().min(1).max(100).optional(),
+			since: z.string().optional(),
+			until: z.string().optional(),
+		}),
+	},
+	async (ctx) => {
+		const controller = ctx.context.controllers.analytics as AnalyticsController;
+		const products = await controller.getSalesByProduct({
+			limit: ctx.query.limit,
+			since: ctx.query.since ? new Date(ctx.query.since) : undefined,
+			until: ctx.query.until ? new Date(ctx.query.until) : undefined,
+		});
+		return { products };
+	},
+);

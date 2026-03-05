@@ -1,0 +1,12 @@
+{
+  "eval_id": 1,
+  "config": "without_skill",
+  "expectations": [
+    {"text": "An updated AGENTS.md file exists in the outputs directory", "passed": true, "evidence": "File exists, 47 lines"},
+    {"text": "The original content is preserved", "passed": true, "evidence": "Architecture (lines 7-9), Tech stack (line 13), Development (lines 15-21) all intact"},
+    {"text": "The file documents the Redis connection pool leak issue", "passed": true, "evidence": "Lines 23-25 (inline under Test) and lines 35-39 (expanded in Gotchas section) both document the redis.quit() teardown issue"},
+    {"text": "The file documents the task_assignments DB trigger", "passed": true, "evidence": "Lines 29-31 (inline under Database) and lines 41-46 (expanded in Gotchas section) both document the trigger/search_index issue"},
+    {"text": "The update is additive — not a rewrite", "passed": true, "evidence": "Original content preserved. New Gotchas section appended. However, duplicates the information — same gotchas appear both inline and in the dedicated section."},
+    {"text": "The file is under 300 lines", "passed": true, "evidence": "47 lines"}
+  ]
+}

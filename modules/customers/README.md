@@ -1,0 +1,188 @@
+# @86d-app/customers
+
+Customer profile and address management. Authenticated customers can view and edit their profile and saved addresses. Admins have full read/write access to all customer records.
+
+## Installation
+
+```sh
+npm install @86d-app/customers
+```
+
+## Usage
+
+```ts
+import customers from "@86d-app/customers";
+
+const module = customers({
+  autoCreateOnSignup: true,
+});
+```
+
+## Configuration
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `autoCreateOnSignup` | `boolean` | `true` | Automatically create a customer record when a user signs up |
+
+## Store Endpoints
+
+All store endpoints require an authenticated session.
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/customers/me` | Get the authenticated customer's profile |
+| `PUT` | `/customers/me/update` | Update the authenticated customer's profile |
+| `GET` | `/customers/me/addresses` | List all addresses for the authenticated customer |
+| `POST` | `/customers/me/addresses/create` | Add a new address |
+| `PUT` | `/customers/me/addresses/:id` | Update an existing address |
+| `DELETE` | `/customers/me/addresses/:id/delete` | Delete an address |
+
+## Admin Endpoints
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/admin/customers` | List all customers (paginated, searchable) |
+| `GET` | `/admin/customers/:id` | Get a customer by ID |
+| `PUT` | `/admin/customers/:id/update` | Update a customer |
+| `DELETE` | `/admin/customers/:id/delete` | Delete a customer |
+
+## Controller API
+
+```ts
+interface CustomerController {
+  /** Look up a customer by their ID */
+  getById(id: string): Promise<Customer | null>;
+
+  /** Look up a customer by their email address */
+  getByEmail(email: string): Promise<Customer | null>;
+
+  /** Create a new customer record */
+  create(params: {
+    id?: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    phone?: string;
+    dateOfBirth?: Date;
+    metadata?: Record<string, unknown>;
+  }): Promise<Customer>;
+
+  /** Update an existing customer's profile fields */
+  update(
+    id: string,
+    params: {
+      firstName?: string;
+      lastName?: string;
+      phone?: string | null;
+      dateOfBirth?: Date | null;
+      metadata?: Record<string, unknown>;
+    },
+  ): Promise<Customer | null>;
+
+  /** Hard-delete a customer */
+  delete(id: string): Promise<void>;
+
+  /** List customers with optional search and pagination */
+  list(params: {
+    limit?: number;
+    offset?: number;
+    search?: string;
+  }): Promise<{ customers: Customer[]; total: number }>;
+
+  /** Get all saved addresses for a customer */
+  listAddresses(customerId: string): Promise<CustomerAddress[]>;
+
+  /** Get a single address by ID */
+  getAddress(id: string): Promise<CustomerAddress | null>;
+
+  /** Add an address to a customer's account */
+  createAddress(params: {
+    customerId: string;
+    type?: "billing" | "shipping";
+    firstName: string;
+    lastName: string;
+    company?: string;
+    line1: string;
+    line2?: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;           // ISO 3166-1 alpha-2 (e.g. "US")
+    phone?: string;
+    isDefault?: boolean;
+  }): Promise<CustomerAddress>;
+
+  /** Update fields on an existing address */
+  updateAddress(
+    id: string,
+    params: {
+      type?: "billing" | "shipping";
+      firstName?: string;
+      lastName?: string;
+      company?: string | null;
+      line1?: string;
+      line2?: string | null;
+      city?: string;
+      state?: string;
+      postalCode?: string;
+      country?: string;
+      phone?: string | null;
+      isDefault?: boolean;
+    },
+  ): Promise<CustomerAddress | null>;
+
+  /** Remove an address */
+  deleteAddress(id: string): Promise<void>;
+
+  /**
+   * Mark an address as default for its type.
+   * Automatically clears the previous default of the same type.
+   */
+  setDefaultAddress(
+    customerId: string,
+    addressId: string,
+  ): Promise<CustomerAddress | null>;
+}
+```
+
+## Types
+
+```ts
+interface Customer {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  dateOfBirth?: Date;
+  metadata?: Record<string, unknown>;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface CustomerAddress {
+  id: string;
+  customerId: string;
+  type: "billing" | "shipping";
+  firstName: string;
+  lastName: string;
+  company?: string;
+  line1: string;
+  line2?: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;             // ISO 3166-1 alpha-2
+  phone?: string;
+  isDefault: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+```
+
+## Notes
+
+- Store endpoints resolve the customer ID from the active session (`ctx.context.session?.user.id`). Unauthenticated requests are rejected.
+- Address ownership is verified before any update or delete operation — customers cannot modify each other's addresses.
+- `setDefaultAddress` is idempotent: calling it on an already-default address is a no-op.
+- Each customer can have one default billing address and one default shipping address independently.

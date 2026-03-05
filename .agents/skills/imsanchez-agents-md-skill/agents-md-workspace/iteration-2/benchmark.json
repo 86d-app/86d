@@ -1,0 +1,32 @@
+{
+  "skill_name": "agents-md",
+  "iteration": 2,
+  "configs": [
+    {
+      "name": "with_skill",
+      "evals": [
+        {"eval_name": "new-project-from-scratch", "pass_rate": 0.875, "passed": 7, "total": 8, "tokens": 24497, "duration_seconds": 71.4},
+        {"eval_name": "update-existing-with-gotchas", "pass_rate": 1.0, "passed": 6, "total": 6, "tokens": 22006, "duration_seconds": 49.0},
+        {"eval_name": "monorepo-subdirectory", "pass_rate": 1.0, "passed": 6, "total": 6, "tokens": 24212, "duration_seconds": 69.8}
+      ],
+      "aggregate": {"mean_pass_rate": 0.958, "stddev_pass_rate": 0.072, "mean_tokens": 23572, "mean_duration_seconds": 63.4}
+    },
+    {
+      "name": "without_skill",
+      "evals": [
+        {"eval_name": "new-project-from-scratch", "pass_rate": 0.75, "passed": 6, "total": 8, "tokens": 22388, "duration_seconds": 78.7},
+        {"eval_name": "update-existing-with-gotchas", "pass_rate": 1.0, "passed": 6, "total": 6, "tokens": 18282, "duration_seconds": 35.0},
+        {"eval_name": "monorepo-subdirectory", "pass_rate": 1.0, "passed": 6, "total": 6, "tokens": 21698, "duration_seconds": 62.3}
+      ],
+      "aggregate": {"mean_pass_rate": 0.917, "stddev_pass_rate": 0.144, "mean_tokens": 20789, "mean_duration_seconds": 58.7}
+    }
+  ],
+  "delta": {"pass_rate": "+4.2%", "tokens": "+13.4%", "duration": "+8.0%"},
+  "analysis": [
+    "New 'uses-list-format' assertion failed for BOTH with_skill and baseline in eval 0. The skill's example uses bullet list format, but the agent still defaulted to ```sh code blocks. The example alone isn't enough to override the model's strong default of using code blocks for commands.",
+    "The skill still beats baseline on the 'no filler' assertion (baseline included 'npm install' again).",
+    "Token overhead dropped significantly from iteration 1 (+32%) to iteration 2 (+13%), and duration overhead dropped from +88% to +8%. The skill is getting more efficient.",
+    "Evals 1 and 2 remain non-discriminating — both versions pass all assertions. The qualitative differences matter more here.",
+    "Key qualitative difference in eval 2: the with-skill version added a testing-specific gotcha ('each refresh call consumes the token, so tests must generate fresh tokens per test case') that the baseline missed. This is genuinely useful extra context."
+  ]
+}

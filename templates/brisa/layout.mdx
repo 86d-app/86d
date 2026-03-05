@@ -1,0 +1,55 @@
+import Footer from "./footer.mdx";
+
+<StoreNavbar
+  config={props.config}
+  navItems={[
+    { label: "Shop", href: "/products" },
+    { label: "Collections", href: "/collections" },
+    { label: "New arrivals", href: "/products?sort=createdAt&order=desc" },
+    { label: "Blog", href: "/blog" },
+  ]}
+  actions={<CartButton />}
+/>
+
+<main className="min-h-[calc(100dvh-4rem)]">
+  <Cart />
+  {props.children}
+</main>
+
+<Footer
+  logo={{
+    url: "/",
+    src: props.theme.resolvedTheme === "dark" ? props.config.logo.dark : props.config.logo.light,
+    alt: props.config.name,
+    title: props.config.name,
+  }}
+  storeName={props.config.name}
+  sections={[
+    {
+      title: "Shop",
+      links: [
+        { name: "All products", href: "/products" },
+        { name: "Collections", href: "/collections" },
+        { name: "New arrivals", href: "/products?sort=createdAt&order=desc" },
+        { name: "Gift cards", href: "/gift-cards" },
+      ],
+    },
+    {
+      title: "Company",
+      links: [
+        { name: "About", href: "/about" },
+        { name: "Contact", href: "/contact" },
+        { name: "Blog", href: "/blog" },
+      ],
+    },
+    {
+      title: "Account",
+      links: [
+        { name: "Orders", href: "/account/orders" },
+        { name: "Track order", href: "/track" },
+        { name: "My account", href: "/account" },
+        { name: "Search", href: "/search" },
+      ],
+    },
+  ]}
+/>

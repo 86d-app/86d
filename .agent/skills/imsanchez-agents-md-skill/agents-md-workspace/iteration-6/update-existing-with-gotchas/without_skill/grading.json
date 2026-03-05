@@ -1,0 +1,13 @@
+{
+  "eval_id": 1,
+  "config": "without_skill",
+  "expectations": [
+    {"text": "An updated AGENTS.md file exists in the outputs directory", "passed": true, "evidence": "File exists, 40 lines"},
+    {"text": "The original content is preserved", "passed": true, "evidence": "Architecture (lines 7-9), Tech stack (line 13), Development (lines 15-21) all intact"},
+    {"text": "The file documents the Redis connection pool leak issue", "passed": true, "evidence": "Lines 25-35: Redis quit() documented with heading, explanation, and code snippet example"},
+    {"text": "The file documents the task_assignments DB trigger", "passed": true, "evidence": "Lines 37-39: task_assignments trigger documented with heading and explanation"},
+    {"text": "The update is additive — not a rewrite", "passed": true, "evidence": "Original content preserved. Gotchas section appended."},
+    {"text": "The updated file is under 50 lines", "passed": true, "evidence": "40 lines — includes a code snippet example which bloats it vs with_skill's 27 lines"},
+    {"text": "Each gotcha appears only once", "passed": true, "evidence": "Each gotcha appears once in the Gotchas section. No duplication."}
+  ]
+}

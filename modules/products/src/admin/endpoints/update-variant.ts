@@ -1,0 +1,41 @@
+import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
+
+export const updateVariant = createAdminEndpoint(
+	"/admin/variants/:id",
+	{
+		method: "PUT",
+		params: z.object({
+			id: z.string(),
+		}),
+		body: z.object({
+			name: z.string().min(1).max(200).transform(sanitizeText).optional(),
+			sku: z.string().max(100).nullable().optional(),
+			barcode: z.string().max(100).nullable().optional(),
+			price: z.number().positive().optional(),
+			compareAtPrice: z.number().positive().nullable().optional(),
+			costPrice: z.number().positive().nullable().optional(),
+			inventory: z.number().int().min(0).optional(),
+			options: z.record(z.string(), z.string()).optional(),
+			images: z.array(z.string()).optional(),
+			weight: z.number().positive().nullable().optional(),
+			weightUnit: z.enum(["kg", "lb", "oz", "g"]).nullable().optional(),
+			position: z.number().int().min(0).optional(),
+		}),
+	},
+	async (ctx) => {
+		const controllers = ctx.context.controllers;
+
+		// Check if variant exists
+		const existingVariant = await controllers.variant.getById(ctx);
+		if (!existingVariant) {
+			return {
+				error: "Variant not found",
+				status: 404,
+			};
+		}
+
+		const variant = await controllers.variant.update(ctx);
+
+		return { variant };
+	},
+);

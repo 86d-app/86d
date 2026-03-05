@@ -1,0 +1,12 @@
+{
+  "eval_id": 2,
+  "config": "without_skill",
+  "expectations": [
+    {"text": "A CLAUDE.md (not AGENTS.md) was created for the auth package, respecting the project's existing naming convention", "passed": true, "evidence": "File is packages-auth-CLAUDE.md — correctly used CLAUDE.md to match root convention"},
+    {"text": "The auth package docs mention the sliding window token rotation and that old refresh tokens are immediately invalidated", "passed": true, "evidence": "Architecture section: 'Token refresh uses sliding-window rotation: the refresh token is rotated on every use, and old refresh tokens are immediately invalidated'"},
+    {"text": "The docs warn that retry logic must re-authenticate from scratch, not reuse refresh tokens", "passed": true, "evidence": "'retry logic on 401 responses must re-authenticate from scratch rather than retrying with the same refresh token'"},
+    {"text": "The root CLAUDE.md was not significantly altered — its existing structure and content are preserved", "passed": true, "evidence": "root-CLAUDE.md is byte-identical to the original fixture"},
+    {"text": "The subdirectory file does not duplicate content already in the root CLAUDE.md", "passed": true, "evidence": "No monorepo structure repeated, no turborepo root commands duplicated. Auth-specific commands (npm run build/test/test:watch) are package-level, not duplicates of root content."},
+    {"text": "The subdirectory file includes auth-package-specific info (tech stack like jose/iron-session, build/test commands)", "passed": true, "evidence": "Lists jose (JWT, HS256), iron-session, and npm run build/test/test:watch commands"}
+  ]
+}

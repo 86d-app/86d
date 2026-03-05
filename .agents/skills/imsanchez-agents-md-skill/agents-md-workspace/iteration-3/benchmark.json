@@ -1,0 +1,32 @@
+{
+  "skill_name": "agents-md",
+  "iteration": 3,
+  "configs": [
+    {
+      "name": "with_skill",
+      "evals": [
+        {"eval_name": "new-project-from-scratch", "pass_rate": 0.875, "passed": 7, "total": 8, "tokens": 28347, "duration_seconds": 82.5},
+        {"eval_name": "update-existing-with-gotchas", "pass_rate": 1.0, "passed": 6, "total": 6, "tokens": 23153, "duration_seconds": 60.6},
+        {"eval_name": "monorepo-subdirectory", "pass_rate": 1.0, "passed": 6, "total": 6, "tokens": 26011, "duration_seconds": 87.3}
+      ],
+      "aggregate": {"mean_pass_rate": 0.958, "stddev_pass_rate": 0.072, "mean_tokens": 25837, "mean_duration_seconds": 76.8}
+    },
+    {
+      "name": "without_skill",
+      "evals": [
+        {"eval_name": "new-project-from-scratch", "pass_rate": 0.75, "passed": 6, "total": 8, "tokens": 21526, "duration_seconds": 56.3},
+        {"eval_name": "update-existing-with-gotchas", "pass_rate": 1.0, "passed": 6, "total": 6, "tokens": 18449, "duration_seconds": 39.5},
+        {"eval_name": "monorepo-subdirectory", "pass_rate": 1.0, "passed": 6, "total": 6, "tokens": 21997, "duration_seconds": 63.7}
+      ],
+      "aggregate": {"mean_pass_rate": 0.917, "stddev_pass_rate": 0.144, "mean_tokens": 20657, "mean_duration_seconds": 53.2}
+    }
+  ],
+  "delta": {"pass_rate": "+4.2%", "tokens": "+25.1%", "duration": "+44.4%"},
+  "analysis": [
+    "With-skill achieves list format for Development/Testing commands (new in this iteration), while baseline still uses code blocks throughout. The 'uses-list-format' assertion now passes for with_skill but fails for baseline — first discriminating result on this assertion.",
+    "The 'npm install' in the Setup section still triggers the 'no filler' assertion failure for with_skill. The model treats Setup as a special case where install instructions feel justified. May need stronger language or may be acceptable.",
+    "Eval 2 (monorepo) outputs are nearly identical between with_skill and baseline because previous iteration runs modified the fixture files. Both inherited accumulated state. This is a testing artifact, not a meaningful comparison for this iteration.",
+    "Eval 1 (update existing) with_skill produced a notably leaner output (32 lines) vs baseline (38 lines). The skill version placed the Redis gotcha inline under the Test heading rather than in a separate Gotchas section with code examples — more contextual and concise.",
+    "Token overhead is stable at ~25%, duration overhead improved from iter2 (+8%) to ~44% — variance between runs rather than a trend."
+  ]
+}

@@ -1,0 +1,331 @@
+import type { ModuleDataService } from "@86d-app/core";
+import type {
+	PaymentController,
+	PaymentIntent,
+	PaymentIntentStatus,
+	PaymentMethod,
+	PaymentProvider,
+	Refund,
+} from "./service";
+
+export function createPaymentController(
+	data: ModuleDataService,
+	provider?: PaymentProvider,
+): PaymentController {
+	return {
+		async createIntent(params) {
+			const id = crypto.randomUUID();
+			const now = new Date();
+
+			let providerIntentId: string | undefined;
+			let providerMetadata: Record<string, unknown> = {};
+			let status: PaymentIntentStatus = "pending";
+
+			if (provider) {
+				const result = await provider.createIntent({
+					amount: params.amount,
+					currency: params.currency ?? "USD",
+					metadata: params.metadata,
+				});
+				providerIntentId = result.providerIntentId;
+				providerMetadata = result.providerMetadata ?? {};
+				status = result.status;
+			}
+
+			const intent: PaymentIntent = {
+				id,
+				providerIntentId,
+				customerId: params.customerId,
+				email: params.email,
+				amount: params.amount,
+				currency: params.currency ?? "USD",
+				status,
+				orderId: params.orderId,
+				checkoutSessionId: params.checkoutSessionId,
+				metadata: params.metadata ?? {},
+				providerMetadata,
+				createdAt: now,
+				updatedAt: now,
+			};
+			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+			await data.upsert("paymentIntent", id, intent as Record<string, any>);
+			return intent;
+		},
+
+		async getIntent(id) {
+			const raw = await data.get("paymentIntent", id);
+			if (!raw) return null;
+			return raw as unknown as PaymentIntent;
+		},
+
+		async confirmIntent(id) {
+			const existing = await data.get("paymentIntent", id);
+			if (!existing) return null;
+			const intent = existing as unknown as PaymentIntent;
+			if (intent.status === "succeeded") return intent;
+
+			let newStatus: PaymentIntentStatus = "succeeded";
+			let newProviderMetadata = intent.providerMetadata;
+
+			if (provider && intent.providerIntentId) {
+				const result = await provider.confirmIntent(intent.providerIntentId);
+				newStatus = result.status === "succeeded" ? "succeeded" : result.status;
+				newProviderMetadata = result.providerMetadata ?? newProviderMetadata;
+			}
+
+			const updated: PaymentIntent = {
+				...intent,
+				status: newStatus,
+				providerMetadata: newProviderMetadata,
+				updatedAt: new Date(),
+			};
+			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+			await data.upsert("paymentIntent", id, updated as Record<string, any>);
+			return updated;
+		},
+
+		async cancelIntent(id) {
+			const existing = await data.get("paymentIntent", id);
+			if (!existing) return null;
+			const intent = existing as unknown as PaymentIntent;
+			if (intent.status === "cancelled") return intent;
+
+			let newProviderMetadata = intent.providerMetadata;
+
+			if (provider && intent.providerIntentId) {
+				const result = await provider.cancelIntent(intent.providerIntentId);
+				newProviderMetadata = result.providerMetadata ?? newProviderMetadata;
+			}
+
+			const updated: PaymentIntent = {
+				...intent,
+				status: "cancelled",
+				providerMetadata: newProviderMetadata,
+				updatedAt: new Date(),
+			};
+			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+			await data.upsert("paymentIntent", id, updated as Record<string, any>);
+			return updated;
+		},
+
+		async listIntents(params) {
+			// Push available filters to where clause
+			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
+			const where: Record<string, any> = {};
+			if (params?.customerId) where.customerId = params.customerId;
+			if (params?.status) where.status = params.status;
+			if (params?.orderId) where.orderId = params.orderId;
+
+			const all = await data.findMany("paymentIntent", {
+				...(Object.keys(where).length > 0 ? { where } : {}),
+				...(params?.take !== undefined ? { take: params.take } : {}),
+				...(params?.skip !== undefined ? { skip: params.skip } : {}),
+			});
+			return all as unknown as PaymentIntent[];
+		},
+
+		async savePaymentMethod(params) {
+			const id = crypto.randomUUID();
+			const now = new Date();
+
+			// If isDefault is set, clear other defaults for this customer
+			if (params.isDefault) {
+				const existing = await data.findMany("paymentMethod", {
+					where: { customerId: params.customerId, isDefault: true },
+				});
+				const methods = existing as unknown as PaymentMethod[];
+				for (const m of methods) {
+					const cleared: PaymentMethod = {
+						...m,
+						isDefault: false,
+						updatedAt: now,
+					};
+					await data.upsert(
+						"paymentMethod",
+						m.id,
+						// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+						cleared as unknown as Record<string, any>,
+					);
+				}
+			}
+
+			const method: PaymentMethod = {
+				id,
+				customerId: params.customerId,
+				providerMethodId: params.providerMethodId,
+				type: params.type ?? "card",
+				last4: params.last4,
+				brand: params.brand,
+				expiryMonth: params.expiryMonth,
+				expiryYear: params.expiryYear,
+				isDefault: params.isDefault ?? false,
+				createdAt: now,
+				updatedAt: now,
+			};
+			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+			await data.upsert("paymentMethod", id, method as Record<string, any>);
+			return method;
+		},
+
+		async getPaymentMethod(id) {
+			const raw = await data.get("paymentMethod", id);
+			if (!raw) return null;
+			return raw as unknown as PaymentMethod;
+		},
+
+		async listPaymentMethods(customerId) {
+			const all = await data.findMany("paymentMethod", {
+				where: { customerId },
+			});
+			return all as unknown as PaymentMethod[];
+		},
+
+		async deletePaymentMethod(id) {
+			const existing = await data.get("paymentMethod", id);
+			if (!existing) return false;
+			await data.delete("paymentMethod", id);
+			return true;
+		},
+
+		async createRefund(params) {
+			const intent = await data.get("paymentIntent", params.intentId);
+			if (!intent) throw new Error("Payment intent not found");
+			const pi = intent as unknown as PaymentIntent;
+
+			const refundAmount = params.amount ?? pi.amount;
+
+			let providerRefundId: string;
+			let refundStatus: Refund["status"] = "succeeded";
+
+			if (provider && pi.providerIntentId) {
+				const result = await provider.createRefund({
+					providerIntentId: pi.providerIntentId,
+					amount: params.amount,
+					reason: params.reason,
+				});
+				providerRefundId = result.providerRefundId;
+				refundStatus = result.status;
+			} else if (pi.providerIntentId && !provider) {
+				throw new Error(
+					"Cannot refund: payment was created through a provider but no provider is configured",
+				);
+			} else {
+				// Local-only intent (no external provider was used)
+				providerRefundId = `local_re_${crypto.randomUUID()}`;
+			}
+
+			const id = crypto.randomUUID();
+			const now = new Date();
+			const refund: Refund = {
+				id,
+				paymentIntentId: params.intentId,
+				providerRefundId,
+				amount: refundAmount,
+				reason: params.reason,
+				status: refundStatus,
+				createdAt: now,
+				updatedAt: now,
+			};
+			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+			await data.upsert("refund", id, refund as Record<string, any>);
+
+			// Mark intent as refunded
+			const updatedIntent: PaymentIntent = {
+				...pi,
+				status: "refunded",
+				updatedAt: now,
+			};
+			await data.upsert(
+				"paymentIntent",
+				params.intentId,
+				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+				updatedIntent as unknown as Record<string, any>,
+			);
+
+			return refund;
+		},
+
+		async getRefund(id) {
+			const raw = await data.get("refund", id);
+			if (!raw) return null;
+			return raw as unknown as Refund;
+		},
+
+		async listRefunds(intentId) {
+			const all = await data.findMany("refund", {
+				where: { paymentIntentId: intentId },
+			});
+			return all as unknown as Refund[];
+		},
+
+		async handleWebhookEvent(params) {
+			const all = await data.findMany("paymentIntent", {
+				where: { providerIntentId: params.providerIntentId },
+				take: 1,
+			});
+			const intents = all as unknown as PaymentIntent[];
+			if (intents.length === 0) return null;
+
+			const intent = intents[0];
+			if (intent.status === params.status) return intent;
+
+			const updated: PaymentIntent = {
+				...intent,
+				status: params.status,
+				providerMetadata: {
+					...intent.providerMetadata,
+					...(params.providerMetadata ?? {}),
+				},
+				updatedAt: new Date(),
+			};
+			await data.upsert(
+				"paymentIntent",
+				intent.id,
+				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+				updated as Record<string, any>,
+			);
+			return updated;
+		},
+
+		async handleWebhookRefund(params) {
+			const all = await data.findMany("paymentIntent", {
+				where: { providerIntentId: params.providerIntentId },
+				take: 1,
+			});
+			const intents = all as unknown as PaymentIntent[];
+			if (intents.length === 0) return null;
+
+			const intent = intents[0];
+			const now = new Date();
+			const refundAmount = params.amount ?? intent.amount;
+
+			const refundId = crypto.randomUUID();
+			const refund: Refund = {
+				id: refundId,
+				paymentIntentId: intent.id,
+				providerRefundId: params.providerRefundId,
+				amount: refundAmount,
+				reason: params.reason,
+				status: "succeeded",
+				createdAt: now,
+				updatedAt: now,
+			};
+			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+			await data.upsert("refund", refundId, refund as Record<string, any>);
+
+			const updatedIntent: PaymentIntent = {
+				...intent,
+				status: "refunded",
+				updatedAt: now,
+			};
+			await data.upsert(
+				"paymentIntent",
+				intent.id,
+				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+				updatedIntent as unknown as Record<string, any>,
+			);
+
+			return { intent: updatedIntent, refund };
+		},
+	};
+}

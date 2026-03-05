@@ -1,0 +1,735 @@
+import type { ModuleDataService, ScopedEventEmitter } from "@86d-app/core";
+import type {
+	Customer,
+	CustomerAddress,
+	CustomerController,
+	ImportCustomerResult,
+	ImportCustomerRow,
+	LoyaltyBalance,
+	LoyaltyStats,
+	LoyaltyTransaction,
+} from "./service";
+
+export function createCustomerController(
+	data: ModuleDataService,
+	events?: ScopedEventEmitter | undefined,
+): CustomerController {
+	return {
+		async getById(id: string): Promise<Customer | null> {
+			return (await data.get("customer", id)) as Customer | null;
+		},
+
+		async getByEmail(email: string): Promise<Customer | null> {
+			const results = (await data.findMany("customer", {
+				where: { email },
+				take: 1,
+			})) as Customer[];
+			return results[0] ?? null;
+		},
+
+		async create(params): Promise<Customer> {
+			const id = params.id ?? crypto.randomUUID();
+			const now = new Date();
+			const customer: Customer = {
+				id,
+				email: params.email,
+				firstName: params.firstName,
+				lastName: params.lastName,
+				phone: params.phone,
+				dateOfBirth: params.dateOfBirth,
+				tags: params.tags ?? [],
+				metadata: params.metadata ?? {},
+				createdAt: now,
+				updatedAt: now,
+			};
+			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
+			await data.upsert("customer", id, customer as Record<string, any>);
+
+			if (events) {
+				void events.emit("customer.created", {
+					customerId: customer.id,
+					email: customer.email,
+					firstName: customer.firstName,
+					lastName: customer.lastName,
+				});
+			}
+
+			return customer;
+		},
+
+		async update(id: string, params): Promise<Customer | null> {
+			const existing = (await data.get("customer", id)) as Customer | null;
+			if (!existing) return null;
+
+			const updated: Customer = {
+				...existing,
+				...(params.firstName !== undefined
+					? { firstName: params.firstName }
+					: {}),
+				...(params.lastName !== undefined ? { lastName: params.lastName } : {}),
+				...(params.phone !== undefined
+					? { phone: params.phone ?? undefined }
+					: {}),
+				...(params.dateOfBirth !== undefined
+					? { dateOfBirth: params.dateOfBirth ?? undefined }
+					: {}),
+				...(params.tags !== undefined ? { tags: params.tags } : {}),
+				...(params.metadata !== undefined ? { metadata: params.metadata } : {}),
+				updatedAt: new Date(),
+			};
+			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
+			await data.upsert("customer", id, updated as Record<string, any>);
+			return updated;
+		},
+
+		async delete(id: string): Promise<void> {
+			await data.delete("customer", id);
+		},
+
+		async list(params): Promise<{ customers: Customer[]; total: number }> {
+			const { limit = 20, offset = 0, search, tag } = params;
+			const all = (await data.findMany("customer", {})) as Customer[];
+
+			let filtered = search
+				? all.filter(
+						(c) =>
+							c.firstName.toLowerCase().includes(search.toLowerCase()) ||
+							c.lastName.toLowerCase().includes(search.toLowerCase()) ||
+							c.email.toLowerCase().includes(search.toLowerCase()),
+					)
+				: all;
+
+			if (tag) {
+				const tagLower = tag.toLowerCase();
+				filtered = filtered.filter((c) =>
+					(c.tags ?? []).some((t) => t.toLowerCase() === tagLower),
+				);
+			}
+
+			// Sort by createdAt descending
+			filtered.sort(
+				(a, b) =>
+					new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+			);
+
+			return {
+				customers: filtered.slice(offset, offset + limit),
+				total: filtered.length,
+			};
+		},
+
+		async addTags(
+			customerId: string,
+			tags: string[],
+		): Promise<Customer | null> {
+			const existing = (await data.get(
+				"customer",
+				customerId,
+			)) as Customer | null;
+			if (!existing) return null;
+
+			const currentTags = existing.tags ?? [];
+			const merged = [...new Set([...currentTags, ...tags])];
+			const updated: Customer = {
+				...existing,
+				tags: merged,
+				updatedAt: new Date(),
+			};
+			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
+			await data.upsert("customer", customerId, updated as Record<string, any>);
+			return updated;
+		},
+
+		async removeTags(
+			customerId: string,
+			tags: string[],
+		): Promise<Customer | null> {
+			const existing = (await data.get(
+				"customer",
+				customerId,
+			)) as Customer | null;
+			if (!existing) return null;
+
+			const tagsToRemove = new Set(tags.map((t) => t.toLowerCase()));
+			const remaining = (existing.tags ?? []).filter(
+				(t) => !tagsToRemove.has(t.toLowerCase()),
+			);
+			const updated: Customer = {
+				...existing,
+				tags: remaining,
+				updatedAt: new Date(),
+			};
+			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
+			await data.upsert("customer", customerId, updated as Record<string, any>);
+			return updated;
+		},
+
+		async listAllTags(): Promise<{ tag: string; count: number }[]> {
+			const all = (await data.findMany("customer", {})) as Customer[];
+			const tagCounts = new Map<string, number>();
+			for (const c of all) {
+				for (const t of c.tags ?? []) {
+					tagCounts.set(t, (tagCounts.get(t) ?? 0) + 1);
+				}
+			}
+			return [...tagCounts.entries()]
+				.map(([tag, count]) => ({ tag, count }))
+				.sort((a, b) => b.count - a.count);
+		},
+
+		async bulkAddTags(
+			customerIds: string[],
+			tags: string[],
+		): Promise<{ updated: number }> {
+			let updated = 0;
+			for (const id of customerIds) {
+				const existing = (await data.get("customer", id)) as Customer | null;
+				if (!existing) continue;
+				const currentTags = existing.tags ?? [];
+				const merged = [...new Set([...currentTags, ...tags])];
+				const record: Customer = {
+					...existing,
+					tags: merged,
+					updatedAt: new Date(),
+				};
+				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
+				await data.upsert("customer", id, record as Record<string, any>);
+				updated++;
+			}
+			return { updated };
+		},
+
+		async bulkRemoveTags(
+			customerIds: string[],
+			tags: string[],
+		): Promise<{ updated: number }> {
+			let updated = 0;
+			const tagsToRemove = new Set(tags.map((t) => t.toLowerCase()));
+			for (const id of customerIds) {
+				const existing = (await data.get("customer", id)) as Customer | null;
+				if (!existing) continue;
+				const remaining = (existing.tags ?? []).filter(
+					(t) => !tagsToRemove.has(t.toLowerCase()),
+				);
+				const record: Customer = {
+					...existing,
+					tags: remaining,
+					updatedAt: new Date(),
+				};
+				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
+				await data.upsert("customer", id, record as Record<string, any>);
+				updated++;
+			}
+			return { updated };
+		},
+
+		async listAddresses(customerId: string): Promise<CustomerAddress[]> {
+			return (await data.findMany("customerAddress", {
+				where: { customerId },
+			})) as CustomerAddress[];
+		},
+
+		async getAddress(id: string): Promise<CustomerAddress | null> {
+			return (await data.get("customerAddress", id)) as CustomerAddress | null;
+		},
+
+		async createAddress(params): Promise<CustomerAddress> {
+			const id = crypto.randomUUID();
+			const now = new Date();
+			const address: CustomerAddress = {
+				id,
+				customerId: params.customerId,
+				type: params.type ?? "shipping",
+				firstName: params.firstName,
+				lastName: params.lastName,
+				company: params.company,
+				line1: params.line1,
+				line2: params.line2,
+				city: params.city,
+				state: params.state,
+				postalCode: params.postalCode,
+				country: params.country,
+				phone: params.phone,
+				isDefault: params.isDefault ?? false,
+				createdAt: now,
+				updatedAt: now,
+			};
+
+			// If marking as default, clear existing defaults of the same type
+			if (address.isDefault) {
+				const existing = (await data.findMany("customerAddress", {
+					where: { customerId: params.customerId, type: address.type },
+				})) as CustomerAddress[];
+				for (const addr of existing) {
+					if (addr.isDefault) {
+						await data.upsert("customerAddress", addr.id, {
+							...addr,
+							isDefault: false,
+							updatedAt: new Date(),
+						} as Record<string, unknown>);
+					}
+				}
+			}
+
+			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
+			await data.upsert("customerAddress", id, address as Record<string, any>);
+			return address;
+		},
+
+		async updateAddress(id: string, params): Promise<CustomerAddress | null> {
+			const existing = (await data.get(
+				"customerAddress",
+				id,
+			)) as CustomerAddress | null;
+			if (!existing) return null;
+
+			const updated: CustomerAddress = {
+				...existing,
+				...(params.type !== undefined ? { type: params.type } : {}),
+				...(params.firstName !== undefined
+					? { firstName: params.firstName }
+					: {}),
+				...(params.lastName !== undefined ? { lastName: params.lastName } : {}),
+				...(params.company !== undefined
+					? { company: params.company ?? undefined }
+					: {}),
+				...(params.line1 !== undefined ? { line1: params.line1 } : {}),
+				...(params.line2 !== undefined
+					? { line2: params.line2 ?? undefined }
+					: {}),
+				...(params.city !== undefined ? { city: params.city } : {}),
+				...(params.state !== undefined ? { state: params.state } : {}),
+				...(params.postalCode !== undefined
+					? { postalCode: params.postalCode }
+					: {}),
+				...(params.country !== undefined ? { country: params.country } : {}),
+				...(params.phone !== undefined
+					? { phone: params.phone ?? undefined }
+					: {}),
+				...(params.isDefault !== undefined
+					? { isDefault: params.isDefault }
+					: {}),
+				updatedAt: new Date(),
+			};
+
+			// If marking as default, clear existing defaults of the same type
+			if (params.isDefault) {
+				const siblings = (await data.findMany("customerAddress", {
+					where: { customerId: existing.customerId, type: updated.type },
+				})) as CustomerAddress[];
+				for (const addr of siblings) {
+					if (addr.id !== id && addr.isDefault) {
+						await data.upsert("customerAddress", addr.id, {
+							...addr,
+							isDefault: false,
+							updatedAt: new Date(),
+						} as Record<string, unknown>);
+					}
+				}
+			}
+
+			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
+			await data.upsert("customerAddress", id, updated as Record<string, any>);
+			return updated;
+		},
+
+		async deleteAddress(id: string): Promise<void> {
+			await data.delete("customerAddress", id);
+		},
+
+		async setDefaultAddress(
+			customerId: string,
+			addressId: string,
+		): Promise<CustomerAddress | null> {
+			const address = (await data.get(
+				"customerAddress",
+				addressId,
+			)) as CustomerAddress | null;
+			if (!address || address.customerId !== customerId) return null;
+
+			// Clear existing defaults of the same type
+			const siblings = (await data.findMany("customerAddress", {
+				where: { customerId, type: address.type },
+			})) as CustomerAddress[];
+			for (const addr of siblings) {
+				if (addr.id !== addressId && addr.isDefault) {
+					await data.upsert("customerAddress", addr.id, {
+						...addr,
+						isDefault: false,
+						updatedAt: new Date(),
+					} as Record<string, unknown>);
+				}
+			}
+
+			const updated: CustomerAddress = {
+				...address,
+				isDefault: true,
+				updatedAt: new Date(),
+			};
+			await data.upsert(
+				"customerAddress",
+				addressId,
+				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
+				updated as unknown as Record<string, any>,
+			);
+			return updated;
+		},
+
+		async listForExport(params): Promise<Customer[]> {
+			const { search, tag, dateFrom, dateTo } = params;
+			const all = (await data.findMany("customer", {})) as Customer[];
+
+			let filtered = all;
+
+			if (search) {
+				const s = search.toLowerCase();
+				filtered = filtered.filter(
+					(c) =>
+						c.firstName.toLowerCase().includes(s) ||
+						c.lastName.toLowerCase().includes(s) ||
+						c.email.toLowerCase().includes(s),
+				);
+			}
+
+			if (tag) {
+				const tagLower = tag.toLowerCase();
+				filtered = filtered.filter((c) =>
+					(c.tags ?? []).some((t) => t.toLowerCase() === tagLower),
+				);
+			}
+
+			if (dateFrom) {
+				const from = new Date(dateFrom).getTime();
+				filtered = filtered.filter(
+					(c) => new Date(c.createdAt).getTime() >= from,
+				);
+			}
+
+			if (dateTo) {
+				const to = new Date(dateTo).getTime();
+				filtered = filtered.filter(
+					(c) => new Date(c.createdAt).getTime() <= to,
+				);
+			}
+
+			filtered.sort(
+				(a, b) =>
+					new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+			);
+
+			return filtered;
+		},
+
+		async importCustomers(
+			rows: ImportCustomerRow[],
+		): Promise<ImportCustomerResult> {
+			let created = 0;
+			let updated = 0;
+			const errors: ImportCustomerResult["errors"] = [];
+
+			// Pre-fetch all customers for email matching
+			const allCustomers = (await data.findMany("customer", {})) as Customer[];
+			const customerByEmail = new Map<string, Customer>();
+			for (const c of allCustomers) {
+				customerByEmail.set(c.email.toLowerCase(), c);
+			}
+
+			for (let i = 0; i < rows.length; i++) {
+				const row = rows[i];
+				// Validate email
+				if (!row.email || row.email.trim() === "") {
+					errors.push({
+						row: i + 1,
+						field: "email",
+						message: "Email is required",
+					});
+					continue;
+				}
+
+				const email = row.email.trim().toLowerCase();
+				if (!email.includes("@")) {
+					errors.push({
+						row: i + 1,
+						field: "email",
+						message: "Invalid email format",
+					});
+					continue;
+				}
+
+				const existing = customerByEmail.get(email);
+				if (existing) {
+					// Update existing customer
+					const updateFields: Partial<Customer> = {
+						updatedAt: new Date(),
+					};
+					if (row.firstName !== undefined)
+						updateFields.firstName = row.firstName;
+					if (row.lastName !== undefined) updateFields.lastName = row.lastName;
+					if (row.phone !== undefined) updateFields.phone = row.phone;
+					if (row.tags !== undefined) {
+						const currentTags = existing.tags ?? [];
+						updateFields.tags = [...new Set([...currentTags, ...row.tags])];
+					}
+
+					const updatedCustomer = { ...existing, ...updateFields };
+					await data.upsert(
+						"customer",
+						existing.id,
+						// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
+						updatedCustomer as Record<string, any>,
+					);
+					customerByEmail.set(email, updatedCustomer as Customer);
+					updated++;
+				} else {
+					// Create new customer
+					const id = crypto.randomUUID();
+					const now = new Date();
+					const customer: Customer = {
+						id,
+						email,
+						firstName: row.firstName ?? "",
+						lastName: row.lastName ?? "",
+						phone: row.phone,
+						tags: row.tags ?? [],
+						metadata: {},
+						createdAt: now,
+						updatedAt: now,
+					};
+					await data.upsert(
+						"customer",
+						id,
+						// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
+						customer as Record<string, any>,
+					);
+					customerByEmail.set(email, customer);
+					created++;
+				}
+			}
+
+			return { created, updated, errors };
+		},
+
+		// --- Loyalty Points ---
+
+		async getLoyaltyBalance(customerId: string): Promise<LoyaltyBalance> {
+			const transactions = (await data.findMany("loyaltyTransaction", {
+				where: { customerId },
+			})) as LoyaltyTransaction[];
+
+			let totalEarned = 0;
+			let totalRedeemed = 0;
+			for (const t of transactions) {
+				if (t.type === "earn" || (t.type === "adjust" && t.points > 0)) {
+					totalEarned += t.points;
+				} else if (
+					t.type === "redeem" ||
+					(t.type === "adjust" && t.points < 0)
+				) {
+					totalRedeemed += Math.abs(t.points);
+				}
+			}
+
+			return {
+				customerId,
+				totalEarned,
+				totalRedeemed,
+				balance: totalEarned - totalRedeemed,
+				transactionCount: transactions.length,
+			};
+		},
+
+		async getLoyaltyHistory(
+			customerId: string,
+			params?: {
+				limit?: number | undefined;
+				offset?: number | undefined;
+			},
+		): Promise<{ transactions: LoyaltyTransaction[]; total: number }> {
+			const limit = params?.limit ?? 20;
+			const offset = params?.offset ?? 0;
+
+			const all = (await data.findMany("loyaltyTransaction", {
+				where: { customerId },
+			})) as LoyaltyTransaction[];
+
+			// Sort by createdAt descending (newest first)
+			all.sort(
+				(a, b) =>
+					new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+			);
+
+			return {
+				transactions: all.slice(offset, offset + limit),
+				total: all.length,
+			};
+		},
+
+		async earnPoints(params): Promise<LoyaltyTransaction> {
+			if (params.points <= 0) {
+				throw new Error("Points to earn must be positive");
+			}
+
+			// Get current balance
+			const balance = await this.getLoyaltyBalance(params.customerId);
+
+			const transaction: LoyaltyTransaction = {
+				id: crypto.randomUUID(),
+				customerId: params.customerId,
+				type: "earn",
+				points: params.points,
+				balance: balance.balance + params.points,
+				reason: params.reason,
+				orderId: params.orderId,
+				createdAt: new Date(),
+			};
+
+			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
+			await data.upsert(
+				"loyaltyTransaction",
+				transaction.id,
+				transaction as Record<string, any>,
+			);
+			return transaction;
+		},
+
+		async redeemPoints(params): Promise<LoyaltyTransaction> {
+			if (params.points <= 0) {
+				throw new Error("Points to redeem must be positive");
+			}
+
+			const balance = await this.getLoyaltyBalance(params.customerId);
+			if (balance.balance < params.points) {
+				throw new Error("Insufficient loyalty points");
+			}
+
+			const transaction: LoyaltyTransaction = {
+				id: crypto.randomUUID(),
+				customerId: params.customerId,
+				type: "redeem",
+				points: -params.points,
+				balance: balance.balance - params.points,
+				reason: params.reason,
+				orderId: params.orderId,
+				createdAt: new Date(),
+			};
+
+			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
+			await data.upsert(
+				"loyaltyTransaction",
+				transaction.id,
+				transaction as Record<string, any>,
+			);
+			return transaction;
+		},
+
+		async adjustPoints(params): Promise<LoyaltyTransaction> {
+			if (params.points === 0) {
+				throw new Error("Adjustment points cannot be zero");
+			}
+
+			const balance = await this.getLoyaltyBalance(params.customerId);
+			const newBalance = balance.balance + params.points;
+
+			if (newBalance < 0) {
+				throw new Error("Adjustment would result in negative balance");
+			}
+
+			const transaction: LoyaltyTransaction = {
+				id: crypto.randomUUID(),
+				customerId: params.customerId,
+				type: "adjust",
+				points: params.points,
+				balance: newBalance,
+				reason: params.reason,
+				createdAt: new Date(),
+			};
+
+			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
+			await data.upsert(
+				"loyaltyTransaction",
+				transaction.id,
+				transaction as Record<string, any>,
+			);
+			return transaction;
+		},
+
+		async getLoyaltyStats(): Promise<LoyaltyStats> {
+			const allTransactions = (await data.findMany(
+				"loyaltyTransaction",
+				{},
+			)) as LoyaltyTransaction[];
+			const allCustomers = (await data.findMany("customer", {})) as Customer[];
+
+			// Group transactions by customer
+			const byCustomer = new Map<string, LoyaltyTransaction[]>();
+			for (const t of allTransactions) {
+				const existing = byCustomer.get(t.customerId) ?? [];
+				existing.push(t);
+				byCustomer.set(t.customerId, existing);
+			}
+
+			let totalPointsIssued = 0;
+			let totalPointsRedeemed = 0;
+			const customerBalances: {
+				customerId: string;
+				balance: number;
+			}[] = [];
+
+			for (const [customerId, transactions] of byCustomer) {
+				let earned = 0;
+				let redeemed = 0;
+				for (const t of transactions) {
+					if (t.type === "earn" || (t.type === "adjust" && t.points > 0)) {
+						earned += t.points;
+					} else if (
+						t.type === "redeem" ||
+						(t.type === "adjust" && t.points < 0)
+					) {
+						redeemed += Math.abs(t.points);
+					}
+				}
+				totalPointsIssued += earned;
+				totalPointsRedeemed += redeemed;
+				customerBalances.push({
+					customerId,
+					balance: earned - redeemed,
+				});
+			}
+
+			const totalOutstanding = totalPointsIssued - totalPointsRedeemed;
+			const customersWithPoints = customerBalances.filter((c) => c.balance > 0);
+
+			// Build customer lookup for top customers
+			const customerMap = new Map<string, Customer>();
+			for (const c of allCustomers) {
+				customerMap.set(c.id, c);
+			}
+
+			// Sort by balance descending and take top 10
+			customerBalances.sort((a, b) => b.balance - a.balance);
+			const topCustomers = customerBalances.slice(0, 10).map((cb) => {
+				const customer = customerMap.get(cb.customerId);
+				return {
+					customerId: cb.customerId,
+					email: customer?.email ?? "",
+					name: customer
+						? `${customer.firstName} ${customer.lastName}`
+						: "Unknown",
+					balance: cb.balance,
+				};
+			});
+
+			return {
+				totalCustomersWithPoints: customersWithPoints.length,
+				totalPointsIssued,
+				totalPointsRedeemed,
+				totalPointsOutstanding: totalOutstanding,
+				averageBalance:
+					customersWithPoints.length > 0
+						? Math.round(totalOutstanding / customersWithPoints.length)
+						: 0,
+				topCustomers,
+			};
+		},
+	};
+}

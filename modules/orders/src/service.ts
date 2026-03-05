@@ -1,0 +1,533 @@
+import type { ModuleController } from "@86d-app/core";
+
+export type OrderStatus =
+	| "pending"
+	| "processing"
+	| "on_hold"
+	| "completed"
+	| "cancelled"
+	| "refunded";
+
+export type PaymentStatus =
+	| "unpaid"
+	| "paid"
+	| "partially_paid"
+	| "refunded"
+	| "voided";
+
+export interface Order {
+	id: string;
+	orderNumber: string;
+	customerId?: string | undefined;
+	guestEmail?: string | undefined;
+	status: OrderStatus;
+	paymentStatus: PaymentStatus;
+	subtotal: number;
+	taxAmount: number;
+	shippingAmount: number;
+	discountAmount: number;
+	total: number;
+	currency: string;
+	notes?: string | undefined;
+	metadata?: Record<string, unknown> | undefined;
+	createdAt: Date;
+	updatedAt: Date;
+}
+
+export interface OrderItem {
+	id: string;
+	orderId: string;
+	productId: string;
+	variantId?: string | undefined;
+	name: string;
+	sku?: string | undefined;
+	price: number;
+	quantity: number;
+	subtotal: number;
+	metadata?: Record<string, unknown> | undefined;
+}
+
+export interface OrderAddress {
+	id: string;
+	orderId: string;
+	type: "billing" | "shipping";
+	firstName: string;
+	lastName: string;
+	company?: string | undefined;
+	line1: string;
+	line2?: string | undefined;
+	city: string;
+	state: string;
+	postalCode: string;
+	country: string;
+	phone?: string | undefined;
+}
+
+export interface OrderWithDetails extends Order {
+	items: OrderItem[];
+	addresses: OrderAddress[];
+}
+
+export interface CreateOrderParams {
+	id?: string | undefined;
+	customerId?: string | undefined;
+	guestEmail?: string | undefined;
+	currency?: string | undefined;
+	subtotal: number;
+	taxAmount?: number | undefined;
+	shippingAmount?: number | undefined;
+	discountAmount?: number | undefined;
+	total: number;
+	notes?: string | undefined;
+	metadata?: Record<string, unknown> | undefined;
+	items: Array<{
+		productId: string;
+		variantId?: string | undefined;
+		name: string;
+		sku?: string | undefined;
+		price: number;
+		quantity: number;
+	}>;
+	billingAddress?: Omit<OrderAddress, "id" | "orderId" | "type"> | undefined;
+	shippingAddress?: Omit<OrderAddress, "id" | "orderId" | "type"> | undefined;
+}
+
+export type FulfillmentStatus =
+	| "pending"
+	| "shipped"
+	| "in_transit"
+	| "delivered"
+	| "failed";
+
+export interface Fulfillment {
+	id: string;
+	orderId: string;
+	status: FulfillmentStatus;
+	trackingNumber?: string | undefined;
+	trackingUrl?: string | undefined;
+	carrier?: string | undefined;
+	notes?: string | undefined;
+	shippedAt?: Date | undefined;
+	deliveredAt?: Date | undefined;
+	createdAt: Date;
+	updatedAt: Date;
+}
+
+export interface FulfillmentItem {
+	id: string;
+	fulfillmentId: string;
+	orderItemId: string;
+	quantity: number;
+}
+
+export interface FulfillmentWithItems extends Fulfillment {
+	items: FulfillmentItem[];
+}
+
+export type OrderFulfillmentStatus =
+	| "unfulfilled"
+	| "partially_fulfilled"
+	| "fulfilled";
+
+export interface CreateFulfillmentParams {
+	orderId: string;
+	carrier?: string | undefined;
+	trackingNumber?: string | undefined;
+	trackingUrl?: string | undefined;
+	notes?: string | undefined;
+	items: Array<{
+		orderItemId: string;
+		quantity: number;
+	}>;
+}
+
+export interface UpdateFulfillmentParams {
+	status?: FulfillmentStatus | undefined;
+	trackingNumber?: string | undefined;
+	trackingUrl?: string | undefined;
+	carrier?: string | undefined;
+	notes?: string | undefined;
+}
+
+export type ReturnStatus =
+	| "requested"
+	| "approved"
+	| "rejected"
+	| "shipped_back"
+	| "received"
+	| "refunded"
+	| "completed";
+
+export type ReturnType = "refund" | "exchange" | "store_credit";
+
+export const RETURN_REASONS = [
+	"defective",
+	"wrong_item",
+	"not_as_described",
+	"changed_mind",
+	"too_small",
+	"too_large",
+	"arrived_late",
+	"damaged_in_shipping",
+	"other",
+] as const;
+
+export type ReturnReason = (typeof RETURN_REASONS)[number];
+
+export interface ReturnRequest {
+	id: string;
+	orderId: string;
+	status: ReturnStatus;
+	type: ReturnType;
+	reason: string;
+	customerNotes?: string | undefined;
+	adminNotes?: string | undefined;
+	refundAmount?: number | undefined;
+	trackingNumber?: string | undefined;
+	trackingUrl?: string | undefined;
+	carrier?: string | undefined;
+	createdAt: Date;
+	updatedAt: Date;
+}
+
+export interface ReturnItem {
+	id: string;
+	returnRequestId: string;
+	orderItemId: string;
+	quantity: number;
+	reason?: string | undefined;
+}
+
+export interface ReturnRequestWithItems extends ReturnRequest {
+	items: ReturnItem[];
+}
+
+export interface CreateReturnParams {
+	orderId: string;
+	type?: ReturnType | undefined;
+	reason: string;
+	customerNotes?: string | undefined;
+	items: Array<{
+		orderItemId: string;
+		quantity: number;
+		reason?: string | undefined;
+	}>;
+}
+
+export interface UpdateReturnParams {
+	status?: ReturnStatus | undefined;
+	adminNotes?: string | undefined;
+	refundAmount?: number | undefined;
+	trackingNumber?: string | undefined;
+	trackingUrl?: string | undefined;
+	carrier?: string | undefined;
+}
+
+export type OrderNoteType = "note" | "system";
+
+export interface OrderNote {
+	id: string;
+	orderId: string;
+	type: OrderNoteType;
+	content: string;
+	authorId?: string | undefined;
+	authorName?: string | undefined;
+	metadata?: Record<string, unknown> | undefined;
+	createdAt: Date;
+}
+
+export interface AddNoteParams {
+	orderId: string;
+	content: string;
+	type?: OrderNoteType | undefined;
+	authorId?: string | undefined;
+	authorName?: string | undefined;
+	metadata?: Record<string, unknown> | undefined;
+}
+
+export interface InvoiceData {
+	invoiceNumber: string;
+	orderNumber: string;
+	orderId: string;
+	issueDate: string;
+	dueDate: string;
+	status: "draft" | "issued" | "paid" | "void";
+	customerName: string;
+	customerEmail?: string | undefined;
+	billingAddress?: Omit<OrderAddress, "id" | "orderId" | "type"> | undefined;
+	shippingAddress?: Omit<OrderAddress, "id" | "orderId" | "type"> | undefined;
+	lineItems: Array<{
+		name: string;
+		sku?: string | undefined;
+		quantity: number;
+		unitPrice: number;
+		subtotal: number;
+	}>;
+	subtotal: number;
+	taxAmount: number;
+	shippingAmount: number;
+	discountAmount: number;
+	total: number;
+	currency: string;
+	storeName: string;
+	notes?: string | undefined;
+}
+
+export interface ReorderItem {
+	productId: string;
+	variantId?: string | undefined;
+	name: string;
+	sku?: string | undefined;
+	price: number;
+	quantity: number;
+}
+
+export interface OrderController extends ModuleController {
+	/**
+	 * Create a new order
+	 */
+	create(params: CreateOrderParams): Promise<Order>;
+
+	/**
+	 * Get an order by ID with all details
+	 */
+	getById(id: string): Promise<OrderWithDetails | null>;
+
+	/**
+	 * Get an order by order number
+	 */
+	getByOrderNumber(orderNumber: string): Promise<OrderWithDetails | null>;
+
+	/**
+	 * List orders for a customer
+	 */
+	listForCustomer(
+		customerId: string,
+		params?: { limit?: number; offset?: number },
+	): Promise<{ orders: Order[]; total: number }>;
+
+	/**
+	 * List all orders (admin)
+	 */
+	list(params: {
+		limit?: number | undefined;
+		offset?: number | undefined;
+		search?: string | undefined;
+		status?: OrderStatus | undefined;
+		paymentStatus?: PaymentStatus | undefined;
+	}): Promise<{ orders: Order[]; total: number }>;
+
+	/**
+	 * List orders with full details (items + addresses) for export
+	 */
+	listForExport(params: {
+		limit?: number | undefined;
+		offset?: number | undefined;
+		search?: string | undefined;
+		status?: OrderStatus | undefined;
+		paymentStatus?: PaymentStatus | undefined;
+		dateFrom?: Date | undefined;
+		dateTo?: Date | undefined;
+	}): Promise<{ orders: OrderWithDetails[]; total: number }>;
+
+	/**
+	 * Update order status
+	 */
+	updateStatus(id: string, status: OrderStatus): Promise<Order | null>;
+
+	/**
+	 * Update payment status
+	 */
+	updatePaymentStatus(
+		id: string,
+		paymentStatus: PaymentStatus,
+	): Promise<Order | null>;
+
+	/**
+	 * Update order notes/metadata
+	 */
+	update(
+		id: string,
+		params: {
+			notes?: string | undefined;
+			metadata?: Record<string, unknown> | undefined;
+		},
+	): Promise<Order | null>;
+
+	/**
+	 * Cancel an order (only if cancellable)
+	 */
+	cancel(id: string): Promise<Order | null>;
+
+	/**
+	 * Delete an order (admin only, hard delete)
+	 */
+	delete(id: string): Promise<void>;
+
+	/**
+	 * Get order items
+	 */
+	getItems(orderId: string): Promise<OrderItem[]>;
+
+	/**
+	 * Get order addresses
+	 */
+	getAddresses(orderId: string): Promise<OrderAddress[]>;
+
+	/**
+	 * Create a fulfillment for an order
+	 */
+	createFulfillment(params: CreateFulfillmentParams): Promise<Fulfillment>;
+
+	/**
+	 * Get a fulfillment by ID with its items
+	 */
+	getFulfillment(id: string): Promise<FulfillmentWithItems | null>;
+
+	/**
+	 * List all fulfillments for an order
+	 */
+	listFulfillments(orderId: string): Promise<FulfillmentWithItems[]>;
+
+	/**
+	 * Update a fulfillment (tracking, status, etc.)
+	 */
+	updateFulfillment(
+		id: string,
+		params: UpdateFulfillmentParams,
+	): Promise<Fulfillment | null>;
+
+	/**
+	 * Delete a fulfillment
+	 */
+	deleteFulfillment(id: string): Promise<void>;
+
+	/**
+	 * Get the overall fulfillment status for an order
+	 */
+	getOrderFulfillmentStatus(orderId: string): Promise<OrderFulfillmentStatus>;
+
+	/**
+	 * Create a return request for an order
+	 */
+	createReturn(params: CreateReturnParams): Promise<ReturnRequest>;
+
+	/**
+	 * Get a return request by ID with its items
+	 */
+	getReturn(id: string): Promise<ReturnRequestWithItems | null>;
+
+	/**
+	 * List return requests for an order
+	 */
+	listReturns(orderId: string): Promise<ReturnRequestWithItems[]>;
+
+	/**
+	 * List all return requests (admin)
+	 */
+	listAllReturns(params: {
+		limit?: number | undefined;
+		offset?: number | undefined;
+		status?: ReturnStatus | undefined;
+	}): Promise<{ returns: ReturnRequestWithItems[]; total: number }>;
+
+	/**
+	 * Update a return request (admin)
+	 */
+	updateReturn(
+		id: string,
+		params: UpdateReturnParams,
+	): Promise<ReturnRequest | null>;
+
+	/**
+	 * Delete a return request
+	 */
+	deleteReturn(id: string): Promise<void>;
+
+	// ── Bulk Operations ───────────────────────────────────────────────────
+
+	/**
+	 * Bulk update order status
+	 */
+	bulkUpdateStatus(
+		ids: string[],
+		status: OrderStatus,
+	): Promise<{ updated: number }>;
+
+	/**
+	 * Bulk update payment status
+	 */
+	bulkUpdatePaymentStatus(
+		ids: string[],
+		paymentStatus: PaymentStatus,
+	): Promise<{ updated: number }>;
+
+	/**
+	 * Bulk delete orders
+	 */
+	bulkDelete(ids: string[]): Promise<{ deleted: number }>;
+
+	// ── Order Notes ──────────────────────────────────────────────────────
+
+	/**
+	 * Add a note or system event to an order
+	 */
+	addNote(params: AddNoteParams): Promise<OrderNote>;
+
+	/**
+	 * List all notes for an order (newest first)
+	 */
+	listNotes(orderId: string): Promise<OrderNote[]>;
+
+	/**
+	 * Delete a note by ID
+	 */
+	deleteNote(id: string): Promise<void>;
+
+	// ── Invoice ─────────────────────────────────────────────────────────
+
+	/**
+	 * Get invoice data for an order
+	 */
+	getInvoiceData(
+		orderId: string,
+		storeName: string,
+	): Promise<InvoiceData | null>;
+
+	// ── Customer Returns ──────────────────────────────────────────────
+
+	/**
+	 * List all return requests for a customer across all their orders
+	 */
+	listReturnsForCustomer(
+		customerId: string,
+		params?: {
+			limit?: number | undefined;
+			offset?: number | undefined;
+			status?: ReturnStatus | undefined;
+		},
+	): Promise<{
+		returns: Array<ReturnRequestWithItems & { orderNumber: string }>;
+		total: number;
+	}>;
+
+	// ── Public Order Tracking ──────────────────────────────────────────
+
+	/**
+	 * Look up an order by order number + email for guest tracking.
+	 * Returns the order only if the email matches either guestEmail or
+	 * the billing address email (case-insensitive).
+	 */
+	getByTracking(
+		orderNumber: string,
+		email: string,
+	): Promise<OrderWithDetails | null>;
+
+	// ── Reorder ──────────────────────────────────────────────────────────
+
+	/**
+	 * Extract cart-ready items from a previous order for reordering.
+	 * Returns the line items with productId, variantId, name, sku, price, and quantity.
+	 */
+	getReorderItems(orderId: string): Promise<ReorderItem[] | null>;
+}

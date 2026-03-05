@@ -1,0 +1,27 @@
+{
+	"extends": "../../tsconfig.base.json",
+	"compilerOptions": {
+		"lib": ["ES2022", "dom", "dom.iterable"],
+		"jsx": "preserve",
+		"baseUrl": ".",
+		"paths": {
+			"~/*": ["./*"],
+			"template/*": ["../../templates/brisa/*"],
+			"@86d-app/core": ["../../packages/core/src/index.ts"],
+			"@86d-app/core/*": ["../../packages/core/src/*"],
+			"@86d-app/runtime/*": ["../../packages/runtime/src/*"],
+			"@86d-app/*/components": [
+				"../../modules/*/src/store/components/index.tsx"
+			],
+			"@86d-app/*/admin-components": [
+				"../../modules/*/src/admin/components/index.tsx"
+			],
+			"@86d-app/*/state": ["../../modules/*/src/state.ts"],
+			"@86d-app/*": ["../../modules/*/src/index.ts"]
+		},
+		"plugins": [{ "name": "next" }],
+		"module": "esnext"
+	},
+	"include": [".", ".next/types/**/*.ts"],
+	"exclude": ["node_modules"]
+}

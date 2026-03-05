@@ -1,0 +1,282 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { SquarePaymentProvider } from "../provider";
+
+function mockFetchResponse(data: unknown, ok = true, status = 200) {
+	return vi.fn().mockResolvedValue({
+		ok,
+		status,
+		json: () => Promise.resolve(data),
+	});
+}
+
+describe("SquarePaymentProvider", () => {
+	let provider: SquarePaymentProvider;
+	const originalFetch = globalThis.fetch;
+
+	beforeEach(() => {
+		provider = new SquarePaymentProvider("sq_test_token");
+	});
+
+	afterEach(() => {
+		globalThis.fetch = originalFetch;
+	});
+
+	// ── createIntent ─────────────────────────────────────────────────────
+
+	describe("createIntent", () => {
+		it("creates a payment via Square API", async () => {
+			globalThis.fetch = mockFetchResponse({
+				payment: {
+					id: "sq_pay_123",
+					status: "APPROVED",
+					amount_money: { amount: 5000, currency: "USD" },
+				},
+			});
+
+			const result = await provider.createIntent({
+				amount: 5000,
+				currency: "USD",
+			});
+			expect(result.providerIntentId).toBe("sq_pay_123");
+			expect(result.status).toBe("pending"); // APPROVED → pending
+			expect(result.providerMetadata?.squareStatus).toBe("APPROVED");
+
+			expect(globalThis.fetch).toHaveBeenCalledWith(
+				"https://connect.squareup.com/v2/payments",
+				expect.objectContaining({
+					method: "POST",
+					headers: expect.objectContaining({
+						Authorization: "Bearer sq_test_token",
+					}),
+				}),
+			);
+		});
+
+		it("maps COMPLETED status to succeeded", async () => {
+			globalThis.fetch = mockFetchResponse({
+				payment: {
+					id: "sq_pay_comp",
+					status: "COMPLETED",
+					amount_money: { amount: 1000, currency: "USD" },
+				},
+			});
+			const result = await provider.createIntent({
+				amount: 1000,
+				currency: "USD",
+			});
+			expect(result.status).toBe("succeeded");
+		});
+
+		it("maps CANCELED status to cancelled", async () => {
+			globalThis.fetch = mockFetchResponse({
+				payment: {
+					id: "sq_pay_cancel",
+					status: "CANCELED",
+					amount_money: { amount: 1000, currency: "USD" },
+				},
+			});
+			const result = await provider.createIntent({
+				amount: 1000,
+				currency: "USD",
+			});
+			expect(result.status).toBe("cancelled");
+		});
+
+		it("maps FAILED status to failed", async () => {
+			globalThis.fetch = mockFetchResponse({
+				payment: {
+					id: "sq_pay_fail",
+					status: "FAILED",
+					amount_money: { amount: 1000, currency: "USD" },
+				},
+			});
+			const result = await provider.createIntent({
+				amount: 1000,
+				currency: "USD",
+			});
+			expect(result.status).toBe("failed");
+		});
+
+		it("uppercases currency", async () => {
+			globalThis.fetch = mockFetchResponse({
+				payment: {
+					id: "sq_lc",
+					status: "PENDING",
+					amount_money: { amount: 500, currency: "EUR" },
+				},
+			});
+			await provider.createIntent({ amount: 500, currency: "eur" });
+			const body = JSON.parse(
+				(globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body,
+			);
+			expect(body.amount_money.currency).toBe("EUR");
+		});
+
+		it("throws on Square API error", async () => {
+			globalThis.fetch = mockFetchResponse(
+				{
+					errors: [
+						{
+							detail: "Not found",
+							category: "API_ERROR",
+							code: "NOT_FOUND",
+						},
+					],
+				},
+				false,
+				404,
+			);
+
+			await expect(
+				provider.createIntent({ amount: 1000, currency: "USD" }),
+			).rejects.toThrow("Square error: Not found");
+		});
+	});
+
+	// ── confirmIntent ────────────────────────────────────────────────────
+
+	describe("confirmIntent", () => {
+		it("completes a payment", async () => {
+			globalThis.fetch = mockFetchResponse({
+				payment: {
+					id: "sq_pay_123",
+					status: "COMPLETED",
+					amount_money: { amount: 5000, currency: "USD" },
+				},
+			});
+
+			const result = await provider.confirmIntent("sq_pay_123");
+			expect(result.providerIntentId).toBe("sq_pay_123");
+			expect(result.status).toBe("succeeded");
+
+			expect(globalThis.fetch).toHaveBeenCalledWith(
+				"https://connect.squareup.com/v2/payments/sq_pay_123/complete",
+				expect.objectContaining({ method: "POST" }),
+			);
+		});
+	});
+
+	// ── cancelIntent ─────────────────────────────────────────────────────
+
+	describe("cancelIntent", () => {
+		it("cancels a payment", async () => {
+			globalThis.fetch = mockFetchResponse({
+				payment: {
+					id: "sq_pay_cancel",
+					status: "CANCELED",
+					amount_money: { amount: 3000, currency: "USD" },
+				},
+			});
+
+			const result = await provider.cancelIntent("sq_pay_cancel");
+			expect(result.status).toBe("cancelled");
+
+			expect(globalThis.fetch).toHaveBeenCalledWith(
+				"https://connect.squareup.com/v2/payments/sq_pay_cancel/cancel",
+				expect.objectContaining({ method: "POST" }),
+			);
+		});
+	});
+
+	// ── createRefund ─────────────────────────────────────────────────────
+
+	describe("createRefund", () => {
+		it("creates a refund", async () => {
+			globalThis.fetch = mockFetchResponse({
+				refund: {
+					id: "sq_ref_123",
+					status: "COMPLETED",
+					amount_money: { amount: 5000, currency: "USD" },
+				},
+			});
+
+			const result = await provider.createRefund({
+				providerIntentId: "sq_pay_123",
+			});
+			expect(result.providerRefundId).toBe("sq_ref_123");
+			expect(result.status).toBe("succeeded");
+		});
+
+		it("sends amount when provided", async () => {
+			globalThis.fetch = mockFetchResponse({
+				refund: {
+					id: "sq_ref_partial",
+					status: "PENDING",
+					amount_money: { amount: 2000, currency: "USD" },
+				},
+			});
+
+			await provider.createRefund({
+				providerIntentId: "sq_pay_123",
+				amount: 2000,
+			});
+
+			const body = JSON.parse(
+				(globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body,
+			);
+			expect(body.amount_money.amount).toBe(2000);
+		});
+
+		it("maps REJECTED status to failed", async () => {
+			globalThis.fetch = mockFetchResponse({
+				refund: {
+					id: "sq_ref_rej",
+					status: "REJECTED",
+					amount_money: { amount: 1000, currency: "USD" },
+				},
+			});
+			const result = await provider.createRefund({
+				providerIntentId: "sq_pay_1",
+			});
+			expect(result.status).toBe("failed");
+		});
+
+		it("maps FAILED status to failed", async () => {
+			globalThis.fetch = mockFetchResponse({
+				refund: {
+					id: "sq_ref_fail",
+					status: "FAILED",
+					amount_money: { amount: 1000, currency: "USD" },
+				},
+			});
+			const result = await provider.createRefund({
+				providerIntentId: "sq_pay_1",
+			});
+			expect(result.status).toBe("failed");
+		});
+
+		it("maps PENDING status to pending", async () => {
+			globalThis.fetch = mockFetchResponse({
+				refund: {
+					id: "sq_ref_pend",
+					status: "PENDING",
+					amount_money: { amount: 1000, currency: "USD" },
+				},
+			});
+			const result = await provider.createRefund({
+				providerIntentId: "sq_pay_1",
+			});
+			expect(result.status).toBe("pending");
+		});
+
+		it("sends reason when provided", async () => {
+			globalThis.fetch = mockFetchResponse({
+				refund: {
+					id: "sq_ref_reason",
+					status: "COMPLETED",
+					amount_money: { amount: 1000, currency: "USD" },
+				},
+			});
+
+			await provider.createRefund({
+				providerIntentId: "sq_pay_1",
+				reason: "Customer request",
+			});
+
+			const body = JSON.parse(
+				(globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body,
+			);
+			expect(body.reason).toBe("Customer request");
+		});
+	});
+});

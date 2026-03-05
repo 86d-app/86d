@@ -1,0 +1,201 @@
+import type {
+	PaymentProvider,
+	ProviderIntentResult,
+	ProviderRefundResult,
+} from "@86d-app/payments";
+
+// Square's Payment status values
+type SquarePaymentStatus =
+	| "APPROVED"
+	| "PENDING"
+	| "COMPLETED"
+	| "CANCELED"
+	| "FAILED";
+
+// Square's Refund status values
+type SquareRefundStatus = "PENDING" | "COMPLETED" | "REJECTED" | "FAILED";
+
+interface SquareAmountMoney {
+	amount: number;
+	currency: string;
+}
+
+interface SquarePayment {
+	id: string;
+	status: SquarePaymentStatus;
+	amount_money: SquareAmountMoney;
+}
+
+interface SquareRefund {
+	id: string;
+	status: SquareRefundStatus;
+	amount_money: SquareAmountMoney;
+}
+
+interface SquarePaymentResponse {
+	payment: SquarePayment;
+}
+
+interface SquareRefundResponse {
+	refund: SquareRefund;
+}
+
+interface SquareErrorDetail {
+	detail: string;
+	category: string;
+	code: string;
+}
+
+interface SquareErrorResponse {
+	errors: SquareErrorDetail[];
+}
+
+export class SquarePaymentProvider implements PaymentProvider {
+	private readonly accessToken: string;
+	private readonly baseUrl = "https://connect.squareup.com";
+	private readonly squareVersion = "2024-01-18";
+
+	constructor(accessToken: string) {
+		this.accessToken = accessToken;
+	}
+
+	private async request<T>(
+		method: "GET" | "POST",
+		path: string,
+		body?: Record<string, unknown>,
+	): Promise<T> {
+		const jsonBody =
+			body !== undefined && method === "POST"
+				? JSON.stringify(body)
+				: undefined;
+		const res = await fetch(`${this.baseUrl}${path}`, {
+			method,
+			headers: {
+				Authorization: `Bearer ${this.accessToken}`,
+				"Square-Version": this.squareVersion,
+				"Content-Type": "application/json",
+			},
+			...(jsonBody !== undefined ? { body: jsonBody } : {}),
+		});
+		// biome-ignore lint/suspicious/noExplicitAny: dynamic JSON response
+		const json = (await res.json()) as any;
+		if (!res.ok) {
+			const err = json as SquareErrorResponse;
+			const detail = err.errors?.[0]?.detail ?? `HTTP ${res.status}`;
+			throw new Error(`Square error: ${detail}`);
+		}
+		return json as T;
+	}
+
+	private mapPaymentStatus(
+		status: SquarePaymentStatus,
+	): ProviderIntentResult["status"] {
+		switch (status) {
+			case "COMPLETED":
+				return "succeeded";
+			case "CANCELED":
+				return "cancelled";
+			case "FAILED":
+				return "failed";
+			case "APPROVED":
+			case "PENDING":
+				return "pending";
+			default:
+				return "pending";
+		}
+	}
+
+	private mapRefundStatus(
+		status: SquareRefundStatus,
+	): ProviderRefundResult["status"] {
+		switch (status) {
+			case "COMPLETED":
+				return "succeeded";
+			case "FAILED":
+			case "REJECTED":
+				return "failed";
+			default:
+				return "pending";
+		}
+	}
+
+	async createIntent(params: {
+		amount: number;
+		currency: string;
+		metadata?: Record<string, unknown> | undefined;
+	}): Promise<ProviderIntentResult> {
+		const body: Record<string, unknown> = {
+			source_id: "EXTERNAL",
+			amount_money: {
+				amount: params.amount,
+				currency: params.currency.toUpperCase(),
+			},
+			autocomplete: false,
+			idempotency_key: crypto.randomUUID(),
+		};
+		const response = await this.request<SquarePaymentResponse>(
+			"POST",
+			"/v2/payments",
+			body,
+		);
+		return {
+			providerIntentId: response.payment.id,
+			status: this.mapPaymentStatus(response.payment.status),
+			providerMetadata: {
+				squareStatus: response.payment.status,
+				amountMoney: response.payment.amount_money,
+			},
+		};
+	}
+
+	async confirmIntent(providerIntentId: string): Promise<ProviderIntentResult> {
+		const response = await this.request<SquarePaymentResponse>(
+			"POST",
+			`/v2/payments/${providerIntentId}/complete`,
+		);
+		return {
+			providerIntentId: response.payment.id,
+			status: this.mapPaymentStatus(response.payment.status),
+			providerMetadata: { squareStatus: response.payment.status },
+		};
+	}
+
+	async cancelIntent(providerIntentId: string): Promise<ProviderIntentResult> {
+		const response = await this.request<SquarePaymentResponse>(
+			"POST",
+			`/v2/payments/${providerIntentId}/cancel`,
+		);
+		return {
+			providerIntentId: response.payment.id,
+			status: this.mapPaymentStatus(response.payment.status),
+			providerMetadata: { squareStatus: response.payment.status },
+		};
+	}
+
+	async createRefund(params: {
+		providerIntentId: string;
+		amount?: number | undefined;
+		reason?: string | undefined;
+	}): Promise<ProviderRefundResult> {
+		const body: Record<string, unknown> = {
+			idempotency_key: crypto.randomUUID(),
+			payment_id: params.providerIntentId,
+		};
+		if (params.amount !== undefined) {
+			body.amount_money = { amount: params.amount, currency: "USD" };
+		}
+		if (params.reason !== undefined) {
+			body.reason = params.reason;
+		}
+		const response = await this.request<SquareRefundResponse>(
+			"POST",
+			"/v2/refunds",
+			body,
+		);
+		return {
+			providerRefundId: response.refund.id,
+			status: this.mapRefundStatus(response.refund.status),
+			providerMetadata: { squareStatus: response.refund.status },
+		};
+	}
+}

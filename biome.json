@@ -1,0 +1,43 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.3.11/schema.json",
+	"linter": {
+		"rules": {
+			"correctness": {
+				"noUnusedVariables": {
+					"level": "warn",
+					"fix": "safe"
+				},
+				"noUnusedImports": {
+					"level": "error",
+					"fix": "safe"
+				}
+			},
+			"nursery": {
+				"recommended": true,
+				"useSortedClasses": {
+					"level": "error",
+					"fix": "safe"
+				}
+			}
+		}
+	},
+	"files": {
+		"includes": [
+			"apps/**/*",
+			"modules/**/*",
+			"packages/**/*",
+			"!**/dist",
+			"!**/.dist",
+			"!**/.turbo",
+			"!**/.vercel",
+			"!**/.next",
+			"!**/.cache",
+			"!**/node_modules"
+		]
+	},
+	"css": {
+		"parser": {
+			"tailwindDirectives": true
+		}
+	}
+}

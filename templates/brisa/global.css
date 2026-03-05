@@ -1,0 +1,168 @@
+/* TODO: Reimplement theme globals (was @import "../packages/theme/globals.css") */
+
+@source ".";
+
+@layer base {
+	html {
+		scroll-behavior: smooth;
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+	}
+
+	a {
+		transition-property: color, opacity, background-color, border-color,
+			box-shadow, transform;
+		transition-duration: 150ms;
+		transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+	}
+
+	img {
+		-webkit-user-drag: none;
+	}
+
+	::selection {
+		background-color: color-mix(in oklch, var(--foreground) 12%, transparent);
+	}
+
+	:focus-visible {
+		outline: 2px solid
+			color-mix(in oklch, var(--foreground) 40%, transparent);
+		outline-offset: 2px;
+	}
+
+	main {
+		animation: pageIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+
+	/* Staggered section entrance */
+	main > section {
+		animation: sectionIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+	}
+
+	main > section:nth-child(2) {
+		animation-delay: 0.08s;
+	}
+	main > section:nth-child(3) {
+		animation-delay: 0.16s;
+	}
+	main > section:nth-child(4) {
+		animation-delay: 0.24s;
+	}
+	main > section:nth-child(5) {
+		animation-delay: 0.32s;
+	}
+}
+
+/* ── Animations ─────────────────────────────────────────────────────────────── */
+
+@keyframes pageIn {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes fadeUp {
+	from {
+		opacity: 0;
+		transform: translateY(16px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes scaleIn {
+	from {
+		opacity: 0;
+		transform: scale(0.97);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+@keyframes shimmer {
+	0% {
+		background-position: -200% 0;
+	}
+	100% {
+		background-position: 200% 0;
+	}
+}
+
+@keyframes sectionIn {
+	from {
+		opacity: 0;
+		transform: translateY(16px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes marquee {
+	0% {
+		transform: translateX(0);
+	}
+	100% {
+		transform: translateX(-50%);
+	}
+}
+
+@keyframes slideIn {
+	from {
+		opacity: 0;
+		transform: translateX(8px);
+	}
+	to {
+		opacity: 1;
+		transform: translateX(0);
+	}
+}
+
+/* ── Utility classes ────────────────────────────────────────────────────────── */
+
+@utility animate-fade-up {
+	animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@utility animate-scale-in {
+	animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@utility animate-shimmer {
+	animation: shimmer 2s linear infinite;
+	background-size: 200% 100%;
+}
+
+@utility animate-marquee {
+	animation: marquee 30s linear infinite;
+}
+
+@utility animate-slide-in {
+	animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@utility text-balance {
+	text-wrap: balance;
+}
+
+@utility text-pretty {
+	text-wrap: pretty;
+}
+
+@utility no-scrollbar {
+	-ms-overflow-style: none;
+	scrollbar-width: none;
+	&::-webkit-scrollbar {
+		display: none;
+	}
+}

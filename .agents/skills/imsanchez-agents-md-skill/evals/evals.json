@@ -1,0 +1,23 @@
+{
+  "skill_name": "agents-md",
+  "evals": [
+    {
+      "id": 0,
+      "prompt": "Create an AGENTS.md for this project. I want future agents to know how to build, test, and navigate the codebase.",
+      "expected_output": "A well-structured AGENTS.md file covering the project's architecture, tech stack, build/test commands, and key patterns discovered from reading the code.",
+      "files": ["agents-md-workspace/fixtures/new-ts-project/"]
+    },
+    {
+      "id": 1,
+      "prompt": "We just spent an hour debugging why vitest hangs after tests pass. Turns out the Redis connection pool leaks if you don't call redis.quit() in the test teardown. Also found out the task_assignments table has a DB trigger that syncs to search_index — direct SQL inserts bypass it. Update the AGENTS.md with these gotchas so the next agent doesn't hit the same issues.",
+      "expected_output": "The existing AGENTS.md is updated (not rewritten) with a Gotchas section capturing the Redis teardown issue and the DB trigger caveat, while preserving all existing content.",
+      "files": ["agents-md-workspace/fixtures/existing-project/"]
+    },
+    {
+      "id": 2,
+      "prompt": "I've been working in the auth package and discovered that the token refresh uses a sliding window with rotation — old refresh tokens are immediately invalidated, so retry logic can't reuse them. Add agent docs for this package. The project already has a root CLAUDE.md.",
+      "expected_output": "A new CLAUDE.md (not AGENTS.md, since the project uses CLAUDE.md) is created in packages/auth/ with auth-specific context including the token rotation gotcha, while the root CLAUDE.md is left intact or minimally updated.",
+      "files": ["agents-md-workspace/fixtures/monorepo/"]
+    }
+  ]
+}
