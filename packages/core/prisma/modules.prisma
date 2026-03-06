@@ -1,3 +1,4 @@
+// Intentional duplicate of packages/db/prisma/modules.prisma
 model Module {
     id   String @id @unique @default(uuid()) @db.Uuid
     cuid String @unique @default(cuid(2)) @db.VarChar(30)
@@ -11,8 +12,8 @@ model Module {
     updatedAt DateTime @default(now()) @updatedAt
 
     data    ModuleData[]
-    store   Json?
-    storeId String?      @db.Uuid
+    store   Json? // Store data when created from 86d.app
+    storeId String?      @db.Uuid // Store ID when created from 86d.app
 
     @@index([storeId, isEnabled])
     @@map("Module")

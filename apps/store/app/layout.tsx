@@ -11,8 +11,8 @@ import env from "env";
 import { IBM_Plex_Mono, Merriweather } from "next/font/google";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { getBaseUrl } from "utils/url";
-import { buildWebSiteJsonLd } from "../lib/seo";
 import { cn } from "~/lib/utils";
+import { buildWebSiteJsonLd } from "../lib/seo";
 
 export const metadata: Metadata = {
 	metadataBase: new URL(getBaseUrl()),
@@ -77,7 +77,13 @@ export default async function RootLayout({
 	return (
 		<html
 			lang="en"
-			className={cn(merriweather.variable, ibmPlexMono.variable, display.variable, "font-sans", inter.variable)}
+			className={cn(
+				merriweather.variable,
+				ibmPlexMono.variable,
+				display.variable,
+				"font-sans",
+				inter.variable,
+			)}
 		>
 			<head>
 				<script

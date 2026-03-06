@@ -513,6 +513,7 @@
       "dependencies": {
         "@86d-app/core": "workspace:*",
         "@prisma/adapter-pg": "^7.4.2",
+        "prisma": "catalog:prisma",
       },
       "devDependencies": {
         "@biomejs/biome": "catalog:",
