@@ -479,10 +479,10 @@ describe("${moduleName}", () => {
 
 	console.log(`\n  Next steps:`);
 	console.log(
-		`  ${c.dim("1.")} Add ${c.cyan(`"@86d-app/${moduleName}"`)} to templates/brisa/config.json`,
+		`  ${c.dim("1.")} Implement your schema, controllers, and endpoints`,
 	);
 	console.log(
-		`  ${c.dim("2.")} Implement your schema, controllers, and endpoints`,
+		`  ${c.dim("2.")} Run: ${c.bold(`86d module enable ${moduleName}`)}`,
 	);
 	console.log(`  ${c.dim("3.")} Run: ${c.bold("86d generate")}`);
 	console.log();

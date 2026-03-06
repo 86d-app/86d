@@ -16,6 +16,7 @@ describe("template", () => {
 	beforeEach(() => {
 		tempDir = join(tmpdir(), `86d-cli-template-test-${Date.now()}`);
 		mkdirSync(join(tempDir, "templates/brisa"), { recursive: true });
+		mkdirSync(join(tempDir, "apps/store"), { recursive: true });
 
 		// Base template files
 		writeFileSync(
@@ -33,6 +34,22 @@ describe("template", () => {
 		writeFileSync(
 			join(tempDir, "templates/brisa/global.css"),
 			"/* brisa styles */",
+		);
+
+		// Store tsconfig with template path alias
+		writeFileSync(
+			join(tempDir, "apps/store/tsconfig.json"),
+			JSON.stringify(
+				{
+					compilerOptions: {
+						paths: {
+							"template/*": ["../../templates/brisa/*"],
+						},
+					},
+				},
+				null,
+				"\t",
+			),
 		);
 
 		logs = [];
@@ -92,12 +109,12 @@ describe("template", () => {
 		expect(config.modules).toContain("@86d-app/cart");
 	});
 
-	it("lists templates", async () => {
+	it("lists templates with active indicator", async () => {
 		await runTemplate("list");
 
 		const output = logs.join("\n");
 		expect(output).toContain("brisa");
-		expect(output).toContain("(default)");
+		expect(output).toContain("(active)");
 	});
 
 	it("rejects duplicate template name", async () => {
@@ -107,5 +124,92 @@ describe("template", () => {
 
 		await expect(runTemplate("create", ["brisa"])).rejects.toThrow("exit");
 		expect(exit).toHaveBeenCalledWith(1);
+	});
+
+	describe("template activate", () => {
+		it("activates a template by updating tsconfig path alias", async () => {
+			// Create a second template
+			mkdirSync(join(tempDir, "templates/minimal"), { recursive: true });
+			writeFileSync(
+				join(tempDir, "templates/minimal/config.json"),
+				JSON.stringify({ theme: "minimal", name: "Minimal Theme" }),
+			);
+
+			await runTemplate("activate", ["minimal"]);
+
+			const tsconfig = readFileSync(
+				join(tempDir, "apps/store/tsconfig.json"),
+				"utf-8",
+			);
+			expect(tsconfig).toContain("templates/minimal/");
+			expect(tsconfig).not.toContain("templates/brisa/");
+		});
+
+		it("shows previous template name on activate", async () => {
+			mkdirSync(join(tempDir, "templates/dark"), { recursive: true });
+			writeFileSync(
+				join(tempDir, "templates/dark/config.json"),
+				JSON.stringify({ theme: "dark" }),
+			);
+
+			await runTemplate("activate", ["dark"]);
+
+			const output = logs.join("\n");
+			expect(output).toContain("was brisa");
+		});
+
+		it("warns when template is already active", async () => {
+			await runTemplate("activate", ["brisa"]);
+
+			const output = logs.join("\n");
+			expect(output).toContain("already active");
+		});
+
+		it("rejects non-existent template", async () => {
+			const exit = vi.spyOn(process, "exit").mockImplementation(() => {
+				throw new Error("exit");
+			});
+
+			await expect(runTemplate("activate", ["nonexistent"])).rejects.toThrow(
+				"exit",
+			);
+			expect(exit).toHaveBeenCalledWith(1);
+		});
+
+		it("rejects template without config.json", async () => {
+			mkdirSync(join(tempDir, "templates/broken"), { recursive: true });
+
+			const exit = vi.spyOn(process, "exit").mockImplementation(() => {
+				throw new Error("exit");
+			});
+
+			await expect(runTemplate("activate", ["broken"])).rejects.toThrow("exit");
+			expect(exit).toHaveBeenCalledWith(1);
+		});
+
+		it("rejects missing name argument", async () => {
+			const exit = vi.spyOn(process, "exit").mockImplementation(() => {
+				throw new Error("exit");
+			});
+
+			await expect(runTemplate("activate", [])).rejects.toThrow("exit");
+			expect(exit).toHaveBeenCalledWith(1);
+		});
+
+		it("works with 'use' alias", async () => {
+			mkdirSync(join(tempDir, "templates/alt"), { recursive: true });
+			writeFileSync(
+				join(tempDir, "templates/alt/config.json"),
+				JSON.stringify({ theme: "alt" }),
+			);
+
+			await runTemplate("use", ["alt"]);
+
+			const tsconfig = readFileSync(
+				join(tempDir, "apps/store/tsconfig.json"),
+				"utf-8",
+			);
+			expect(tsconfig).toContain("templates/alt/");
+		});
 	});
 });

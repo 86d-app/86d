@@ -72,6 +72,7 @@ ${c.bold("Commands:")}
   ${c.cyan("module enable")} <name>    Enable a module in the active template
   ${c.cyan("module disable")} <name>   Disable a module in the active template
   ${c.cyan("template create")} <name>  Scaffold a new template from brisa
+  ${c.cyan("template activate")} <name> Switch the store to use a template
   ${c.cyan("template list")}           List all templates
   ${c.cyan("generate")}                Run all code generation
   ${c.cyan("generate modules")}        Generate module imports and API router
@@ -87,6 +88,7 @@ ${c.dim("Examples:")}
   ${c.gray("$")} 86d dev --port 4000
   ${c.gray("$")} 86d module create loyalty-points
   ${c.gray("$")} 86d module enable loyalty-points
+  ${c.gray("$")} 86d template activate minimal
   ${c.gray("$")} 86d generate
 `);
 }
