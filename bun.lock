@@ -315,6 +315,20 @@
         "vitest": "catalog:vite",
       },
     },
+    "modules/search": {
+      "name": "@86d-app/search",
+      "version": "0.0.1",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
     "modules/shipping": {
       "name": "@86d-app/shipping",
       "version": "0.0.1",
@@ -650,6 +664,8 @@
     "@86d-app/reviews": ["@86d-app/reviews@workspace:modules/reviews"],
 
     "@86d-app/runtime": ["@86d-app/runtime@workspace:packages/runtime"],
+
+    "@86d-app/search": ["@86d-app/search@workspace:modules/search"],
 
     "@86d-app/shipping": ["@86d-app/shipping@workspace:modules/shipping"],
 

@@ -1,0 +1,21 @@
+import { createStoreEndpoint, z } from "@86d-app/core";
+import type { SearchController } from "../../service";
+
+export const suggestEndpoint = createStoreEndpoint(
+	"/search/suggest",
+	{
+		method: "GET",
+		query: z.object({
+			q: z.string().min(1).max(200),
+			limit: z.coerce.number().int().min(1).max(20).optional(),
+		}),
+	},
+	async (ctx) => {
+		const controller = ctx.context.controllers.search as SearchController;
+		const suggestions = await controller.suggest(
+			ctx.query.q,
+			ctx.query.limit ?? 8,
+		);
+		return { suggestions };
+	},
+);
