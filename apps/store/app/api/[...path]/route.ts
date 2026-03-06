@@ -258,26 +258,22 @@ async function handleRequest(req: NextRequest, ctx: RouteParams) {
 			);
 		}
 
-		// Verify user has admin access to this store
-		const storeId = env.STORE_ID;
-		if (storeId) {
-			const access = await verifyStoreAdminAccess(session.user.id, storeId);
-			if (!access.hasAccess) {
-				logger.warn("Store admin access denied", {
-					userId: session.user.id,
-					storeId,
-					path: fullPath,
-				});
-				return NextResponse.json(
-					{
-						error: {
-							code: "FORBIDDEN",
-							message: "You do not have permission to access this store.",
-						},
+		// Verify user has admin role (better-auth admin plugin)
+		const access = verifyStoreAdminAccess(session.user);
+		if (!access.hasAccess) {
+			logger.warn("Store admin access denied", {
+				userId: session.user.id,
+				path: fullPath,
+			});
+			return NextResponse.json(
+				{
+					error: {
+						code: "FORBIDDEN",
+						message: "You do not have permission to access this store.",
 					},
-					{ status: 403 },
-				);
-			}
+				},
+				{ status: 403 },
+			);
 		}
 
 		// Rate limit by user ID for admin routes

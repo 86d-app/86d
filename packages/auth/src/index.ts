@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
+import { admin } from "better-auth/plugins";
 import { toNextJsHandler } from "better-auth/next-js";
 import { db } from "db";
 
@@ -9,6 +10,7 @@ export const auth = betterAuth({
 	session: {
 		cookieCache: { enabled: true, maxAge: 60 * 5 },
 	},
+	plugins: [admin()],
 });
 
 export const handler = toNextJsHandler(auth);

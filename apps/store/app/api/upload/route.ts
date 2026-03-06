@@ -56,9 +56,8 @@ export async function POST(request: Request) {
 		);
 	}
 
-	try {
-		await verifyStoreAdminAccess(session.user.id, storeId);
-	} catch {
+	const access = verifyStoreAdminAccess(session.user);
+	if (!access.hasAccess) {
 		return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 	}
 
