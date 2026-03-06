@@ -1,10 +1,10 @@
-import { db } from "db";
-import env from "env";
+import { getStoreConfig } from "@86d-app/sdk";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { logger } from "utils/logger";
 import { createRateLimiter } from "utils/rate-limit";
 import { sanitizeText } from "utils/sanitize";
+import { resolveTemplatePath } from "~/lib/template-path";
 
 const contactLimiter = createRateLimiter({ limit: 5, window: 600_000 });
 
@@ -85,17 +85,11 @@ export async function POST(req: NextRequest) {
 	const { data } = validation;
 
 	// Fetch store name for email branding
-	const storeId = env.STORE_ID;
-	let storeName = "Our Store";
-	if (storeId) {
-		const store = await db.store.findUnique({
-			where: { id: storeId },
-			select: { name: true },
-		});
-		if (store) {
-			storeName = store.name;
-		}
-	}
+	const config = await getStoreConfig({
+		templatePath: resolveTemplatePath(),
+		fallbackToTemplateOnError: true,
+	});
+	const storeName = config.name ?? "Our Store";
 
 	// Send confirmation email to the submitter
 	try {

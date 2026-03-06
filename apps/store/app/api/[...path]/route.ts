@@ -1,13 +1,5 @@
 import { getSession } from "auth/actions";
 import { verifyStoreAdminAccess } from "auth/store-access";
-import { db } from "db";
-import env from "env";
-import {
-	extractBearerToken,
-	hasRequiredScope,
-	validateApiKey,
-} from "lib/api-key-auth";
-import { hashApiKey, isValidApiKeyFormat } from "lib/api-keys";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { logger } from "utils/logger";
@@ -28,9 +20,6 @@ const sensitiveLimiter = createRateLimiter({ limit: 10, window: 600_000 });
 
 /** Admin endpoint limit: 300 requests per minute per session user. */
 const adminLimiter = createRateLimiter({ limit: 300, window: 60_000 });
-
-/** API key endpoint limit: 600 requests per minute per key. */
-const apiKeyLimiter = createRateLimiter({ limit: 600, window: 60_000 });
 
 // Paths that get the stricter rate limit
 const SENSITIVE_PATHS = new Set([
@@ -127,125 +116,14 @@ function rateLimitResponse(resetAt: number): NextResponse {
 	);
 }
 
-// ── API key authentication ────────────────────────────────────────────────────
-
-/**
- * Attempt to authenticate via API key (Bearer token in Authorization header).
- * Returns the auth result if a Bearer token is present, or null if no token.
- */
-async function authenticateApiKey(req: NextRequest) {
-	const token = extractBearerToken(req.headers.get("authorization"));
-	if (!token) return null;
-
-	// Quick format check before hitting DB
-	if (!isValidApiKeyFormat(token)) {
-		return {
-			authenticated: false as const,
-			error: "Invalid API key format",
-			status: 401 as const,
-		};
-	}
-
-	const keyHash = hashApiKey(token);
-	const record = await db.apiKey
-		.findUnique({
-			where: { keyHash },
-			select: {
-				id: true,
-				keyHash: true,
-				storeId: true,
-				scopes: true,
-				revokedAt: true,
-				expiresAt: true,
-			},
-		})
-		.catch(() => null);
-
-	const result = validateApiKey(token, record);
-
-	if (result.authenticated) {
-		// Update lastUsedAt (fire-and-forget)
-		db.apiKey
-			.update({
-				where: { id: result.apiKeyId },
-				data: { lastUsedAt: new Date() },
-			})
-			.catch(() => {
-				// Non-critical — don't fail the request if usage tracking fails
-			});
-	}
-
-	return result;
-}
-
 /**
  * Handle all API requests.
- * Supports two auth modes:
- * 1. Session-based (cookies) — for browser-based storefront and admin
- * 2. API key (Bearer token) — for headless/external API consumers
+ * Uses session-based authentication (cookies) for browser-based storefront and admin.
  */
 async function handleRequest(req: NextRequest, ctx: RouteParams) {
 	const { path } = await ctx.params;
 	const fullPath = `/${path.join("/")}`;
 	const isAdmin = fullPath.startsWith("/admin");
-
-	// ── API key authentication ───────────────────────────────────────────
-	const apiKeyAuth = await authenticateApiKey(req);
-
-	if (apiKeyAuth) {
-		// A Bearer token was provided — authenticate via API key
-		if (!apiKeyAuth.authenticated) {
-			return NextResponse.json(
-				{
-					error: {
-						code: "UNAUTHORIZED",
-						message: apiKeyAuth.error,
-					},
-				},
-				{ status: apiKeyAuth.status },
-			);
-		}
-
-		// Verify API key belongs to this store
-		const storeId = env.STORE_ID;
-		if (storeId && apiKeyAuth.storeId !== storeId) {
-			return NextResponse.json(
-				{
-					error: {
-						code: "FORBIDDEN",
-						message: "API key does not belong to this store.",
-					},
-				},
-				{ status: 403 },
-			);
-		}
-
-		// Check scopes for the requested path/method
-		if (!hasRequiredScope(apiKeyAuth.scopes, fullPath, req.method)) {
-			return NextResponse.json(
-				{
-					error: {
-						code: "FORBIDDEN",
-						message: `Insufficient scope. Required: ${isAdmin ? "admin" : "store"}:${["GET", "HEAD"].includes(req.method) ? "read" : "write"}`,
-					},
-				},
-				{ status: 403 },
-			);
-		}
-
-		// Rate limit by API key ID
-		const rlResult = apiKeyLimiter.check(`apikey:${apiKeyAuth.apiKeyId}`);
-		if (!rlResult.allowed) {
-			logger.warn("API key rate limit exceeded", {
-				apiKeyId: apiKeyAuth.apiKeyId,
-				path: fullPath,
-			});
-			return rateLimitResponse(rlResult.resetAt);
-		}
-
-		// API key is valid — proceed to request handling (skip session auth)
-		return handleAuthedRequest(req, fullPath, null);
-	}
 
 	// ── Session-based authentication ─────────────────────────────────────
 	if (isAdmin) {

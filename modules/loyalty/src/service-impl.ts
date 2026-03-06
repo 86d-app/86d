@@ -46,10 +46,10 @@ export function createLoyaltyController(
 		const newTier = computeTier(account.lifetimeEarned, thresholds);
 		if (newTier !== account.tier) {
 			const updated = { ...account, tier: newTier, updatedAt: new Date() };
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert(
 				"loyaltyAccount",
 				account.id,
+				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 				updated as Record<string, any>,
 			);
 			return updated;
@@ -107,10 +107,10 @@ export function createLoyaltyController(
 				status: "suspended" as const,
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert(
 				"loyaltyAccount",
 				account.id,
+				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 				updated as Record<string, any>,
 			);
 			return updated;
@@ -123,10 +123,10 @@ export function createLoyaltyController(
 				status: "active" as const,
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert(
 				"loyaltyAccount",
 				account.id,
+				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 				updated as Record<string, any>,
 			);
 			return updated;
@@ -146,10 +146,10 @@ export function createLoyaltyController(
 				lifetimeEarned: account.lifetimeEarned + params.points,
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert(
 				"loyaltyAccount",
 				account.id,
+				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 				updated as Record<string, any>,
 			);
 
@@ -163,10 +163,10 @@ export function createLoyaltyController(
 				orderId: params.orderId,
 				createdAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert(
 				"loyaltyTransaction",
 				txnId,
+				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 				txn as Record<string, any>,
 			);
 
@@ -189,10 +189,10 @@ export function createLoyaltyController(
 				lifetimeRedeemed: account.lifetimeRedeemed + params.points,
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert(
 				"loyaltyAccount",
 				account.id,
+				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 				updated as Record<string, any>,
 			);
 
@@ -206,10 +206,10 @@ export function createLoyaltyController(
 				orderId: params.orderId,
 				createdAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert(
 				"loyaltyTransaction",
 				txnId,
+				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 				txn as Record<string, any>,
 			);
 
@@ -228,10 +228,10 @@ export function createLoyaltyController(
 					: {}),
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert(
 				"loyaltyAccount",
 				account.id,
+				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 				updated as Record<string, any>,
 			);
 
@@ -244,10 +244,10 @@ export function createLoyaltyController(
 				description: params.description,
 				createdAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert(
 				"loyaltyTransaction",
 				txnId,
+				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 				txn as Record<string, any>,
 			);
 
@@ -286,8 +286,12 @@ export function createLoyaltyController(
 				active: true,
 				createdAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("loyaltyRule", id, rule as Record<string, any>);
+			await data.upsert(
+				"loyaltyRule",
+				id,
+				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+				rule as Record<string, any>,
+			);
 			return rule;
 		},
 
@@ -304,8 +308,12 @@ export function createLoyaltyController(
 					: {}),
 				...(params.active !== undefined ? { active: params.active } : {}),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("loyaltyRule", id, updated as Record<string, any>);
+			await data.upsert(
+				"loyaltyRule",
+				id,
+				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+				updated as Record<string, any>,
+			);
 			return updated;
 		},
 
@@ -380,8 +388,12 @@ export function createLoyaltyController(
 				perks: params.perks,
 				sortOrder: existing.length,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("loyaltyTier", id, tier as Record<string, any>);
+			await data.upsert(
+				"loyaltyTier",
+				id,
+				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+				tier as Record<string, any>,
+			);
 			return tier;
 		},
 
@@ -400,8 +412,12 @@ export function createLoyaltyController(
 					: {}),
 				...(params.perks !== undefined ? { perks: params.perks } : {}),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("loyaltyTier", id, updated as Record<string, any>);
+			await data.upsert(
+				"loyaltyTier",
+				id,
+				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+				updated as Record<string, any>,
+			);
 			return updated;
 		},
 

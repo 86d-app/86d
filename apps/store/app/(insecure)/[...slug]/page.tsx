@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 	if (path.startsWith("/products/") && slugParam) {
 		const product = await fetchProductForSeo(slugParam);
 		if (!product) return { title: "Product not found" };
-		const storeName = getStoreName();
+		const storeName = await getStoreName();
 		const url = getBaseUrl();
 		const title = `${product.name} — ${storeName}`;
 		const description =
@@ -64,7 +64,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 	if (path.startsWith("/collections/") && slugParam) {
 		const collection = await fetchCollectionForSeo(slugParam);
 		if (!collection) return { title: "Collection not found" };
-		const storeName = getStoreName();
+		const storeName = await getStoreName();
 		const url = getBaseUrl();
 		const title = `${collection.name} — ${storeName}`;
 		const description =

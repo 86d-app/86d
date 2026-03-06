@@ -4,14 +4,6 @@
 	"private": true,
 	"type": "module",
 	"exports": {
-		"./api-key-auth": {
-			"types": "./src/api-key-auth.ts",
-			"default": "./src/api-key-auth.ts"
-		},
-		"./api-keys": {
-			"types": "./src/api-keys.ts",
-			"default": "./src/api-keys.ts"
-		},
 		"./carrier-tracking": {
 			"types": "./src/carrier-tracking.ts",
 			"default": "./src/carrier-tracking.ts"

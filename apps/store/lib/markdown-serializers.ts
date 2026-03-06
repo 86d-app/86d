@@ -20,7 +20,7 @@ const STORE_LEVEL_ROUTES = new Set([
 ]);
 
 async function serializeHomepage(): Promise<string> {
-	const storeName = getStoreName();
+	const storeName = await getStoreName();
 	const url = getBaseUrl();
 
 	return `# ${storeName}
@@ -37,17 +37,18 @@ Thoughtfully selected products that elevate your everyday. Quality craftsmanship
 
 async function serializeSearch(): Promise<string> {
 	const url = getBaseUrl();
+	const storeName = await getStoreName();
 
 	return `# Search
 
-Search products at ${getStoreName()}.
+Search products at ${storeName}.
 
 [Search products](${url}/search)
 `;
 }
 
-function serializeStaticPage(path: string): string {
-	const storeName = getStoreName();
+async function serializeStaticPage(path: string): Promise<string> {
+	const storeName = await getStoreName();
 	const url = getBaseUrl();
 
 	const titles: Record<string, string> = {

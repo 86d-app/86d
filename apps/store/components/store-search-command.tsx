@@ -13,16 +13,14 @@ import {
 	CommandInput,
 	CommandItem,
 	CommandList,
-	CommandLoading,
-} from "ui/core/command";
+} from "~/components/ui/command";
 import {
 	InputGroup,
 	InputGroupAddon,
 	InputGroupInput,
-} from "ui/core/input-group";
-import { Kbd } from "ui/core/kbd";
-import { Spinner } from "ui/core/spinner";
-import { View } from "ui/core/view";
+} from "~/components/ui/input-group";
+import { Kbd } from "~/components/ui/kbd";
+import { Spinner } from "~/components/ui/spinner";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -236,12 +234,10 @@ export function StoreSearchCommand() {
 								Type to search products, collections, and pages
 							</div>
 						) : isLoading ? (
-							<CommandLoading>
-								<View className="flex flex-row items-center justify-center gap-2">
-									<Spinner />
-									<span>Searching&hellip;</span>
-								</View>
-							</CommandLoading>
+							<div className="flex flex-row items-center justify-center gap-2 py-6 text-sm">
+								<Spinner />
+								<span>Searching&hellip;</span>
+							</div>
 						) : isError ? (
 							<CommandEmpty>Something went wrong. Try again.</CommandEmpty>
 						) : results.length === 0 ? (

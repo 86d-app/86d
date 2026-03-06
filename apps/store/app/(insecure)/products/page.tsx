@@ -8,12 +8,13 @@ import { getStoreName } from "~/lib/seo";
 import { prefetchCategories, prefetchProducts } from "~/lib/server-prefetch";
 import ProductsPageClient from "./products-page-client";
 
-const storeName = getStoreName();
-
-export const metadata: Metadata = {
-	title: `Products — ${storeName}`,
-	description: `Browse our full product catalog at ${storeName}. Find exactly what you're looking for.`,
-};
+export async function generateMetadata(): Promise<Metadata> {
+	const storeName = await getStoreName();
+	return {
+		title: `Products — ${storeName}`,
+		description: `Browse our full product catalog at ${storeName}. Find exactly what you're looking for.`,
+	};
+}
 
 export default async function ProductsPage() {
 	const queryClient = getQueryClient();

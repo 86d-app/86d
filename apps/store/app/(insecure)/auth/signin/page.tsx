@@ -1,4 +1,4 @@
-import { SignInForm } from "ui/auth/signin-form";
+import { SignInForm } from "~/components/auth/signin-form";
 
 export const metadata = {
 	title: "Sign in — 86d Store",

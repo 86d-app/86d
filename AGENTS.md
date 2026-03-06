@@ -63,9 +63,8 @@ The store app imports from packages removed from the proprietary codebase. These
 | `db` | Prisma client | `import { db } from "db"` |
 | `env` | Env var validation | `import env from "env"` |
 | `auth` | Better Auth (sessions) | `import { getSession } from "auth/actions"` |
-| `ui` | Component library | `import { Toaster } from "ui/core/sonner"` |
 | `utils` | Logger, rate-limit, url | `import { logger } from "utils/logger"` |
-| `lib` | API keys, notifications | `import { hashApiKey } from "lib/api-keys"` |
+| `lib` | Notifications, webhooks, carrier tracking | `import { ... } from "lib/notification-settings"` |
 | `emails` | React Email + Resend | `import resend from "emails"` |
 | `theme` | Tailwind theme globals | `@import "../packages/theme/globals.css"` |
 | `validators` | Shared Zod schemas | `import { ... } from "validators"` |

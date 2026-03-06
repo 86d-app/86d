@@ -10,7 +10,10 @@
         "DATABASE_URL",
         "DATABASE_URL_UNPOOLED",
         "BETTER_AUTH_SECRET",
-        "BETTER_AUTH_URL"
+        "BETTER_AUTH_URL",
+        "STORE_ID",
+        "86D_API_URL",
+        "86D_API_KEY"
     ],
     "globalPassThroughEnv": [
         "COREPACK_HOME"

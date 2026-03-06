@@ -1,5 +1,5 @@
 import type React from "react";
-import type { IconName } from "ui/core/icon";
+import type { IconName } from "~/components/icon/icon";
 
 export interface NavLogo {
 	url: string;

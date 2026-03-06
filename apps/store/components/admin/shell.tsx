@@ -2,8 +2,8 @@
 
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import type { IconName } from "ui/core/icon";
-import { Icon } from "ui/core/icon";
+import type { IconName } from "~/components/icon/icon";
+import { Icon } from "~/components/icon/icon";
 import type { AdminNavItem } from "~/lib/admin-registry";
 
 const DASHBOARD_ITEM: AdminNavItem = {

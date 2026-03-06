@@ -1,17 +1,25 @@
 "use client";
 
+import type { Config } from "@86d-app/sdk";
 import { PageViewTracker } from "components/analytics-tracker";
+import { AppStateProvider } from "hooks/use-app";
 import { useTheme } from "next-themes";
-import config from "template/config.json";
 import Layout from "template/layout.mdx";
-import type { Config } from "~/config";
 
-export function AppLayout({ children }: { children: React.ReactNode }) {
+export function AppLayout({
+	children,
+	config,
+}: {
+	children: React.ReactNode;
+	config: Config;
+}) {
 	const theme = useTheme();
 	return (
-		<Layout config={config as Config} theme={theme}>
-			<PageViewTracker />
-			{children}
-		</Layout>
+		<AppStateProvider config={config}>
+			<Layout config={config} theme={theme}>
+				<PageViewTracker />
+				{children}
+			</Layout>
+		</AppStateProvider>
 	);
 }

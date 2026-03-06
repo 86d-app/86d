@@ -1,5 +1,17 @@
 {
 	"$schema": "https://biomejs.dev/schemas/2.3.11/schema.json",
+	"overrides": [
+		{
+			"includes": ["apps/store/components/**/*.tsx"],
+			"linter": {
+				"rules": {
+					"a11y": {
+						"useSemanticElements": "off"
+					}
+				}
+			}
+		}
+	],
 	"linter": {
 		"rules": {
 			"correctness": {

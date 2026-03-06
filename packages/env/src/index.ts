@@ -5,6 +5,8 @@ const envSchema = z.object({
 		.enum(["development", "production", "test"])
 		.default("development"),
 	STORE_ID: z.string().optional(),
+	"86D_API_URL": z.string().url().optional(),
+	"86D_API_KEY": z.string().optional(),
 	DATABASE_URL: z.string().optional(),
 	NEXT_PUBLIC_STORE_URL: z.string().url().optional(),
 	NEXT_PUBLIC_GOOGLE_TAG_MANAGER_ID: z.string().optional(),

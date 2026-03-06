@@ -1,15 +1,14 @@
 "use client";
 
+import type { Config } from "@86d-app/sdk";
 import { makeAutoObservable } from "mobx";
 import { createContext, useContext } from "react";
-import config from "template/config.json";
-import type { Config } from "~/config";
 import packageJson from "../package.json";
 
-export function createAppState() {
+export function createAppState(config: Config) {
 	return makeAutoObservable({
 		package: packageJson,
-		config: config as Config,
+		config,
 	});
 }
 
@@ -17,9 +16,14 @@ export type AppState = ReturnType<typeof createAppState>;
 
 const AppStateContext = createContext<AppState | null>(null);
 
-const appState = createAppState();
-
-export function AppStateProvider({ children }: { children: React.ReactNode }) {
+export function AppStateProvider({
+	children,
+	config,
+}: {
+	children: React.ReactNode;
+	config: Config;
+}) {
+	const appState = createAppState(config);
 	return (
 		<AppStateContext.Provider value={appState}>
 			{children}

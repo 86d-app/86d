@@ -5,10 +5,12 @@
 
 import { ModuleRegistry } from "@86d-app/runtime/registry";
 import { UniversalDataService } from "@86d-app/runtime/universal-data-service";
+import { getStoreConfig } from "@86d-app/sdk";
 import { db, Prisma } from "db";
 import env from "env";
 import { logger } from "utils/logger";
 import { modules } from "../generated/api";
+import { resolveTemplatePath } from "./template-path";
 
 let registry: ModuleRegistry | null = null;
 let bootPromise: Promise<void> | null = null;
@@ -22,14 +24,12 @@ function getRegistry(): ModuleRegistry {
 	if (!registry) {
 		registry = new ModuleRegistry(modules, storeId, {
 			resolveStoreId: async (id) => {
-				const store = await db.store.findUnique({
-					where: { id },
-					select: { id: true },
+				await getStoreConfig({
+					storeId: id,
+					templatePath: resolveTemplatePath(),
+					fallbackToTemplateOnError: false,
 				});
-				if (!store) {
-					throw new Error(`Store not found for STORE_ID: ${id}`);
-				}
-				return store.id;
+				return id;
 			},
 			upsertModuleRecord: async (params) => {
 				const record = await db.module.upsert({
@@ -108,28 +108,26 @@ export async function ensureBooted(): Promise<ModuleRegistry> {
 				let enabledEvents: Set<string> | undefined;
 
 				if (storeId) {
-					const store = await db.store.findUnique({
-						where: { id: storeId },
-						select: { name: true, notificationSettings: true },
+					const config = await getStoreConfig({
+						storeId,
+						templatePath: resolveTemplatePath(),
+						fallbackToTemplateOnError: true,
 					});
-					if (store) {
-						storeName = store.name;
-						const settings = parseNotificationSettings(
-							store.notificationSettings,
-						);
-						if (settings.fromAddress) {
-							fromAddress = settings.fromAddress;
-						}
-						if (settings.adminEmail) {
-							adminEmail = settings.adminEmail;
-						}
-						// Build set of enabled events
-						if (settings.events && Object.keys(settings.events).length > 0) {
-							enabledEvents = new Set<string>();
-							for (const evt of NOTIFICATION_EVENT_TYPES) {
-								if (isEventEnabled(settings, evt)) {
-									enabledEvents.add(evt);
-								}
+					storeName = config.name ?? "Our Store";
+					const settings = config.notificationSettings
+						? parseNotificationSettings(config.notificationSettings)
+						: {};
+					if (settings.fromAddress) {
+						fromAddress = settings.fromAddress;
+					}
+					if (settings.adminEmail) {
+						adminEmail = settings.adminEmail;
+					}
+					if (settings.events && Object.keys(settings.events).length > 0) {
+						enabledEvents = new Set<string>();
+						for (const evt of NOTIFICATION_EVENT_TYPES) {
+							if (isEventEnabled(settings, evt)) {
+								enabledEvents.add(evt);
 							}
 						}
 					}

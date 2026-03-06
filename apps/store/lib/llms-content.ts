@@ -33,6 +33,9 @@ export async function fetchLlmsFullContent(): Promise<LlmsFullContent> {
  * Fetch content and render the full llms-full.txt markdown document.
  */
 export async function generateLlmsFullMarkdown(): Promise<string> {
-	const content = await fetchLlmsFullContent();
-	return renderLlmsFullMarkdown(content, getStoreName(), getBaseUrl());
+	const [content, storeName] = await Promise.all([
+		fetchLlmsFullContent(),
+		getStoreName(),
+	]);
+	return renderLlmsFullMarkdown(content, storeName, getBaseUrl());
 }

@@ -1,7 +1,16 @@
+import { getStoreConfig } from "@86d-app/sdk";
 import { db } from "db";
 import env from "env";
 import { cache } from "react";
 import { getBaseUrl } from "utils/url";
+import { resolveTemplatePath } from "./template-path";
+
+const getStoreConfigCached = cache(async () =>
+	getStoreConfig({
+		templatePath: resolveTemplatePath(),
+		fallbackToTemplateOnError: true,
+	}),
+);
 
 // biome-ignore lint/suspicious/noExplicitAny: ModuleData.data is JSONB
 type JsonData = Record<string, any>;
@@ -215,12 +224,11 @@ export async function fetchCollectionSlugsForSitemap(): Promise<
 }
 
 /**
- * Get the store name from config.
+ * Get the store name from config (async).
  */
-export function getStoreName(): string {
+export async function getStoreName(): Promise<string> {
 	try {
-		// biome-ignore lint/suspicious/noExplicitAny: dynamic JSON import
-		const config = require("../../../templates/brisa/config.json") as any;
+		const config = await getStoreConfigCached();
 		return config.name ?? "86d Store";
 	} catch {
 		return "86d Store";
@@ -429,9 +437,9 @@ export async function fetchBlogPostsForLlms(): Promise<
 /**
  * Build JSON-LD WebSite structured data for the root layout.
  */
-export function buildWebSiteJsonLd(): object {
+export async function buildWebSiteJsonLd(): Promise<object> {
 	const url = getBaseUrl();
-	const storeName = getStoreName();
+	const storeName = await getStoreName();
 
 	return {
 		"@context": "https://schema.org",

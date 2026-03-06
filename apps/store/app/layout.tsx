@@ -3,7 +3,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Zalando_Sans } from "next/font/google";
 import { cookies } from "next/headers";
 import { ThemeProvider } from "next-themes";
-import { Toaster } from "ui/core/sonner";
+import { Toaster } from "~/components/ui/sonner";
 import "./globals.css";
 import { GoogleTagManager } from "@next/third-parties/google";
 import { StoreQueryProvider } from "components/providers";
@@ -72,7 +72,7 @@ export default async function RootLayout({
 	const themeCookie = cookieStore.get("theme");
 	const initialTheme = (themeCookie?.value as "light" | "dark") || "system";
 
-	const webSiteJsonLd = buildWebSiteJsonLd();
+	const webSiteJsonLd = await buildWebSiteJsonLd();
 
 	return (
 		<html
