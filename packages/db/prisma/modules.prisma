@@ -15,7 +15,7 @@ model Module {
     store   Json? // Store data when created from 86d.app
     storeId String?      @db.Uuid // Store ID when created from 86d.app
 
-    @@index([storeId, isEnabled])
+    @@unique([storeId, name])
     @@map("Module")
 }
 

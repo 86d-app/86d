@@ -21,7 +21,7 @@ function Calendar({
 	showOutsideDays = true,
 	captionLayout = "label",
 	buttonVariant = "ghost",
-	locale,
+	locale = {},
 	formatters,
 	components,
 	...props

@@ -41,16 +41,6 @@ interface SitemapEntry {
 	updatedAt: Date;
 }
 
-const UUID_REGEX =
-	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-/** Build a single-field store where clause so we never pass CUID/slugId into Store.id (UUID). */
-function storeWhereByIdOrCuidOrSlugId(storeId: string) {
-	if (UUID_REGEX.test(storeId)) return { id: storeId };
-	if (storeId.length === 12) return { slugId: storeId };
-	return { cuid: storeId };
-}
-
 /**
  * Resolve the products module DB ID for the current store.
  * Cached per request via React `cache()`.
@@ -61,7 +51,7 @@ const getProductsModuleId = cache(async (): Promise<string | null> => {
 
 	const mod = await db.module.findFirst({
 		where: {
-			store: storeWhereByIdOrCuidOrSlugId(storeId),
+			storeId,
 			name: "@86d-app/products",
 		},
 		select: { id: true },
@@ -157,7 +147,7 @@ const getModuleIdByName = cache(
 
 		const mod = await db.module.findFirst({
 			where: {
-				store: storeWhereByIdOrCuidOrSlugId(storeId),
+				storeId,
 				name: moduleName,
 			},
 			select: { id: true },
