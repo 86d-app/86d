@@ -9,9 +9,8 @@
 </p>
 
 <p align="center">
-  <a href="https://vercel.com/changelog"><strong>npm</strong></a> ·
   <a href="https://x.com/86d_app"><strong>X</strong></a> ·
-  <a href="https://vercel.com/templates"><strong>LinkedIn</strong></a>
+  <a href="https://www.linkedin.com/company/86d"><strong>LinkedIn</strong></a>
 </p>
 <br/>
 
