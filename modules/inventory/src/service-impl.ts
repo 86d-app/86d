@@ -94,10 +94,10 @@ async function emitBackInStock(
 	const now = new Date();
 	for (const sub of subs) {
 		const updated = { ...sub, status: "notified" as const, notifiedAt: now };
-		// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService uses any for JSONB
 		void dataService.upsert(
 			"backInStockSubscription",
 			sub.id,
+			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService uses any for JSONB
 			updated as Record<string, any>,
 		);
 	}
@@ -335,10 +335,10 @@ export function createInventoryController(
 				notifiedAt: undefined,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService uses any for JSONB
 			await data.upsert(
 				"backInStockSubscription",
 				id,
+				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService uses any for JSONB
 				sub as Record<string, any>,
 			);
 			return sub;
@@ -440,10 +440,10 @@ export function createInventoryController(
 					status: "notified",
 					notifiedAt: now,
 				};
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService uses any for JSONB
 				await data.upsert(
 					"backInStockSubscription",
 					sub.id,
+					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService uses any for JSONB
 					updated as Record<string, any>,
 				);
 				count++;
