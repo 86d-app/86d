@@ -41,7 +41,7 @@
 		"@types/node": "catalog:node",
 		"@vitest/coverage-v8": "^4.0.0",
 		"dotenv-cli": "catalog:",
-		"turbo": "catalog:",
+		"turbo": "^2.8.14",
 		"type-fest": "catalog:",
 		"typescript": "catalog:",
 		"vitest": "catalog:vite"
