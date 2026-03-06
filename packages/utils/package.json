@@ -30,5 +30,8 @@
 	"devDependencies": {
 		"@biomejs/biome": "catalog:",
 		"typescript": "catalog:"
+	},
+	"dependencies": {
+		"winston": "^3.19.0"
 	}
 }

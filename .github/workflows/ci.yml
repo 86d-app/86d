@@ -42,6 +42,9 @@ jobs:
       - name: Setup
         uses: ./internals/github/setup
 
+      - name: Generate modules
+        run: bun run generate:modules
+
       - name: Typecheck
         run: bun typecheck
 
@@ -67,6 +70,9 @@ jobs:
 
       - name: Setup
         uses: ./internals/github/setup
+
+      - name: Generate modules
+        run: bun run generate:modules
 
       - name: Install Playwright
         run: bunx playwright install --with-deps chromium
