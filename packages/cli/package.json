@@ -27,6 +27,7 @@
 		"build": "tsc",
 		"check": "biome check src",
 		"check:fix": "biome check --write src",
+		"test": "vitest run",
 		"typecheck": "tsc --noEmit --emitDeclarationOnly false"
 	},
 	"dependencies": {
@@ -36,6 +37,7 @@
 		"@biomejs/biome": "catalog:",
 		"@types/node": "catalog:node",
 		"tsx": "catalog:",
-		"typescript": "catalog:"
+		"typescript": "catalog:",
+		"vitest": "catalog:vite"
 	}
 }
