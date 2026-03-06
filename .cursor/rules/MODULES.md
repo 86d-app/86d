@@ -57,7 +57,7 @@ mkdir -p modules/[module-name]/src
 {
     "private": true,
     "name": "@86d-app/[module-name]",
-    "version": "0.0.1",
+    "version": "0.0.3",
     "type": "module",
     "exports": {
         "./*": "./src/*"
