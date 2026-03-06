@@ -1,4 +1,5 @@
 import type { Module, ModuleConfig } from "@86d-app/core";
+import { adminEndpoints } from "./admin/endpoints";
 import { createStoreEndpoints } from "./store/endpoints";
 
 export { StripePaymentProvider } from "./provider";
@@ -24,7 +25,18 @@ export default function stripe(options: StripeOptions): Module {
 					? { webhookSecret: options.webhookSecret }
 					: {},
 			),
-			admin: {},
+			admin: adminEndpoints,
+		},
+		admin: {
+			pages: [
+				{
+					path: "/admin/stripe",
+					component: "StripeAdmin",
+					label: "Stripe",
+					icon: "CreditCard",
+					group: "Settings",
+				},
+			],
 		},
 		options: {
 			apiKey: options.apiKey,

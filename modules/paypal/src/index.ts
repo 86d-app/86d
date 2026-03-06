@@ -1,4 +1,5 @@
 import type { Module, ModuleConfig } from "@86d-app/core";
+import { adminEndpoints } from "./admin/endpoints";
 import { createStoreEndpoints } from "./store/endpoints";
 
 export { PayPalPaymentProvider } from "./provider";
@@ -27,7 +28,18 @@ export default function paypal(options: PayPalOptions): Module {
 		},
 		endpoints: {
 			store: createStoreEndpoints(webhookOpts),
-			admin: {},
+			admin: adminEndpoints,
+		},
+		admin: {
+			pages: [
+				{
+					path: "/admin/paypal",
+					component: "PayPalAdmin",
+					label: "PayPal",
+					icon: "CreditCard",
+					group: "Settings",
+				},
+			],
 		},
 		options: {
 			clientId: options.clientId,

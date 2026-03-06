@@ -1,4 +1,5 @@
 import type { Module, ModuleConfig } from "@86d-app/core";
+import { adminEndpoints } from "./admin/endpoints";
 import { createStoreEndpoints } from "./store/endpoints";
 
 export { BraintreePaymentProvider } from "./provider";
@@ -23,7 +24,18 @@ export default function braintree(options: BraintreeOptions): Module {
 				publicKey: options.publicKey,
 				privateKey: options.privateKey,
 			}),
-			admin: {},
+			admin: adminEndpoints,
+		},
+		admin: {
+			pages: [
+				{
+					path: "/admin/braintree",
+					component: "BraintreeAdmin",
+					label: "Braintree",
+					icon: "CreditCard",
+					group: "Settings",
+				},
+			],
 		},
 		options: {
 			merchantId: options.merchantId,

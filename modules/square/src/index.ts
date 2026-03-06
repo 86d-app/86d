@@ -1,4 +1,5 @@
 import type { Module, ModuleConfig } from "@86d-app/core";
+import { adminEndpoints } from "./admin/endpoints";
 import { createStoreEndpoints } from "./store/endpoints";
 
 export { SquarePaymentProvider } from "./provider";
@@ -32,7 +33,18 @@ export default function square(options: SquareOptions): Module {
 		},
 		endpoints: {
 			store: createStoreEndpoints(webhookOpts),
-			admin: {},
+			admin: adminEndpoints,
+		},
+		admin: {
+			pages: [
+				{
+					path: "/admin/square",
+					component: "SquareAdmin",
+					label: "Square",
+					icon: "CreditCard",
+					group: "Settings",
+				},
+			],
 		},
 		options: {
 			accessToken: options.accessToken,
