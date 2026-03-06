@@ -44,7 +44,7 @@
 		"build": "tsc",
 		"check": "biome check src",
 		"check:fix": "biome check --write src",
-		"clean": "git clean -xdf .cache .turbo dist node_modules",
+		"clean": "git clean -xdf .cache .turbo dist node_modules src/prisma",
 		"dev": "tsc",
 		"postinstall": "prisma generate",
 		"test": "vitest run",

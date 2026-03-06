@@ -50,6 +50,7 @@ describe("template", () => {
 	});
 
 	async function runTemplate(subcommand: string, args: string[] = []) {
+		vi.resetModules();
 		vi.doMock("../utils.js", async () => {
 			const actual =
 				await vi.importActual<typeof import("../utils.js")>("../utils.js");

@@ -58,6 +58,7 @@ describe("status", () => {
 	});
 
 	async function runStatus() {
+		vi.resetModules();
 		vi.doMock("../utils.js", async () => {
 			const actual =
 				await vi.importActual<typeof import("../utils.js")>("../utils.js");
@@ -94,7 +95,6 @@ describe("status", () => {
 	it("reports missing env vars", async () => {
 		writeFileSync(join(tempDir, ".env"), "DATABASE_URL=postgres://localhost\n");
 
-		vi.resetModules();
 		await runStatus();
 		const output = logs.join("\n");
 		expect(output).toContain("missing");

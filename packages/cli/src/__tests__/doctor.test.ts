@@ -92,6 +92,7 @@ describe("doctor", () => {
 	});
 
 	async function runDoctor() {
+		vi.resetModules();
 		vi.doMock("../utils.js", async () => {
 			const actual =
 				await vi.importActual<typeof import("../utils.js")>("../utils.js");

@@ -267,7 +267,9 @@ describe("createCustomerController", () => {
 		});
 
 		it("does not throw when deleting non-existent customer", async () => {
-			await expect(controller.delete("non-existent-id")).resolves.not.toThrow();
+			await expect(
+				controller.delete("non-existent-id"),
+			).resolves.toBeUndefined();
 		});
 	});
 

@@ -11,7 +11,7 @@
 		"typecheck": "turbo run typecheck",
 		"check": "turbo run check",
 		"check:fix": "turbo run check:fix",
-		"clean": "turbo run clean && git clean -xdf .turbo .next node_modules",
+		"clean": "turbo run clean && git clean -xdf .turbo .next node_modules coverage logs playwright-report",
 		"dev": "dotenv -- turbo run dev --filter=store",
 		"dev:store": "dotenv -- turbo run dev --filter=store",
 		"start": "turbo run start",

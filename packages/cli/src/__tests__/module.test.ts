@@ -24,6 +24,7 @@ describe("module create", () => {
 	});
 
 	async function runModuleCreate(name: string) {
+		vi.resetModules();
 		// Mock findProjectRoot to return our temp dir
 		vi.doMock("../utils.js", async () => {
 			const actual =

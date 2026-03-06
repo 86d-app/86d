@@ -27,9 +27,9 @@
 	"scripts": {
 		"dev": "tsx src/index.ts",
 		"build": "tsc",
-		"clean": "rm -rf dist",
 		"check": "biome check src",
 		"check:fix": "biome check --write src",
+		"clean": "git clean -xdf .cache .turbo dist node_modules",
 		"test": "vitest run",
 		"typecheck": "tsc --noEmit --emitDeclarationOnly false"
 	},

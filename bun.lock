@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "86d",
+      "name": "@86d-app/86d",
       "dependencies": {
         "tsx": "catalog:",
       },
