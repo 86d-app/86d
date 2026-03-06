@@ -10,13 +10,13 @@
 		"86d"
 	],
 	"license": "MIT",
-	"author": "86d <hello@86d.app>",
+	"author": "86d <chat@86d.app>",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/esaiasco/86d.git",
+		"url": "https://github.com/86d-app/86d.git",
 		"directory": "modules/shipping"
 	},
-	"homepage": "https://github.com/esaiasco/86d/tree/main/modules/shipping",
+	"homepage": "https://github.com/86d-app/86d/tree/main/modules/shipping",
 	"type": "module",
 	"exports": {
 		"./admin-components": "./src/admin/components",

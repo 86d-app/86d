@@ -4,6 +4,13 @@
 	"description": "CLI for 86d — modular, open-source commerce platform",
 	"type": "module",
 	"license": "MIT",
+	"author": "86d <chat@86d.app>",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/86d-app/86d.git",
+		"directory": "packages/cli"
+	},
+	"homepage": "https://github.com/86d-app/86d/tree/main/packages/cli",
 	"bin": {
 		"86d": "./src/index.ts"
 	},
@@ -17,11 +24,6 @@
 		"modular",
 		"cli"
 	],
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/86d-app/86d",
-		"directory": "packages/cli"
-	},
 	"scripts": {
 		"dev": "tsx src/index.ts",
 		"build": "tsc",

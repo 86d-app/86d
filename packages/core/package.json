@@ -1,8 +1,16 @@
 {
 	"name": "@86d-app/core",
 	"version": "0.0.1",
-	"private": true,
+	"description": "Core package for 86d dynamic commerce platform",
 	"type": "module",
+	"license": "MIT",
+	"author": "86d <chat@86d.app>",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/86d-app/86d.git",
+		"directory": "packages/core"
+	},
+	"homepage": "https://github.com/86d-app/86d/tree/main/packages/core",
 	"files": [
 		"dist"
 	],
