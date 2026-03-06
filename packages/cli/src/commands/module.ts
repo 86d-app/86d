@@ -10,9 +10,11 @@ import {
 	c,
 	error,
 	findProjectRoot,
+	getTemplateConfigPath,
 	heading,
 	readJson,
 	success,
+	type TemplateConfig,
 	warn,
 } from "../utils.js";
 
@@ -194,25 +196,6 @@ function listEndpointPaths(filePath: string, indent: string) {
 	}
 }
 
-function getActiveTemplateConfigPath(root: string): string | undefined {
-	const tsconfig = join(root, "apps/store/tsconfig.json");
-	if (!existsSync(tsconfig)) return undefined;
-	try {
-		const content = readFileSync(tsconfig, "utf-8");
-		const match = content.match(/templates\/([^/]+)\//);
-		if (!match) return undefined;
-		const configPath = join(root, "templates", match[1], "config.json");
-		return existsSync(configPath) ? configPath : undefined;
-	} catch {
-		return undefined;
-	}
-}
-
-interface TemplateConfig {
-	modules?: string[];
-	[key: string]: unknown;
-}
-
 function enableModule(name: string | undefined) {
 	if (!name) {
 		error("Module name is required.");
@@ -230,7 +213,7 @@ function enableModule(name: string | undefined) {
 		process.exit(1);
 	}
 
-	const configPath = getActiveTemplateConfigPath(root);
+	const configPath = getTemplateConfigPath(root);
 	if (!configPath) {
 		error("Could not find active template config.json");
 		process.exit(1);
@@ -266,7 +249,7 @@ function disableModule(name: string | undefined) {
 	const moduleName = name.replace(/^@86d-app\//, "");
 	const fullName = `@86d-app/${moduleName}`;
 
-	const configPath = getActiveTemplateConfigPath(root);
+	const configPath = getTemplateConfigPath(root);
 	if (!configPath) {
 		error("Could not find active template config.json");
 		process.exit(1);

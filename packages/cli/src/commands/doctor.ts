@@ -1,19 +1,21 @@
 import { execSync } from "node:child_process";
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { c, findProjectRoot, heading, readJson } from "../utils.js";
+import {
+	c,
+	detectActiveTemplate,
+	findProjectRoot,
+	heading,
+	parseEnvFile,
+	readJson,
+	type TemplateConfig,
+} from "../utils.js";
 
 interface Check {
 	label: string;
 	status: "pass" | "warn" | "fail";
 	message: string;
 	fix?: string;
-}
-
-interface TemplateConfig {
-	theme?: string;
-	name?: string;
-	modules?: string[];
 }
 
 export function doctor() {
@@ -118,8 +120,7 @@ export function doctor() {
 	}
 
 	// 5. Active template
-	const storeConfig = join(root, "apps/store/tsconfig.json");
-	const activeTemplate = detectActiveTemplate(storeConfig);
+	const activeTemplate = detectActiveTemplate(root);
 
 	if (activeTemplate) {
 		const configPath = join(root, "templates", activeTemplate, "config.json");
@@ -204,24 +205,7 @@ export function doctor() {
 	// 7. Environment
 	const envPath = join(root, ".env");
 	if (existsSync(envPath)) {
-		const envContent = readFileSync(envPath, "utf-8");
-		const lines = envContent.split("\n");
-		const vars: Record<string, string> = {};
-		for (const line of lines) {
-			const trimmed = line.trim();
-			if (!trimmed || trimmed.startsWith("#")) continue;
-			const eqIdx = trimmed.indexOf("=");
-			if (eqIdx === -1) continue;
-			const key = trimmed.slice(0, eqIdx).trim();
-			let value = trimmed.slice(eqIdx + 1).trim();
-			if (
-				(value.startsWith('"') && value.endsWith('"')) ||
-				(value.startsWith("'") && value.endsWith("'"))
-			) {
-				value = value.slice(1, -1);
-			}
-			vars[key] = value;
-		}
+		const vars = parseEnvFile(envPath);
 
 		const required = ["DATABASE_URL", "STORE_ID", "BETTER_AUTH_SECRET"];
 		const missing = required.filter(
@@ -349,15 +333,4 @@ function printResults(checks: Check[]) {
 		);
 	}
 	console.log();
-}
-
-function detectActiveTemplate(tsconfigPath: string): string | undefined {
-	if (!existsSync(tsconfigPath)) return undefined;
-	try {
-		const content = readFileSync(tsconfigPath, "utf-8");
-		const match = content.match(/templates\/([^/]+)\//);
-		return match?.[1];
-	} catch {
-		return undefined;
-	}
 }

@@ -1,18 +1,14 @@
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import {
 	c,
+	detectActiveTemplate,
 	findProjectRoot,
 	heading,
 	parseEnvFile,
 	readJson,
+	type TemplateConfig,
 } from "../utils.js";
-
-interface TemplateConfig {
-	theme?: string;
-	name?: string;
-	modules?: string[];
-}
 
 export function status() {
 	const root = findProjectRoot();
@@ -25,8 +21,7 @@ export function status() {
 
 	// 2. Active template
 	const templatesDir = join(root, "templates");
-	const storeConfig = join(root, "apps/store/tsconfig.json");
-	const activeTemplate = detectActiveTemplate(storeConfig);
+	const activeTemplate = detectActiveTemplate(root);
 	let templateConfig: TemplateConfig | undefined;
 
 	if (activeTemplate) {
@@ -117,16 +112,4 @@ export function status() {
 	}
 
 	console.log();
-}
-
-function detectActiveTemplate(tsconfigPath: string): string | undefined {
-	if (!existsSync(tsconfigPath)) return undefined;
-	try {
-		const content = readFileSync(tsconfigPath, "utf-8");
-		// Look for template/* path alias pointing to ../../templates/<name>/*
-		const match = content.match(/templates\/([^/]+)\//);
-		return match?.[1];
-	} catch {
-		return undefined;
-	}
 }

@@ -431,10 +431,10 @@
       ],
     },
     "packages/cli": {
-      "name": "@86d-app/86d",
+      "name": "86d",
       "version": "0.0.3",
       "bin": {
-        "86d": "./src/index.ts",
+        "86d": "./dist/index.js",
       },
       "dependencies": {
         "@86d-app/core": "workspace:*",
@@ -627,7 +627,7 @@
     },
   },
   "packages": {
-    "@86d-app/86d": ["@86d-app/86d@workspace:packages/cli"],
+    "86d": ["86d@workspace:packages/cli"],
 
     "@86d-app/analytics": ["@86d-app/analytics@workspace:modules/analytics"],
 

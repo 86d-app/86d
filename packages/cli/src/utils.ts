@@ -116,6 +116,38 @@ export function readJson<T = Record<string, unknown>>(
 	}
 }
 
+export interface TemplateConfig {
+	theme?: string;
+	name?: string;
+	modules?: string[];
+	[key: string]: unknown;
+}
+
+/**
+ * Detect the active template name from the store tsconfig path alias.
+ */
+export function detectActiveTemplate(root: string): string | undefined {
+	const tsconfigPath = join(root, "apps/store/tsconfig.json");
+	if (!existsSync(tsconfigPath)) return undefined;
+	try {
+		const content = readFileSync(tsconfigPath, "utf-8");
+		const match = content.match(/templates\/([^/]+)\//);
+		return match?.[1];
+	} catch {
+		return undefined;
+	}
+}
+
+/**
+ * Get the path to the active template's config.json, if it exists.
+ */
+export function getTemplateConfigPath(root: string): string | undefined {
+	const template = detectActiveTemplate(root);
+	if (!template) return undefined;
+	const configPath = join(root, "templates", template, "config.json");
+	return existsSync(configPath) ? configPath : undefined;
+}
+
 /**
  * Parse a .env file into key-value pairs.
  * Handles comments, empty lines, quoted values, and inline comments.
