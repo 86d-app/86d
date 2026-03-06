@@ -427,6 +427,7 @@
         "@types/node": "catalog:node",
         "tsx": "catalog:",
         "typescript": "catalog:",
+        "vitest": "catalog:vite",
       },
     },
     "packages/core": {
