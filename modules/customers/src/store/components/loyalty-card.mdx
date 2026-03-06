@@ -1,0 +1,68 @@
+{props.balance ? (
+  <div className="space-y-6">
+    <div className="flex items-center justify-between">
+      <h2 className="text-lg font-semibold">Loyalty</h2>
+      {props.balance.tier && (
+        <span className="rounded-full bg-foreground/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider">
+          {props.balance.tier}
+        </span>
+      )}
+    </div>
+
+    <div className="grid gap-4 sm:grid-cols-2">
+      <div className="rounded-lg border border-border p-4">
+        <p className="text-sm text-muted-foreground">Available Points</p>
+        <p className="mt-1 text-2xl font-bold tabular-nums">
+          {props.balance.points.toLocaleString()}
+        </p>
+      </div>
+      <div className="rounded-lg border border-border p-4">
+        <p className="text-sm text-muted-foreground">Lifetime Points</p>
+        <p className="mt-1 text-2xl font-bold tabular-nums">
+          {props.balance.lifetimePoints.toLocaleString()}
+        </p>
+      </div>
+    </div>
+
+    {props.transactions.length > 0 && (
+      <div>
+        <h3 className="mb-3 text-sm font-semibold">Recent Activity</h3>
+        <div className="space-y-2">
+          {props.transactions.slice(0, 10).map((tx) => (
+            <div
+              key={tx.id}
+              className="flex items-center justify-between border-b border-border py-2 last:border-0"
+            >
+              <div>
+                <p className="text-sm">{tx.description}</p>
+                <p className="text-xs text-muted-foreground">
+                  {new Date(tx.createdAt).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </p>
+              </div>
+              <span
+                className={`text-sm font-medium tabular-nums ${
+                  tx.type === "earn" || (tx.type === "adjust" && tx.points > 0)
+                    ? "text-green-600"
+                    : tx.type === "redeem" || tx.type === "expire"
+                      ? "text-red-600"
+                      : ""
+                }`}
+              >
+                {tx.points > 0 ? "+" : ""}
+                {tx.points.toLocaleString()}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+  </div>
+) : (
+  <div className="py-8 text-center text-sm text-muted-foreground">
+    Loading loyalty information...
+  </div>
+)}

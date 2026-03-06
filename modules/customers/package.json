@@ -18,6 +18,7 @@
 	"homepage": "https://github.com/esaiasco/86d/tree/main/modules/customers",
 	"type": "module",
 	"exports": {
+		"./components": "./src/store/components",
 		"./admin-components": "./src/admin/components",
 		"./*": "./src/*"
 	},
@@ -36,6 +37,7 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "catalog:",
+		"@types/mdx": "catalog:mdx",
 		"@types/react": "catalog:react",
 		"typescript": "catalog:",
 		"vitest": "catalog:vite"
