@@ -583,10 +583,10 @@ export function createCustomerController(
 				createdAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
 			await data.upsert(
 				"loyaltyTransaction",
 				transaction.id,
+				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
 				transaction as Record<string, any>,
 			);
 			return transaction;
@@ -613,10 +613,10 @@ export function createCustomerController(
 				createdAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
 			await data.upsert(
 				"loyaltyTransaction",
 				transaction.id,
+				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
 				transaction as Record<string, any>,
 			);
 			return transaction;
@@ -644,10 +644,10 @@ export function createCustomerController(
 				createdAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
 			await data.upsert(
 				"loyaltyTransaction",
 				transaction.id,
+				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
 				transaction as Record<string, any>,
 			);
 			return transaction;

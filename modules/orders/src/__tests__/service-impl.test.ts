@@ -2320,10 +2320,10 @@ describe("createOrderController", () => {
 			const reorderItems = await controller.getReorderItems(order.id);
 			expect(reorderItems).not.toBeNull();
 			expect(reorderItems).toHaveLength(1);
-			expect(reorderItems![0]?.productId).toBe("prod_abc");
-			expect(reorderItems![0]?.name).toBe("Test Widget");
-			expect(reorderItems![0]?.price).toBe(1999);
-			expect(reorderItems![0]?.quantity).toBe(2);
+			expect(reorderItems?.[0]?.productId).toBe("prod_abc");
+			expect(reorderItems?.[0]?.name).toBe("Test Widget");
+			expect(reorderItems?.[0]?.price).toBe(1999);
+			expect(reorderItems?.[0]?.quantity).toBe(2);
 		});
 
 		it("returns null for non-existent order", async () => {
@@ -2355,8 +2355,8 @@ describe("createOrderController", () => {
 			const reorderItems = await controller.getReorderItems(order.id);
 			expect(reorderItems).toHaveLength(2);
 
-			const itemA = reorderItems!.find((i) => i.productId === "prod_1");
-			const itemB = reorderItems!.find((i) => i.productId === "prod_2");
+			const itemA = reorderItems?.find((i) => i.productId === "prod_1");
+			const itemB = reorderItems?.find((i) => i.productId === "prod_2");
 
 			expect(itemA?.name).toBe("Widget A");
 			expect(itemA?.quantity).toBe(1);
@@ -2397,9 +2397,9 @@ describe("createOrderController", () => {
 			});
 
 			const reorderItems = await controller.getReorderItems(order.id);
-			expect(reorderItems![0]?.productId).toBe("prod_v");
-			expect(reorderItems![0]?.variantId).toBe("var_color_red");
-			expect(reorderItems![0]?.sku).toBe("TS-RED-L");
+			expect(reorderItems?.[0]?.productId).toBe("prod_v");
+			expect(reorderItems?.[0]?.variantId).toBe("var_color_red");
+			expect(reorderItems?.[0]?.sku).toBe("TS-RED-L");
 		});
 
 		it("returns empty array for order with no items", async () => {

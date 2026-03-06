@@ -138,7 +138,6 @@ function CustomerLoyaltyModal({
 	const [transactions, setTransactions] = useState<LoyaltyTransaction[]>([]);
 	const [loading, setLoading] = useState(true);
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: fetch on mount only
 	useEffect(() => {
 		Promise.all([
 			fetch(`/admin/customers/${customerId}/loyalty`).then((r) => r.json()),

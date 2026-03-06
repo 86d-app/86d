@@ -25,6 +25,10 @@ export function moduleCommand(subcommand: string | undefined, args: string[]) {
 			return listModules();
 		case "info":
 			return moduleInfo(args[0]);
+		case "enable":
+			return enableModule(args[0]);
+		case "disable":
+			return disableModule(args[0]);
 		case "help":
 		case "--help":
 		case undefined:
@@ -42,9 +46,11 @@ function printHelp() {
 ${c.bold("86d module")} — Manage modules
 
 ${c.dim("Usage:")}
-  86d module create <name>   Scaffold a new module
-  86d module list             List all modules
-  86d module info <name>      Show module details
+  86d module create <name>    Scaffold a new module
+  86d module list              List all modules
+  86d module info <name>       Show module details
+  86d module enable <name>     Enable a module in the active template
+  86d module disable <name>    Disable a module in the active template
 `);
 }
 
@@ -186,6 +192,104 @@ function listEndpointPaths(filePath: string, indent: string) {
 		const path = raw.slice(1, -1);
 		console.log(`${indent}  ${c.cyan(path)}`);
 	}
+}
+
+function getActiveTemplateConfigPath(root: string): string | undefined {
+	const tsconfig = join(root, "apps/store/tsconfig.json");
+	if (!existsSync(tsconfig)) return undefined;
+	try {
+		const content = readFileSync(tsconfig, "utf-8");
+		const match = content.match(/templates\/([^/]+)\//);
+		if (!match) return undefined;
+		const configPath = join(root, "templates", match[1], "config.json");
+		return existsSync(configPath) ? configPath : undefined;
+	} catch {
+		return undefined;
+	}
+}
+
+interface TemplateConfig {
+	modules?: string[];
+	[key: string]: unknown;
+}
+
+function enableModule(name: string | undefined) {
+	if (!name) {
+		error("Module name is required.");
+		console.log(`\n  Usage: 86d module enable <name>`);
+		process.exit(1);
+	}
+
+	const root = findProjectRoot();
+	const moduleName = name.replace(/^@86d-app\//, "");
+	const moduleDir = join(root, "modules", moduleName);
+	const fullName = `@86d-app/${moduleName}`;
+
+	if (!existsSync(moduleDir)) {
+		error(`Module "${moduleName}" not found at ${moduleDir}`);
+		process.exit(1);
+	}
+
+	const configPath = getActiveTemplateConfigPath(root);
+	if (!configPath) {
+		error("Could not find active template config.json");
+		process.exit(1);
+	}
+
+	const config = readJson<TemplateConfig>(configPath);
+	if (!config) {
+		error(`Could not read ${configPath}`);
+		process.exit(1);
+	}
+
+	const modules = config.modules ?? [];
+	if (modules.includes(fullName)) {
+		warn(`${fullName} is already enabled`);
+		return;
+	}
+
+	modules.push(fullName);
+	config.modules = modules;
+	writeFileSync(configPath, JSON.stringify(config, null, "\t"));
+	success(`Enabled ${c.bold(fullName)}`);
+	console.log(`\n  Run ${c.bold("86d generate")} to update generated code.\n`);
+}
+
+function disableModule(name: string | undefined) {
+	if (!name) {
+		error("Module name is required.");
+		console.log(`\n  Usage: 86d module disable <name>`);
+		process.exit(1);
+	}
+
+	const root = findProjectRoot();
+	const moduleName = name.replace(/^@86d-app\//, "");
+	const fullName = `@86d-app/${moduleName}`;
+
+	const configPath = getActiveTemplateConfigPath(root);
+	if (!configPath) {
+		error("Could not find active template config.json");
+		process.exit(1);
+	}
+
+	const config = readJson<TemplateConfig>(configPath);
+	if (!config) {
+		error(`Could not read ${configPath}`);
+		process.exit(1);
+	}
+
+	const modules = config.modules ?? [];
+	const idx = modules.indexOf(fullName);
+	if (idx === -1) {
+		warn(`${fullName} is not currently enabled`);
+		return;
+	}
+
+	modules.splice(idx, 1);
+	config.modules = modules;
+	writeFileSync(configPath, JSON.stringify(config, null, "\t"));
+	success(`Disabled ${c.bold(fullName)}`);
+	console.log(`\n  Run ${c.bold("86d generate")} to update generated code.\n`);
 }
 
 function createModule(name: string | undefined) {
