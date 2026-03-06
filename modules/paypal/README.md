@@ -17,7 +17,7 @@
 > [!WARNING]
 > This project is under active development and is not ready for production use. Please proceed with caution. Use at your own risk.
 
-# @86d-app/paypal
+# PayPal Module
 
 PayPal payment provider implementing the `PaymentProvider` interface from `@86d-app/payments`. Uses PayPal Orders API v2 via raw `fetch()` with OAuth2 client credentials — no PayPal SDK required.
 

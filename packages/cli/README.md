@@ -17,7 +17,7 @@
 > [!WARNING]
 > This project is under active development and is not ready for production use. Please proceed with caution. Use at your own risk.
 
-# @86d-app/86d
+# 86d CLI
 
 CLI for 86d — modular, open-source commerce platform.
 

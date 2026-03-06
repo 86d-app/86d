@@ -17,7 +17,7 @@
 > [!WARNING]
 > This project is under active development and is not ready for production use. Please proceed with caution. Use at your own risk.
 
-# @86d-app/checkout
+# Checkout Module
 
 Checkout session management for the 86d commerce platform. Handles the cart-to-order conversion flow: session creation, address collection, discount application, and order completion.
 

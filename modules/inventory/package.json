@@ -15,7 +15,7 @@
 		"url": "https://github.com/86d-app/86d.git",
 		"directory": "modules/inventory"
 	},
-	"homepage": "https://github.com/86d-app/86d/tree/main/modules/inventory",
+	"homepage": "https://86d.app",
 	"type": "module",
 	"exports": {
 		"./admin-components": "./src/admin/components",

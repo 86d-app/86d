@@ -17,7 +17,7 @@
 > [!WARNING]
 > This project is under active development and is not ready for production use. Please proceed with caution. Use at your own risk.
 
-# @86d-app/core
+# Core
 
 Core types and utilities for building modules in the 86d module system. This package provides everything module authors need to create publishable, type-safe modules.
 

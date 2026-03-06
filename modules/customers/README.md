@@ -17,7 +17,7 @@
 > [!WARNING]
 > This project is under active development and is not ready for production use. Please proceed with caution. Use at your own risk.
 
-# @86d-app/customers
+# Customers Module
 
 Customer profile and address management. Authenticated customers can view and edit their profile and saved addresses. Admins have full read/write access to all customer records.
 

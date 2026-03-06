@@ -11,7 +11,7 @@ model Module {
     updatedAt DateTime @default(now()) @updatedAt
 
     data    ModuleData[]
-    // store   Store?       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+    store   Json?
     storeId String?      @db.Uuid
 
     @@index([storeId, isEnabled])

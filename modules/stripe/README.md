@@ -17,7 +17,7 @@
 > [!WARNING]
 > This project is under active development and is not ready for production use. Please proceed with caution. Use at your own risk.
 
-# @86d-app/stripe
+# Stripe Module
 
 Stripe payment provider for the 86d commerce platform. Implements the `PaymentProvider` interface from `@86d-app/payments` using raw `fetch()` calls to the Stripe REST API (no SDK dependency). Includes a webhook endpoint with HMAC-SHA256 signature verification.
 

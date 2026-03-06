@@ -233,6 +233,20 @@
         "vitest": "catalog:vite",
       },
     },
+    "modules/loyalty": {
+      "name": "@86d-app/loyalty",
+      "version": "0.0.4",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
     "modules/newsletter": {
       "name": "@86d-app/newsletter",
       "version": "0.0.4",
@@ -650,6 +664,8 @@
     "@86d-app/gift-cards": ["@86d-app/gift-cards@workspace:modules/gift-cards"],
 
     "@86d-app/inventory": ["@86d-app/inventory@workspace:modules/inventory"],
+
+    "@86d-app/loyalty": ["@86d-app/loyalty@workspace:modules/loyalty"],
 
     "@86d-app/newsletter": ["@86d-app/newsletter@workspace:modules/newsletter"],
 

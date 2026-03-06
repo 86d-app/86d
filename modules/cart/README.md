@@ -17,7 +17,7 @@
 > [!WARNING]
 > This project is under active development and is not ready for production use. Please proceed with caution. Use at your own risk.
 
-# @86d-app/cart
+# Cart Module
 
 Shopping cart module for guest and authenticated customers. Supports adding, updating, and removing items with configurable expiration and per-cart item limits.
 

@@ -17,7 +17,7 @@
 > [!WARNING]
 > This project is under active development and is not ready for production use. Please proceed with caution. Use at your own risk.
 
-# @86d-app/orders
+# Orders Module
 
 Order lifecycle management. Handles order creation, status transitions, and customer/admin access to order history. Designed to be called by the checkout module on order confirmation.
 

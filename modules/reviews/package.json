@@ -16,7 +16,7 @@
 		"url": "https://github.com/86d-app/86d.git",
 		"directory": "modules/reviews"
 	},
-	"homepage": "https://github.com/86d-app/86d/tree/main/modules/reviews",
+	"homepage": "https://86d.app",
 	"type": "module",
 	"exports": {
 		"./components": "./src/store/components",

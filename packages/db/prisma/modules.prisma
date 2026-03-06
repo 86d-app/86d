@@ -1,0 +1,46 @@
+model Module {
+    id   String @id @unique @default(uuid()) @db.Uuid
+    cuid String @unique @default(cuid(2)) @db.VarChar(30)
+
+    name      String
+    version   String
+    isEnabled Boolean @default(true)
+    settings  Json?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @default(now()) @updatedAt
+
+    data    ModuleData[]
+    store   Json? // Store data when created from 86d.app
+    storeId String?      @db.Uuid // Store ID when created from 86d.app
+
+    @@index([storeId, isEnabled])
+    @@map("Module")
+}
+
+model ModuleData {
+    id   String @id @unique @default(uuid()) @db.Uuid
+    cuid String @unique @default(cuid(2)) @db.VarChar(30)
+
+    // Entity type for querying (e.g., "cart", "cartItem", "order")
+    entityType String @db.VarChar(100)
+    // Module-defined entity ID (e.g., "cart_123", "item_456")
+    entityId   String @db.VarChar(255)
+    data       Json?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @default(now()) @updatedAt
+
+    moduleId String       @db.Uuid
+    module   Module       @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+    children ModuleData[] @relation("ModuleDataParent")
+    parentId String?      @db.Uuid
+    parent   ModuleData?  @relation("ModuleDataParent", fields: [parentId], references: [id], onDelete: Cascade)
+
+    // Performance indexes
+    @@unique([moduleId, entityType, entityId], name: "module_entity_unique")
+    @@index([moduleId, entityType])
+    @@index([moduleId, parentId])
+    @@index([entityType, entityId])
+    @@map("ModuleData")
+}

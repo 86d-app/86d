@@ -17,7 +17,7 @@
 > [!WARNING]
 > This project is under active development and is not ready for production use. Please proceed with caution. Use at your own risk.
 
-# @86d-app/reviews
+# Reviews Module
 
 Product reviews and ratings for the 86d commerce platform. Manages a moderation queue so store owners can approve or reject reviews before they appear publicly.
 

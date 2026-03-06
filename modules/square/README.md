@@ -17,7 +17,7 @@
 > [!WARNING]
 > This project is under active development and is not ready for production use. Please proceed with caution. Use at your own risk.
 
-# @86d-app/square
+# Square Module
 
 Square payment provider implementing the `PaymentProvider` interface from `@86d-app/payments`. Uses Square's Payments API via raw `fetch()` — no Square SDK required.
 

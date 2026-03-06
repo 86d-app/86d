@@ -10,7 +10,7 @@
 		"url": "https://github.com/86d-app/86d.git",
 		"directory": "packages/core"
 	},
-	"homepage": "https://github.com/86d-app/86d/tree/main/packages/core",
+	"homepage": "https://86d.app",
 	"files": [
 		"dist"
 	],

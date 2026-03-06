@@ -10,7 +10,7 @@
 		"url": "https://github.com/86d-app/86d.git",
 		"directory": "packages/cli"
 	},
-	"homepage": "https://github.com/86d-app/86d/tree/main/packages/cli",
+	"homepage": "https://86d.app",
 	"bin": {
 		"86d": "./dist/index.js"
 	},
