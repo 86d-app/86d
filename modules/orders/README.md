@@ -1,3 +1,23 @@
+<p align="center">
+  <a href="https://86d.app">
+    <img src="https://86d.app/logo" height="96" alt="86d" />
+  </a>
+</p>
+
+<p align="center">
+  Dynamic Commerce
+</p>
+
+<p align="center">
+  <a href="https://vercel.com/changelog"><strong>npm</strong></a> ·
+  <a href="https://x.com/86d_app"><strong>X</strong></a> ·
+  <a href="https://vercel.com/templates"><strong>LinkedIn</strong></a>
+</p>
+<br/>
+
+> [!WARNING]
+> This project is under active development and is not ready for production use. Please proceed with caution. Use at your own risk.
+
 # @86d-app/orders
 
 Order lifecycle management. Handles order creation, status transitions, and customer/admin access to order history. Designed to be called by the checkout module on order confirmation.

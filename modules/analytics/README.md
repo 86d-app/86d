@@ -1,3 +1,23 @@
+<p align="center">
+  <a href="https://86d.app">
+    <img src="https://86d.app/logo" height="96" alt="86d" />
+  </a>
+</p>
+
+<p align="center">
+  Dynamic Commerce
+</p>
+
+<p align="center">
+  <a href="https://vercel.com/changelog"><strong>npm</strong></a> ·
+  <a href="https://x.com/86d_app"><strong>X</strong></a> ·
+  <a href="https://vercel.com/templates"><strong>LinkedIn</strong></a>
+</p>
+<br/>
+
+> [!WARNING]
+> This project is under active development and is not ready for production use. Please proceed with caution. Use at your own risk.
+
 # @86d-app/analytics
 
 Event tracking and reporting module for 86d stores. Records page views, product views, cart events, purchases, and custom events. Provides admin endpoints for stats aggregation, top-product reports, and raw event access.
