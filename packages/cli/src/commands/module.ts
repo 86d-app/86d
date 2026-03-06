@@ -1,9 +1,20 @@
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
-import { readdirSync } from "node:fs";
-import { join, resolve } from "node:path";
-
-const ROOT = resolve(import.meta.dirname, "../../../..");
-const MODULES_DIR = join(ROOT, "modules");
+import {
+	existsSync,
+	mkdirSync,
+	readdirSync,
+	readFileSync,
+	writeFileSync,
+} from "node:fs";
+import { join } from "node:path";
+import {
+	c,
+	error,
+	findProjectRoot,
+	heading,
+	readJson,
+	success,
+	warn,
+} from "../utils.js";
 
 export function moduleCommand(subcommand: string | undefined, args: string[]) {
 	switch (subcommand) {
@@ -12,54 +23,193 @@ export function moduleCommand(subcommand: string | undefined, args: string[]) {
 		case "list":
 		case "ls":
 			return listModules();
+		case "info":
+			return moduleInfo(args[0]);
+		case "help":
+		case "--help":
+		case undefined:
+			return printHelp();
 		default:
-			console.error(
-				`Unknown module subcommand: ${subcommand ?? "(none)"}\n`,
-			);
-			console.log("Usage:");
-			console.log("  86d module create <name>   Scaffold a new module");
-			console.log("  86d module list             List all modules");
+			error(`Unknown subcommand: ${subcommand}`);
+			console.log();
+			printHelp();
 			process.exit(1);
 	}
 }
 
+function printHelp() {
+	console.log(`
+${c.bold("86d module")} — Manage modules
+
+${c.dim("Usage:")}
+  86d module create <name>   Scaffold a new module
+  86d module list             List all modules
+  86d module info <name>      Show module details
+`);
+}
+
 function listModules() {
-	if (!existsSync(MODULES_DIR)) {
-		console.log("No modules directory found.");
+	const root = findProjectRoot();
+	const modulesDir = join(root, "modules");
+
+	if (!existsSync(modulesDir)) {
+		warn("No modules directory found.");
 		return;
 	}
 
-	const modules = readdirSync(MODULES_DIR, { withFileTypes: true })
+	const modules = readdirSync(modulesDir, { withFileTypes: true })
 		.filter((d) => d.isDirectory())
 		.map((d) => d.name)
 		.sort();
 
-	console.log(`Found ${modules.length} module(s):\n`);
+	heading(`Modules (${modules.length})`);
+	console.log();
+
 	for (const mod of modules) {
-		const pkgPath = join(MODULES_DIR, mod, "package.json");
-		const hasPackage = existsSync(pkgPath);
-		console.log(`  @86d-app/${mod}${hasPackage ? "" : "  (no package.json)"}`);
+		const pkg = readJson<{ version?: string }>(
+			join(modulesDir, mod, "package.json"),
+		);
+		const version = pkg?.version ? c.dim(` v${pkg.version}`) : "";
+		const hasComponents = existsSync(
+			join(modulesDir, mod, "src/store/components/index.tsx"),
+		);
+		const hasAdmin = existsSync(
+			join(modulesDir, mod, "src/admin/endpoints/index.ts"),
+		);
+
+		const tags: string[] = [];
+		if (hasComponents) tags.push(c.cyan("components"));
+		if (hasAdmin) tags.push(c.yellow("admin"));
+		const tagStr =
+			tags.length > 0
+				? `  ${c.dim("[")}${tags.join(c.dim(", "))}${c.dim("]")}`
+				: "";
+
+		console.log(`  ${c.bold(`@86d-app/${mod}`)}${version}${tagStr}`);
+	}
+	console.log();
+}
+
+function moduleInfo(name: string | undefined) {
+	if (!name) {
+		error("Module name is required.");
+		console.log(`\n  Usage: 86d module info <name>`);
+		process.exit(1);
+	}
+
+	const root = findProjectRoot();
+	const moduleName = name.replace(/^@86d-app\//, "");
+	const moduleDir = join(root, "modules", moduleName);
+
+	if (!existsSync(moduleDir)) {
+		error(`Module "${moduleName}" not found at ${moduleDir}`);
+		process.exit(1);
+	}
+
+	const pkg = readJson<{
+		name?: string;
+		version?: string;
+		dependencies?: Record<string, string>;
+	}>(join(moduleDir, "package.json"));
+
+	heading(`@86d-app/${moduleName}`);
+	console.log();
+
+	if (pkg?.version) {
+		console.log(`  ${c.dim("Version:")}  ${pkg.version}`);
+	}
+
+	// Read module ID from index.ts
+	const indexPath = join(moduleDir, "src/index.ts");
+	if (existsSync(indexPath)) {
+		const indexContent = readFileSync(indexPath, "utf-8");
+		const idMatch = indexContent.match(/id:\s*"([^"]+)"/);
+		if (idMatch) {
+			console.log(`  ${c.dim("ID:")}       ${idMatch[1]}`);
+		}
+	}
+
+	// Count endpoints
+	const storeEndpointsPath = join(moduleDir, "src/store/endpoints/index.ts");
+	const adminEndpointsPath = join(moduleDir, "src/admin/endpoints/index.ts");
+	const storeCount = countEndpoints(storeEndpointsPath);
+	const adminCount = countEndpoints(adminEndpointsPath);
+	console.log(
+		`  ${c.dim("Endpoints:")} ${storeCount} store, ${adminCount} admin`,
+	);
+
+	// Check for components
+	const storeComponents = existsSync(
+		join(moduleDir, "src/store/components/index.tsx"),
+	);
+	const adminComponents = existsSync(
+		join(moduleDir, "src/admin/components/index.tsx"),
+	);
+	console.log(
+		`  ${c.dim("Components:")} ${storeComponents ? c.green("store") : c.dim("none")}${adminComponents ? `, ${c.green("admin")}` : ""}`,
+	);
+
+	// Check for tests
+	const hasTests =
+		existsSync(join(moduleDir, "src/__tests__")) ||
+		existsSync(join(moduleDir, "src/tests"));
+	console.log(
+		`  ${c.dim("Tests:")}     ${hasTests ? c.green("yes") : c.dim("none")}`,
+	);
+
+	// List store endpoint paths
+	if (storeCount > 0 && existsSync(storeEndpointsPath)) {
+		console.log(`\n  ${c.dim("Store endpoints:")}`);
+		listEndpointPaths(storeEndpointsPath, "  ");
+	}
+
+	if (adminCount > 0 && existsSync(adminEndpointsPath)) {
+		console.log(`\n  ${c.dim("Admin endpoints:")}`);
+		listEndpointPaths(adminEndpointsPath, "  ");
+	}
+
+	console.log();
+}
+
+function countEndpoints(filePath: string): number {
+	if (!existsSync(filePath)) return 0;
+	const content = readFileSync(filePath, "utf-8");
+	const matches = content.match(/"\/[^"]+"/g);
+	return matches?.length ?? 0;
+}
+
+function listEndpointPaths(filePath: string, indent: string) {
+	const content = readFileSync(filePath, "utf-8");
+	const paths = content.match(/"(\/[^"]+)"/g);
+	if (!paths) return;
+	for (const raw of paths) {
+		const path = raw.slice(1, -1);
+		console.log(`${indent}  ${c.cyan(path)}`);
 	}
 }
 
 function createModule(name: string | undefined) {
 	if (!name) {
-		console.error("Module name is required.\n");
-		console.log("Usage: 86d module create <name>");
-		console.log("Example: 86d module create loyalty-points");
+		error("Module name is required.");
+		console.log(`\n  Usage: 86d module create <name>`);
+		console.log(`  Example: ${c.dim("86d module create loyalty-points")}`);
 		process.exit(1);
 	}
+
+	const root = findProjectRoot();
+	const modulesDir = join(root, "modules");
 
 	// Normalize: strip @86d-app/ prefix if provided
 	const moduleName = name.replace(/^@86d-app\//, "");
-	const moduleDir = join(MODULES_DIR, moduleName);
+	const moduleDir = join(modulesDir, moduleName);
 
 	if (existsSync(moduleDir)) {
-		console.error(`Module "${moduleName}" already exists at ${moduleDir}`);
+		error(`Module "${moduleName}" already exists at ${moduleDir}`);
 		process.exit(1);
 	}
 
-	console.log(`Creating module @86d-app/${moduleName}...\n`);
+	heading(`Creating @86d-app/${moduleName}`);
+	console.log();
 
 	// Create directory structure
 	const dirs = [
@@ -71,6 +221,7 @@ function createModule(name: string | undefined) {
 		join(moduleDir, "src/admin"),
 		join(moduleDir, "src/admin/components"),
 		join(moduleDir, "src/admin/endpoints"),
+		join(moduleDir, "src/__tests__"),
 	];
 
 	for (const dir of dirs) {
@@ -92,6 +243,7 @@ function createModule(name: string | undefined) {
 					"./admin-components": "./src/admin/components/index.tsx",
 				},
 				scripts: {
+					build: "tsc",
 					check: "biome check src",
 					"check:fix": "biome check --write src",
 					test: "vitest run",
@@ -213,16 +365,44 @@ export {};
 `,
 	);
 
-	console.log(`  Created ${dirs.length} directories`);
-	console.log(`  Created module entry point, schema, endpoints, and components`);
-	console.log(`\nNext steps:`);
-	console.log(`  1. Add "@86d-app/${moduleName}" to templates/brisa/config.json`);
-	console.log(`  2. Implement your schema, controllers, and endpoints`);
-	console.log(`  3. Run: 86d generate`);
+	// Basic test file
+	writeFileSync(
+		join(moduleDir, "src/__tests__/index.test.ts"),
+		`import { describe, expect, it } from "vitest";
+import ${toCamelCase(moduleName)} from "../index.js";
+
+describe("${moduleName}", () => {
+	it("creates a module with correct id", () => {
+		const mod = ${toCamelCase(moduleName)}();
+		expect(mod.id).toBe("${moduleName}");
+	});
+
+	it("creates a module with version", () => {
+		const mod = ${toCamelCase(moduleName)}();
+		expect(mod.version).toBe("0.0.1");
+	});
+});
+`,
+	);
+
+	success(`Created ${dirs.length} directories`);
+	success(
+		"Created module entry point, schema, endpoints, components, and test",
+	);
+
+	console.log(`\n  Next steps:`);
+	console.log(
+		`  ${c.dim("1.")} Add ${c.cyan(`"@86d-app/${moduleName}"`)} to templates/brisa/config.json`,
+	);
+	console.log(
+		`  ${c.dim("2.")} Implement your schema, controllers, and endpoints`,
+	);
+	console.log(`  ${c.dim("3.")} Run: ${c.bold("86d generate")}`);
+	console.log();
 }
 
 function toCamelCase(name: string): string {
-	return name.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+	return name.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());
 }
 
 function toPascalCase(name: string): string {

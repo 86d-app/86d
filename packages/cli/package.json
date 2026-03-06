@@ -1,13 +1,27 @@
 {
-	"name": "@86d-app/cli",
+	"name": "@86d-app/86d",
 	"version": "0.0.1",
+	"description": "CLI for 86d — modular, open-source commerce platform",
 	"type": "module",
+	"license": "MIT",
 	"bin": {
 		"86d": "./src/index.ts"
 	},
 	"files": [
 		"src"
 	],
+	"keywords": [
+		"86d",
+		"commerce",
+		"ecommerce",
+		"modular",
+		"cli"
+	],
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/86d-app/86d",
+		"directory": "packages/cli"
+	},
 	"scripts": {
 		"dev": "tsx src/index.ts",
 		"build": "tsc",

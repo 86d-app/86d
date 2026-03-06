@@ -32,7 +32,8 @@
 			"!**/.vercel",
 			"!**/.next",
 			"!**/.cache",
-			"!**/node_modules"
+			"!**/node_modules",
+			"!**/src/prisma"
 		]
 	},
 	"css": {

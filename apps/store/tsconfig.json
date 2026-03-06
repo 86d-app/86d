@@ -17,7 +17,8 @@
 				"../../modules/*/src/admin/components/index.tsx"
 			],
 			"@86d-app/*/state": ["../../modules/*/src/state.ts"],
-			"@86d-app/*": ["../../modules/*/src/index.ts"]
+			"@86d-app/*": ["../../modules/*/src/index.ts"],
+			"lib/*": ["../../packages/lib/src/*"]
 		},
 		"plugins": [{ "name": "next" }],
 		"module": "esnext"

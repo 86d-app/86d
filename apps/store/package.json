@@ -15,6 +15,13 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
+		"auth": "workspace:*",
+		"db": "workspace:*",
+		"emails": "workspace:*",
+		"env": "workspace:*",
+		"lib": "workspace:*",
+		"ui": "workspace:*",
+		"utils": "workspace:*",
 		"@86d-app/analytics": "workspace:*",
 		"@86d-app/blog": "workspace:*",
 		"@86d-app/braintree": "workspace:*",

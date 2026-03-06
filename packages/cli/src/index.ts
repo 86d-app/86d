@@ -1,23 +1,11 @@
 #!/usr/bin/env node
 
-/**
- * 86d CLI
- *
- * Commands:
- *   dev              Start the store development server
- *   init             Configure a local store (set up .env, install deps)
- *   module create    Scaffold a new module
- *   module list      List all modules
- *   template create  Scaffold a new template
- *   template list    List all templates
- *   generate         Run code generation (modules, components, API router)
- */
-
 import { dev } from "./commands/dev.js";
 import { generate } from "./commands/generate.js";
 import { init } from "./commands/init.js";
 import { moduleCommand } from "./commands/module.js";
 import { templateCommand } from "./commands/template.js";
+import { c, getVersion } from "./utils.js";
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -52,35 +40,45 @@ async function main() {
 			return printVersion();
 
 		default:
-			console.error(`Unknown command: ${command}`);
+			console.error(`Unknown command: ${command}\n`);
 			printHelp();
 			process.exit(1);
 	}
 }
 
 function printHelp() {
+	const v = getVersion();
 	console.log(`
-86d — Modular commerce platform CLI
+${c.bold("86d")} ${c.dim(`v${v}`)} — Modular commerce platform
 
-Usage: 86d <command> [options]
+${c.dim("Usage:")} 86d <command> [options]
 
-Commands:
-  dev                    Start the store development server
-  init                   Configure a local store
-  module create <name>   Scaffold a new module
-  module list            List all modules
-  template create <name> Scaffold a new template from brisa
-  template list          List all templates
-  generate               Run code generation
+${c.bold("Commands:")}
+  ${c.cyan("dev")}                    Start the store development server
+  ${c.cyan("init")}                   Configure a local store (env, deps, codegen)
+  ${c.cyan("module create")} <name>   Scaffold a new module
+  ${c.cyan("module list")}            List all modules
+  ${c.cyan("module info")} <name>     Show module details
+  ${c.cyan("template create")} <name> Scaffold a new template from brisa
+  ${c.cyan("template list")}          List all templates
+  ${c.cyan("generate")}               Run all code generation
+  ${c.cyan("generate modules")}       Generate module imports and API router
+  ${c.cyan("generate components")}    Generate component documentation
 
-Options:
-  -h, --help             Show this help message
-  -v, --version          Show version
+${c.bold("Options:")}
+  ${c.dim("-h, --help")}             Show this help message
+  ${c.dim("-v, --version")}          Show version
+
+${c.dim("Examples:")}
+  ${c.gray("$")} 86d init
+  ${c.gray("$")} 86d dev --port 4000
+  ${c.gray("$")} 86d module create loyalty-points
+  ${c.gray("$")} 86d generate
 `);
 }
 
 function printVersion() {
-	console.log("86d v0.0.1");
+	console.log(`86d v${getVersion()}`);
 }
 
 main().catch((err) => {

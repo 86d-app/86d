@@ -452,7 +452,8 @@ function getBaseUrl(): string {
   return "http://localhost:3000";
 }
 
-export const api = createClient<Router>({
+// biome-ignore lint/suspicious/noExplicitAny: avoids TS2742 portability error with transitive @better-fetch/fetch
+export const api: any = createClient<Router>({
   baseURL: getBaseUrl(),
 });
 

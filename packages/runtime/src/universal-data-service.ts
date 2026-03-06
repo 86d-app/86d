@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "@86d-app/core/prisma";
 
 export interface DataServiceConfig {
 	// biome-ignore lint/suspicious/noExplicitAny: PrismaClient at runtime

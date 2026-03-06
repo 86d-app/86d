@@ -286,7 +286,7 @@ function createOrderShippedHandler(
 		// Auto-generate tracking URL from carrier + tracking number if not provided
 		let trackingUrl = p.trackingUrl;
 		if (!trackingUrl && p.carrier && p.trackingNumber) {
-			trackingUrl = getTrackingUrl(p.carrier, p.trackingNumber);
+			trackingUrl = getTrackingUrl(p.carrier, p.trackingNumber) ?? undefined;
 		}
 
 		await resend.emails.send({

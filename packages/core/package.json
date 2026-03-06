@@ -26,6 +26,10 @@
 		"./charts": {
 			"types": "./src/charts.ts",
 			"default": "./src/charts.ts"
+		},
+		"./prisma": {
+			"types": "./src/prisma/client.ts",
+			"default": "./src/prisma/client.ts"
 		}
 	},
 	"scripts": {
