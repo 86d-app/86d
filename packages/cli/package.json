@@ -1,5 +1,5 @@
 {
-	"name": "@86d-app/86d",
+	"name": "86d",
 	"version": "0.0.1",
 	"description": "CLI for 86d — modular, open-source commerce platform",
 	"type": "module",
