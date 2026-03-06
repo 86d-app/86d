@@ -1,0 +1,44 @@
+{
+	"name": "auth",
+	"version": "0.0.1",
+	"private": true,
+	"type": "module",
+	"exports": {
+		".": {
+			"types": "./src/index.ts",
+			"default": "./src/index.ts"
+		},
+		"./actions": {
+			"types": "./src/actions.ts",
+			"default": "./src/actions.ts"
+		},
+		"./store-access": {
+			"types": "./src/store-access.ts",
+			"default": "./src/store-access.ts"
+		}
+	},
+	"scripts": {
+		"build": "tsc",
+		"check": "biome check src",
+		"check:fix": "biome check --write src",
+		"typecheck": "tsc --noEmit --emitDeclarationOnly false"
+	},
+	"dependencies": {
+		"better-auth": "1.2.10",
+		"db": "workspace:*"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "catalog:",
+		"@types/node": "catalog:node",
+		"next": "catalog:next",
+		"typescript": "catalog:"
+	},
+	"peerDependencies": {
+		"next": ">=15"
+	},
+	"peerDependenciesMeta": {
+		"next": {
+			"optional": true
+		}
+	}
+}
