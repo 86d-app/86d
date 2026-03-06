@@ -156,8 +156,7 @@ export async function ensureBooted(): Promise<ModuleRegistry> {
 					const { registerWebhookHandlers } = await import(
 						"./webhook-subscriber"
 					);
-					// biome-ignore lint/suspicious/noExplicitAny: DB type narrowed to webhook subset in subscriber
-					registerWebhookHandlers(bus, db as any, storeId);
+					registerWebhookHandlers(bus, db, storeId);
 				}
 			} catch (err) {
 				logger.warn("Webhook delivery disabled", {
