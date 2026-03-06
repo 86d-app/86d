@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { dev } from "./commands/dev.js";
+import { doctor } from "./commands/doctor.js";
 import { generate } from "./commands/generate.js";
 import { init } from "./commands/init.js";
 import { moduleCommand } from "./commands/module.js";
@@ -32,6 +33,9 @@ async function main() {
 		case "status":
 			return status();
 
+		case "doctor":
+			return doctor();
+
 		case "help":
 		case "--help":
 		case "-h":
@@ -61,6 +65,7 @@ ${c.bold("Commands:")}
   ${c.cyan("dev")}                     Start the store development server
   ${c.cyan("init")}                    Configure a local store (env, deps, codegen)
   ${c.cyan("status")}                  Show project health and configuration
+  ${c.cyan("doctor")}                  Diagnose project issues with fix suggestions
   ${c.cyan("module create")} <name>    Scaffold a new module
   ${c.cyan("module list")}             List all modules
   ${c.cyan("module info")} <name>      Show module details

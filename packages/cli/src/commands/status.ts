@@ -1,6 +1,12 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { c, findProjectRoot, heading, readJson } from "../utils.js";
+import {
+	c,
+	findProjectRoot,
+	heading,
+	parseEnvFile,
+	readJson,
+} from "../utils.js";
 
 interface TemplateConfig {
 	theme?: string;
@@ -57,8 +63,7 @@ export function status() {
 	// 4. Environment
 	const envPath = join(root, ".env");
 	if (existsSync(envPath)) {
-		const envContent = readFileSync(envPath, "utf-8");
-		const vars = parseEnvKeys(envContent);
+		const vars = parseEnvFile(envPath);
 
 		const required = ["DATABASE_URL", "STORE_ID", "BETTER_AUTH_SECRET"];
 		const optional = [
@@ -69,14 +74,12 @@ export function status() {
 
 		const missingRequired = required.filter(
 			(k) =>
-				!vars.has(k) ||
-				vars.get(k) === "" ||
-				vars.get(k) === "change-me-to-a-random-string",
+				!(k in vars) ||
+				vars[k] === "" ||
+				vars[k] === "change-me-to-a-random-string",
 		);
 
-		const setOptional = optional.filter(
-			(k) => vars.has(k) && vars.get(k) !== "",
-		);
+		const setOptional = optional.filter((k) => k in vars && vars[k] !== "");
 
 		if (missingRequired.length === 0) {
 			console.log(
@@ -126,24 +129,4 @@ function detectActiveTemplate(tsconfigPath: string): string | undefined {
 	} catch {
 		return undefined;
 	}
-}
-
-function parseEnvKeys(content: string): Map<string, string> {
-	const vars = new Map<string, string>();
-	for (const line of content.split("\n")) {
-		const trimmed = line.trim();
-		if (!trimmed || trimmed.startsWith("#")) continue;
-		const eqIdx = trimmed.indexOf("=");
-		if (eqIdx === -1) continue;
-		const key = trimmed.slice(0, eqIdx).trim();
-		let value = trimmed.slice(eqIdx + 1).trim();
-		if (
-			(value.startsWith('"') && value.endsWith('"')) ||
-			(value.startsWith("'") && value.endsWith("'"))
-		) {
-			value = value.slice(1, -1);
-		}
-		vars.set(key, value);
-	}
-	return vars;
 }

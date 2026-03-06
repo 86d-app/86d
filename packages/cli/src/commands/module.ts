@@ -250,7 +250,7 @@ function enableModule(name: string | undefined) {
 
 	modules.push(fullName);
 	config.modules = modules;
-	writeFileSync(configPath, JSON.stringify(config, null, "\t"));
+	writeFileSync(configPath, `${JSON.stringify(config, null, "\t")}\n`);
 	success(`Enabled ${c.bold(fullName)}`);
 	console.log(`\n  Run ${c.bold("86d generate")} to update generated code.\n`);
 }
@@ -287,7 +287,7 @@ function disableModule(name: string | undefined) {
 
 	modules.splice(idx, 1);
 	config.modules = modules;
-	writeFileSync(configPath, JSON.stringify(config, null, "\t"));
+	writeFileSync(configPath, `${JSON.stringify(config, null, "\t")}\n`);
 	success(`Disabled ${c.bold(fullName)}`);
 	console.log(`\n  Run ${c.bold("86d generate")} to update generated code.\n`);
 }

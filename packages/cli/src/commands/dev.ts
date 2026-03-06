@@ -1,33 +1,7 @@
 import { spawn } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { c, error, findProjectRoot, info } from "../utils.js";
-
-/**
- * Parse a .env file into key-value pairs.
- * Handles comments, empty lines, quoted values, and inline comments.
- */
-function parseEnvFile(filePath: string): Record<string, string> {
-	if (!existsSync(filePath)) return {};
-	const vars: Record<string, string> = {};
-	for (const line of readFileSync(filePath, "utf-8").split("\n")) {
-		const trimmed = line.trim();
-		if (!trimmed || trimmed.startsWith("#")) continue;
-		const eqIdx = trimmed.indexOf("=");
-		if (eqIdx === -1) continue;
-		const key = trimmed.slice(0, eqIdx).trim();
-		let value = trimmed.slice(eqIdx + 1).trim();
-		// Strip surrounding quotes
-		if (
-			(value.startsWith('"') && value.endsWith('"')) ||
-			(value.startsWith("'") && value.endsWith("'"))
-		) {
-			value = value.slice(1, -1);
-		}
-		vars[key] = value;
-	}
-	return vars;
-}
+import { c, error, findProjectRoot, info, parseEnvFile } from "../utils.js";
 
 /**
  * Load .env files in standard precedence order (later files override).

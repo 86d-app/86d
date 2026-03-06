@@ -12,10 +12,10 @@
 	},
 	"homepage": "https://github.com/86d-app/86d/tree/main/packages/cli",
 	"bin": {
-		"86d": "./src/index.ts"
+		"86d": "./dist/index.js"
 	},
 	"files": [
-		"src"
+		"dist"
 	],
 	"keywords": [
 		"86d",
@@ -27,6 +27,7 @@
 	"scripts": {
 		"dev": "tsx src/index.ts",
 		"build": "tsc",
+		"clean": "rm -rf dist",
 		"check": "biome check src",
 		"check:fix": "biome check --write src",
 		"test": "vitest run",

@@ -115,7 +115,7 @@ function createTemplate(name: string | undefined) {
 			const config = JSON.parse(readFileSync(configPath, "utf-8"));
 			config.theme = name;
 			config.name = `86d ${name.charAt(0).toUpperCase() + name.slice(1)} Theme`;
-			writeFileSync(configPath, JSON.stringify(config, null, "\t"));
+			writeFileSync(configPath, `${JSON.stringify(config, null, "\t")}\n`);
 			success("Updated config.json with new theme name");
 		} catch {
 			warn("Could not update config.json — edit it manually");
