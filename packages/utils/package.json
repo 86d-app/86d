@@ -1,0 +1,34 @@
+{
+	"name": "utils",
+	"version": "0.0.1",
+	"private": true,
+	"type": "module",
+	"exports": {
+		"./logger": {
+			"types": "./src/logger.ts",
+			"default": "./src/logger.ts"
+		},
+		"./url": {
+			"types": "./src/url.ts",
+			"default": "./src/url.ts"
+		},
+		"./rate-limit": {
+			"types": "./src/rate-limit.ts",
+			"default": "./src/rate-limit.ts"
+		},
+		"./sanitize": {
+			"types": "./src/sanitize.ts",
+			"default": "./src/sanitize.ts"
+		}
+	},
+	"scripts": {
+		"build": "tsc",
+		"check": "biome check src",
+		"check:fix": "biome check --write src",
+		"typecheck": "tsc --noEmit --emitDeclarationOnly false"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "catalog:",
+		"typescript": "catalog:"
+	}
+}
