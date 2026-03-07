@@ -22,7 +22,7 @@ bun run 86d template create x  # scaffold a new template
 
 ```
 apps/store/          Next.js storefront + per-store admin
-modules/             31 modules (cart, products, orders, checkout, etc.)
+modules/             32 modules (cart, products, orders, checkout, settings, etc.)
 packages/
   core/              Module system (isolation boundary, contracts, test-utils)
   runtime/           Store runtime engine (data service, registry)
