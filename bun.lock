@@ -152,6 +152,20 @@
         "vitest": "catalog:vite",
       },
     },
+    "modules/bundles": {
+      "name": "@86d-app/bundles",
+      "version": "0.0.1",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
     "modules/cart": {
       "name": "@86d-app/cart",
       "version": "0.0.4",
@@ -726,6 +740,8 @@
     "@86d-app/blog": ["@86d-app/blog@workspace:modules/blog"],
 
     "@86d-app/braintree": ["@86d-app/braintree@workspace:modules/braintree"],
+
+    "@86d-app/bundles": ["@86d-app/bundles@workspace:modules/bundles"],
 
     "@86d-app/cart": ["@86d-app/cart@workspace:modules/cart"],
 
