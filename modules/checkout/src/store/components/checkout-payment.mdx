@@ -1,0 +1,67 @@
+<div className="space-y-5">
+  <div>
+    <h2 className="font-display text-lg font-semibold text-foreground">Payment</h2>
+  </div>
+
+  {props.loading && (
+    <div className="flex flex-col items-center justify-center gap-3 py-10">
+      <div className="h-6 w-6 animate-spin rounded-full border-2 border-border border-t-foreground" />
+      <p className="text-muted-foreground text-sm">Processing payment…</p>
+    </div>
+  )}
+
+  {!props.loading && props.error && (
+    <div className="rounded-md border border-destructive/30 bg-destructive/5 p-4">
+      <p className="text-destructive text-sm">{props.error}</p>
+      <button
+        type="button"
+        onClick={props.onRetry}
+        className="mt-3 rounded-md bg-foreground px-4 py-2 font-medium text-background text-sm transition-opacity hover:opacity-85"
+      >
+        Try again
+      </button>
+    </div>
+  )}
+
+  {!props.loading && !props.error && props.payment && (
+    <>
+      {props.payment.status === "succeeded" ? (
+        <div className="rounded-md border border-green-500/30 bg-green-500/5 p-4">
+          <p className="font-medium text-green-700 text-sm dark:text-green-400">
+            Payment of {props.total} confirmed
+          </p>
+          <p className="mt-1 text-muted-foreground text-xs">
+            Redirecting to order review…
+          </p>
+        </div>
+      ) : props.hasClientSecret ? (
+        <div className="rounded-md border border-border bg-muted/30 p-4">
+          <p className="text-foreground text-sm">
+            Complete your payment using the provider's payment form below.
+          </p>
+          <p className="mt-2 text-muted-foreground text-xs">
+            Your payment provider's UI will appear here once integrated.
+          </p>
+        </div>
+      ) : (
+        <div className="rounded-md border border-border bg-muted/30 p-4">
+          <p className="text-muted-foreground text-sm">
+            Payment status: {props.payment.status}
+          </p>
+        </div>
+      )}
+    </>
+  )}
+
+  {!props.loading && (
+    <div className="flex items-center gap-3">
+      <button
+        type="button"
+        onClick={props.onBack}
+        className="rounded-md border border-border px-4 py-2.5 text-foreground text-sm transition-colors hover:bg-muted"
+      >
+        Back
+      </button>
+    </div>
+  )}
+</div>
