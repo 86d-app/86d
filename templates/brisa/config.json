@@ -32,7 +32,8 @@
         "@86d-app/wishlist",
         "@86d-app/gift-cards",
         "@86d-app/tax",
-        "@86d-app/blog"
+        "@86d-app/blog",
+        "@86d-app/import-export"
     ],
     "moduleOptions": {
         "@86d-app/cart": {
