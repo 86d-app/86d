@@ -264,6 +264,20 @@
         "vitest": "catalog:vite",
       },
     },
+    "modules/fulfillment": {
+      "name": "@86d-app/fulfillment",
+      "version": "0.0.1",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
     "modules/gift-cards": {
       "name": "@86d-app/gift-cards",
       "version": "0.0.4",
@@ -843,6 +857,8 @@
     "@86d-app/digital-downloads": ["@86d-app/digital-downloads@workspace:modules/digital-downloads"],
 
     "@86d-app/discounts": ["@86d-app/discounts@workspace:modules/discounts"],
+
+    "@86d-app/fulfillment": ["@86d-app/fulfillment@workspace:modules/fulfillment"],
 
     "@86d-app/gift-cards": ["@86d-app/gift-cards@workspace:modules/gift-cards"],
 
