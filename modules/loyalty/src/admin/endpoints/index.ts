@@ -4,6 +4,7 @@ import { deleteRule } from "./delete-rule";
 import { getAccount } from "./get-account";
 import { listAccounts } from "./list-accounts";
 import { listRules } from "./list-rules";
+import { listTiers } from "./list-tiers";
 import { loyaltySummary } from "./loyalty-summary";
 import { createTier, deleteTier, updateTier } from "./manage-tiers";
 import { reactivateAccount } from "./reactivate-account";
@@ -21,6 +22,7 @@ export const adminEndpoints = {
 	"/admin/loyalty/rules/create": createRule,
 	"/admin/loyalty/rules/:id/update": updateRule,
 	"/admin/loyalty/rules/:id/delete": deleteRule,
+	"/admin/loyalty/tiers": listTiers,
 	"/admin/loyalty/tiers/create": createTier,
 	"/admin/loyalty/tiers/:id/update": updateTier,
 	"/admin/loyalty/tiers/:id/delete": deleteTier,
