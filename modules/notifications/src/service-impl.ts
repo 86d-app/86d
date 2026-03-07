@@ -33,10 +33,10 @@ export function createNotificationsController(
 				read: false,
 				createdAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert(
 				"notification",
 				id,
+				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires Record<string, any>
 				notification as Record<string, any>,
 			);
 			return notification;

@@ -1,0 +1,21 @@
+import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
+import type { MediaController } from "../../service";
+
+export const createFolderEndpoint = createAdminEndpoint(
+	"/admin/media/folders",
+	{
+		method: "POST",
+		body: z.object({
+			name: z.string().min(1).max(200).transform(sanitizeText),
+			parentId: z.string().optional(),
+		}),
+	},
+	async (ctx) => {
+		const controller = ctx.context.controllers.media as MediaController;
+		const folder = await controller.createFolder({
+			name: ctx.body.name,
+			parentId: ctx.body.parentId,
+		});
+		return { folder };
+	},
+);

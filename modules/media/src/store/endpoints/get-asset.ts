@@ -1,0 +1,15 @@
+import { createStoreEndpoint, z } from "@86d-app/core";
+import type { MediaController } from "../../service";
+
+export const getAssetEndpoint = createStoreEndpoint(
+	"/media/:id",
+	{
+		method: "GET",
+		params: z.object({ id: z.string() }),
+	},
+	async (ctx) => {
+		const controller = ctx.context.controllers.media as MediaController;
+		const asset = await controller.getAsset(ctx.params.id);
+		return { asset };
+	},
+);

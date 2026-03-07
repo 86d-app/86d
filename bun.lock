@@ -263,6 +263,20 @@
         "vitest": "catalog:vite",
       },
     },
+    "modules/media": {
+      "name": "@86d-app/media",
+      "version": "0.0.1",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
     "modules/newsletter": {
       "name": "@86d-app/newsletter",
       "version": "0.0.4",
@@ -730,6 +744,8 @@
     "@86d-app/inventory": ["@86d-app/inventory@workspace:modules/inventory"],
 
     "@86d-app/loyalty": ["@86d-app/loyalty@workspace:modules/loyalty"],
+
+    "@86d-app/media": ["@86d-app/media@workspace:modules/media"],
 
     "@86d-app/newsletter": ["@86d-app/newsletter@workspace:modules/newsletter"],
 
