@@ -1,0 +1,17 @@
+import { createStoreEndpoint, z } from "@86d-app/core";
+import type { SeoController } from "../../service";
+
+export const getMetaEndpoint = createStoreEndpoint(
+	"/seo/meta",
+	{
+		method: "GET",
+		query: z.object({
+			path: z.string().min(1),
+		}),
+	},
+	async (ctx) => {
+		const controller = ctx.context.controllers.seo as SeoController;
+		const meta = await controller.getMetaTagByPath(ctx.query.path);
+		return { meta };
+	},
+);
