@@ -512,6 +512,20 @@
         "vitest": "catalog:vite",
       },
     },
+    "modules/store-credits": {
+      "name": "@86d-app/store-credits",
+      "version": "0.0.1",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
     "modules/stripe": {
       "name": "@86d-app/stripe",
       "version": "0.0.4",
@@ -841,6 +855,8 @@
     "@86d-app/shipping": ["@86d-app/shipping@workspace:modules/shipping"],
 
     "@86d-app/square": ["@86d-app/square@workspace:modules/square"],
+
+    "@86d-app/store-credits": ["@86d-app/store-credits@workspace:modules/store-credits"],
 
     "@86d-app/stripe": ["@86d-app/stripe@workspace:modules/stripe"],
 
