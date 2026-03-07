@@ -1,0 +1,18 @@
+import { createStoreEndpoint } from "@86d-app/core";
+import type { NotificationsController } from "../../service";
+
+export const markAllReadEndpoint = createStoreEndpoint(
+	"/notifications/read-all",
+	{
+		method: "POST",
+	},
+	async (ctx) => {
+		const customerId = ctx.context.session?.user.id;
+		if (!customerId) return { error: "Not authenticated" };
+
+		const controller = ctx.context.controllers
+			.notifications as NotificationsController;
+		const count = await controller.markAllRead(customerId);
+		return { marked: count };
+	},
+);

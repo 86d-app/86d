@@ -1,0 +1,29 @@
+import { createStoreEndpoint, z } from "@86d-app/core";
+import type { NotificationsController } from "../../service";
+
+export const updatePreferencesEndpoint = createStoreEndpoint(
+	"/notifications/preferences",
+	{
+		method: "POST",
+		body: z.object({
+			orderUpdates: z.boolean().optional(),
+			promotions: z.boolean().optional(),
+			shippingAlerts: z.boolean().optional(),
+			accountAlerts: z.boolean().optional(),
+		}),
+	},
+	async (ctx) => {
+		const customerId = ctx.context.session?.user.id;
+		if (!customerId) return { error: "Not authenticated" };
+
+		const controller = ctx.context.controllers
+			.notifications as NotificationsController;
+		const preferences = await controller.updatePreferences(customerId, {
+			orderUpdates: ctx.body.orderUpdates,
+			promotions: ctx.body.promotions,
+			shippingAlerts: ctx.body.shippingAlerts,
+			accountAlerts: ctx.body.accountAlerts,
+		});
+		return { preferences };
+	},
+);

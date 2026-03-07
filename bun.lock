@@ -277,6 +277,20 @@
         "vitest": "catalog:vite",
       },
     },
+    "modules/notifications": {
+      "name": "@86d-app/notifications",
+      "version": "0.0.1",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
     "modules/orders": {
       "name": "@86d-app/orders",
       "version": "0.0.4",
@@ -320,6 +334,20 @@
     "modules/products": {
       "name": "@86d-app/products",
       "version": "0.0.4",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
+    "modules/referrals": {
+      "name": "@86d-app/referrals",
+      "version": "0.0.1",
       "dependencies": {
         "@86d-app/core": "workspace:*",
       },
@@ -691,6 +719,8 @@
 
     "@86d-app/newsletter": ["@86d-app/newsletter@workspace:modules/newsletter"],
 
+    "@86d-app/notifications": ["@86d-app/notifications@workspace:modules/notifications"],
+
     "@86d-app/orders": ["@86d-app/orders@workspace:modules/orders"],
 
     "@86d-app/payments": ["@86d-app/payments@workspace:modules/payments"],
@@ -698,6 +728,8 @@
     "@86d-app/paypal": ["@86d-app/paypal@workspace:modules/paypal"],
 
     "@86d-app/products": ["@86d-app/products@workspace:modules/products"],
+
+    "@86d-app/referrals": ["@86d-app/referrals@workspace:modules/referrals"],
 
     "@86d-app/reviews": ["@86d-app/reviews@workspace:modules/reviews"],
 
