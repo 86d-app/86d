@@ -112,6 +112,20 @@
     "internals/github": {
       "name": "github",
     },
+    "modules/abandoned-carts": {
+      "name": "@86d-app/abandoned-carts",
+      "version": "0.0.1",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
     "modules/analytics": {
       "name": "@86d-app/analytics",
       "version": "0.0.4",
@@ -734,6 +748,8 @@
   },
   "packages": {
     "86d": ["86d@workspace:packages/cli"],
+
+    "@86d-app/abandoned-carts": ["@86d-app/abandoned-carts@workspace:modules/abandoned-carts"],
 
     "@86d-app/analytics": ["@86d-app/analytics@workspace:modules/analytics"],
 

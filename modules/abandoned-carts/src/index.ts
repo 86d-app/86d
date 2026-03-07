@@ -1,0 +1,67 @@
+import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
+import { adminEndpoints } from "./admin/endpoints";
+import { abandonedCartSchema } from "./schema";
+import { createAbandonedCartController } from "./service-impl";
+import { storeEndpoints } from "./store/endpoints";
+
+export type {
+	AbandonedCart,
+	AbandonedCartController,
+	AbandonedCartStats,
+	AbandonedCartWithAttempts,
+	CartItemSnapshot,
+	RecoveryAttempt,
+} from "./service";
+
+export interface AbandonedCartOptions extends ModuleConfig {
+	/** Minutes of inactivity before a cart is considered abandoned (default: 60) */
+	abandonmentThresholdMinutes?: number;
+	/** Maximum number of recovery attempts per cart (default: 3) */
+	maxRecoveryAttempts?: number;
+	/** Days after which abandoned carts are automatically expired (default: 30) */
+	expirationDays?: number;
+}
+
+export default function abandonedCarts(options?: AbandonedCartOptions): Module {
+	return {
+		id: "abandoned-carts",
+		version: "0.0.1",
+		schema: abandonedCartSchema,
+		requires: {
+			cart: { read: ["cartItems", "cartTotal"] },
+			customers: { read: ["customerEmail"] },
+		},
+		exports: {
+			read: ["abandonedCartCount", "recoveryRate"],
+		},
+		events: {
+			emits: [
+				"cart.abandoned",
+				"cart.recoveryAttempted",
+				"cart.recovered",
+				"cart.expired",
+				"cart.dismissed",
+			],
+		},
+		init: async (ctx: ModuleContext) => {
+			const controller = createAbandonedCartController(ctx.data);
+			return { controllers: { abandonedCarts: controller } };
+		},
+		endpoints: {
+			store: storeEndpoints,
+			admin: adminEndpoints,
+		},
+		admin: {
+			pages: [
+				{
+					path: "/admin/abandoned-carts",
+					component: "AbandonedCartOverview",
+					label: "Abandoned Carts",
+					icon: "ShoppingCart",
+					group: "Sales",
+				},
+			],
+		},
+		options,
+	};
+}
