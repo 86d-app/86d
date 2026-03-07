@@ -1,0 +1,22 @@
+import { createAdminEndpoint, z } from "@86d-app/core";
+import type { AuditLogController } from "../../service";
+
+export const getEntry = createAdminEndpoint(
+	"/admin/audit-log/entries/:id",
+	{
+		method: "GET",
+		params: z.object({
+			id: z.string(),
+		}),
+	},
+	async (ctx) => {
+		const controller = ctx.context.controllers[
+			"audit-log"
+		] as AuditLogController;
+		const entry = await controller.getById(ctx.params.id);
+		if (!entry) {
+			return { error: "Audit entry not found", status: 404 };
+		}
+		return { entry };
+	},
+);

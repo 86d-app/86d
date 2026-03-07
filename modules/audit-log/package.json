@@ -1,0 +1,43 @@
+{
+	"name": "@86d-app/audit-log",
+	"version": "0.0.1",
+	"description": "Audit logging for admin actions and system events in 86d commerce platform",
+	"keywords": [
+		"commerce",
+		"audit-log",
+		"admin",
+		"security",
+		"compliance",
+		"86d"
+	],
+	"license": "MIT",
+	"author": "86d <chat@86d.app>",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/86d-app/86d.git",
+		"directory": "modules/audit-log"
+	},
+	"homepage": "https://86d.app",
+	"type": "module",
+	"exports": {
+		"./*": "./src/*"
+	},
+	"scripts": {
+		"build": "tsc",
+		"check": "biome check src",
+		"check:fix": "biome check --write src",
+		"clean": "git clean -xdf .cache .turbo dist node_modules",
+		"dev": "tsc",
+		"test": "vitest run",
+		"test:watch": "vitest watch",
+		"typecheck": "tsc --noEmit --emitDeclarationOnly false"
+	},
+	"dependencies": {
+		"@86d-app/core": "workspace:*"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "catalog:",
+		"typescript": "catalog:",
+		"vitest": "catalog:vite"
+	}
+}

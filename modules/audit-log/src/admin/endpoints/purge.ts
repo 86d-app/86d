@@ -1,0 +1,21 @@
+import { createAdminEndpoint, z } from "@86d-app/core";
+import type { AuditLogController } from "../../service";
+
+export const purge = createAdminEndpoint(
+	"/admin/audit-log/purge",
+	{
+		method: "POST",
+		body: z.object({
+			olderThanDays: z.number().int().min(1),
+		}),
+	},
+	async (ctx) => {
+		const controller = ctx.context.controllers[
+			"audit-log"
+		] as AuditLogController;
+		const cutoff = new Date();
+		cutoff.setDate(cutoff.getDate() - ctx.body.olderThanDays);
+		const deleted = await controller.purge(cutoff);
+		return { deleted, cutoffDate: cutoff.toISOString() };
+	},
+);
