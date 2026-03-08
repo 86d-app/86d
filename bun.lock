@@ -223,6 +223,20 @@
         "vitest": "catalog:vite",
       },
     },
+    "modules/comparisons": {
+      "name": "@86d-app/comparisons",
+      "version": "0.0.1",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
     "modules/customers": {
       "name": "@86d-app/customers",
       "version": "0.0.4",
@@ -349,6 +363,18 @@
         "vitest": "catalog:vite",
       },
     },
+    "modules/multi-currency": {
+      "name": "@86d-app/multi-currency",
+      "version": "0.0.1",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
     "modules/navigation": {
       "name": "@86d-app/navigation",
       "version": "0.0.1",
@@ -448,6 +474,20 @@
     "modules/products": {
       "name": "@86d-app/products",
       "version": "0.0.4",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
+    "modules/recently-viewed": {
+      "name": "@86d-app/recently-viewed",
+      "version": "0.0.1",
       "dependencies": {
         "@86d-app/core": "workspace:*",
       },
@@ -880,6 +920,8 @@
 
     "@86d-app/checkout": ["@86d-app/checkout@workspace:modules/checkout"],
 
+    "@86d-app/comparisons": ["@86d-app/comparisons@workspace:modules/comparisons"],
+
     "@86d-app/core": ["@86d-app/core@workspace:packages/core"],
 
     "@86d-app/customers": ["@86d-app/customers@workspace:modules/customers"],
@@ -900,6 +942,8 @@
 
     "@86d-app/media": ["@86d-app/media@workspace:modules/media"],
 
+    "@86d-app/multi-currency": ["@86d-app/multi-currency@workspace:modules/multi-currency"],
+
     "@86d-app/navigation": ["@86d-app/navigation@workspace:modules/navigation"],
 
     "@86d-app/newsletter": ["@86d-app/newsletter@workspace:modules/newsletter"],
@@ -915,6 +959,8 @@
     "@86d-app/paypal": ["@86d-app/paypal@workspace:modules/paypal"],
 
     "@86d-app/products": ["@86d-app/products@workspace:modules/products"],
+
+    "@86d-app/recently-viewed": ["@86d-app/recently-viewed@workspace:modules/recently-viewed"],
 
     "@86d-app/referrals": ["@86d-app/referrals@workspace:modules/referrals"],
 
