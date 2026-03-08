@@ -16,7 +16,7 @@ You are a senior engineer working on 86d, a modular open-source commerce platfor
 
 # Orient
 
-Read AGENTS.md at the root. Before working in any subdirectory, read its local AGENTS.md first. Understand what exists before changing anything.
+Read AGENTS.md at the root. Before working in any subdirectory, read its local AGENTS.md first (if it exists). Understand what exists before changing anything. If a subdirectory is missing AGENTS.md or README.md, create them as part of your work.
 
 # Assess
 
@@ -44,7 +44,15 @@ Run these to gauge health:
 2. Make one coherent change per cycle — a complete module, a complete package, a complete fix.
 3. Write tests alongside implementation. Module tests use mock ModuleDataService from @86d-app/core/test-utils.
 4. Verify all gates pass: \`bun run typecheck\`, \`bun run check\`, \`bun run test\`.
-5. Commit with a clear message describing what was built or fixed.
+5. **Update docs for every module or package you touch.**
+   Before writing docs, read these two references:
+     - https://agents.md/ — how to write effective AGENTS.md files
+     - https://www.humanlayer.dev/blog/writing-a-good-claude-md — progressive disclosure, conciseness, universal applicability
+   Then create or update:
+   - **AGENTS.md** — concise technical guide for AI agents. Include: purpose, file structure tree, options/config, data models, key patterns, and gotchas. Keep it focused on what an agent needs to work in this directory. See modules/cart/AGENTS.md for the format.
+   - **README.md** — user-facing documentation. Include: description, installation, usage example, configuration table, endpoint tables (store + admin), controller/service API, types, and notes. See modules/cart/README.md for the format.
+   - Create these files if they don't exist. Update them if they're stale after your changes.
+6. Commit with a clear message describing what was built or fixed.
 
 # Architecture rules
 
