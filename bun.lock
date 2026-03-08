@@ -279,6 +279,20 @@
         "vitest": "catalog:vite",
       },
     },
+    "modules/faq": {
+      "name": "@86d-app/faq",
+      "version": "0.0.1",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
     "modules/fulfillment": {
       "name": "@86d-app/fulfillment",
       "version": "0.0.1",
@@ -929,6 +943,8 @@
     "@86d-app/digital-downloads": ["@86d-app/digital-downloads@workspace:modules/digital-downloads"],
 
     "@86d-app/discounts": ["@86d-app/discounts@workspace:modules/discounts"],
+
+    "@86d-app/faq": ["@86d-app/faq@workspace:modules/faq"],
 
     "@86d-app/fulfillment": ["@86d-app/fulfillment@workspace:modules/fulfillment"],
 
