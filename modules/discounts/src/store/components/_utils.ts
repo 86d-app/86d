@@ -5,6 +5,19 @@ export function formatCents(cents: number): string {
 	}).format(cents / 100);
 }
 
+export function formatDiscountValue(type: string, value: number): string {
+	switch (type) {
+		case "percentage":
+			return `${value}% OFF`;
+		case "fixed_amount":
+			return `${formatCents(value)} OFF`;
+		case "free_shipping":
+			return "FREE SHIPPING";
+		default:
+			return "SALE";
+	}
+}
+
 export function extractError(error: Error | null, fallback: string): string {
 	if (!error) return fallback;
 	// biome-ignore lint/suspicious/noExplicitAny: accessing HTTP error body property
