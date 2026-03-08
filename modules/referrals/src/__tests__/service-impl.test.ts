@@ -2,6 +2,11 @@ import { createMockDataService } from "@86d-app/core/test-utils";
 import { beforeEach, describe, expect, it } from "vitest";
 import { createReferralController } from "../service-impl";
 
+function unwrap<T>(value: T | null | undefined): T {
+	expect(value).not.toBeNull();
+	return value as T;
+}
+
 describe("createReferralController", () => {
 	let mockData: ReturnType<typeof createMockDataService>;
 	let controller: ReturnType<typeof createReferralController>;
@@ -229,7 +234,7 @@ describe("createReferralController", () => {
 				refereeCustomerId: "cust-2",
 				refereeEmail: "a@test.com",
 			});
-			const found = await controller.getReferral(created!.id);
+			const found = await controller.getReferral(unwrap(created).id);
 			expect(found?.refereeEmail).toBe("a@test.com");
 		});
 
@@ -288,7 +293,7 @@ describe("createReferralController", () => {
 				refereeCustomerId: "cust-3",
 				refereeEmail: "b@test.com",
 			});
-			await controller.completeReferral(ref!.id);
+			await controller.completeReferral(unwrap(ref).id);
 
 			const pending = await controller.listReferrals({ status: "pending" });
 			expect(pending).toHaveLength(1);
@@ -308,7 +313,7 @@ describe("createReferralController", () => {
 				refereeCustomerId: "cust-2",
 				refereeEmail: "a@test.com",
 			});
-			const completed = await controller.completeReferral(ref!.id);
+			const completed = await controller.completeReferral(unwrap(ref).id);
 			expect(completed?.status).toBe("completed");
 			expect(completed?.completedAt).toBeInstanceOf(Date);
 		});
@@ -320,8 +325,8 @@ describe("createReferralController", () => {
 				refereeCustomerId: "cust-2",
 				refereeEmail: "a@test.com",
 			});
-			await controller.completeReferral(ref!.id);
-			const again = await controller.completeReferral(ref!.id);
+			await controller.completeReferral(unwrap(ref).id);
+			const again = await controller.completeReferral(unwrap(ref).id);
 			expect(again).toBeNull();
 		});
 
@@ -339,7 +344,7 @@ describe("createReferralController", () => {
 				refereeCustomerId: "cust-2",
 				refereeEmail: "a@test.com",
 			});
-			const revoked = await controller.revokeReferral(ref!.id);
+			const revoked = await controller.revokeReferral(unwrap(ref).id);
 			expect(revoked?.status).toBe("revoked");
 		});
 
@@ -350,8 +355,8 @@ describe("createReferralController", () => {
 				refereeCustomerId: "cust-2",
 				refereeEmail: "a@test.com",
 			});
-			await controller.completeReferral(ref!.id);
-			const result = await controller.revokeReferral(ref!.id);
+			await controller.completeReferral(unwrap(ref).id);
+			const result = await controller.revokeReferral(unwrap(ref).id);
 			expect(result).toBeNull();
 		});
 	});
@@ -364,7 +369,7 @@ describe("createReferralController", () => {
 				refereeCustomerId: "cust-2",
 				refereeEmail: "a@test.com",
 			});
-			const result = await controller.markReferrerRewarded(ref!.id);
+			const result = await controller.markReferrerRewarded(unwrap(ref).id);
 			expect(result?.referrerRewarded).toBe(true);
 		});
 
@@ -382,7 +387,7 @@ describe("createReferralController", () => {
 				refereeCustomerId: "cust-2",
 				refereeEmail: "a@test.com",
 			});
-			const result = await controller.markRefereeRewarded(ref!.id);
+			const result = await controller.markRefereeRewarded(unwrap(ref).id);
 			expect(result?.refereeRewarded).toBe(true);
 		});
 	});
@@ -564,7 +569,7 @@ describe("createReferralController", () => {
 				refereeCustomerId: "cust-3",
 				refereeEmail: "b@test.com",
 			});
-			await controller.completeReferral(ref!.id);
+			await controller.completeReferral(unwrap(ref).id);
 
 			const stats = await controller.getStats();
 			expect(stats.totalCodes).toBe(2);
@@ -588,7 +593,7 @@ describe("createReferralController", () => {
 				refereeCustomerId: "cust-3",
 				refereeEmail: "b@test.com",
 			});
-			await controller.completeReferral(ref!.id);
+			await controller.completeReferral(unwrap(ref).id);
 
 			const stats = await controller.getStatsForCustomer("cust-1");
 			expect(stats.code?.code).toBe(code.code);
@@ -616,14 +621,14 @@ describe("createReferralController", () => {
 			});
 			expect(ref?.status).toBe("pending");
 
-			const completed = await controller.completeReferral(ref!.id);
+			const completed = await controller.completeReferral(unwrap(ref).id);
 			expect(completed?.status).toBe("completed");
 			expect(completed?.completedAt).toBeInstanceOf(Date);
 
-			await controller.markReferrerRewarded(ref!.id);
-			await controller.markRefereeRewarded(ref!.id);
+			await controller.markReferrerRewarded(unwrap(ref).id);
+			await controller.markRefereeRewarded(unwrap(ref).id);
 
-			const final = await controller.getReferral(ref!.id);
+			const final = await controller.getReferral(unwrap(ref).id);
 			expect(final?.referrerRewarded).toBe(true);
 			expect(final?.refereeRewarded).toBe(true);
 		});
@@ -635,8 +640,8 @@ describe("createReferralController", () => {
 				refereeCustomerId: "cust-2",
 				refereeEmail: "a@test.com",
 			});
-			await controller.revokeReferral(ref!.id);
-			const result = await controller.completeReferral(ref!.id);
+			await controller.revokeReferral(unwrap(ref).id);
+			const result = await controller.completeReferral(unwrap(ref).id);
 			expect(result).toBeNull();
 		});
 
