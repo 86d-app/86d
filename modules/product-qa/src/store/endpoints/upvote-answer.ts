@@ -1,0 +1,20 @@
+import { createStoreEndpoint, z } from "@86d-app/core";
+import type { ProductQaController } from "../../service";
+
+export const upvoteAnswer = createStoreEndpoint(
+	"/product-qa/answers/:id/upvote",
+	{
+		method: "POST",
+		params: z.object({
+			id: z.string(),
+		}),
+	},
+	async (ctx) => {
+		const controller = ctx.context.controllers.productQa as ProductQaController;
+		const answer = await controller.upvoteAnswer(ctx.params.id);
+		if (!answer) {
+			return { error: "Answer not found" };
+		}
+		return { answer };
+	},
+);
