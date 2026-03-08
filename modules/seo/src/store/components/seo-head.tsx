@@ -1,5 +1,6 @@
 "use client";
 
+import { escapeScriptContent } from "@86d-app/core";
 import { observer } from "@86d-app/core/state";
 import type { MetaTag } from "../../service";
 import { useSeoApi } from "./_hooks";
@@ -43,7 +44,9 @@ export const SeoHead = observer((props: SeoHeadProps) => {
 			twitterImage={meta?.twitterImage ?? meta?.ogImage ?? ""}
 			noIndex={meta?.noIndex ?? false}
 			noFollow={meta?.noFollow ?? false}
-			jsonLd={meta?.jsonLd ? JSON.stringify(meta.jsonLd) : ""}
+			jsonLd={
+				meta?.jsonLd ? escapeScriptContent(JSON.stringify(meta.jsonLd)) : ""
+			}
 		/>
 	);
 });

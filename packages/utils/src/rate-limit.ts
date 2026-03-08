@@ -15,10 +15,22 @@ interface RateLimiter {
 
 export function createRateLimiter(options: RateLimiterOptions): RateLimiter {
 	const hits = new Map<string, { count: number; resetAt: number }>();
+	let lastSweep = Date.now();
+
+	function sweep(now: number) {
+		if (now - lastSweep < options.window) return;
+		lastSweep = now;
+		for (const [key, entry] of hits) {
+			if (now >= entry.resetAt) {
+				hits.delete(key);
+			}
+		}
+	}
 
 	return {
 		check(key: string): RateLimitResult {
 			const now = Date.now();
+			sweep(now);
 			const entry = hits.get(key);
 
 			if (!entry || now >= entry.resetAt) {

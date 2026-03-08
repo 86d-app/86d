@@ -1,5 +1,7 @@
 "use client";
 
+import { sanitizeHtml } from "@86d-app/core";
+import { useMemo } from "react";
 import { usePagesApi } from "./_hooks";
 import PageDetailTemplate from "./page-detail.mdx";
 
@@ -26,5 +28,10 @@ export function PageDetail({ slug }: { slug: string }) {
 
 	const page = data?.page ?? null;
 
-	return <PageDetailTemplate isLoading={isLoading} page={page} />;
+	const sanitizedPage = useMemo(() => {
+		if (!page) return null;
+		return { ...page, content: sanitizeHtml(page.content) };
+	}, [page]);
+
+	return <PageDetailTemplate isLoading={isLoading} page={sanitizedPage} />;
 }

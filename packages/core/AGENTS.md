@@ -25,6 +25,9 @@ src/
 - `ModuleContext` — runtime context passed to module init
 - `ModuleDataService` — universal data access (get, findMany, upsert, delete)
 - Client hooks auto-derive from endpoints: GET becomes query, POST/PUT/DELETE becomes mutation
+- `sanitizeText(input)` — strip all HTML tags and normalize whitespace (for plain-text fields)
+- `sanitizeHtml(input)` — strip dangerous HTML (script, style, iframe, event handlers, javascript: URLs) while preserving safe markup (for rich-text content rendered via `dangerouslySetInnerHTML`)
+- `escapeScriptContent(input)` — escape `</` and `<!--` for safe embedding inside `<script>` tags (for JSON-LD etc.)
 
 ## Isolation boundary
 

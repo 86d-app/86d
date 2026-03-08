@@ -332,7 +332,8 @@ describe("createStoreCreditController", () => {
 			});
 
 			const account = await controller.getAccount("cust_1");
-			const txns = await controller.listTransactions(account!.id);
+			if (!account) throw new Error("Expected account");
+			const txns = await controller.listTransactions(account.id);
 			expect(txns).toHaveLength(2);
 		});
 
@@ -351,13 +352,14 @@ describe("createStoreCreditController", () => {
 			});
 
 			const account = await controller.getAccount("cust_1");
-			const credits = await controller.listTransactions(account!.id, {
+			if (!account) throw new Error("Expected account");
+			const credits = await controller.listTransactions(account.id, {
 				type: "credit",
 			});
 			expect(credits).toHaveLength(1);
 			expect(credits[0].type).toBe("credit");
 
-			const debits = await controller.listTransactions(account!.id, {
+			const debits = await controller.listTransactions(account.id, {
 				type: "debit",
 			});
 			expect(debits).toHaveLength(1);
@@ -379,7 +381,8 @@ describe("createStoreCreditController", () => {
 			});
 
 			const account = await controller.getAccount("cust_1");
-			const refunds = await controller.listTransactions(account!.id, {
+			if (!account) throw new Error("Expected account");
+			const refunds = await controller.listTransactions(account.id, {
 				reason: "return_refund",
 			});
 			expect(refunds).toHaveLength(1);
@@ -407,7 +410,8 @@ describe("createStoreCreditController", () => {
 			});
 
 			const account = await controller.getAccount("cust_1");
-			const page = await controller.listTransactions(account!.id, {
+			if (!account) throw new Error("Expected account");
+			const page = await controller.listTransactions(account.id, {
 				take: 2,
 			});
 			expect(page).toHaveLength(2);

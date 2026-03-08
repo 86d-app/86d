@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { normalizeWhitespace, sanitizeText, stripTags } from "../sanitize";
+import {
+	escapeScriptContent,
+	normalizeWhitespace,
+	sanitizeHtml,
+	sanitizeText,
+	stripTags,
+} from "../sanitize";
 
 describe("stripTags", () => {
 	it("removes simple HTML tags", () => {
@@ -90,5 +96,107 @@ describe("sanitizeText", () => {
 
 	it("handles empty string", () => {
 		expect(sanitizeText("")).toBe("");
+	});
+});
+
+describe("sanitizeHtml", () => {
+	it("removes script tags and content", () => {
+		expect(sanitizeHtml('<p>Safe</p><script>alert("xss")</script>')).toBe(
+			"<p>Safe</p>",
+		);
+	});
+
+	it("removes style tags and content", () => {
+		expect(sanitizeHtml("<div>Ok</div><style>*{display:none}</style>")).toBe(
+			"<div>Ok</div>",
+		);
+	});
+
+	it("removes iframe tags", () => {
+		expect(sanitizeHtml('<p>Content</p><iframe src="evil.com"></iframe>')).toBe(
+			"<p>Content</p>",
+		);
+	});
+
+	it("removes self-closing iframes", () => {
+		expect(sanitizeHtml('<p>Ok</p><iframe src="x" />')).toBe("<p>Ok</p>");
+	});
+
+	it("removes object tags", () => {
+		expect(sanitizeHtml('<object data="x.swf">fallback</object>')).toBe("");
+	});
+
+	it("removes embed tags", () => {
+		expect(sanitizeHtml('<embed src="x.swf" />')).toBe("");
+	});
+
+	it("removes form tags and content", () => {
+		expect(
+			sanitizeHtml('<form action="/steal"><input name="pw"/></form>'),
+		).toBe("");
+	});
+
+	it("removes event handler attributes", () => {
+		expect(sanitizeHtml('<img src="x.jpg" onerror="alert(1)">')).toBe(
+			'<img src="x.jpg">',
+		);
+	});
+
+	it("removes onclick attributes", () => {
+		expect(sanitizeHtml('<a href="/ok" onclick="steal()">Link</a>')).toBe(
+			'<a href="/ok">Link</a>',
+		);
+	});
+
+	it("removes javascript: URLs", () => {
+		expect(sanitizeHtml('<a href="javascript:alert(1)">Click</a>')).toBe(
+			'<a href="">Click</a>',
+		);
+	});
+
+	it("preserves safe HTML tags", () => {
+		const safe =
+			'<h1>Title</h1><p>Para with <strong>bold</strong> and <a href="/link">link</a></p>';
+		expect(sanitizeHtml(safe)).toBe(safe);
+	});
+
+	it("preserves safe attributes", () => {
+		const safe = '<img src="photo.jpg" alt="A photo" class="rounded">';
+		expect(sanitizeHtml(safe)).toBe(safe);
+	});
+
+	it("handles empty string", () => {
+		expect(sanitizeHtml("")).toBe("");
+	});
+
+	it("handles plain text", () => {
+		expect(sanitizeHtml("Just text")).toBe("Just text");
+	});
+});
+
+describe("escapeScriptContent", () => {
+	it("escapes closing script tags", () => {
+		expect(escapeScriptContent("</script>")).toBe("<\\/script>");
+	});
+
+	it("escapes HTML comments", () => {
+		expect(escapeScriptContent("<!--")).toBe("<\\!--");
+	});
+
+	it("escapes both patterns in JSON", () => {
+		const json = '{"html":"</script>","comment":"<!--test-->"}';
+		const escaped = escapeScriptContent(json);
+		expect(escaped).not.toContain("</");
+		expect(escaped).not.toContain("<!--");
+		expect(escaped).toBe('{"html":"<\\/script>","comment":"<\\!--test-->"}');
+	});
+
+	it("leaves safe content unchanged", () => {
+		const safe = '{"name":"Product","price":9.99}';
+		expect(escapeScriptContent(safe)).toBe(safe);
+	});
+
+	it("handles empty string", () => {
+		expect(escapeScriptContent("")).toBe("");
 	});
 });

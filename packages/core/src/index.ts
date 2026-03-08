@@ -41,7 +41,13 @@ export {
 	type ModuleEvent,
 	type ScopedEventEmitter,
 } from "./events";
-export { normalizeWhitespace, sanitizeText, stripTags } from "./sanitize";
+export {
+	escapeScriptContent,
+	normalizeWhitespace,
+	sanitizeHtml,
+	sanitizeText,
+	stripTags,
+} from "./sanitize";
 export type {
 	Awaitable,
 	LiteralString,

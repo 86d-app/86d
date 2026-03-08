@@ -31,3 +31,42 @@ export function normalizeWhitespace(input: string): string {
 export function sanitizeText(input: string): string {
 	return normalizeWhitespace(stripTags(input));
 }
+
+/**
+ * Sanitize rich HTML content by removing dangerous elements while
+ * preserving safe markup. Use this for fields that intentionally store
+ * HTML (page content, rich-text editors) before rendering with
+ * `dangerouslySetInnerHTML`.
+ *
+ * Removes: `<script>`, `<style>`, `<iframe>`, `<object>`, `<embed>`,
+ * `<form>`, event-handler attributes (`on*`), and `javascript:` URLs.
+ */
+export function sanitizeHtml(input: string): string {
+	return (
+		input
+			// Remove dangerous tags and their content
+			.replace(/<script[\s\S]*?<\/script>/gi, "")
+			.replace(/<style[\s\S]*?<\/style>/gi, "")
+			.replace(/<iframe[\s\S]*?<\/iframe>/gi, "")
+			.replace(/<iframe[^>]*\/?\s*>/gi, "")
+			.replace(/<object[\s\S]*?<\/object>/gi, "")
+			.replace(/<embed[^>]*\/?\s*>/gi, "")
+			.replace(/<form[\s\S]*?<\/form>/gi, "")
+			// Remove event-handler attributes (onclick, onerror, onload, etc.)
+			.replace(/\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]*)/gi, "")
+			// Remove javascript: URLs in href, src, action attributes
+			.replace(
+				/(href|src|action)\s*=\s*(?:"javascript:[^"]*"|'javascript:[^']*')/gi,
+				'$1=""',
+			)
+	);
+}
+
+/**
+ * Escape a string for safe embedding inside a `<script>` tag.
+ * Prevents script-tag breakout by encoding `</` and `<!--` sequences.
+ * Use this when injecting JSON or data into inline `<script>` blocks.
+ */
+export function escapeScriptContent(input: string): string {
+	return input.replace(/<\//g, "<\\/").replace(/<!--/g, "<\\!--");
+}
