@@ -1,0 +1,488 @@
+import type { ModuleDataService } from "@86d-app/core";
+import type {
+	CoOccurrence,
+	ProductInteraction,
+	RecommendationController,
+	RecommendationRule,
+	RecommendedProduct,
+} from "./service";
+
+const DEFAULT_TAKE = 10;
+
+export function createRecommendationController(
+	data: ModuleDataService,
+): RecommendationController {
+	return {
+		// --- Rules ---
+
+		async createRule(params) {
+			const id = crypto.randomUUID();
+			const rule: RecommendationRule = {
+				id,
+				name: params.name,
+				strategy: params.strategy,
+				sourceProductId: params.sourceProductId,
+				targetProductIds: params.targetProductIds,
+				weight: params.weight ?? 1,
+				isActive: params.isActive ?? true,
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			};
+			await data.upsert(
+				"recommendationRule",
+				id,
+				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+				rule as Record<string, any>,
+			);
+			return rule;
+		},
+
+		async updateRule(id, params) {
+			const existing = (await data.get(
+				"recommendationRule",
+				id,
+			)) as unknown as RecommendationRule | null;
+			if (!existing) return null;
+
+			const updated: RecommendationRule = {
+				...existing,
+				...(params.name !== undefined ? { name: params.name } : {}),
+				...(params.strategy !== undefined ? { strategy: params.strategy } : {}),
+				...(params.sourceProductId !== undefined
+					? { sourceProductId: params.sourceProductId }
+					: {}),
+				...(params.targetProductIds !== undefined
+					? { targetProductIds: params.targetProductIds }
+					: {}),
+				...(params.weight !== undefined ? { weight: params.weight } : {}),
+				...(params.isActive !== undefined ? { isActive: params.isActive } : {}),
+				updatedAt: new Date(),
+			};
+			await data.upsert(
+				"recommendationRule",
+				id,
+				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+				updated as Record<string, any>,
+			);
+			return updated;
+		},
+
+		async deleteRule(id) {
+			const existing = await data.get("recommendationRule", id);
+			if (!existing) return false;
+			await data.delete("recommendationRule", id);
+			return true;
+		},
+
+		async getRule(id) {
+			return (await data.get(
+				"recommendationRule",
+				id,
+			)) as unknown as RecommendationRule | null;
+		},
+
+		async listRules(params) {
+			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
+			const where: Record<string, any> = {};
+			if (params?.strategy) where.strategy = params.strategy;
+			if (params?.isActive !== undefined) where.isActive = params.isActive;
+
+			const rules = (await data.findMany("recommendationRule", {
+				...(Object.keys(where).length > 0 ? { where } : {}),
+				...(params?.take !== undefined ? { take: params.take } : {}),
+				...(params?.skip !== undefined ? { skip: params.skip } : {}),
+			})) as unknown as RecommendationRule[];
+
+			return rules.sort(
+				(a, b) =>
+					new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+			);
+		},
+
+		async countRules(params) {
+			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
+			const where: Record<string, any> = {};
+			if (params?.strategy) where.strategy = params.strategy;
+			if (params?.isActive !== undefined) where.isActive = params.isActive;
+
+			const rules = await data.findMany("recommendationRule", {
+				...(Object.keys(where).length > 0 ? { where } : {}),
+			});
+			return rules.length;
+		},
+
+		// --- Co-occurrences ---
+
+		async recordPurchase(productIds) {
+			if (productIds.length < 2) return 0;
+
+			let pairsRecorded = 0;
+			// Generate all pairs
+			for (let i = 0; i < productIds.length; i++) {
+				for (let j = i + 1; j < productIds.length; j++) {
+					// Canonical ordering so (A,B) == (B,A)
+					const [id1, id2] =
+						productIds[i] < productIds[j]
+							? [productIds[i], productIds[j]]
+							: [productIds[j], productIds[i]];
+
+					// Find existing co-occurrence
+					const existing = (await data.findMany("coOccurrence", {
+						where: { productId1: id1, productId2: id2 },
+					})) as unknown as CoOccurrence[];
+
+					if (existing.length > 0) {
+						const entry = existing[0];
+						const updated = {
+							...entry,
+							count: entry.count + 1,
+							lastOccurredAt: new Date(),
+						};
+						await data.upsert(
+							"coOccurrence",
+							entry.id,
+							// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+							updated as Record<string, any>,
+						);
+					} else {
+						const id = crypto.randomUUID();
+						const entry = {
+							id,
+							productId1: id1,
+							productId2: id2,
+							count: 1,
+							lastOccurredAt: new Date(),
+						};
+						await data.upsert(
+							"coOccurrence",
+							id,
+							// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+							entry as Record<string, any>,
+						);
+					}
+					pairsRecorded += 1;
+				}
+			}
+			return pairsRecorded;
+		},
+
+		async getCoOccurrences(productId, params) {
+			const take = params?.take ?? DEFAULT_TAKE;
+
+			// Find where productId is either id1 or id2
+			const asId1 = (await data.findMany("coOccurrence", {
+				where: { productId1: productId },
+			})) as unknown as CoOccurrence[];
+
+			const asId2 = (await data.findMany("coOccurrence", {
+				where: { productId2: productId },
+			})) as unknown as CoOccurrence[];
+
+			const all = [...asId1, ...asId2];
+
+			return all.sort((a, b) => b.count - a.count).slice(0, take);
+		},
+
+		// --- Interactions ---
+
+		async trackInteraction(params) {
+			if (!params.customerId && !params.sessionId) {
+				throw new Error("Either customerId or sessionId is required");
+			}
+
+			const id = crypto.randomUUID();
+			const interaction: ProductInteraction = {
+				id,
+				productId: params.productId,
+				customerId: params.customerId,
+				sessionId: params.sessionId,
+				type: params.type,
+				productName: params.productName,
+				productSlug: params.productSlug,
+				productImage: params.productImage,
+				productPrice: params.productPrice,
+				productCategory: params.productCategory,
+				createdAt: new Date(),
+			};
+			await data.upsert(
+				"productInteraction",
+				id,
+				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+				interaction as Record<string, any>,
+			);
+			return interaction;
+		},
+
+		// --- Recommendations ---
+
+		async getForProduct(productId, params) {
+			const take = params?.take ?? DEFAULT_TAKE;
+			const strategy = params?.strategy;
+			const results: RecommendedProduct[] = [];
+
+			// Manual rules
+			if (!strategy || strategy === "manual") {
+				const rules = (await data.findMany("recommendationRule", {
+					where: { isActive: true },
+				})) as unknown as RecommendationRule[];
+
+				const matching = rules.filter(
+					(r) => r.strategy === "manual" && r.sourceProductId === productId,
+				);
+
+				for (const rule of matching) {
+					for (const targetId of rule.targetProductIds) {
+						// Get product info from interactions if available
+						const interactions = (await data.findMany("productInteraction", {
+							where: { productId: targetId },
+							take: 1,
+						})) as unknown as ProductInteraction[];
+
+						const info = interactions[0];
+						results.push({
+							productId: targetId,
+							productName: info?.productName ?? targetId,
+							productSlug: info?.productSlug ?? targetId,
+							productImage: info?.productImage,
+							productPrice: info?.productPrice,
+							score: rule.weight,
+							strategy: "manual",
+						});
+					}
+				}
+			}
+
+			// Bought together
+			if (!strategy || strategy === "bought_together") {
+				const coOccurrences = (await data.findMany("coOccurrence", {
+					where: { productId1: productId },
+				})) as unknown as CoOccurrence[];
+
+				const coOccurrences2 = (await data.findMany("coOccurrence", {
+					where: { productId2: productId },
+				})) as unknown as CoOccurrence[];
+
+				const allCo = [...coOccurrences, ...coOccurrences2];
+
+				for (const co of allCo) {
+					const relatedId =
+						co.productId1 === productId ? co.productId2 : co.productId1;
+
+					// Skip if already in results
+					if (results.some((r) => r.productId === relatedId)) continue;
+
+					const interactions = (await data.findMany("productInteraction", {
+						where: { productId: relatedId },
+						take: 1,
+					})) as unknown as ProductInteraction[];
+
+					const info = interactions[0];
+					results.push({
+						productId: relatedId,
+						productName: info?.productName ?? relatedId,
+						productSlug: info?.productSlug ?? relatedId,
+						productImage: info?.productImage,
+						productPrice: info?.productPrice,
+						score: co.count,
+						strategy: "bought_together",
+					});
+				}
+			}
+
+			// Sort by score descending, limit
+			return results.sort((a, b) => b.score - a.score).slice(0, take);
+		},
+
+		async getTrending(params) {
+			const take = params?.take ?? DEFAULT_TAKE;
+			const since = params?.since ?? new Date(Date.now() - 7 * 86_400_000); // 7 days default
+
+			const allInteractions = (await data.findMany(
+				"productInteraction",
+				{},
+			)) as unknown as ProductInteraction[];
+
+			// Filter to recent and aggregate by product
+			const sinceTime = since.getTime();
+			const productScores = new Map<
+				string,
+				{
+					productId: string;
+					productName: string;
+					productSlug: string;
+					productImage?: string | undefined;
+					productPrice?: number | undefined;
+					score: number;
+				}
+			>();
+
+			for (const interaction of allInteractions) {
+				if (new Date(interaction.createdAt).getTime() < sinceTime) continue;
+
+				// Weight: purchase=3, add_to_cart=2, view=1
+				const weight =
+					interaction.type === "purchase"
+						? 3
+						: interaction.type === "add_to_cart"
+							? 2
+							: 1;
+
+				const existing = productScores.get(interaction.productId);
+				if (existing) {
+					existing.score += weight;
+				} else {
+					productScores.set(interaction.productId, {
+						productId: interaction.productId,
+						productName: interaction.productName,
+						productSlug: interaction.productSlug,
+						productImage: interaction.productImage,
+						productPrice: interaction.productPrice,
+						score: weight,
+					});
+				}
+			}
+
+			return Array.from(productScores.values())
+				.sort((a, b) => b.score - a.score)
+				.slice(0, take)
+				.map((p) => ({ ...p, strategy: "trending" as const }));
+		},
+
+		async getPersonalized(customerId, params) {
+			const take = params?.take ?? DEFAULT_TAKE;
+
+			// Get customer's interaction history
+			const customerInteractions = (await data.findMany("productInteraction", {
+				where: { customerId },
+			})) as unknown as ProductInteraction[];
+
+			if (customerInteractions.length === 0) return [];
+
+			// Collect categories the customer has interacted with
+			const customerCategories = new Set<string>();
+			const customerProductIds = new Set<string>();
+			for (const interaction of customerInteractions) {
+				customerProductIds.add(interaction.productId);
+				if (interaction.productCategory) {
+					customerCategories.add(interaction.productCategory);
+				}
+			}
+
+			if (customerCategories.size === 0) {
+				// No category data — fall back to bought-together from purchased products
+				const purchasedIds = customerInteractions
+					.filter((i) => i.type === "purchase")
+					.map((i) => i.productId);
+
+				const results: RecommendedProduct[] = [];
+				for (const pid of purchasedIds) {
+					const coOcc1 = (await data.findMany("coOccurrence", {
+						where: { productId1: pid },
+					})) as unknown as CoOccurrence[];
+					const coOcc2 = (await data.findMany("coOccurrence", {
+						where: { productId2: pid },
+					})) as unknown as CoOccurrence[];
+
+					for (const co of [...coOcc1, ...coOcc2]) {
+						const relatedId =
+							co.productId1 === pid ? co.productId2 : co.productId1;
+						if (customerProductIds.has(relatedId)) continue;
+						if (results.some((r) => r.productId === relatedId)) continue;
+
+						const info = (await data.findMany("productInteraction", {
+							where: { productId: relatedId },
+							take: 1,
+						})) as unknown as ProductInteraction[];
+
+						results.push({
+							productId: relatedId,
+							productName: info[0]?.productName ?? relatedId,
+							productSlug: info[0]?.productSlug ?? relatedId,
+							productImage: info[0]?.productImage,
+							productPrice: info[0]?.productPrice,
+							score: co.count,
+							strategy: "personalized",
+						});
+					}
+				}
+
+				return results.sort((a, b) => b.score - a.score).slice(0, take);
+			}
+
+			// Find other products in the same categories that the customer hasn't interacted with
+			const allInteractions = (await data.findMany(
+				"productInteraction",
+				{},
+			)) as unknown as ProductInteraction[];
+
+			const candidateScores = new Map<
+				string,
+				{
+					productId: string;
+					productName: string;
+					productSlug: string;
+					productImage?: string | undefined;
+					productPrice?: number | undefined;
+					score: number;
+				}
+			>();
+
+			for (const interaction of allInteractions) {
+				// Skip products the customer already interacted with
+				if (customerProductIds.has(interaction.productId)) continue;
+
+				// Only consider products in matching categories
+				if (
+					!interaction.productCategory ||
+					!customerCategories.has(interaction.productCategory)
+				) {
+					continue;
+				}
+
+				const weight =
+					interaction.type === "purchase"
+						? 3
+						: interaction.type === "add_to_cart"
+							? 2
+							: 1;
+
+				const existing = candidateScores.get(interaction.productId);
+				if (existing) {
+					existing.score += weight;
+				} else {
+					candidateScores.set(interaction.productId, {
+						productId: interaction.productId,
+						productName: interaction.productName,
+						productSlug: interaction.productSlug,
+						productImage: interaction.productImage,
+						productPrice: interaction.productPrice,
+						score: weight,
+					});
+				}
+			}
+
+			return Array.from(candidateScores.values())
+				.sort((a, b) => b.score - a.score)
+				.slice(0, take)
+				.map((p) => ({ ...p, strategy: "personalized" as const }));
+		},
+
+		// --- Stats ---
+
+		async getStats() {
+			const allRules = await data.findMany("recommendationRule", {});
+			const activeRules = (allRules as unknown as RecommendationRule[]).filter(
+				(r) => r.isActive,
+			);
+			const allCo = await data.findMany("coOccurrence", {});
+			const allInteractions = await data.findMany("productInteraction", {});
+
+			return {
+				totalRules: allRules.length,
+				activeRules: activeRules.length,
+				totalCoOccurrences: allCo.length,
+				totalInteractions: allInteractions.length,
+			};
+		},
+	};
+}
