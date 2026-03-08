@@ -1,0 +1,29 @@
+{
+	"name": "@86d-app/quotes",
+	"version": "0.0.1",
+	"type": "module",
+	"exports": {
+		"./components": "./src/store/components",
+		"./admin-components": "./src/admin/components",
+		"./*": "./src/*"
+	},
+	"scripts": {
+		"build": "tsc",
+		"check": "biome check src",
+		"check:fix": "biome check --write src",
+		"dev": "tsc",
+		"test": "vitest run",
+		"test:watch": "vitest watch",
+		"typecheck": "tsc --noEmit --emitDeclarationOnly false"
+	},
+	"dependencies": {
+		"@86d-app/core": "workspace:*"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "catalog:",
+		"@types/mdx": "catalog:mdx",
+		"@types/react": "catalog:react",
+		"typescript": "catalog:",
+		"vitest": "catalog:vite"
+	}
+}
