@@ -1,0 +1,20 @@
+import { createAdminEndpoint, z } from "@86d-app/core";
+import type { CustomerGroupController } from "../../service";
+
+export const listPricing = createAdminEndpoint(
+	"/admin/customer-groups/:id/pricing/list",
+	{
+		method: "GET",
+		params: z.object({
+			id: z.string(),
+		}),
+	},
+	async (ctx) => {
+		const controller = ctx.context.controllers
+			.customerGroups as CustomerGroupController;
+
+		const adjustments = await controller.listPriceAdjustments(ctx.params.id);
+
+		return { adjustments };
+	},
+);
