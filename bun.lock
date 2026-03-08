@@ -127,6 +127,20 @@
         "vitest": "catalog:vite",
       },
     },
+    "modules/affiliates": {
+      "name": "@86d-app/affiliates",
+      "version": "0.0.1",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
     "modules/analytics": {
       "name": "@86d-app/analytics",
       "version": "0.0.4",
@@ -142,6 +156,20 @@
     },
     "modules/audit-log": {
       "name": "@86d-app/audit-log",
+      "version": "0.0.1",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
+    "modules/automations": {
+      "name": "@86d-app/automations",
       "version": "0.0.1",
       "dependencies": {
         "@86d-app/core": "workspace:*",
@@ -225,6 +253,20 @@
     },
     "modules/comparisons": {
       "name": "@86d-app/comparisons",
+      "version": "0.0.1",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
+    "modules/customer-groups": {
+      "name": "@86d-app/customer-groups",
       "version": "0.0.1",
       "dependencies": {
         "@86d-app/core": "workspace:*",
@@ -513,6 +555,20 @@
         "vitest": "catalog:vite",
       },
     },
+    "modules/recommendations": {
+      "name": "@86d-app/recommendations",
+      "version": "0.0.1",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
     "modules/referrals": {
       "name": "@86d-app/referrals",
       "version": "0.0.1",
@@ -668,6 +724,20 @@
     "modules/tax": {
       "name": "@86d-app/tax",
       "version": "0.0.4",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
+    "modules/tickets": {
+      "name": "@86d-app/tickets",
+      "version": "0.0.1",
       "dependencies": {
         "@86d-app/core": "workspace:*",
       },
@@ -920,9 +990,13 @@
 
     "@86d-app/abandoned-carts": ["@86d-app/abandoned-carts@workspace:modules/abandoned-carts"],
 
+    "@86d-app/affiliates": ["@86d-app/affiliates@workspace:modules/affiliates"],
+
     "@86d-app/analytics": ["@86d-app/analytics@workspace:modules/analytics"],
 
     "@86d-app/audit-log": ["@86d-app/audit-log@workspace:modules/audit-log"],
+
+    "@86d-app/automations": ["@86d-app/automations@workspace:modules/automations"],
 
     "@86d-app/blog": ["@86d-app/blog@workspace:modules/blog"],
 
@@ -937,6 +1011,8 @@
     "@86d-app/comparisons": ["@86d-app/comparisons@workspace:modules/comparisons"],
 
     "@86d-app/core": ["@86d-app/core@workspace:packages/core"],
+
+    "@86d-app/customer-groups": ["@86d-app/customer-groups@workspace:modules/customer-groups"],
 
     "@86d-app/customers": ["@86d-app/customers@workspace:modules/customers"],
 
@@ -978,6 +1054,8 @@
 
     "@86d-app/recently-viewed": ["@86d-app/recently-viewed@workspace:modules/recently-viewed"],
 
+    "@86d-app/recommendations": ["@86d-app/recommendations@workspace:modules/recommendations"],
+
     "@86d-app/referrals": ["@86d-app/referrals@workspace:modules/referrals"],
 
     "@86d-app/returns": ["@86d-app/returns@workspace:modules/returns"],
@@ -1005,6 +1083,8 @@
     "@86d-app/subscriptions": ["@86d-app/subscriptions@workspace:modules/subscriptions"],
 
     "@86d-app/tax": ["@86d-app/tax@workspace:modules/tax"],
+
+    "@86d-app/tickets": ["@86d-app/tickets@workspace:modules/tickets"],
 
     "@86d-app/waitlist": ["@86d-app/waitlist@workspace:modules/waitlist"],
 
