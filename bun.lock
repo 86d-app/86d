@@ -389,6 +389,20 @@
         "vitest": "catalog:vite",
       },
     },
+    "modules/flash-sales": {
+      "name": "@86d-app/flash-sales",
+      "version": "0.0.1",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
     "modules/forms": {
       "name": "@86d-app/forms",
       "version": "0.0.1",
@@ -1232,6 +1246,8 @@
     "@86d-app/discounts": ["@86d-app/discounts@workspace:modules/discounts"],
 
     "@86d-app/faq": ["@86d-app/faq@workspace:modules/faq"],
+
+    "@86d-app/flash-sales": ["@86d-app/flash-sales@workspace:modules/flash-sales"],
 
     "@86d-app/forms": ["@86d-app/forms@workspace:modules/forms"],
 
