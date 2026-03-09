@@ -1,0 +1,48 @@
+# Choose a Delivery Slot
+
+Select your preferred delivery window.
+
+<div className="space-y-4">
+  <div>
+    <label className="text-sm font-medium" htmlFor="delivery-date">Delivery date</label>
+    <input
+      id="delivery-date"
+      type="date"
+      className="mt-1 block rounded border px-3 py-2 text-sm"
+      value={props.selectedDate}
+      onChange={(e) => props.onDateChange(e.target.value)}
+    />
+  </div>
+
+  {props.loading ? (
+    <div className="py-12 text-center text-muted-foreground">Loading available slots…</div>
+  ) : props.slots.length === 0 ? (
+    <div className="py-12 text-center text-muted-foreground">No delivery slots available for this date.</div>
+  ) : (
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {props.slots.map((slot) => (
+        <div
+          key={slot.schedule.id}
+          className={`rounded-lg border p-4 transition-colors ${slot.available ? "hover:bg-muted/30 cursor-pointer" : "opacity-50 cursor-not-allowed"}`}
+        >
+          <h3 className="font-semibold">{slot.schedule.name}</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {slot.schedule.startTime} – {slot.schedule.endTime}
+          </p>
+          <div className="mt-2 flex items-center justify-between">
+            <span className="text-sm">
+              {slot.available
+                ? `${slot.remaining} slot${slot.remaining === 1 ? "" : "s"} left`
+                : "Fully booked"}
+            </span>
+            {slot.schedule.surchargeInCents > 0 && (
+              <span className="text-sm font-medium">
+                +${(slot.schedule.surchargeInCents / 100).toFixed(2)}
+              </span>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  )}
+</div>

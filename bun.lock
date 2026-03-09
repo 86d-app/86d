@@ -375,6 +375,20 @@
         "vitest": "catalog:vite",
       },
     },
+    "modules/delivery-slots": {
+      "name": "@86d-app/delivery-slots",
+      "version": "0.0.1",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
     "modules/digital-downloads": {
       "name": "@86d-app/digital-downloads",
       "version": "0.0.4",
@@ -1314,6 +1328,8 @@
     "@86d-app/customer-groups": ["@86d-app/customer-groups@workspace:modules/customer-groups"],
 
     "@86d-app/customers": ["@86d-app/customers@workspace:modules/customers"],
+
+    "@86d-app/delivery-slots": ["@86d-app/delivery-slots@workspace:modules/delivery-slots"],
 
     "@86d-app/digital-downloads": ["@86d-app/digital-downloads@workspace:modules/digital-downloads"],
 

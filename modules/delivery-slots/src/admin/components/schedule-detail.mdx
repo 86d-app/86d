@@ -1,0 +1,44 @@
+# Schedule Detail
+
+{props.loading ? (
+  <div className="py-12 text-center text-muted-foreground">Loading schedule…</div>
+) : !props.schedule ? (
+  <div className="py-12 text-center text-muted-foreground">Schedule not found.</div>
+) : (
+  <div className="space-y-6">
+    <div className="grid grid-cols-2 gap-4">
+      <div className="rounded-lg border p-4">
+        <div className="text-sm text-muted-foreground">Name</div>
+        <div className="text-lg font-semibold">{props.schedule.name}</div>
+      </div>
+      <div className="rounded-lg border p-4">
+        <div className="text-sm text-muted-foreground">Day</div>
+        <div className="text-lg font-semibold">{props.dayNames[props.schedule.dayOfWeek]}</div>
+      </div>
+      <div className="rounded-lg border p-4">
+        <div className="text-sm text-muted-foreground">Time Window</div>
+        <div className="text-lg font-semibold">{props.schedule.startTime} – {props.schedule.endTime}</div>
+      </div>
+      <div className="rounded-lg border p-4">
+        <div className="text-sm text-muted-foreground">Capacity</div>
+        <div className="text-lg font-semibold">{props.schedule.capacity} bookings</div>
+      </div>
+      <div className="rounded-lg border p-4">
+        <div className="text-sm text-muted-foreground">Surcharge</div>
+        <div className="text-lg font-semibold">
+          {props.schedule.surchargeInCents === 0
+            ? "None"
+            : `$${(props.schedule.surchargeInCents / 100).toFixed(2)}`}
+        </div>
+      </div>
+      <div className="rounded-lg border p-4">
+        <div className="text-sm text-muted-foreground">Status</div>
+        <div className="text-lg font-semibold">
+          <span className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${props.schedule.active ? "text-green-700 bg-green-50 border-green-200" : "text-gray-700 bg-gray-50 border-gray-200"}`}>
+            {props.schedule.active ? "Active" : "Inactive"}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+)}

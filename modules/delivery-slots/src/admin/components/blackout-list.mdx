@@ -1,0 +1,34 @@
+# Blackout Dates
+
+Block specific dates from delivery. Bookings cannot be made for blackout dates.
+
+<div className="space-y-4">
+  {props.loading ? (
+    <div className="py-12 text-center text-muted-foreground">Loading blackout dates…</div>
+  ) : props.blackouts.length === 0 ? (
+    <div className="py-12 text-center text-muted-foreground">No blackout dates set.</div>
+  ) : (
+    <div className="overflow-x-auto rounded-lg border">
+      <table className="w-full text-sm">
+        <thead className="border-b bg-muted/50">
+          <tr>
+            <th className="px-4 py-3 text-left font-medium">Date</th>
+            <th className="px-4 py-3 text-left font-medium">Reason</th>
+            <th className="px-4 py-3 text-left font-medium">Created</th>
+          </tr>
+        </thead>
+        <tbody>
+          {props.blackouts.map((b) => (
+            <tr key={b.id} className="border-b last:border-0 hover:bg-muted/30">
+              <td className="px-4 py-3 font-medium">{b.date}</td>
+              <td className="px-4 py-3 text-muted-foreground">{b.reason || "—"}</td>
+              <td className="px-4 py-3 text-muted-foreground">
+                {new Date(b.createdAt).toLocaleDateString()}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )}
+</div>
