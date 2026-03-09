@@ -107,8 +107,8 @@ function resolveField(
 	const { sourceField, transform, transformValue, defaultValue } = mapping;
 
 	// Check custom fields first, then standard fields
-	// biome-ignore lint/suspicious/noExplicitAny: ProductData has dynamic field access
 	const rawValue = (product.customFields?.[sourceField] ??
+		// biome-ignore lint/suspicious/noExplicitAny: ProductData has dynamic field access
 		(product as any)[sourceField]) as unknown;
 
 	if (rawValue === undefined || rawValue === null || rawValue === "") {
@@ -496,10 +496,10 @@ export function createProductFeedsController(
 						issues: [],
 						lastSyncedAt: now,
 					};
-					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 					await data.upsert(
 						"feedItem",
 						itemId,
+						// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 						feedItem as Record<string, any>,
 					);
 					continue;

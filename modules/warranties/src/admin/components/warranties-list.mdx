@@ -1,0 +1,26 @@
+# Warranty Claims
+
+Manage warranty claims from customers.
+
+<div className="space-y-4">
+  {props.summary && (
+    <div className="grid grid-cols-4 gap-4">
+      <div className="rounded-lg border p-4">
+        <div className="text-sm text-muted-foreground">Total Claims</div>
+        <div className="text-2xl font-bold">{props.summary.totalClaims}</div>
+      </div>
+      <div className="rounded-lg border p-4">
+        <div className="text-sm text-muted-foreground">Pending Review</div>
+        <div className="text-2xl font-bold">{props.summary.submitted + props.summary.underReview}</div>
+      </div>
+      <div className="rounded-lg border p-4">
+        <div className="text-sm text-muted-foreground">In Progress</div>
+        <div className="text-2xl font-bold">{props.summary.approved + props.summary.inRepair}</div>
+      </div>
+      <div className="rounded-lg border p-4">
+        <div className="text-sm text-muted-foreground">Resolved</div>
+        <div className="text-2xl font-bold">{props.summary.resolved + props.summary.closed}</div>
+      </div>
+    </div>
+  )}
+</div>

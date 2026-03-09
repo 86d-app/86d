@@ -1,0 +1,32 @@
+# Claim Detail
+
+{props.loading && <div>Loading...</div>}
+
+{props.claim && (
+  <div className="space-y-6">
+    <div className="grid grid-cols-2 gap-4">
+      <div>
+        <div className="text-sm text-muted-foreground">Status</div>
+        <div className="font-medium">{props.claim.status}</div>
+      </div>
+      <div>
+        <div className="text-sm text-muted-foreground">Issue Type</div>
+        <div className="font-medium">{props.claim.issueType}</div>
+      </div>
+      <div>
+        <div className="text-sm text-muted-foreground">Submitted</div>
+        <div className="font-medium">{props.claim.submittedAt}</div>
+      </div>
+      {props.claim.resolution && (
+        <div>
+          <div className="text-sm text-muted-foreground">Resolution</div>
+          <div className="font-medium">{props.claim.resolution}</div>
+        </div>
+      )}
+    </div>
+    <div>
+      <div className="text-sm text-muted-foreground">Description</div>
+      <div className="mt-1">{props.claim.issueDescription}</div>
+    </div>
+  </div>
+)}

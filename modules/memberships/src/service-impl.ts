@@ -376,10 +376,10 @@ export function createMembershipController(
 					description: params.description,
 				}),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert(
 				"membershipBenefit",
 				id,
+				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 				benefit as Record<string, any>,
 			);
 			return benefit;

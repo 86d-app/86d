@@ -383,11 +383,11 @@ describe("createProductFeedsController", () => {
 			const result = await controller.generateFeed(feed.id, [makeProduct()]);
 
 			expect(result).not.toBeNull();
-			expect(result!.itemCount).toBe(1);
-			expect(result!.errorCount).toBe(0);
-			expect(result!.output).toContain('<?xml version="1.0"');
-			expect(result!.output).toContain("<g:title>Test Product</g:title>");
-			expect(result!.output).toContain("<g:price>29.99</g:price>");
+			expect(result?.itemCount).toBe(1);
+			expect(result?.errorCount).toBe(0);
+			expect(result?.output).toContain('<?xml version="1.0"');
+			expect(result?.output).toContain("<g:title>Test Product</g:title>");
+			expect(result?.output).toContain("<g:price>29.99</g:price>");
 		});
 
 		it("generates CSV output", async () => {
@@ -401,9 +401,9 @@ describe("createProductFeedsController", () => {
 			const result = await controller.generateFeed(feed.id, [makeProduct()]);
 
 			expect(result).not.toBeNull();
-			expect(result!.output).toContain("g:id");
-			expect(result!.output).toContain("g:title");
-			expect(result!.output).toContain("Test Product");
+			expect(result?.output).toContain("g:id");
+			expect(result?.output).toContain("g:title");
+			expect(result?.output).toContain("Test Product");
 		});
 
 		it("generates TSV output", async () => {
@@ -417,7 +417,7 @@ describe("createProductFeedsController", () => {
 			const result = await controller.generateFeed(feed.id, [makeProduct()]);
 
 			expect(result).not.toBeNull();
-			expect(result!.output).toContain("\t");
+			expect(result?.output).toContain("\t");
 		});
 
 		it("generates JSON output", async () => {
@@ -431,7 +431,7 @@ describe("createProductFeedsController", () => {
 			const result = await controller.generateFeed(feed.id, [makeProduct()]);
 
 			expect(result).not.toBeNull();
-			const parsed = JSON.parse(result!.output);
+			const parsed = JSON.parse(result?.output ?? "");
 			expect(parsed.products).toHaveLength(1);
 			expect(parsed.products[0].title).toBe("Test Product");
 		});
@@ -449,7 +449,7 @@ describe("createProductFeedsController", () => {
 				makeProduct({ price: 99.99 }),
 			]);
 
-			expect(result!.itemCount).toBe(1);
+			expect(result?.itemCount).toBe(1);
 		});
 
 		it("applies product filters - excludes products above maxPrice", async () => {
@@ -465,7 +465,7 @@ describe("createProductFeedsController", () => {
 				makeProduct({ price: 99.99 }),
 			]);
 
-			expect(result!.itemCount).toBe(1);
+			expect(result?.itemCount).toBe(1);
 		});
 
 		it("applies product filters - requires images", async () => {
@@ -481,7 +481,7 @@ describe("createProductFeedsController", () => {
 				makeProduct({ imageUrl: undefined }),
 			]);
 
-			expect(result!.itemCount).toBe(1);
+			expect(result?.itemCount).toBe(1);
 		});
 
 		it("applies product filters - requires in stock", async () => {
@@ -497,7 +497,7 @@ describe("createProductFeedsController", () => {
 				makeProduct({ availability: "out_of_stock" }),
 			]);
 
-			expect(result!.itemCount).toBe(1);
+			expect(result?.itemCount).toBe(1);
 		});
 
 		it("applies product filters - excludes categories", async () => {
@@ -513,7 +513,7 @@ describe("createProductFeedsController", () => {
 				makeProduct({ category: "Clothing" }),
 			]);
 
-			expect(result!.itemCount).toBe(1);
+			expect(result?.itemCount).toBe(1);
 		});
 
 		it("applies product filters - includes only specified categories", async () => {
@@ -529,7 +529,7 @@ describe("createProductFeedsController", () => {
 				makeProduct({ category: "Clothing" }),
 			]);
 
-			expect(result!.itemCount).toBe(1);
+			expect(result?.itemCount).toBe(1);
 		});
 
 		it("creates feed items for each product", async () => {
@@ -575,7 +575,7 @@ describe("createProductFeedsController", () => {
 			});
 			const result = await controller.generateFeed(feed.id, [product]);
 
-			expect(result!.errorCount).toBe(1);
+			expect(result?.errorCount).toBe(1);
 		});
 
 		it("applies category mappings during generation", async () => {
@@ -593,7 +593,7 @@ describe("createProductFeedsController", () => {
 			const product = makeProduct({ category: "Electronics" });
 			const result = await controller.generateFeed(feed.id, [product]);
 
-			expect(result!.output).toContain(
+			expect(result?.output).toContain(
 				"Electronics &gt; Computers &amp; Accessories",
 			);
 		});
@@ -617,7 +617,7 @@ describe("createProductFeedsController", () => {
 				makeProduct({ title: "hello world" }),
 			]);
 
-			const parsed = JSON.parse(result!.output);
+			const parsed = JSON.parse(result?.output ?? "");
 			expect(parsed.products[0].name).toBe("HELLO WORLD");
 		});
 
@@ -640,7 +640,7 @@ describe("createProductFeedsController", () => {
 				makeProduct({ title: "HELLO WORLD" }),
 			]);
 
-			const parsed = JSON.parse(result!.output);
+			const parsed = JSON.parse(result?.output ?? "");
 			expect(parsed.products[0].name).toBe("hello world");
 		});
 
@@ -664,7 +664,7 @@ describe("createProductFeedsController", () => {
 				makeProduct({ sku: "ABC123" }),
 			]);
 
-			const parsed = JSON.parse(result!.output);
+			const parsed = JSON.parse(result?.output ?? "");
 			expect(parsed.products[0].item_id).toBe("STORE-ABC123");
 		});
 
@@ -688,7 +688,7 @@ describe("createProductFeedsController", () => {
 				makeProduct({ title: "Widget" }),
 			]);
 
-			const parsed = JSON.parse(result!.output);
+			const parsed = JSON.parse(result?.output ?? "");
 			expect(parsed.products[0].name).toBe("Widget - Sale");
 		});
 
@@ -712,7 +712,7 @@ describe("createProductFeedsController", () => {
 				makeProduct({ title: "Widget" }),
 			]);
 
-			const parsed = JSON.parse(result!.output);
+			const parsed = JSON.parse(result?.output ?? "");
 			expect(parsed.products[0].name).toBe("Buy Widget now!");
 		});
 
@@ -735,7 +735,7 @@ describe("createProductFeedsController", () => {
 				makeProduct({ brand: undefined }),
 			]);
 
-			const parsed = JSON.parse(result!.output);
+			const parsed = JSON.parse(result?.output ?? "");
 			expect(parsed.products[0].brand).toBe("Unknown Brand");
 		});
 
@@ -771,9 +771,9 @@ describe("createProductFeedsController", () => {
 			await controller.generateFeed(feed.id, [makeProduct(), makeProduct()]);
 
 			const updated = await controller.getFeed(feed.id);
-			expect(updated!.itemCount).toBe(2);
-			expect(updated!.lastGeneratedAt).toBeDefined();
-			expect(updated!.status).toBe("active");
+			expect(updated?.itemCount).toBe(2);
+			expect(updated?.lastGeneratedAt).toBeDefined();
+			expect(updated?.status).toBe("active");
 		});
 
 		it("returns null for non-existent feed", async () => {
@@ -796,7 +796,7 @@ describe("createProductFeedsController", () => {
 				}),
 			]);
 
-			const parsed = JSON.parse(result!.output);
+			const parsed = JSON.parse(result?.output ?? "");
 			expect(parsed.products[0].label).toBe("BESTSELLER");
 		});
 
@@ -811,7 +811,7 @@ describe("createProductFeedsController", () => {
 				makeProduct({ title: 'Widget <"Special"> & More' }),
 			]);
 
-			expect(result!.output).toContain(
+			expect(result?.output).toContain(
 				"Widget &lt;&quot;Special&quot;&gt; &amp; More",
 			);
 		});
@@ -828,7 +828,7 @@ describe("createProductFeedsController", () => {
 				makeProduct({ title: "Widget, Deluxe Edition" }),
 			]);
 
-			expect(result!.output).toContain('"Widget, Deluxe Edition"');
+			expect(result?.output).toContain('"Widget, Deluxe Edition"');
 		});
 
 		it("generates empty output for no matching products", async () => {
@@ -843,7 +843,7 @@ describe("createProductFeedsController", () => {
 				makeProduct({ price: 10 }),
 			]);
 
-			expect(result!.itemCount).toBe(0);
+			expect(result?.itemCount).toBe(0);
 		});
 	});
 
@@ -945,7 +945,7 @@ describe("createProductFeedsController", () => {
 
 			const item = await controller.getFeedItem(feed.id, "product-123");
 			expect(item).not.toBeNull();
-			expect(item!.productId).toBe("product-123");
+			expect(item?.productId).toBe("product-123");
 		});
 
 		it("returns null for non-existent product", async () => {
@@ -1204,7 +1204,7 @@ describe("createProductFeedsController", () => {
 
 			const result = await controller.generateFeed(feed.id, [makeProduct()]);
 
-			expect(result!.output).toContain("<g:title>");
+			expect(result?.output).toContain("<g:title>");
 		});
 
 		it("generates correct output for Pinterest channel", async () => {
@@ -1217,7 +1217,7 @@ describe("createProductFeedsController", () => {
 
 			const result = await controller.generateFeed(feed.id, [makeProduct()]);
 
-			const parsed = JSON.parse(result!.output);
+			const parsed = JSON.parse(result?.output ?? "");
 			expect(parsed.products[0].title).toBe("Test Product");
 		});
 
@@ -1231,8 +1231,8 @@ describe("createProductFeedsController", () => {
 
 			const result = await controller.generateFeed(feed.id, [makeProduct()]);
 
-			expect(result!.output).toContain("title");
-			expect(result!.output).toContain("Test Product");
+			expect(result?.output).toContain("title");
+			expect(result?.output).toContain("Test Product");
 		});
 	});
 
@@ -1251,7 +1251,7 @@ describe("createProductFeedsController", () => {
 				makeProduct({ title: longTitle }),
 			]);
 
-			expect(result!.warningCount).toBe(1);
+			expect(result?.warningCount).toBe(1);
 		});
 
 		it("warns when description exceeds 5000 characters", async () => {
@@ -1266,7 +1266,7 @@ describe("createProductFeedsController", () => {
 				makeProduct({ description: longDesc }),
 			]);
 
-			expect(result!.warningCount).toBe(1);
+			expect(result?.warningCount).toBe(1);
 		});
 	});
 });
