@@ -1,0 +1,22 @@
+import { createStoreEndpoint, z } from "@86d-app/core";
+import type { BrandController } from "../../service";
+
+export const getBrand = createStoreEndpoint(
+	"/brands/:slug",
+	{
+		method: "GET",
+		params: z.object({
+			slug: z.string().min(1),
+		}),
+	},
+	async (ctx) => {
+		const controller = ctx.context.controllers.brands as BrandController;
+		const brand = await controller.getBrandBySlug(ctx.params.slug);
+
+		if (!brand || !brand.isActive) {
+			return { error: "Brand not found", status: 404 };
+		}
+
+		return { brand };
+	},
+);
