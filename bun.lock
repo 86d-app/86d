@@ -924,6 +924,20 @@
         "vitest": "catalog:vite",
       },
     },
+    "modules/vendors": {
+      "name": "@86d-app/vendors",
+      "version": "0.0.1",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
     "modules/waitlist": {
       "name": "@86d-app/waitlist",
       "version": "0.0.1",
@@ -1286,6 +1300,8 @@
     "@86d-app/tax": ["@86d-app/tax@workspace:modules/tax"],
 
     "@86d-app/tickets": ["@86d-app/tickets@workspace:modules/tickets"],
+
+    "@86d-app/vendors": ["@86d-app/vendors@workspace:modules/vendors"],
 
     "@86d-app/waitlist": ["@86d-app/waitlist@workspace:modules/waitlist"],
 

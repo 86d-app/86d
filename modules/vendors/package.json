@@ -1,0 +1,47 @@
+{
+	"name": "@86d-app/vendors",
+	"version": "0.0.1",
+	"description": "Multi-vendor marketplace — vendor profiles, product assignments, commission tracking, and payout management",
+	"keywords": [
+		"commerce",
+		"vendors",
+		"marketplace",
+		"multi-vendor",
+		"commissions",
+		"payouts"
+	],
+	"license": "MIT",
+	"author": "86d <chat@86d.app>",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/86d-app/86d.git",
+		"directory": "modules/vendors"
+	},
+	"homepage": "https://86d.app",
+	"type": "module",
+	"exports": {
+		"./components": "./src/store/components",
+		"./admin-components": "./src/admin/components",
+		"./*": "./src/*"
+	},
+	"scripts": {
+		"build": "tsc",
+		"check": "biome check src",
+		"check:fix": "biome check --write src",
+		"clean": "git clean -xdf .cache .turbo dist node_modules",
+		"dev": "tsc",
+		"test": "vitest run",
+		"test:watch": "vitest watch",
+		"typecheck": "tsc --noEmit --emitDeclarationOnly false"
+	},
+	"dependencies": {
+		"@86d-app/core": "workspace:*"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "catalog:",
+		"@types/mdx": "catalog:mdx",
+		"@types/react": "catalog:react",
+		"typescript": "catalog:",
+		"vitest": "catalog:vite"
+	}
+}
