@@ -485,6 +485,20 @@
         "vitest": "catalog:vite",
       },
     },
+    "modules/memberships": {
+      "name": "@86d-app/memberships",
+      "version": "0.0.1",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
     "modules/multi-currency": {
       "name": "@86d-app/multi-currency",
       "version": "0.0.1",
@@ -1204,6 +1218,8 @@
     "@86d-app/loyalty": ["@86d-app/loyalty@workspace:modules/loyalty"],
 
     "@86d-app/media": ["@86d-app/media@workspace:modules/media"],
+
+    "@86d-app/memberships": ["@86d-app/memberships@workspace:modules/memberships"],
 
     "@86d-app/multi-currency": ["@86d-app/multi-currency@workspace:modules/multi-currency"],
 
