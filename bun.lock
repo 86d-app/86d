@@ -168,6 +168,20 @@
         "vitest": "catalog:vite",
       },
     },
+    "modules/appointments": {
+      "name": "@86d-app/appointments",
+      "version": "0.0.1",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
     "modules/audit-log": {
       "name": "@86d-app/audit-log",
       "version": "0.0.1",
@@ -1212,6 +1226,8 @@
     "@86d-app/analytics": ["@86d-app/analytics@workspace:modules/analytics"],
 
     "@86d-app/announcements": ["@86d-app/announcements@workspace:modules/announcements"],
+
+    "@86d-app/appointments": ["@86d-app/appointments@workspace:modules/appointments"],
 
     "@86d-app/audit-log": ["@86d-app/audit-log@workspace:modules/audit-log"],
 
