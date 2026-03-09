@@ -65,7 +65,9 @@ Run these to gauge health:
 - Store app alias: \`~/\` (NOT bare \`lib/\` — conflicts with packages/lib)
 - Templates live in templates/<name>/. The store app resolves them via tsconfig alias \`template/*\`.
 " \
+  --model opus \
   --dangerously-skip-permissions \
+  --max-turns 100 \
   --effort high \
   --verbose \
   2>&1 | tee -a "$LOG_FILE"
