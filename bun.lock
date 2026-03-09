@@ -263,6 +263,20 @@
         "vitest": "catalog:vite",
       },
     },
+    "modules/collections": {
+      "name": "@86d-app/collections",
+      "version": "0.0.1",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
     "modules/comparisons": {
       "name": "@86d-app/comparisons",
       "version": "0.0.1",
@@ -1114,6 +1128,8 @@
     "@86d-app/cart": ["@86d-app/cart@workspace:modules/cart"],
 
     "@86d-app/checkout": ["@86d-app/checkout@workspace:modules/checkout"],
+
+    "@86d-app/collections": ["@86d-app/collections@workspace:modules/collections"],
 
     "@86d-app/comparisons": ["@86d-app/comparisons@workspace:modules/comparisons"],
 
