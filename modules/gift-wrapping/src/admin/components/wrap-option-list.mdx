@@ -1,0 +1,81 @@
+# Gift Wrapping
+
+Manage gift wrapping options — create, price, and activate wrapping styles for your store.
+
+<div className="space-y-4">
+  {props.summary && (
+    <div className="grid grid-cols-4 gap-4">
+      <div className="rounded-lg border p-4">
+        <div className="text-sm text-muted-foreground">Total Options</div>
+        <div className="text-2xl font-bold">{props.summary.totalOptions}</div>
+      </div>
+      <div className="rounded-lg border p-4">
+        <div className="text-sm text-muted-foreground">Active</div>
+        <div className="text-2xl font-bold">{props.summary.activeOptions}</div>
+      </div>
+      <div className="rounded-lg border p-4">
+        <div className="text-sm text-muted-foreground">Selections</div>
+        <div className="text-2xl font-bold">{props.summary.totalSelections}</div>
+      </div>
+      <div className="rounded-lg border p-4">
+        <div className="text-sm text-muted-foreground">Revenue</div>
+        <div className="text-2xl font-bold">
+          ${(props.summary.totalRevenue / 100).toFixed(2)}
+        </div>
+      </div>
+    </div>
+  )}
+
+  <div className="flex items-center gap-2">
+    <select
+      className="rounded border px-3 py-1.5 text-sm"
+      value={props.activeFilter}
+      onChange={(e) => props.onActiveChange(e.target.value)}
+    >
+      <option value="">All</option>
+      <option value="true">Active</option>
+      <option value="false">Inactive</option>
+    </select>
+  </div>
+
+  {props.loading ? (
+    <div className="py-12 text-center text-muted-foreground">Loading wrapping options…</div>
+  ) : props.options.length === 0 ? (
+    <div className="py-12 text-center text-muted-foreground">No wrapping options found.</div>
+  ) : (
+    <div className="overflow-x-auto rounded-lg border">
+      <table className="w-full text-sm">
+        <thead className="border-b bg-muted/50">
+          <tr>
+            <th className="px-4 py-3 text-left font-medium">Name</th>
+            <th className="px-4 py-3 text-left font-medium">Price</th>
+            <th className="px-4 py-3 text-left font-medium">Status</th>
+            <th className="px-4 py-3 text-left font-medium">Sort Order</th>
+            <th className="px-4 py-3 text-left font-medium">Created</th>
+          </tr>
+        </thead>
+        <tbody>
+          {props.options.map((opt) => (
+            <tr key={opt.id} className="border-b last:border-0 hover:bg-muted/30">
+              <td className="px-4 py-3 font-medium">{opt.name}</td>
+              <td className="px-4 py-3">
+                {opt.priceInCents === 0
+                  ? "Free"
+                  : `$${(opt.priceInCents / 100).toFixed(2)}`}
+              </td>
+              <td className="px-4 py-3">
+                <span className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${opt.active ? "text-green-700 bg-green-50 border-green-200" : "text-gray-700 bg-gray-50 border-gray-200"}`}>
+                  {opt.active ? "Active" : "Inactive"}
+                </span>
+              </td>
+              <td className="px-4 py-3 text-muted-foreground">{opt.sortOrder}</td>
+              <td className="px-4 py-3 text-muted-foreground">
+                {new Date(opt.createdAt).toLocaleDateString()}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )}
+</div>

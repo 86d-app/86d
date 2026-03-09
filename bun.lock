@@ -485,6 +485,20 @@
         "vitest": "catalog:vite",
       },
     },
+    "modules/gift-wrapping": {
+      "name": "@86d-app/gift-wrapping",
+      "version": "0.0.1",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
     "modules/import-export": {
       "name": "@86d-app/import-export",
       "version": "0.0.1",
@@ -1316,6 +1330,8 @@
     "@86d-app/gift-cards": ["@86d-app/gift-cards@workspace:modules/gift-cards"],
 
     "@86d-app/gift-registry": ["@86d-app/gift-registry@workspace:modules/gift-registry"],
+
+    "@86d-app/gift-wrapping": ["@86d-app/gift-wrapping@workspace:modules/gift-wrapping"],
 
     "@86d-app/import-export": ["@86d-app/import-export@workspace:modules/import-export"],
 
