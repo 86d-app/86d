@@ -563,6 +563,20 @@
         "vitest": "catalog:vite",
       },
     },
+    "modules/product-feeds": {
+      "name": "@86d-app/product-feeds",
+      "version": "0.0.1",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
     "modules/product-labels": {
       "name": "@86d-app/product-labels",
       "version": "0.0.1",
@@ -1146,6 +1160,8 @@
     "@86d-app/paypal": ["@86d-app/paypal@workspace:modules/paypal"],
 
     "@86d-app/preorders": ["@86d-app/preorders@workspace:modules/preorders"],
+
+    "@86d-app/product-feeds": ["@86d-app/product-feeds@workspace:modules/product-feeds"],
 
     "@86d-app/product-labels": ["@86d-app/product-labels@workspace:modules/product-labels"],
 
