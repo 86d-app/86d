@@ -744,6 +744,20 @@
         "vitest": "catalog:vite",
       },
     },
+    "modules/social-proof": {
+      "name": "@86d-app/social-proof",
+      "version": "0.0.1",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
     "modules/square": {
       "name": "@86d-app/square",
       "version": "0.0.4",
@@ -1162,6 +1176,8 @@
     "@86d-app/settings": ["@86d-app/settings@workspace:modules/settings"],
 
     "@86d-app/shipping": ["@86d-app/shipping@workspace:modules/shipping"],
+
+    "@86d-app/social-proof": ["@86d-app/social-proof@workspace:modules/social-proof"],
 
     "@86d-app/square": ["@86d-app/square@workspace:modules/square"],
 
