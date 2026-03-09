@@ -1,0 +1,40 @@
+{
+	"name": "@86d-app/auctions",
+	"version": "0.0.1",
+	"description": "Time-limited product auctions with bidding, reserve prices, and buy-it-now for 86d commerce platform",
+	"keywords": ["commerce", "auctions", "bidding", "86d"],
+	"license": "MIT",
+	"author": "86d <chat@86d.app>",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/86d-app/86d.git",
+		"directory": "modules/auctions"
+	},
+	"homepage": "https://86d.app",
+	"type": "module",
+	"exports": {
+		"./components": "./src/store/components",
+		"./admin-components": "./src/admin/components",
+		"./*": "./src/*"
+	},
+	"scripts": {
+		"build": "tsc",
+		"check": "biome check src",
+		"check:fix": "biome check --write src",
+		"clean": "git clean -xdf .cache .turbo dist node_modules",
+		"dev": "tsc",
+		"test": "vitest run",
+		"test:watch": "vitest watch",
+		"typecheck": "tsc --noEmit --emitDeclarationOnly false"
+	},
+	"dependencies": {
+		"@86d-app/core": "workspace:*"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "catalog:",
+		"@types/mdx": "catalog:mdx",
+		"@types/react": "catalog:react",
+		"typescript": "catalog:",
+		"vitest": "catalog:vite"
+	}
+}

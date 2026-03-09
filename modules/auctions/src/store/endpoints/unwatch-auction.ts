@@ -1,0 +1,23 @@
+import { createStoreEndpoint, z } from "@86d-app/core";
+import type { AuctionController } from "../../service";
+
+export const unwatchAuction = createStoreEndpoint(
+	"/auctions/unwatch",
+	{
+		method: "POST",
+		body: z.object({
+			auctionId: z.string(),
+		}),
+	},
+	async (ctx) => {
+		const userId = ctx.context.session?.user?.id;
+		if (!userId) {
+			return { error: "Unauthorized", status: 401 };
+		}
+
+		const controller = ctx.context.controllers.auctions as AuctionController;
+		const removed = await controller.unwatchAuction(ctx.body.auctionId, userId);
+
+		return { removed };
+	},
+);

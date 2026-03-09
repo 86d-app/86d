@@ -1,0 +1,11 @@
+# Auctions
+
+Browse active auctions and place your bids.
+
+{props.loading && <div>Loading auctions...</div>}
+
+{!props.loading && props.auctions.length === 0 && (
+  <div className="text-center py-12 text-muted-foreground">
+    No active auctions right now. Check back soon!
+  </div>
+)}

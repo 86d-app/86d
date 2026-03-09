@@ -1,0 +1,25 @@
+# Auction
+
+{props.loading && <div>Loading auction...</div>}
+
+{props.auction && (
+  <div className="space-y-6">
+    <div>
+      <h2 className="text-2xl font-bold">{props.auction.title}</h2>
+      <p className="text-muted-foreground">{props.auction.productName}</p>
+    </div>
+    <div className="grid grid-cols-2 gap-4">
+      <div className="rounded-lg border p-4">
+        <div className="text-sm text-muted-foreground">Current Bid</div>
+        <div className="text-3xl font-bold">${(props.auction.currentBid / 100).toFixed(2)}</div>
+        <div className="text-sm text-muted-foreground">{props.auction.bidCount} bids</div>
+      </div>
+      {props.auction.buyNowPrice > 0 && (
+        <div className="rounded-lg border p-4">
+          <div className="text-sm text-muted-foreground">Buy It Now</div>
+          <div className="text-3xl font-bold">${(props.auction.buyNowPrice / 100).toFixed(2)}</div>
+        </div>
+      )}
+    </div>
+  </div>
+)}
