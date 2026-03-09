@@ -813,6 +813,20 @@
         "vitest": "catalog:vite",
       },
     },
+    "modules/store-locator": {
+      "name": "@86d-app/store-locator",
+      "version": "0.0.1",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
     "modules/stripe": {
       "name": "@86d-app/stripe",
       "version": "0.0.4",
@@ -1214,6 +1228,8 @@
     "@86d-app/square": ["@86d-app/square@workspace:modules/square"],
 
     "@86d-app/store-credits": ["@86d-app/store-credits@workspace:modules/store-credits"],
+
+    "@86d-app/store-locator": ["@86d-app/store-locator@workspace:modules/store-locator"],
 
     "@86d-app/stripe": ["@86d-app/stripe@workspace:modules/stripe"],
 
