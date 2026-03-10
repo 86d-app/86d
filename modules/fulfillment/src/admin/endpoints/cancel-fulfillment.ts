@@ -12,7 +12,7 @@ export const cancelFulfillment = createAdminEndpoint(
 			.fulfillment as FulfillmentController;
 		const fulfillment = await controller.cancelFulfillment(ctx.params.id);
 		if (!fulfillment) {
-			throw new Error("Fulfillment not found");
+			return { error: "Fulfillment not found", status: 404 };
 		}
 		return { fulfillment };
 	},

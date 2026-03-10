@@ -41,7 +41,7 @@ const module = fulfillment({
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `autoShipOnTracking` | `boolean` | `false` | Automatically transition status to "shipped" when tracking info is added |
+| `autoShipOnTracking` | `boolean` | `false` | Automatically transition status to "shipped" when tracking info is added to a pending or processing fulfillment |
 
 ## Store Endpoints
 
@@ -50,17 +50,45 @@ const module = fulfillment({
 | `GET` | `/fulfillment/:id` | Get a single fulfillment by ID |
 | `GET` | `/fulfillment/order/:orderId` | List all fulfillments for an order |
 
+Store endpoints return a subset of fields — `notes` and `updatedAt` are excluded.
+
 ## Admin Endpoints
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/admin/fulfillment` | List all fulfillments (filterable by status) |
+| `GET` | `/admin/fulfillment` | List all fulfillments (filterable by status, limit, offset) |
 | `POST` | `/admin/fulfillment/create` | Create a new fulfillment for an order |
 | `GET` | `/admin/fulfillment/:id` | Get a fulfillment by ID |
-| `PUT` | `/admin/fulfillment/:id/status` | Update fulfillment status |
-| `PUT` | `/admin/fulfillment/:id/tracking` | Add carrier and tracking information |
+| `POST` | `/admin/fulfillment/:id/status` | Update fulfillment status |
+| `POST` | `/admin/fulfillment/:id/tracking` | Add carrier and tracking information |
 | `POST` | `/admin/fulfillment/:id/cancel` | Cancel a fulfillment |
 | `GET` | `/admin/fulfillment/order/:orderId` | List fulfillments for an order (admin) |
+
+## Status Lifecycle
+
+```
+pending → processing → shipped → delivered
+  ↓          ↓           ↓
+  └──────────┴───────────┴──→ cancelled
+```
+
+- **delivered** and **cancelled** are terminal states with no outward transitions.
+- `shippedAt` is automatically set when status transitions to "shipped".
+- `deliveredAt` is automatically set when status transitions to "delivered".
+- `cancelFulfillment` is idempotent — calling it on an already-cancelled fulfillment returns the existing record.
+
+## Events
+
+The module emits the following domain events via `ScopedEventEmitter`:
+
+| Event | Trigger | Payload |
+|---|---|---|
+| `fulfillment.created` | New fulfillment created | `{ fulfillmentId, orderId, items }` |
+| `fulfillment.shipped` | Status → shipped | `{ fulfillmentId, orderId, carrier, trackingNumber }` |
+| `fulfillment.delivered` | Status → delivered | `{ fulfillmentId, orderId }` |
+| `fulfillment.cancelled` | Status → cancelled | `{ fulfillmentId, orderId }` |
+
+Events fire-and-forget and never block the mutation.
 
 ## Controller API
 
@@ -189,5 +217,5 @@ Use this component alongside order details to display shipping carrier and track
 - Requires the `orders` module (reads orderDetails and orderItems).
 - Multiple fulfillments can be created per order, supporting partial and split shipments.
 - Fulfillment items are stored as a JSON array (not a separate table).
-- `shippedAt` is set automatically when status transitions to "shipped"; `deliveredAt` when "delivered".
 - Store endpoints are read-only; all mutations require admin access.
+- Endpoints return `{ error, status }` objects for not-found cases instead of throwing.

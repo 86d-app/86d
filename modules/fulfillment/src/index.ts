@@ -33,7 +33,9 @@ export default function fulfillment(options?: FulfillmentOptions): Module {
 			],
 		},
 		init: async (ctx: ModuleContext) => {
-			const controller = createFulfillmentController(ctx.data);
+			const controller = createFulfillmentController(ctx.data, ctx.events, {
+				autoShipOnTracking: options?.autoShipOnTracking,
+			});
 			return { controllers: { fulfillment: controller } };
 		},
 		endpoints: {

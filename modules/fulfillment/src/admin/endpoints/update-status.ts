@@ -24,7 +24,7 @@ export const updateStatus = createAdminEndpoint(
 			ctx.body.status,
 		);
 		if (!fulfillment) {
-			throw new Error("Fulfillment not found");
+			return { error: "Fulfillment not found", status: 404 };
 		}
 		return { fulfillment };
 	},

@@ -12,7 +12,7 @@ export const getFulfillment = createStoreEndpoint(
 			.fulfillment as FulfillmentController;
 		const fulfillment = await controller.getFulfillment(ctx.params.id);
 		if (!fulfillment) {
-			throw new Error("Fulfillment not found");
+			return { error: "Fulfillment not found", status: 404 };
 		}
 		return {
 			fulfillment: {

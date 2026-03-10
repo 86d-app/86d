@@ -1,17 +1,9 @@
-import type { ModuleDataService } from "@86d-app/core";
+import type { ModuleDataService, ScopedEventEmitter } from "@86d-app/core";
 import type {
 	Fulfillment,
 	FulfillmentController,
 	FulfillmentStatus,
 } from "./service";
-
-const VALID_STATUSES: FulfillmentStatus[] = [
-	"pending",
-	"processing",
-	"shipped",
-	"delivered",
-	"cancelled",
-];
 
 const STATUS_TRANSITIONS: Record<FulfillmentStatus, FulfillmentStatus[]> = {
 	pending: ["processing", "shipped", "cancelled"],
@@ -21,8 +13,15 @@ const STATUS_TRANSITIONS: Record<FulfillmentStatus, FulfillmentStatus[]> = {
 	cancelled: [],
 };
 
+export interface FulfillmentControllerOptions {
+	/** Auto-transition to "shipped" when tracking is added to a pending/processing fulfillment */
+	autoShipOnTracking?: boolean | undefined;
+}
+
 export function createFulfillmentController(
 	data: ModuleDataService,
+	events?: ScopedEventEmitter | undefined,
+	options?: FulfillmentControllerOptions | undefined,
 ): FulfillmentController {
 	return {
 		async createFulfillment(params): Promise<Fulfillment> {
@@ -43,6 +42,15 @@ export function createFulfillmentController(
 			};
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("fulfillment", id, fulfillment as Record<string, any>);
+
+			if (events) {
+				void events.emit("fulfillment.created", {
+					fulfillmentId: id,
+					orderId: params.orderId,
+					items: params.items,
+				});
+			}
+
 			return fulfillment;
 		},
 
@@ -77,12 +85,8 @@ export function createFulfillmentController(
 			)) as Fulfillment | null;
 			if (!existing) return null;
 
-			if (!VALID_STATUSES.includes(status)) {
-				throw new Error(`Invalid status: ${status}`);
-			}
-
 			const allowed = STATUS_TRANSITIONS[existing.status];
-			if (!allowed.includes(status)) {
+			if (!allowed || !allowed.includes(status)) {
 				throw new Error(
 					`Cannot transition from "${existing.status}" to "${status}"`,
 				);
@@ -98,6 +102,28 @@ export function createFulfillmentController(
 			};
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("fulfillment", id, updated as Record<string, any>);
+
+			if (events) {
+				if (status === "shipped") {
+					void events.emit("fulfillment.shipped", {
+						fulfillmentId: id,
+						orderId: existing.orderId,
+						carrier: updated.carrier,
+						trackingNumber: updated.trackingNumber,
+					});
+				} else if (status === "delivered") {
+					void events.emit("fulfillment.delivered", {
+						fulfillmentId: id,
+						orderId: existing.orderId,
+					});
+				} else if (status === "cancelled") {
+					void events.emit("fulfillment.cancelled", {
+						fulfillmentId: id,
+						orderId: existing.orderId,
+					});
+				}
+			}
+
 			return updated;
 		},
 
@@ -114,15 +140,33 @@ export function createFulfillmentController(
 				);
 			}
 
+			const now = new Date();
+			const shouldAutoShip =
+				options?.autoShipOnTracking &&
+				(existing.status === "pending" || existing.status === "processing");
+
 			const updated: Fulfillment = {
 				...existing,
 				carrier: params.carrier,
 				trackingNumber: params.trackingNumber,
 				trackingUrl: params.trackingUrl,
-				updatedAt: new Date(),
+				updatedAt: now,
+				...(shouldAutoShip
+					? { status: "shipped" as const, shippedAt: now }
+					: {}),
 			};
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("fulfillment", id, updated as Record<string, any>);
+
+			if (events && shouldAutoShip) {
+				void events.emit("fulfillment.shipped", {
+					fulfillmentId: id,
+					orderId: existing.orderId,
+					carrier: params.carrier,
+					trackingNumber: params.trackingNumber,
+				});
+			}
+
 			return updated;
 		},
 
@@ -147,6 +191,14 @@ export function createFulfillmentController(
 			};
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("fulfillment", id, updated as Record<string, any>);
+
+			if (events) {
+				void events.emit("fulfillment.cancelled", {
+					fulfillmentId: id,
+					orderId: existing.orderId,
+				});
+			}
+
 			return updated;
 		},
 	};

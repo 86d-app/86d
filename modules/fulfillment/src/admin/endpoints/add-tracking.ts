@@ -21,7 +21,7 @@ export const addTracking = createAdminEndpoint(
 			trackingUrl: ctx.body.trackingUrl,
 		});
 		if (!fulfillment) {
-			throw new Error("Fulfillment not found");
+			return { error: "Fulfillment not found", status: 404 };
 		}
 		return { fulfillment };
 	},
