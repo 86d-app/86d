@@ -277,6 +277,18 @@
         "vitest": "catalog:vite",
       },
     },
+    "modules/bulk-pricing": {
+      "name": "@86d-app/bulk-pricing",
+      "version": "0.0.1",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
     "modules/bundles": {
       "name": "@86d-app/bundles",
       "version": "0.0.1",
@@ -1340,6 +1352,8 @@
     "@86d-app/braintree": ["@86d-app/braintree@workspace:modules/braintree"],
 
     "@86d-app/brands": ["@86d-app/brands@workspace:modules/brands"],
+
+    "@86d-app/bulk-pricing": ["@86d-app/bulk-pricing@workspace:modules/bulk-pricing"],
 
     "@86d-app/bundles": ["@86d-app/bundles@workspace:modules/bundles"],
 
