@@ -4,7 +4,11 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import type { IconName } from "~/components/icon/icon";
 import { Icon } from "~/components/icon/icon";
-import type { AdminNavGroup, AdminNavItem } from "~/lib/admin-registry";
+import type {
+	AdminNavGroup,
+	AdminNavItem,
+	AdminNavSubGroup,
+} from "~/lib/admin-registry";
 
 const DASHBOARD_ITEM: AdminNavItem = {
 	label: "Dashboard",
@@ -14,7 +18,7 @@ const DASHBOARD_ITEM: AdminNavItem = {
 
 const STORAGE_KEY = "86d-admin-sidebar-collapsed";
 
-function loadCollapsedGroups(): Set<string> {
+function loadCollapsedSections(): Set<string> {
 	if (typeof window === "undefined") return new Set();
 	try {
 		const raw = localStorage.getItem(STORAGE_KEY);
@@ -25,7 +29,7 @@ function loadCollapsedGroups(): Set<string> {
 	return new Set();
 }
 
-function saveCollapsedGroups(collapsed: Set<string>) {
+function saveCollapsedSections(collapsed: Set<string>) {
 	try {
 		localStorage.setItem(STORAGE_KEY, JSON.stringify([...collapsed]));
 	} catch {
@@ -33,20 +37,28 @@ function saveCollapsedGroups(collapsed: Set<string>) {
 	}
 }
 
+function isItemActive(href: string, pathname: string): boolean {
+	return href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
+}
+
 function NavLink({
 	item,
 	isActive,
 	onClose,
+	indent,
 }: {
 	item: AdminNavItem;
 	isActive: boolean;
 	onClose?: (() => void) | undefined;
+	indent?: boolean;
 }) {
 	return (
 		<a
 			href={item.href}
 			onClick={onClose}
-			className={`flex items-center gap-2.5 rounded-md px-3 py-2 font-medium text-sm transition-colors ${
+			className={`flex items-center gap-2.5 rounded-md py-1.5 font-medium text-sm transition-colors ${
+				indent ? "pr-3 pl-9" : "px-3"
+			} ${
 				isActive
 					? "bg-muted text-foreground"
 					: "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -60,27 +72,95 @@ function NavLink({
 	);
 }
 
+function CollapsibleSubGroup({
+	subgroup,
+	pathname,
+	collapsed,
+	onToggle,
+	onClose,
+}: {
+	subgroup: AdminNavSubGroup;
+	pathname: string;
+	collapsed: boolean;
+	onToggle: () => void;
+	onClose?: () => void;
+}) {
+	const hasActiveItem = subgroup.items.some((item) =>
+		isItemActive(item.href, pathname),
+	);
+
+	// Auto-expand if an item in this subgroup is active
+	const isOpen = hasActiveItem || !collapsed;
+
+	return (
+		<div className="pt-0.5">
+			<button
+				type="button"
+				onClick={onToggle}
+				className="flex w-full items-center gap-2 rounded-md px-3 py-1 text-left transition-colors hover:bg-muted/50"
+			>
+				{subgroup.icon ? (
+					<Icon
+						name={subgroup.icon as IconName}
+						className="size-3 shrink-0 text-muted-foreground/70"
+					/>
+				) : null}
+				<span className="flex-1 font-medium text-muted-foreground/80 text-xs">
+					{subgroup.label}
+				</span>
+				<Icon
+					name="chevron-right"
+					className={`size-2.5 shrink-0 text-muted-foreground/50 transition-transform duration-200 ${
+						isOpen ? "rotate-90" : ""
+					}`}
+				/>
+			</button>
+			{isOpen ? (
+				<div className="mt-0.5">
+					{subgroup.items.map((item) => (
+						<NavLink
+							key={item.href + item.label}
+							item={item}
+							isActive={isItemActive(item.href, pathname)}
+							indent
+							{...(onClose !== undefined ? { onClose } : {})}
+						/>
+					))}
+				</div>
+			) : null}
+		</div>
+	);
+}
+
 function CollapsibleGroup({
 	group,
 	pathname,
 	collapsed,
 	onToggle,
+	onToggleSubGroup,
+	collapsedSections,
 	onClose,
 }: {
 	group: AdminNavGroup;
 	pathname: string;
 	collapsed: boolean;
 	onToggle: () => void;
+	onToggleSubGroup: (key: string) => void;
+	collapsedSections: Set<string>;
 	onClose?: () => void;
 }) {
-	const hasActiveItem = group.items.some((item) =>
-		item.href === "/admin"
-			? pathname === "/admin"
-			: pathname.startsWith(item.href),
+	const hasActiveDirectItem = group.items.some((item) =>
+		isItemActive(item.href, pathname),
 	);
+	const hasActiveSubGroupItem = group.subgroups.some((sg) =>
+		sg.items.some((item) => isItemActive(item.href, pathname)),
+	);
+	const hasActiveItem = hasActiveDirectItem || hasActiveSubGroupItem;
 
 	// Auto-expand if an item in this group is active
 	const isOpen = hasActiveItem || !collapsed;
+
+	const hasSubGroups = group.subgroups.length > 0;
 
 	return (
 		<div className="pt-1">
@@ -107,16 +187,26 @@ function CollapsibleGroup({
 			</button>
 			{isOpen ? (
 				<div className="mt-0.5">
-					{group.items.map((item) => {
-						const isActive =
-							item.href === "/admin"
-								? pathname === "/admin"
-								: pathname.startsWith(item.href);
+					{/* Direct items (not in any subgroup) */}
+					{group.items.map((item) => (
+						<NavLink
+							key={item.href + item.label}
+							item={item}
+							isActive={isItemActive(item.href, pathname)}
+							{...(hasSubGroups ? { indent: false } : {})}
+							{...(onClose !== undefined ? { onClose } : {})}
+						/>
+					))}
+					{/* Subgroups */}
+					{group.subgroups.map((sg) => {
+						const sgKey = `${group.label}:${sg.label}`;
 						return (
-							<NavLink
-								key={item.href + item.label}
-								item={item}
-								isActive={isActive}
+							<CollapsibleSubGroup
+								key={sgKey}
+								subgroup={sg}
+								pathname={pathname}
+								collapsed={collapsedSections.has(sgKey)}
+								onToggle={() => onToggleSubGroup(sgKey)}
 								{...(onClose !== undefined ? { onClose } : {})}
 							/>
 						);
@@ -135,24 +225,24 @@ function Sidebar({
 	onClose?: () => void;
 }) {
 	const pathname = usePathname();
-	const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
+	const [collapsedSections, setCollapsedSections] = useState<Set<string>>(
 		() => new Set(),
 	);
 
 	// Load persisted state on mount
 	useEffect(() => {
-		setCollapsedGroups(loadCollapsedGroups());
+		setCollapsedSections(loadCollapsedSections());
 	}, []);
 
-	const toggleGroup = useCallback((label: string) => {
-		setCollapsedGroups((prev) => {
+	const toggleSection = useCallback((key: string) => {
+		setCollapsedSections((prev) => {
 			const next = new Set(prev);
-			if (next.has(label)) {
-				next.delete(label);
+			if (next.has(key)) {
+				next.delete(key);
 			} else {
-				next.add(label);
+				next.add(key);
 			}
-			saveCollapsedGroups(next);
+			saveCollapsedSections(next);
 			return next;
 		});
 	}, []);
@@ -191,26 +281,22 @@ function Sidebar({
 							key={group.label}
 							group={group}
 							pathname={pathname}
-							collapsed={collapsedGroups.has(group.label)}
-							onToggle={() => toggleGroup(group.label)}
+							collapsed={collapsedSections.has(group.label)}
+							onToggle={() => toggleSection(group.label)}
+							onToggleSubGroup={toggleSection}
+							collapsedSections={collapsedSections}
 							{...(onClose !== undefined ? { onClose } : {})}
 						/>
 					) : (
 						// Ungrouped items rendered directly
-						group.items.map((item) => {
-							const isActive =
-								item.href === "/admin"
-									? pathname === "/admin"
-									: pathname.startsWith(item.href);
-							return (
-								<NavLink
-									key={item.href + item.label}
-									item={item}
-									isActive={isActive}
-									{...(onClose !== undefined ? { onClose } : {})}
-								/>
-							);
-						})
+						group.items.map((item) => (
+							<NavLink
+								key={item.href + item.label}
+								item={item}
+								isActive={isItemActive(item.href, pathname)}
+								{...(onClose !== undefined ? { onClose } : {})}
+							/>
+						))
 					),
 				)}
 			</nav>

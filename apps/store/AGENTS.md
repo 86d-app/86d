@@ -42,7 +42,7 @@ components/
     1.mdx              Template variant 1 (render logic)
   logo/                Logo component variants
   admin/
-    shell.tsx          AdminShell: sidebar nav (Products, Categories, Carts) + mobile menu
+    shell.tsx          AdminShell: 2-level collapsible sidebar (groups + subgroups) + mobile menu
     product-form.tsx   ProductForm: create/edit form, fetches categories, slug auto-gen
 ```
 
@@ -57,6 +57,16 @@ Auth-protected, per-store management interface. Built at `app/admin/`.
 - All admin pages are client components using `useModuleClient()` hooks to `/api/admin/...` endpoints
 - Admin module components use the TSX+MDX pattern internally (logic in TSX, presentation in MDX)
 - API routes served through existing catch-all `api/[...path]/route.ts` (no separate admin route needed)
+
+### Admin sidebar navigation (2-level)
+The sidebar uses a 2-level collapsible navigation system:
+- **Level 1 (Groups)**: Catalog, Sales, Customers, Fulfillment, Marketing, Content, Finance, Support, System
+- **Level 2 (Subgroups)**: Larger groups have collapsible subgroups (e.g., Sales → Orders, Cart, Billing, Scheduling, Promotions, Add-ons)
+- Subgroup assignment is centralized in `lib/admin-registry.ts` via `SUBGROUP_CONFIG` — maps first path segment after `/admin/` to a subgroup
+- Modules can override subgroup via `subgroup` field on `AdminPage` declarations
+- Smaller groups (Content, Finance, Support, System) stay flat — no subgroups
+- Both group and subgroup collapse state persists in localStorage (`86d-admin-sidebar-collapsed`)
+- Active items auto-expand their parent group and subgroup
 
 ## Theme/template pattern
 

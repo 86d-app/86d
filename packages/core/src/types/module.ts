@@ -92,6 +92,12 @@ export interface AdminPage {
 	label?: string;
 	icon?: string;
 	group?: string;
+	/**
+	 * Optional subgroup within the group for 2-level sidebar navigation.
+	 * When set, the item is nested under a collapsible subgroup header.
+	 * If not set, the admin registry assigns one automatically based on the path.
+	 */
+	subgroup?: string;
 }
 
 /**

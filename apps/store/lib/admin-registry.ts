@@ -1,6 +1,13 @@
 /**
  * Admin registry: builds nav items and route table from module admin.pages.
  * Used by AdminShell (sidebar) and the catch-all admin route (resolve path → component).
+ *
+ * Supports 2-level navigation:
+ *   Level 1 — Groups (Catalog, Sales, Customers, …)
+ *   Level 2 — Subgroups within groups (Orders, Cart, Billing, …)
+ *
+ * Subgroups are assigned automatically based on the item's path prefix.
+ * Modules can override this by setting `subgroup` on their AdminPage declarations.
  */
 
 import type { AdminPage } from "@86d-app/core";
@@ -11,12 +18,22 @@ export interface AdminNavItem {
 	href: string;
 	icon?: string;
 	group?: string;
+	subgroup?: string;
+}
+
+export interface AdminNavSubGroup {
+	label: string;
+	icon: string;
+	items: AdminNavItem[];
 }
 
 export interface AdminNavGroup {
 	label: string;
 	icon: string;
+	/** Direct items not assigned to any subgroup */
 	items: AdminNavItem[];
+	/** Collapsible subgroups within this group */
+	subgroups: AdminNavSubGroup[];
 }
 
 export interface AdminRouteMatch {
@@ -47,6 +64,193 @@ const GROUP_ORDER = GROUP_CONFIG.map((g) => g.label);
 export const GROUP_ICONS: Record<string, string> = Object.fromEntries(
 	GROUP_CONFIG.map((g) => [g.label, g.icon]),
 );
+
+// ---------------------------------------------------------------------------
+// Subgroup configuration
+// ---------------------------------------------------------------------------
+
+/**
+ * Subgroup definitions per group.
+ * Each entry: label, icon, and the admin path segments it owns.
+ * Order here determines sidebar display order.
+ */
+const SUBGROUP_CONFIG: Record<
+	string,
+	ReadonlyArray<{
+		label: string;
+		icon: string;
+		/** First path segment(s) after /admin/ that belong to this subgroup */
+		segments: string[];
+	}>
+> = {
+	Catalog: [
+		{
+			label: "Products",
+			icon: "Package",
+			segments: ["products", "categories", "collections", "bundles"],
+		},
+		{
+			label: "Brands",
+			icon: "Store",
+			segments: ["brands", "vendors"],
+		},
+		{
+			label: "Pricing",
+			icon: "DollarSign",
+			segments: ["bulk-pricing", "price-lists", "labels"],
+		},
+	],
+	Sales: [
+		{
+			label: "Orders",
+			icon: "ShoppingBag",
+			segments: ["orders", "checkout", "returns"],
+		},
+		{
+			label: "Cart",
+			icon: "ShoppingCart",
+			segments: ["carts", "abandoned-carts"],
+		},
+		{
+			label: "Billing",
+			icon: "Receipt",
+			segments: ["payments", "invoices", "gift-cards", "downloads"],
+		},
+		{
+			label: "Scheduling",
+			icon: "Calendar",
+			segments: ["appointments", "subscriptions"],
+		},
+		{
+			label: "Promotions",
+			icon: "Lightning",
+			segments: ["flash-sales", "auctions", "quotes"],
+		},
+		{
+			label: "Add-ons",
+			icon: "Gift",
+			segments: ["gift-wrapping", "gift-registries", "warranties"],
+		},
+	],
+	Customers: [
+		{
+			label: "Manage",
+			icon: "Users",
+			segments: ["customers", "customer-groups"],
+		},
+		{
+			label: "Programs",
+			icon: "Crown",
+			segments: ["loyalty", "memberships", "store-credits"],
+		},
+		{
+			label: "Growth",
+			icon: "TrendingUp",
+			segments: ["affiliates", "referrals"],
+		},
+	],
+	Fulfillment: [
+		{
+			label: "Shipping",
+			icon: "Truck",
+			segments: ["shipping", "fulfillment"],
+		},
+		{
+			label: "Inventory",
+			icon: "Warehouse",
+			segments: ["inventory", "backorders", "preorders"],
+		},
+		{
+			label: "Delivery",
+			icon: "MapPin",
+			segments: ["store-pickup", "delivery-slots"],
+		},
+	],
+	Marketing: [
+		{
+			label: "Promotions",
+			icon: "Tag",
+			segments: ["discounts"],
+		},
+		{
+			label: "Feedback",
+			icon: "Star",
+			segments: ["reviews", "product-qa", "comparisons"],
+		},
+		{
+			label: "Engagement",
+			icon: "Megaphone",
+			segments: [
+				"newsletter",
+				"wishlist",
+				"waitlist",
+				"social-proof",
+				"recently-viewed",
+				"recommendations",
+				"product-feeds",
+			],
+		},
+	],
+};
+
+/**
+ * Pre-computed lookup: (group, path-segment) → subgroup label.
+ * Built once from SUBGROUP_CONFIG.
+ */
+const SEGMENT_TO_SUBGROUP: Record<string, Record<string, string>> = {};
+for (const [group, subgroups] of Object.entries(SUBGROUP_CONFIG)) {
+	const map: Record<string, string> = {};
+	for (const sg of subgroups) {
+		for (const seg of sg.segments) {
+			map[seg] = sg.label;
+		}
+	}
+	SEGMENT_TO_SUBGROUP[group] = map;
+}
+
+/**
+ * Pre-computed lookup: (group, subgroup label) → { label, icon }.
+ */
+const SUBGROUP_META: Record<
+	string,
+	Record<string, { label: string; icon: string }>
+> = {};
+for (const [group, subgroups] of Object.entries(SUBGROUP_CONFIG)) {
+	const map: Record<string, { label: string; icon: string }> = {};
+	for (const sg of subgroups) {
+		map[sg.label] = { label: sg.label, icon: sg.icon };
+	}
+	SUBGROUP_META[group] = map;
+}
+
+/**
+ * Extract the first path segment after /admin/ from an href.
+ * e.g. "/admin/products/new" → "products"
+ */
+function extractAdminSegment(href: string): string {
+	const parts = href.replace(/^\//, "").split("/");
+	// parts[0] = "admin", parts[1] = first segment
+	return parts[1] ?? "";
+}
+
+/**
+ * Determine the subgroup for a nav item.
+ * Priority: explicit page.subgroup > path-based auto-assignment > undefined.
+ */
+function resolveSubgroup(
+	item: AdminNavItem,
+	group: string,
+): string | undefined {
+	if (item.subgroup) return item.subgroup;
+	const segmentMap = SEGMENT_TO_SUBGROUP[group];
+	if (!segmentMap) return undefined;
+	const segment = extractAdminSegment(item.href);
+	return segmentMap[segment];
+}
+
+// ---------------------------------------------------------------------------
+// Route table (unchanged)
+// ---------------------------------------------------------------------------
 
 function buildRouteTable(): Array<{
 	pattern: string;
@@ -118,9 +322,13 @@ export function getAdminRoute(path: string): AdminRouteMatch | null {
 	return null;
 }
 
+// ---------------------------------------------------------------------------
+// Nav items (flat list)
+// ---------------------------------------------------------------------------
+
 /**
- * Nav items for the admin sidebar: only pages with a label, with optional group and icon.
- * Order: Dashboard (built-in), then by group (Catalog, Sales, …), then ungrouped; within group by label.
+ * Nav items for the admin sidebar: only pages with a label, with optional group, icon, and subgroup.
+ * Order: by group (Catalog, Sales, …), then by subgroup order, then alphabetically within subgroup.
  */
 export function getAdminNavItems(): AdminNavItem[] {
 	const withLabel: Array<AdminNavItem & { sortGroup: string }> = [];
@@ -134,6 +342,8 @@ export function getAdminNavItems(): AdminNavItem[] {
 				...(page.icon !== undefined && page.icon !== "" && { icon: page.icon }),
 				...(page.group !== undefined &&
 					page.group !== "" && { group: page.group }),
+				...(page.subgroup !== undefined &&
+					page.subgroup !== "" && { subgroup: page.subgroup }),
 				sortGroup: page.group ?? "\uFFFF", // ungrouped last when sorted
 			});
 		}
@@ -153,9 +363,13 @@ export function getAdminNavItems(): AdminNavItem[] {
 	return withLabel.map(({ sortGroup: _, ...item }) => item);
 }
 
+// ---------------------------------------------------------------------------
+// Nav groups (2-level structured)
+// ---------------------------------------------------------------------------
+
 /**
- * Structured nav groups for the sidebar with ordered sections.
- * Each group has a label, icon, and sorted list of nav items.
+ * Structured nav groups for the sidebar with ordered sections and subgroups.
+ * Each group has a label, icon, direct items (no subgroup), and subgroups.
  */
 export function getAdminNavGroups(): AdminNavGroup[] {
 	const items = getAdminNavItems();
@@ -179,10 +393,61 @@ export function getAdminNavGroups(): AdminNavGroup[] {
 	const groups: AdminNavGroup[] = [];
 	for (const [label, groupItems] of groupMap) {
 		if (!label) continue; // skip ungrouped for now
+
+		// Separate items into subgroups and direct items
+		const subgroupBuckets = new Map<string, AdminNavItem[]>();
+		const directItems: AdminNavItem[] = [];
+
+		for (const item of groupItems) {
+			const sg = resolveSubgroup(item, label);
+			if (sg) {
+				const bucket = subgroupBuckets.get(sg);
+				if (bucket) {
+					bucket.push(item);
+				} else {
+					subgroupBuckets.set(sg, [item]);
+				}
+			} else {
+				directItems.push(item);
+			}
+		}
+
+		// Build subgroups in config order
+		const subgroups: AdminNavSubGroup[] = [];
+		const configOrder = SUBGROUP_CONFIG[label];
+		if (configOrder) {
+			for (const sgConfig of configOrder) {
+				const sgItems = subgroupBuckets.get(sgConfig.label);
+				if (sgItems && sgItems.length > 0) {
+					sgItems.sort((a, b) => a.label.localeCompare(b.label));
+					subgroups.push({
+						label: sgConfig.label,
+						icon: sgConfig.icon,
+						items: sgItems,
+					});
+				}
+			}
+		}
+
+		// Any subgroups not in config (from explicit module declarations) go at the end
+		for (const [sgLabel, sgItems] of subgroupBuckets) {
+			if (subgroups.some((sg) => sg.label === sgLabel)) continue;
+			sgItems.sort((a, b) => a.label.localeCompare(b.label));
+			const meta = SUBGROUP_META[label]?.[sgLabel];
+			subgroups.push({
+				label: sgLabel,
+				icon: meta?.icon ?? "Folder",
+				items: sgItems,
+			});
+		}
+
+		directItems.sort((a, b) => a.label.localeCompare(b.label));
+
 		groups.push({
 			label,
 			icon: GROUP_ICONS[label] ?? "Folder",
-			items: groupItems,
+			items: directItems,
+			subgroups,
 		});
 	}
 
@@ -193,13 +458,14 @@ export function getAdminNavGroups(): AdminNavGroup[] {
 		return a.label.localeCompare(b.label);
 	});
 
-	// Prepend ungrouped items as individual pseudo-groups
+	// Prepend ungrouped items as individual pseudo-group
 	const ungrouped = groupMap.get("");
 	if (ungrouped) {
 		groups.unshift({
 			label: "",
 			icon: "",
 			items: ungrouped,
+			subgroups: [],
 		});
 	}
 

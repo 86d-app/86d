@@ -40,6 +40,8 @@ internals/github/    CI setup action
 
 Every module exports a factory → Module object with `id`, `version`, `schema`, `endpoints`, and optional `init`. Modules depend only on `@86d-app/core`. All DB access goes through `ModuleDataService` (provided by runtime). Modules cannot import other modules directly — cross-module access uses declared contracts (`requires`/`exports`).
 
+Admin pages declare `group` and optional `subgroup` for 2-level sidebar navigation. Groups: Catalog, Sales, Customers, Fulfillment, Marketing, Content, Finance, Support, System. Large groups have collapsible subgroups (e.g., Sales → Orders, Cart, Billing). Subgroup mapping is centralized in `apps/store/lib/admin-registry.ts`.
+
 ```
 modules/<name>/src/
   index.ts              Factory + types + admin nav

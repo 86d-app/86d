@@ -62,6 +62,22 @@ requires: {
 
 The runtime validates at init that every consumer requirement is a subset of what the provider permits. Read vs readWrite is enforced. No module can access fields another module hasn't explicitly exposed. Contracts are part of the public API — changing exposed fields is a semver-breaking change.
 
+## Admin page declarations
+
+Modules declare admin pages with optional sidebar metadata:
+
+```ts
+admin: {
+  pages: [
+    { path: "/admin/products", component: "ProductList", label: "Products", icon: "Package", group: "Catalog" },
+    { path: "/admin/products/:id/edit", component: "ProductEdit" },  // no label = not in sidebar
+  ]
+}
+```
+
+- `group` — sidebar section (Catalog, Sales, Customers, Fulfillment, Marketing, Content, Finance, Support, System)
+- `subgroup` — optional 2nd-level grouping within a group (e.g., "Orders" within "Sales"). If omitted, assigned automatically by `admin-registry.ts` based on the path segment after `/admin/`
+
 ## Key details
 
 - This is the only package module authors depend on (`@86d-app/core`)
