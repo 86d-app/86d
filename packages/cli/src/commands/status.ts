@@ -45,9 +45,13 @@ export function status() {
 				.sort()
 		: [];
 
-	const enabledModules = templateConfig?.modules ?? [];
+	const configModules = templateConfig?.modules;
+	const enabledModules =
+		configModules === "*"
+			? allModules.map((m) => `@86d-app/${m}`)
+			: (configModules ?? []);
 	const enabledNames = new Set(
-		enabledModules.map((m) => m.replace(/^@86d-app\//, "")),
+		enabledModules.map((m: string) => m.replace(/^@86d-app\//, "")),
 	);
 	const disabledModules = allModules.filter((m) => !enabledNames.has(m));
 

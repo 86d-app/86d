@@ -1,17 +1,20 @@
-import {
-	existsSync,
-	mkdirSync,
-	readdirSync,
-	readFileSync,
-	writeFileSync,
-} from "node:fs";
+import { execSync } from "node:child_process";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import type { RegistryManifest, RegistryModule } from "@86d-app/registry";
+import {
+	fetchModule,
+	getLocalModuleNames,
+	parseSpecifier,
+	readLocalManifest,
+} from "@86d-app/registry";
 import {
 	c,
 	error,
 	findProjectRoot,
 	getTemplateConfigPath,
 	heading,
+	info,
 	readJson,
 	success,
 	type TemplateConfig,
@@ -22,9 +25,14 @@ export function moduleCommand(subcommand: string | undefined, args: string[]) {
 	switch (subcommand) {
 		case "create":
 			return createModule(args[0]);
+		case "add":
+		case "install":
+			return addModule(args[0]);
 		case "list":
 		case "ls":
 			return listModules();
+		case "search":
+			return searchRegistry(args[0]);
 		case "info":
 			return moduleInfo(args[0]);
 		case "enable":
@@ -48,13 +56,147 @@ function printHelp() {
 ${c.bold("86d module")} — Manage modules
 
 ${c.dim("Usage:")}
-  86d module create <name>    Scaffold a new module
-  86d module list              List all modules
-  86d module info <name>       Show module details
-  86d module enable <name>     Enable a module in the active template
-  86d module disable <name>    Disable a module in the active template
+  86d module create <name>           Scaffold a new module
+  86d module add <specifier>         Add a module from registry, GitHub, or npm
+  86d module list                    List all local modules
+  86d module search [query]          Search the registry for modules
+  86d module info <name>             Show module details
+  86d module enable <name>           Enable a module in the active template
+  86d module disable <name>          Disable a module in the active template
+
+${c.dim("Module specifiers (for 'add'):")}
+  products                           Official module (short name)
+  @86d-app/products                  Official module (full name)
+  github:owner/repo/modules/name    GitHub repository module
+  npm:@scope/package                 npm package
 `);
 }
+
+// ── Registry Helpers ──────────────────────────────────────────────────
+
+function loadManifest(root: string): RegistryManifest | undefined {
+	return readLocalManifest(join(root, "registry.json"));
+}
+
+// ── Add Module ────────────────────────────────────────────────────────
+
+async function addModule(specifier: string | undefined) {
+	if (!specifier) {
+		error("Module specifier is required.");
+		console.log(`\n  Usage: 86d module add <specifier>`);
+		console.log(`  Examples:`);
+		console.log(`    ${c.dim("86d module add products")}`);
+		console.log(
+			`    ${c.dim("86d module add github:owner/repo/modules/loyalty")}`,
+		);
+		console.log(`    ${c.dim("86d module add npm:@acme/commerce-module")}`);
+		process.exit(1);
+	}
+
+	const root = findProjectRoot();
+	const manifest = loadManifest(root);
+
+	// Parse the specifier using the registry package
+	const spec = parseSpecifier(specifier);
+
+	heading(`Adding module: ${spec.packageName}`);
+	console.log();
+
+	// Check if already installed locally
+	const localDir = join(root, "modules", spec.name);
+	if (existsSync(join(localDir, "package.json"))) {
+		info(`Module "${spec.name}" already exists locally`);
+		enableModule(spec.name);
+		return;
+	}
+
+	// Fetch the module using the registry package
+	info(`Fetching ${spec.packageName} (source: ${spec.source})...`);
+	const result = await fetchModule(spec, root, manifest);
+
+	if (!result.success) {
+		error(`Failed to add module: ${result.error}`);
+
+		if (spec.source === "registry") {
+			console.log(
+				`\n  Try: ${c.bold(`86d module create ${spec.name}`)} to scaffold a new module.`,
+			);
+		}
+		process.exit(1);
+	}
+
+	success(`Downloaded module to ${result.localPath}`);
+
+	// Install dependencies
+	info("Installing dependencies...");
+	try {
+		execSync("bun install", { cwd: root, stdio: "pipe" });
+	} catch {
+		warn("Failed to install dependencies — run 'bun install' manually");
+	}
+
+	success(`Added ${c.bold(spec.packageName)}`);
+
+	// Enable in template config
+	enableModule(spec.name);
+
+	console.log(`\n  Run ${c.bold("86d generate")} to update generated code.\n`);
+}
+
+// ── Search Registry ───────────────────────────────────────────────────
+
+function searchRegistry(query: string | undefined) {
+	const root = findProjectRoot();
+	const manifest = loadManifest(root);
+
+	if (!manifest?.modules) {
+		error("No registry.json found. Run 'bun run generate:registry' first.");
+		process.exit(1);
+	}
+
+	const entries = Object.entries(manifest.modules);
+	const filtered = query
+		? entries.filter(
+				([name, mod]) =>
+					name.includes(query) ||
+					mod.description.toLowerCase().includes(query.toLowerCase()) ||
+					mod.category.toLowerCase().includes(query.toLowerCase()),
+			)
+		: entries;
+
+	heading(
+		`Registry modules${query ? ` matching "${query}"` : ""} (${filtered.length})`,
+	);
+	console.log();
+
+	// Group by category
+	const grouped: Record<string, Array<[string, RegistryModule]>> = {};
+	for (const entry of filtered) {
+		const cat = entry[1].category;
+		if (!grouped[cat]) grouped[cat] = [];
+		grouped[cat].push(entry);
+	}
+
+	const localModules = new Set(getLocalModuleNames(root));
+
+	for (const [category, mods] of Object.entries(grouped).sort((a, b) =>
+		a[0].localeCompare(b[0]),
+	)) {
+		console.log(
+			`  ${c.bold(category.charAt(0).toUpperCase() + category.slice(1))}`,
+		);
+		for (const [name, mod] of mods) {
+			const installed = localModules.has(name);
+			const status = installed ? c.green(" ●") : c.dim(" ○");
+			console.log(
+				`  ${status} ${c.cyan(name)} ${c.dim(`v${mod.version}`)} — ${c.dim(mod.description.slice(0, 60))}`,
+			);
+		}
+		console.log();
+	}
+}
+
+// ── List Modules ──────────────────────────────────────────────────────
 
 function listModules() {
 	const root = findProjectRoot();
@@ -65,12 +207,10 @@ function listModules() {
 		return;
 	}
 
-	const modules = readdirSync(modulesDir, { withFileTypes: true })
-		.filter((d) => d.isDirectory())
-		.map((d) => d.name)
-		.sort();
+	const modules = getLocalModuleNames(root);
+	const manifest = loadManifest(root);
 
-	heading(`Modules (${modules.length})`);
+	heading(`Local modules (${modules.length})`);
 	console.log();
 
 	for (const mod of modules) {
@@ -88,6 +228,13 @@ function listModules() {
 		const tags: string[] = [];
 		if (hasComponents) tags.push(c.cyan("components"));
 		if (hasAdmin) tags.push(c.yellow("admin"));
+
+		// Add registry metadata if available
+		const registryEntry = manifest?.modules[mod];
+		if (registryEntry?.category) {
+			tags.push(c.dim(registryEntry.category));
+		}
+
 		const tagStr =
 			tags.length > 0
 				? `  ${c.dim("[")}${tags.join(c.dim(", "))}${c.dim("]")}`
@@ -97,6 +244,8 @@ function listModules() {
 	}
 	console.log();
 }
+
+// ── Module Info ───────────────────────────────────────────────────────
 
 function moduleInfo(name: string | undefined) {
 	if (!name) {
@@ -109,8 +258,29 @@ function moduleInfo(name: string | undefined) {
 	const moduleName = name.replace(/^@86d-app\//, "");
 	const moduleDir = join(root, "modules", moduleName);
 
+	// Check registry first if not installed locally
 	if (!existsSync(moduleDir)) {
-		error(`Module "${moduleName}" not found at ${moduleDir}`);
+		const manifest = loadManifest(root);
+		const entry = manifest?.modules[moduleName];
+		if (entry) {
+			heading(`@86d-app/${moduleName} ${c.dim("(not installed)")}`);
+			console.log();
+			console.log(`  ${c.dim("Version:")}     ${entry.version}`);
+			console.log(`  ${c.dim("Category:")}    ${entry.category}`);
+			console.log(`  ${c.dim("Description:")} ${entry.description}`);
+			if (entry.requires.length > 0) {
+				console.log(`  ${c.dim("Requires:")}    ${entry.requires.join(", ")}`);
+			}
+			console.log(
+				`  ${c.dim("Components:")}  store: ${entry.hasStoreComponents ? c.green("yes") : c.dim("no")}, admin: ${entry.hasAdminComponents ? c.green("yes") : c.dim("no")}`,
+			);
+			console.log(
+				`\n  Install with: ${c.bold(`86d module add ${moduleName}`)}\n`,
+			);
+			return;
+		}
+
+		error(`Module "${moduleName}" not found locally or in registry`);
 		process.exit(1);
 	}
 
@@ -120,11 +290,18 @@ function moduleInfo(name: string | undefined) {
 		dependencies?: Record<string, string>;
 	}>(join(moduleDir, "package.json"));
 
+	const manifest = loadManifest(root);
+	const registryEntry = manifest?.modules[moduleName];
+
 	heading(`@86d-app/${moduleName}`);
 	console.log();
 
 	if (pkg?.version) {
 		console.log(`  ${c.dim("Version:")}  ${pkg.version}`);
+	}
+
+	if (registryEntry?.category) {
+		console.log(`  ${c.dim("Category:")} ${registryEntry.category}`);
 	}
 
 	// Read module ID from index.ts
@@ -156,6 +333,12 @@ function moduleInfo(name: string | undefined) {
 	console.log(
 		`  ${c.dim("Components:")} ${storeComponents ? c.green("store") : c.dim("none")}${adminComponents ? `, ${c.green("admin")}` : ""}`,
 	);
+
+	if (registryEntry?.requires && registryEntry.requires.length > 0) {
+		console.log(
+			`  ${c.dim("Requires:")}   ${registryEntry.requires.join(", ")}`,
+		);
+	}
 
 	// Check for tests
 	const hasTests =
@@ -196,6 +379,8 @@ function listEndpointPaths(filePath: string, indent: string) {
 	}
 }
 
+// ── Enable/Disable ───────────────────────────────────────────────────
+
 function enableModule(name: string | undefined) {
 	if (!name) {
 		error("Module name is required.");
@@ -223,6 +408,12 @@ function enableModule(name: string | undefined) {
 	if (!config) {
 		error(`Could not read ${configPath}`);
 		process.exit(1);
+	}
+
+	// When modules is "*", all modules are already enabled
+	if (config.modules === "*") {
+		info(`Config uses "*" (all modules) — ${fullName} is already included`);
+		return;
 	}
 
 	const modules = config.modules ?? [];
@@ -261,6 +452,21 @@ function disableModule(name: string | undefined) {
 		process.exit(1);
 	}
 
+	// When modules is "*", convert to explicit list minus the disabled module
+	if (config.modules === "*") {
+		const allModules = getLocalModuleNames(root)
+			.map((d) => `@86d-app/${d}`)
+			.filter((m) => m !== fullName);
+
+		config.modules = allModules;
+		writeFileSync(configPath, `${JSON.stringify(config, null, "\t")}\n`);
+		success(`Disabled ${c.bold(fullName)} (converted "*" to explicit list)`);
+		console.log(
+			`\n  Run ${c.bold("86d generate")} to update generated code.\n`,
+		);
+		return;
+	}
+
 	const modules = config.modules ?? [];
 	const idx = modules.indexOf(fullName);
 	if (idx === -1) {
@@ -274,6 +480,8 @@ function disableModule(name: string | undefined) {
 	success(`Disabled ${c.bold(fullName)}`);
 	console.log(`\n  Run ${c.bold("86d generate")} to update generated code.\n`);
 }
+
+// ── Create Module ─────────────────────────────────────────────────────
 
 function createModule(name: string | undefined) {
 	if (!name) {
@@ -487,6 +695,8 @@ describe("${moduleName}", () => {
 	console.log(`  ${c.dim("3.")} Run: ${c.bold("86d generate")}`);
 	console.log();
 }
+
+// ── Helpers ───────────────────────────────────────────────────────────
 
 function toCamelCase(name: string): string {
 	return name.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());

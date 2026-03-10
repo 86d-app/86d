@@ -37,6 +37,9 @@ logs/
 .cache/
 .parcel-cache/
 
+# Registry cache
+.86d/
+
 # Misc
 bak/
 

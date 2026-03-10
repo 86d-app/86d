@@ -27,9 +27,10 @@ packages/
   core/              Module system (isolation boundary, contracts, test-utils)
   runtime/           Store runtime engine (data service, registry)
   cli/               CLI tool (dev, init, module, template, generate)
+  registry/          Git-based module registry (resolve, fetch, cache modules)
 templates/
   brisa/             Default store template (config.json, MDX pages, global.css)
-scripts/             Code generation (generate-modules.ts, generate-component-docs.ts)
+scripts/             Code generation (generate-modules.ts, generate-registry.ts)
 internals/github/    CI setup action
 ```
 

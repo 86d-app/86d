@@ -119,7 +119,7 @@ export function readJson<T = Record<string, unknown>>(
 export interface TemplateConfig {
 	theme?: string;
 	name?: string;
-	modules?: string[];
+	modules?: "*" | string[];
 	[key: string]: unknown;
 }
 

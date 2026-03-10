@@ -1,0 +1,838 @@
+{
+	"version": 1,
+	"baseUrl": "https://github.com/86d-app/86d",
+	"defaultRef": "main",
+	"modules": {
+		"abandoned-carts": {
+			"name": "@86d-app/abandoned-carts",
+			"description": "Abandoned cart tracking and recovery for 86d commerce platform",
+			"version": "0.0.1",
+			"category": "sales",
+			"path": "modules/abandoned-carts",
+			"requires": [],
+			"hasStoreComponents": true,
+			"hasAdminComponents": true,
+			"hasStorePages": false
+		},
+		"affiliates": {
+			"name": "@86d-app/affiliates",
+			"description": "Affiliate marketing program module for 86d commerce platform",
+			"version": "0.0.1",
+			"category": "growth",
+			"path": "modules/affiliates",
+			"requires": [],
+			"hasStoreComponents": false,
+			"hasAdminComponents": false,
+			"hasStorePages": false
+		},
+		"analytics": {
+			"name": "@86d-app/analytics",
+			"description": "Event tracking and analytics module for 86d commerce platform",
+			"version": "0.0.4",
+			"category": "marketing",
+			"path": "modules/analytics",
+			"requires": [],
+			"hasStoreComponents": false,
+			"hasAdminComponents": true,
+			"hasStorePages": false
+		},
+		"announcements": {
+			"name": "@86d-app/announcements",
+			"description": "Site-wide announcement bars, promotional banners, and notification banners for 86d commerce platform",
+			"version": "0.0.1",
+			"category": "content",
+			"path": "modules/announcements",
+			"requires": [],
+			"hasStoreComponents": true,
+			"hasAdminComponents": false,
+			"hasStorePages": false
+		},
+		"appointments": {
+			"name": "@86d-app/appointments",
+			"description": "Appointments — service-based booking with staff scheduling, time slots, and customer appointment management",
+			"version": "0.0.1",
+			"category": "services",
+			"path": "modules/appointments",
+			"requires": [
+				"customers"
+			],
+			"hasStoreComponents": false,
+			"hasAdminComponents": false,
+			"hasStorePages": true
+		},
+		"auctions": {
+			"name": "@86d-app/auctions",
+			"description": "Time-limited product auctions with bidding, reserve prices, and buy-it-now for 86d commerce platform",
+			"version": "0.0.1",
+			"category": "sales",
+			"path": "modules/auctions",
+			"requires": [],
+			"hasStoreComponents": true,
+			"hasAdminComponents": true,
+			"hasStorePages": true
+		},
+		"audit-log": {
+			"name": "@86d-app/audit-log",
+			"description": "Audit logging for admin actions and system events in 86d commerce platform",
+			"version": "0.0.1",
+			"category": "system",
+			"path": "modules/audit-log",
+			"requires": [],
+			"hasStoreComponents": false,
+			"hasAdminComponents": false,
+			"hasStorePages": false
+		},
+		"automations": {
+			"name": "@86d-app/automations",
+			"description": "Event-driven workflow automation module for 86d commerce platform",
+			"version": "0.0.1",
+			"category": "system",
+			"path": "modules/automations",
+			"requires": [],
+			"hasStoreComponents": false,
+			"hasAdminComponents": false,
+			"hasStorePages": false
+		},
+		"backorders": {
+			"name": "@86d-app/backorders",
+			"description": "Backorder management module for 86d commerce platform",
+			"version": "0.0.1",
+			"category": "orders",
+			"path": "modules/backorders",
+			"requires": [
+				"inventory"
+			],
+			"hasStoreComponents": false,
+			"hasAdminComponents": false,
+			"hasStorePages": false
+		},
+		"blog": {
+			"name": "@86d-app/blog",
+			"description": "Blog content management module for 86d commerce platform",
+			"version": "0.0.4",
+			"category": "marketing",
+			"path": "modules/blog",
+			"requires": [],
+			"hasStoreComponents": true,
+			"hasAdminComponents": true,
+			"hasStorePages": true
+		},
+		"braintree": {
+			"name": "@86d-app/braintree",
+			"description": "Braintree payment provider for 86d commerce platform",
+			"version": "0.0.4",
+			"category": "settings",
+			"path": "modules/braintree",
+			"requires": [],
+			"hasStoreComponents": false,
+			"hasAdminComponents": true,
+			"hasStorePages": false
+		},
+		"brands": {
+			"name": "@86d-app/brands",
+			"description": "Product brand management — organize products by manufacturer or brand with brand pages",
+			"version": "0.0.1",
+			"category": "products",
+			"path": "modules/brands",
+			"requires": [],
+			"hasStoreComponents": false,
+			"hasAdminComponents": false,
+			"hasStorePages": false
+		},
+		"bulk-pricing": {
+			"name": "@86d-app/bulk-pricing",
+			"description": "Quantity-based tiered pricing — set volume discounts for products so customers pay less when buying in bulk",
+			"version": "0.0.1",
+			"category": "catalog",
+			"path": "modules/bulk-pricing",
+			"requires": [
+				"products"
+			],
+			"hasStoreComponents": false,
+			"hasAdminComponents": false,
+			"hasStorePages": false
+		},
+		"bundles": {
+			"name": "@86d-app/bundles",
+			"description": "Product bundles with configurable discounts for 86d commerce platform",
+			"version": "0.0.1",
+			"category": "catalog",
+			"path": "modules/bundles",
+			"requires": [],
+			"hasStoreComponents": true,
+			"hasAdminComponents": true,
+			"hasStorePages": false
+		},
+		"cart": {
+			"name": "@86d-app/cart",
+			"description": "Shopping cart module for 86d commerce platform",
+			"version": "0.0.4",
+			"category": "sales",
+			"path": "modules/cart",
+			"requires": [],
+			"hasStoreComponents": true,
+			"hasAdminComponents": true,
+			"hasStorePages": false
+		},
+		"checkout": {
+			"name": "@86d-app/checkout",
+			"description": "Checkout flow module for 86d commerce platform",
+			"version": "0.0.4",
+			"category": "sales",
+			"path": "modules/checkout",
+			"requires": [],
+			"hasStoreComponents": true,
+			"hasAdminComponents": true,
+			"hasStorePages": false
+		},
+		"collections": {
+			"name": "@86d-app/collections",
+			"description": "Curated product collections for merchandising — manual and automatic groupings",
+			"version": "0.0.1",
+			"category": "products",
+			"path": "modules/collections",
+			"requires": [],
+			"hasStoreComponents": true,
+			"hasAdminComponents": true,
+			"hasStorePages": false
+		},
+		"comparisons": {
+			"name": "@86d-app/comparisons",
+			"description": "Product comparison module for 86d commerce platform",
+			"version": "0.0.1",
+			"category": "marketing",
+			"path": "modules/comparisons",
+			"requires": [],
+			"hasStoreComponents": true,
+			"hasAdminComponents": true,
+			"hasStorePages": false
+		},
+		"customer-groups": {
+			"name": "@86d-app/customer-groups",
+			"description": "Customer groups and segmentation module for 86d commerce platform",
+			"version": "0.0.1",
+			"category": "customers",
+			"path": "modules/customer-groups",
+			"requires": [],
+			"hasStoreComponents": false,
+			"hasAdminComponents": false,
+			"hasStorePages": false
+		},
+		"customers": {
+			"name": "@86d-app/customers",
+			"description": "Customer management module for 86d commerce platform",
+			"version": "0.0.4",
+			"category": "customers",
+			"path": "modules/customers",
+			"requires": [],
+			"hasStoreComponents": true,
+			"hasAdminComponents": true,
+			"hasStorePages": false
+		},
+		"delivery-slots": {
+			"name": "@86d-app/delivery-slots",
+			"description": "Delivery slots — define delivery time windows by day of week with capacity limits, surcharges, and blackout dates",
+			"version": "0.0.1",
+			"category": "orders",
+			"path": "modules/delivery-slots",
+			"requires": [
+				"orders"
+			],
+			"hasStoreComponents": true,
+			"hasAdminComponents": true,
+			"hasStorePages": true
+		},
+		"digital-downloads": {
+			"name": "@86d-app/digital-downloads",
+			"description": "Digital file delivery module for 86d commerce platform",
+			"version": "0.0.4",
+			"category": "sales",
+			"path": "modules/digital-downloads",
+			"requires": [],
+			"hasStoreComponents": true,
+			"hasAdminComponents": true,
+			"hasStorePages": false
+		},
+		"discounts": {
+			"name": "@86d-app/discounts",
+			"description": "Discount codes and promotions module for 86d commerce platform",
+			"version": "0.0.4",
+			"category": "sales",
+			"path": "modules/discounts",
+			"requires": [],
+			"hasStoreComponents": true,
+			"hasAdminComponents": true,
+			"hasStorePages": false
+		},
+		"faq": {
+			"name": "@86d-app/faq",
+			"description": "FAQ and knowledge base module for 86d commerce platform",
+			"version": "0.0.1",
+			"category": "content",
+			"path": "modules/faq",
+			"requires": [],
+			"hasStoreComponents": true,
+			"hasAdminComponents": false,
+			"hasStorePages": false
+		},
+		"flash-sales": {
+			"name": "@86d-app/flash-sales",
+			"description": "Flash sales — time-limited promotional events with countdown timers, per-product sale pricing, and stock limits",
+			"version": "0.0.1",
+			"category": "sales",
+			"path": "modules/flash-sales",
+			"requires": [
+				"products"
+			],
+			"hasStoreComponents": false,
+			"hasAdminComponents": false,
+			"hasStorePages": true
+		},
+		"forms": {
+			"name": "@86d-app/forms",
+			"description": "Custom forms module for 86d commerce platform — contact forms, surveys, inquiries",
+			"version": "0.0.1",
+			"category": "content",
+			"path": "modules/forms",
+			"requires": [],
+			"hasStoreComponents": false,
+			"hasAdminComponents": false,
+			"hasStorePages": false
+		},
+		"fulfillment": {
+			"name": "@86d-app/fulfillment",
+			"description": "Order fulfillment management for 86d commerce platform",
+			"version": "0.0.1",
+			"category": "orders",
+			"path": "modules/fulfillment",
+			"requires": [],
+			"hasStoreComponents": true,
+			"hasAdminComponents": true,
+			"hasStorePages": false
+		},
+		"gift-cards": {
+			"name": "@86d-app/gift-cards",
+			"description": "Gift card issuance, redemption, and balance management for 86d commerce platform",
+			"version": "0.0.4",
+			"category": "sales",
+			"path": "modules/gift-cards",
+			"requires": [],
+			"hasStoreComponents": true,
+			"hasAdminComponents": true,
+			"hasStorePages": false
+		},
+		"gift-registry": {
+			"name": "@86d-app/gift-registry",
+			"description": "",
+			"version": "0.0.1",
+			"category": "sales",
+			"path": "modules/gift-registry",
+			"requires": [],
+			"hasStoreComponents": true,
+			"hasAdminComponents": true,
+			"hasStorePages": true
+		},
+		"gift-wrapping": {
+			"name": "@86d-app/gift-wrapping",
+			"description": "Gift wrapping — add-on wrapping options for order items with custom messages and recipient names",
+			"version": "0.0.1",
+			"category": "sales",
+			"path": "modules/gift-wrapping",
+			"requires": [
+				"orders"
+			],
+			"hasStoreComponents": true,
+			"hasAdminComponents": true,
+			"hasStorePages": true
+		},
+		"import-export": {
+			"name": "@86d-app/import-export",
+			"description": "Bulk import and export for products, orders, customers, and inventory in 86d commerce platform",
+			"version": "0.0.1",
+			"category": "settings",
+			"path": "modules/import-export",
+			"requires": [],
+			"hasStoreComponents": false,
+			"hasAdminComponents": true,
+			"hasStorePages": false
+		},
+		"inventory": {
+			"name": "@86d-app/inventory",
+			"description": "Inventory and stock tracking module for 86d commerce platform",
+			"version": "0.0.4",
+			"category": "settings",
+			"path": "modules/inventory",
+			"requires": [],
+			"hasStoreComponents": true,
+			"hasAdminComponents": true,
+			"hasStorePages": false
+		},
+		"invoices": {
+			"name": "@86d-app/invoices",
+			"description": "Invoices — invoice lifecycle management with payment terms, partial payments, credit notes, and configurable numbering",
+			"version": "0.0.1",
+			"category": "sales",
+			"path": "modules/invoices",
+			"requires": [
+				"orders"
+			],
+			"hasStoreComponents": true,
+			"hasAdminComponents": true,
+			"hasStorePages": false
+		},
+		"loyalty": {
+			"name": "@86d-app/loyalty",
+			"description": "Customer loyalty and rewards points module for 86d commerce platform",
+			"version": "0.0.4",
+			"category": "marketing",
+			"path": "modules/loyalty",
+			"requires": [
+				"customers"
+			],
+			"hasStoreComponents": true,
+			"hasAdminComponents": false,
+			"hasStorePages": false
+		},
+		"media": {
+			"name": "@86d-app/media",
+			"description": "Media and asset management module for 86d commerce platform",
+			"version": "0.0.1",
+			"category": "content",
+			"path": "modules/media",
+			"requires": [],
+			"hasStoreComponents": true,
+			"hasAdminComponents": true,
+			"hasStorePages": false
+		},
+		"memberships": {
+			"name": "@86d-app/memberships",
+			"description": "Paid membership plans — recurring subscriptions with exclusive benefits, gated products, and member pricing",
+			"version": "0.0.1",
+			"category": "customers",
+			"path": "modules/memberships",
+			"requires": [
+				"customers"
+			],
+			"hasStoreComponents": false,
+			"hasAdminComponents": false,
+			"hasStorePages": false
+		},
+		"multi-currency": {
+			"name": "@86d-app/multi-currency",
+			"description": "Multi-currency support module for 86d commerce platform",
+			"version": "0.0.1",
+			"category": "settings",
+			"path": "modules/multi-currency",
+			"requires": [],
+			"hasStoreComponents": false,
+			"hasAdminComponents": false,
+			"hasStorePages": false
+		},
+		"navigation": {
+			"name": "@86d-app/navigation",
+			"description": "Store navigation and menu management module for 86d commerce platform",
+			"version": "0.0.1",
+			"category": "content",
+			"path": "modules/navigation",
+			"requires": [],
+			"hasStoreComponents": true,
+			"hasAdminComponents": true,
+			"hasStorePages": false
+		},
+		"newsletter": {
+			"name": "@86d-app/newsletter",
+			"description": "Newsletter subscription management module for 86d commerce platform",
+			"version": "0.0.4",
+			"category": "marketing",
+			"path": "modules/newsletter",
+			"requires": [],
+			"hasStoreComponents": true,
+			"hasAdminComponents": true,
+			"hasStorePages": false
+		},
+		"notifications": {
+			"name": "@86d-app/notifications",
+			"description": "In-app notification management module for 86d commerce platform",
+			"version": "0.0.1",
+			"category": "engagement",
+			"path": "modules/notifications",
+			"requires": [],
+			"hasStoreComponents": true,
+			"hasAdminComponents": true,
+			"hasStorePages": false
+		},
+		"orders": {
+			"name": "@86d-app/orders",
+			"description": "Order management module for 86d commerce platform",
+			"version": "0.0.4",
+			"category": "sales",
+			"path": "modules/orders",
+			"requires": [],
+			"hasStoreComponents": true,
+			"hasAdminComponents": true,
+			"hasStorePages": false
+		},
+		"pages": {
+			"name": "@86d-app/pages",
+			"description": "Custom content pages module for 86d commerce platform",
+			"version": "0.0.1",
+			"category": "content",
+			"path": "modules/pages",
+			"requires": [],
+			"hasStoreComponents": true,
+			"hasAdminComponents": true,
+			"hasStorePages": true
+		},
+		"payments": {
+			"name": "@86d-app/payments",
+			"description": "Payment processing abstraction for 86d commerce platform",
+			"version": "0.0.4",
+			"category": "sales",
+			"path": "modules/payments",
+			"requires": [],
+			"hasStoreComponents": false,
+			"hasAdminComponents": true,
+			"hasStorePages": false
+		},
+		"paypal": {
+			"name": "@86d-app/paypal",
+			"description": "PayPal payment provider for 86d commerce platform",
+			"version": "0.0.4",
+			"category": "settings",
+			"path": "modules/paypal",
+			"requires": [],
+			"hasStoreComponents": false,
+			"hasAdminComponents": true,
+			"hasStorePages": false
+		},
+		"preorders": {
+			"name": "@86d-app/preorders",
+			"description": "Preorder campaign management module for 86d commerce platform",
+			"version": "0.0.1",
+			"category": "orders",
+			"path": "modules/preorders",
+			"requires": [
+				"products"
+			],
+			"hasStoreComponents": false,
+			"hasAdminComponents": false,
+			"hasStorePages": false
+		},
+		"price-lists": {
+			"name": "@86d-app/price-lists",
+			"description": "Price list management — B2B/wholesale pricing, volume tiers, customer-group-specific pricing, and scheduled price overrides",
+			"version": "0.0.1",
+			"category": "catalog",
+			"path": "modules/price-lists",
+			"requires": [
+				"products"
+			],
+			"hasStoreComponents": false,
+			"hasAdminComponents": false,
+			"hasStorePages": false
+		},
+		"product-feeds": {
+			"name": "@86d-app/product-feeds",
+			"description": "Product feed generation for Google Shopping, Facebook/Meta catalog, and custom channels in 86d commerce platform",
+			"version": "0.0.1",
+			"category": "marketing",
+			"path": "modules/product-feeds",
+			"requires": [],
+			"hasStoreComponents": false,
+			"hasAdminComponents": false,
+			"hasStorePages": false
+		},
+		"product-labels": {
+			"name": "@86d-app/product-labels",
+			"description": "Product labels and badges module for 86d commerce platform",
+			"version": "0.0.1",
+			"category": "products",
+			"path": "modules/product-labels",
+			"requires": [],
+			"hasStoreComponents": true,
+			"hasAdminComponents": true,
+			"hasStorePages": false
+		},
+		"product-qa": {
+			"name": "@86d-app/product-qa",
+			"description": "Product questions and answers module for 86d commerce platform",
+			"version": "0.0.1",
+			"category": "marketing",
+			"path": "modules/product-qa",
+			"requires": [],
+			"hasStoreComponents": false,
+			"hasAdminComponents": false,
+			"hasStorePages": false
+		},
+		"products": {
+			"name": "@86d-app/products",
+			"description": "Product catalog module for 86d commerce platform",
+			"version": "0.0.4",
+			"category": "catalog",
+			"path": "modules/products",
+			"requires": [],
+			"hasStoreComponents": true,
+			"hasAdminComponents": true,
+			"hasStorePages": true
+		},
+		"quotes": {
+			"name": "@86d-app/quotes",
+			"description": "",
+			"version": "0.0.1",
+			"category": "sales",
+			"path": "modules/quotes",
+			"requires": [],
+			"hasStoreComponents": false,
+			"hasAdminComponents": false,
+			"hasStorePages": false
+		},
+		"recently-viewed": {
+			"name": "@86d-app/recently-viewed",
+			"description": "Recently viewed products tracking module for 86d commerce platform",
+			"version": "0.0.1",
+			"category": "marketing",
+			"path": "modules/recently-viewed",
+			"requires": [],
+			"hasStoreComponents": true,
+			"hasAdminComponents": true,
+			"hasStorePages": false
+		},
+		"recommendations": {
+			"name": "@86d-app/recommendations",
+			"description": "Product recommendation engine for 86d commerce platform",
+			"version": "0.0.1",
+			"category": "marketing",
+			"path": "modules/recommendations",
+			"requires": [],
+			"hasStoreComponents": false,
+			"hasAdminComponents": false,
+			"hasStorePages": false
+		},
+		"referrals": {
+			"name": "@86d-app/referrals",
+			"description": "Customer referral program module for 86d commerce platform",
+			"version": "0.0.1",
+			"category": "growth",
+			"path": "modules/referrals",
+			"requires": [],
+			"hasStoreComponents": true,
+			"hasAdminComponents": true,
+			"hasStorePages": false
+		},
+		"returns": {
+			"name": "@86d-app/returns",
+			"description": "Return request management for 86d commerce platform",
+			"version": "0.0.1",
+			"category": "sales",
+			"path": "modules/returns",
+			"requires": [],
+			"hasStoreComponents": true,
+			"hasAdminComponents": true,
+			"hasStorePages": false
+		},
+		"reviews": {
+			"name": "@86d-app/reviews",
+			"description": "Product reviews and ratings module for 86d commerce platform",
+			"version": "0.0.4",
+			"category": "marketing",
+			"path": "modules/reviews",
+			"requires": [],
+			"hasStoreComponents": true,
+			"hasAdminComponents": true,
+			"hasStorePages": false
+		},
+		"search": {
+			"name": "@86d-app/search",
+			"description": "Unified search, autocomplete, and search analytics module for 86d commerce platform",
+			"version": "0.0.4",
+			"category": "marketing",
+			"path": "modules/search",
+			"requires": [],
+			"hasStoreComponents": true,
+			"hasAdminComponents": true,
+			"hasStorePages": true
+		},
+		"seo": {
+			"name": "@86d-app/seo",
+			"description": "SEO management module for 86d commerce platform — meta tags, redirects, and sitemaps",
+			"version": "0.0.1",
+			"category": "marketing",
+			"path": "modules/seo",
+			"requires": [],
+			"hasStoreComponents": true,
+			"hasAdminComponents": true,
+			"hasStorePages": true
+		},
+		"settings": {
+			"name": "@86d-app/settings",
+			"description": "Store settings and configuration module for 86d commerce platform",
+			"version": "0.0.1",
+			"category": "configuration",
+			"path": "modules/settings",
+			"requires": [],
+			"hasStoreComponents": false,
+			"hasAdminComponents": true,
+			"hasStorePages": false
+		},
+		"shipping": {
+			"name": "@86d-app/shipping",
+			"description": "Shipping zones and rates module for 86d commerce platform",
+			"version": "0.0.4",
+			"category": "settings",
+			"path": "modules/shipping",
+			"requires": [],
+			"hasStoreComponents": true,
+			"hasAdminComponents": true,
+			"hasStorePages": false
+		},
+		"social-proof": {
+			"name": "@86d-app/social-proof",
+			"description": "Social proof and trust signals module for 86d commerce platform",
+			"version": "0.0.1",
+			"category": "marketing",
+			"path": "modules/social-proof",
+			"requires": [],
+			"hasStoreComponents": true,
+			"hasAdminComponents": true,
+			"hasStorePages": false
+		},
+		"square": {
+			"name": "@86d-app/square",
+			"description": "Square payment provider for 86d commerce platform",
+			"version": "0.0.4",
+			"category": "settings",
+			"path": "modules/square",
+			"requires": [],
+			"hasStoreComponents": false,
+			"hasAdminComponents": true,
+			"hasStorePages": false
+		},
+		"store-credits": {
+			"name": "@86d-app/store-credits",
+			"description": "Store credit accounts and transactions for 86d commerce platform",
+			"version": "0.0.1",
+			"category": "sales",
+			"path": "modules/store-credits",
+			"requires": [],
+			"hasStoreComponents": true,
+			"hasAdminComponents": false,
+			"hasStorePages": false
+		},
+		"store-locator": {
+			"name": "@86d-app/store-locator",
+			"description": "Physical store location management and proximity search for 86d commerce platform",
+			"version": "0.0.1",
+			"category": "content",
+			"path": "modules/store-locator",
+			"requires": [],
+			"hasStoreComponents": false,
+			"hasAdminComponents": false,
+			"hasStorePages": false
+		},
+		"store-pickup": {
+			"name": "@86d-app/store-pickup",
+			"description": "Store pickup (BOPIS) — let customers buy online and pick up in store with location management and time windows",
+			"version": "0.0.1",
+			"category": "orders",
+			"path": "modules/store-pickup",
+			"requires": [
+				"orders"
+			],
+			"hasStoreComponents": true,
+			"hasAdminComponents": true,
+			"hasStorePages": true
+		},
+		"stripe": {
+			"name": "@86d-app/stripe",
+			"description": "Stripe payment provider for 86d commerce platform",
+			"version": "0.0.4",
+			"category": "settings",
+			"path": "modules/stripe",
+			"requires": [],
+			"hasStoreComponents": false,
+			"hasAdminComponents": true,
+			"hasStorePages": false
+		},
+		"subscriptions": {
+			"name": "@86d-app/subscriptions",
+			"description": "Subscription plans and recurring billing module for 86d commerce platform",
+			"version": "0.0.4",
+			"category": "sales",
+			"path": "modules/subscriptions",
+			"requires": [],
+			"hasStoreComponents": true,
+			"hasAdminComponents": true,
+			"hasStorePages": false
+		},
+		"tax": {
+			"name": "@86d-app/tax",
+			"description": "Tax calculation and management module for 86d commerce platform",
+			"version": "0.0.4",
+			"category": "settings",
+			"path": "modules/tax",
+			"requires": [],
+			"hasStoreComponents": true,
+			"hasAdminComponents": true,
+			"hasStorePages": false
+		},
+		"tickets": {
+			"name": "@86d-app/tickets",
+			"description": "Customer support tickets module for 86d commerce platform",
+			"version": "0.0.1",
+			"category": "support",
+			"path": "modules/tickets",
+			"requires": [],
+			"hasStoreComponents": false,
+			"hasAdminComponents": false,
+			"hasStorePages": false
+		},
+		"vendors": {
+			"name": "@86d-app/vendors",
+			"description": "Multi-vendor marketplace — vendor profiles, product assignments, commission tracking, and payout management",
+			"version": "0.0.1",
+			"category": "marketplace",
+			"path": "modules/vendors",
+			"requires": [
+				"products"
+			],
+			"hasStoreComponents": false,
+			"hasAdminComponents": false,
+			"hasStorePages": false
+		},
+		"waitlist": {
+			"name": "@86d-app/waitlist",
+			"description": "Back-in-stock waitlist and notification module for 86d commerce platform",
+			"version": "0.0.1",
+			"category": "marketing",
+			"path": "modules/waitlist",
+			"requires": [
+				"inventory"
+			],
+			"hasStoreComponents": true,
+			"hasAdminComponents": false,
+			"hasStorePages": false
+		},
+		"warranties": {
+			"name": "@86d-app/warranties",
+			"description": "Product warranty plans, registrations, and claims for 86d commerce platform",
+			"version": "0.0.1",
+			"category": "sales",
+			"path": "modules/warranties",
+			"requires": [],
+			"hasStoreComponents": true,
+			"hasAdminComponents": true,
+			"hasStorePages": false
+		},
+		"wishlist": {
+			"name": "@86d-app/wishlist",
+			"description": "Customer wishlist and favorites module for 86d commerce platform",
+			"version": "0.0.4",
+			"category": "marketing",
+			"path": "modules/wishlist",
+			"requires": [],
+			"hasStoreComponents": true,
+			"hasAdminComponents": true,
+			"hasStorePages": false
+		}
+	}
+}

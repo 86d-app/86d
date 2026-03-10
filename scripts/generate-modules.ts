@@ -3,29 +3,35 @@
 /**
  * Module Generator Script
  *
- * Generates apps/store/modules.ts from templates/config.json
+ * Generates apps/store/generated/ from templates/config.json
  *
- * Features:
- * - Reads module list from config.json
- * - Detects workspace vs npm modules automatically
- * - Adds missing modules to package.json dependencies
- * - Installs dependencies if needed
- * - Generates static imports for all modules with components
- * - Treats @86d-app/* and external modules uniformly
+ * Uses @86d-app/registry for module resolution and fetching:
+ * - Resolves module specifiers (local, registry, github, npm)
+ * - Fetches missing modules from remote sources at buildtime
+ * - Generates static imports for all resolved modules
+ * - Gracefully skips modules that fail to resolve/fetch
  *
- * Module Types:
- * - Workspace: @86d-app/* modules in /modules directory
- * - NPM: Any other module name (installed from npm)
+ * Module specifiers in config.json:
+ * - "*": All local workspace modules + registry modules
+ * - "@86d-app/products": Official module (workspace or registry)
+ * - "github:owner/repo/modules/custom": GitHub module
+ * - "npm:@scope/package": npm module
  */
 
 import { execSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
-
-interface Config {
-	modules?: string[];
-	moduleOptions?: Record<string, any>;
-}
+import {
+	existsSync,
+	mkdirSync,
+	readFileSync,
+	writeFileSync,
+} from "node:fs";
+import { join, resolve } from "node:path";
+import {
+	fetchModule,
+	readStoreConfig,
+	resolveModules,
+} from "../packages/registry/src/index.js";
+import type { ResolvedModule } from "../packages/registry/src/index.js";
 
 interface PackageJson {
 	dependencies?: Record<string, string>;
@@ -34,6 +40,7 @@ interface PackageJson {
 
 interface ModuleInfo {
 	name: string;
+	packageName: string;
 	hasComponents: boolean;
 	type: "workspace" | "npm";
 }
@@ -65,6 +72,86 @@ function readPackageJson(): PackageJson {
 
 function writePackageJson(pkg: PackageJson) {
 	writeFileSync(PACKAGE_JSON_PATH, JSON.stringify(pkg, null, 4));
+}
+
+/**
+ * Resolve the modules field using the registry package.
+ *
+ * 1. Read config.json and resolve all module specifiers
+ * 2. For missing modules: attempt buildtime fetch from remote sources
+ * 3. Return only successfully resolved modules as package name strings
+ */
+async function resolveModulesFromRegistry(): Promise<ResolvedModule[]> {
+	const config = readStoreConfig(CONFIG_PATH);
+
+	// Resolve specifiers against local workspace + registry manifest
+	const resolved = await resolveModules(config, { root: WORKSPACE_ROOT });
+
+	const found: ResolvedModule[] = [];
+	const toFetch: ResolvedModule[] = [];
+
+	for (const mod of resolved) {
+		if (mod.status === "found") {
+			found.push(mod);
+		} else if (mod.status === "missing" && !mod.error) {
+			// Module exists in registry/github/npm but not locally — can be fetched
+			toFetch.push(mod);
+		} else {
+			// Truly missing (not in registry, or has error) — skip with warning
+			console.warn(
+				`⚠ Module "${mod.specifier.raw}" not found — skipping${mod.error ? `: ${mod.error}` : ""}`,
+			);
+		}
+	}
+
+	// Fetch missing modules at buildtime
+	if (toFetch.length > 0) {
+		console.log(`  Fetching ${toFetch.length} missing module(s)...`);
+
+		// Load manifest for fetch operations
+		const { readLocalManifest } = await import(
+			"../packages/registry/src/index.js"
+		);
+		const manifest = readLocalManifest(
+			join(WORKSPACE_ROOT, "registry.json"),
+		);
+
+		for (const mod of toFetch) {
+			const { specifier } = mod;
+			console.log(`  ↓ Fetching ${specifier.packageName} (${specifier.source})...`);
+
+			const result = await fetchModule(specifier, WORKSPACE_ROOT, manifest);
+			if (result.success && result.localPath) {
+				found.push({
+					...mod,
+					status: "found",
+					localPath: result.localPath,
+				});
+				console.log(`  ✓ ${specifier.packageName}`);
+			} else {
+				console.warn(
+					`  ⚠ Failed to fetch ${specifier.packageName}: ${result.error ?? "unknown error"} — skipping`,
+				);
+			}
+		}
+	}
+
+	const localCount = found.filter(
+		(m) => m.specifier.source === "local",
+	).length;
+	const remoteCount = found.length - localCount;
+	console.log(
+		`  Resolved ${found.length} module(s) (${localCount} local, ${remoteCount} fetched)`,
+	);
+
+	return found;
+}
+
+/**
+ * Convert resolved modules to the package name list the generators expect.
+ */
+function resolvedToPackageNames(resolved: ResolvedModule[]): string[] {
+	return resolved.map((m) => m.specifier.packageName);
 }
 
 function isWorkspaceModule(moduleName: string): boolean {
@@ -164,14 +251,7 @@ async function ensureModuleDependencies(modules: string[]) {
 }
 
 async function generateModulesFile() {
-	// Read config.json
-	if (!existsSync(CONFIG_PATH)) {
-		console.error("config.json not found at:", CONFIG_PATH);
-		process.exit(1);
-	}
-
-	const config: Config = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
-	const modules = config.modules || [];
+	const modules = getCachedModules();
 
 	if (modules.length === 0) {
 		console.log("No modules defined in config.json");
@@ -270,14 +350,8 @@ export { components };
 }
 
 async function generateApiRouter() {
-	// Read config.json
-	if (!existsSync(CONFIG_PATH)) {
-		console.error("config.json not found at:", CONFIG_PATH);
-		process.exit(1);
-	}
-
-	const config: Config = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
-	const modules = config.modules || [];
+	const config = readStoreConfig(CONFIG_PATH);
+	const modules = getCachedModules();
 	const moduleOptions = config.moduleOptions || {};
 
 	if (modules.length === 0) {
@@ -424,14 +498,7 @@ export type Router = ReturnType<typeof createApiRouter>;
 }
 
 async function generateClient() {
-	// Read config.json
-	if (!existsSync(CONFIG_PATH)) {
-		console.error("config.json not found at:", CONFIG_PATH);
-		process.exit(1);
-	}
-
-	const config: Config = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
-	const modules = config.modules || [];
+	const modules = getCachedModules();
 
 	if (modules.length === 0) {
 		console.log("No modules defined for client generation");
@@ -570,8 +637,7 @@ function extractEndpointMappings(moduleName: string): {
  * by friendly names: api.cart.getCart.useQuery(), api.products.listProducts.useQuery()
  */
 async function generateHooks() {
-	const config: Config = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
-	const modules = config.modules || [];
+	const modules = getCachedModules();
 
 	if (modules.length === 0) {
 		const emptyContent = `// Auto-generated file - do not edit manually
@@ -656,14 +722,20 @@ function buildApi(client: ModuleClient<any>) {
 		const propName = toCamelCase(mod.shortName);
 		code += `    ${propName}: {\n`;
 
+		// Collect store endpoint names for dedup
+		const storeNames = new Set(mod.store.map((ep) => ep.name));
+
 		// Store endpoints
 		for (const ep of mod.store) {
 			code += `      ${ep.name}: client.module("${mod.moduleId}").store["${ep.path}"],\n`;
 		}
 
-		// Admin endpoints (nested under the module, not a separate top-level 'admin')
+		// Admin endpoints — prefix with "admin" if name collides with a store endpoint
 		for (const ep of mod.admin) {
-			code += `      ${ep.name}: client.module("${mod.moduleId}").admin["${ep.path}"],\n`;
+			const key = storeNames.has(ep.name)
+				? `admin${ep.name.charAt(0).toUpperCase()}${ep.name.slice(1)}`
+				: ep.name;
+			code += `      ${key}: client.module("${mod.moduleId}").admin["${ep.path}"],\n`;
 		}
 
 		code += "    },\n";
@@ -690,13 +762,7 @@ export { useModuleClient } from "@86d-app/core/client";
  * Keyed by module id so the catch-all route can load (moduleId, componentName) → Component.
  */
 async function generateAdminLoaders() {
-	if (!existsSync(CONFIG_PATH)) {
-		console.error("config.json not found at:", CONFIG_PATH);
-		process.exit(1);
-	}
-
-	const config: Config = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
-	const modules = config.modules || [];
+	const modules = getCachedModules();
 
 	const entries: Array<{ moduleId: string; packageName: string }> = [];
 	for (const moduleName of modules) {
@@ -737,13 +803,7 @@ ${loadersEntries}
  * Only modules with store.pages are included (used by the store catch-all route).
  */
 async function generateStoreLoaders() {
-	if (!existsSync(CONFIG_PATH)) {
-		console.error("config.json not found at:", CONFIG_PATH);
-		process.exit(1);
-	}
-
-	const config: Config = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
-	const modules = config.modules || [];
+	const modules = getCachedModules();
 
 	const entries: Array<{ moduleId: string; packageName: string }> = [];
 	for (const moduleName of modules) {
@@ -788,8 +848,31 @@ ${loadersEntries}
 	console.log(`✓ Generated store-loaders.ts with ${entries.length} module(s)`);
 }
 
+// Cache resolved modules list so it's only computed once
+let _cachedModules: string[] | undefined;
+let _cachedResolved: ResolvedModule[] | undefined;
+
+function getCachedModules(): string[] {
+	if (!_cachedModules) {
+		throw new Error("Modules not resolved yet — call resolveModulesFromRegistry() first");
+	}
+	return _cachedModules;
+}
+
+function getCachedResolved(): ResolvedModule[] {
+	if (!_cachedResolved) {
+		throw new Error("Modules not resolved yet — call resolveModulesFromRegistry() first");
+	}
+	return _cachedResolved;
+}
+
 // Run all generators
 async function runGenerators() {
+	// Pre-resolve modules once for all generators (with buildtime fetch)
+	console.log("Resolving modules...");
+	_cachedResolved = await resolveModulesFromRegistry();
+	_cachedModules = resolvedToPackageNames(_cachedResolved);
+
 	await generateModulesFile();
 	await generateApiRouter();
 	await generateClient();

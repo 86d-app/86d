@@ -10,31 +10,7 @@
         "light": "/assets/logo/light.svg",
         "dark": "/assets/logo/dark.svg"
     },
-    "modules": [
-        "@86d-app/products",
-        "@86d-app/cart",
-        "@86d-app/customers",
-        "@86d-app/orders",
-        "@86d-app/discounts",
-        "@86d-app/checkout",
-        "@86d-app/inventory",
-        "@86d-app/shipping",
-        "@86d-app/subscriptions",
-        "@86d-app/digital-downloads",
-        "@86d-app/payments",
-        "@86d-app/reviews",
-        "@86d-app/newsletter",
-        "@86d-app/analytics",
-        "@86d-app/stripe",
-        "@86d-app/square",
-        "@86d-app/paypal",
-        "@86d-app/braintree",
-        "@86d-app/wishlist",
-        "@86d-app/gift-cards",
-        "@86d-app/tax",
-        "@86d-app/blog",
-        "@86d-app/import-export"
-    ],
+    "modules": "*",
     "moduleOptions": {
         "@86d-app/cart": {
             "guestCartExpiration": 604800000,

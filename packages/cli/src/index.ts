@@ -67,7 +67,9 @@ ${c.bold("Commands:")}
   ${c.cyan("status")}                  Show project health and configuration
   ${c.cyan("doctor")}                  Diagnose project issues with fix suggestions
   ${c.cyan("module create")} <name>    Scaffold a new module
-  ${c.cyan("module list")}             List all modules
+  ${c.cyan("module add")} <specifier>  Add a module from registry, GitHub, or npm
+  ${c.cyan("module list")}             List all local modules
+  ${c.cyan("module search")} [query]   Search the registry for modules
   ${c.cyan("module info")} <name>      Show module details
   ${c.cyan("module enable")} <name>    Enable a module in the active template
   ${c.cyan("module disable")} <name>   Disable a module in the active template

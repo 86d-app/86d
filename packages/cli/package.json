@@ -34,7 +34,8 @@
 		"typecheck": "tsc --noEmit --emitDeclarationOnly false"
 	},
 	"dependencies": {
-		"@86d-app/core": "workspace:*"
+		"@86d-app/core": "workspace:*",
+		"@86d-app/registry": "workspace:*"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "catalog:",

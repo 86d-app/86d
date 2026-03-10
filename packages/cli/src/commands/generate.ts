@@ -17,11 +17,14 @@ export function generate(args: string[]) {
 	switch (subcommand) {
 		case "modules":
 			return runModuleGeneration();
+		case "registry":
+			return runRegistryGeneration();
 		case "components":
 		case "component-docs":
 			return runComponentDocs();
 		case "all":
 		case undefined:
+			runRegistryGeneration();
 			runModuleGeneration();
 			runComponentDocs();
 			return;
@@ -43,6 +46,7 @@ ${c.bold("86d generate")} — Run code generation
 ${c.dim("Usage:")}
   86d generate               Run all generators
   86d generate modules       Generate module imports, API router, client, hooks
+  86d generate registry      Generate registry.json manifest
   86d generate components    Generate component documentation
 `);
 }
@@ -74,6 +78,30 @@ function runModuleGeneration() {
 	} catch {
 		error("Module generation failed");
 		process.exit(1);
+	}
+}
+
+function runRegistryGeneration() {
+	const root = findProjectRoot();
+	const script = join(root, "scripts/generate-registry.ts");
+
+	if (!existsSync(script)) {
+		info("scripts/generate-registry.ts not found, skipping");
+		return;
+	}
+
+	heading("Generating registry manifest");
+	console.log();
+
+	try {
+		execSync(`${getRunner(root)} ${script}`, {
+			cwd: root,
+			stdio: "inherit",
+		});
+		console.log();
+		success("Registry generation complete");
+	} catch {
+		warn("Registry generation failed (non-fatal)");
 	}
 }
 
