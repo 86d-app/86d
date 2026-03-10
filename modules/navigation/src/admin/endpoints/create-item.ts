@@ -1,4 +1,4 @@
-import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
+import { createAdminEndpoint, isSafeUrl, sanitizeText, z } from "@86d-app/core";
 import type { NavigationController } from "../../service";
 
 export const createItemEndpoint = createAdminEndpoint(
@@ -12,7 +12,7 @@ export const createItemEndpoint = createAdminEndpoint(
 			type: z
 				.enum(["link", "category", "collection", "page", "product"])
 				.optional(),
-			url: z.string().max(2000).optional(),
+			url: z.string().max(2000).refine(isSafeUrl, "Invalid URL").optional(),
 			resourceId: z.string().optional(),
 			openInNewTab: z.boolean().optional(),
 			cssClass: z.string().max(200).transform(sanitizeText).optional(),

@@ -6,12 +6,15 @@ export const subscribe = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			planId: z.string(),
-			email: z.string().email(),
-			customerId: z.string().optional(),
+			planId: z.string().max(200),
 		}),
 	},
 	async (ctx) => {
+		const session = ctx.context.session;
+		if (!session) {
+			return { error: "Authentication required", status: 401 };
+		}
+
 		const controller = ctx.context.controllers
 			.subscriptions as SubscriptionController;
 		const plan = await controller.getPlan(ctx.body.planId);
@@ -19,8 +22,8 @@ export const subscribe = createStoreEndpoint(
 		if (!plan.isActive) return { error: "Plan is not active", status: 400 };
 		const subscription = await controller.subscribe({
 			planId: ctx.body.planId,
-			email: ctx.body.email,
-			customerId: ctx.body.customerId,
+			email: session.user.email,
+			customerId: session.user.id,
 		});
 		return { subscription };
 	},

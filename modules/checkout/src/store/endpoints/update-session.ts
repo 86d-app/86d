@@ -9,9 +9,9 @@ const addressSchema = z.object({
 	line2: z.string().max(500).transform(sanitizeText).optional(),
 	city: z.string().min(1).max(200).transform(sanitizeText),
 	state: z.string().min(1).max(200).transform(sanitizeText),
-	postalCode: z.string().min(1),
+	postalCode: z.string().min(1).max(20),
 	country: z.string().length(2),
-	phone: z.string().optional(),
+	phone: z.string().max(50).transform(sanitizeText).optional(),
 });
 
 export const updateSession = createStoreEndpoint(
@@ -24,7 +24,7 @@ export const updateSession = createStoreEndpoint(
 			shippingAddress: addressSchema.optional(),
 			billingAddress: addressSchema.optional(),
 			shippingAmount: z.number().int().nonnegative().optional(),
-			paymentMethod: z.string().optional(),
+			paymentMethod: z.string().max(100).transform(sanitizeText).optional(),
 		}),
 	},
 	async (ctx) => {
@@ -36,7 +36,7 @@ export const updateSession = createStoreEndpoint(
 
 		// Ownership check
 		const userId = ctx.context.session?.user.id;
-		if (existing.customerId && userId && existing.customerId !== userId) {
+		if (existing.customerId && (!userId || existing.customerId !== userId)) {
 			return { error: "Checkout session not found", status: 404 };
 		}
 

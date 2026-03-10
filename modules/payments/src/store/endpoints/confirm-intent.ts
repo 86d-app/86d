@@ -8,9 +8,19 @@ export const confirmIntent = createStoreEndpoint(
 		params: z.object({ id: z.string() }),
 	},
 	async (ctx) => {
+		const session = ctx.context.session;
+		if (!session) {
+			return { error: "Authentication required", status: 401 };
+		}
+
 		const controller = ctx.context.controllers.payments as PaymentController;
 		const intent = await controller.confirmIntent(ctx.params.id);
 		if (!intent) return { error: "Payment intent not found", status: 404 };
+
+		if (intent.customerId && intent.customerId !== session.user.id) {
+			return { error: "Payment intent not found", status: 404 };
+		}
+
 		return { intent };
 	},
 );

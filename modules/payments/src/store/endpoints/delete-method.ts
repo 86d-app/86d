@@ -8,9 +8,19 @@ export const deletePaymentMethod = createStoreEndpoint(
 		params: z.object({ id: z.string() }),
 	},
 	async (ctx) => {
+		const session = ctx.context.session;
+		if (!session) {
+			return { error: "Authentication required", status: 401 };
+		}
+
 		const controller = ctx.context.controllers.payments as PaymentController;
 		const method = await controller.getPaymentMethod(ctx.params.id);
 		if (!method) return { error: "Payment method not found", status: 404 };
+
+		if (method.customerId && method.customerId !== session.user.id) {
+			return { error: "Payment method not found", status: 404 };
+		}
+
 		const deleted = await controller.deletePaymentMethod(ctx.params.id);
 		return { deleted };
 	},

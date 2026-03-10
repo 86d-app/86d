@@ -8,10 +8,15 @@ export const redeemGiftCard = createStoreEndpoint(
 		body: z.object({
 			code: z.string().min(1).max(50),
 			amount: z.number().positive(),
-			orderId: z.string().optional(),
+			orderId: z.string().max(200).optional(),
 		}),
 	},
 	async (ctx) => {
+		const session = ctx.context.session;
+		if (!session) {
+			return { error: "Authentication required", status: 401 };
+		}
+
 		const controller = ctx.context.controllers.giftCards as GiftCardController;
 		const result = await controller.redeem(
 			ctx.body.code,

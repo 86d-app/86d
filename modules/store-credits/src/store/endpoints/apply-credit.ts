@@ -6,17 +6,22 @@ export const applyCredit = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			customerId: z.string(),
 			amount: z.number().positive(),
-			orderId: z.string().optional(),
+			orderId: z.string().max(200).optional(),
 		}),
 	},
 	async (ctx) => {
+		const session = ctx.context.session;
+		if (!session) {
+			return { error: "Authentication required", status: 401 };
+		}
+		const customerId = session.user.id;
+
 		const controller = ctx.context.controllers[
 			"store-credits"
 		] as StoreCreditController;
 		const transaction = await controller.debit({
-			customerId: ctx.body.customerId,
+			customerId,
 			amount: ctx.body.amount,
 			reason: "order_payment",
 			description: ctx.body.orderId

@@ -1,17 +1,19 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
+import { createStoreEndpoint } from "@86d-app/core";
 import type { PaymentController } from "../../service";
 
 export const listPaymentMethods = createStoreEndpoint(
 	"/payments/methods",
 	{
 		method: "GET",
-		query: z.object({
-			customerId: z.string(),
-		}),
 	},
 	async (ctx) => {
+		const session = ctx.context.session;
+		if (!session) {
+			return { error: "Authentication required", status: 401 };
+		}
+
 		const controller = ctx.context.controllers.payments as PaymentController;
-		const methods = await controller.listPaymentMethods(ctx.query.customerId);
+		const methods = await controller.listPaymentMethods(session.user.id);
 		return { methods };
 	},
 );

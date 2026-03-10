@@ -1,4 +1,4 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
+import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { OrderController } from "../../service";
 
 export const getMyInvoice = createStoreEndpoint(
@@ -6,7 +6,11 @@ export const getMyInvoice = createStoreEndpoint(
 	{
 		method: "GET",
 		params: z.object({ id: z.string() }),
-		query: z.object({ storeName: z.string().optional() }).optional(),
+		query: z
+			.object({
+				storeName: z.string().max(200).transform(sanitizeText).optional(),
+			})
+			.optional(),
 	},
 	async (ctx) => {
 		const userId = ctx.context.session?.user.id;

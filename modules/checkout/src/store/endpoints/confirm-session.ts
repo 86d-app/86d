@@ -19,7 +19,7 @@ export const confirmSession = createStoreEndpoint(
 
 		// Ownership check
 		const userId = ctx.context.session?.user.id;
-		if (existing.customerId && userId && existing.customerId !== userId) {
+		if (existing.customerId && (!userId || existing.customerId !== userId)) {
 			return { error: "Checkout session not found", status: 404 };
 		}
 

@@ -6,17 +6,20 @@ export const createBackorder = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			productId: z.string(),
+			productId: z.string().max(200),
 			productName: z.string().max(500).transform(sanitizeText),
 			variantId: z.string().max(200).optional(),
 			variantLabel: z.string().max(200).transform(sanitizeText).optional(),
-			customerId: z.string(),
-			customerEmail: z.string().email().max(320),
-			orderId: z.string().optional(),
+			orderId: z.string().max(200).optional(),
 			quantity: z.number().int().min(1).max(9999),
 		}),
 	},
 	async (ctx) => {
+		const session = ctx.context.session;
+		if (!session) {
+			return { error: "Authentication required", status: 401 };
+		}
+
 		const controller = ctx.context.controllers
 			.backorders as BackordersController;
 		const backorder = await controller.createBackorder({
@@ -24,8 +27,8 @@ export const createBackorder = createStoreEndpoint(
 			productName: ctx.body.productName,
 			variantId: ctx.body.variantId,
 			variantLabel: ctx.body.variantLabel,
-			customerId: ctx.body.customerId,
-			customerEmail: ctx.body.customerEmail,
+			customerId: session.user.id,
+			customerEmail: session.user.email,
 			orderId: ctx.body.orderId,
 			quantity: ctx.body.quantity,
 		});

@@ -63,6 +63,24 @@ export function sanitizeHtml(input: string): string {
 }
 
 /**
+ * Check whether a URL string is safe for use in `href` / `src` attributes.
+ * Rejects `javascript:`, `data:`, and `vbscript:` URIs that can execute
+ * arbitrary code when rendered in the browser.
+ *
+ * Use as a Zod `.refine()` guard on any URL field that will be rendered
+ * as an HTML attribute.
+ */
+export function isSafeUrl(url: string): boolean {
+	// biome-ignore lint/suspicious/noControlCharactersInRegex: intentionally stripping control chars to prevent URI obfuscation
+	const trimmed = url.replace(/[\s\u0000-\u001f]+/g, "").toLowerCase();
+	return (
+		!trimmed.startsWith("javascript:") &&
+		!trimmed.startsWith("data:") &&
+		!trimmed.startsWith("vbscript:")
+	);
+}
+
+/**
  * Escape a string for safe embedding inside a `<script>` tag.
  * Prevents script-tag breakout by encoding `</` and `<!--` sequences.
  * Use this when injecting JSON or data into inline `<script>` blocks.

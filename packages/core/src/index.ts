@@ -43,6 +43,7 @@ export {
 } from "./events";
 export {
 	escapeScriptContent,
+	isSafeUrl,
 	normalizeWhitespace,
 	sanitizeHtml,
 	sanitizeText,

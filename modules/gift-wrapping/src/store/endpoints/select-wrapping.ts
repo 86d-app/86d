@@ -1,4 +1,4 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
+import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { GiftWrappingController } from "../../service";
 
 export const selectWrapping = createStoreEndpoint(
@@ -6,12 +6,11 @@ export const selectWrapping = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			orderId: z.string().min(1),
-			orderItemId: z.string().min(1),
-			wrapOptionId: z.string().min(1),
-			recipientName: z.string().max(200).optional(),
-			giftMessage: z.string().max(500).optional(),
-			customerId: z.string().optional(),
+			orderId: z.string().min(1).max(200),
+			orderItemId: z.string().min(1).max(200),
+			wrapOptionId: z.string().min(1).max(200),
+			recipientName: z.string().max(200).transform(sanitizeText).optional(),
+			giftMessage: z.string().max(500).transform(sanitizeText).optional(),
 		}),
 	},
 	async (ctx) => {
@@ -25,7 +24,8 @@ export const selectWrapping = createStoreEndpoint(
 		if (ctx.body.recipientName != null)
 			params.recipientName = ctx.body.recipientName;
 		if (ctx.body.giftMessage != null) params.giftMessage = ctx.body.giftMessage;
-		if (ctx.body.customerId != null) params.customerId = ctx.body.customerId;
+		const customerId = ctx.context.session?.user.id;
+		if (customerId != null) params.customerId = customerId;
 		const selection = await controller.selectWrapping(params);
 		return { selection };
 	},

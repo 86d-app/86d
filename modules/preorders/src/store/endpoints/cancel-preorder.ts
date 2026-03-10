@@ -13,6 +13,11 @@ export const cancelPreorder = createStoreEndpoint(
 		}),
 	},
 	async (ctx) => {
+		const session = ctx.context.session;
+		if (!session) {
+			return { error: "Authentication required", status: 401 };
+		}
+
 		const controller = ctx.context.controllers.preorders as PreordersController;
 		const item = await controller.cancelPreorderItem(
 			ctx.params.id,
@@ -21,6 +26,11 @@ export const cancelPreorder = createStoreEndpoint(
 		if (!item) {
 			return { error: "Preorder not found", item: null };
 		}
+
+		if (item.customerId !== session.user.id) {
+			return { error: "Preorder not found", item: null };
+		}
+
 		return { item };
 	},
 );

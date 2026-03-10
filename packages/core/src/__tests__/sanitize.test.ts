@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
 	escapeScriptContent,
+	isSafeUrl,
 	normalizeWhitespace,
 	sanitizeHtml,
 	sanitizeText,
@@ -171,6 +172,37 @@ describe("sanitizeHtml", () => {
 
 	it("handles plain text", () => {
 		expect(sanitizeHtml("Just text")).toBe("Just text");
+	});
+});
+
+describe("isSafeUrl", () => {
+	it("accepts normal URLs", () => {
+		expect(isSafeUrl("https://example.com")).toBe(true);
+		expect(isSafeUrl("/products/123")).toBe(true);
+		expect(isSafeUrl("mailto:user@example.com")).toBe(true);
+	});
+
+	it("rejects javascript: URIs", () => {
+		expect(isSafeUrl("javascript:alert(1)")).toBe(false);
+		expect(isSafeUrl("JAVASCRIPT:alert(1)")).toBe(false);
+		expect(isSafeUrl("  javascript:alert(1)")).toBe(false);
+	});
+
+	it("rejects data: URIs", () => {
+		expect(isSafeUrl("data:text/html,<script>alert(1)</script>")).toBe(false);
+	});
+
+	it("rejects vbscript: URIs", () => {
+		expect(isSafeUrl("vbscript:msgbox")).toBe(false);
+	});
+
+	it("rejects obfuscated javascript: URIs with control chars", () => {
+		expect(isSafeUrl("java\tscript:alert(1)")).toBe(false);
+		expect(isSafeUrl("java\nscript:alert(1)")).toBe(false);
+	});
+
+	it("accepts empty string", () => {
+		expect(isSafeUrl("")).toBe(true);
 	});
 });
 

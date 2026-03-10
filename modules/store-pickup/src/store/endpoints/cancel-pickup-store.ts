@@ -10,6 +10,11 @@ export const cancelPickupStore = createStoreEndpoint(
 		}),
 	},
 	async (ctx) => {
+		const session = ctx.context.session;
+		if (!session) {
+			return { error: "Authentication required", status: 401 };
+		}
+
 		const controller = ctx.context.controllers
 			.storePickup as StorePickupController;
 		try {
@@ -17,6 +22,11 @@ export const cancelPickupStore = createStoreEndpoint(
 			if (!pickup) {
 				return { error: "Pickup not found", status: 404 };
 			}
+
+			if (pickup.customerId && pickup.customerId !== session.user.id) {
+				return { error: "Pickup not found", status: 404 };
+			}
+
 			return { pickup };
 		} catch (err) {
 			const message = err instanceof Error ? err.message : "Cancel failed";

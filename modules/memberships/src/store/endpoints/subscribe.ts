@@ -6,17 +6,21 @@ export const subscribe = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			customerId: z.string().min(1),
-			planId: z.string().min(1),
+			planId: z.string().min(1).max(200),
 		}),
 	},
 	async (ctx) => {
+		const session = ctx.context.session;
+		if (!session) {
+			return { error: "Authentication required", status: 401 };
+		}
+
 		const controller = ctx.context.controllers
 			.memberships as MembershipController;
 
 		try {
 			const membership = await controller.subscribe({
-				customerId: ctx.body.customerId,
+				customerId: session.user.id,
 				planId: ctx.body.planId,
 			});
 			return { membership };

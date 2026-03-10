@@ -1,4 +1,4 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
+import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { InventoryController } from "../../service";
 
 export const backInStockSubscribe = createStoreEndpoint(
@@ -6,20 +6,20 @@ export const backInStockSubscribe = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			productId: z.string(),
-			variantId: z.string().optional(),
-			email: z.string().email(),
-			customerId: z.string().optional(),
-			productName: z.string().optional(),
+			productId: z.string().max(200),
+			variantId: z.string().max(200).optional(),
+			email: z.string().email().max(320),
+			productName: z.string().max(500).transform(sanitizeText).optional(),
 		}),
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers.inventory as InventoryController;
+		const customerId = ctx.context.session?.user.id;
 		const subscription = await controller.subscribeBackInStock({
 			productId: ctx.body.productId,
 			variantId: ctx.body.variantId,
 			email: ctx.body.email,
-			customerId: ctx.body.customerId,
+			customerId,
 			productName: ctx.body.productName,
 		});
 		return { subscription };

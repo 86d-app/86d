@@ -10,6 +10,11 @@ export const cancelBackorder = createStoreEndpoint(
 		}),
 	},
 	async (ctx) => {
+		const session = ctx.context.session;
+		if (!session) {
+			return { error: "Authentication required", status: 401 };
+		}
+
 		const controller = ctx.context.controllers
 			.backorders as BackordersController;
 		const backorder = await controller.cancelBackorder(
@@ -19,6 +24,11 @@ export const cancelBackorder = createStoreEndpoint(
 		if (!backorder) {
 			return { error: "Backorder not found", cancelled: false };
 		}
+
+		if (backorder.customerId !== session.user.id) {
+			return { error: "Backorder not found", cancelled: false };
+		}
+
 		return { cancelled: true, backorder };
 	},
 );

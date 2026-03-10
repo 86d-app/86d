@@ -6,16 +6,20 @@ export const redeem = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			customerId: z.string(),
 			points: z.number().int().min(1),
 			description: z.string().max(500).transform(sanitizeText),
-			orderId: z.string().optional(),
+			orderId: z.string().max(200).optional(),
 		}),
 	},
 	async (ctx) => {
+		const session = ctx.context.session;
+		if (!session) {
+			return { error: "Authentication required", status: 401 };
+		}
+
 		const controller = ctx.context.controllers.loyalty as LoyaltyController;
 		const transaction = await controller.redeemPoints({
-			customerId: ctx.body.customerId,
+			customerId: session.user.id,
 			points: ctx.body.points,
 			description: ctx.body.description,
 			orderId: ctx.body.orderId,
