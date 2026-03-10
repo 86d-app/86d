@@ -220,6 +220,48 @@ describe("createLoyaltyController", () => {
 			const account = await controller.getAccount("cust_1");
 			expect(account?.balance).toBe(70);
 		});
+
+		it("allows balance to go negative via large negative adjustment", async () => {
+			await controller.earnPoints({
+				customerId: "cust_1",
+				points: 50,
+				description: "earn",
+			});
+			await controller.adjustPoints({
+				customerId: "cust_1",
+				points: -100,
+				description: "Admin correction",
+			});
+
+			const account = await controller.getAccount("cust_1");
+			expect(account?.balance).toBe(-50);
+		});
+
+		it("positive adjustment increases lifetimeEarned", async () => {
+			await controller.getOrCreateAccount("cust_1");
+			await controller.adjustPoints({
+				customerId: "cust_1",
+				points: 200,
+				description: "Bonus",
+			});
+			const account = await controller.getAccount("cust_1");
+			expect(account?.lifetimeEarned).toBe(200);
+		});
+
+		it("negative adjustment does not change lifetimeEarned", async () => {
+			await controller.earnPoints({
+				customerId: "cust_1",
+				points: 300,
+				description: "earn",
+			});
+			await controller.adjustPoints({
+				customerId: "cust_1",
+				points: -100,
+				description: "Correction",
+			});
+			const account = await controller.getAccount("cust_1");
+			expect(account?.lifetimeEarned).toBe(300); // unchanged
+		});
 	});
 
 	// ── Transaction history ───────────────────────────────────────────
@@ -597,6 +639,67 @@ describe("createLoyaltyController", () => {
 			const account = await controller.getAccount("cust_1");
 			expect(account?.tier).toBe("bronze");
 		});
+
+		it("uses custom tier thresholds when configured", async () => {
+			// Custom tiers with lower thresholds than defaults
+			await controller.createTier({
+				name: "Bronze",
+				slug: "bronze",
+				minPoints: 0,
+			});
+			await controller.createTier({
+				name: "Silver",
+				slug: "silver",
+				minPoints: 100,
+			});
+			await controller.createTier({
+				name: "Gold",
+				slug: "gold",
+				minPoints: 300,
+			});
+
+			// 150 points — default thresholds would keep bronze, custom should give silver
+			await controller.earnPoints({
+				customerId: "cust_1",
+				points: 150,
+				description: "custom tier test",
+			});
+			const account = await controller.getAccount("cust_1");
+			expect(account?.tier).toBe("silver");
+		});
+
+		it("upgrades tier via positive adjustPoints", async () => {
+			await controller.getOrCreateAccount("cust_1");
+			await controller.adjustPoints({
+				customerId: "cust_1",
+				points: 600,
+				description: "Admin bonus",
+			});
+			const account = await controller.getAccount("cust_1");
+			expect(account?.tier).toBe("silver");
+			expect(account?.lifetimeEarned).toBe(600);
+		});
+
+		it("does not downgrade tier on negative adjustPoints", async () => {
+			// Earn enough for silver
+			await controller.earnPoints({
+				customerId: "cust_1",
+				points: 600,
+				description: "earn",
+			});
+			const before = await controller.getAccount("cust_1");
+			expect(before?.tier).toBe("silver");
+
+			// Negative adjustment — no tier recalc triggered
+			await controller.adjustPoints({
+				customerId: "cust_1",
+				points: -500,
+				description: "Correction",
+			});
+			const after = await controller.getAccount("cust_1");
+			expect(after?.tier).toBe("silver");
+			expect(after?.balance).toBe(100);
+		});
 	});
 
 	// ── Admin ─────────────────────────────────────────────────────────
@@ -675,6 +778,44 @@ describe("createLoyaltyController", () => {
 			expect(summary.tierBreakdown).toHaveLength(1); // both bronze
 			expect(summary.tierBreakdown[0].tier).toBe("bronze");
 			expect(summary.tierBreakdown[0].count).toBe(2);
+		});
+
+		it("shows tier breakdown across multiple tiers", async () => {
+			// 1 bronze account
+			await controller.earnPoints({
+				customerId: "cust_1",
+				points: 100,
+				description: "small",
+			});
+			// 2 silver accounts
+			await controller.earnPoints({
+				customerId: "cust_2",
+				points: 600,
+				description: "medium",
+			});
+			await controller.earnPoints({
+				customerId: "cust_3",
+				points: 700,
+				description: "medium",
+			});
+			// 1 gold account
+			await controller.earnPoints({
+				customerId: "cust_4",
+				points: 2500,
+				description: "large",
+			});
+
+			const summary = await controller.getSummary();
+			expect(summary.totalAccounts).toBe(4);
+			expect(summary.totalLifetimeEarned).toBe(100 + 600 + 700 + 2500);
+			expect(summary.totalPointsOutstanding).toBe(100 + 600 + 700 + 2500);
+
+			const breakdown = new Map(
+				summary.tierBreakdown.map((b) => [b.tier, b.count]),
+			);
+			expect(breakdown.get("bronze")).toBe(1);
+			expect(breakdown.get("silver")).toBe(2);
+			expect(breakdown.get("gold")).toBe(1);
 		});
 	});
 });

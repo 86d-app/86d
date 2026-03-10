@@ -65,21 +65,47 @@ jobs:
 
   test-e2e:
     runs-on: ubuntu-latest
+    needs: [typecheck]
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: 86d
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/86d
+      DATABASE_URL_UNPOOLED: postgresql://postgres:postgres@localhost:5432/86d
+      BETTER_AUTH_SECRET: ci-test-secret-not-for-production
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup
         uses: ./internals/github/setup
 
-      - name: Generate modules
-        run: bun run generate:modules
-
-      - name: Install Playwright
-        run: bunx playwright install --with-deps chromium
-
       - name: Copy env
         shell: bash
         run: cp .env.example .env
+
+      - name: Generate modules
+        run: bun run generate:modules
+
+      - name: Push database schema
+        working-directory: packages/db
+        run: bunx prisma db push --schema prisma --skip-generate --accept-data-loss
+
+      - name: Seed database
+        run: bun run db:seed
+
+      - name: Install Playwright
+        run: bunx playwright install --with-deps chromium
 
       - name: E2E tests
         run: bun test:e2e
