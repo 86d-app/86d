@@ -105,7 +105,10 @@ function StatCard({
 	trend?: { value: number; label: string } | undefined;
 }) {
 	return (
-		<div className="rounded-lg border border-border bg-card p-5">
+		<div
+			className="rounded-lg border border-border bg-card p-5"
+			data-testid="stat-card"
+		>
 			<p className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
 				{label}
 			</p>
@@ -113,7 +116,12 @@ function StatCard({
 				<div className="mt-2 h-8 w-24 animate-pulse rounded bg-muted" />
 			) : (
 				<>
-					<p className="mt-2 font-bold text-3xl text-foreground">{value}</p>
+					<p
+						className="mt-2 font-bold text-3xl text-foreground"
+						data-testid="stat-value"
+					>
+						{value}
+					</p>
 					{trend && trend.value !== 0 && (
 						<p
 							className={`mt-1 text-xs ${trend.value > 0 ? "text-green-600" : "text-red-500"}`}

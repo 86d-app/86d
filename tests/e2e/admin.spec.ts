@@ -50,7 +50,7 @@ test.describe("Store Admin — Authentication", () => {
 			.fill("wrongpassword");
 		await admin.page.locator('button[type="submit"]').click();
 		/* Should stay on sign-in page or show error message */
-		await admin.page.waitForTimeout(2000);
+		await admin.page.waitForLoadState("networkidle");
 		const url = admin.page.url();
 		expect(url).toContain("/auth/signin");
 	});
@@ -66,25 +66,23 @@ test.describe("Store Admin — Dashboard", () => {
 			.locator("h1")
 			.filter({ hasText: "Dashboard" });
 		await expect(heading).toBeVisible();
-		/* Stat cards should appear (4 cards: Total, Active, Draft, Categories) */
-		const statCards = admin.page.locator("div.rounded-lg.border.bg-card");
+		/* Stat cards should appear */
+		const statCards = admin.page.locator("[data-testid='stat-card']");
 		await expect(statCards.first()).toBeVisible({ timeout: 10_000 });
 	});
 
 	test("stat cards show numeric values after loading", async ({
 		admin,
 	}) => {
-		/* Wait for loading skeletons to disappear */
-		await admin.page.waitForTimeout(3000);
-		const statValues = admin.page.locator(
-			"div.rounded-lg.border.bg-card p.font-bold",
-		);
+		/* Wait for data to load */
+		await admin.page.waitForLoadState("networkidle");
+		const statValues = admin.page.locator("[data-testid='stat-value']");
 		const count = await statValues.count();
 		expect(count).toBeGreaterThan(0);
-		/* Values should be numbers */
+		/* Values should be numbers, currency, or ratios (e.g. "5 / 10") */
 		for (let i = 0; i < count; i++) {
 			const text = await statValues.nth(i).textContent();
-			expect(text?.trim()).toMatch(/^\d+$/);
+			expect(text?.trim()).toMatch(/^[\d$.,/\s]+$/);
 		}
 	});
 });
@@ -164,7 +162,7 @@ test.describe("Store Admin — Product Management", () => {
 		admin,
 	}) => {
 		/* Wait for the product list to load */
-		await admin.page.waitForTimeout(3000);
+		await admin.page.waitForLoadState("networkidle");
 		/* Should show at least one product from seed data or empty state */
 		const rows = admin.page.locator("table tbody tr, div[class*='card']");
 		const emptyState = admin.page
@@ -207,7 +205,7 @@ test.describe("Store Admin — Module Pages", () => {
 		test(`${name} page loads without errors`, async ({ admin }) => {
 			await admin.page.goto(path);
 			/* Page should have a heading or content */
-			await admin.page.waitForTimeout(2000);
+			await admin.page.waitForLoadState("networkidle");
 			/* No unhandled errors — check that page loaded */
 			const heading = admin.page.locator("h1, h2").first();
 			await expect(heading).toBeVisible({ timeout: 10_000 });

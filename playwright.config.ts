@@ -39,6 +39,7 @@ export default defineConfig({
 				"storefront.spec.ts",
 				"admin.spec.ts",
 				"checkout.spec.ts",
+				"dashboard.spec.ts",
 				"accessibility.spec.ts",
 				"performance.spec.ts",
 			],

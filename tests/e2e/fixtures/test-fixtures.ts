@@ -83,8 +83,8 @@ export class StorefrontPage {
 
 	async searchProducts(query: string) {
 		await this.searchInput.fill(query);
-		/* Search triggers on input change, wait for network */
-		await this.page.waitForTimeout(500);
+		/* Wait for search results to update after debounce */
+		await this.page.waitForLoadState("networkidle");
 	}
 
 	async addToCartFromDetail(quantity = 1) {
@@ -92,8 +92,8 @@ export class StorefrontPage {
 			.locator("button")
 			.filter({ hasText: "Add to cart" });
 		await addButton.click();
-		/* Wait for mutation */
-		await this.page.waitForTimeout(500);
+		/* Wait for cart mutation to settle */
+		await this.page.waitForLoadState("networkidle");
 	}
 }
 
@@ -121,7 +121,7 @@ export class AdminPage {
 	}
 
 	get statCards() {
-		return this.page.locator("div.rounded-lg.border.bg-card");
+		return this.page.locator("[data-testid='stat-card']");
 	}
 
 	get sidebar() {

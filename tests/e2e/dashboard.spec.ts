@@ -60,7 +60,7 @@ test.describe("Dashboard — Authentication", () => {
 			.locator('input[type="password"]')
 			.fill("wrongpassword123");
 		await dashboard.page.locator('button[type="submit"]').click();
-		await dashboard.page.waitForTimeout(2000);
+		await dashboard.page.waitForLoadState("networkidle");
 		expect(dashboard.page.url()).toContain("/auth/signin");
 	});
 
@@ -230,7 +230,7 @@ test.describe("Dashboard — Module Configuration", () => {
 			await modulesLink.click();
 			await dashboard.page.waitForURL(/\/modules/);
 			/* Should have toggle switches or checkboxes for modules */
-			await dashboard.page.waitForTimeout(2000);
+			await dashboard.page.waitForLoadState("networkidle");
 			const toggles = dashboard.page.locator(
 				'button[role="switch"], input[type="checkbox"]',
 			);
@@ -263,7 +263,7 @@ test.describe("Dashboard — Navigation", () => {
 
 	test("settings page loads correctly", async ({ dashboard }) => {
 		await dashboard.goto("/settings");
-		await dashboard.page.waitForTimeout(2000);
+		await dashboard.page.waitForLoadState("networkidle");
 		const heading = dashboard.page
 			.locator("h1, h2")
 			.filter({ hasText: /settings/i })

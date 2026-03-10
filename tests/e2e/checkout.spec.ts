@@ -18,7 +18,7 @@ test.describe("Checkout — Full flow", () => {
 		const firstCard = storefront.allProductCards.first();
 		await firstCard.click();
 		await storefront.page.waitForURL(/\/products\/.+/);
-		await storefront.page.waitForTimeout(1000);
+		await storefront.page.waitForLoadState("networkidle");
 
 		/* 4. Check product is in stock */
 		const addButton = storefront.page
@@ -70,7 +70,7 @@ test.describe("Checkout — Full flow", () => {
 		});
 		await storefront.allProductCards.first().click();
 		await storefront.page.waitForURL(/\/products\/.+/);
-		await storefront.page.waitForTimeout(1000);
+		await storefront.page.waitForLoadState("networkidle");
 
 		const addButton = storefront.page
 			.locator("button")
@@ -81,11 +81,11 @@ test.describe("Checkout — Full flow", () => {
 			return;
 		}
 		await addButton.click();
-		await storefront.page.waitForTimeout(1000);
+		await storefront.page.waitForLoadState("networkidle");
 
 		/* Navigate to checkout */
 		await storefront.page.goto("/checkout");
-		await storefront.page.waitForTimeout(2000);
+		await storefront.page.waitForLoadState("networkidle");
 
 		/* Should show product name or price somewhere */
 		const price = storefront.page
@@ -103,7 +103,7 @@ test.describe("Checkout — Full flow", () => {
 		});
 		await storefront.allProductCards.first().click();
 		await storefront.page.waitForURL(/\/products\/.+/);
-		await storefront.page.waitForTimeout(1000);
+		await storefront.page.waitForLoadState("networkidle");
 
 		const addButton = storefront.page
 			.locator("button")
@@ -114,10 +114,10 @@ test.describe("Checkout — Full flow", () => {
 			return;
 		}
 		await addButton.click();
-		await storefront.page.waitForTimeout(1000);
+		await storefront.page.waitForLoadState("networkidle");
 
 		await storefront.page.goto("/checkout");
-		await storefront.page.waitForTimeout(2000);
+		await storefront.page.waitForLoadState("networkidle");
 
 		/* Should have email and/or name input for customer info */
 		const emailInput = storefront.page.locator(
@@ -138,7 +138,7 @@ test.describe("Checkout — Edge cases", () => {
 		storefront,
 	}) => {
 		await storefront.page.goto("/checkout");
-		await storefront.page.waitForTimeout(2000);
+		await storefront.page.waitForLoadState("networkidle");
 		/* Should either redirect to cart/products or show empty cart message */
 		const url = storefront.page.url();
 		const isEmpty = await storefront.page
@@ -159,7 +159,7 @@ test.describe("Checkout — Edge cases", () => {
 		});
 		await storefront.allProductCards.first().click();
 		await storefront.page.waitForURL(/\/products\/.+/);
-		await storefront.page.waitForTimeout(1000);
+		await storefront.page.waitForLoadState("networkidle");
 
 		const addButton = storefront.page
 			.locator("button")
@@ -170,11 +170,11 @@ test.describe("Checkout — Edge cases", () => {
 			return;
 		}
 		await addButton.click();
-		await storefront.page.waitForTimeout(1000);
+		await storefront.page.waitForLoadState("networkidle");
 
 		/* Navigate to homepage */
 		await storefront.goto("/");
-		await storefront.page.waitForTimeout(500);
+		await storefront.page.waitForLoadState("domcontentloaded");
 
 		/* Open cart — should still have items */
 		await storefront.openCart();

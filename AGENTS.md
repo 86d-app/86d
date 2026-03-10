@@ -12,6 +12,7 @@ bun run typecheck            # TypeScript check all packages
 bun run check                # Biome lint/format all packages
 bun run test                 # Vitest unit tests
 bun run test:e2e             # Playwright E2E tests
+bun run db:seed              # seed demo data (requires DATABASE_URL)
 bun run generate:modules     # regenerate module imports from config
 bun run 86d init             # configure a local store
 bun run 86d module create x  # scaffold a new module
@@ -30,7 +31,8 @@ packages/
   registry/          Git-based module registry (resolve, fetch, cache modules)
 templates/
   brisa/             Default store template (config.json, MDX pages, global.css)
-scripts/             Code generation (generate-modules.ts, generate-registry.ts)
+tests/e2e/           Playwright E2E tests (storefront, admin, checkout, visual)
+scripts/             Code generation + seed (generate-modules.ts, seed.ts)
 internals/github/    CI setup action
 ```
 
@@ -55,21 +57,20 @@ Templates live in `templates/<name>/`. The store app resolves them via tsconfig 
 
 Components follow a two-file pattern: `.tsx` (logic) + `.mdx` (presentation). Numbered MDX variants (1.mdx, 2.mdx) represent different designs for the same component.
 
-## Missing packages (need reimplementation)
+## Core packages
 
-The store app imports from packages removed from the proprietary codebase. These must be rebuilt:
-
-| Package | Purpose | Import examples |
-|---------|---------|-----------------|
-| `db` | Prisma client | `import { db } from "db"` |
-| `env` | Env var validation | `import env from "env"` |
-| `auth` | Better Auth (sessions) | `import { getSession } from "auth/actions"` |
-| `utils` | Logger, rate-limit, url | `import { logger } from "utils/logger"` |
-| `lib` | Notifications, webhooks, carrier tracking | `import { ... } from "lib/notification-settings"` |
-| `emails` | React Email + Resend | `import resend from "emails"` |
-| `theme` | Tailwind theme globals | `@import "../packages/theme/globals.css"` |
-| `validators` | Shared Zod schemas | `import { ... } from "validators"` |
-| `api` | tRPC router | `import { ... } from "api"` |
+| Package | Status | Purpose |
+|---------|--------|---------|
+| `db` | Complete | Prisma client singleton (PrismaPg adapter) |
+| `env` | Complete | Zod env validation |
+| `auth` | Complete | Better Auth (sessions, admin role) |
+| `utils` | Complete | Logger, rate-limit, url, sanitize |
+| `lib` | Complete | API keys, webhooks, carrier tracking, LLM content |
+| `emails` | Complete | React Email + Resend (16 templates) |
+| `registry` | Complete | Git-based module registry (resolve, fetch, cache) |
+| `runtime` | Complete | ModuleRegistry, UniversalDataService |
+| `sdk` | Complete | Store config, template loading, API client |
+| `cli` | Complete | `86d dev/init/module/template/generate` (69 tests) |
 
 ## Code conventions
 
@@ -96,3 +97,4 @@ Read these when working in specific areas:
 - `apps/store/AGENTS.md` — Store app architecture, routes, admin, theme system
 - `apps/store/EXAMPLES.md` — Module usage examples
 - `templates/brisa/GUIDE.md` — Template authoring guide
+- `tests/e2e/AGENTS.md` — E2E test patterns, fixtures, conventions

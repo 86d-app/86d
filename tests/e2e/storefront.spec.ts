@@ -75,7 +75,7 @@ test.describe("Storefront — Product listing", () => {
 		/* Type a search term — should narrow results */
 		await storefront.searchProducts("nonexistent-product-xyz");
 		/* Either shows empty state or zero products */
-		await storefront.page.waitForTimeout(1000);
+		await storefront.page.waitForLoadState("networkidle");
 		const emptyState = storefront.page
 			.locator("p")
 			.filter({ hasText: "No products found" });
@@ -90,8 +90,8 @@ test.describe("Storefront — Product listing", () => {
 		storefront,
 	}) => {
 		await storefront.navigateToProducts();
-		/* Wait for page to load */
-		await storefront.page.waitForTimeout(1000);
+		/* Wait for page to fully load */
+		await storefront.page.waitForLoadState("networkidle");
 		/* Sort dropdown should always be present */
 		const sortSelect = storefront.page.locator("select").last();
 		await expect(sortSelect).toBeVisible();
@@ -173,7 +173,7 @@ test.describe("Storefront — Product detail", () => {
 		});
 		await storefront.allProductCards.first().click();
 		await storefront.page.waitForURL(/\/products\/.+/);
-		await storefront.page.waitForTimeout(1000);
+		await storefront.page.waitForLoadState("networkidle");
 		/* Find quantity display */
 		const qtyDisplay = storefront.page.locator("span.tabular-nums").first();
 		await expect(qtyDisplay).toBeVisible();
@@ -216,7 +216,7 @@ test.describe("Storefront — Cart", () => {
 		});
 		await storefront.allProductCards.first().click();
 		await storefront.page.waitForURL(/\/products\/.+/);
-		await storefront.page.waitForTimeout(1000);
+		await storefront.page.waitForLoadState("networkidle");
 		/* Check if product is in stock */
 		const addButton = storefront.page
 			.locator("button")
@@ -254,7 +254,7 @@ test.describe("Storefront — Cart", () => {
 		});
 		await storefront.allProductCards.first().click();
 		await storefront.page.waitForURL(/\/products\/.+/);
-		await storefront.page.waitForTimeout(1000);
+		await storefront.page.waitForLoadState("networkidle");
 		const addButton = storefront.page
 			.locator("button")
 			.filter({ hasText: "Add to cart" });
@@ -264,7 +264,7 @@ test.describe("Storefront — Cart", () => {
 			return;
 		}
 		await addButton.click();
-		await storefront.page.waitForTimeout(1000);
+		await storefront.page.waitForLoadState("networkidle");
 		await storefront.openCart();
 		/* Checkout link should be visible */
 		await expect(storefront.checkoutLink).toBeVisible();
