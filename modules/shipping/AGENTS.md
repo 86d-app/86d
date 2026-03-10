@@ -22,7 +22,8 @@ src/
       update-rate.ts        PUT    /admin/shipping/rates/:id/update
       delete-rate.ts        DELETE /admin/shipping/rates/:id/delete
   __tests__/
-    service-impl.test.ts    24 tests
+    service-impl.test.ts    45 tests (CRUD, calculateRates core)
+    controllers.test.ts     23 tests (edge cases, boundaries, multi-zone)
 ```
 
 ## Data models

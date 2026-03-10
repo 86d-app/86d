@@ -19,17 +19,26 @@ src/
     admin/          Store admin MDX components
       index.tsx     Cart list table, cart detail view (.tsx logic)
       *.mdx         Admin template variants
-  endpoints/
-    store/          Customer-facing
+  store/
+    endpoints/
       add-to-cart.ts        POST /cart
       get-cart.ts           GET  /cart/get
-      clear-cart.ts         DELETE /cart/clear
+      clear-cart.ts         POST /cart/clear
       remove-from-cart.ts   DELETE /cart/items/:id/remove
-      update-cart-item.ts   PUT  /cart/items/:id/update
-    admin/          Protected (renders in store admin /admin/)
-      list-carts.ts         GET  /admin/carts
-      get-cart-details.ts   GET  /admin/carts/:id
-      delete-cart.ts        DELETE /admin/carts/:id/delete
+      update-cart-item.ts   PATCH /cart/items/:id/update
+    components/             Customer-facing MDX
+  admin/
+    endpoints/
+      list-carts.ts           GET    /admin/carts
+      list-abandoned.ts       GET    /admin/carts/abandoned
+      recovery-stats.ts       GET    /admin/carts/recovery-stats
+      get-cart-details.ts     GET    /admin/carts/:id
+      delete-cart.ts          DELETE /admin/carts/:id/delete
+      send-recovery.ts        POST   /admin/carts/:id/send-recovery
+    components/             Admin MDX
+  __tests__/
+    service-impl.test.ts    41 tests (core controller CRUD)
+    controllers.test.ts     32 tests (edge cases, isolation, recovery)
 ```
 
 ## Options
@@ -44,11 +53,16 @@ CartOptions {
 ## Data models
 
 - **cart**: id, customerId?, guestId?, status (active|abandoned|converted), expiresAt, metadata
-- **cartItem**: id, cartId (FK cascade), productId, variantId?, quantity, price (snapshot), metadata
+- **cartItem**: id, cartId (FK cascade), productId, variantId?, quantity, price (snapshot), productName, productSlug, productImage?, variantName?, variantOptions?, metadata
 
 ## Patterns
 
-- Adapter pattern abstracts storage — swap the default in-memory adapter for any persistence layer
 - Cart item IDs are deterministic: `${cartId}_${productId}[_${variantId}]`
-- Supports both guest carts (guestId) and customer carts (customerId)
+- Same product+variant merges quantity; different variants are separate line items
+- Supports both guest carts (guestId) and customer carts (customerId); customerId takes priority
+- Anonymous carts get a random UUID
 - Store endpoints return consistent shape: `{ cart, items, itemCount, subtotal }`
+- Abandoned cart recovery: `markAsAbandoned`, `markRecoveryEmailSent` (tracks count in metadata), `getRecoveryStats`
+- `getAbandonedCarts` filters active carts older than threshold (default 1h), paginated
+- `removeFromCart` has fallback logic for guest-to-customer cart migration
+- `clearCart` removes items but preserves the cart entity
