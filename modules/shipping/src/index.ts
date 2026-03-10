@@ -42,7 +42,7 @@ export default function shipping(options?: ShippingOptions): Module {
 					component: "ShippingAdmin",
 					label: "Shipping",
 					icon: "Truck",
-					group: "Settings",
+					group: "Fulfillment",
 				},
 			],
 		},

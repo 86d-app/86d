@@ -33,7 +33,7 @@ export default function braintree(options: BraintreeOptions): Module {
 					component: "BraintreeAdmin",
 					label: "Braintree",
 					icon: "CreditCard",
-					group: "Settings",
+					group: "Finance",
 				},
 			],
 		},

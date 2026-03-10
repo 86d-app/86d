@@ -37,7 +37,7 @@ export default function paypal(options: PayPalOptions): Module {
 					component: "PayPalAdmin",
 					label: "PayPal",
 					icon: "CreditCard",
-					group: "Settings",
+					group: "Finance",
 				},
 			],
 		},

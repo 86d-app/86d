@@ -47,7 +47,7 @@ export default function fulfillment(options?: FulfillmentOptions): Module {
 					component: "FulfillmentAdmin",
 					label: "Fulfillment",
 					icon: "PackageCheck",
-					group: "Orders",
+					group: "Fulfillment",
 				},
 			],
 		},

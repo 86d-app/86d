@@ -34,7 +34,7 @@ export default function stripe(options: StripeOptions): Module {
 					component: "StripeAdmin",
 					label: "Stripe",
 					icon: "CreditCard",
-					group: "Settings",
+					group: "Finance",
 				},
 			],
 		},

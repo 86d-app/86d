@@ -66,7 +66,7 @@ export default function tax(options?: TaxOptions): Module {
 					component: "TaxRates",
 					label: "Tax",
 					icon: "CurrencyDollar",
-					group: "Settings",
+					group: "Finance",
 				},
 			],
 		},

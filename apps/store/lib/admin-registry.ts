@@ -13,20 +13,40 @@ export interface AdminNavItem {
 	group?: string;
 }
 
+export interface AdminNavGroup {
+	label: string;
+	icon: string;
+	items: AdminNavItem[];
+}
+
 export interface AdminRouteMatch {
 	moduleId: string;
 	component: string;
 	params: Record<string, string>;
 }
 
-/** Stable order for sidebar groups. Ungrouped items appear first, then by this order. */
-const GROUP_ORDER = [
-	"Catalog",
-	"Sales",
-	"Customers",
-	"Settings",
-	"Marketing",
+/**
+ * Stable order and icons for sidebar groups.
+ * Groups not listed here appear alphabetically after the defined ones.
+ */
+const GROUP_CONFIG: ReadonlyArray<{ label: string; icon: string }> = [
+	{ label: "Catalog", icon: "Package" },
+	{ label: "Sales", icon: "ShoppingCart" },
+	{ label: "Customers", icon: "Users" },
+	{ label: "Fulfillment", icon: "Truck" },
+	{ label: "Marketing", icon: "Megaphone" },
+	{ label: "Content", icon: "FileText" },
+	{ label: "Finance", icon: "DollarSign" },
+	{ label: "Support", icon: "LifeBuoy" },
+	{ label: "System", icon: "Settings" },
 ] as const;
+
+const GROUP_ORDER = GROUP_CONFIG.map((g) => g.label);
+
+/** Map of group label → icon name for sidebar rendering */
+export const GROUP_ICONS: Record<string, string> = Object.fromEntries(
+	GROUP_CONFIG.map((g) => [g.label, g.icon]),
+);
 
 function buildRouteTable(): Array<{
 	pattern: string;
@@ -120,7 +140,7 @@ export function getAdminNavItems(): AdminNavItem[] {
 	}
 
 	const orderIdx = (g: string) => {
-		const i = GROUP_ORDER.indexOf(g as (typeof GROUP_ORDER)[number]);
+		const i = GROUP_ORDER.indexOf(g);
 		return i >= 0 ? i : GROUP_ORDER.length;
 	};
 	withLabel.sort((a, b) => {
@@ -131,4 +151,57 @@ export function getAdminNavItems(): AdminNavItem[] {
 	});
 
 	return withLabel.map(({ sortGroup: _, ...item }) => item);
+}
+
+/**
+ * Structured nav groups for the sidebar with ordered sections.
+ * Each group has a label, icon, and sorted list of nav items.
+ */
+export function getAdminNavGroups(): AdminNavGroup[] {
+	const items = getAdminNavItems();
+	const groupMap = new Map<string, AdminNavItem[]>();
+
+	for (const item of items) {
+		const key = item.group ?? "";
+		const arr = groupMap.get(key);
+		if (arr) {
+			arr.push(item);
+		} else {
+			groupMap.set(key, [item]);
+		}
+	}
+
+	const orderIdx = (g: string) => {
+		const i = GROUP_ORDER.indexOf(g);
+		return i >= 0 ? i : GROUP_ORDER.length;
+	};
+
+	const groups: AdminNavGroup[] = [];
+	for (const [label, groupItems] of groupMap) {
+		if (!label) continue; // skip ungrouped for now
+		groups.push({
+			label,
+			icon: GROUP_ICONS[label] ?? "Folder",
+			items: groupItems,
+		});
+	}
+
+	groups.sort((a, b) => {
+		const oa = orderIdx(a.label);
+		const ob = orderIdx(b.label);
+		if (oa !== ob) return oa - ob;
+		return a.label.localeCompare(b.label);
+	});
+
+	// Prepend ungrouped items as individual pseudo-groups
+	const ungrouped = groupMap.get("");
+	if (ungrouped) {
+		groups.unshift({
+			label: "",
+			icon: "",
+			items: ungrouped,
+		});
+	}
+
+	return groups;
 }

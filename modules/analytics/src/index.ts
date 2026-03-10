@@ -56,7 +56,7 @@ export default function analytics(options?: AnalyticsOptions): Module {
 					component: "AnalyticsAdmin",
 					label: "Analytics",
 					icon: "ChartBar",
-					group: "Marketing",
+					group: "System",
 				},
 			],
 		},

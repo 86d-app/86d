@@ -44,7 +44,7 @@ export default function settings(options?: SettingsOptions): Module {
 					component: "SettingsGeneral",
 					label: "Settings",
 					icon: "GearSix",
-					group: "Configuration",
+					group: "System",
 				},
 				{
 					path: "/admin/settings/contact",

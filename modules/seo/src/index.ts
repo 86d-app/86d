@@ -43,7 +43,7 @@ export default function seo(options?: SeoOptions): Module {
 					component: "SeoAdmin",
 					label: "SEO",
 					icon: "Search",
-					group: "Marketing",
+					group: "Content",
 				},
 			],
 		},

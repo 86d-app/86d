@@ -67,7 +67,7 @@ export default function importExport(options?: ImportExportOptions): Module {
 					component: "ImportExportOverview",
 					label: "Import / Export",
 					icon: "ArrowsDownUp",
-					group: "Settings",
+					group: "System",
 				},
 				{
 					path: "/admin/import-export/imports/:id",

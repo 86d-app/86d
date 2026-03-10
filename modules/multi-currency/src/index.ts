@@ -69,7 +69,7 @@ export default function multiCurrency(options?: MultiCurrencyOptions): Module {
 					component: "CurrencyList",
 					label: "Currencies",
 					icon: "Coins",
-					group: "Settings",
+					group: "Finance",
 				},
 				{
 					path: "/admin/currencies/new",

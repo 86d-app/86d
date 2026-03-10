@@ -38,7 +38,7 @@ export default function blog(options?: BlogOptions): Module {
 					component: "BlogAdmin",
 					label: "Blog",
 					icon: "Article",
-					group: "Marketing",
+					group: "Content",
 				},
 			],
 		},

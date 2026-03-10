@@ -57,7 +57,7 @@ export default function deliverySlots(options?: DeliverySlotsOptions): Module {
 					component: "ScheduleList",
 					label: "Delivery Slots",
 					icon: "Clock",
-					group: "Orders",
+					group: "Fulfillment",
 				},
 				{
 					path: "/admin/delivery-slots/:id",
@@ -68,7 +68,7 @@ export default function deliverySlots(options?: DeliverySlotsOptions): Module {
 					component: "BlackoutList",
 					label: "Blackout Dates",
 					icon: "CalendarOff",
-					group: "Orders",
+					group: "Fulfillment",
 				},
 			],
 		},

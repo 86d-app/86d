@@ -49,7 +49,7 @@ export default function brands(options?: BrandsOptions): Module {
 					component: "BrandAdmin",
 					label: "Brands",
 					icon: "Award",
-					group: "Products",
+					group: "Catalog",
 				},
 			],
 		},

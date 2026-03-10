@@ -1,16 +1,37 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { IconName } from "~/components/icon/icon";
 import { Icon } from "~/components/icon/icon";
-import type { AdminNavItem } from "~/lib/admin-registry";
+import type { AdminNavGroup, AdminNavItem } from "~/lib/admin-registry";
 
 const DASHBOARD_ITEM: AdminNavItem = {
 	label: "Dashboard",
 	href: "/admin",
 	icon: "SquaresFour",
 };
+
+const STORAGE_KEY = "86d-admin-sidebar-collapsed";
+
+function loadCollapsedGroups(): Set<string> {
+	if (typeof window === "undefined") return new Set();
+	try {
+		const raw = localStorage.getItem(STORAGE_KEY);
+		if (raw) return new Set(JSON.parse(raw) as string[]);
+	} catch {
+		// ignore
+	}
+	return new Set();
+}
+
+function saveCollapsedGroups(collapsed: Set<string>) {
+	try {
+		localStorage.setItem(STORAGE_KEY, JSON.stringify([...collapsed]));
+	} catch {
+		// ignore
+	}
+}
 
 function NavLink({
 	item,
@@ -39,40 +60,102 @@ function NavLink({
 	);
 }
 
-function Sidebar({
-	navItems,
+function CollapsibleGroup({
+	group,
+	pathname,
+	collapsed,
+	onToggle,
 	onClose,
 }: {
-	navItems: AdminNavItem[];
+	group: AdminNavGroup;
+	pathname: string;
+	collapsed: boolean;
+	onToggle: () => void;
+	onClose?: () => void;
+}) {
+	const hasActiveItem = group.items.some((item) =>
+		item.href === "/admin"
+			? pathname === "/admin"
+			: pathname.startsWith(item.href),
+	);
+
+	// Auto-expand if an item in this group is active
+	const isOpen = hasActiveItem || !collapsed;
+
+	return (
+		<div className="pt-1">
+			<button
+				type="button"
+				onClick={onToggle}
+				className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left transition-colors hover:bg-muted"
+			>
+				{group.icon ? (
+					<Icon
+						name={group.icon as IconName}
+						className="size-3.5 shrink-0 text-muted-foreground"
+					/>
+				) : null}
+				<span className="flex-1 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
+					{group.label}
+				</span>
+				<Icon
+					name="chevron-right"
+					className={`size-3 shrink-0 text-muted-foreground transition-transform duration-200 ${
+						isOpen ? "rotate-90" : ""
+					}`}
+				/>
+			</button>
+			{isOpen ? (
+				<div className="mt-0.5">
+					{group.items.map((item) => {
+						const isActive =
+							item.href === "/admin"
+								? pathname === "/admin"
+								: pathname.startsWith(item.href);
+						return (
+							<NavLink
+								key={item.href + item.label}
+								item={item}
+								isActive={isActive}
+								{...(onClose !== undefined ? { onClose } : {})}
+							/>
+						);
+					})}
+				</div>
+			) : null}
+		</div>
+	);
+}
+
+function Sidebar({
+	navGroups,
+	onClose,
+}: {
+	navGroups: AdminNavGroup[];
 	onClose?: () => void;
 }) {
 	const pathname = usePathname();
+	const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
+		() => new Set(),
+	);
 
-	// Group module items by group for section headers
-	const moduleItems = navItems;
-	const sections: Array<{ group?: string; items: AdminNavItem[] }> = [];
-	let currentGroup: string | undefined;
-	let currentItems: AdminNavItem[] = [];
-	for (const item of moduleItems) {
-		if (item.group !== currentGroup) {
-			if (currentItems.length > 0) {
-				sections.push({
-					...(currentGroup !== undefined && { group: currentGroup }),
-					items: currentItems,
-				});
+	// Load persisted state on mount
+	useEffect(() => {
+		setCollapsedGroups(loadCollapsedGroups());
+	}, []);
+
+	const toggleGroup = useCallback((label: string) => {
+		setCollapsedGroups((prev) => {
+			const next = new Set(prev);
+			if (next.has(label)) {
+				next.delete(label);
+			} else {
+				next.add(label);
 			}
-			currentGroup = item.group;
-			currentItems = [item];
-		} else {
-			currentItems.push(item);
-		}
-	}
-	if (currentItems.length > 0) {
-		sections.push({
-			...(currentGroup !== undefined && { group: currentGroup }),
-			items: currentItems,
+			saveCollapsedGroups(next);
+			return next;
 		});
-	}
+	}, []);
 
 	return (
 		<aside className="flex h-full w-60 flex-col border-border border-r bg-background">
@@ -102,14 +185,19 @@ function Sidebar({
 					{...(onClose !== undefined ? { onClose } : {})}
 				/>
 				{/* Module items by group */}
-				{sections.map((section) => (
-					<div key={section.group ?? "_"} className="pt-1">
-						{section.group ? (
-							<div className="px-3 py-1.5 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
-								{section.group}
-							</div>
-						) : null}
-						{section.items.map((item) => {
+				{navGroups.map((group) =>
+					group.label ? (
+						<CollapsibleGroup
+							key={group.label}
+							group={group}
+							pathname={pathname}
+							collapsed={collapsedGroups.has(group.label)}
+							onToggle={() => toggleGroup(group.label)}
+							{...(onClose !== undefined ? { onClose } : {})}
+						/>
+					) : (
+						// Ungrouped items rendered directly
+						group.items.map((item) => {
 							const isActive =
 								item.href === "/admin"
 									? pathname === "/admin"
@@ -122,9 +210,9 @@ function Sidebar({
 									{...(onClose !== undefined ? { onClose } : {})}
 								/>
 							);
-						})}
-					</div>
-				))}
+						})
+					),
+				)}
 			</nav>
 
 			{/* Footer */}
@@ -149,10 +237,10 @@ function Sidebar({
 }
 
 export function AdminShell({
-	navItems,
+	navGroups,
 	children,
 }: {
-	navItems: AdminNavItem[];
+	navGroups: AdminNavGroup[];
 	children: React.ReactNode;
 }) {
 	const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -161,7 +249,7 @@ export function AdminShell({
 		<div className="flex h-svh overflow-hidden bg-background">
 			{/* Desktop sidebar */}
 			<div className="hidden lg:flex lg:flex-shrink-0">
-				<Sidebar navItems={navItems} />
+				<Sidebar navGroups={navGroups} />
 			</div>
 
 			{/* Mobile sidebar */}
@@ -174,7 +262,7 @@ export function AdminShell({
 					/>
 					<div className="fixed inset-y-0 left-0 z-50 lg:hidden">
 						<Sidebar
-							navItems={navItems}
+							navGroups={navGroups}
 							onClose={() => setSidebarOpen(false)}
 						/>
 					</div>

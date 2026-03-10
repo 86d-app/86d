@@ -42,7 +42,7 @@ export default function square(options: SquareOptions): Module {
 					component: "SquareAdmin",
 					label: "Square",
 					icon: "CreditCard",
-					group: "Settings",
+					group: "Finance",
 				},
 			],
 		},

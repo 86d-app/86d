@@ -63,7 +63,7 @@ export default function storePickup(options?: StorePickupOptions): Module {
 					component: "LocationList",
 					label: "Pickup Locations",
 					icon: "MapPin",
-					group: "Orders",
+					group: "Fulfillment",
 				},
 				{
 					path: "/admin/store-pickup/:id",
@@ -74,7 +74,7 @@ export default function storePickup(options?: StorePickupOptions): Module {
 					component: "PickupQueue",
 					label: "Pickup Queue",
 					icon: "PackageCheck",
-					group: "Orders",
+					group: "Fulfillment",
 				},
 			],
 		},

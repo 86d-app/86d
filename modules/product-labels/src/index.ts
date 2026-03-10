@@ -52,7 +52,7 @@ export default function productLabels(options?: ProductLabelsOptions): Module {
 					component: "LabelAdmin",
 					label: "Labels",
 					icon: "Tag",
-					group: "Products",
+					group: "Catalog",
 				},
 			],
 		},

@@ -131,7 +131,7 @@ export default function storeCredits(options?: StoreCreditsOptions): Module {
 					component: "StoreCreditsDashboard",
 					label: "Store Credits",
 					icon: "Wallet",
-					group: "Sales",
+					group: "Customers",
 				},
 				{
 					path: "/admin/store-credits/:customerId",

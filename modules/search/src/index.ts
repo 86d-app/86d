@@ -44,7 +44,7 @@ export default function search(options?: SearchOptions): Module {
 					component: "SearchAnalytics",
 					label: "Search",
 					icon: "MagnifyingGlass",
-					group: "Marketing",
+					group: "System",
 				},
 			],
 		},

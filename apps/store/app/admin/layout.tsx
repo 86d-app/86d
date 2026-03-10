@@ -2,7 +2,7 @@ import { getSession } from "auth/actions";
 import { verifyStoreAdminAccess } from "auth/store-access";
 import { redirect } from "next/navigation";
 import { AdminShell } from "~/components/admin/shell";
-import { getAdminNavItems } from "~/lib/admin-registry";
+import { getAdminNavGroups } from "~/lib/admin-registry";
 
 export const metadata = {
 	title: "Store Admin",
@@ -42,6 +42,6 @@ export default async function AdminLayout({
 		);
 	}
 
-	const navItems = getAdminNavItems();
-	return <AdminShell navItems={navItems}>{children}</AdminShell>;
+	const navGroups = getAdminNavGroups();
+	return <AdminShell navGroups={navGroups}>{children}</AdminShell>;
 }

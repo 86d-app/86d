@@ -59,7 +59,7 @@ export default function collections(options?: CollectionsOptions): Module {
 					component: "CollectionAdmin",
 					label: "Collections",
 					icon: "FolderOpen",
-					group: "Products",
+					group: "Catalog",
 				},
 			],
 		},
