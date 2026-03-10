@@ -1,0 +1,61 @@
+# Pickup Queue
+
+Track and manage customer pickup orders across all locations.
+
+<div className="space-y-4">
+  <div className="flex items-center gap-2">
+    <select
+      className="rounded border px-3 py-1.5 text-sm"
+      value={props.statusFilter}
+      onChange={(e) => props.onStatusChange(e.target.value)}
+    >
+      <option value="">All Statuses</option>
+      <option value="scheduled">Scheduled</option>
+      <option value="preparing">Preparing</option>
+      <option value="ready">Ready</option>
+      <option value="picked_up">Picked Up</option>
+      <option value="cancelled">Cancelled</option>
+    </select>
+  </div>
+
+  {props.loading ? (
+    <div className="py-12 text-center text-muted-foreground">Loading pickups…</div>
+  ) : props.pickups.length === 0 ? (
+    <div className="py-12 text-center text-muted-foreground">No pickups found.</div>
+  ) : (
+    <div className="overflow-x-auto rounded-lg border">
+      <table className="w-full text-sm">
+        <thead className="border-b bg-muted/50">
+          <tr>
+            <th className="px-4 py-3 text-left font-medium">Order</th>
+            <th className="px-4 py-3 text-left font-medium">Location</th>
+            <th className="px-4 py-3 text-left font-medium">Date</th>
+            <th className="px-4 py-3 text-left font-medium">Window</th>
+            <th className="px-4 py-3 text-left font-medium">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {props.pickups.map((p) => (
+            <tr key={p.id} className="border-b last:border-0 hover:bg-muted/30">
+              <td className="px-4 py-3 font-mono text-xs">{p.orderId}</td>
+              <td className="px-4 py-3">{p.locationName}</td>
+              <td className="px-4 py-3">{p.scheduledDate}</td>
+              <td className="px-4 py-3">{p.startTime} – {p.endTime}</td>
+              <td className="px-4 py-3">
+                <span className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${
+                  p.status === "ready" ? "text-green-700 bg-green-50 border-green-200" :
+                  p.status === "preparing" ? "text-yellow-700 bg-yellow-50 border-yellow-200" :
+                  p.status === "picked_up" ? "text-blue-700 bg-blue-50 border-blue-200" :
+                  p.status === "cancelled" ? "text-red-700 bg-red-50 border-red-200" :
+                  "text-gray-700 bg-gray-50 border-gray-200"
+                }`}>
+                  {p.status.replace("_", " ")}
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )}
+</div>
