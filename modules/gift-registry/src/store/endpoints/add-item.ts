@@ -1,4 +1,4 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
+import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { AddItemParams, GiftRegistryController } from "../../service";
 
 export const addItem = createStoreEndpoint(
@@ -8,14 +8,14 @@ export const addItem = createStoreEndpoint(
 		body: z.object({
 			registryId: z.string(),
 			productId: z.string(),
-			productName: z.string().min(1).max(300),
+			productName: z.string().min(1).max(300).transform(sanitizeText),
 			variantId: z.string().optional(),
-			variantName: z.string().max(200).optional(),
+			variantName: z.string().max(200).transform(sanitizeText).optional(),
 			imageUrl: z.string().url().optional(),
 			priceInCents: z.number().int().min(1),
 			quantityDesired: z.number().int().min(1).max(100).optional(),
 			priority: z.enum(["must_have", "nice_to_have", "dream"]).optional(),
-			note: z.string().max(500).optional(),
+			note: z.string().max(500).transform(sanitizeText).optional(),
 		}),
 	},
 	async (ctx) => {

@@ -1,4 +1,4 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
+import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { WarrantyController } from "../../service";
 
 export const submitClaim = createStoreEndpoint(
@@ -15,7 +15,7 @@ export const submitClaim = createStoreEndpoint(
 				"missing_parts",
 				"other",
 			]),
-			issueDescription: z.string().min(10).max(2000),
+			issueDescription: z.string().min(10).max(2000).transform(sanitizeText),
 		}),
 	},
 	async (ctx) => {

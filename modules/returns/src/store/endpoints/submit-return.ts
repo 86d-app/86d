@@ -1,4 +1,4 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
+import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { ReturnController } from "../../service";
 
 export const submitReturn = createStoreEndpoint(
@@ -7,16 +7,16 @@ export const submitReturn = createStoreEndpoint(
 		method: "POST",
 		body: z.object({
 			orderId: z.string(),
-			reason: z.string().min(1).max(1000),
+			reason: z.string().min(1).max(1000).transform(sanitizeText),
 			refundMethod: z
 				.enum(["original_payment", "store_credit", "exchange"])
 				.optional(),
-			customerNotes: z.string().max(2000).optional(),
+			customerNotes: z.string().max(2000).transform(sanitizeText).optional(),
 			items: z
 				.array(
 					z.object({
 						orderItemId: z.string(),
-						productName: z.string(),
+						productName: z.string().max(500).transform(sanitizeText),
 						sku: z.string().optional(),
 						quantity: z.number().int().min(1),
 						unitPrice: z.number().min(0),
@@ -33,7 +33,7 @@ export const submitReturn = createStoreEndpoint(
 						condition: z
 							.enum(["unopened", "opened", "used", "damaged"])
 							.optional(),
-						notes: z.string().max(500).optional(),
+						notes: z.string().max(500).transform(sanitizeText).optional(),
 					}),
 				)
 				.min(1),

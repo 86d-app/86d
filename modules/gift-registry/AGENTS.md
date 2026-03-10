@@ -66,8 +66,14 @@ src/
 - Slugs are auto-generated with UUID suffix to avoid collisions, or user-specified
 - `exactOptionalPropertyTypes` is on — build objects conditionally, never pass `undefined`
 
+## Security
+
+- All user-facing text inputs (`title`, `description`, `thankYouMessage`, `productName`, `variantName`, `note`, `purchaserName`, `giftMessage`) are sanitized via `sanitizeText` transform
+- Prevents stored XSS when registry content is displayed to visitors
+
 ## Gotchas
 
 - Slug uniqueness is checked on create; changing slugs after creation is not supported
 - Purchases from guests (no session) still allowed — `purchaserId` is optional
 - Archived registries reject both item additions and purchases
+- Always import `sanitizeText` from `@86d-app/core` when adding new text fields to store endpoints

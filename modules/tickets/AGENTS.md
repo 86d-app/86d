@@ -105,8 +105,14 @@ interface TicketsOptions {
 
 `ticket.created`, `ticket.updated`, `ticket.closed`, `ticket.reopened`, `ticket.message.added`
 
+## Security
+
+- All text inputs in store endpoints (`subject`, `description`, `customerName`, `body`) are sanitized via `sanitizeText` transform to prevent stored XSS
+- `customerName` is length-bounded to 200 chars
+
 ## Gotchas
 
 - `onDelete: "set null"` (with space) not `"set-null"` in schema references
 - Cast data to `Record<string, any>` for `data.upsert()` calls
 - Store `GET /tickets/:id` requires `?email=` query for customer verification
+- Always import `sanitizeText` from `@86d-app/core` when adding new text fields to store endpoints

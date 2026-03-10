@@ -9,7 +9,11 @@ export const submitForm = createStoreEndpoint(
 			slug: z.string(),
 		}),
 		body: z.object({
-			values: z.record(z.string(), z.unknown()),
+			values: z
+				.record(z.string().max(100), z.unknown())
+				.refine((obj) => Object.keys(obj).length <= 100, {
+					message: "Form must have at most 100 fields",
+				}),
 			/** Honeypot field — if filled, the submission is silently discarded */
 			_hp: z.string().optional(),
 		}),
@@ -19,7 +23,7 @@ export const submitForm = createStoreEndpoint(
 		const form = await formsController.getFormBySlug(ctx.params.slug);
 
 		if (!form || !form.isActive) {
-			throw new Error("Form not found or not accepting submissions");
+			return { error: "Form not found", status: 404 };
 		}
 
 		// Honeypot check: if _hp is filled, silently accept but don't store

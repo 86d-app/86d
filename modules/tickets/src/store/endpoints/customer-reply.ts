@@ -1,4 +1,4 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
+import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { TicketController } from "../../service";
 
 export const customerReply = createStoreEndpoint(
@@ -9,9 +9,9 @@ export const customerReply = createStoreEndpoint(
 			id: z.string(),
 		}),
 		body: z.object({
-			body: z.string().min(1).max(5000),
+			body: z.string().min(1).max(5000).transform(sanitizeText),
 			customerEmail: z.string().email(),
-			customerName: z.string().min(1),
+			customerName: z.string().min(1).max(200).transform(sanitizeText),
 		}),
 	},
 	async (ctx) => {

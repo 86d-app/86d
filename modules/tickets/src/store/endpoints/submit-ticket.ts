@@ -1,4 +1,4 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
+import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { TicketController } from "../../service";
 
 export const submitTicket = createStoreEndpoint(
@@ -6,11 +6,11 @@ export const submitTicket = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			subject: z.string().min(1).max(200),
-			description: z.string().min(1).max(5000),
+			subject: z.string().min(1).max(200).transform(sanitizeText),
+			description: z.string().min(1).max(5000).transform(sanitizeText),
 			categoryId: z.string().optional(),
 			customerEmail: z.string().email(),
-			customerName: z.string().min(1),
+			customerName: z.string().min(1).max(200).transform(sanitizeText),
 			customerId: z.string().optional(),
 			orderId: z.string().optional(),
 		}),

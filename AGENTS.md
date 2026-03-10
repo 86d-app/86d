@@ -79,6 +79,16 @@ The store app imports from packages removed from the proprietary codebase. These
 - Store app path alias: `~/` for local imports (not bare `lib/`).
 - Tests use `@86d-app/core/test-utils` mock data services. Never a real database.
 
+## Security conventions
+
+- **Sanitize all user text inputs** in store endpoints: use `.transform(sanitizeText)` from `@86d-app/core` on every string field that accepts user-provided text (names, descriptions, messages, notes, titles). This strips HTML/script tags and normalizes whitespace.
+- **Bound string lengths**: always add `.max()` to string fields, even optional ones.
+- **Constrain record fields**: use `z.record(z.string().max(100), z.unknown())` with `.refine()` to limit key count when accepting arbitrary metadata/data objects.
+- **Admin endpoints** are protected at the framework level via `createAdminEndpoint` — no per-endpoint auth checks needed.
+- **Rate limiting** is enforced at the API route handler: 120 req/min for public, 300 req/min for admin, stricter limits on sensitive endpoints.
+- **Rich HTML fields** (page content, blog posts) use `sanitizeHtml()` instead of `sanitizeText()` to preserve safe markup.
+- **Return errors, don't throw**: store endpoints should `return { error: "...", status: 404 }` not `throw new Error("...")` to prevent stack trace leakage.
+
 ## Detailed docs
 
 Read these when working in specific areas:

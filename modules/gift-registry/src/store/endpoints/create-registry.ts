@@ -1,4 +1,4 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
+import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
 import type {
 	CreateRegistryParams,
 	GiftRegistryController,
@@ -9,8 +9,8 @@ export const createRegistry = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			title: z.string().min(1).max(200),
-			description: z.string().max(2000).optional(),
+			title: z.string().min(1).max(200).transform(sanitizeText),
+			description: z.string().max(2000).transform(sanitizeText).optional(),
 			type: z.enum([
 				"wedding",
 				"baby",
@@ -28,7 +28,7 @@ export const createRegistry = createStoreEndpoint(
 			visibility: z.enum(["public", "unlisted", "private"]).optional(),
 			eventDate: z.coerce.date().optional(),
 			coverImageUrl: z.string().url().optional(),
-			thankYouMessage: z.string().max(1000).optional(),
+			thankYouMessage: z.string().max(1000).transform(sanitizeText).optional(),
 		}),
 	},
 	async (ctx) => {

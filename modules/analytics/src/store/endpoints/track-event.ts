@@ -1,4 +1,4 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
+import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { AnalyticsController } from "../../service";
 
 export const trackEventEndpoint = createStoreEndpoint(
@@ -6,13 +6,18 @@ export const trackEventEndpoint = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			type: z.string().min(1).max(100),
-			sessionId: z.string().optional(),
-			customerId: z.string().optional(),
-			productId: z.string().optional(),
-			orderId: z.string().optional(),
+			type: z.string().min(1).max(100).transform(sanitizeText),
+			sessionId: z.string().max(200).optional(),
+			customerId: z.string().max(200).optional(),
+			productId: z.string().max(200).optional(),
+			orderId: z.string().max(200).optional(),
 			value: z.number().optional(),
-			data: z.record(z.string(), z.unknown()).optional(),
+			data: z
+				.record(z.string().max(100), z.unknown())
+				.refine((obj) => Object.keys(obj).length <= 50, {
+					message: "Data object must have at most 50 keys",
+				})
+				.optional(),
 		}),
 	},
 	async (ctx) => {

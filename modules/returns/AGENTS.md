@@ -64,3 +64,9 @@ ReturnsOptions {
 - `refundAmount` is set at completion time by admin, not at request time
 - Events emitted at each status transition for integration with notifications, store-credits, orders
 - Summary endpoint returns counts by status + total refund amount
+
+## Security
+
+- Store endpoint text inputs (`reason`, `customerNotes`, `productName`, `notes`) are sanitized via `sanitizeText` transform
+- Return item `productName` is length-bounded to 500 chars; `notes` to 500 chars
+- Always import `sanitizeText` from `@86d-app/core` when adding new text fields
