@@ -14,6 +14,7 @@ export {
 export { buildManifest } from "./manifest.js";
 export {
 	getLocalModuleNames,
+	getModuleDependencies,
 	readLocalManifest,
 	resolveModules,
 } from "./resolver.js";

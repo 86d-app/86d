@@ -29,6 +29,15 @@ At init, the runtime:
 4. Rejects startup if any contract is unsatisfied or exceeds permissions
 5. Creates scoped data access proxies that enforce field-level read/readWrite boundaries
 
+## Graceful degradation
+
+Boot is resilient — individual module failures don't crash the store:
+- If a module's `init()` throws, it's marked as "error" and skipped
+- Modules depending on a failed module are also marked as "error"
+- Boot only throws if ALL modules fail (zero successful initializations)
+- `getHealth()` returns status "error" when any module has errors (but store still serves)
+- `createRequestContext()` includes only successfully initialized modules in the data registry
+
 ## Key details
 
 - Depends on: `@86d-app/core`, `better-call`, `packages/db`, `packages/env`

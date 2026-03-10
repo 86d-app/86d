@@ -253,3 +253,40 @@ export function readLocalManifest(
 		return undefined;
 	}
 }
+
+/**
+ * Get the full transitive dependency list for a module.
+ *
+ * Walks the `requires` field in the registry manifest to find all modules
+ * that must be installed for `moduleName` to work. Returns module names
+ * in installation order (dependencies before dependents).
+ */
+export function getModuleDependencies(
+	moduleName: string,
+	manifest: RegistryManifest | undefined,
+): string[] {
+	if (!manifest) return [];
+
+	const modules = manifest.modules;
+	const visited = new Set<string>();
+	const result: string[] = [];
+
+	function walk(name: string) {
+		if (visited.has(name)) return;
+		visited.add(name);
+
+		const entry = modules[name];
+		if (!entry) return;
+
+		for (const dep of entry.requires) {
+			walk(dep);
+		}
+
+		result.push(name);
+	}
+
+	walk(moduleName);
+
+	// Remove the module itself from its own dependency list
+	return result.filter((n) => n !== moduleName);
+}

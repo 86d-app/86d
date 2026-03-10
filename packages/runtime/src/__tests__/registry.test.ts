@@ -265,7 +265,7 @@ describe("ModuleRegistry", () => {
 			);
 		});
 
-		it("throws when dependency is not initialized before dependent", async () => {
+		it("marks module as error when dependency is not initialized before it", async () => {
 			const modules = [
 				createMinimalModule("cart", {
 					requires: ["products"],
@@ -280,12 +280,13 @@ describe("ModuleRegistry", () => {
 				createMockConfig(),
 			);
 
-			await expect(registry.boot()).rejects.toThrow(
-				'requires "products" but it was not initialized',
-			);
+			// Boot succeeds because products initializes fine; cart fails gracefully
+			await registry.boot();
+			expect(registry.getModuleStatus("cart")).toBe("error");
+			expect(registry.getModuleStatus("products")).toBe("ready");
 		});
 
-		it("sets module status to error on init failure", async () => {
+		it("throws when ALL modules fail to initialize", async () => {
 			const modules = [
 				createMinimalModule("products", {
 					init: async () => {
@@ -299,8 +300,34 @@ describe("ModuleRegistry", () => {
 				createMockConfig(),
 			);
 
-			await expect(registry.boot()).rejects.toThrow("Init failed!");
+			await expect(registry.boot()).rejects.toThrow(
+				"All modules failed to initialize",
+			);
 			expect(registry.getModuleStatus("products")).toBe("error");
+		});
+
+		it("skips module whose dependency failed", async () => {
+			const modules = [
+				createMinimalModule("products", {
+					init: async () => {
+						throw new Error("Init failed!");
+					},
+				}),
+				createMinimalModule("cart", {
+					requires: ["products"],
+				}),
+			];
+			const registry = new ModuleRegistry(
+				modules,
+				"store-1",
+				createMockConfig(),
+			);
+
+			await expect(registry.boot()).rejects.toThrow(
+				"All modules failed to initialize",
+			);
+			expect(registry.getModuleStatus("products")).toBe("error");
+			expect(registry.getModuleStatus("cart")).toBe("error");
 		});
 
 		it("wires event handlers declared on modules", async () => {
@@ -660,7 +687,7 @@ describe("ModuleRegistry", () => {
 			]);
 		});
 
-		it("returns error status when a module has errors", async () => {
+		it("returns error status when a module has errors but boot succeeds", async () => {
 			const modules = [
 				createMinimalModule("products"),
 				createMinimalModule("cart", {
@@ -675,14 +702,16 @@ describe("ModuleRegistry", () => {
 				createMockConfig(),
 			);
 
-			try {
-				await registry.boot();
-			} catch {
-				// expected
-			}
+			// Boot succeeds: products is ready, cart is error
+			await registry.boot();
 
 			const health = registry.getHealth();
-			expect(health.status).toBe("booting");
+			expect(health.status).toBe("error");
+			expect(health.modules[0]).toEqual({
+				id: "products",
+				status: "ready",
+				error: undefined,
+			});
 			expect(health.modules[1]).toEqual({
 				id: "cart",
 				status: "error",
@@ -739,14 +768,11 @@ describe("ModuleRegistry", () => {
 		it("handles zero modules", async () => {
 			const registry = new ModuleRegistry([], "store-1", createMockConfig());
 
-			await registry.boot();
-			expect(registry.isReady()).toBe(true);
-			expect(registry.getModuleIds()).toEqual([]);
-
-			// createRequestContext should throw because no default data service
-			expect(() => registry.createRequestContext()).toThrow(
-				"No modules initialized",
+			// Zero modules means nothing to initialize — throws
+			await expect(registry.boot()).rejects.toThrow(
+				"All modules failed to initialize",
 			);
+			expect(registry.getModuleIds()).toEqual([]);
 		});
 
 		it("handles modules with no init, no controllers, no events", async () => {

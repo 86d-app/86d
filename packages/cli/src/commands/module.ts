@@ -3,8 +3,10 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { RegistryManifest, RegistryModule } from "@86d-app/registry";
 import {
+	computeIntegrity,
 	fetchModule,
 	getLocalModuleNames,
+	getModuleDependencies,
 	parseSpecifier,
 	readLocalManifest,
 } from "@86d-app/registry";
@@ -28,6 +30,9 @@ export function moduleCommand(subcommand: string | undefined, args: string[]) {
 		case "add":
 		case "install":
 			return addModule(args[0]);
+		case "update":
+		case "upgrade":
+			return updateModules(args[0]);
 		case "list":
 		case "ls":
 			return listModules();
@@ -58,6 +63,7 @@ ${c.bold("86d module")} — Manage modules
 ${c.dim("Usage:")}
   86d module create <name>           Scaffold a new module
   86d module add <specifier>         Add a module from registry, GitHub, or npm
+  86d module update [name]           Check for and apply module updates
   86d module list                    List all local modules
   86d module search [query]          Search the registry for modules
   86d module info <name>             Show module details
@@ -127,7 +133,36 @@ async function addModule(specifier: string | undefined) {
 
 	success(`Downloaded module to ${result.localPath}`);
 
-	// Install dependencies
+	// Check for required dependencies and auto-install them
+	const deps = getModuleDependencies(spec.name, manifest);
+	if (deps.length > 0) {
+		const missingDeps = deps.filter(
+			(dep) => !existsSync(join(root, "modules", dep, "package.json")),
+		);
+
+		if (missingDeps.length > 0) {
+			console.log();
+			info(
+				`${spec.name} requires: ${missingDeps.map((d) => c.cyan(d)).join(", ")}`,
+			);
+			info("Installing required dependencies...");
+
+			for (const dep of missingDeps) {
+				const depSpec = parseSpecifier(dep);
+				info(`  ↓ Fetching ${depSpec.packageName}...`);
+				const depResult = await fetchModule(depSpec, root, manifest);
+				if (depResult.success) {
+					success(`  ✓ ${depSpec.packageName}`);
+				} else {
+					warn(
+						`  Failed to fetch ${depSpec.packageName}: ${depResult.error ?? "unknown error"}`,
+					);
+				}
+			}
+		}
+	}
+
+	// Install node dependencies
 	info("Installing dependencies...");
 	try {
 		execSync("bun install", { cwd: root, stdio: "pipe" });
@@ -141,6 +176,93 @@ async function addModule(specifier: string | undefined) {
 	enableModule(spec.name);
 
 	console.log(`\n  Run ${c.bold("86d generate")} to update generated code.\n`);
+}
+
+// ── Update Modules ────────────────────────────────────────────────────
+
+async function updateModules(name: string | undefined) {
+	const root = findProjectRoot();
+	const manifest = loadManifest(root);
+
+	if (!manifest) {
+		error("No registry.json found. Run 'bun run generate:registry' first.");
+		process.exit(1);
+	}
+
+	const localModules = getLocalModuleNames(root);
+
+	// If a specific module is given, only check that one
+	const targets = name ? [name.replace(/^@86d-app\//, "")] : localModules;
+
+	heading(`Checking for updates${name ? ` (${name})` : ""}`);
+	console.log();
+
+	const outdated: Array<{
+		name: string;
+		localVersion: string;
+		registryVersion: string;
+		integrityChanged: boolean;
+	}> = [];
+
+	for (const moduleName of targets) {
+		const registryEntry = manifest.modules[moduleName];
+		if (!registryEntry) continue; // Not in registry (custom module)
+
+		const moduleDir = join(root, "modules", moduleName);
+		const pkgPath = join(moduleDir, "package.json");
+		if (!existsSync(pkgPath)) continue;
+
+		const pkg = readJson<{ version?: string }>(pkgPath);
+		const localVersion = pkg?.version ?? "0.0.0";
+
+		// Check version difference
+		const versionChanged = localVersion !== registryEntry.version;
+
+		// Check integrity
+		const localIntegrity = computeIntegrity(moduleDir);
+		const integrityChanged =
+			registryEntry.integrity !== undefined &&
+			localIntegrity !== undefined &&
+			localIntegrity !== registryEntry.integrity;
+
+		if (versionChanged || integrityChanged) {
+			outdated.push({
+				name: moduleName,
+				localVersion,
+				registryVersion: registryEntry.version,
+				integrityChanged,
+			});
+		}
+	}
+
+	if (outdated.length === 0) {
+		success("All modules are up to date");
+		return;
+	}
+
+	console.log(
+		`  ${c.yellow(`${outdated.length} module(s) have updates available:`)}`,
+	);
+	console.log();
+
+	for (const mod of outdated) {
+		const versionInfo =
+			mod.localVersion !== mod.registryVersion
+				? `${c.dim(mod.localVersion)} → ${c.green(mod.registryVersion)}`
+				: c.dim(mod.localVersion);
+		const integrityTag = mod.integrityChanged
+			? c.yellow(" (content changed)")
+			: "";
+		console.log(
+			`  ${c.bold(`@86d-app/${mod.name}`)} ${versionInfo}${integrityTag}`,
+		);
+	}
+
+	console.log();
+	info(
+		`To update, run: ${c.bold("86d module add <name>")} for each module above`,
+	);
+	console.log();
 }
 
 // ── Search Registry ───────────────────────────────────────────────────

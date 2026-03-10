@@ -114,7 +114,7 @@ if (result.success) {
 The registry integrates with the 86d CLI:
 
 ```sh
-# Add a module from the registry
+# Add a module from the registry (auto-installs required dependencies)
 86d module add products
 
 # Add from GitHub
@@ -123,12 +123,18 @@ The registry integrates with the 86d CLI:
 # Add from npm
 86d module add npm:@acme/commerce-module
 
+# Check for module updates (compares local vs registry versions/integrity)
+86d module update
+86d module update cart
+
 # Search the registry
 86d module search shipping
 
 # Generate registry manifest
 86d generate registry
 ```
+
+When adding a module, the CLI automatically resolves and installs any required dependencies (declared via the `requires` field in the registry manifest).
 
 ## Config Format
 
@@ -215,6 +221,9 @@ Scan the `modules/` directory and build a registry manifest with full metadata f
 
 ### `readStoreConfig(path): StoreConfig`
 Read and parse a store's `config.json` file.
+
+### `getModuleDependencies(name, manifest): string[]`
+Get the full transitive dependency list for a module, topologically sorted (dependencies before dependents). Handles circular dependencies gracefully.
 
 ### `getLocalModuleNames(root): string[]`
 Get sorted list of all locally available module names.

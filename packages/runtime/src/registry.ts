@@ -147,6 +147,7 @@ export class ModuleRegistry {
 		this.eventBus = createEventBus(this.config.eventBusOptions);
 
 		const initializedModules: string[] = [];
+		const failedModules = new Set<string>();
 
 		// Build the shared context that modules can access during init
 		const contextBase = {
@@ -166,6 +167,11 @@ export class ModuleRegistry {
 				// Check dependencies are initialized
 				const requiredIds = getRequiredModuleIds(mod.requires);
 				for (const requiredId of requiredIds) {
+					if (failedModules.has(requiredId)) {
+						throw new Error(
+							`Module "${mod.id}" requires "${requiredId}" which failed to initialize.`,
+						);
+					}
 					if (!initializedModules.includes(requiredId)) {
 						throw new Error(
 							`Module "${mod.id}" requires "${requiredId}" but it was not initialized. ` +
@@ -230,8 +236,16 @@ export class ModuleRegistry {
 			} catch (err) {
 				entry.status = "error";
 				entry.error = err instanceof Error ? err : new Error(String(err));
-				throw err;
+				failedModules.add(mod.id);
+				// Continue booting remaining modules — degraded operation is
+				// better than a complete startup failure.
 			}
+		}
+
+		if (initializedModules.length === 0) {
+			throw new Error(
+				"All modules failed to initialize. Cannot start the store.",
+			);
 		}
 
 		this.booted = true;
