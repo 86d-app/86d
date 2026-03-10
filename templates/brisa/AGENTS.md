@@ -56,7 +56,7 @@ Module components are registered automatically. Use them by name in any MDX file
 <NewsletterForm compact={true} source="footer" />
 ```
 
-Each module documents its components in `COMPONENTS.md`. See [docs/MODULE_COMPONENTS.md](../docs/MODULE_COMPONENTS.md) for the unified reference.
+Each module documents its store components in the **Store Components** section of its `README.md`.
 
 ## Layout Pattern
 

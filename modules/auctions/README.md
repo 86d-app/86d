@@ -178,7 +178,7 @@ When enabled, if a bid is placed within `antiSnipingMinutes` of the auction end,
 | `AuctionListing` | Browsable grid of active auctions |
 | `AuctionPage` | Detailed auction view with bid history |
 
-## Admin Components
+### Admin Components
 
 | Component | Description |
 |-----------|-------------|

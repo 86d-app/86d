@@ -228,6 +228,35 @@ interface ApplyResult {
 }
 ```
 
+## Store Components
+
+### DiscountCodeInput
+
+Promo code input field with validation. Shows applied state when a valid code is entered.
+
+#### Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `subtotal` | `number` | `0` | Cart subtotal in cents (for minimum amount validation) |
+| `productIds` | `string[]` | — | Product IDs for product-specific discounts |
+| `categoryIds` | `string[]` | — | Category IDs for category-specific discounts |
+| `onApplied` | `(result) => void` | — | Callback when a valid code is applied |
+| `onRemoved` | `() => void` | — | Callback when the applied code is removed |
+| `compact` | `boolean` | `false` | Compact inline layout |
+
+#### Usage in MDX
+
+```mdx
+<DiscountCodeInput />
+
+<DiscountCodeInput
+  subtotal={cartSubtotal}
+  compact={true}
+  onApplied={(result) => console.log(result)}
+/>
+```
+
 ## Notes
 
 - Promo codes are stored and matched case-insensitively (`toUpperCase().trim()`). `SAVE10`, `save10`, and `Save10` all resolve to the same code.

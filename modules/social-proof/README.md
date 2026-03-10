@@ -267,15 +267,15 @@ interface ActivitySummary {
 
 ## Store Components
 
-### `<ProductActivity productId="..." period="24h" />`
+##### `<ProductActivity productId="..." period="24h" />`
 
 Displays social proof indicators on product pages: "X bought recently", "Y viewing", "Z added to cart". Only renders when there is activity data.
 
-### `<TrustBadges position="product" />`
+##### `<TrustBadges position="product" />`
 
 Renders configurable trust badges (secure checkout, money-back guarantee, etc.) filtered by position. Uses emoji icons with optional links.
 
-### `<RecentPurchases take={5} />`
+##### `<RecentPurchases take={5} />`
 
 Shows a feed of recent purchase events with product name, location, and relative time. Each item links to the product page.
 

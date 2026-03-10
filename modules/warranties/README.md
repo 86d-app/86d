@@ -172,7 +172,7 @@ submitted → under_review → approved → in_repair → resolved → closed
 | `WarrantyStatus` | Lists customer's registered warranties |
 | `ClaimForm` | Form to submit a warranty claim |
 
-## Admin Components
+### Admin Components
 
 | Component | Description |
 |-----------|-------------|
