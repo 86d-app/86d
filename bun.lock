@@ -541,6 +541,20 @@
         "vitest": "catalog:vite",
       },
     },
+    "modules/invoices": {
+      "name": "@86d-app/invoices",
+      "version": "0.0.1",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
     "modules/loyalty": {
       "name": "@86d-app/loyalty",
       "version": "0.0.4",
@@ -1352,6 +1366,8 @@
     "@86d-app/import-export": ["@86d-app/import-export@workspace:modules/import-export"],
 
     "@86d-app/inventory": ["@86d-app/inventory@workspace:modules/inventory"],
+
+    "@86d-app/invoices": ["@86d-app/invoices@workspace:modules/invoices"],
 
     "@86d-app/loyalty": ["@86d-app/loyalty@workspace:modules/loyalty"],
 
