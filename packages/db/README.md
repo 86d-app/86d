@@ -47,9 +47,9 @@ type UserCreateInput = Prisma.UserCreateInput;
 
 | Environment Variable | Required | Description |
 |---|---|---|
-| `DATABASE_URL` | Yes | PostgreSQL connection string |
+| `DATABASE_URL` | Yes (runtime) | PostgreSQL connection string |
 
-The client will throw an error at startup if `DATABASE_URL` is not set.
+The client is **lazy-initialized** — it is only created when first accessed at runtime, not at import time. This allows the store app to build without a database. If `DATABASE_URL` is not set when the client is first used, an error is thrown.
 
 ## Schema Management
 
@@ -82,7 +82,7 @@ bunx prisma migrate dev
 
 ### `db`
 
-Singleton `PrismaClient` instance. In non-production environments, the client is cached on `globalThis` to survive hot module reloads.
+Lazy-initialized `PrismaClient` proxy. The actual connection is created on first property access. In non-production environments, the client is cached on `globalThis` to survive hot module reloads.
 
 ### `Prisma`
 

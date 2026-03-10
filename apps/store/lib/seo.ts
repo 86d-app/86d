@@ -49,15 +49,19 @@ const getProductsModuleId = cache(async (): Promise<string | null> => {
 	const storeId = env.STORE_ID;
 	if (!storeId) return null;
 
-	const mod = await db.module.findFirst({
-		where: {
-			storeId,
-			name: "@86d-app/products",
-		},
-		select: { id: true },
-	});
-
-	return mod?.id ?? null;
+	try {
+		const mod = await db.module.findFirst({
+			where: {
+				storeId,
+				name: "@86d-app/products",
+			},
+			select: { id: true },
+		});
+		return mod?.id ?? null;
+	} catch {
+		// DB unavailable (e.g. build time without DATABASE_URL)
+		return null;
+	}
 });
 
 /**
@@ -145,15 +149,19 @@ const getModuleIdByName = cache(
 		const storeId = env.STORE_ID;
 		if (!storeId) return null;
 
-		const mod = await db.module.findFirst({
-			where: {
-				storeId,
-				name: moduleName,
-			},
-			select: { id: true },
-		});
-
-		return mod?.id ?? null;
+		try {
+			const mod = await db.module.findFirst({
+				where: {
+					storeId,
+					name: moduleName,
+				},
+				select: { id: true },
+			});
+			return mod?.id ?? null;
+		} catch {
+			// DB unavailable (e.g. build time without DATABASE_URL)
+			return null;
+		}
 	},
 );
 

@@ -16,11 +16,28 @@ function createClient(): PrismaClientInstance {
 	return new PrismaClient({ adapter });
 }
 
-export const db: PrismaClientInstance =
-	globalForPrisma.prisma ?? createClient();
-
-if (process.env.NODE_ENV !== "production") {
-	globalForPrisma.prisma = db;
+function getClient(): PrismaClientInstance {
+	if (!globalForPrisma.prisma) {
+		globalForPrisma.prisma = createClient();
+	}
+	return globalForPrisma.prisma;
 }
+
+/**
+ * Lazy-initialized Prisma client.
+ * The connection is created on first property access, not at import time.
+ * This allows the store app to build without DATABASE_URL.
+ */
+export const db: PrismaClientInstance = new Proxy({} as PrismaClientInstance, {
+	get(_target, prop) {
+		const client = getClient();
+		const value = Reflect.get(client, prop, client);
+		if (typeof value === "function") {
+			// biome-ignore lint/complexity/noBannedTypes: binding proxied Prisma methods requires generic function cast
+			return (value as Function).bind(client);
+		}
+		return value;
+	},
+});
 
 export { Prisma };

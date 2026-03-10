@@ -20,15 +20,17 @@ prisma/
 
 ## Key exports
 
-- `db` — singleton `PrismaClient` instance (cached on `globalThis` in non-production)
+- `db` — lazy-initialized `PrismaClient` proxy (cached on `globalThis` in non-production)
 - `Prisma` — re-exported Prisma namespace for types and utilities
 
 ## How it works
 
 - `PrismaClient` is imported from `@86d-app/core/prisma` (generated in core)
 - Uses `@prisma/adapter-pg` (`PrismaPg`) with `DATABASE_URL` from env
+- The client is **lazy-initialized via Proxy** — the connection is created on first property access, not at import time
+- This allows the store app to build (`next build`) without `DATABASE_URL` set
+- Throws on first actual DB access if `DATABASE_URL` is not set
 - In non-production, the client is cached on `globalThis` to survive HMR reloads
-- Throws immediately if `DATABASE_URL` is not set
 
 ## Prisma setup
 

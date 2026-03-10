@@ -23,6 +23,19 @@ function loadTranspilePackages(): string[] {
 	}
 }
 
+const cspDirectives = [
+	"default-src 'self'",
+	// Next.js requires unsafe-inline and unsafe-eval for its runtime
+	"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com",
+	"style-src 'self' 'unsafe-inline'",
+	"img-src 'self' data: https: blob:",
+	"font-src 'self'",
+	"connect-src 'self' https://vitals.vercel-insights.com https://www.google-analytics.com https:",
+	"frame-ancestors 'none'",
+	"base-uri 'self'",
+	"form-action 'self'",
+].join("; ");
+
 const securityHeaders = [
 	{ key: "X-Frame-Options", value: "DENY" },
 	{ key: "X-Content-Type-Options", value: "nosniff" },
@@ -39,11 +52,9 @@ const securityHeaders = [
 		key: "Permissions-Policy",
 		value: "camera=(), microphone=(), geolocation=()",
 	},
-	// Report-only CSP: violations are reported, not blocked. Tighten to enforce once policy is stable.
 	{
-		key: "Content-Security-Policy-Report-Only",
-		value:
-			"default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self'; connect-src 'self' https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+		key: "Content-Security-Policy",
+		value: cspDirectives,
 	},
 ];
 
