@@ -1,11 +1,67 @@
 import { execSync } from "node:child_process";
-import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import {
+	existsSync,
+	mkdirSync,
+	readFileSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 import type {
 	FetchResult,
 	ModuleSpecifier,
 	RegistryManifest,
 } from "./types.js";
+
+/** Max retries for transient network failures. */
+const MAX_RETRIES = 3;
+/** Base delay (ms) for exponential backoff: 500ms, 1s, 2s. */
+const BASE_DELAY_MS = 500;
+/** HTTP status codes that are worth retrying. */
+const RETRYABLE_STATUS = new Set([408, 429, 500, 502, 503, 504]);
+
+/**
+ * Sleep for a given number of milliseconds.
+ */
+function sleep(ms: number): Promise<void> {
+	return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Fetch with retry and exponential backoff for transient failures.
+ */
+export async function fetchWithRetry(
+	url: string,
+	init: RequestInit,
+	retries = MAX_RETRIES,
+): Promise<Response> {
+	let lastError: Error | undefined;
+
+	for (let attempt = 0; attempt <= retries; attempt++) {
+		try {
+			const response = await fetch(url, init);
+
+			// Don't retry client errors (except retryable ones)
+			if (response.ok || !RETRYABLE_STATUS.has(response.status)) {
+				return response;
+			}
+
+			// Retryable server error — fall through to retry logic
+			lastError = new Error(`HTTP ${response.status} ${response.statusText}`);
+		} catch (err) {
+			// Network error (DNS, timeout, connection refused) — retryable
+			lastError = err instanceof Error ? err : new Error(String(err));
+		}
+
+		if (attempt < retries) {
+			const delay = BASE_DELAY_MS * 2 ** attempt;
+			await sleep(delay);
+		}
+	}
+
+	throw lastError ?? new Error("Fetch failed after retries");
+}
 
 /**
  * Fetch a module from its remote source and install it into `modules/`.
@@ -75,7 +131,24 @@ async function fetchFromRegistry(
 		ref: manifest.defaultRef,
 	};
 
-	return fetchFromGitHub(ghSpec, root);
+	const result = await fetchFromGitHub(ghSpec, root);
+
+	// Verify integrity if the manifest includes a hash
+	if (result.success && result.localPath && entry.integrity) {
+		const pkgPath = join(result.localPath, "package.json");
+		if (existsSync(pkgPath)) {
+			const actual = `sha256-${createHash("sha256").update(readFileSync(pkgPath, "utf-8")).digest("hex")}`;
+			if (actual !== entry.integrity) {
+				rmSync(result.localPath, { recursive: true, force: true });
+				return {
+					success: false,
+					error: `Integrity check failed for "${spec.name}": expected ${entry.integrity}, got ${actual}`,
+				};
+			}
+		}
+	}
+
+	return result;
 }
 
 /**
@@ -83,6 +156,8 @@ async function fetchFromRegistry(
  *
  * Downloads the directory contents via the GitHub tarball API,
  * extracts the module path, and writes it to `modules/{name}/`.
+ *
+ * Retries transient failures (5xx, 429, network errors) with exponential backoff.
  */
 async function fetchFromGitHub(
 	spec: ModuleSpecifier,
@@ -104,15 +179,14 @@ async function fetchFromGitHub(
 	}
 
 	try {
-		// Download tarball via GitHub API
+		// Download tarball via GitHub API with retry
 		const tarballUrl = `https://api.github.com/repos/${repo}/tarball/${ref}`;
 		const tmpDir = join(root, ".86d", "tmp", `${name}-${Date.now()}`);
 		mkdirSync(tmpDir, { recursive: true });
 
 		const tarballPath = join(tmpDir, "archive.tar.gz");
 
-		// Fetch the tarball
-		const response = await fetch(tarballUrl, {
+		const response = await fetchWithRetry(tarballUrl, {
 			headers: {
 				Accept: "application/vnd.github+json",
 				"User-Agent": "86d-registry",
@@ -240,4 +314,14 @@ export function ensureCacheDir(root: string): string {
 	const cacheDir = join(root, ".86d");
 	mkdirSync(cacheDir, { recursive: true });
 	return cacheDir;
+}
+
+/**
+ * Compute a SHA-256 integrity hash for a module's package.json.
+ */
+export function computeIntegrity(modulePath: string): string | undefined {
+	const pkgPath = join(modulePath, "package.json");
+	if (!existsSync(pkgPath)) return undefined;
+	const content = readFileSync(pkgPath, "utf-8");
+	return `sha256-${createHash("sha256").update(content).digest("hex")}`;
 }

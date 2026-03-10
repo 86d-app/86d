@@ -12,7 +12,8 @@
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-173e45b6322ba45e41116a3ad56b6ac24fbf3aba1b2219f270bce6ce5e03f64c"
 		},
 		"affiliates": {
 			"name": "@86d-app/affiliates",
@@ -23,7 +24,8 @@
 			"requires": [],
 			"hasStoreComponents": false,
 			"hasAdminComponents": false,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-21bcb5299c8f83d0a36f3e2f99a472ceeedd4159802835090343994d761b6b61"
 		},
 		"analytics": {
 			"name": "@86d-app/analytics",
@@ -34,7 +36,8 @@
 			"requires": [],
 			"hasStoreComponents": false,
 			"hasAdminComponents": true,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-67bf1814c21c27c8ab33c726e3de55a4c82ab79c1f179507232f33d4e1a134e0"
 		},
 		"announcements": {
 			"name": "@86d-app/announcements",
@@ -45,7 +48,8 @@
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": false,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-cff5a748bbbc2f54f706b0414cea9f381d3b48af3869bbeb0bbdc6a6c6691c45"
 		},
 		"appointments": {
 			"name": "@86d-app/appointments",
@@ -56,9 +60,10 @@
 			"requires": [
 				"customers"
 			],
-			"hasStoreComponents": false,
+			"hasStoreComponents": true,
 			"hasAdminComponents": false,
-			"hasStorePages": true
+			"hasStorePages": true,
+			"integrity": "sha256-19a92e7a1413b418c1878d88a8fa348b44cdc979a1e8cc7993ebf26fbfc78ca0"
 		},
 		"auctions": {
 			"name": "@86d-app/auctions",
@@ -69,7 +74,8 @@
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
-			"hasStorePages": true
+			"hasStorePages": true,
+			"integrity": "sha256-378b499b94ae9b2890f0248026ddbc8f9aef0eb6c8cec60b72a2145dcf470c4f"
 		},
 		"audit-log": {
 			"name": "@86d-app/audit-log",
@@ -80,7 +86,8 @@
 			"requires": [],
 			"hasStoreComponents": false,
 			"hasAdminComponents": false,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-32fdcd7135d7712c4b59652e640855e7571daa25cb2a33c132cbace74c8dba1b"
 		},
 		"automations": {
 			"name": "@86d-app/automations",
@@ -91,7 +98,8 @@
 			"requires": [],
 			"hasStoreComponents": false,
 			"hasAdminComponents": false,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-f7ae4bfbbbc2f79f77cc073cdeea2fffffbe7f60613895d2fe6539ad543fc584"
 		},
 		"backorders": {
 			"name": "@86d-app/backorders",
@@ -104,7 +112,8 @@
 			],
 			"hasStoreComponents": false,
 			"hasAdminComponents": false,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-7df991e2238c3ab5f0835ec407a166e25840504124189ddbb91f2f782d2f3694"
 		},
 		"blog": {
 			"name": "@86d-app/blog",
@@ -115,7 +124,8 @@
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
-			"hasStorePages": true
+			"hasStorePages": true,
+			"integrity": "sha256-0b24a4acdc6238553f022ff97736dfefbe8564dfbc8d6277ef712f524d40250e"
 		},
 		"braintree": {
 			"name": "@86d-app/braintree",
@@ -126,7 +136,8 @@
 			"requires": [],
 			"hasStoreComponents": false,
 			"hasAdminComponents": true,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-99f6af25e418adf729f327558c041b30f31ad931f05aa6ab988a4a16eb41a1f9"
 		},
 		"brands": {
 			"name": "@86d-app/brands",
@@ -137,7 +148,8 @@
 			"requires": [],
 			"hasStoreComponents": false,
 			"hasAdminComponents": false,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-69c6dbdeab6fba6e558a262595d8ace3bd8f34b3f8f5c1beb1784873834a37f2"
 		},
 		"bulk-pricing": {
 			"name": "@86d-app/bulk-pricing",
@@ -150,7 +162,8 @@
 			],
 			"hasStoreComponents": false,
 			"hasAdminComponents": false,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-c6695d5f6c034c7e35ce4b1e8fccbea50ca9f84cbc92e0f927d6e0d1289541a5"
 		},
 		"bundles": {
 			"name": "@86d-app/bundles",
@@ -161,7 +174,8 @@
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-b826c6bb6aa2d22db933f5c77198e55d97374b4ac8af6b64d1e88949bb23fa67"
 		},
 		"cart": {
 			"name": "@86d-app/cart",
@@ -172,7 +186,8 @@
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-943df63489d589aa8941d4a8393db0da8dfb14d75dbecbd13072927489b65539"
 		},
 		"checkout": {
 			"name": "@86d-app/checkout",
@@ -183,7 +198,8 @@
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-eccc657c80a58e73b9bb52e98834f3cce777403ff5a5f98845b1194eaa5819cf"
 		},
 		"collections": {
 			"name": "@86d-app/collections",
@@ -194,7 +210,8 @@
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-736668e90333d2360f939f7f674512726c044927d9c396fe9b72b9ac2c3077ae"
 		},
 		"comparisons": {
 			"name": "@86d-app/comparisons",
@@ -205,7 +222,8 @@
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-6df71b69522e16aaf3392064022e82bb658dae5f22b2b3cd6d5697801e6262e5"
 		},
 		"customer-groups": {
 			"name": "@86d-app/customer-groups",
@@ -216,7 +234,8 @@
 			"requires": [],
 			"hasStoreComponents": false,
 			"hasAdminComponents": false,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-4f9e80fc039c468429f4736a9c497ff52b1ad50f1ad9ecec47149f1adb257338"
 		},
 		"customers": {
 			"name": "@86d-app/customers",
@@ -227,7 +246,8 @@
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-35d87f06c00fc241b96b51c7f96117f8c45b64822f4d3430ad29dacb0de1ca31"
 		},
 		"delivery-slots": {
 			"name": "@86d-app/delivery-slots",
@@ -240,7 +260,8 @@
 			],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
-			"hasStorePages": true
+			"hasStorePages": true,
+			"integrity": "sha256-b6b6116c1eb431aed6562c38cafa7775d320cc44f7ebbc5065cb7d0a6bd960bb"
 		},
 		"digital-downloads": {
 			"name": "@86d-app/digital-downloads",
@@ -251,7 +272,8 @@
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-65c04694767618f7fb082666490e6d6b4fa5d5886c378e45ae87b9c8e6845d59"
 		},
 		"discounts": {
 			"name": "@86d-app/discounts",
@@ -262,7 +284,8 @@
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-edec9c000736f9aa76fe06443f335fd68694569b86c59d14646a6c5e8364eb90"
 		},
 		"faq": {
 			"name": "@86d-app/faq",
@@ -273,7 +296,8 @@
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": false,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-42775fe9598eacc7dff494950553b22b5cd011135527dab3c7ef46d140598123"
 		},
 		"flash-sales": {
 			"name": "@86d-app/flash-sales",
@@ -284,9 +308,10 @@
 			"requires": [
 				"products"
 			],
-			"hasStoreComponents": false,
+			"hasStoreComponents": true,
 			"hasAdminComponents": false,
-			"hasStorePages": true
+			"hasStorePages": true,
+			"integrity": "sha256-46ef8f0f73e2f45c46864eb16e97e882e63009804a107528079122068889c402"
 		},
 		"forms": {
 			"name": "@86d-app/forms",
@@ -297,7 +322,8 @@
 			"requires": [],
 			"hasStoreComponents": false,
 			"hasAdminComponents": false,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-15848be15bcfe61fa525d89fe95dbdf3077ccb2aed66e07f52d310ef720cacb6"
 		},
 		"fulfillment": {
 			"name": "@86d-app/fulfillment",
@@ -308,7 +334,8 @@
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-b695b9b73fb4f0e2997722ea5a163a556c7bdc345c6e322a07a9fd7d7d38f056"
 		},
 		"gift-cards": {
 			"name": "@86d-app/gift-cards",
@@ -319,7 +346,8 @@
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-30db93f157319a1b5a232ac89dd0e661e5c1ec8a540aadbeb874504eac064aa9"
 		},
 		"gift-registry": {
 			"name": "@86d-app/gift-registry",
@@ -330,7 +358,8 @@
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
-			"hasStorePages": true
+			"hasStorePages": true,
+			"integrity": "sha256-0c34fe401a73903fcc17b7d91c04d53785a57929e8aa7ff404414b9a3b86c3fa"
 		},
 		"gift-wrapping": {
 			"name": "@86d-app/gift-wrapping",
@@ -343,7 +372,8 @@
 			],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
-			"hasStorePages": true
+			"hasStorePages": true,
+			"integrity": "sha256-dd3bab9ebd6d197205facb4d54cf11da05ca299327448edd2bb7ed20a17a3561"
 		},
 		"import-export": {
 			"name": "@86d-app/import-export",
@@ -354,7 +384,8 @@
 			"requires": [],
 			"hasStoreComponents": false,
 			"hasAdminComponents": true,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-ae7efbd974f96f9086f4b449a5d14d0e8d0a4a8d9e0abdc325a76294c06eb143"
 		},
 		"inventory": {
 			"name": "@86d-app/inventory",
@@ -365,7 +396,8 @@
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-f66c3c5b78220fb9bafd0f2327d991325c0bcd6c14a4a50ceee53cc5831379b5"
 		},
 		"invoices": {
 			"name": "@86d-app/invoices",
@@ -378,7 +410,8 @@
 			],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-68d429fbee09fd9dd76f2403c48961c940548d92eaa9f6a091c54d7fcc0fc8c3"
 		},
 		"loyalty": {
 			"name": "@86d-app/loyalty",
@@ -391,7 +424,8 @@
 			],
 			"hasStoreComponents": true,
 			"hasAdminComponents": false,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-3a65a02c46860cfe9b05abee03da5f49001708ca80c7d9415908948049b33d6a"
 		},
 		"media": {
 			"name": "@86d-app/media",
@@ -402,7 +436,8 @@
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-f5f8e9e10246e6e3d7314faa50fef62b381e878df2de4ffec826478798b41402"
 		},
 		"memberships": {
 			"name": "@86d-app/memberships",
@@ -415,7 +450,8 @@
 			],
 			"hasStoreComponents": false,
 			"hasAdminComponents": false,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-864c5c4c808290b15ae1eac18395028051a1ec1fc4962fa890c967cae341ab54"
 		},
 		"multi-currency": {
 			"name": "@86d-app/multi-currency",
@@ -426,7 +462,8 @@
 			"requires": [],
 			"hasStoreComponents": false,
 			"hasAdminComponents": false,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-13eb2a31edd1bc56f6e97cb5ba0ea3f0da512d63ec1c6118de5590c1f7e26272"
 		},
 		"navigation": {
 			"name": "@86d-app/navigation",
@@ -437,7 +474,8 @@
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-01890ab09a958742ab6b8219470e4e4eaceb7415c57c88846b08f0fb785d54db"
 		},
 		"newsletter": {
 			"name": "@86d-app/newsletter",
@@ -448,7 +486,8 @@
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-561d6541622d31265de36131afa55ad0969e8612373262a26bb4ba9680351e5a"
 		},
 		"notifications": {
 			"name": "@86d-app/notifications",
@@ -459,7 +498,8 @@
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-f3a01a9e83920df0163e6aafdfcea6a90fe8ec125597bc046cce91b912bcab08"
 		},
 		"orders": {
 			"name": "@86d-app/orders",
@@ -470,7 +510,8 @@
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-60eb82f2c3b9514a924f9b096b83e821a7182bc020ffa86838fa2ba0d620633f"
 		},
 		"pages": {
 			"name": "@86d-app/pages",
@@ -481,7 +522,8 @@
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
-			"hasStorePages": true
+			"hasStorePages": true,
+			"integrity": "sha256-61b07d9d798ca762a0c167e938b1b51620127957a2c0c7c155e332641b50d3bc"
 		},
 		"payments": {
 			"name": "@86d-app/payments",
@@ -492,7 +534,8 @@
 			"requires": [],
 			"hasStoreComponents": false,
 			"hasAdminComponents": true,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-b38522f2b1a64eb2a2675a852462b345b6081557d21c37d6b3ea3fe6d8a63c67"
 		},
 		"paypal": {
 			"name": "@86d-app/paypal",
@@ -503,7 +546,8 @@
 			"requires": [],
 			"hasStoreComponents": false,
 			"hasAdminComponents": true,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-053da7650f83914558bf8fb300aa79e322ca70a924550161707fe688e1b39081"
 		},
 		"preorders": {
 			"name": "@86d-app/preorders",
@@ -516,7 +560,8 @@
 			],
 			"hasStoreComponents": false,
 			"hasAdminComponents": false,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-19fea9e70bb0a98e7cec7a46135a6e1091d2edaeb63ec333349e9b8830d48d15"
 		},
 		"price-lists": {
 			"name": "@86d-app/price-lists",
@@ -529,7 +574,8 @@
 			],
 			"hasStoreComponents": false,
 			"hasAdminComponents": false,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-4d583a316129c0d7e00f36845c7046548569c6f1b47d76ca7b5ad50ad2682e7e"
 		},
 		"product-feeds": {
 			"name": "@86d-app/product-feeds",
@@ -540,7 +586,8 @@
 			"requires": [],
 			"hasStoreComponents": false,
 			"hasAdminComponents": false,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-6f5ba8f3ec880f8afceeac016d270d0d911dc75c8a8f2d0a10e6a844ae896967"
 		},
 		"product-labels": {
 			"name": "@86d-app/product-labels",
@@ -551,7 +598,8 @@
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-1cb427872e18c3946d3b2472bd5fdfa67f49a63238cbf4da626caa2143921a3b"
 		},
 		"product-qa": {
 			"name": "@86d-app/product-qa",
@@ -562,7 +610,8 @@
 			"requires": [],
 			"hasStoreComponents": false,
 			"hasAdminComponents": false,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-2c0fe40ba5fffba0b769596e6ec85ee5107ce84eb262f28394e459b01606a608"
 		},
 		"products": {
 			"name": "@86d-app/products",
@@ -573,7 +622,8 @@
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
-			"hasStorePages": true
+			"hasStorePages": true,
+			"integrity": "sha256-819759daf20afae533b85166b2566aace5b524074d83c678dd2b156ef8e2a3ff"
 		},
 		"quotes": {
 			"name": "@86d-app/quotes",
@@ -584,7 +634,8 @@
 			"requires": [],
 			"hasStoreComponents": false,
 			"hasAdminComponents": false,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-2196c14f28bc7d29e4f0d18c642941179600bf1d72a64e24e42358b04cbdd8d2"
 		},
 		"recently-viewed": {
 			"name": "@86d-app/recently-viewed",
@@ -595,7 +646,8 @@
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-955d4a5e7c302fecfcc28dfb6c470bf7d06333efd5f9fc8e5cece3f0e8a94389"
 		},
 		"recommendations": {
 			"name": "@86d-app/recommendations",
@@ -606,7 +658,8 @@
 			"requires": [],
 			"hasStoreComponents": false,
 			"hasAdminComponents": false,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-82ceb6def753818bb9daf2ddfb7a6c23b3b56225c19dbae9ceac186736da489b"
 		},
 		"referrals": {
 			"name": "@86d-app/referrals",
@@ -617,7 +670,8 @@
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-cffb749ecc63b89e2e7d18fd3c2d05b36d1f026969b9809d4a11b857f406ca91"
 		},
 		"returns": {
 			"name": "@86d-app/returns",
@@ -628,7 +682,8 @@
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-f31799d310df731690cd04f35daf4e8b6d7df3397d29a40068e76221cfa24369"
 		},
 		"reviews": {
 			"name": "@86d-app/reviews",
@@ -639,7 +694,8 @@
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-245e600370e5054de10d7dc71cfa7a91d9b39cb8210f5c09e8ea5fbc41371e22"
 		},
 		"search": {
 			"name": "@86d-app/search",
@@ -650,7 +706,8 @@
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
-			"hasStorePages": true
+			"hasStorePages": true,
+			"integrity": "sha256-99d5c4fe42d501c4227b2dd80a920a080b243b4611137aaea26030ac3d085f24"
 		},
 		"seo": {
 			"name": "@86d-app/seo",
@@ -661,7 +718,8 @@
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
-			"hasStorePages": true
+			"hasStorePages": true,
+			"integrity": "sha256-eeedeaafdf65bcbe3b6aa3fa6eda0eac7029001ac84ea76d72a8632c56f2f4cf"
 		},
 		"settings": {
 			"name": "@86d-app/settings",
@@ -672,7 +730,8 @@
 			"requires": [],
 			"hasStoreComponents": false,
 			"hasAdminComponents": true,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-0b37d4e9022cb8a4b4d292a277310d59e4b9a2c54c5dede75a5f23a9a3e45ad5"
 		},
 		"shipping": {
 			"name": "@86d-app/shipping",
@@ -683,7 +742,8 @@
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-0d2b016806fdeab2fab158deba8b112f1f404c70feafab8bb88a587834592dc8"
 		},
 		"social-proof": {
 			"name": "@86d-app/social-proof",
@@ -694,7 +754,8 @@
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-0c11da28cab5cc455231be3d9a853ace644f37b2f079246f1df9333d6e49c267"
 		},
 		"square": {
 			"name": "@86d-app/square",
@@ -705,7 +766,8 @@
 			"requires": [],
 			"hasStoreComponents": false,
 			"hasAdminComponents": true,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-4095463ee054d74adf05a8f8c3e3aebfc95655924a0279f4339ee0cbbc48043a"
 		},
 		"store-credits": {
 			"name": "@86d-app/store-credits",
@@ -716,7 +778,8 @@
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": false,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-8b6d6a4b55ad4717ab8f6c7ea806339f3b75aa0e1575399dbe6e774374d34261"
 		},
 		"store-locator": {
 			"name": "@86d-app/store-locator",
@@ -727,7 +790,8 @@
 			"requires": [],
 			"hasStoreComponents": false,
 			"hasAdminComponents": false,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-abc2890a4c58517670238084d735fcfd4ce812aa10deb7363979fc14284e0264"
 		},
 		"store-pickup": {
 			"name": "@86d-app/store-pickup",
@@ -740,7 +804,8 @@
 			],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
-			"hasStorePages": true
+			"hasStorePages": true,
+			"integrity": "sha256-736c53dff86e2e1793fa348f291bf2e69719eef40ac137f3da96c2aca0519e21"
 		},
 		"stripe": {
 			"name": "@86d-app/stripe",
@@ -751,7 +816,8 @@
 			"requires": [],
 			"hasStoreComponents": false,
 			"hasAdminComponents": true,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-9a3c6b49103a438add59ee9fca0d20cadd12f1dc05924b0c9975eb258c445d50"
 		},
 		"subscriptions": {
 			"name": "@86d-app/subscriptions",
@@ -762,7 +828,8 @@
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-7d066887c9d2a44843eefe5a374c93391a8861e9b0829dd07eda8b290ac37d9a"
 		},
 		"tax": {
 			"name": "@86d-app/tax",
@@ -773,7 +840,8 @@
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-bafda11e6435061ab8c0b4a8f532a751ca3b125203259782d29081d5552e2a60"
 		},
 		"tickets": {
 			"name": "@86d-app/tickets",
@@ -784,7 +852,8 @@
 			"requires": [],
 			"hasStoreComponents": false,
 			"hasAdminComponents": false,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-da1177c70c59be6759e876cfd72f243b4b01895d2c519cbcb5ad81abf4ebe7d7"
 		},
 		"vendors": {
 			"name": "@86d-app/vendors",
@@ -797,7 +866,8 @@
 			],
 			"hasStoreComponents": false,
 			"hasAdminComponents": false,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-ef4eb295877a5dced59368af2ec8f0c2b9142507d04e7d581fb814b312d51b90"
 		},
 		"waitlist": {
 			"name": "@86d-app/waitlist",
@@ -810,7 +880,8 @@
 			],
 			"hasStoreComponents": true,
 			"hasAdminComponents": false,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-9f5bd3d25466775d76d2e9a51dadb64b6177a759a6513c3399ef1e77b3940892"
 		},
 		"warranties": {
 			"name": "@86d-app/warranties",
@@ -821,7 +892,8 @@
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-248e301fb5ebf4eb70c5a33fd7c90b608b874a8ea56eb8afe8453d8c8e138009"
 		},
 		"wishlist": {
 			"name": "@86d-app/wishlist",
@@ -832,7 +904,16 @@
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
-			"hasStorePages": false
+			"hasStorePages": false,
+			"integrity": "sha256-de2fef93f6d492e3c7332a72a0edba63f84f430b6d3212e2dad18e297ff0dd0d"
+		}
+	},
+	"templates": {
+		"brisa": {
+			"name": "brisa",
+			"description": "86d Starter Kit",
+			"version": "0.0.1",
+			"path": "templates/brisa"
 		}
 	}
 }

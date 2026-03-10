@@ -26,10 +26,12 @@ Git-based module registry for the 86d commerce platform. Enables modules to be s
 The registry provides the module resolution layer for 86d stores. When a store's `config.json` lists modules, the registry determines where each module lives and how to fetch it.
 
 **Key features:**
-- Resolve modules from local workspace, GitHub repos, or npm
-- Generate and consume `registry.json` manifests
+- Resolve modules and templates from local workspace, GitHub repos, or npm
+- Generate and consume `registry.json` manifests with integrity verification
 - Support `"*"` wildcard for including all available modules
-- Graceful handling of missing modules with warnings
+- Template resolution — fetch store templates from GitHub or npm
+- Graceful handling of missing modules/templates with warnings
+- Retry with exponential backoff for transient network failures
 
 ## Usage
 
@@ -135,12 +137,31 @@ The store's `config.json` supports these registry-related fields:
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `modules` | `"*" \| string[]` | `"*"` | Module specifiers or `"*"` for all |
+| `template` | `string` | — | Template specifier (local name, GitHub, or npm) |
 | `registry` | `string` | GitHub raw URL | Custom registry manifest URL |
 | `moduleOptions` | `Record<string, object>` | `{}` | Per-module configuration |
 
+### Resolving Templates
+
+```ts
+import { resolveTemplate, fetchTemplate } from "@86d-app/registry";
+
+// Resolve from local, registry, GitHub, or npm
+const result = resolveTemplate("brisa", "/path/to/project", manifest);
+
+if (result.status === "missing") {
+  const fetched = await fetchTemplate(result.specifier, "/path/to/project", manifest);
+}
+```
+
+Template specifiers use the same formats as modules:
+- `"brisa"` — local template in `templates/`
+- `"github:owner/repo/templates/custom"` — from GitHub
+- `"npm:@acme/store-template"` — from npm
+
 ## Registry Manifest
 
-The `registry.json` file at the repo root indexes all available modules:
+The `registry.json` file at the repo root indexes all available modules and templates:
 
 ```json
 {
@@ -157,7 +178,16 @@ The `registry.json` file at the repo root indexes all available modules:
       "requires": [],
       "hasStoreComponents": true,
       "hasAdminComponents": true,
-      "hasStorePages": true
+      "hasStorePages": true,
+      "integrity": "sha256-..."
+    }
+  },
+  "templates": {
+    "brisa": {
+      "name": "brisa",
+      "description": "86d Starter Kit",
+      "version": "0.0.1",
+      "path": "templates/brisa"
     }
   }
 }
@@ -188,6 +218,21 @@ Read and parse a store's `config.json` file.
 
 ### `getLocalModuleNames(root): string[]`
 Get sorted list of all locally available module names.
+
+### `resolveTemplate(spec, root, manifest?): ResolvedTemplate`
+Resolve a template specifier to a local directory, checking local templates first then registry.
+
+### `fetchTemplate(spec, root, manifest?): Promise<FetchResult>`
+Download a template from GitHub or npm and install it into `templates/`.
+
+### `getLocalTemplateNames(root): string[]`
+Get sorted list of all locally available template names.
+
+### `readTemplateConfig(path): Record<string, unknown> | undefined`
+Read a template's `config.json` contents.
+
+### `computeIntegrity(modulePath): string | undefined`
+Compute SHA-256 integrity hash for a module's `package.json`.
 
 ## Buildtime Integration
 

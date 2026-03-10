@@ -1,7 +1,11 @@
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { getLocalModuleNames, resolveModules } from "../resolver.js";
+import {
+	getLocalModuleNames,
+	readLocalManifest,
+	resolveModules,
+} from "../resolver.js";
 import type { RegistryManifest, StoreConfig } from "../types.js";
 
 const TMP_ROOT = join(import.meta.dirname, ".tmp-resolver-test");
@@ -37,6 +41,7 @@ const testManifest: RegistryManifest = {
 	version: 1,
 	baseUrl: "https://github.com/86d-app/86d",
 	defaultRef: "main",
+	templates: {},
 	modules: {
 		products: {
 			name: "@86d-app/products",
@@ -189,5 +194,43 @@ describe("getLocalModuleNames", () => {
 	it("returns empty array for non-existent root", () => {
 		const names = getLocalModuleNames("/non/existent/path");
 		expect(names).toEqual([]);
+	});
+});
+
+describe("readLocalManifest", () => {
+	it("reads a valid registry.json", () => {
+		const manifestPath = join(TMP_ROOT, "registry.json");
+		writeFileSync(
+			manifestPath,
+			JSON.stringify({
+				version: 1,
+				baseUrl: "https://github.com/86d-app/86d",
+				defaultRef: "main",
+				modules: {},
+				templates: {},
+			}),
+		);
+		const result = readLocalManifest(manifestPath);
+		expect(result).toBeDefined();
+		expect(result?.version).toBe(1);
+	});
+
+	it("returns undefined for non-existent file", () => {
+		const result = readLocalManifest("/non/existent/registry.json");
+		expect(result).toBeUndefined();
+	});
+
+	it("returns undefined for invalid JSON", () => {
+		const badPath = join(TMP_ROOT, "bad-registry.json");
+		writeFileSync(badPath, "not json{{{");
+		const result = readLocalManifest(badPath);
+		expect(result).toBeUndefined();
+	});
+
+	it("returns undefined for valid JSON that fails schema validation", () => {
+		const invalidPath = join(TMP_ROOT, "invalid-registry.json");
+		writeFileSync(invalidPath, JSON.stringify({ version: 999, modules: {} }));
+		const result = readLocalManifest(invalidPath);
+		expect(result).toBeUndefined();
 	});
 });

@@ -23,6 +23,9 @@ const manifest = buildManifest(WORKSPACE_ROOT, {
 });
 
 const moduleCount = Object.keys(manifest.modules).length;
+const templateCount = Object.keys(manifest.templates).length;
 
 writeFileSync(OUTPUT_PATH, `${JSON.stringify(manifest, null, "\t")}\n`);
-console.log(`✓ Generated registry.json with ${moduleCount} module(s)`);
+console.log(
+	`✓ Generated registry.json with ${moduleCount} module(s) and ${templateCount} template(s)`,
+);

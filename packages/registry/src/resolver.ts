@@ -1,5 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { fetchWithRetry } from "./fetcher.js";
 import { parseSpecifier } from "./specifier.js";
 import type {
 	ModuleSpecifier,
@@ -209,10 +210,12 @@ async function loadManifest(
 		}
 	}
 
-	// 2. Try remote fetch
+	// 2. Try remote fetch with retry
 	const url = registryUrl ?? DEFAULT_REGISTRY_URL;
 	try {
-		const res = await fetch(url);
+		const res = await fetchWithRetry(url, {
+			headers: { "User-Agent": "86d-registry" },
+		});
 		if (!res.ok) return undefined;
 		const raw = await res.json();
 		return registryManifestSchema.parse(raw);

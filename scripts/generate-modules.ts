@@ -55,6 +55,7 @@ const CLIENT_PATH = join(GENERATED_DIR, "client.ts");
 const HOOKS_PATH = join(GENERATED_DIR, "hooks.ts");
 const ADMIN_LOADERS_PATH = join(GENERATED_DIR, "admin-loaders.ts");
 const STORE_LOADERS_PATH = join(GENERATED_DIR, "store-loaders.ts");
+const TRANSPILE_PACKAGES_PATH = join(GENERATED_DIR, "transpile-packages.json");
 const PACKAGE_JSON_PATH = join(STORE_ROOT, "package.json");
 
 /**
@@ -848,6 +849,40 @@ ${loadersEntries}
 	console.log(`✓ Generated store-loaders.ts with ${entries.length} module(s)`);
 }
 
+/**
+ * Generate transpile-packages.json: list of module package names that need
+ * Next.js transpilation (any workspace module with JSX/TSX files).
+ *
+ * next.config.ts reads this file to build the transpilePackages array,
+ * eliminating the need for a hard-coded list.
+ */
+function generateTranspilePackages() {
+	const modules = getCachedModules();
+	const transpile: string[] = [];
+
+	for (const moduleName of modules) {
+		if (getModuleType(moduleName) !== "workspace") continue;
+		const shortName = moduleName.replace("@86d-app/", "");
+		const basePath = join(WORKSPACE_ROOT, "modules", shortName, "src");
+
+		// Include if module has any TSX files (store components, admin components, or pages)
+		const hasJsx =
+			existsSync(join(basePath, "store", "components", "index.tsx")) ||
+			existsSync(join(basePath, "admin", "components", "index.tsx"));
+
+		if (hasJsx) {
+			transpile.push(moduleName);
+		}
+	}
+
+	transpile.sort();
+	ensureDir(GENERATED_DIR);
+	writeFileSync(TRANSPILE_PACKAGES_PATH, JSON.stringify(transpile, null, 2));
+	console.log(
+		`✓ Generated transpile-packages.json with ${transpile.length} package(s)`,
+	);
+}
+
 // Cache resolved modules list so it's only computed once
 let _cachedModules: string[] | undefined;
 let _cachedResolved: ResolvedModule[] | undefined;
@@ -879,6 +914,7 @@ async function runGenerators() {
 	await generateHooks();
 	await generateAdminLoaders();
 	await generateStoreLoaders();
+	generateTranspilePackages();
 
 	// Auto-format generated files so biome check passes
 	try {

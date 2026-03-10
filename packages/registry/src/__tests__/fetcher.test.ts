@@ -1,7 +1,7 @@
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { ensureCacheDir, fetchModule } from "../fetcher.js";
+import { computeIntegrity, ensureCacheDir, fetchModule } from "../fetcher.js";
 import type { ModuleSpecifier, RegistryManifest } from "../types.js";
 
 const TMP_ROOT = join(import.meta.dirname, ".tmp-fetcher-test");
@@ -61,6 +61,7 @@ describe("fetchModule", () => {
 			baseUrl: "https://github.com/86d-app/86d",
 			defaultRef: "main",
 			modules: {},
+			templates: {},
 		};
 
 		const result = await fetchModule(spec, TMP_ROOT, manifest);
@@ -102,5 +103,18 @@ describe("ensureCacheDir", () => {
 	it("creates .86d directory", () => {
 		const cacheDir = ensureCacheDir(TMP_ROOT);
 		expect(cacheDir).toBe(join(TMP_ROOT, ".86d"));
+	});
+});
+
+describe("computeIntegrity", () => {
+	it("computes sha256 hash for module with package.json", () => {
+		const hash = computeIntegrity(join(TMP_ROOT, "modules", "products"));
+		expect(hash).toBeDefined();
+		expect(hash).toMatch(/^sha256-[a-f0-9]{64}$/);
+	});
+
+	it("returns undefined for module without package.json", () => {
+		const hash = computeIntegrity("/non/existent/module");
+		expect(hash).toBeUndefined();
 	});
 });

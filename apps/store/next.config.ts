@@ -1,7 +1,27 @@
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import createMDX from "@next/mdx";
 import env from "env";
 import type { NextConfig } from "next";
 import type { RemotePattern } from "next/dist/shared/lib/image-config";
+
+/**
+ * Read the auto-generated transpile packages list.
+ * Falls back to empty array if the file hasn't been generated yet.
+ */
+function loadTranspilePackages(): string[] {
+	const filePath = join(
+		import.meta.dirname,
+		"generated",
+		"transpile-packages.json",
+	);
+	if (!existsSync(filePath)) return [];
+	try {
+		return JSON.parse(readFileSync(filePath, "utf-8"));
+	} catch {
+		return [];
+	}
+}
 
 const securityHeaders = [
 	{ key: "X-Frame-Options", value: "DENY" },
@@ -31,20 +51,7 @@ const withMDX = createMDX({});
 
 export default withMDX({
 	pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
-	transpilePackages: [
-		"@86d-app/blog",
-		"@86d-app/cart",
-		"@86d-app/digital-downloads",
-		"@86d-app/discounts",
-		"@86d-app/gift-cards",
-		"@86d-app/newsletter",
-		"@86d-app/orders",
-		"@86d-app/products",
-		"@86d-app/reviews",
-		"@86d-app/subscriptions",
-		"@86d-app/tax",
-		"@86d-app/wishlist",
-	],
+	transpilePackages: loadTranspilePackages(),
 	turbopack: {
 		rules: {
 			"*.txt": {

@@ -1,6 +1,11 @@
+import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { RegistryManifest, RegistryModule } from "./types.js";
+import type {
+	RegistryManifest,
+	RegistryModule,
+	RegistryTemplate,
+} from "./types.js";
 
 /**
  * Build a registry manifest by scanning the local `modules/` directory.
@@ -15,15 +20,18 @@ export function buildManifest(
 	},
 ): RegistryManifest {
 	const modulesDir = join(root, "modules");
+	const templatesDir = join(root, "templates");
 	const modules: Record<string, RegistryModule> = {};
+	const templates: Record<string, RegistryTemplate> = {};
+
+	const baseManifest = {
+		version: 1 as const,
+		baseUrl: options?.baseUrl ?? "https://github.com/86d-app/86d",
+		defaultRef: options?.defaultRef ?? "main",
+	};
 
 	if (!existsSync(modulesDir)) {
-		return {
-			version: 1,
-			baseUrl: options?.baseUrl ?? "https://github.com/86d-app/86d",
-			defaultRef: options?.defaultRef ?? "main",
-			modules,
-		};
+		return { ...baseManifest, modules, templates };
 	}
 
 	const dirs = readdirSync(modulesDir, { withFileTypes: true })
@@ -39,12 +47,23 @@ export function buildManifest(
 		}
 	}
 
-	return {
-		version: 1,
-		baseUrl: options?.baseUrl ?? "https://github.com/86d-app/86d",
-		defaultRef: options?.defaultRef ?? "main",
-		modules,
-	};
+	// Scan templates
+	if (existsSync(templatesDir)) {
+		const templateDirs = readdirSync(templatesDir, { withFileTypes: true })
+			.filter((d) => d.isDirectory())
+			.map((d) => d.name)
+			.sort();
+
+		for (const name of templateDirs) {
+			const templateDir = join(templatesDir, name);
+			const entry = buildTemplateEntry(templateDir, name);
+			if (entry) {
+				templates[name] = entry;
+			}
+		}
+	}
+
+	return { ...baseManifest, modules, templates };
 }
 
 /**
@@ -57,7 +76,11 @@ function buildModuleEntry(
 	const pkgPath = join(moduleDir, "package.json");
 	if (!existsSync(pkgPath)) return undefined;
 
-	const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
+	const pkgRaw = readFileSync(pkgPath, "utf-8");
+	const pkg = JSON.parse(pkgRaw);
+
+	// SHA-256 integrity hash of the package.json for verification after fetch
+	const integrity = `sha256-${createHash("sha256").update(pkgRaw).digest("hex")}`;
 	const indexPath = join(moduleDir, "src", "index.ts");
 
 	// Extract metadata from index.ts
@@ -117,5 +140,29 @@ function buildModuleEntry(
 		hasStoreComponents,
 		hasAdminComponents,
 		hasStorePages,
+		integrity,
 	};
+}
+
+/**
+ * Build a single {@link RegistryTemplate} entry from a template directory.
+ */
+function buildTemplateEntry(
+	templateDir: string,
+	name: string,
+): RegistryTemplate | undefined {
+	const configPath = join(templateDir, "config.json");
+	if (!existsSync(configPath)) return undefined;
+
+	try {
+		const config = JSON.parse(readFileSync(configPath, "utf-8"));
+		return {
+			name,
+			description: config.description ?? config.name ?? name,
+			version: config.version ?? "0.0.1",
+			path: `templates/${name}`,
+		};
+	} catch {
+		return undefined;
+	}
 }

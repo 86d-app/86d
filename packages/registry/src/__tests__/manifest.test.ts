@@ -6,6 +6,17 @@ import { buildManifest } from "../manifest.js";
 const TMP_ROOT = join(import.meta.dirname, ".tmp-manifest-test");
 
 beforeAll(() => {
+	// Create a fake template structure
+	mkdirSync(join(TMP_ROOT, "templates", "brisa"), { recursive: true });
+	writeFileSync(
+		join(TMP_ROOT, "templates", "brisa", "config.json"),
+		JSON.stringify({
+			theme: "brisa",
+			name: "Brisa Starter Kit",
+			version: "1.0.0",
+		}),
+	);
+
 	// Create a fake module structure
 	mkdirSync(
 		join(TMP_ROOT, "modules", "products", "src", "store", "components"),
@@ -152,5 +163,22 @@ describe("buildManifest", () => {
 	it("handles non-existent modules directory", () => {
 		const manifest = buildManifest("/non/existent/path");
 		expect(Object.keys(manifest.modules)).toHaveLength(0);
+	});
+
+	it("includes templates in manifest", () => {
+		const manifest = buildManifest(TMP_ROOT);
+		expect(Object.keys(manifest.templates)).toEqual(["brisa"]);
+		expect(manifest.templates.brisa.name).toBe("brisa");
+		expect(manifest.templates.brisa.description).toBe("Brisa Starter Kit");
+		expect(manifest.templates.brisa.version).toBe("1.0.0");
+		expect(manifest.templates.brisa.path).toBe("templates/brisa");
+	});
+
+	it("computes integrity hashes for modules", () => {
+		const manifest = buildManifest(TMP_ROOT);
+		expect(manifest.modules.products.integrity).toBeDefined();
+		expect(manifest.modules.products.integrity).toMatch(
+			/^sha256-[a-f0-9]{64}$/,
+		);
 	});
 });

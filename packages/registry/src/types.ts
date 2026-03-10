@@ -54,9 +54,27 @@ export const registryModuleSchema = z.object({
 	hasAdminComponents: z.boolean().default(false),
 	/** Whether the module declares store pages. */
 	hasStorePages: z.boolean().default(false),
+	/** SHA-256 hash of the module's package.json for integrity verification. */
+	integrity: z.string().optional(),
 });
 
 export type RegistryModule = z.infer<typeof registryModuleSchema>;
+
+// ── Registry Templates ────────────────────────────────────────────────
+
+/** Schema for a single template entry in the registry manifest. */
+export const registryTemplateSchema = z.object({
+	/** Template name (e.g. "brisa"). */
+	name: z.string(),
+	/** Human-readable description. */
+	description: z.string(),
+	/** Semver version. */
+	version: z.string(),
+	/** Path within the registry repo (e.g. "templates/brisa"). */
+	path: z.string(),
+});
+
+export type RegistryTemplate = z.infer<typeof registryTemplateSchema>;
 
 /** Schema for the full registry manifest (registry.json). */
 export const registryManifestSchema = z.object({
@@ -68,6 +86,8 @@ export const registryManifestSchema = z.object({
 	defaultRef: z.string().default("main"),
 	/** Module entries keyed by short name. */
 	modules: z.record(z.string(), registryModuleSchema),
+	/** Template entries keyed by short name. */
+	templates: z.record(z.string(), registryTemplateSchema).default({}),
 });
 
 export type RegistryManifest = z.infer<typeof registryManifestSchema>;
@@ -80,10 +100,16 @@ export type RegistryManifest = z.infer<typeof registryManifestSchema>;
  * `modules` can be:
  * - `"*"` to include all modules from the registry
  * - An array of module specifiers (strings)
+ *
+ * `template` can be:
+ * - A local name (e.g. "brisa") for templates in `templates/`
+ * - A GitHub specifier (e.g. "github:owner/repo/templates/custom")
+ * - An npm specifier (e.g. "npm:@acme/store-template")
  */
 export interface StoreConfig {
 	theme?: string;
 	name?: string;
+	template?: string;
 	modules?: "*" | string[];
 	moduleOptions?: Record<string, Record<string, unknown>>;
 	registry?: string;
