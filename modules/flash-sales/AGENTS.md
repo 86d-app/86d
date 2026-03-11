@@ -26,6 +26,8 @@ src/
     remove-product.ts       POST /admin/flash-sales/:id/products/:productId/remove
     bulk-add-products.ts    POST /admin/flash-sales/:id/products/bulk
     get-stats.ts            GET  /admin/flash-sales/stats
+  admin/components/
+    index.tsx               FlashSaleList, FlashSaleDetail
   __tests__/
     service-impl.test.ts    77 tests
 ```
@@ -42,6 +44,13 @@ FlashSalesOptions {
 
 - **flashSale**: id, name, slug (unique), description?, status (draft|scheduled|active|ended), startsAt, endsAt, createdAt, updatedAt
 - **flashSaleProduct**: id, flashSaleId (indexed), productId (indexed), salePrice, originalPrice, stockLimit?, stockSold, sortOrder, createdAt
+
+## Admin Components
+
+| Component | Path | Description |
+|---|---|---|
+| `FlashSaleList` | `/admin/flash-sales` | Stats (total/active/scheduled/products/units sold), status filter, sale list with status badges, inline create form with datetime pickers |
+| `FlashSaleDetail` | `/admin/flash-sales/:id` | Edit sale details (name, slug, description, status, start/end dates), product management section with add form (product ID, prices, stock limit) and product list with discount % and remove |
 
 ## Key patterns
 

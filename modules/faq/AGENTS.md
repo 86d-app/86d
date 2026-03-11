@@ -36,6 +36,9 @@ src/
       update-item.ts         PUT    /admin/faq/items/:id
       delete-item.ts         DELETE /admin/faq/items/:id/delete
       stats.ts               GET    /admin/faq/stats
+  admin/
+    components/
+      index.tsx           FaqList, FaqDetail, FaqCategories, FaqCategoryDetail
   __tests__/
     service-impl.test.ts   39 tests covering all controller methods
 ```
@@ -52,6 +55,15 @@ FaqOptions {
 
 - **faqCategory**: id, name, slug (unique), description?, icon?, position, isVisible, metadata
 - **faqItem**: id, categoryId (FK cascade), question, answer, slug (unique), position, isVisible, tags[], helpfulCount, notHelpfulCount, metadata
+
+## Admin Components
+
+| Component | Path | Description |
+|---|---|---|
+| `FaqList` | `/admin/faq` | Stats (categories/questions/helpful/not helpful), category filter, item list with visibility badges, inline create form |
+| `FaqDetail` | `/admin/faq/:id` | Edit form for question, answer, category, slug, tags, position, visibility toggle |
+| `FaqCategories` | `/admin/faq/categories` | Category list with visibility badges, inline create form with auto-slug, edit/delete actions |
+| `FaqCategoryDetail` | `/admin/faq/categories/:id` | Edit form for name, slug, description, icon, position, visibility toggle |
 
 ## Key patterns
 

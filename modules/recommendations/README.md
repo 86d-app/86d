@@ -111,6 +111,12 @@ const module = recommendations({
 | `GET` | `/admin/recommendations/co-occurrences/:productId` | View co-occurrence data for a product |
 | `GET` | `/admin/recommendations/stats` | Get recommendation system statistics |
 
+## Admin Pages
+
+| Path | Component | Description |
+|---|---|---|
+| `/admin/recommendations` | `RecommendationAdmin` | Stats dashboard (total/active rules, co-occurrences, interactions), inline rule creation form, strategy filter, rules list with activate/deactivate and delete |
+
 ## Controller API
 
 ```ts

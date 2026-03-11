@@ -67,6 +67,13 @@ const module = flashSales({
 | `POST` | `/admin/flash-sales/:id/products/:productId/remove` | Remove a product from a flash sale |
 | `POST` | `/admin/flash-sales/:id/products/bulk` | Bulk add products to a flash sale |
 
+## Admin Pages
+
+| Path | Component | Group | Description |
+|------|-----------|-------|-------------|
+| `/admin/flash-sales` | FlashSaleList | Sales | Stats dashboard (total/active/scheduled/products/units sold), status filter, sale list with status badges and date ranges, inline create form with datetime pickers |
+| `/admin/flash-sales/:id` | FlashSaleDetail | — | Edit sale details (name, slug, description, status, start/end dates), product management with add form (product ID, original and sale prices in cents, stock limit) and product list showing discount percentages and stock tracking |
+
 ## Controller API
 
 The `FlashSaleController` interface is exported for use in inter-module contracts.

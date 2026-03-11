@@ -25,9 +25,18 @@ src/
       record-purchase.ts         POST /admin/recommendations/record-purchase
       get-co-occurrences.ts      GET  /admin/recommendations/co-occurrences/:productId
       get-stats.ts               GET  /admin/recommendations/stats
+  admin/
+    components/
+      index.tsx              RecommendationAdmin (stats, create rule, filter, list)
   __tests__/
     service-impl.test.ts     54 tests
 ```
+
+## Admin Components
+
+| Component | Path | Description |
+|---|---|---|
+| `RecommendationAdmin` | `/admin/recommendations` | Stats dashboard, inline create form, strategy filter, rules list with activate/deactivate/delete |
 
 ## Options
 

@@ -31,6 +31,8 @@ modules/tickets/src/
     update-category.ts  PUT /admin/tickets/categories/:id
     delete-category.ts  DELETE /admin/tickets/categories/:id/delete
     stats.ts            GET /admin/tickets/stats
+  admin/components/
+    index.tsx           TicketList, TicketDetail, TicketCategories, TicketCategoryDetail
   __tests__/
     service-impl.test.ts  45 tests covering all controller methods
 ```
@@ -100,6 +102,15 @@ interface TicketsOptions {
 - **Internal notes**: Messages with `isInternal: true` are hidden from store endpoints
 - **Customer access**: Store endpoints verify `customerEmail` matches ticket owner
 - **Controller key**: `ctx.context.controllers.tickets as TicketController`
+
+## Admin Components
+
+| Component | Path | Description |
+|---|---|---|
+| `TicketList` | `/admin/tickets` | Stats dashboard (total/open/pending/in-progress/resolved/closed), status + priority filters, ticket list with status/priority badges |
+| `TicketDetail` | `/admin/tickets/:id` | Threaded message view, admin reply form with internal note toggle, sidebar with status/priority selects and customer info |
+| `TicketCategories` | `/admin/tickets/categories` | Category list with active/inactive badges, inline create form, edit/delete actions |
+| `TicketCategoryDetail` | `/admin/tickets/categories/:id` | Edit form for name, slug, description, position, active toggle |
 
 ## Events emitted
 

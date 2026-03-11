@@ -142,6 +142,15 @@ interface FaqItem {
 }
 ```
 
+## Admin Pages
+
+| Path | Component | Group | Description |
+|------|-----------|-------|-------------|
+| `/admin/faq` | FaqList | Content | Stats dashboard (categories, questions, helpful/not helpful votes), category filter, FAQ item list with visibility badges, inline create form with category select and auto-slug |
+| `/admin/faq/categories` | FaqCategories | Content | Category list with visibility badges, inline create form with name, slug, description, icon, and position fields |
+| `/admin/faq/:id` | FaqDetail | — | Edit form for question, answer, category, slug, tags, position, and visibility toggle with helpful/not helpful counts |
+| `/admin/faq/categories/:id` | FaqCategoryDetail | — | Edit form for name, slug, description, icon, position, and visibility toggle |
+
 ## Store Components
 
 ### FaqAccordion

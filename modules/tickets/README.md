@@ -158,12 +158,12 @@ type MessageAuthorType = "customer" | "admin" | "system";
 
 ## Admin Pages
 
-| Path | Component | Group |
-|------|-----------|-------|
-| `/admin/tickets` | TicketList | Support |
-| `/admin/tickets/categories` | TicketCategories | Support |
-| `/admin/tickets/:id` | TicketDetail | — |
-| `/admin/tickets/categories/:id` | TicketCategoryDetail | — |
+| Path | Component | Group | Description |
+|------|-----------|-------|-------------|
+| `/admin/tickets` | TicketList | Support | Stats dashboard (total/open/pending/in-progress/resolved/closed), status and priority filter dropdowns, ticket list with badges linking to detail |
+| `/admin/tickets/categories` | TicketCategories | Support | Category list with active/inactive badges, inline create form with auto-slug, edit and delete actions |
+| `/admin/tickets/:id` | TicketDetail | — | Threaded message view with author type badges and internal note highlighting, admin reply form with internal note toggle, sidebar with live status/priority selects and customer info |
+| `/admin/tickets/categories/:id` | TicketCategoryDetail | — | Edit form for name, slug, description, position, and active toggle with success/error feedback |
 
 ## Notes
 
