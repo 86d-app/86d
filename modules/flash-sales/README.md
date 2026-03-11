@@ -67,6 +67,16 @@ const module = flashSales({
 | `POST` | `/admin/flash-sales/:id/products/:productId/remove` | Remove a product from a flash sale |
 | `POST` | `/admin/flash-sales/:id/products/bulk` | Bulk add products to a flash sale |
 
+## Store Components
+
+| Component | Description |
+|---|---|
+| `FlashSaleListing` | Full-page listing of all active flash sales with product grids, countdown timers, discount badges, and stock progress bars |
+| `FlashSaleDetail` | Single flash sale detail page with breadcrumb navigation, countdown, and product grid with add-to-cart buttons |
+| `FlashSaleProductCard` | Individual product card showing discount badge, sale/original pricing, stock remaining bar, and add-to-cart |
+| `FlashDealBadge` | Embeddable badge for product detail pages — shows flash sale name, pricing, countdown timer, and stock remaining |
+| `Countdown` | Reusable live countdown timer (days/hours/minutes/seconds) with optional label and `onExpire` callback |
+
 ## Admin Pages
 
 | Path | Component | Group | Description |

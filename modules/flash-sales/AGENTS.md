@@ -26,10 +26,21 @@ src/
     remove-product.ts       POST /admin/flash-sales/:id/products/:productId/remove
     bulk-add-products.ts    POST /admin/flash-sales/:id/products/bulk
     get-stats.ts            GET  /admin/flash-sales/stats
+  store/components/
+    _hooks.ts               useFlashSalesApi, useCartMutation
+    _utils.ts               formatPrice, formatDate, formatDateTime, getTimeRemaining
+    countdown.tsx           Live countdown timer (re-renders every second)
+    flash-sale-product-card.tsx  Product card with discount badge, stock bar, add-to-cart
+    flash-sale-listing.tsx  All active sales grid with countdowns and product previews
+    flash-sale-detail.tsx   Single sale page with breadcrumb, header, product grid
+    flash-deal-badge.tsx    Embeddable badge for product pages (shows deal pricing + countdown)
+    index.tsx               MDXComponents export
   admin/components/
     index.tsx               FlashSaleList, FlashSaleDetail
   __tests__/
-    service-impl.test.ts    77 tests
+    service-impl.test.ts    77 tests (core CRUD, stock tracking, active queries, stats)
+    endpoint-security.test.ts  14 tests (visibility rules, stock enforcement, cascade isolation)
+    controllers.test.ts     24 tests (edge cases: upserts, pagination, discount calc, batch queries)
 ```
 
 ## Options
@@ -44,6 +55,16 @@ FlashSalesOptions {
 
 - **flashSale**: id, name, slug (unique), description?, status (draft|scheduled|active|ended), startsAt, endsAt, createdAt, updatedAt
 - **flashSaleProduct**: id, flashSaleId (indexed), productId (indexed), salePrice, originalPrice, stockLimit?, stockSold, sortOrder, createdAt
+
+## Store Components
+
+| Component | Description |
+|---|---|
+| `FlashSaleListing` | All active sales with product grids, discount badges, countdowns, stock bars |
+| `FlashSaleDetail` | Single sale page with breadcrumb, countdown, all products with add-to-cart |
+| `FlashSaleProductCard` | Product card: discount badge, pricing, stock progress bar, add-to-cart button |
+| `FlashDealBadge` | Embeddable on product pages — shows sale name, pricing, countdown, stock remaining |
+| `Countdown` | Live countdown timer component (days/hours/minutes/seconds), calls `onExpire` callback |
 
 ## Admin Components
 
