@@ -156,6 +156,12 @@ const moduleNames = [
 	"import-export",
 	"warranties",
 	"abandoned-carts",
+	"braintree",
+	"paypal",
+	"square",
+	"stripe",
+	"redirects",
+	"sitemap",
 ];
 
 for (const name of moduleNames) {
@@ -837,6 +843,1116 @@ async function seedDemoOrder(client: pg.PoolClient) {
 }
 
 /* ------------------------------------------------------------------ */
+/* Additional module seed functions                                   */
+/* ------------------------------------------------------------------ */
+
+async function seedBrands(client: pg.PoolClient) {
+	console.log("  Creating brands...");
+	const brands = [
+		{
+			id: uuid(),
+			name: "Artisan Co.",
+			slug: "artisan-co",
+			description: "Handcrafted goods made with care and tradition.",
+			logo: "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=200",
+			website: "https://artisan.example.com",
+			isActive: true,
+			isFeatured: true,
+			position: 0,
+		},
+		{
+			id: uuid(),
+			name: "TechEdge",
+			slug: "techedge",
+			description: "Cutting-edge consumer electronics and accessories.",
+			logo: "https://images.unsplash.com/photo-1496200186974-4293800e2f20?w=200",
+			website: "https://techedge.example.com",
+			isActive: true,
+			isFeatured: true,
+			position: 1,
+		},
+		{
+			id: uuid(),
+			name: "Verde Naturals",
+			slug: "verde-naturals",
+			description: "Sustainable, eco-friendly products for everyday life.",
+			logo: "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=200",
+			isActive: true,
+			isFeatured: false,
+			position: 2,
+		},
+	];
+
+	for (const brand of brands) {
+		await insertModuleData(client, "brands", "brand", brand.id, {
+			...brand,
+			createdAt: now,
+			updatedAt: now,
+		});
+	}
+
+	// Link some products to brands
+	for (let i = 0; i < Math.min(products.length, brands.length); i++) {
+		const linkId = uuid();
+		await insertModuleData(client, "brands", "brandProduct", linkId, {
+			id: linkId,
+			brandId: brands[i].id,
+			productId: products[i].id,
+		});
+	}
+}
+
+async function seedReviews(client: pg.PoolClient) {
+	console.log("  Creating reviews...");
+	const reviewData = [
+		{
+			productId: products[0].id,
+			authorName: "Sarah M.",
+			authorEmail: "sarah@example.com",
+			rating: 5,
+			title: "Perfect everyday tee",
+			body: "Incredibly soft fabric and the fit is just right. Already ordered two more!",
+			status: "approved",
+			isVerifiedPurchase: true,
+		},
+		{
+			productId: products[0].id,
+			authorName: "Mike T.",
+			authorEmail: "mike@example.com",
+			rating: 4,
+			title: "Great quality",
+			body: "Nice weight and feel. Runs slightly large but still a great shirt.",
+			status: "approved",
+			isVerifiedPurchase: true,
+		},
+		{
+			productId: products[1].id,
+			authorName: "Emily R.",
+			authorEmail: "emily@example.com",
+			rating: 5,
+			title: "Beautiful craftsmanship",
+			body: "The leather is gorgeous and the bag is very well made. Gets better with age.",
+			status: "approved",
+			isVerifiedPurchase: true,
+		},
+		{
+			productId: products[2].id,
+			authorName: "David L.",
+			authorEmail: "david@example.com",
+			rating: 5,
+			title: "Best headphones I've owned",
+			body: "The noise cancellation is incredible and battery life easily lasts a full day.",
+			status: "approved",
+			isVerifiedPurchase: false,
+		},
+		{
+			productId: products[4].id,
+			authorName: "Lisa K.",
+			authorEmail: "lisa@example.com",
+			rating: 4,
+			title: "Lovely mug",
+			body: "Beautiful glaze and perfect size. The handle could be a bit bigger though.",
+			status: "approved",
+			isVerifiedPurchase: true,
+		},
+	];
+
+	for (const review of reviewData) {
+		const reviewId = uuid();
+		await insertModuleData(client, "reviews", "review", reviewId, {
+			id: reviewId,
+			...review,
+			helpfulCount: 0,
+			createdAt: now,
+			updatedAt: now,
+		});
+	}
+}
+
+async function seedBlog(client: pg.PoolClient) {
+	console.log("  Creating blog posts...");
+	const posts = [
+		{
+			id: uuid(),
+			title: "Welcome to Our Store",
+			slug: "welcome-to-our-store",
+			content:
+				"We're excited to launch our new online store! Browse our curated collection of quality products, from handcrafted leather goods to premium electronics. Each item is selected for its exceptional quality and design.",
+			excerpt: "Discover our curated collection of quality products.",
+			author: "Admin",
+			category: "news",
+			status: "published",
+			tags: ["announcement", "launch"],
+			publishedAt: now,
+		},
+		{
+			id: uuid(),
+			title: "The Art of Leather Craftsmanship",
+			slug: "art-of-leather-craftsmanship",
+			content:
+				"Full-grain leather is the highest quality leather available. It retains the complete grain surface, developing a rich patina over time. Our messenger bags are crafted by skilled artisans who have perfected their technique over decades.",
+			excerpt:
+				"Learn about the craftsmanship behind our leather goods.",
+			author: "Admin",
+			category: "craftsmanship",
+			status: "published",
+			tags: ["leather", "craftsmanship", "quality"],
+			publishedAt: now,
+		},
+		{
+			id: uuid(),
+			title: "Sustainable Living Guide",
+			slug: "sustainable-living-guide",
+			content:
+				"Small changes make a big difference. Our bamboo water bottles and organic products help reduce your environmental footprint without sacrificing quality or style. Here are five easy swaps you can make today.",
+			excerpt: "Simple tips for a more sustainable lifestyle.",
+			author: "Admin",
+			category: "sustainability",
+			status: "published",
+			tags: ["sustainability", "eco-friendly", "tips"],
+			publishedAt: now,
+		},
+	];
+
+	for (const post of posts) {
+		await insertModuleData(client, "blog", "post", post.id, {
+			...post,
+			createdAt: now,
+			updatedAt: now,
+		});
+	}
+}
+
+async function seedPages(client: pg.PoolClient) {
+	console.log("  Creating pages...");
+	const pageData = [
+		{
+			id: uuid(),
+			title: "About Us",
+			slug: "about",
+			content:
+				"We are a modern commerce platform dedicated to connecting customers with quality products. Our mission is to make online shopping simple, enjoyable, and trustworthy.",
+			status: "published",
+			showInNavigation: true,
+			position: 0,
+		},
+		{
+			id: uuid(),
+			title: "Contact",
+			slug: "contact",
+			content:
+				"Get in touch with our team. Email us at hello@demo.86d.app or call +1-555-0100. Our support hours are Monday through Friday, 9am to 5pm PST.",
+			status: "published",
+			showInNavigation: true,
+			position: 1,
+		},
+		{
+			id: uuid(),
+			title: "Shipping Policy",
+			slug: "shipping-policy",
+			content:
+				"We offer free standard shipping on orders over $50. Standard shipping takes 5-7 business days. Express shipping (2-3 business days) is available for $9.99. International shipping rates vary by destination.",
+			status: "published",
+			showInNavigation: false,
+			position: 2,
+		},
+		{
+			id: uuid(),
+			title: "Return Policy",
+			slug: "return-policy",
+			content:
+				"We accept returns within 30 days of purchase. Items must be in original condition with tags attached. Refunds are processed within 5-7 business days after we receive the returned item.",
+			status: "published",
+			showInNavigation: false,
+			position: 3,
+		},
+		{
+			id: uuid(),
+			title: "Privacy Policy",
+			slug: "privacy-policy",
+			content:
+				"Your privacy is important to us. We collect only the information necessary to process your orders and improve your shopping experience. We never sell your personal data to third parties.",
+			status: "published",
+			showInNavigation: false,
+			position: 4,
+		},
+	];
+
+	for (const page of pageData) {
+		await insertModuleData(client, "pages", "page", page.id, {
+			...page,
+			publishedAt: now,
+			createdAt: now,
+			updatedAt: now,
+		});
+	}
+}
+
+async function seedShipping(client: pg.PoolClient) {
+	console.log("  Creating shipping zones and rates...");
+	const domesticZoneId = uuid();
+	const internationalZoneId = uuid();
+
+	await insertModuleData(client, "shipping", "shippingZone", domesticZoneId, {
+		id: domesticZoneId,
+		name: "United States",
+		countries: ["US"],
+		isActive: true,
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	await insertModuleData(
+		client,
+		"shipping",
+		"shippingZone",
+		internationalZoneId,
+		{
+			id: internationalZoneId,
+			name: "International",
+			countries: [],
+			isActive: true,
+			createdAt: now,
+			updatedAt: now,
+		},
+	);
+
+	const rates = [
+		{
+			id: uuid(),
+			zoneId: domesticZoneId,
+			name: "Standard Shipping",
+			price: 599,
+			minOrderAmount: 0,
+			isActive: true,
+		},
+		{
+			id: uuid(),
+			zoneId: domesticZoneId,
+			name: "Free Shipping",
+			price: 0,
+			minOrderAmount: 5000,
+			isActive: true,
+		},
+		{
+			id: uuid(),
+			zoneId: domesticZoneId,
+			name: "Express Shipping",
+			price: 999,
+			minOrderAmount: 0,
+			isActive: true,
+		},
+		{
+			id: uuid(),
+			zoneId: internationalZoneId,
+			name: "International Standard",
+			price: 1499,
+			minOrderAmount: 0,
+			isActive: true,
+		},
+	];
+
+	for (const rate of rates) {
+		await insertModuleData(client, "shipping", "shippingRate", rate.id, {
+			...rate,
+			createdAt: now,
+			updatedAt: now,
+		});
+	}
+}
+
+async function seedTax(client: pg.PoolClient) {
+	console.log("  Creating tax rates...");
+	const taxRates = [
+		{
+			id: uuid(),
+			name: "California Sales Tax",
+			country: "US",
+			state: "CA",
+			rate: 7.25,
+			type: "percentage",
+			enabled: true,
+			priority: 0,
+			compound: false,
+			inclusive: false,
+		},
+		{
+			id: uuid(),
+			name: "New York Sales Tax",
+			country: "US",
+			state: "NY",
+			rate: 8.0,
+			type: "percentage",
+			enabled: true,
+			priority: 0,
+			compound: false,
+			inclusive: false,
+		},
+		{
+			id: uuid(),
+			name: "Texas Sales Tax",
+			country: "US",
+			state: "TX",
+			rate: 6.25,
+			type: "percentage",
+			enabled: true,
+			priority: 0,
+			compound: false,
+			inclusive: false,
+		},
+	];
+
+	for (const rate of taxRates) {
+		await insertModuleData(client, "tax", "taxRate", rate.id, {
+			...rate,
+			createdAt: now,
+			updatedAt: now,
+		});
+	}
+
+	const categoryId = uuid();
+	await insertModuleData(client, "tax", "taxCategory", categoryId, {
+		id: categoryId,
+		name: "Standard Rate",
+		description: "Default tax category for most products",
+		createdAt: now,
+		updatedAt: now,
+	});
+}
+
+async function seedDiscounts(client: pg.PoolClient) {
+	console.log("  Creating discounts...");
+	const discountId = uuid();
+	await insertModuleData(client, "discounts", "discount", discountId, {
+		id: discountId,
+		name: "Welcome 10% Off",
+		description: "10% off your first order",
+		type: "percentage",
+		value: 10,
+		appliesTo: "all",
+		stackable: false,
+		isActive: true,
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	const codeId = uuid();
+	await insertModuleData(client, "discounts", "discountCode", codeId, {
+		id: codeId,
+		discountId,
+		code: "WELCOME10",
+		usedCount: 0,
+		isActive: true,
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	const freeShipId = uuid();
+	await insertModuleData(client, "discounts", "discount", freeShipId, {
+		id: freeShipId,
+		name: "Free Shipping Over $75",
+		description: "Free shipping on orders $75+",
+		type: "free_shipping",
+		value: 0,
+		minimumAmount: 7500,
+		appliesTo: "all",
+		stackable: true,
+		isActive: true,
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	const freeShipCodeId = uuid();
+	await insertModuleData(
+		client,
+		"discounts",
+		"discountCode",
+		freeShipCodeId,
+		{
+			id: freeShipCodeId,
+			discountId: freeShipId,
+			code: "FREESHIP75",
+			usedCount: 0,
+			isActive: true,
+			createdAt: now,
+			updatedAt: now,
+		},
+	);
+}
+
+async function seedFaq(client: pg.PoolClient) {
+	console.log("  Creating FAQ...");
+	const shippingCatId = uuid();
+	const returnsCatId = uuid();
+	const generalCatId = uuid();
+
+	await insertModuleData(client, "faq", "faqCategory", shippingCatId, {
+		id: shippingCatId,
+		name: "Shipping & Delivery",
+		slug: "shipping-delivery",
+		description: "Questions about shipping and delivery times",
+		position: 0,
+		isVisible: true,
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	await insertModuleData(client, "faq", "faqCategory", returnsCatId, {
+		id: returnsCatId,
+		name: "Returns & Refunds",
+		slug: "returns-refunds",
+		description: "Questions about our return and refund policy",
+		position: 1,
+		isVisible: true,
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	await insertModuleData(client, "faq", "faqCategory", generalCatId, {
+		id: generalCatId,
+		name: "General",
+		slug: "general",
+		description: "General questions about our store",
+		position: 2,
+		isVisible: true,
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	const faqItems = [
+		{
+			categoryId: shippingCatId,
+			question: "How long does shipping take?",
+			answer:
+				"Standard shipping takes 5-7 business days. Express shipping takes 2-3 business days.",
+			slug: "how-long-does-shipping-take",
+			position: 0,
+		},
+		{
+			categoryId: shippingCatId,
+			question: "Do you offer free shipping?",
+			answer:
+				"Yes! We offer free standard shipping on all orders over $50.",
+			slug: "do-you-offer-free-shipping",
+			position: 1,
+		},
+		{
+			categoryId: shippingCatId,
+			question: "Do you ship internationally?",
+			answer:
+				"Yes, we ship to most countries worldwide. International shipping rates vary by destination.",
+			slug: "do-you-ship-internationally",
+			position: 2,
+		},
+		{
+			categoryId: returnsCatId,
+			question: "What is your return policy?",
+			answer:
+				"We accept returns within 30 days of purchase. Items must be in original condition with tags attached.",
+			slug: "what-is-your-return-policy",
+			position: 0,
+		},
+		{
+			categoryId: returnsCatId,
+			question: "How long do refunds take?",
+			answer:
+				"Refunds are processed within 5-7 business days after we receive the returned item.",
+			slug: "how-long-do-refunds-take",
+			position: 1,
+		},
+		{
+			categoryId: generalCatId,
+			question: "How do I create an account?",
+			answer:
+				'Click the "Sign Up" button in the top right corner and follow the registration steps.',
+			slug: "how-do-i-create-an-account",
+			position: 0,
+		},
+		{
+			categoryId: generalCatId,
+			question: "How can I contact customer support?",
+			answer:
+				"You can reach us at hello@demo.86d.app or call +1-555-0100 during business hours (Mon-Fri, 9am-5pm PST).",
+			slug: "how-can-i-contact-support",
+			position: 1,
+		},
+	];
+
+	for (const item of faqItems) {
+		const itemId = uuid();
+		await insertModuleData(client, "faq", "faqItem", itemId, {
+			id: itemId,
+			...item,
+			isVisible: true,
+			helpfulCount: 0,
+			notHelpfulCount: 0,
+			createdAt: now,
+			updatedAt: now,
+		});
+	}
+}
+
+async function seedAnnouncements(client: pg.PoolClient) {
+	console.log("  Creating announcements...");
+	const announcementId = uuid();
+	await insertModuleData(
+		client,
+		"announcements",
+		"announcement",
+		announcementId,
+		{
+			id: announcementId,
+			title: "Free Shipping on Orders Over $50",
+			content: "Use code FREESHIP at checkout. Limited time offer!",
+			type: "bar",
+			position: "top",
+			backgroundColor: "#1a1a2e",
+			textColor: "#ffffff",
+			linkUrl: "/products",
+			linkText: "Shop Now",
+			priority: 0,
+			isActive: true,
+			isDismissible: true,
+			targetAudience: "all",
+			impressions: 0,
+			clicks: 0,
+			dismissals: 0,
+			createdAt: now,
+			updatedAt: now,
+		},
+	);
+}
+
+async function seedSeo(client: pg.PoolClient) {
+	console.log("  Creating SEO meta tags...");
+	const metaTags = [
+		{
+			path: "/",
+			title: "86d Demo Store - Quality Products, Honest Prices",
+			description:
+				"Discover curated products from handcrafted leather goods to premium electronics. Free shipping on orders over $50.",
+			ogTitle: "86d Demo Store",
+			ogDescription:
+				"Quality products, honest prices. Shop our curated collection.",
+			ogType: "website",
+		},
+		{
+			path: "/products",
+			title: "All Products - 86d Demo Store",
+			description:
+				"Browse our full catalog of quality products across clothing, electronics, accessories, and more.",
+		},
+		{
+			path: "/collections",
+			title: "Collections - 86d Demo Store",
+			description:
+				"Explore our curated product collections including Featured Products, New Arrivals, and Best Sellers.",
+		},
+		{
+			path: "/blog",
+			title: "Blog - 86d Demo Store",
+			description:
+				"Read our latest articles on craftsmanship, sustainability, and product guides.",
+		},
+	];
+
+	for (const meta of metaTags) {
+		const metaId = uuid();
+		await insertModuleData(client, "seo", "metaTag", metaId, {
+			id: metaId,
+			...meta,
+			noIndex: false,
+			noFollow: false,
+			createdAt: now,
+			updatedAt: now,
+		});
+	}
+}
+
+async function seedSearch(client: pg.PoolClient) {
+	console.log("  Creating search index...");
+	for (const product of products) {
+		const indexId = uuid();
+		await insertModuleData(client, "search", "searchIndex", indexId, {
+			id: indexId,
+			entityType: "product",
+			entityId: product.id,
+			title: product.name,
+			body: product.description,
+			tags: product.tags,
+			url: `/products/${product.slug}`,
+			image: product.images[0]?.url,
+			metadata: {
+				price: product.price,
+				sku: product.sku,
+				status: product.status,
+			},
+			createdAt: now,
+			updatedAt: now,
+		});
+	}
+
+	// Synonyms for common searches
+	const synonyms = [
+		{ term: "tee", synonyms: ["t-shirt", "tshirt", "shirt"] },
+		{ term: "bag", synonyms: ["messenger", "backpack", "tote"] },
+		{ term: "headphones", synonyms: ["earphones", "earbuds", "headset"] },
+		{ term: "cup", synonyms: ["mug", "tumbler", "glass"] },
+	];
+
+	for (const syn of synonyms) {
+		const synId = uuid();
+		await insertModuleData(client, "search", "searchSynonym", synId, {
+			id: synId,
+			term: syn.term,
+			synonyms: syn.synonyms,
+			createdAt: now,
+			updatedAt: now,
+		});
+	}
+}
+
+async function seedNewsletter(client: pg.PoolClient) {
+	console.log("  Creating newsletter subscribers...");
+	const subscribers = [
+		{
+			email: "john@example.com",
+			firstName: "John",
+			lastName: "Doe",
+			status: "active",
+			source: "checkout",
+		},
+		{
+			email: "jane@example.com",
+			firstName: "Jane",
+			lastName: "Smith",
+			status: "active",
+			source: "footer",
+		},
+		{
+			email: "demo@example.com",
+			firstName: "Demo",
+			lastName: "User",
+			status: "active",
+			source: "popup",
+		},
+	];
+
+	for (const sub of subscribers) {
+		const subId = uuid();
+		await insertModuleData(client, "newsletter", "subscriber", subId, {
+			id: subId,
+			...sub,
+			tags: [],
+			subscribedAt: now,
+			createdAt: now,
+			updatedAt: now,
+		});
+	}
+}
+
+async function seedSocialProof(client: pg.PoolClient) {
+	console.log("  Creating social proof...");
+	// Trust badges
+	const badges = [
+		{
+			name: "Secure Checkout",
+			description: "256-bit SSL encryption",
+			icon: "shield-check",
+			position: 0,
+			priority: 0,
+			isActive: true,
+		},
+		{
+			name: "Free Returns",
+			description: "30-day return policy",
+			icon: "refresh-cw",
+			position: 1,
+			priority: 0,
+			isActive: true,
+		},
+		{
+			name: "Fast Shipping",
+			description: "Free shipping on $50+",
+			icon: "truck",
+			position: 2,
+			priority: 0,
+			isActive: true,
+		},
+	];
+
+	for (const badge of badges) {
+		const badgeId = uuid();
+		await insertModuleData(client, "social-proof", "trustBadge", badgeId, {
+			id: badgeId,
+			...badge,
+			createdAt: now,
+			updatedAt: now,
+		});
+	}
+
+	// Recent activity events
+	const events = [
+		{
+			productId: products[0].id,
+			productName: products[0].name,
+			productSlug: products[0].slug,
+			productImage: products[0].images[0]?.url,
+			eventType: "purchase",
+			region: "US",
+			country: "United States",
+			city: "San Francisco",
+			quantity: 1,
+		},
+		{
+			productId: products[2].id,
+			productName: products[2].name,
+			productSlug: products[2].slug,
+			productImage: products[2].images[0]?.url,
+			eventType: "purchase",
+			region: "US",
+			country: "United States",
+			city: "New York",
+			quantity: 1,
+		},
+	];
+
+	for (const event of events) {
+		const eventId = uuid();
+		await insertModuleData(
+			client,
+			"social-proof",
+			"activityEvent",
+			eventId,
+			{
+				id: eventId,
+				...event,
+				createdAt: now,
+				updatedAt: now,
+			},
+		);
+	}
+}
+
+async function seedProductLabels(client: pg.PoolClient) {
+	console.log("  Creating product labels...");
+	const labels = [
+		{
+			id: uuid(),
+			name: "Sale",
+			slug: "sale",
+			displayText: "Sale",
+			type: "badge",
+			color: "#ffffff",
+			backgroundColor: "#ef4444",
+			priority: 0,
+			isActive: true,
+		},
+		{
+			id: uuid(),
+			name: "New",
+			slug: "new",
+			displayText: "New",
+			type: "badge",
+			color: "#ffffff",
+			backgroundColor: "#22c55e",
+			priority: 1,
+			isActive: true,
+		},
+		{
+			id: uuid(),
+			name: "Best Seller",
+			slug: "best-seller",
+			displayText: "Best Seller",
+			type: "badge",
+			color: "#ffffff",
+			backgroundColor: "#3b82f6",
+			priority: 2,
+			isActive: true,
+		},
+	];
+
+	for (const label of labels) {
+		await insertModuleData(client, "product-labels", "label", label.id, {
+			...label,
+			createdAt: now,
+			updatedAt: now,
+		});
+	}
+
+	// Assign "Sale" label to products with compareAtPrice
+	const saleProducts = products.filter((p) => p.compareAtPrice);
+	for (const product of saleProducts) {
+		const linkId = uuid();
+		await insertModuleData(
+			client,
+			"product-labels",
+			"productLabel",
+			linkId,
+			{
+				id: linkId,
+				productId: product.id,
+				labelId: labels[0].id,
+				position: 0,
+			},
+		);
+	}
+}
+
+async function seedRedirects(client: pg.PoolClient) {
+	console.log("  Creating redirects...");
+	const redirects = [
+		{
+			sourcePath: "/old-products",
+			targetPath: "/products",
+			statusCode: 301,
+			isActive: true,
+			isRegex: false,
+			preserveQueryString: true,
+			note: "Legacy products page redirect",
+			hitCount: 0,
+		},
+		{
+			sourcePath: "/shop",
+			targetPath: "/products",
+			statusCode: 301,
+			isActive: true,
+			isRegex: false,
+			preserveQueryString: true,
+			note: "Shop shortcut",
+			hitCount: 0,
+		},
+		{
+			sourcePath: "/faq",
+			targetPath: "/help/faq",
+			statusCode: 302,
+			isActive: true,
+			isRegex: false,
+			preserveQueryString: false,
+			note: "FAQ redirect to help center",
+			hitCount: 0,
+		},
+	];
+
+	for (const redirect of redirects) {
+		const redirectId = uuid();
+		await insertModuleData(client, "redirects", "redirect", redirectId, {
+			id: redirectId,
+			...redirect,
+			createdAt: now,
+			updatedAt: now,
+		});
+	}
+}
+
+async function seedSitemap(client: pg.PoolClient) {
+	console.log("  Creating sitemap config...");
+	const configId = uuid();
+	await insertModuleData(client, "sitemap", "sitemapConfig", configId, {
+		id: configId,
+		baseUrl: "https://demo.86d.app",
+		includeProducts: true,
+		includeCollections: true,
+		includePages: true,
+		includeBlog: true,
+		includeBrands: true,
+		defaultChangeFreq: "weekly",
+		defaultPriority: 0.5,
+		productChangeFreq: "weekly",
+		productPriority: 0.8,
+		collectionChangeFreq: "weekly",
+		collectionPriority: 0.7,
+		pageChangeFreq: "monthly",
+		pagePriority: 0.6,
+		excludedPaths: ["/admin", "/api", "/checkout"],
+		lastGenerated: now,
+		createdAt: now,
+		updatedAt: now,
+	});
+}
+
+async function seedStoreLocator(client: pg.PoolClient) {
+	console.log("  Creating store locations...");
+	const locations = [
+		{
+			id: uuid(),
+			name: "86d Flagship - San Francisco",
+			slug: "sf-flagship",
+			description: "Our flagship store in the heart of San Francisco.",
+			address: "123 Commerce St",
+			city: "San Francisco",
+			state: "CA",
+			postalCode: "94102",
+			country: "US",
+			latitude: 37.7749,
+			longitude: -122.4194,
+			phone: "+1-555-0100",
+			email: "sf@demo.86d.app",
+			hours: {
+				monday: { open: "09:00", close: "21:00" },
+				tuesday: { open: "09:00", close: "21:00" },
+				wednesday: { open: "09:00", close: "21:00" },
+				thursday: { open: "09:00", close: "21:00" },
+				friday: { open: "09:00", close: "22:00" },
+				saturday: { open: "10:00", close: "22:00" },
+				sunday: { open: "11:00", close: "19:00" },
+			},
+			amenities: ["wifi", "parking", "wheelchair-accessible"],
+			isActive: true,
+			isFeatured: true,
+			pickupEnabled: true,
+		},
+		{
+			id: uuid(),
+			name: "86d Downtown - New York",
+			slug: "nyc-downtown",
+			description:
+				"Our New York location in the heart of downtown Manhattan.",
+			address: "456 Broadway",
+			city: "New York",
+			state: "NY",
+			postalCode: "10013",
+			country: "US",
+			latitude: 40.7128,
+			longitude: -74.006,
+			phone: "+1-555-0200",
+			email: "nyc@demo.86d.app",
+			hours: {
+				monday: { open: "10:00", close: "20:00" },
+				tuesday: { open: "10:00", close: "20:00" },
+				wednesday: { open: "10:00", close: "20:00" },
+				thursday: { open: "10:00", close: "20:00" },
+				friday: { open: "10:00", close: "21:00" },
+				saturday: { open: "10:00", close: "21:00" },
+				sunday: { open: "12:00", close: "18:00" },
+			},
+			amenities: ["wifi", "wheelchair-accessible"],
+			isActive: true,
+			isFeatured: false,
+			pickupEnabled: true,
+		},
+	];
+
+	for (const location of locations) {
+		await insertModuleData(
+			client,
+			"store-locator",
+			"location",
+			location.id,
+			{
+				...location,
+				createdAt: now,
+				updatedAt: now,
+			},
+		);
+	}
+}
+
+async function seedStorePickup(client: pg.PoolClient) {
+	console.log("  Creating store pickup locations and windows...");
+	const pickupLocationId = uuid();
+	await insertModuleData(
+		client,
+		"store-pickup",
+		"pickupLocation",
+		pickupLocationId,
+		{
+			id: pickupLocationId,
+			name: "86d Flagship - San Francisco",
+			address: "123 Commerce St",
+			city: "San Francisco",
+			state: "CA",
+			postalCode: "94102",
+			country: "US",
+			phone: "+1-555-0100",
+			email: "pickup@demo.86d.app",
+			latitude: 37.7749,
+			longitude: -122.4194,
+			preparationMinutes: 60,
+			active: true,
+			sortOrder: 0,
+			createdAt: now,
+			updatedAt: now,
+		},
+	);
+
+	// Pickup windows for weekdays
+	for (let day = 1; day <= 5; day++) {
+		const windowId = uuid();
+		await insertModuleData(
+			client,
+			"store-pickup",
+			"pickupWindow",
+			windowId,
+			{
+				id: windowId,
+				locationId: pickupLocationId,
+				dayOfWeek: day,
+				startTime: "10:00",
+				endTime: "18:00",
+				capacity: 20,
+				active: true,
+				sortOrder: day,
+				createdAt: now,
+				updatedAt: now,
+			},
+		);
+	}
+}
+
+async function seedDeliverySlots(client: pg.PoolClient) {
+	console.log("  Creating delivery schedules...");
+	const schedules = [
+		{
+			name: "Morning Delivery",
+			dayOfWeek: 1,
+			startTime: "08:00",
+			endTime: "12:00",
+			capacity: 10,
+			surchargeInCents: 0,
+			active: true,
+			sortOrder: 0,
+		},
+		{
+			name: "Afternoon Delivery",
+			dayOfWeek: 1,
+			startTime: "12:00",
+			endTime: "17:00",
+			capacity: 15,
+			surchargeInCents: 0,
+			active: true,
+			sortOrder: 1,
+		},
+		{
+			name: "Evening Delivery",
+			dayOfWeek: 1,
+			startTime: "17:00",
+			endTime: "21:00",
+			capacity: 8,
+			surchargeInCents: 500,
+			active: true,
+			sortOrder: 2,
+		},
+	];
+
+	for (const schedule of schedules) {
+		const scheduleId = uuid();
+		await insertModuleData(
+			client,
+			"delivery-slots",
+			"deliverySchedule",
+			scheduleId,
+			{
+				id: scheduleId,
+				...schedule,
+				createdAt: now,
+				updatedAt: now,
+			},
+		);
+	}
+}
+
+/* ------------------------------------------------------------------ */
 /* Main                                                               */
 /* ------------------------------------------------------------------ */
 
@@ -860,6 +1976,27 @@ async function main() {
 		await seedNavigation(client);
 		await seedDemoOrder(client);
 
+		// Extended module seed data
+		await seedBrands(client);
+		await seedReviews(client);
+		await seedBlog(client);
+		await seedPages(client);
+		await seedShipping(client);
+		await seedTax(client);
+		await seedDiscounts(client);
+		await seedFaq(client);
+		await seedAnnouncements(client);
+		await seedSeo(client);
+		await seedSearch(client);
+		await seedNewsletter(client);
+		await seedSocialProof(client);
+		await seedProductLabels(client);
+		await seedRedirects(client);
+		await seedSitemap(client);
+		await seedStoreLocator(client);
+		await seedStorePickup(client);
+		await seedDeliverySlots(client);
+
 		await client.query("COMMIT");
 
 		console.log("\n✅ Seed complete!");
@@ -868,7 +2005,11 @@ async function main() {
 		console.log("    Password: password123");
 		console.log(`\n  ${products.length} products, ${categories.length} categories, ${collections.length} collections`);
 		console.log(`  ${customers.length} customers, ${settings.length} settings, 1 demo order`);
-		console.log(`  ${moduleNames.length} modules registered\n`);
+		console.log(`  ${moduleNames.length} modules registered`);
+		console.log("  + brands, reviews, blog posts, pages, shipping zones, tax rates");
+		console.log("  + discounts, FAQ, announcements, SEO, search index");
+		console.log("  + newsletter, social proof, product labels, redirects");
+		console.log("  + sitemap config, store locations, pickup windows, delivery slots\n");
 	} catch (error) {
 		await client.query("ROLLBACK");
 		console.error("\n❌ Seed failed:", error);
