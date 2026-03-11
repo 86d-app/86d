@@ -205,7 +205,14 @@ const SUBGROUP_CONFIG: Record<
 		{
 			label: "Site",
 			icon: "Globe",
-			segments: ["navigation", "media", "seo", "store-locator", "redirects"],
+			segments: [
+				"navigation",
+				"media",
+				"seo",
+				"store-locator",
+				"redirects",
+				"sitemap",
+			],
 		},
 	],
 	Finance: [
