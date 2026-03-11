@@ -28,8 +28,10 @@ src/
     delete-submission.ts         POST /admin/forms/submissions/:id/delete
     bulk-delete-submissions.ts   POST /admin/forms/submissions/bulk-delete
     stats.ts            GET /admin/forms/stats
+  admin/components/
+    index.tsx           FormsList, FormCreate, FormDetail, FormSubmissions
   __tests__/
-    service-impl.test.ts  52 tests covering CRUD, validation, submissions, stats
+    service-impl.test.ts  58 tests covering CRUD, validation, all field types, submissions, stats
 ```
 
 ## Data models
@@ -62,12 +64,24 @@ src/
 
 `text`, `email`, `textarea`, `number`, `phone`, `select`, `radio`, `checkbox`, `date`, `url`, `hidden`
 
+## Admin components
+
+| Component | Path | Description |
+|-----------|------|-------------|
+| `FormsList` | `/admin/forms` | Stats dashboard + form table with status, field count, creation date |
+| `FormCreate` | `/admin/forms/create` | Create form with field builder, settings, slug auto-generation |
+| `FormDetail` | `/admin/forms/:id` | View/edit form with inline field builder, toggle active, delete |
+| `FormSubmissions` | `/admin/forms/:id/submissions` | Submission list with status filter, bulk select/delete, mark read/spam/archive |
+
+All components use `useModuleClient()` from `@86d-app/core/client`. The `FieldBuilder` internal component is shared between create and edit views.
+
 ## Key patterns
 
 - **Validation** happens in `service-impl.ts` `validateSubmission()` — checks required, email/url format, number range, text length, regex pattern, select/radio options
 - **Honeypot** spam protection: store submit endpoint accepts `_hp` field; if non-empty, silently discards the submission
 - **Auto-read**: admin `get-submission` endpoint marks unread submissions as read
 - **Cascade delete**: deleting a form removes all its submissions
+- **Label a11y**: all form inputs are nested inside `<label>` elements for accessibility
 
 ## Options
 

@@ -149,11 +149,10 @@ describe("comparisons controller – edge cases", () => {
 				...original,
 				addedAt: new Date("2020-01-01"),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: test mock
 			await mockData.upsert(
 				"comparisonItem",
 				original.id,
-				backdated as Record<string, any>,
+				backdated as Record<string, unknown>,
 			);
 
 			const updated = await controller.addProduct(
@@ -690,11 +689,10 @@ describe("comparisons controller – edge cases", () => {
 				...first,
 				addedAt: new Date("2020-01-01"),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: test mock
 			await mockData.upsert(
 				"comparisonItem",
 				first.id,
-				backdated as Record<string, any>,
+				backdated as Record<string, unknown>,
 			);
 
 			await controller.addProduct(

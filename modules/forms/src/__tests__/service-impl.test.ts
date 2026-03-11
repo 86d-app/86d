@@ -674,6 +674,236 @@ describe("createFormsControllers", () => {
 		});
 	});
 
+	describe("additional field type validation", () => {
+		it("accepts phone field with any string value", async () => {
+			const form = await controller.createForm({
+				name: "Form",
+				slug: "form",
+				fields: [
+					{
+						name: "phone",
+						label: "Phone",
+						type: "phone",
+						required: true,
+						position: 0,
+					},
+				],
+			});
+
+			const sub = await controller.submitForm({
+				formId: form.id,
+				values: { phone: "+1-555-123-4567" },
+			});
+			expect(sub.values.phone).toBe("+1-555-123-4567");
+		});
+
+		it("accepts date field with valid date string", async () => {
+			const form = await controller.createForm({
+				name: "Form",
+				slug: "form",
+				fields: [
+					{
+						name: "date",
+						label: "Preferred Date",
+						type: "date",
+						required: true,
+						position: 0,
+					},
+				],
+			});
+
+			const sub = await controller.submitForm({
+				formId: form.id,
+				values: { date: "2026-03-15" },
+			});
+			expect(sub.values.date).toBe("2026-03-15");
+		});
+
+		it("accepts checkbox field with boolean-like value", async () => {
+			const form = await controller.createForm({
+				name: "Form",
+				slug: "form",
+				fields: [
+					{
+						name: "agree",
+						label: "I agree",
+						type: "checkbox",
+						required: true,
+						position: 0,
+					},
+				],
+			});
+
+			const sub = await controller.submitForm({
+				formId: form.id,
+				values: { agree: "true" },
+			});
+			expect(sub.values.agree).toBe("true");
+		});
+
+		it("accepts hidden field with preset value", async () => {
+			const form = await controller.createForm({
+				name: "Form",
+				slug: "form",
+				fields: [
+					{
+						name: "source",
+						label: "Source",
+						type: "hidden",
+						required: true,
+						position: 0,
+					},
+				],
+			});
+
+			const sub = await controller.submitForm({
+				formId: form.id,
+				values: { source: "homepage" },
+			});
+			expect(sub.values.source).toBe("homepage");
+		});
+
+		it("validates radio options like select", async () => {
+			const form = await controller.createForm({
+				name: "Form",
+				slug: "form",
+				fields: [
+					{
+						name: "size",
+						label: "Size",
+						type: "radio",
+						required: true,
+						options: ["S", "M", "L"],
+						position: 0,
+					},
+				],
+			});
+
+			await expect(
+				controller.submitForm({
+					formId: form.id,
+					values: { size: "XL" },
+				}),
+			).rejects.toThrow("Size must be one of: S, M, L");
+
+			const sub = await controller.submitForm({
+				formId: form.id,
+				values: { size: "M" },
+			});
+			expect(sub.values.size).toBe("M");
+		});
+
+		it("handles all field types in a single form", async () => {
+			const allFields: FormField[] = [
+				{
+					name: "name",
+					label: "Name",
+					type: "text",
+					required: false,
+					position: 0,
+				},
+				{
+					name: "email",
+					label: "Email",
+					type: "email",
+					required: false,
+					position: 1,
+				},
+				{
+					name: "message",
+					label: "Message",
+					type: "textarea",
+					required: false,
+					position: 2,
+				},
+				{
+					name: "qty",
+					label: "Qty",
+					type: "number",
+					required: false,
+					position: 3,
+				},
+				{
+					name: "phone",
+					label: "Phone",
+					type: "phone",
+					required: false,
+					position: 4,
+				},
+				{
+					name: "color",
+					label: "Color",
+					type: "select",
+					required: false,
+					options: ["red", "blue"],
+					position: 5,
+				},
+				{
+					name: "size",
+					label: "Size",
+					type: "radio",
+					required: false,
+					options: ["S", "M"],
+					position: 6,
+				},
+				{
+					name: "agree",
+					label: "Agree",
+					type: "checkbox",
+					required: false,
+					position: 7,
+				},
+				{
+					name: "date",
+					label: "Date",
+					type: "date",
+					required: false,
+					position: 8,
+				},
+				{
+					name: "site",
+					label: "Site",
+					type: "url",
+					required: false,
+					position: 9,
+				},
+				{
+					name: "ref",
+					label: "Ref",
+					type: "hidden",
+					required: false,
+					position: 10,
+				},
+			];
+
+			const form = await controller.createForm({
+				name: "All Types",
+				slug: "all-types",
+				fields: allFields,
+			});
+
+			const sub = await controller.submitForm({
+				formId: form.id,
+				values: {
+					name: "Jane",
+					email: "jane@test.com",
+					message: "Hello",
+					qty: 5,
+					phone: "555-1234",
+					color: "red",
+					size: "S",
+					agree: "true",
+					date: "2026-01-01",
+					site: "https://example.com",
+					ref: "abc123",
+				},
+			});
+
+			expect(sub.id).toBeTruthy();
+			expect(Object.keys(sub.values)).toHaveLength(11);
+		});
+	});
+
 	// --- Submission management ---
 
 	describe("getSubmission", () => {

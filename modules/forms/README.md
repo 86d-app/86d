@@ -24,6 +24,7 @@ export default defineStore({
 - **Submission management** — status tracking (unread/read/spam/archived), bulk delete
 - **Submission limits** — optional cap on total submissions per form
 - **Auto-read** — viewing a submission in admin auto-marks it as read
+- **Admin UI** — full admin interface with form list, create/edit with drag-and-drop field builder, submission inbox with filtering and bulk actions
 
 ## Configuration
 
@@ -123,9 +124,19 @@ type SubmissionStatus = "unread" | "read" | "spam" | "archived";
 | `forms.submission.statusChanged` | Submission status changed |
 | `forms.submission.deleted` | Submission deleted |
 
+## Admin pages
+
+| Page | Path | Description |
+|------|------|-------------|
+| Forms List | `/admin/forms` | Dashboard with stats cards (total forms, submissions, unread, spam) and sortable form table |
+| Create Form | `/admin/forms/create` | Multi-section form with field builder, settings, and auto-slug generation |
+| Form Detail | `/admin/forms/:id` | View form config, inline edit mode with field builder, toggle active/inactive, delete |
+| Submissions | `/admin/forms/:id/submissions` | Submission inbox with status filter, bulk select, mark read/spam/archive, bulk delete |
+
 ## Notes
 
 - Forms with `isActive: false` are hidden from store endpoints but visible in admin
 - Deleting a form cascades to delete all its submissions
 - The `maxSubmissions` field (0 = unlimited) caps total submissions per form
 - The honeypot field `_hp` is checked in the store submit endpoint, not in the controller — this keeps controller logic reusable
+- All form inputs use nested `<label>` elements for accessibility compliance
