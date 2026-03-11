@@ -91,6 +91,15 @@ GET /memberships/check-access?customerId=cust_1&productId=prod_1
 | POST | `/admin/memberships/plans/:planId/products/gate` | Gate products to plan |
 | POST | `/admin/memberships/plans/:planId/products/ungate` | Ungate products |
 
+## Admin UI
+
+The module includes admin UI components in `src/admin/components/index.tsx` (client components using `useModuleClient`):
+
+| Page | Component | Description |
+|------|-----------|-------------|
+| `/admin/memberships` | `MembershipAdmin` | Membership list with status filters, member management |
+| `/admin/memberships/plans` | `MembershipPlans` | Plan list with create/edit forms, benefit and product gating management |
+
 ## Service API
 
 The `MembershipController` provides 24 methods:

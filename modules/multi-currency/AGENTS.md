@@ -12,6 +12,8 @@ src/
   service-impl.ts       Controller implementation
   store/endpoints/      Public endpoints (3)
   admin/endpoints/      Protected admin endpoints (12)
+  admin/components/
+    index.tsx             Admin UI (CurrencyList, CurrencyForm, CurrencyDetail) — "use client"
   __tests__/            62 unit tests
 ```
 

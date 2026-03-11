@@ -16,6 +16,8 @@ src/
     my-backorders.ts        GET  /backorders/mine
     get-backorder.ts        GET  /backorders/:id
     cancel-backorder.ts     POST /backorders/:id/cancel
+  admin/components/
+    index.tsx               Admin UI (BackorderList, BackorderPolicies) — "use client"
   admin/endpoints/
     list-backorders.ts      GET  /admin/backorders
     get-backorder.ts        GET  /admin/backorders/:id

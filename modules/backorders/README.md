@@ -69,6 +69,15 @@ const module = backorders({
 | `GET` | `/admin/backorders/policies/:productId` | Get a product's backorder policy |
 | `POST` | `/admin/backorders/policies/:productId/delete` | Delete a product's backorder policy |
 
+## Admin UI
+
+The module includes admin UI components in `src/admin/components/index.tsx` (client components using `useModuleClient`):
+
+| Page | Component | Description |
+|------|-----------|-------------|
+| `/admin/backorders` | `BackorderList` | Backorder list with status filters, status updates, and stock allocation |
+| `/admin/backorders/policies` | `BackorderPolicies` | Per-product backorder policy management |
+
 ## Controller API
 
 ```ts

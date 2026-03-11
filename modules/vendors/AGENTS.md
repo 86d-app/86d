@@ -15,6 +15,8 @@ src/
     get-vendor.ts         GET  /vendors/:slug
     vendor-products.ts    GET  /vendors/:vendorId/products
     apply.ts              POST /vendors/apply
+  admin/components/
+    index.tsx             Admin UI (VendorAdmin, VendorPayouts) — "use client"
   admin/endpoints/
     list-vendors.ts       GET    /admin/vendors
     create-vendor.ts      POST   /admin/vendors/create

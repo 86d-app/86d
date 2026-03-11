@@ -12,6 +12,8 @@ src/
   service-impl.ts       Controller implementation (ModuleDataService)
   store/endpoints/      5 public endpoints (apply, dashboard, links, track)
   admin/endpoints/      15 admin endpoints (CRUD affiliates, conversions, payouts, stats)
+  admin/components/
+    index.tsx             Admin UI (AffiliateList, ApplicationList, ConversionList, PayoutList) — "use client"
   __tests__/            74 tests covering all operations
 ```
 

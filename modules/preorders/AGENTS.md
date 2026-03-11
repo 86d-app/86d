@@ -17,6 +17,8 @@ src/
     place-preorder.ts       POST /preorders/place
     my-preorders.ts         GET  /preorders/mine
     cancel-preorder.ts      POST /preorders/:id/cancel
+  admin/components/
+    index.tsx               Admin UI (CampaignList, CampaignDetail) — "use client"
   admin/endpoints/
     list-campaigns.ts       GET  /admin/preorders/campaigns
     create-campaign.ts      POST /admin/preorders/campaigns/create

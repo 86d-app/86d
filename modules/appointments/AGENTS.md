@@ -17,6 +17,8 @@ src/
     book-appointment.ts     POST /appointments/book
     get-appointment.ts      GET  /appointments/:id
     cancel-appointment.ts   POST /appointments/:id/cancel
+  admin/components/
+    index.tsx               Admin UI (AppointmentList, AppointmentDetail, ServiceList, StaffList) — "use client"
   admin/endpoints/
     list-services.ts        GET  /admin/appointments/services
     create-service.ts       POST /admin/appointments/services/create

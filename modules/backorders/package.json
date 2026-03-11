@@ -36,6 +36,7 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "catalog:",
+		"@types/react": "catalog:react",
 		"typescript": "catalog:",
 		"vitest": "catalog:vite"
 	}

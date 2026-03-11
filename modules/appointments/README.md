@@ -96,6 +96,17 @@ const module = appointments({
 | `POST` | `/admin/appointments/:id/update` | Update appointment |
 | `GET` | `/admin/appointments/stats` | Get appointment statistics |
 
+## Admin UI
+
+The module includes admin UI components in `src/admin/components/index.tsx` (client components using `useModuleClient`):
+
+| Page | Component | Description |
+|------|-----------|-------------|
+| `/admin/appointments` | `AppointmentList` | Appointment list with status filters and management |
+| `/admin/appointments/:id` | `AppointmentDetail` | Appointment detail with status updates |
+| `/admin/appointments/services` | `ServiceList` | Service list with create/edit forms |
+| `/admin/appointments/staff` | `StaffList` | Staff list with schedule and service assignment management |
+
 ## Controller API
 
 ```ts

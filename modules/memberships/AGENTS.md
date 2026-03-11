@@ -12,6 +12,8 @@ src/
   service-impl.ts       Full controller implementation
   store/endpoints/      6 public endpoints (list plans, get plan, subscribe, cancel, check access, my membership)
   admin/endpoints/      14 admin endpoints (CRUD plans, manage memberships, benefits, product gating, stats)
+  admin/components/
+    index.tsx             Admin UI (MembershipAdmin, MembershipPlans) — "use client"
   __tests__/            63 tests covering all controller methods
 ```
 

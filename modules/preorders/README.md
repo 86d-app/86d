@@ -73,6 +73,15 @@ const module = preorders({
 | `POST` | `/admin/preorders/items/:id/cancel` | Cancel a preorder item |
 | `GET` | `/admin/preorders/summary` | Dashboard summary with campaign and revenue stats |
 
+## Admin UI
+
+The module includes admin UI components in `src/admin/components/index.tsx` (client components using `useModuleClient`):
+
+| Page | Component | Description |
+|------|-----------|-------------|
+| `/admin/preorders` | `CampaignList` | Campaign list with status filters, create forms, and lifecycle actions |
+| `/admin/preorders/campaigns/:id` | `CampaignDetail` | Campaign detail with preorder items, fulfillment, and customer notifications |
+
 ## Controller API
 
 ```ts

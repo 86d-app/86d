@@ -56,6 +56,17 @@ export default defineStore({
 | `/admin/affiliates/payouts/:id/complete`      | POST   | Mark payout completed           |
 | `/admin/affiliates/payouts/:id/fail`          | POST   | Mark payout failed              |
 
+## Admin UI
+
+The module includes admin UI components in `src/admin/components/index.tsx` (client components using `useModuleClient`):
+
+| Page | Component | Description |
+|------|-----------|-------------|
+| `/admin/affiliates` | `AffiliateList` | Affiliate list with stats, status management, and detail views |
+| `/admin/affiliates/applications` | `ApplicationList` | Pending applications with approve/reject actions |
+| `/admin/affiliates/conversions` | `ConversionList` | Conversion list with approve/reject actions |
+| `/admin/affiliates/payouts` | `PayoutList` | Payout list with creation and status management |
+
 ## Controller API
 
 ```ts

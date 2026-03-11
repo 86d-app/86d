@@ -73,6 +73,15 @@ const module = vendors({
 | `PATCH` | `/admin/vendors/payouts/:id/status` | Update payout status |
 | `GET` | `/admin/vendors/payouts/stats` | Get payout statistics |
 
+## Admin UI
+
+The module includes admin UI components in `src/admin/components/index.tsx` (client components using `useModuleClient`):
+
+| Page | Component | Description |
+|------|-----------|-------------|
+| `/admin/vendors` | `VendorAdmin` | Vendor list with status filters, create/edit forms, and status management |
+| `/admin/vendors/payouts` | `VendorPayouts` | Payout list with status tracking and payout creation |
+
 ## Controller API
 
 The `VendorController` interface is exported for inter-module contracts.

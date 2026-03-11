@@ -78,6 +78,17 @@ POST /currencies/product-price
 | `/admin/currencies/price-overrides/:productId` | GET | List overrides for a product |
 | `/admin/currencies/price-overrides/:id/delete` | POST | Delete a price override |
 
+## Admin UI
+
+The module includes admin UI components in `src/admin/components/index.tsx` (client components using `useModuleClient`):
+
+| Page | Component | Description |
+|------|-----------|-------------|
+| `/admin/currencies` | `CurrencyList` | Currency list with exchange rates and status indicators |
+| `/admin/currencies/new` | `CurrencyForm` | Create a new currency |
+| `/admin/currencies/:id` | `CurrencyDetail` | Currency detail with rate history and price overrides |
+| `/admin/currencies/:id/edit` | `CurrencyForm` | Edit an existing currency |
+
 ## Controller API
 
 Access via `ctx.context.controllers.multiCurrency`:
