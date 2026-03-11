@@ -1,9 +1,12 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
 export function SignInForm() {
+	const searchParams = useSearchParams();
+	const redirectTo = searchParams.get("redirect") ?? "/";
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState("");
 
@@ -32,7 +35,7 @@ export function SignInForm() {
 			}
 
 			toast.success("Signed in successfully");
-			window.location.href = "/";
+			window.location.href = redirectTo;
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Something went wrong");
 		} finally {
@@ -41,7 +44,7 @@ export function SignInForm() {
 	}
 
 	return (
-		<form className="space-y-4" onSubmit={handleSubmit}>
+		<form className="flex flex-col gap-4" onSubmit={handleSubmit}>
 			{error ? (
 				<div className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-destructive text-sm">
 					{error}

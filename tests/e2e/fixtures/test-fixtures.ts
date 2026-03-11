@@ -105,14 +105,14 @@ export class AdminPage {
 	}
 
 	async signIn(email = ADMIN_EMAIL, password = ADMIN_PASSWORD) {
-		await this.page.goto("/auth/signin");
+		await this.page.goto("/auth/signin?redirect=/admin");
 		/* Fill the sign-in form */
 		await this.page.locator('input[type="email"]').fill(email);
 		await this.page.locator('input[type="password"]').fill(password);
 		await this.page
 			.locator('button[type="submit"]')
 			.click();
-		/* Wait for redirect */
+		/* Wait for redirect to admin */
 		await this.page.waitForURL(/\/admin/, { timeout: 15_000 });
 	}
 

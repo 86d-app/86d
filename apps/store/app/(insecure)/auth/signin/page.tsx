@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { SignInForm } from "~/components/auth/signin-form";
 
 export const metadata = {
@@ -13,7 +14,9 @@ export default function SignInPage() {
 					Enter your credentials to access your account.
 				</p>
 			</div>
-			<SignInForm />
+			<Suspense>
+				<SignInForm />
+			</Suspense>
 			<div className="mt-4 flex items-center justify-between text-sm">
 				<a
 					href="/auth/reset"
