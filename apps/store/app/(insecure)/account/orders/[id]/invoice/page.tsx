@@ -3,6 +3,7 @@
 import { useModuleClient } from "@86d-app/core/client";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { StatusBadge } from "~/components/status-badge";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -56,13 +57,6 @@ function formatPrice(amount: number, currency = "USD"): string {
 		currency,
 	}).format(amount);
 }
-
-const STATUS_COLORS: Record<string, string> = {
-	paid: "bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200",
-	issued: "bg-blue-50 text-blue-800 dark:bg-blue-950 dark:text-blue-200",
-	draft: "bg-gray-50 text-gray-700 dark:bg-gray-900 dark:text-gray-300",
-	void: "bg-red-50 text-red-800 dark:bg-red-950 dark:text-red-200",
-};
 
 // ── Invoice Page ────────────────────────────────────────────────────────────
 
@@ -170,11 +164,7 @@ export default function CustomerInvoicePage() {
 						<p className="font-semibold text-foreground text-lg">
 							{invoice.storeName}
 						</p>
-						<span
-							className={`mt-2 inline-flex items-center rounded-full px-2.5 py-0.5 font-medium text-xs capitalize ${STATUS_COLORS[invoice.status] ?? "bg-gray-50 text-gray-700 dark:bg-gray-900 dark:text-gray-300"}`}
-						>
-							{invoice.status}
-						</span>
+						<StatusBadge status={invoice.status} className="mt-2" />
 					</div>
 				</div>
 
@@ -212,7 +202,7 @@ export default function CustomerInvoicePage() {
 						</p>
 						<p className="text-foreground text-sm">{invoice.customerName}</p>
 						{invoice.billingAddress && (
-							<div className="mt-1 space-y-0.5 text-muted-foreground text-sm">
+							<div className="mt-1 flex flex-col gap-0.5 text-muted-foreground text-sm">
 								{invoice.billingAddress.company && (
 									<p>{invoice.billingAddress.company}</p>
 								)}
@@ -237,7 +227,7 @@ export default function CustomerInvoicePage() {
 								{invoice.shippingAddress.firstName}{" "}
 								{invoice.shippingAddress.lastName}
 							</p>
-							<div className="mt-1 space-y-0.5 text-muted-foreground text-sm">
+							<div className="mt-1 flex flex-col gap-0.5 text-muted-foreground text-sm">
 								{invoice.shippingAddress.company && (
 									<p>{invoice.shippingAddress.company}</p>
 								)}
@@ -310,7 +300,7 @@ export default function CustomerInvoicePage() {
 
 				{/* Totals */}
 				<div className="mt-6 flex justify-end">
-					<div className="w-full space-y-2 sm:w-64">
+					<div className="flex w-full flex-col gap-2 sm:w-64">
 						<div className="flex justify-between text-sm">
 							<span className="text-muted-foreground">Subtotal</span>
 							<span className="text-foreground tabular-nums">
@@ -319,10 +309,8 @@ export default function CustomerInvoicePage() {
 						</div>
 						{invoice.discountAmount > 0 && (
 							<div className="flex justify-between text-sm">
-								<span className="text-emerald-600 dark:text-emerald-400">
-									Discount
-								</span>
-								<span className="text-emerald-600 tabular-nums dark:text-emerald-400">
+								<span className="text-status-success">Discount</span>
+								<span className="text-status-success tabular-nums">
 									-{formatPrice(invoice.discountAmount, invoice.currency)}
 								</span>
 							</div>

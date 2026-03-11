@@ -11,6 +11,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { Skeleton } from "~/components/ui/skeleton";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -406,10 +407,10 @@ function SearchResults() {
 						<div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
 							{Array.from({ length: 8 }).map((_, i) => (
 								<div key={`skeleton-${i}`}>
-									<div className="aspect-[3/4] animate-pulse rounded-lg bg-muted" />
-									<div className="mt-3 space-y-1.5">
-										<div className="h-3.5 w-3/4 animate-pulse rounded bg-muted-foreground/10" />
-										<div className="h-3.5 w-1/3 animate-pulse rounded bg-muted-foreground/10" />
+									<Skeleton className="aspect-[3/4] rounded-lg" />
+									<div className="mt-3 flex flex-col gap-1.5">
+										<Skeleton className="h-3.5 w-3/4" />
+										<Skeleton className="h-3.5 w-1/3" />
 									</div>
 								</div>
 							))}
@@ -483,7 +484,7 @@ export default function SearchPageClient() {
 		<Suspense
 			fallback={
 				<div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
-					<div className="h-14 max-w-2xl animate-pulse rounded-xl bg-muted" />
+					<Skeleton className="h-14 max-w-2xl rounded-xl" />
 				</div>
 			}
 		>

@@ -2,6 +2,9 @@
 
 import { useModuleClient } from "@86d-app/core/client";
 import { useState } from "react";
+import { StatusBadge } from "~/components/status-badge";
+import { buttonVariants } from "~/components/ui/button";
+import { Skeleton } from "~/components/ui/skeleton";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -54,9 +57,9 @@ function transactionColor(
 	points: number,
 ): string {
 	if (type === "earn" || (type === "adjust" && points > 0)) {
-		return "text-emerald-600 dark:text-emerald-400";
+		return "text-status-success";
 	}
-	return "text-red-600 dark:text-red-400";
+	return "text-status-danger";
 }
 
 // ── Stat Card ───────────────────────────────────────────────────────────────
@@ -129,7 +132,7 @@ export default function LoyaltyPage() {
 			{isLoading && !balance ? (
 				<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
 					{[1, 2, 3, 4].map((n) => (
-						<div key={n} className="h-24 animate-pulse rounded-xl bg-muted" />
+						<Skeleton key={n} className="h-24 rounded-xl" />
 					))}
 				</div>
 			) : balance ? (
@@ -159,17 +162,17 @@ export default function LoyaltyPage() {
 					<h3 className="font-semibold text-foreground text-sm">
 						How to earn points
 					</h3>
-					<ul className="mt-2 space-y-1.5 text-muted-foreground text-sm">
+					<ul className="mt-2 flex flex-col gap-1.5 text-muted-foreground text-sm">
 						<li className="flex items-start gap-2">
-							<span className="mt-0.5 shrink-0 text-emerald-500">+</span>
+							<span className="mt-0.5 shrink-0 text-status-success">+</span>
 							Place orders — earn points on every purchase
 						</li>
 						<li className="flex items-start gap-2">
-							<span className="mt-0.5 shrink-0 text-emerald-500">+</span>
+							<span className="mt-0.5 shrink-0 text-status-success">+</span>
 							Write reviews — share your experience to earn points
 						</li>
 						<li className="flex items-start gap-2">
-							<span className="mt-0.5 shrink-0 text-emerald-500">+</span>
+							<span className="mt-0.5 shrink-0 text-status-success">+</span>
 							Special promotions — bonus point events
 						</li>
 					</ul>
@@ -183,15 +186,15 @@ export default function LoyaltyPage() {
 				</h3>
 
 				{isLoading && transactions.length === 0 ? (
-					<div className="space-y-2">
+					<div className="flex flex-col gap-2">
 						{[1, 2, 3].map((n) => (
-							<div key={n} className="h-14 animate-pulse rounded-lg bg-muted" />
+							<Skeleton key={n} className="h-14 rounded-lg" />
 						))}
 					</div>
 				) : transactions.length === 0 ? (
 					<div className="rounded-xl border border-border bg-muted/30 py-10 text-center">
 						<div className="mb-3 flex justify-center">
-							<div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+							<div className="flex size-12 items-center justify-center rounded-full bg-muted">
 								<svg
 									xmlns="http://www.w3.org/2000/svg"
 									width="20"
@@ -217,7 +220,7 @@ export default function LoyaltyPage() {
 						</p>
 						<a
 							href="/products"
-							className="mt-4 inline-flex items-center justify-center rounded-lg bg-foreground px-5 py-2 font-semibold text-background text-sm transition-opacity hover:opacity-90"
+							className={buttonVariants({ className: "mt-4" })}
 						>
 							Browse products
 						</a>
@@ -232,17 +235,17 @@ export default function LoyaltyPage() {
 								>
 									<div className="min-w-0 flex-1">
 										<div className="flex items-center gap-2">
-											<span
-												className={`inline-flex rounded-full px-2 py-0.5 font-medium text-xs ${
+											<StatusBadge
+												status={tx.type}
+												label={transactionLabel(tx.type)}
+												variant={
 													tx.type === "earn"
-														? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
+														? "success"
 														: tx.type === "redeem"
-															? "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300"
-															: "bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300"
-												}`}
-											>
-												{transactionLabel(tx.type)}
-											</span>
+															? "danger"
+															: "warning"
+												}
+											/>
 											<span className="text-muted-foreground text-xs">
 												{formatDate(tx.createdAt)}
 											</span>

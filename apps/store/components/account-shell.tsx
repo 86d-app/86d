@@ -305,7 +305,10 @@ export function AccountShell({
 							{userName}
 						</p>
 					</div>
-					<nav className="space-y-0.5" aria-label="Account navigation">
+					<nav
+						className="flex flex-col gap-0.5"
+						aria-label="Account navigation"
+					>
 						{NAV_ITEMS.map((item) => {
 							const isActive =
 								item.href === "/account"

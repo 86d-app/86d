@@ -215,7 +215,7 @@ export function ImageUpload({
 					{uploading ? (
 						<div className="flex items-center gap-2">
 							<svg
-								className="h-5 w-5 animate-spin text-muted-foreground"
+								className="size-5 animate-spin text-muted-foreground"
 								xmlns="http://www.w3.org/2000/svg"
 								fill="none"
 								viewBox="0 0 24 24"
@@ -375,7 +375,7 @@ export function SingleImageUpload({
 				>
 					{uploading ? (
 						<svg
-							className="h-5 w-5 animate-spin"
+							className="size-5 animate-spin"
 							xmlns="http://www.w3.org/2000/svg"
 							fill="none"
 							viewBox="0 0 24 24"

@@ -11,7 +11,7 @@ export default async function AuthLayout({ children }: AuthLayoutProps) {
 
 	return (
 		<div className="flex min-h-svh items-center justify-center bg-muted px-4 py-8">
-			<div className="w-full max-w-sm space-y-4">
+			<div className="flex w-full max-w-sm flex-col gap-4">
 				<div className="text-center">
 					<a href="/" className="inline-block">
 						<img

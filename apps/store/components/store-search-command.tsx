@@ -188,7 +188,7 @@ export function StoreSearchCommand() {
 		<>
 			{/* Desktop: full search trigger */}
 			<InputGroup
-				className="hidden max-w-[10rem] transition-all duration-300 md:flex md:max-w-xs hover:dark:bg-input/60!"
+				className="hidden max-w-[10rem] transition-all duration-300 md:flex md:max-w-xs dark:hover:bg-input/60!"
 				onClick={handleTriggerClick}
 			>
 				<InputGroupInput

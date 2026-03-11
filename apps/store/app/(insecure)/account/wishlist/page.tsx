@@ -1,6 +1,8 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
+import { buttonVariants } from "~/components/ui/button";
+import { Skeleton } from "~/components/ui/skeleton";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -81,13 +83,13 @@ export default function WishlistPage() {
 			{isLoading || !customerId ? (
 				<div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
 					{[1, 2, 3].map((n) => (
-						<div key={n} className="h-48 animate-pulse rounded-xl bg-muted" />
+						<Skeleton key={n} className="h-48 rounded-xl" />
 					))}
 				</div>
 			) : items.length === 0 ? (
 				<div className="rounded-xl border border-border bg-muted/30 py-12 text-center">
 					<div className="mb-4 flex justify-center">
-						<div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+						<div className="flex size-14 items-center justify-center rounded-full bg-muted">
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
 								width="24"
@@ -111,10 +113,7 @@ export default function WishlistPage() {
 					<p className="mt-1 text-muted-foreground text-sm">
 						Save items you love while browsing the store.
 					</p>
-					<a
-						href="/products"
-						className="mt-4 inline-flex items-center justify-center rounded-lg bg-foreground px-5 py-2 font-semibold text-background text-sm transition-opacity hover:opacity-90"
-					>
+					<a href="/products" className={buttonVariants({ className: "mt-4" })}>
 						Browse products
 					</a>
 				</div>
@@ -170,7 +169,7 @@ export default function WishlistPage() {
 								<button
 									type="button"
 									onClick={() => handleRemove(item.id)}
-									className="mt-2 text-muted-foreground text-xs transition-colors hover:text-red-600 dark:hover:text-red-400"
+									className="mt-2 text-muted-foreground text-xs transition-colors hover:text-destructive"
 								>
 									Remove
 								</button>

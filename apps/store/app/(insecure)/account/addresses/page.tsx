@@ -2,6 +2,9 @@
 
 import { useModuleClient } from "@86d-app/core/client";
 import { useState } from "react";
+import { StatusBadge } from "~/components/status-badge";
+import { Button } from "~/components/ui/button";
+import { Skeleton } from "~/components/ui/skeleton";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -79,7 +82,7 @@ function AddressForm({
 				e.preventDefault();
 				onSubmit(form);
 			}}
-			className="space-y-4 rounded-xl border border-border p-5"
+			className="flex flex-col gap-4 rounded-xl border border-border p-5"
 		>
 			{/* Type */}
 			<div>
@@ -471,15 +474,15 @@ export default function AddressesPage() {
 
 			{mode === "list" &&
 				(isLoading ? (
-					<div className="space-y-3">
+					<div className="flex flex-col gap-3">
 						{[1, 2].map((n) => (
-							<div key={n} className="h-32 animate-pulse rounded-xl bg-muted" />
+							<Skeleton key={n} className="h-32 rounded-xl" />
 						))}
 					</div>
 				) : addresses.length === 0 ? (
 					<div className="rounded-xl border border-border bg-muted/30 py-12 text-center">
 						<div className="mb-4 flex justify-center">
-							<div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+							<div className="flex size-14 items-center justify-center rounded-full bg-muted">
 								<svg
 									xmlns="http://www.w3.org/2000/svg"
 									width="24"
@@ -506,7 +509,7 @@ export default function AddressesPage() {
 						</p>
 					</div>
 				) : (
-					<div className="space-y-3">
+					<div className="flex flex-col gap-3">
 						{addresses.map((addr) => (
 							<div
 								key={addr.id}
@@ -519,9 +522,11 @@ export default function AddressesPage() {
 												{addr.type}
 											</span>
 											{addr.isDefault && (
-												<span className="inline-block rounded-full bg-emerald-50 px-2 py-0.5 font-medium text-emerald-700 text-xs dark:bg-emerald-950 dark:text-emerald-300">
-													Default
-												</span>
+												<StatusBadge
+													status="default"
+													label="Default"
+													variant="success"
+												/>
 											)}
 										</div>
 										<p className="font-medium text-foreground text-sm">
@@ -560,14 +565,14 @@ export default function AddressesPage() {
 										>
 											Edit
 										</button>
-										<button
-											type="button"
+										<Button
+											variant="destructive"
+											size="sm"
 											disabled={deletingId === addr.id}
 											onClick={() => handleDelete(addr.id)}
-											className="rounded-lg border border-red-200 px-3 py-1.5 text-red-600 text-sm transition-colors hover:bg-red-50 disabled:opacity-60 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/30"
 										>
 											{deletingId === addr.id ? "Deleting..." : "Delete"}
-										</button>
+										</Button>
 									</div>
 								</div>
 							</div>

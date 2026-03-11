@@ -267,7 +267,7 @@ function Sidebar({
 			</div>
 
 			{/* Nav */}
-			<nav className="flex-1 space-y-0.5 overflow-y-auto p-3">
+			<nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-3">
 				{/* Dashboard */}
 				<NavLink
 					item={DASHBOARD_ITEM}
@@ -302,7 +302,7 @@ function Sidebar({
 			</nav>
 
 			{/* Footer */}
-			<div className="space-y-1 border-border border-t p-3">
+			<div className="flex flex-col gap-1 border-border border-t p-3">
 				<a
 					href="/"
 					className="flex items-center gap-2.5 rounded-md px-3 py-2 font-medium text-muted-foreground text-sm transition-colors hover:bg-muted hover:text-foreground"

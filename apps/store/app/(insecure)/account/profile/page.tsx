@@ -2,6 +2,7 @@
 
 import { useModuleClient } from "@86d-app/core/client";
 import { useState } from "react";
+import { Skeleton } from "~/components/ui/skeleton";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -83,14 +84,14 @@ export default function ProfilePage() {
 			</div>
 
 			{isLoading ? (
-				<div className="space-y-4">
+				<div className="flex flex-col gap-4">
 					{[1, 2, 3, 4].map((n) => (
-						<div key={n} className="h-16 animate-pulse rounded-xl bg-muted" />
+						<Skeleton key={n} className="h-16 rounded-xl" />
 					))}
 				</div>
 			) : (
 				<form onSubmit={handleSubmit}>
-					<div className="space-y-5 rounded-xl border border-border p-5">
+					<div className="flex flex-col gap-5 rounded-xl border border-border p-5">
 						{/* Email (read-only) */}
 						<div>
 							<label
@@ -193,7 +194,7 @@ export default function ProfilePage() {
 						</div>
 					)}
 					{success && (
-						<output className="mt-4 block rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-700 text-sm dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300">
+						<output className="mt-4 block rounded-lg border border-status-success/20 bg-status-success-bg px-4 py-3 text-sm text-status-success">
 							Profile updated successfully.
 						</output>
 					)}

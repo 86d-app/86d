@@ -2,6 +2,9 @@
 
 import { useModuleClient } from "@86d-app/core/client";
 import { useState } from "react";
+import { StatusBadge } from "~/components/status-badge";
+import { Button } from "~/components/ui/button";
+import { Skeleton } from "~/components/ui/skeleton";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -35,18 +38,6 @@ function formatDate(iso: string): string {
 		year: "numeric",
 	}).format(new Date(iso));
 }
-
-const STATUS_STYLES: Record<string, string> = {
-	active:
-		"bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200",
-	trialing: "bg-blue-50 text-blue-800 dark:bg-blue-950 dark:text-blue-200",
-	past_due:
-		"bg-yellow-50 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200",
-	cancelled: "bg-red-50 text-red-800 dark:bg-red-950 dark:text-red-200",
-	expired: "bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
-	paused:
-		"bg-orange-50 text-orange-800 dark:bg-orange-950 dark:text-orange-200",
-};
 
 // ── Subscriptions Page ──────────────────────────────────────────────────────
 
@@ -118,9 +109,9 @@ export default function SubscriptionsPage() {
 			)}
 
 			{isLoading || !email ? (
-				<div className="space-y-3">
+				<div className="flex flex-col gap-3">
 					{[1, 2].map((n) => (
-						<div key={n} className="h-28 animate-pulse rounded-xl bg-muted" />
+						<Skeleton key={n} className="h-28 rounded-xl" />
 					))}
 				</div>
 			) : subscriptions.length === 0 ? (
@@ -153,12 +144,9 @@ export default function SubscriptionsPage() {
 					</p>
 				</div>
 			) : (
-				<div className="space-y-3">
+				<div className="flex flex-col gap-3">
 					{subscriptions.map((sub) => {
 						const isActive = ["active", "trialing"].includes(sub.status);
-						const colorClass =
-							STATUS_STYLES[sub.status] ??
-							"bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
 
 						return (
 							<div key={sub.id} className="rounded-xl border border-border p-4">
@@ -168,13 +156,9 @@ export default function SubscriptionsPage() {
 											<p className="font-medium text-foreground text-sm">
 												{sub.planId}
 											</p>
-											<span
-												className={`inline-block rounded-full px-2 py-0.5 font-medium text-xs capitalize ${colorClass}`}
-											>
-												{sub.status.replace(/_/g, " ")}
-											</span>
+											<StatusBadge status={sub.status} />
 										</div>
-										<div className="space-y-0.5 text-muted-foreground text-xs">
+										<div className="flex flex-col gap-0.5 text-muted-foreground text-xs">
 											<p>
 												Current period: {formatDate(sub.currentPeriodStart)}{" "}
 												&ndash; {formatDate(sub.currentPeriodEnd)}
@@ -183,7 +167,7 @@ export default function SubscriptionsPage() {
 												<p>Trial ends {formatDate(sub.trialEnd)}</p>
 											)}
 											{sub.cancelAtPeriodEnd && (
-												<p className="font-medium text-yellow-700 dark:text-yellow-300">
+												<p className="font-medium text-status-warning">
 													Cancels at end of period
 												</p>
 											)}
@@ -203,14 +187,14 @@ export default function SubscriptionsPage() {
 											>
 												Cancel at period end
 											</button>
-											<button
-												type="button"
+											<Button
+												variant="destructive"
+												size="xs"
 												disabled={cancellingId === sub.id}
 												onClick={() => handleCancel(sub.id, false)}
-												className="rounded-lg border border-red-200 px-3 py-1.5 text-red-600 text-xs transition-colors hover:bg-red-50 disabled:opacity-60 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/30"
 											>
 												Cancel now
-											</button>
+											</Button>
 										</div>
 									)}
 								</div>

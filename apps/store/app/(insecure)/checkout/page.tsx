@@ -313,7 +313,7 @@ function OrderSummary({
 			</h3>
 
 			{/* Line items */}
-			<ul className="mb-4 space-y-3">
+			<ul className="mb-4 flex flex-col gap-3">
 				{(cart?.items ?? []).map((item) => {
 					const price = item.variant?.price ?? item.product.price;
 					const image = item.product.images?.[0];
@@ -483,7 +483,7 @@ function OrderSummary({
 			)}
 
 			{/* Totals */}
-			<div className="space-y-2 border-border/40 border-t pt-3">
+			<div className="flex flex-col gap-2 border-border/40 border-t pt-3">
 				<div className="flex justify-between text-sm">
 					<span className="text-muted-foreground">Subtotal</span>
 					<span className="text-foreground tabular-nums">
@@ -501,7 +501,7 @@ function OrderSummary({
 				{discount > 0 && (
 					<div className="flex justify-between text-sm">
 						<span className="text-muted-foreground">Discount</span>
-						<span className="text-green-600 tabular-nums">
+						<span className="text-status-success tabular-nums">
 							-{formatPrice(discount)}
 						</span>
 					</div>
@@ -509,7 +509,7 @@ function OrderSummary({
 				{giftCard > 0 && (
 					<div className="flex justify-between text-sm">
 						<span className="text-muted-foreground">Gift card</span>
-						<span className="text-green-600 tabular-nums">
+						<span className="text-status-success tabular-nums">
 							-{formatPrice(giftCard)}
 						</span>
 					</div>
@@ -1217,7 +1217,7 @@ const CheckoutPage = observer(function CheckoutPage() {
 									Calculating shipping rates...
 								</div>
 							) : shippingRates.length > 0 ? (
-								<div className="mb-6 space-y-2">
+								<div className="mb-6 flex flex-col gap-2">
 									{shippingRates.map((rate) => (
 										<label
 											key={rate.id}
@@ -1395,7 +1395,7 @@ const CheckoutPage = observer(function CheckoutPage() {
 							</h2>
 
 							{/* Contact & shipping summary */}
-							<div className="mb-6 space-y-4">
+							<div className="mb-6 flex flex-col gap-4">
 								<div className="rounded-lg border border-border/40 p-4">
 									<div className="mb-2 flex items-center justify-between">
 										<h3 className="font-semibold text-muted-foreground text-xs uppercase tracking-widest">

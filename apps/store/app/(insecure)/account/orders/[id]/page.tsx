@@ -4,6 +4,9 @@ import { cartState } from "@86d-app/cart/state";
 import { useModuleClient } from "@86d-app/core/client";
 import { useParams } from "next/navigation";
 import { useState } from "react";
+import { StatusBadge } from "~/components/status-badge";
+import { Button } from "~/components/ui/button";
+import { Skeleton } from "~/components/ui/skeleton";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -93,59 +96,6 @@ function formatDate(iso: string): string {
 		day: "numeric",
 		year: "numeric",
 	}).format(new Date(iso));
-}
-
-const STATUS_STYLES: Record<string, string> = {
-	pending:
-		"bg-yellow-50 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200",
-	processing: "bg-blue-50 text-blue-800 dark:bg-blue-950 dark:text-blue-200",
-	on_hold:
-		"bg-orange-50 text-orange-800 dark:bg-orange-950 dark:text-orange-200",
-	completed:
-		"bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200",
-	cancelled: "bg-red-50 text-red-800 dark:bg-red-950 dark:text-red-200",
-	refunded:
-		"bg-purple-50 text-purple-800 dark:bg-purple-950 dark:text-purple-200",
-};
-
-const PAYMENT_STYLES: Record<string, string> = {
-	unpaid: "bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
-	paid: "bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200",
-	partially_paid:
-		"bg-yellow-50 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200",
-	refunded:
-		"bg-purple-50 text-purple-800 dark:bg-purple-950 dark:text-purple-200",
-	voided: "bg-red-50 text-red-800 dark:bg-red-950 dark:text-red-200",
-};
-
-const FULFILLMENT_STYLES: Record<string, string> = {
-	pending:
-		"bg-yellow-50 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200",
-	shipped: "bg-blue-50 text-blue-800 dark:bg-blue-950 dark:text-blue-200",
-	in_transit:
-		"bg-indigo-50 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-200",
-	delivered:
-		"bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200",
-	failed: "bg-red-50 text-red-800 dark:bg-red-950 dark:text-red-200",
-};
-
-function StatusBadge({
-	value,
-	styles,
-}: {
-	value: string;
-	styles: Record<string, string>;
-}) {
-	const colorClass =
-		styles[value] ??
-		"bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
-	return (
-		<span
-			className={`inline-block rounded-full px-2.5 py-0.5 font-medium text-xs capitalize ${colorClass}`}
-		>
-			{value.replace(/_/g, " ")}
-		</span>
-	);
 }
 
 // ── Order Detail Page ───────────────────────────────────────────────────────
@@ -239,11 +189,11 @@ export default function OrderDetailPage() {
 	if (isLoading) {
 		return (
 			<div>
-				<div className="mb-4 h-5 w-20 animate-pulse rounded bg-muted" />
-				<div className="mb-6 h-8 w-48 animate-pulse rounded-lg bg-muted" />
-				<div className="space-y-3">
+				<Skeleton className="mb-4 h-5 w-20" />
+				<Skeleton className="mb-6 h-8 w-48 rounded-lg" />
+				<div className="flex flex-col gap-3">
 					{[1, 2, 3].map((n) => (
-						<div key={n} className="h-16 animate-pulse rounded-xl bg-muted" />
+						<Skeleton key={n} className="h-16 rounded-xl" />
 					))}
 				</div>
 			</div>
@@ -289,8 +239,8 @@ export default function OrderDetailPage() {
 						Placed on {formatDate(order.createdAt)}
 					</p>
 					<div className="mt-2 flex gap-2">
-						<StatusBadge value={order.status} styles={STATUS_STYLES} />
-						<StatusBadge value={order.paymentStatus} styles={PAYMENT_STYLES} />
+						<StatusBadge status={order.status} />
+						<StatusBadge status={order.paymentStatus} />
 					</div>
 				</div>
 				<div className="flex flex-wrap gap-2">
@@ -333,17 +283,17 @@ export default function OrderDetailPage() {
 						Invoice
 					</a>
 					{cancellable && (
-						<button
+						<Button
+							variant="destructive"
 							type="button"
 							disabled={cancelMutation.isPending}
 							onClick={() => {
 								setCancelError("");
 								cancelMutation.mutate({ params: { id: orderId } });
 							}}
-							className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 font-medium text-red-700 text-sm transition-opacity hover:bg-red-100 disabled:opacity-60 dark:border-red-800 dark:bg-red-950/30 dark:text-red-300 dark:hover:bg-red-950/50"
 						>
 							{cancelMutation.isPending ? "Cancelling..." : "Cancel Order"}
-						</button>
+						</Button>
 					)}
 				</div>
 			</div>
@@ -395,14 +345,14 @@ export default function OrderDetailPage() {
 
 			{/* Shipment Tracking */}
 			{fulfillments.length > 0 && (
-				<div className="mb-6 space-y-3">
+				<div className="mb-6 flex flex-col gap-3">
 					<h2 className="font-semibold text-foreground text-sm">
 						Shipment Tracking
 					</h2>
 					{fulfillments.map((f) => (
 						<div key={f.id} className="rounded-xl border border-border p-4">
 							<div className="flex items-center gap-2">
-								<StatusBadge value={f.status} styles={FULFILLMENT_STYLES} />
+								<StatusBadge status={f.status} />
 								{f.carrier && (
 									<span className="text-muted-foreground text-sm">
 										{f.carrier}
@@ -485,7 +435,7 @@ export default function OrderDetailPage() {
 				<h2 className="mb-3 font-semibold text-foreground text-sm">
 					Order Summary
 				</h2>
-				<div className="space-y-2 text-sm">
+				<div className="flex flex-col gap-2 text-sm">
 					<div className="flex justify-between">
 						<span className="text-muted-foreground">Subtotal</span>
 						<span className="text-foreground tabular-nums">
@@ -495,7 +445,7 @@ export default function OrderDetailPage() {
 					{order.discountAmount > 0 && (
 						<div className="flex justify-between">
 							<span className="text-muted-foreground">Discount</span>
-							<span className="text-emerald-600 tabular-nums dark:text-emerald-400">
+							<span className="text-status-success tabular-nums">
 								-{formatPrice(order.discountAmount, order.currency)}
 							</span>
 						</div>
@@ -533,7 +483,7 @@ export default function OrderDetailPage() {
 							<h2 className="mb-2 font-semibold text-foreground text-sm">
 								Shipping Address
 							</h2>
-							<div className="space-y-0.5 text-muted-foreground text-sm">
+							<div className="flex flex-col gap-0.5 text-muted-foreground text-sm">
 								<p>
 									{shipping.firstName} {shipping.lastName}
 								</p>
@@ -553,7 +503,7 @@ export default function OrderDetailPage() {
 							<h2 className="mb-2 font-semibold text-foreground text-sm">
 								Billing Address
 							</h2>
-							<div className="space-y-0.5 text-muted-foreground text-sm">
+							<div className="flex flex-col gap-0.5 text-muted-foreground text-sm">
 								<p>
 									{billing.firstName} {billing.lastName}
 								</p>

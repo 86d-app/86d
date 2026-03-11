@@ -2,6 +2,9 @@
 
 import { useModuleClient } from "@86d-app/core/client";
 import { useState } from "react";
+import { StatusBadge } from "~/components/status-badge";
+import { buttonVariants } from "~/components/ui/button";
+import { Skeleton } from "~/components/ui/skeleton";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -55,39 +58,6 @@ function formatDate(iso: string): string {
 	}).format(new Date(iso));
 }
 
-const RETURN_STATUS_STYLES: Record<string, string> = {
-	requested:
-		"bg-yellow-50 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200",
-	approved: "bg-blue-50 text-blue-800 dark:bg-blue-950 dark:text-blue-200",
-	rejected: "bg-red-50 text-red-800 dark:bg-red-950 dark:text-red-200",
-	shipped_back:
-		"bg-indigo-50 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-200",
-	received:
-		"bg-purple-50 text-purple-800 dark:bg-purple-950 dark:text-purple-200",
-	refunded:
-		"bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200",
-	completed: "bg-green-50 text-green-800 dark:bg-green-950 dark:text-green-200",
-};
-
-function StatusBadge({
-	value,
-	styles,
-}: {
-	value: string;
-	styles: Record<string, string>;
-}) {
-	const colorClass =
-		styles[value] ??
-		"bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
-	return (
-		<span
-			className={`inline-block rounded-full px-2 py-0.5 font-medium text-xs capitalize ${colorClass}`}
-		>
-			{value.replace(/_/g, " ")}
-		</span>
-	);
-}
-
 const STATUS_FILTERS = [
 	{ label: "All", value: "" },
 	{ label: "Requested", value: "requested" },
@@ -116,7 +86,7 @@ function ReturnTimeline({ status }: { status: string }) {
 	if (status === "rejected") {
 		return (
 			<div className="flex items-center gap-1.5">
-				<div className="flex h-5 w-5 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/40">
+				<div className="flex size-5 items-center justify-center rounded-full bg-status-danger-bg">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						width="10"
@@ -126,14 +96,14 @@ function ReturnTimeline({ status }: { status: string }) {
 						stroke="currentColor"
 						strokeWidth="3"
 						strokeLinecap="round"
-						className="text-red-600 dark:text-red-400"
+						className="text-status-danger"
 						aria-hidden="true"
 					>
 						<path d="M18 6 6 18" />
 						<path d="m6 6 12 12" />
 					</svg>
 				</div>
-				<span className="font-medium text-red-600 text-xs dark:text-red-400">
+				<span className="font-medium text-status-danger text-xs">
 					Return rejected
 				</span>
 			</div>
@@ -219,15 +189,15 @@ export default function ReturnsPage() {
 			</div>
 
 			{isLoading ? (
-				<div className="space-y-3">
+				<div className="flex flex-col gap-3">
 					{[1, 2, 3].map((n) => (
-						<div key={n} className="h-28 animate-pulse rounded-xl bg-muted" />
+						<Skeleton key={n} className="h-28 rounded-xl" />
 					))}
 				</div>
 			) : returns.length === 0 ? (
 				<div className="rounded-xl border border-border bg-muted/30 py-16 text-center">
 					<div className="mb-4 flex justify-center">
-						<div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+						<div className="flex size-14 items-center justify-center rounded-full bg-muted">
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
 								width="24"
@@ -256,7 +226,7 @@ export default function ReturnsPage() {
 					</p>
 					<a
 						href="/account/orders"
-						className="mt-4 inline-flex items-center justify-center rounded-lg bg-foreground px-5 py-2 font-semibold text-background text-sm transition-opacity hover:opacity-90"
+						className={buttonVariants({ className: "mt-4" })}
 					>
 						View orders
 					</a>
@@ -264,7 +234,7 @@ export default function ReturnsPage() {
 			) : (
 				<>
 					{/* Returns list */}
-					<div className="space-y-3">
+					<div className="flex flex-col gap-3">
 						{returns.map((r) => (
 							<a
 								key={r.id}
@@ -274,10 +244,7 @@ export default function ReturnsPage() {
 								<div className="flex flex-wrap items-start justify-between gap-2">
 									<div className="min-w-0 flex-1">
 										<div className="flex flex-wrap items-center gap-2">
-											<StatusBadge
-												value={r.status}
-												styles={RETURN_STATUS_STYLES}
-											/>
+											<StatusBadge status={r.status} />
 											<span className="text-muted-foreground text-xs capitalize">
 												{r.type.replace(/_/g, " ")}
 											</span>
@@ -292,7 +259,7 @@ export default function ReturnsPage() {
 									</div>
 									<div className="shrink-0 text-right">
 										{r.refundAmount != null && (
-											<p className="font-medium text-emerald-600 text-sm dark:text-emerald-400">
+											<p className="font-medium text-sm text-status-success">
 												{formatPrice(r.refundAmount)}
 											</p>
 										)}

@@ -37,6 +37,14 @@
 	--sidebar-accent-foreground: oklch(0.205 0 0);
 	--sidebar-border: oklch(0.922 0 0);
 	--sidebar-ring: oklch(0.708 0 0);
+	--status-success: oklch(0.45 0.12 155);
+	--status-success-bg: oklch(0.965 0.015 155);
+	--status-warning: oklch(0.55 0.12 65);
+	--status-warning-bg: oklch(0.97 0.015 75);
+	--status-danger: oklch(0.55 0.18 25);
+	--status-danger-bg: oklch(0.975 0.012 25);
+	--status-info: oklch(0.5 0.14 250);
+	--status-info-bg: oklch(0.97 0.012 250);
 }
 
 .dark {
@@ -71,6 +79,14 @@
 	--sidebar-accent-foreground: oklch(0.985 0 0);
 	--sidebar-border: oklch(1 0 0 / 10%);
 	--sidebar-ring: oklch(0.556 0 0);
+	--status-success: oklch(0.75 0.12 155);
+	--status-success-bg: oklch(0.25 0.04 155);
+	--status-warning: oklch(0.78 0.1 75);
+	--status-warning-bg: oklch(0.25 0.04 75);
+	--status-danger: oklch(0.75 0.14 25);
+	--status-danger-bg: oklch(0.25 0.04 25);
+	--status-info: oklch(0.75 0.12 250);
+	--status-info-bg: oklch(0.25 0.04 250);
 }
 
 @theme inline {
@@ -113,6 +129,14 @@
 	--radius-2xl: calc(var(--radius) * 1.8);
 	--radius-3xl: calc(var(--radius) * 2.2);
 	--radius-4xl: calc(var(--radius) * 2.6);
+	--color-status-success: var(--status-success);
+	--color-status-success-bg: var(--status-success-bg);
+	--color-status-warning: var(--status-warning);
+	--color-status-warning-bg: var(--status-warning-bg);
+	--color-status-danger: var(--status-danger);
+	--color-status-danger-bg: var(--status-danger-bg);
+	--color-status-info: var(--status-info);
+	--color-status-info-bg: var(--status-info-bg);
 }
 
 @layer base {

@@ -2,6 +2,9 @@
 
 import { useModuleClient } from "@86d-app/core/client";
 import { useState } from "react";
+import { StatusBadge } from "~/components/status-badge";
+import { buttonVariants } from "~/components/ui/button";
+import { Skeleton } from "~/components/ui/skeleton";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -41,48 +44,6 @@ function formatDate(iso: string): string {
 	}).format(new Date(iso));
 }
 
-const STATUS_STYLES: Record<string, string> = {
-	pending:
-		"bg-yellow-50 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200",
-	processing: "bg-blue-50 text-blue-800 dark:bg-blue-950 dark:text-blue-200",
-	on_hold:
-		"bg-orange-50 text-orange-800 dark:bg-orange-950 dark:text-orange-200",
-	completed:
-		"bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200",
-	cancelled: "bg-red-50 text-red-800 dark:bg-red-950 dark:text-red-200",
-	refunded:
-		"bg-purple-50 text-purple-800 dark:bg-purple-950 dark:text-purple-200",
-};
-
-const PAYMENT_STYLES: Record<string, string> = {
-	unpaid: "bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
-	paid: "bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200",
-	partially_paid:
-		"bg-yellow-50 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200",
-	refunded:
-		"bg-purple-50 text-purple-800 dark:bg-purple-950 dark:text-purple-200",
-	voided: "bg-red-50 text-red-800 dark:bg-red-950 dark:text-red-200",
-};
-
-function StatusBadge({
-	value,
-	styles,
-}: {
-	value: string;
-	styles: Record<string, string>;
-}) {
-	const colorClass =
-		styles[value] ??
-		"bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
-	return (
-		<span
-			className={`inline-block rounded-full px-2 py-0.5 font-medium text-xs capitalize ${colorClass}`}
-		>
-			{value.replace(/_/g, " ")}
-		</span>
-	);
-}
-
 // ── Orders Page ─────────────────────────────────────────────────────────────
 
 export default function OrdersPage() {
@@ -120,18 +81,15 @@ export default function OrdersPage() {
 			</div>
 
 			{isLoading ? (
-				<div className="space-y-3">
+				<div className="flex flex-col gap-3">
 					{[1, 2, 3, 4, 5].map((n) => (
-						<div
-							key={n}
-							className="h-[72px] animate-pulse rounded-xl bg-muted"
-						/>
+						<Skeleton key={n} className="h-[72px] rounded-xl" />
 					))}
 				</div>
 			) : orders.length === 0 ? (
 				<div className="rounded-xl border border-border bg-muted/30 py-16 text-center">
 					<div className="mb-4 flex justify-center">
-						<div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+						<div className="flex size-14 items-center justify-center rounded-full bg-muted">
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
 								width="24"
@@ -155,10 +113,7 @@ export default function OrdersPage() {
 					<p className="mt-1 text-muted-foreground text-sm">
 						Your order history will appear here after your first purchase.
 					</p>
-					<a
-						href="/products"
-						className="mt-4 inline-flex items-center justify-center rounded-lg bg-foreground px-5 py-2 font-semibold text-background text-sm transition-opacity hover:opacity-90"
-					>
+					<a href="/products" className={buttonVariants({ className: "mt-4" })}>
 						Browse products
 					</a>
 				</div>
@@ -205,16 +160,10 @@ export default function OrdersPage() {
 											{formatDate(order.createdAt)}
 										</td>
 										<td className="px-4 py-3.5">
-											<StatusBadge
-												value={order.status}
-												styles={STATUS_STYLES}
-											/>
+											<StatusBadge status={order.status} />
 										</td>
 										<td className="px-4 py-3.5">
-											<StatusBadge
-												value={order.paymentStatus}
-												styles={PAYMENT_STYLES}
-											/>
+											<StatusBadge status={order.paymentStatus} />
 										</td>
 										<td className="px-4 py-3.5 text-right font-medium text-foreground text-sm tabular-nums">
 											{formatPrice(order.total, order.currency)}
@@ -262,7 +211,7 @@ export default function OrdersPage() {
 										<span className="font-medium text-foreground text-sm">
 											{order.orderNumber}
 										</span>
-										<StatusBadge value={order.status} styles={STATUS_STYLES} />
+										<StatusBadge status={order.status} />
 									</div>
 									<p className="mt-0.5 text-muted-foreground text-xs">
 										{formatDate(order.createdAt)}

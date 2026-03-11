@@ -2,6 +2,9 @@
 
 import { useModuleClient } from "@86d-app/core/client";
 import { useState } from "react";
+import { StatusBadge } from "~/components/status-badge";
+import { buttonVariants } from "~/components/ui/button";
+import { Skeleton } from "~/components/ui/skeleton";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -39,32 +42,12 @@ function formatDate(iso: string): string {
 	}).format(new Date(iso));
 }
 
-const STATUS_STYLES: Record<string, string> = {
-	pending:
-		"bg-yellow-50 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200",
-	approved: "bg-green-50 text-green-800 dark:bg-green-950 dark:text-green-200",
-	rejected: "bg-red-50 text-red-800 dark:bg-red-950 dark:text-red-200",
-};
-
 const STATUS_FILTERS = [
 	{ label: "All", value: "" },
 	{ label: "Pending", value: "pending" },
 	{ label: "Approved", value: "approved" },
 	{ label: "Rejected", value: "rejected" },
 ] as const;
-
-function StatusBadge({ status }: { status: string }) {
-	const colorClass =
-		STATUS_STYLES[status] ??
-		"bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
-	return (
-		<span
-			className={`inline-block rounded-full px-2 py-0.5 font-medium text-xs capitalize ${colorClass}`}
-		>
-			{status}
-		</span>
-	);
-}
 
 function StarRating({ rating }: { rating: number }) {
 	return (
@@ -157,9 +140,9 @@ export default function MyReviewsPage() {
 			</div>
 
 			{isLoading ? (
-				<div className="space-y-3">
+				<div className="flex flex-col gap-3">
 					{[1, 2, 3].map((n) => (
-						<div key={n} className="h-28 animate-pulse rounded-xl bg-muted" />
+						<Skeleton key={n} className="h-28 rounded-xl" />
 					))}
 				</div>
 			) : reviews.length === 0 ? (
@@ -191,16 +174,13 @@ export default function MyReviewsPage() {
 							? "Try adjusting your filter."
 							: "Share your thoughts on products you've purchased."}
 					</p>
-					<a
-						href="/products"
-						className="mt-4 inline-flex items-center justify-center rounded-lg bg-foreground px-5 py-2 font-semibold text-background text-sm transition-opacity hover:opacity-90"
-					>
+					<a href="/products" className={buttonVariants({ className: "mt-4" })}>
 						Browse products
 					</a>
 				</div>
 			) : (
 				<>
-					<div className="space-y-3">
+					<div className="flex flex-col gap-3">
 						{reviews.map((review) => (
 							<div
 								key={review.id}
@@ -212,7 +192,7 @@ export default function MyReviewsPage() {
 											<StarRating rating={review.rating} />
 											<StatusBadge status={review.status} />
 											{review.isVerifiedPurchase && (
-												<span className="inline-flex items-center gap-1 text-emerald-600 text-xs dark:text-emerald-400">
+												<span className="inline-flex items-center gap-1 text-status-success text-xs">
 													<svg
 														xmlns="http://www.w3.org/2000/svg"
 														width="12"
@@ -271,8 +251,8 @@ export default function MyReviewsPage() {
 
 								{/* Rejection note */}
 								{review.status === "rejected" && review.moderationNote && (
-									<div className="mt-3 rounded-lg bg-red-50/50 p-3 dark:bg-red-950/20">
-										<p className="mb-1 text-red-600 text-xs dark:text-red-400">
+									<div className="mt-3 rounded-lg bg-status-danger-bg/50 p-3">
+										<p className="mb-1 text-status-danger text-xs">
 											Moderation note
 										</p>
 										<p className="text-foreground text-sm">

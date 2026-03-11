@@ -3,6 +3,8 @@
 import { useAnalytics } from "hooks/use-analytics";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef } from "react";
+import { buttonVariants } from "~/components/ui/button";
+import { Skeleton } from "~/components/ui/skeleton";
 
 // ── Confirmation Content ────────────────────────────────────────────────────
 
@@ -28,7 +30,7 @@ function ConfirmationContent() {
 		<div className="mx-auto max-w-2xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
 			{/* Success icon */}
 			<div className="mb-6 flex justify-center">
-				<div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-950/30">
+				<div className="flex size-16 items-center justify-center rounded-full bg-status-success-bg">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						width="32"
@@ -39,7 +41,7 @@ function ConfirmationContent() {
 						strokeWidth="2"
 						strokeLinecap="round"
 						strokeLinejoin="round"
-						className="text-emerald-600 dark:text-emerald-400"
+						className="text-status-success"
 						aria-hidden="true"
 					>
 						<path d="M20 6 9 17l-5-5" />
@@ -67,9 +69,9 @@ function ConfirmationContent() {
 				<h2 className="mb-4 font-semibold text-foreground text-sm">
 					What happens next?
 				</h2>
-				<div className="space-y-4">
+				<div className="flex flex-col gap-4">
 					<div className="flex gap-3">
-						<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted font-medium text-muted-foreground text-xs">
+						<div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted font-medium text-muted-foreground text-xs">
 							1
 						</div>
 						<div>
@@ -82,7 +84,7 @@ function ConfirmationContent() {
 						</div>
 					</div>
 					<div className="flex gap-3">
-						<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted font-medium text-muted-foreground text-xs">
+						<div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted font-medium text-muted-foreground text-xs">
 							2
 						</div>
 						<div>
@@ -95,7 +97,7 @@ function ConfirmationContent() {
 						</div>
 					</div>
 					<div className="flex gap-3">
-						<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted font-medium text-muted-foreground text-xs">
+						<div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted font-medium text-muted-foreground text-xs">
 							3
 						</div>
 						<div>
@@ -110,16 +112,10 @@ function ConfirmationContent() {
 
 			{/* Actions */}
 			<div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
-				<a
-					href="/account"
-					className="inline-flex items-center justify-center rounded-lg bg-foreground px-6 py-3 font-semibold text-background text-sm transition-opacity hover:opacity-90"
-				>
+				<a href="/account" className={buttonVariants()}>
 					View my orders
 				</a>
-				<a
-					href="/products"
-					className="inline-flex items-center justify-center rounded-lg border border-border bg-background px-6 py-3 font-medium text-foreground text-sm transition-colors hover:bg-muted"
-				>
+				<a href="/products" className={buttonVariants({ variant: "outline" })}>
 					Continue shopping
 				</a>
 			</div>
@@ -135,9 +131,9 @@ export default function CheckoutConfirmationPage() {
 			fallback={
 				<div className="mx-auto max-w-2xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
 					<div className="flex flex-col items-center gap-4">
-						<div className="h-16 w-16 animate-pulse rounded-full bg-muted" />
-						<div className="h-8 w-64 animate-pulse rounded-lg bg-muted" />
-						<div className="h-4 w-48 animate-pulse rounded bg-muted" />
+						<Skeleton className="size-16 rounded-full" />
+						<Skeleton className="h-8 w-64 rounded-lg" />
+						<Skeleton className="h-4 w-48" />
 					</div>
 				</div>
 			}

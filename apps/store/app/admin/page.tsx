@@ -1,6 +1,8 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
+import { StatusBadge } from "~/components/status-badge";
+import { Skeleton } from "~/components/ui/skeleton";
 
 /* ── helpers ───────────────────────────────────────────────── */
 
@@ -24,17 +26,6 @@ function timeAgo(dateStr: string | Date): string {
 	if (days < 30) return `${days}d ago`;
 	return date.toLocaleDateString();
 }
-
-const STATUS_COLORS: Record<string, string> = {
-	pending: "bg-yellow-100 text-yellow-800",
-	processing: "bg-blue-100 text-blue-800",
-	on_hold: "bg-orange-100 text-orange-800",
-	completed: "bg-green-100 text-green-800",
-	cancelled: "bg-gray-100 text-gray-700",
-	refunded: "bg-purple-100 text-purple-800",
-	unpaid: "bg-red-100 text-red-800",
-	paid: "bg-green-100 text-green-800",
-};
 
 /* ── API hook ──────────────────────────────────────────────── */
 
@@ -113,7 +104,7 @@ function StatCard({
 				{label}
 			</p>
 			{loading ? (
-				<div className="mt-2 h-8 w-24 animate-pulse rounded bg-muted" />
+				<Skeleton className="mt-2 h-8 w-24" />
 			) : (
 				<>
 					<p
@@ -124,7 +115,7 @@ function StatCard({
 					</p>
 					{trend && trend.value !== 0 && (
 						<p
-							className={`mt-1 text-xs ${trend.value > 0 ? "text-green-600" : "text-red-500"}`}
+							className={`mt-1 text-xs ${trend.value > 0 ? "text-status-success" : "text-status-danger"}`}
 						>
 							{trend.value > 0 ? "+" : ""}
 							{trend.value.toFixed(0)}% {trend.label}
@@ -136,17 +127,6 @@ function StatCard({
 				</>
 			)}
 		</div>
-	);
-}
-
-function StatusBadge({ status }: { status: string }) {
-	const color = STATUS_COLORS[status] ?? "bg-gray-100 text-gray-700";
-	return (
-		<span
-			className={`inline-flex rounded-full px-2 py-0.5 font-medium text-xs ${color}`}
-		>
-			{status.replace(/_/g, " ")}
-		</span>
 	);
 }
 
@@ -465,12 +445,9 @@ export default function AdminDashboard() {
 						</a>
 					</div>
 					{loadingRecent ? (
-						<div className="space-y-3 p-5">
+						<div className="flex flex-col gap-3 p-5">
 							{Array.from({ length: 3 }).map((_, i) => (
-								<div
-									key={`skel-${i}`}
-									className="h-10 animate-pulse rounded bg-muted"
-								/>
+								<Skeleton key={`skel-${i}`} className="h-10 rounded" />
 							))}
 						</div>
 					) : recentOrdersData?.orders?.length ? (
@@ -511,7 +488,7 @@ export default function AdminDashboard() {
 				</div>
 
 				{/* Right column */}
-				<div className="space-y-6">
+				<div className="flex flex-col gap-6">
 					{/* Low stock alerts */}
 					<div className="rounded-lg border border-border bg-card">
 						<div className="flex items-center justify-between border-border border-b px-5 py-4">
@@ -527,12 +504,9 @@ export default function AdminDashboard() {
 							</a>
 						</div>
 						{loadingLowStock ? (
-							<div className="space-y-2 p-5">
+							<div className="flex flex-col gap-2 p-5">
 								{Array.from({ length: 2 }).map((_, i) => (
-									<div
-										key={`ls-${i}`}
-										className="h-8 animate-pulse rounded bg-muted"
-									/>
+									<Skeleton key={`ls-${i}`} className="h-8 rounded" />
 								))}
 							</div>
 						) : lowStockCount > 0 ? (
@@ -547,7 +521,7 @@ export default function AdminDashboard() {
 											{item.variantId ? ` / ${item.variantId.slice(0, 8)}` : ""}
 										</p>
 										<span
-											className={`font-medium text-sm ${item.available <= 0 ? "text-red-600" : "text-yellow-600"}`}
+											className={`font-medium text-sm ${item.available <= 0 ? "text-status-danger" : "text-status-warning"}`}
 										>
 											{item.available} left
 										</span>
@@ -571,7 +545,7 @@ export default function AdminDashboard() {
 						<h2 className="mb-3 font-semibold text-foreground text-sm">
 							Quick Actions
 						</h2>
-						<div className="space-y-2">
+						<div className="flex flex-col gap-2">
 							<QuickAction
 								href="/admin/products/new"
 								icon={<IconPlus />}

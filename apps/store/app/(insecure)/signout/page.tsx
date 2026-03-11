@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { buttonVariants } from "~/components/ui/button";
 
 export default function SignOutPage() {
 	const [error, setError] = useState(false);
@@ -31,10 +32,7 @@ export default function SignOutPage() {
 					<p className="mb-6 text-muted-foreground text-sm">
 						Something went wrong. Please try again.
 					</p>
-					<a
-						href="/"
-						className="inline-flex items-center justify-center rounded-lg bg-foreground px-6 py-2.5 font-semibold text-background text-sm transition-opacity hover:opacity-90"
-					>
+					<a href="/" className={buttonVariants()}>
 						Go to home
 					</a>
 				</div>
