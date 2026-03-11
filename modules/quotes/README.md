@@ -107,6 +107,24 @@ type AuthorType = "customer" | "admin"
 7. **Admin converts** — links the accepted quote to an order via `convertToOrder`
 8. **Expiration** — counter-offers expire after `defaultExpirationDays`; expired quotes cannot be accepted
 
+## Store Components
+
+| Component | Description |
+|-----------|-------------|
+| `QuoteRequest` | Form for customers to create a new quote with product line items |
+| `MyQuotes` | List of the current customer's quotes with status badges and filtering |
+| `QuoteDetail` | Full quote view with line items, comments, and accept/decline actions |
+
+### Usage
+
+```tsx
+import { QuoteRequest, MyQuotes, QuoteDetail } from "@86d-app/quotes/store/components";
+
+<QuoteRequest customerId="customer-456" />
+<MyQuotes customerId="customer-456" />
+<QuoteDetail quoteId="quote-789" />
+```
+
 ## Notes
 
 - Quote totals are automatically recalculated when items are added, updated, or removed

@@ -82,6 +82,7 @@
         "@86d-app/quotes": "workspace:*",
         "@86d-app/recently-viewed": "workspace:*",
         "@86d-app/recommendations": "workspace:*",
+        "@86d-app/redirects": "workspace:*",
         "@86d-app/referrals": "workspace:*",
         "@86d-app/returns": "workspace:*",
         "@86d-app/reviews": "workspace:*",
@@ -90,6 +91,7 @@
         "@86d-app/seo": "workspace:*",
         "@86d-app/settings": "workspace:*",
         "@86d-app/shipping": "workspace:*",
+        "@86d-app/sitemap": "workspace:*",
         "@86d-app/social-proof": "workspace:*",
         "@86d-app/square": "workspace:*",
         "@86d-app/store-credits": "workspace:*",
@@ -282,6 +284,7 @@
       },
       "devDependencies": {
         "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
         "@types/react": "catalog:react",
         "typescript": "catalog:",
         "vitest": "catalog:vite",
@@ -781,6 +784,7 @@
       },
       "devDependencies": {
         "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
         "@types/react": "catalog:react",
         "typescript": "catalog:",
         "vitest": "catalog:vite",
@@ -836,6 +840,7 @@
       },
       "devDependencies": {
         "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
         "@types/react": "catalog:react",
         "typescript": "catalog:",
         "vitest": "catalog:vite",

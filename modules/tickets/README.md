@@ -165,6 +165,24 @@ type MessageAuthorType = "customer" | "admin" | "system";
 | `/admin/tickets/:id` | TicketDetail | — | Threaded message view with author type badges and internal note highlighting, admin reply form with internal note toggle, sidebar with live status/priority selects and customer info |
 | `/admin/tickets/categories/:id` | TicketCategoryDetail | — | Edit form for name, slug, description, position, and active toggle with success/error feedback |
 
+## Store Components
+
+| Component | Description |
+|-----------|-------------|
+| `TicketForm` | Form for customers to submit a new support ticket with category selection |
+| `MyTickets` | List of the current customer's tickets with status badges and filtering |
+| `TicketDetail` | Threaded ticket view with messages and customer reply form |
+
+### Usage
+
+```tsx
+import { TicketForm, MyTickets, TicketDetail } from "@86d-app/tickets/store/components";
+
+<TicketForm />
+<MyTickets customerEmail="customer@example.com" />
+<TicketDetail ticketId="abc-123" customerEmail="customer@example.com" />
+```
+
 ## Notes
 
 - Ticket numbers are sequential starting at 1001 for a professional appearance

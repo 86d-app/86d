@@ -10,7 +10,14 @@ src/
   schema.ts             location entity (single entity, flat)
   service.ts            Location, LocationWithDistance, StoreLocatorController types
   service-impl.ts       Controller implementation (haversine distance, hours check)
-  store/endpoints/      5 customer-facing endpoints
+  store/
+    endpoints/          5 customer-facing endpoints
+    components/         Customer-facing components
+      _hooks.ts         API hooks (useStoreLocatorApi)
+      _utils.ts         Shared utilities
+      index.tsx         Component exports
+      *.tsx             Component logic
+      *.mdx             Component templates
   admin/endpoints/      6 admin endpoints
   admin/components/     3 TSX components (LocationList, LocationForm, LocationDetail)
   __tests__/            58 tests covering all controller methods

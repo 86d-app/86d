@@ -11,6 +11,12 @@ src/
   service.ts            Types + QuoteController interface
   service-impl.ts       Controller implementation
   store/endpoints/      10 customer-facing endpoints
+  store/components/     Customer-facing components
+    _hooks.ts           API hooks (useQuotesApi)
+    _utils.ts           Shared utilities
+    index.tsx           Component exports
+    *.tsx               Component logic
+    *.mdx               Component templates
   admin/endpoints/      10 admin endpoints
   __tests__/            54 tests
 ```

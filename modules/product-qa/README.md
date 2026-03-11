@@ -152,6 +152,24 @@ interface QaAnalytics {
 }
 ```
 
+## Store Components
+
+| Component | Description |
+|-----------|-------------|
+| `ProductQuestions` | Q&A section for product pages showing published questions with answers |
+| `QuestionForm` | Form to submit a new question about a product |
+| `QuestionCard` | Individual question display with answer count and upvote button |
+| `AnswerList` | List of answers for a specific question with upvoting |
+
+### Usage
+
+```tsx
+import { ProductQuestions, QuestionForm } from "@86d-app/product-qa/store/components";
+
+<ProductQuestions productId="abc-123" />
+<QuestionForm productId="abc-123" />
+```
+
 ## Notes
 
 - Questions and answers go through a moderation queue by default (`pending` → `published`/`rejected`). Set `autoPublish: "true"` to skip moderation.

@@ -19,6 +19,12 @@ src/
       upvote-question.ts         POST /product-qa/questions/:id/upvote
       upvote-answer.ts           POST /product-qa/answers/:id/upvote
       product-qa-summary.ts      GET  /product-qa/products/:productId/summary
+    components/                  Customer-facing components
+      _hooks.ts                  API hooks (useProductQaApi)
+      _utils.ts                  Shared utilities
+      index.tsx                  Component exports
+      *.tsx                      Component logic
+      *.mdx                      Component templates
   admin/
     endpoints/
       list-questions.ts          GET  /admin/product-qa/questions

@@ -17,6 +17,12 @@ src/
     place-preorder.ts       POST /preorders/place
     my-preorders.ts         GET  /preorders/mine
     cancel-preorder.ts      POST /preorders/:id/cancel
+  store/components/         Customer-facing components
+    _hooks.ts               API hooks (usePreordersApi)
+    _utils.ts               Shared utilities
+    index.tsx               Component exports
+    *.tsx                   Component logic
+    *.mdx                   Component templates
   admin/components/
     index.tsx               Admin UI (CampaignList, CampaignDetail) — "use client"
   admin/endpoints/

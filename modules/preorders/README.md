@@ -211,6 +211,22 @@ pending → confirmed → ready → fulfilled
 - **cancelled**: Preorder was cancelled before fulfillment
 - **refunded**: Payment was refunded after cancellation
 
+## Store Components
+
+| Component | Description |
+|-----------|-------------|
+| `PreorderButton` | Button to place a preorder for a product with an active campaign |
+| `MyPreorders` | List of the current customer's preorders with status tracking |
+
+### Usage
+
+```tsx
+import { PreorderButton, MyPreorders } from "@86d-app/preorders/store/components";
+
+<PreorderButton productId="abc-123" />
+<MyPreorders customerId="customer-456" />
+```
+
 ## Notes
 
 - Campaigns auto-activate when `startDate` is in the past at creation time.

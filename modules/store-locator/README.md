@@ -138,6 +138,22 @@ interface DayHours {
 }
 ```
 
+## Store Components
+
+| Component | Description |
+|-----------|-------------|
+| `LocationList` | Displays a searchable, filterable list of store locations |
+| `LocationDetail` | Shows full details for a single location including hours, amenities, and map |
+
+### Usage
+
+```tsx
+import { LocationList, LocationDetail } from "@86d-app/store-locator/store/components";
+
+<LocationList />
+<LocationDetail slug="downtown-flagship" />
+```
+
 ## Notes
 
 - Proximity search uses the Haversine formula for accurate great-circle distances

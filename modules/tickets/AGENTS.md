@@ -17,6 +17,12 @@ modules/tickets/src/
     customer-reply.ts   POST /tickets/:id/reply
     customer-tickets.ts GET /tickets/mine
     list-categories.ts  GET /tickets/categories
+  store/components/     Customer-facing components
+    _hooks.ts           API hooks (useTicketsApi)
+    _utils.ts           Shared utilities
+    index.tsx           Component exports
+    *.tsx               Component logic
+    *.mdx               Component templates
   admin/endpoints/      Admin-only endpoints
     index.ts            Endpoint map
     list-tickets.ts     GET /admin/tickets

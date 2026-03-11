@@ -16,6 +16,12 @@ src/
     my-backorders.ts        GET  /backorders/mine
     get-backorder.ts        GET  /backorders/:id
     cancel-backorder.ts     POST /backorders/:id/cancel
+  store/components/         Customer-facing components
+    _hooks.ts               API hooks (useBackordersApi)
+    _utils.ts               Shared utilities
+    index.tsx               Component exports
+    *.tsx                   Component logic
+    *.mdx                   Component templates
   admin/components/
     index.tsx               Admin UI (BackorderList, BackorderPolicies) — "use client"
   admin/endpoints/

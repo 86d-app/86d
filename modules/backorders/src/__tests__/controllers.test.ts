@@ -400,7 +400,7 @@ describe("backorders controller edge cases", () => {
 		it("updates updatedAt on each status change", async () => {
 			const bo = await mustCreate();
 			const confirmed = await controller.updateStatus(bo.id, "confirmed");
-			expect(confirmed!.updatedAt.getTime()).toBeGreaterThanOrEqual(
+			expect(confirmed?.updatedAt.getTime()).toBeGreaterThanOrEqual(
 				bo.updatedAt.getTime(),
 			);
 		});

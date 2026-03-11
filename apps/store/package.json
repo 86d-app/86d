@@ -131,7 +131,9 @@
 		"@86d-app/tickets": "workspace:*",
 		"@86d-app/vendors": "workspace:*",
 		"@86d-app/waitlist": "workspace:*",
-		"@86d-app/warranties": "workspace:*"
+		"@86d-app/warranties": "workspace:*",
+		"@86d-app/redirects": "workspace:*",
+		"@86d-app/sitemap": "workspace:*"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "catalog:",

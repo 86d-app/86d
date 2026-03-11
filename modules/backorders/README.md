@@ -179,6 +179,22 @@ pending → confirmed → allocated → shipped → delivered
 - **delivered**: Customer received the order
 - **cancelled**: Backorder was cancelled (any active status)
 
+## Store Components
+
+| Component | Description |
+|-----------|-------------|
+| `BackorderButton` | Button to place a backorder for an out-of-stock product |
+| `MyBackorders` | List of the current customer's backorders with status tracking |
+
+### Usage
+
+```tsx
+import { BackorderButton, MyBackorders } from "@86d-app/backorders/store/components";
+
+<BackorderButton productId="abc-123" />
+<MyBackorders customerId="customer-456" />
+```
+
 ## Notes
 
 - Backorder policies are per-product. Products without a policy accept backorders with `pending` status.
