@@ -651,6 +651,185 @@ describe("createBrandController", () => {
 		});
 	});
 
+	// ── Edge Cases ──
+
+	describe("edge cases", () => {
+		it("bulkAssignProducts with empty array", async () => {
+			const brand = await createTestBrand();
+			const assigned = await controller.bulkAssignProducts({
+				brandId: brand.id,
+				productIds: [],
+			});
+			expect(assigned).toBe(0);
+		});
+
+		it("bulkUnassignProducts with empty array", async () => {
+			const brand = await createTestBrand();
+			const removed = await controller.bulkUnassignProducts({
+				brandId: brand.id,
+				productIds: [],
+			});
+			expect(removed).toBe(0);
+		});
+
+		it("countBrands with isFeatured filter", async () => {
+			await createTestBrand({ slug: "f1", isFeatured: true });
+			await createTestBrand({ slug: "f2", isFeatured: true });
+			await createTestBrand({ slug: "n1", isFeatured: false });
+			const count = await controller.countBrands({ isFeatured: true });
+			expect(count).toBe(2);
+		});
+
+		it("listBrands with both isActive and isFeatured", async () => {
+			await createTestBrand({
+				slug: "af",
+				isActive: true,
+				isFeatured: true,
+			});
+			await createTestBrand({
+				slug: "an",
+				isActive: true,
+				isFeatured: false,
+			});
+			await createTestBrand({
+				slug: "if",
+				isActive: false,
+				isFeatured: true,
+			});
+			const list = await controller.listBrands({
+				isActive: true,
+				isFeatured: true,
+			});
+			expect(list).toHaveLength(1);
+			expect(list[0].slug).toBe("af");
+		});
+
+		it("getBrandForProduct returns null after unassign", async () => {
+			const brand = await createTestBrand();
+			await controller.assignProduct({
+				brandId: brand.id,
+				productId: "prod-1",
+			});
+			await controller.unassignProduct({
+				brandId: brand.id,
+				productId: "prod-1",
+			});
+			const found = await controller.getBrandForProduct("prod-1");
+			expect(found).toBeNull();
+		});
+
+		it("multiple brands can exist with different slugs", async () => {
+			await createTestBrand({ name: "Brand A", slug: "brand-a" });
+			await createTestBrand({ name: "Brand B", slug: "brand-b" });
+			await createTestBrand({ name: "Brand C", slug: "brand-c" });
+			const list = await controller.listBrands();
+			expect(list).toHaveLength(3);
+		});
+
+		it("updateBrand preserves createdAt", async () => {
+			const brand = await createTestBrand();
+			const original = brand.createdAt;
+			const updated = await controller.updateBrand(brand.id, {
+				name: "Updated",
+			});
+			expect(updated?.createdAt.getTime()).toBe(original.getTime());
+		});
+
+		it("deleteBrand returns false after already deleted", async () => {
+			const brand = await createTestBrand();
+			await controller.deleteBrand(brand.id);
+			const secondDelete = await controller.deleteBrand(brand.id);
+			expect(secondDelete).toBe(false);
+		});
+	});
+
+	// ── Integration ──
+
+	describe("integration", () => {
+		it("full brand lifecycle: create → assign products → update → delete", async () => {
+			const brand = await createTestBrand({
+				name: "Test Brand",
+				slug: "test-brand",
+				description: "A test brand",
+			});
+
+			// Assign products
+			await controller.bulkAssignProducts({
+				brandId: brand.id,
+				productIds: ["p1", "p2", "p3"],
+			});
+			expect(await controller.countBrandProducts(brand.id)).toBe(3);
+
+			// Update the brand
+			await controller.updateBrand(brand.id, {
+				name: "Updated Brand",
+				isFeatured: true,
+			});
+
+			// Verify featured
+			const featured = await controller.getFeaturedBrands();
+			expect(featured).toHaveLength(1);
+			expect(featured[0].name).toBe("Updated Brand");
+
+			// Delete
+			await controller.deleteBrand(brand.id);
+			expect(await controller.getBrand(brand.id)).toBeNull();
+			expect(await controller.countBrandProducts(brand.id)).toBe(0);
+		});
+
+		it("product reassignment across brands", async () => {
+			const brandA = await createTestBrand({ slug: "a" });
+			const brandB = await createTestBrand({ slug: "b" });
+
+			await controller.assignProduct({
+				brandId: brandA.id,
+				productId: "shared-prod",
+			});
+
+			// Verify in brand A
+			expect(await controller.getBrandForProduct("shared-prod")).not.toBeNull();
+			expect((await controller.getBrandForProduct("shared-prod"))?.id).toBe(
+				brandA.id,
+			);
+
+			// Reassign to brand B
+			await controller.assignProduct({
+				brandId: brandB.id,
+				productId: "shared-prod",
+			});
+
+			// Now in brand B, not A
+			expect((await controller.getBrandForProduct("shared-prod"))?.id).toBe(
+				brandB.id,
+			);
+			expect(await controller.countBrandProducts(brandA.id)).toBe(0);
+			expect(await controller.countBrandProducts(brandB.id)).toBe(1);
+		});
+
+		it("stats reflect all operations", async () => {
+			const b1 = await createTestBrand({
+				slug: "active",
+				isActive: true,
+				isFeatured: true,
+			});
+			await createTestBrand({
+				slug: "inactive",
+				isActive: false,
+			});
+
+			await controller.bulkAssignProducts({
+				brandId: b1.id,
+				productIds: ["p1", "p2"],
+			});
+
+			const stats = await controller.getStats();
+			expect(stats.totalBrands).toBe(2);
+			expect(stats.activeBrands).toBe(1);
+			expect(stats.featuredBrands).toBe(1);
+			expect(stats.totalProducts).toBe(2);
+		});
+	});
+
 	// ── getStats ──
 
 	describe("getStats", () => {

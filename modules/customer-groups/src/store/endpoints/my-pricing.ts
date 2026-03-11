@@ -7,25 +7,26 @@ export const myPricing = createStoreEndpoint(
 		method: "GET",
 		query: z
 			.object({
-				customerId: z.string(),
 				scope: z.enum(["all", "category", "product"]).optional(),
-				scopeId: z.string().optional(),
+				scopeId: z.string().max(200).optional(),
 			})
 			.optional(),
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers
 			.customerGroups as CustomerGroupController;
-		const customerId = ctx.query?.customerId;
+		const customerId = ctx.context.session?.user?.id;
 
 		if (!customerId) {
 			return { adjustments: [] };
 		}
 
-		const adjustments = await controller.getCustomerPricing(customerId, {
-			scope: ctx.query?.scope,
-			scopeId: ctx.query?.scopeId,
-		});
+		const params: { scope?: "all" | "category" | "product"; scopeId?: string } =
+			{};
+		if (ctx.query?.scope != null) params.scope = ctx.query.scope;
+		if (ctx.query?.scopeId != null) params.scopeId = ctx.query.scopeId;
+
+		const adjustments = await controller.getCustomerPricing(customerId, params);
 
 		return { adjustments };
 	},

@@ -1,5 +1,7 @@
 import { addMember } from "./add-member";
 import { addRule } from "./add-rule";
+import { bulkAddMembers } from "./bulk-add-members";
+import { bulkRemoveMembers } from "./bulk-remove-members";
 import { createGroup } from "./create-group";
 import { deleteGroup } from "./delete-group";
 import { evaluateRules } from "./evaluate-rules";
@@ -27,6 +29,8 @@ export const adminEndpoints = {
 	"/admin/customer-groups/:id/members": listMembers,
 	"/admin/customer-groups/:id/members/add": addMember,
 	"/admin/customer-groups/:id/members/remove": removeMember,
+	"/admin/customer-groups/:id/members/bulk-add": bulkAddMembers,
+	"/admin/customer-groups/:id/members/bulk-remove": bulkRemoveMembers,
 	"/admin/customer-groups/:id/pricing": setPricing,
 	"/admin/customer-groups/:id/pricing/list": listPricing,
 	"/admin/customer-groups/:id/rules/add": addRule,

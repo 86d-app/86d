@@ -260,6 +260,49 @@ export function createCustomerGroupControllers(
 			);
 		},
 
+		async bulkAddMembers(groupId, customerIds, opts = {}) {
+			let added = 0;
+			for (const customerId of customerIds) {
+				// Skip if already a member
+				const existing = (await data.findMany("groupMembership", {
+					where: { groupId, customerId },
+				})) as GroupMembership[];
+				if (existing.length > 0) continue;
+
+				const id = crypto.randomUUID();
+				const membership: GroupMembership = {
+					id,
+					groupId,
+					customerId,
+					joinedAt: new Date(),
+					expiresAt: opts.expiresAt ?? undefined,
+					metadata: {},
+				};
+				await data.upsert(
+					"groupMembership",
+					id,
+					// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
+					membership as Record<string, any>,
+				);
+				added++;
+			}
+			return added;
+		},
+
+		async bulkRemoveMembers(groupId, customerIds) {
+			let removed = 0;
+			for (const customerId of customerIds) {
+				const memberships = (await data.findMany("groupMembership", {
+					where: { groupId, customerId },
+				})) as GroupMembership[];
+				for (const m of memberships) {
+					await data.delete("groupMembership", m.id);
+					removed++;
+				}
+			}
+			return removed;
+		},
+
 		async addRule(params) {
 			const id = crypto.randomUUID();
 			const now = new Date();

@@ -1,20 +1,15 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
+import { createStoreEndpoint } from "@86d-app/core";
 import type { CustomerGroupController } from "../../service";
 
 export const myGroups = createStoreEndpoint(
 	"/customer-groups/mine",
 	{
 		method: "GET",
-		query: z
-			.object({
-				customerId: z.string(),
-			})
-			.optional(),
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers
 			.customerGroups as CustomerGroupController;
-		const customerId = ctx.query?.customerId;
+		const customerId = ctx.context.session?.user?.id;
 
 		if (!customerId) {
 			return { groups: [] };

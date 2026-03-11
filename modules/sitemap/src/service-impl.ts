@@ -1,5 +1,10 @@
 import type { ModuleDataService } from "@86d-app/core";
-import type { SitemapConfig, SitemapController, SitemapEntry } from "./service";
+import {
+	MAX_ENTRIES_PER_SITEMAP,
+	type SitemapConfig,
+	type SitemapController,
+	type SitemapEntry,
+} from "./service";
 
 const CONFIG_ID = "default";
 
@@ -113,11 +118,63 @@ export function createSitemapController(
 			return entry;
 		},
 
+		async getEntry(id) {
+			const raw = await data.get("sitemapEntry", id);
+			if (!raw) return null;
+			return raw as unknown as SitemapEntry;
+		},
+
+		async getEntryByLoc(loc) {
+			const entries = (await data.findMany("sitemapEntry", {
+				where: { loc },
+			})) as unknown as SitemapEntry[];
+			return entries[0] ?? null;
+		},
+
+		async updateEntry(id, params) {
+			const existing = await data.get("sitemapEntry", id);
+			if (!existing) return null;
+
+			const entry = existing as unknown as SitemapEntry;
+			const config = await this.getConfig();
+			const baseUrl = config.baseUrl.replace(/\/$/, "");
+
+			const updated: SitemapEntry = {
+				...entry,
+				...(params.path != null && { loc: `${baseUrl}${params.path}` }),
+				...(params.changefreq != null && { changefreq: params.changefreq }),
+				...(params.priority != null && { priority: params.priority }),
+				...(params.lastmod != null && { lastmod: params.lastmod }),
+			};
+
+			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+			await data.upsert("sitemapEntry", id, updated as Record<string, any>);
+			return updated;
+		},
+
 		async removeEntry(id) {
 			const existing = await data.get("sitemapEntry", id);
 			if (!existing) return false;
 			await data.delete("sitemapEntry", id);
 			return true;
+		},
+
+		async bulkAddEntries(entries) {
+			const results: SitemapEntry[] = [];
+			for (const params of entries) {
+				const entry = await this.addEntry(params);
+				results.push(entry);
+			}
+			return results;
+		},
+
+		async bulkRemoveEntries(ids) {
+			let removed = 0;
+			for (const id of ids) {
+				const success = await this.removeEntry(id);
+				if (success) removed++;
+			}
+			return removed;
 		},
 
 		async listEntries(params) {
@@ -145,11 +202,19 @@ export function createSitemapController(
 			return results.length;
 		},
 
-		async generateXml() {
-			const entries = (await data.findMany(
+		async generateXml(page) {
+			const allEntries = (await data.findMany(
 				"sitemapEntry",
 				buildFindOptions({ orderBy: { loc: "asc" } }),
 			)) as unknown as SitemapEntry[];
+
+			let entries: SitemapEntry[];
+			if (page != null && allEntries.length > MAX_ENTRIES_PER_SITEMAP) {
+				const start = page * MAX_ENTRIES_PER_SITEMAP;
+				entries = allEntries.slice(start, start + MAX_ENTRIES_PER_SITEMAP);
+			} else {
+				entries = allEntries;
+			}
 
 			const lines: string[] = [
 				'<?xml version="1.0" encoding="UTF-8"?>',
@@ -168,6 +233,33 @@ export function createSitemapController(
 			}
 
 			lines.push("</urlset>");
+			return lines.join("\n");
+		},
+
+		async generateSitemapIndex() {
+			const totalEntries = await this.countEntries();
+			if (totalEntries <= MAX_ENTRIES_PER_SITEMAP) return null;
+
+			const config = await this.getConfig();
+			const baseUrl = config.baseUrl.replace(/\/$/, "");
+			const pageCount = Math.ceil(totalEntries / MAX_ENTRIES_PER_SITEMAP);
+			const now = formatDate(new Date());
+
+			const lines: string[] = [
+				'<?xml version="1.0" encoding="UTF-8"?>',
+				'<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+			];
+
+			for (let i = 0; i < pageCount; i++) {
+				lines.push("  <sitemap>");
+				lines.push(
+					`    <loc>${escapeXml(`${baseUrl}/sitemap-${i}.xml`)}</loc>`,
+				);
+				lines.push(`    <lastmod>${now}</lastmod>`);
+				lines.push("  </sitemap>");
+			}
+
+			lines.push("</sitemapindex>");
 			return lines.join("\n");
 		},
 

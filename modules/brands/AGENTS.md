@@ -21,6 +21,7 @@ src/
   admin/
     endpoints/      Protected
       list-brands.ts          GET  /admin/brands
+      get-brand.ts            GET  /admin/brands/:id — brand detail + productCount
       get-stats.ts            GET  /admin/brands/stats
       create-brand.ts         POST /admin/brands/create
       update-brand.ts         POST /admin/brands/:id/update
@@ -30,7 +31,7 @@ src/
       unassign-products.ts    POST /admin/brands/:id/products/unassign
     components/     Admin UI components (placeholder)
   __tests__/
-    service-impl.test.ts  54 tests covering all controller methods
+    service-impl.test.ts  65 tests covering all controller methods + edge cases + integration
 ```
 
 ## Options

@@ -11,6 +11,7 @@ export type {
 	SitemapEntry,
 	SitemapStats,
 } from "./service";
+export { MAX_ENTRIES_PER_SITEMAP } from "./service";
 
 export interface SitemapOptions extends ModuleConfig {
 	/** Base URL for the store. Default: https://example.com */

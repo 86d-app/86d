@@ -40,7 +40,7 @@ export interface SitemapEntry {
 	lastmod?: Date;
 	changefreq: ChangeFreq;
 	priority: number;
-	/** Source type: product, collection, page, blog, custom */
+	/** Source type: product, collection, page, blog, brand, static, custom */
 	source: string;
 	/** ID of source record (if applicable) */
 	sourceId?: string;
@@ -52,6 +52,9 @@ export interface SitemapStats {
 	entriesBySource: Record<string, number>;
 	lastGenerated?: Date;
 }
+
+/** Maximum URLs per sitemap file (per sitemaps.org spec: 50,000) */
+export const MAX_ENTRIES_PER_SITEMAP = 50_000;
 
 export interface SitemapController extends ModuleController {
 	getConfig(): Promise<SitemapConfig>;
@@ -87,9 +90,49 @@ export interface SitemapController extends ModuleController {
 	}): Promise<SitemapEntry>;
 
 	/**
+	 * Get a single entry by ID.
+	 */
+	getEntry(id: string): Promise<SitemapEntry | null>;
+
+	/**
+	 * Find an entry by its full URL (loc).
+	 */
+	getEntryByLoc(loc: string): Promise<SitemapEntry | null>;
+
+	/**
+	 * Update a custom sitemap entry.
+	 */
+	updateEntry(
+		id: string,
+		params: {
+			path?: string;
+			changefreq?: ChangeFreq;
+			priority?: number;
+			lastmod?: Date;
+		},
+	): Promise<SitemapEntry | null>;
+
+	/**
 	 * Remove a custom sitemap entry.
 	 */
 	removeEntry(id: string): Promise<boolean>;
+
+	/**
+	 * Add multiple custom entries at once. Returns created entries.
+	 */
+	bulkAddEntries(
+		entries: Array<{
+			path: string;
+			changefreq?: ChangeFreq;
+			priority?: number;
+			lastmod?: Date;
+		}>,
+	): Promise<SitemapEntry[]>;
+
+	/**
+	 * Remove multiple entries by IDs. Returns number removed.
+	 */
+	bulkRemoveEntries(ids: string[]): Promise<number>;
 
 	/**
 	 * List all entries (auto-generated + custom).
@@ -107,8 +150,16 @@ export interface SitemapController extends ModuleController {
 
 	/**
 	 * Generate the sitemap XML string from entries.
+	 * When the entry count exceeds MAX_ENTRIES_PER_SITEMAP, returns only
+	 * entries for the given page (0-indexed). Returns all entries otherwise.
 	 */
-	generateXml(): Promise<string>;
+	generateXml(page?: number): Promise<string>;
+
+	/**
+	 * Generate a sitemap index XML referencing sub-sitemaps.
+	 * Returns null if all entries fit in a single sitemap.
+	 */
+	generateSitemapIndex(): Promise<string | null>;
 
 	/**
 	 * Rebuild entries from configured sources.

@@ -126,6 +126,16 @@ export interface CustomerGroupController extends ModuleController {
 	/** Check if a customer belongs to a specific group */
 	isMember(groupId: string, customerId: string): Promise<boolean>;
 
+	/** Add multiple customers to a group at once. Returns count added. */
+	bulkAddMembers(
+		groupId: string,
+		customerIds: string[],
+		opts?: { expiresAt?: Date | undefined },
+	): Promise<number>;
+
+	/** Remove multiple customers from a group at once. Returns count removed. */
+	bulkRemoveMembers(groupId: string, customerIds: string[]): Promise<number>;
+
 	/** Add a segmentation rule to an automatic group */
 	addRule(params: {
 		groupId: string;

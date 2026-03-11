@@ -11,8 +11,9 @@ src/
   service.ts        CustomerGroupController interface + types
   service-impl.ts   Controller implementation
   store/endpoints/
-    my-groups.ts          GET  /customer-groups/mine
-    my-pricing.ts         GET  /customer-groups/pricing
+    my-groups.ts          GET  /customer-groups/mine (session-based auth)
+    my-pricing.ts         GET  /customer-groups/pricing (session-based auth)
+    check-membership.ts   GET  /customer-groups/check?groupSlug= (session-based auth)
   admin/endpoints/
     list-groups.ts        GET  /admin/customer-groups
     create-group.ts       POST /admin/customer-groups/create
@@ -29,6 +30,8 @@ src/
     list-pricing.ts       GET  /admin/customer-groups/:id/pricing/list
     remove-pricing.ts     POST /admin/customer-groups/pricing/:adjustmentId/remove
     stats.ts              GET  /admin/customer-groups/stats
+    bulk-add-members.ts   POST /admin/customer-groups/:id/members/bulk-add (max 500)
+    bulk-remove-members.ts POST /admin/customer-groups/:id/members/bulk-remove (max 500)
   admin/components/       Admin UI (placeholder)
 ```
 
@@ -59,3 +62,6 @@ CustomerGroupsOptions {
 - `deleteGroup` cascades: removes all memberships, rules, and price adjustments
 - Groups sorted by `priority` (ascending) in list queries
 - Duplicate membership prevention: adding same customer to same group throws
+- Store endpoints derive `customerId` from session — never from request params (security)
+- Bulk operations: `bulkAddMembers` skips existing members, `bulkRemoveMembers` counts actually removed
+- Bulk admin endpoints capped at 500 entries per request

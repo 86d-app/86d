@@ -12,7 +12,9 @@ src/
   service-impl.ts       Controller implementation (createSitemapController)
   store/endpoints/
     index.ts            Route map
-    get-sitemap.ts      GET /sitemap.xml — full XML output
+    get-sitemap.ts      GET /sitemap.xml — full XML output (paginated if >50K entries)
+    get-sitemap-index.ts GET /sitemap-index.xml — sitemap index for large sites
+                         GET /sitemap-page.xml?page=N — paginated sitemap pages
     get-stats.ts        GET /sitemap/stats — public entry count + last generated
   admin/endpoints/
     index.ts            Route map
@@ -22,12 +24,16 @@ src/
     list-entries.ts     GET /admin/sitemap/entries — paginated entry list
     add-entry.ts        POST /admin/sitemap/entries/add — custom entry
     remove-entry.ts     POST /admin/sitemap/entries/:id/remove
+    get-entry.ts        GET /admin/sitemap/entries/:id — single entry detail
+    update-entry.ts     POST /admin/sitemap/entries/:id/update — edit entry
+    bulk-add.ts         POST /admin/sitemap/entries/bulk-add — up to 500 entries
+    bulk-remove.ts      POST /admin/sitemap/entries/bulk-remove — up to 500 IDs
     get-stats.ts        GET /admin/sitemap/stats
     preview.ts          GET /admin/sitemap/preview — raw XML preview
   admin/components/
     index.tsx            SitemapAdmin — config, stats, entries table, regenerate
   __tests__/
-    service-impl.test.ts 41 tests covering all controller methods
+    service-impl.test.ts 130 tests covering all controller methods
 ```
 
 ## Data model
@@ -44,6 +50,9 @@ src/
 - **Exclusions**: `excludedPaths` checks both exact match and prefix match (`/path` and `/path/*`)
 - **XML generation**: Proper escaping of `&`, `<`, `>`, `"`, `'` in URLs
 - **Date formatting**: ISO 8601 date-only format (`YYYY-MM-DD`) for `lastmod`
+- **Pagination**: Sites with >50,000 URLs get a sitemap index with multiple sitemap pages (MAX_ENTRIES_PER_SITEMAP = 50,000)
+- **Sitemap index**: `/sitemap-index.xml` returns `<sitemapindex>` XML; redirects to `/api/sitemap.xml` if all entries fit in one page
+- **Bulk operations**: Admin bulk-add/bulk-remove capped at 500 entries per request
 
 ## Options
 

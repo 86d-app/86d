@@ -984,6 +984,147 @@ describe("Customer Groups Module", () => {
 		});
 	});
 
+	// ─── Bulk Operations ───
+
+	describe("bulkAddMembers", () => {
+		it("adds multiple members to a group", async () => {
+			const group = await controller.createGroup({
+				name: "Wholesale",
+				slug: "wholesale",
+			});
+			const added = await controller.bulkAddMembers(group.id, [
+				"cust-1",
+				"cust-2",
+				"cust-3",
+			]);
+			expect(added).toBe(3);
+
+			const members = await controller.listMembers(group.id);
+			expect(members).toHaveLength(3);
+		});
+
+		it("skips already existing members", async () => {
+			const group = await controller.createGroup({
+				name: "VIP",
+				slug: "vip",
+			});
+			await controller.addMember({
+				groupId: group.id,
+				customerId: "cust-1",
+			});
+
+			const added = await controller.bulkAddMembers(group.id, [
+				"cust-1",
+				"cust-2",
+			]);
+			expect(added).toBe(1); // only cust-2 was new
+
+			const members = await controller.listMembers(group.id);
+			expect(members).toHaveLength(2);
+		});
+
+		it("applies expiresAt to all new members", async () => {
+			const group = await controller.createGroup({
+				name: "Trial",
+				slug: "trial",
+			});
+			const expires = new Date(Date.now() + 86400000);
+			await controller.bulkAddMembers(group.id, ["cust-1", "cust-2"], {
+				expiresAt: expires,
+			});
+
+			const members = await controller.listMembers(group.id, {
+				includeExpired: true,
+			});
+			expect(members[0].expiresAt).toEqual(expires);
+			expect(members[1].expiresAt).toEqual(expires);
+		});
+
+		it("returns 0 for empty input", async () => {
+			const group = await controller.createGroup({
+				name: "Empty",
+				slug: "empty",
+			});
+			const added = await controller.bulkAddMembers(group.id, []);
+			expect(added).toBe(0);
+		});
+
+		it("returns 0 when all are duplicates", async () => {
+			const group = await controller.createGroup({
+				name: "VIP",
+				slug: "vip",
+			});
+			await controller.addMember({
+				groupId: group.id,
+				customerId: "cust-1",
+			});
+			await controller.addMember({
+				groupId: group.id,
+				customerId: "cust-2",
+			});
+
+			const added = await controller.bulkAddMembers(group.id, [
+				"cust-1",
+				"cust-2",
+			]);
+			expect(added).toBe(0);
+		});
+	});
+
+	describe("bulkRemoveMembers", () => {
+		it("removes multiple members from a group", async () => {
+			const group = await controller.createGroup({
+				name: "VIP",
+				slug: "vip",
+			});
+			await controller.bulkAddMembers(group.id, ["cust-1", "cust-2", "cust-3"]);
+
+			const removed = await controller.bulkRemoveMembers(group.id, [
+				"cust-1",
+				"cust-3",
+			]);
+			expect(removed).toBe(2);
+
+			const members = await controller.listMembers(group.id);
+			expect(members).toHaveLength(1);
+		});
+
+		it("returns 0 for non-existent members", async () => {
+			const group = await controller.createGroup({
+				name: "VIP",
+				slug: "vip",
+			});
+			const removed = await controller.bulkRemoveMembers(group.id, [
+				"nonexistent-1",
+				"nonexistent-2",
+			]);
+			expect(removed).toBe(0);
+		});
+
+		it("returns 0 for empty input", async () => {
+			const group = await controller.createGroup({
+				name: "Empty",
+				slug: "empty",
+			});
+			const removed = await controller.bulkRemoveMembers(group.id, []);
+			expect(removed).toBe(0);
+		});
+
+		it("handles mixed existing and non-existing members", async () => {
+			const group = await controller.createGroup({
+				name: "VIP",
+				slug: "vip",
+			});
+			await controller.bulkAddMembers(group.id, ["cust-1", "cust-2"]);
+
+			const removed = await controller.bulkRemoveMembers(group.id, [
+				"cust-1",
+				"nonexistent",
+			]);
+			expect(removed).toBe(1);
+		});
+	});
+
 	// ─── Stats ───
 
 	describe("getStats", () => {
