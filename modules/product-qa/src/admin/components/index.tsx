@@ -187,12 +187,92 @@ export function QaAnalytics() {
 	);
 }
 
+interface Answer {
+	id: string;
+	authorName?: string;
+	authorEmail?: string;
+	body: string;
+	isOfficial?: boolean;
+	upvoteCount?: number;
+	status: string;
+	createdAt: string;
+}
+
+interface QuestionWithAnswers {
+	id: string;
+	productId: string;
+	productName?: string;
+	authorName?: string;
+	authorEmail?: string;
+	body: string;
+	status: string;
+	upvoteCount?: number;
+	answerCount?: number;
+	createdAt: string;
+}
+
 export function QuestionDetail({
 	params,
 }: {
 	params?: Record<string, string>;
 }) {
 	const id = params?.id ?? "";
+	const client = useModuleClient();
+	const questionApi =
+		client.module("product-qa").admin["/admin/product-qa/questions/:id"];
+
+	const { data, isLoading } = questionApi.useQuery({ id }) as {
+		data: { question?: QuestionWithAnswers; answers?: Answer[] } | undefined;
+		isLoading: boolean;
+	};
+
+	const question = data?.question;
+	const answers = data?.answers ?? [];
+
+	if (isLoading) {
+		return (
+			<div>
+				<div className="mb-6">
+					<a
+						href="/admin/product-qa"
+						className="text-muted-foreground text-sm hover:text-foreground"
+					>
+						&larr; Back to Q&amp;A
+					</a>
+				</div>
+				<div className="space-y-4">
+					<div className="h-32 animate-pulse rounded-lg border border-border bg-muted/30" />
+					<div className="h-24 animate-pulse rounded-lg border border-border bg-muted/30" />
+				</div>
+			</div>
+		);
+	}
+
+	if (!question) {
+		return (
+			<div>
+				<div className="mb-6">
+					<a
+						href="/admin/product-qa"
+						className="text-muted-foreground text-sm hover:text-foreground"
+					>
+						&larr; Back to Q&amp;A
+					</a>
+				</div>
+				<div className="rounded-lg border border-border bg-card p-8 text-center">
+					<p className="text-muted-foreground text-sm">Question not found.</p>
+				</div>
+			</div>
+		);
+	}
+
+	const ANSWER_STATUS_COLORS: Record<string, string> = {
+		pending:
+			"bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
+		published:
+			"bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+		rejected: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+	};
 
 	return (
 		<div>
@@ -203,16 +283,148 @@ export function QuestionDetail({
 				>
 					&larr; Back to Q&amp;A
 				</a>
-				<h1 className="mt-2 font-bold text-2xl text-foreground">Question</h1>
-				<p className="mt-1 text-muted-foreground text-sm">
-					Question ID: {id || "Unknown"}
-				</p>
 			</div>
 
-			<div className="rounded-lg border border-border bg-card p-8 text-center">
-				<p className="text-muted-foreground text-sm">
-					Question detail view is under development.
-				</p>
+			<div className="grid gap-6 lg:grid-cols-3">
+				{/* Left column */}
+				<div className="space-y-6 lg:col-span-2">
+					{/* Question */}
+					<div className="rounded-lg border border-border bg-card p-5">
+						<div className="mb-3 flex items-start justify-between gap-3">
+							<h1 className="font-bold text-foreground text-lg">
+								{question.body}
+							</h1>
+							<span
+								className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 font-medium text-xs ${STATUS_COLORS[question.status] ?? "bg-muted text-muted-foreground"}`}
+							>
+								{question.status}
+							</span>
+						</div>
+						<div className="flex flex-wrap gap-4 text-muted-foreground text-sm">
+							<span>
+								Asked by{" "}
+								<span className="font-medium text-foreground">
+									{question.authorName ?? question.authorEmail ?? "Anonymous"}
+								</span>
+							</span>
+							{question.productName ? (
+								<span>on {question.productName}</span>
+							) : null}
+							<span>{new Date(question.createdAt).toLocaleDateString()}</span>
+							{question.upvoteCount ? (
+								<span>{question.upvoteCount} upvotes</span>
+							) : null}
+						</div>
+
+						{/* Action buttons */}
+						<div className="mt-4 flex gap-2 border-border border-t pt-4">
+							{question.status === "pending" ? (
+								<>
+									<button
+										type="button"
+										className="rounded-lg bg-green-600 px-3 py-1.5 font-medium text-sm text-white hover:bg-green-700"
+									>
+										Publish
+									</button>
+									<button
+										type="button"
+										className="rounded-lg border border-border bg-card px-3 py-1.5 font-medium text-red-600 text-sm hover:bg-muted"
+									>
+										Reject
+									</button>
+								</>
+							) : null}
+						</div>
+					</div>
+
+					{/* Answers */}
+					<div className="rounded-lg border border-border bg-card">
+						<div className="border-border border-b px-4 py-3">
+							<h2 className="font-semibold text-foreground text-sm">
+								Answers ({answers.length})
+							</h2>
+						</div>
+						{answers.length === 0 ? (
+							<div className="p-4 text-center text-muted-foreground text-sm">
+								No answers yet.
+							</div>
+						) : (
+							<div className="divide-y divide-border">
+								{answers.map((answer) => (
+									<div key={answer.id} className="p-4">
+										<div className="mb-2 flex items-center gap-2">
+											{answer.isOfficial ? (
+												<span className="inline-flex items-center rounded-full bg-blue-100 px-1.5 py-0.5 font-medium text-blue-800 text-xs dark:bg-blue-900/30 dark:text-blue-400">
+													Official
+												</span>
+											) : null}
+											<span
+												className={`inline-flex items-center rounded-full px-1.5 py-0.5 font-medium text-xs ${ANSWER_STATUS_COLORS[answer.status] ?? "bg-muted text-muted-foreground"}`}
+											>
+												{answer.status}
+											</span>
+											<span className="font-medium text-foreground text-sm">
+												{answer.authorName ?? "Anonymous"}
+											</span>
+											<span className="text-muted-foreground text-xs">
+												{new Date(answer.createdAt).toLocaleDateString()}
+											</span>
+										</div>
+										<p className="text-foreground text-sm">{answer.body}</p>
+										{answer.upvoteCount ? (
+											<p className="mt-1 text-muted-foreground text-xs">
+												{answer.upvoteCount} upvotes
+											</p>
+										) : null}
+									</div>
+								))}
+							</div>
+						)}
+					</div>
+				</div>
+
+				{/* Right column */}
+				<div>
+					<div className="rounded-lg border border-border bg-card p-4">
+						<h3 className="mb-3 font-semibold text-foreground text-sm">
+							Details
+						</h3>
+						<dl className="space-y-2 text-sm">
+							<div>
+								<dt className="text-muted-foreground">Status</dt>
+								<dd className="font-medium text-foreground capitalize">
+									{question.status}
+								</dd>
+							</div>
+							<div>
+								<dt className="text-muted-foreground">Answers</dt>
+								<dd className="font-medium text-foreground">
+									{question.answerCount ?? answers.length}
+								</dd>
+							</div>
+							<div>
+								<dt className="text-muted-foreground">Upvotes</dt>
+								<dd className="font-medium text-foreground">
+									{question.upvoteCount ?? 0}
+								</dd>
+							</div>
+							<div>
+								<dt className="text-muted-foreground">Asked</dt>
+								<dd className="font-medium text-foreground">
+									{new Date(question.createdAt).toLocaleDateString()}
+								</dd>
+							</div>
+							{question.productName ? (
+								<div>
+									<dt className="text-muted-foreground">Product</dt>
+									<dd className="font-medium text-foreground">
+										{question.productName}
+									</dd>
+								</div>
+							) : null}
+						</dl>
+					</div>
+				</div>
 			</div>
 		</div>
 	);
