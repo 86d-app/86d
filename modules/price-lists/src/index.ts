@@ -55,6 +55,14 @@ export default function priceLists(options?: PriceListsOptions): Module {
 					icon: "Tags",
 					group: "Catalog",
 				},
+				{
+					path: "/admin/price-lists/create",
+					component: "PriceListCreate",
+				},
+				{
+					path: "/admin/price-lists/:id",
+					component: "PriceListDetail",
+				},
 			],
 		},
 		options,

@@ -146,6 +146,14 @@ interface PriceListStats {
 }
 ```
 
+## Admin Pages
+
+| Page | Path | Description |
+|------|------|-------------|
+| Price Lists | `/admin/price-lists` | Dashboard with stats (active, scheduled, entries) and filterable list |
+| Create | `/admin/price-lists/create` | Form with currency, priority, status, schedule dates, and customer group |
+| Detail | `/admin/price-lists/:id` | View entries table with pricing, compare-at, qty ranges; add/remove entries inline; activate/deactivate/delete |
+
 ## Notes
 
 - **Priority-based resolution**: Lower priority number = higher priority. The first matching price list wins.

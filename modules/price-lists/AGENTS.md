@@ -25,6 +25,8 @@ src/
     remove-entry.ts       DELETE /admin/price-lists/:id/entries/:productId/remove
     bulk-set-entries.ts   POST   /admin/price-lists/:id/entries/bulk
     get-stats.ts          GET    /admin/price-lists/stats
+  admin/components/
+    index.tsx             PriceListAdmin, PriceListCreate, PriceListDetail
 ```
 
 ## Options
@@ -39,6 +41,14 @@ PriceListsOptions {
 
 - **priceList**: id, name, slug (unique), description?, currency?, priority, status (active|inactive|scheduled), startsAt?, endsAt?, customerGroupId?, createdAt, updatedAt
 - **priceEntry**: id, priceListId (indexed), productId (indexed), price, compareAtPrice?, minQuantity?, maxQuantity?, createdAt
+
+## Admin components
+
+| Component | Path | Description |
+|-----------|------|-------------|
+| `PriceListAdmin` | `/admin/price-lists` | Stats dashboard + filterable table (status, priority, currency, schedule) |
+| `PriceListCreate` | `/admin/price-lists/create` | Create form with settings (currency, priority, status, schedule, customer group) |
+| `PriceListDetail` | `/admin/price-lists/:id` | Detail view with entry table, add entry form, activate/deactivate, delete |
 
 ## Patterns
 
