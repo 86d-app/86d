@@ -12,7 +12,6 @@ export const submitAnswer = createStoreEndpoint(
 			authorName: z.string().max(200).transform(sanitizeText),
 			authorEmail: z.string().email(),
 			body: z.string().max(5000).transform(sanitizeText),
-			customerId: z.string().optional(),
 		}),
 	},
 	async (ctx) => {
@@ -24,13 +23,14 @@ export const submitAnswer = createStoreEndpoint(
 			return { error: "Question not found" };
 		}
 
+		const customerId = ctx.context.session?.user.id;
 		const answer = await controller.createAnswer({
 			questionId: ctx.params.questionId,
 			productId: question.productId,
 			authorName: ctx.body.authorName,
 			authorEmail: ctx.body.authorEmail,
 			body: ctx.body.body,
-			customerId: ctx.body.customerId,
+			customerId,
 		});
 		return { answer };
 	},

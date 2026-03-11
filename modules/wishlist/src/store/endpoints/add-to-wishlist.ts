@@ -6,7 +6,6 @@ export const addToWishlist = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			customerId: z.string(),
 			productId: z.string(),
 			productName: z.string().max(500).transform(sanitizeText),
 			productImage: z.string().max(2000).optional(),
@@ -14,9 +13,13 @@ export const addToWishlist = createStoreEndpoint(
 		}),
 	},
 	async (ctx) => {
+		const customerId = ctx.context.session?.user.id;
+		if (!customerId) {
+			return { error: "Unauthorized", status: 401 };
+		}
 		const controller = ctx.context.controllers.wishlist as WishlistController;
 		const item = await controller.addItem({
-			customerId: ctx.body.customerId,
+			customerId,
 			productId: ctx.body.productId,
 			productName: ctx.body.productName,
 			productImage: ctx.body.productImage,

@@ -26,7 +26,7 @@ export function WishlistPage({
 	const [error, setError] = useState("");
 
 	const { data, isLoading: loading } = customerId
-		? (api.listWishlist.useQuery({ customerId }) as {
+		? (api.listWishlist.useQuery({}) as {
 				data: { items: WishlistItem[]; total: number } | undefined;
 				isLoading: boolean;
 			})

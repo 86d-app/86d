@@ -23,7 +23,6 @@ export function WishlistButton({
 	const { data: checkData, isLoading: checking } = customerId
 		? (api.checkWishlist.useQuery({
 				params: { productId },
-				customerId,
 			}) as {
 				data: { inWishlist: boolean } | undefined;
 				isLoading: boolean;
@@ -47,7 +46,6 @@ export function WishlistButton({
 		setError("");
 		if (inWishlist) return;
 		addMutation.mutate({
-			customerId,
 			productId,
 			productName,
 			productImage,

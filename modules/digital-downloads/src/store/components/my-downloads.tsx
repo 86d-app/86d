@@ -18,17 +18,13 @@ interface DownloadToken {
 }
 
 export function MyDownloads({
-	email,
 	title = "My Downloads",
 }: {
-	email: string;
 	title?: string | undefined;
 }) {
 	const api = useDownloadsApi();
 
-	const { data, isLoading, isError } = api.listMyDownloads.useQuery({
-		email,
-	}) as {
+	const { data, isLoading, isError } = api.listMyDownloads.useQuery({}) as {
 		data: { tokens: DownloadToken[] } | undefined;
 		isLoading: boolean;
 		isError: boolean;

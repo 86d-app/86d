@@ -10,7 +10,10 @@ export const subscribeEndpoint = createStoreEndpoint(
 			firstName: z.string().max(200).transform(sanitizeText).optional(),
 			lastName: z.string().max(200).transform(sanitizeText).optional(),
 			source: z.string().max(200).transform(sanitizeText).optional(),
-			tags: z.array(z.string()).optional(),
+			tags: z
+				.array(z.string().max(100).transform(sanitizeText))
+				.max(50)
+				.optional(),
 		}),
 	},
 	async (ctx) => {

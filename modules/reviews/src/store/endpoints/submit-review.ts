@@ -12,12 +12,11 @@ export const submitReview = createStoreEndpoint(
 			rating: z.number().int().min(1).max(5),
 			title: z.string().max(500).transform(sanitizeText).optional(),
 			body: z.string().max(10000).transform(sanitizeText),
-			customerId: z.string().optional(),
-			isVerifiedPurchase: z.boolean().optional(),
 		}),
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers.reviews as ReviewController;
+		const customerId = ctx.context.session?.user.id;
 		const review = await controller.createReview({
 			productId: ctx.body.productId,
 			authorName: ctx.body.authorName,
@@ -25,8 +24,8 @@ export const submitReview = createStoreEndpoint(
 			rating: ctx.body.rating,
 			title: ctx.body.title,
 			body: ctx.body.body,
-			customerId: ctx.body.customerId,
-			isVerifiedPurchase: ctx.body.isVerifiedPurchase,
+			customerId,
+			isVerifiedPurchase: false,
 		});
 		return { review };
 	},

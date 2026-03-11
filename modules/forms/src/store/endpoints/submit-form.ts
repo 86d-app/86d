@@ -15,7 +15,7 @@ export const submitForm = createStoreEndpoint(
 					message: "Form must have at most 100 fields",
 				}),
 			/** Honeypot field — if filled, the submission is silently discarded */
-			_hp: z.string().optional(),
+			_hp: z.string().max(1000).optional(),
 		}),
 	},
 	async (ctx) => {

@@ -12,7 +12,13 @@ export const createIntent = createStoreEndpoint(
 			orderId: z.string().optional(),
 			checkoutSessionId: z.string().optional(),
 			metadata: z
-				.record(z.string().max(100), z.unknown())
+				.record(
+					z
+						.string()
+						.max(100)
+						.regex(/^[\w.-]+$/),
+					z.unknown(),
+				)
 				.refine((obj) => Object.keys(obj).length <= 20, {
 					message: "Metadata must have at most 20 keys",
 				})

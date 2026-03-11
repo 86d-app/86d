@@ -36,6 +36,12 @@ Handles product reviews and ratings. Reviews start as `pending` and require admi
 |-----|------|-------------|
 | `autoApprove` | `"true" \| "false"` | Skip moderation queue |
 
+## Security
+
+- `POST /reviews` does NOT accept `customerId` or `isVerifiedPurchase` from the client
+- `customerId` is derived from `ctx.context.session.user.id` (undefined for guest reviews)
+- `isVerifiedPurchase` is always set to `false` — only admin can mark reviews as verified
+
 ## Tests
 
 28 tests in `tests/service-impl.test.ts` covering all controller methods.

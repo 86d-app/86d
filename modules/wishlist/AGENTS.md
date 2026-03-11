@@ -42,6 +42,12 @@ WishlistOptions {
 
 - Emits: `wishlist.itemAdded`, `wishlist.itemRemoved`
 
+## Security
+
+- All store endpoints derive `customerId` from `ctx.context.session.user.id` — never from request body/query
+- Unauthenticated users get `401` on add/remove/list, or `{ inWishlist: false }` on check
+- Remove endpoint verifies item ownership (`item.customerId === session.user.id`) before deletion
+
 ## Patterns
 
 - Registers `search: { store: "/wishlist/store-search" }` for search module integration

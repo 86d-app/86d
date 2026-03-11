@@ -6,14 +6,15 @@ export const checkWishlist = createStoreEndpoint(
 	{
 		method: "GET",
 		params: z.object({ productId: z.string() }),
-		query: z.object({
-			customerId: z.string(),
-		}),
 	},
 	async (ctx) => {
+		const customerId = ctx.context.session?.user.id;
+		if (!customerId) {
+			return { inWishlist: false };
+		}
 		const controller = ctx.context.controllers.wishlist as WishlistController;
 		const inWishlist = await controller.isInWishlist(
-			ctx.query.customerId,
+			customerId,
 			ctx.params.productId,
 		);
 		return { inWishlist };

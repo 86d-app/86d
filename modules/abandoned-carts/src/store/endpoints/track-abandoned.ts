@@ -17,7 +17,6 @@ export const trackAbandoned = createStoreEndpoint(
 		method: "POST",
 		body: z.object({
 			cartId: z.string().min(1).max(200),
-			customerId: z.string().optional(),
 			email: z.string().email().max(320).optional(),
 			items: z.array(cartItemSchema).min(1).max(100),
 			cartTotal: z.number().min(0),
@@ -35,9 +34,10 @@ export const trackAbandoned = createStoreEndpoint(
 			return { tracked: true, id: existing.id };
 		}
 
+		const customerId = ctx.context.session?.user.id;
 		const cart = await controller.create({
 			cartId: ctx.body.cartId,
-			customerId: ctx.body.customerId,
+			customerId,
 			email: ctx.body.email,
 			items: ctx.body.items as CartItemSnapshot[],
 			cartTotal: ctx.body.cartTotal,

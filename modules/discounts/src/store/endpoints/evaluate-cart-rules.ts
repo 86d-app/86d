@@ -8,8 +8,8 @@ export const evaluateCartRules = createStoreEndpoint(
 		body: z.object({
 			subtotal: z.number().int().nonnegative(),
 			itemCount: z.number().int().nonnegative(),
-			productIds: z.array(z.string()).optional(),
-			categoryIds: z.array(z.string()).optional(),
+			productIds: z.array(z.string().max(100)).max(1000).optional(),
+			categoryIds: z.array(z.string().max(100)).max(1000).optional(),
 		}),
 	},
 	async (ctx) => {

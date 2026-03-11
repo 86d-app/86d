@@ -91,6 +91,9 @@ Components follow a two-file pattern: `.tsx` (logic) + `.mdx` (presentation). Nu
 - **Rate limiting** is enforced at the API route handler: 120 req/min for public, 300 req/min for admin, stricter limits on sensitive endpoints.
 - **Rich HTML fields** (page content, blog posts) use `sanitizeHtml()` instead of `sanitizeText()` to preserve safe markup.
 - **Return errors, don't throw**: store endpoints should `return { error: "...", status: 404 }` not `throw new Error("...")` to prevent stack trace leakage.
+- **Never trust client-provided identity**: store endpoints must derive `customerId` from `ctx.context.session.user.id`, not from request body/query. Same for email (`session.user.email`). Never accept `isVerifiedPurchase` or similar trust-elevation flags from clients.
+- **Ownership verification on mutations**: before updating or deleting user-scoped resources, verify `resource.customerId === session.user.id`. Return 404 (not 403) to avoid leaking resource existence.
+- **Bound array lengths**: always add `.max()` to arrays accepting user input (e.g., tags, product IDs) to prevent DoS via oversized payloads.
 
 ## Detailed docs
 
