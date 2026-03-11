@@ -2,7 +2,13 @@
 	"name": "@86d-app/backorders",
 	"version": "0.0.1",
 	"description": "Backorder management module for 86d commerce platform",
-	"keywords": ["commerce", "backorders", "out-of-stock", "inventory", "86d"],
+	"keywords": [
+		"commerce",
+		"backorders",
+		"out-of-stock",
+		"inventory",
+		"86d"
+	],
 	"license": "MIT",
 	"author": "86d <chat@86d.app>",
 	"repository": {

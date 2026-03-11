@@ -2,7 +2,13 @@
 	"name": "@86d-app/warranties",
 	"version": "0.0.1",
 	"description": "Product warranty plans, registrations, and claims for 86d commerce platform",
-	"keywords": ["commerce", "warranties", "warranty", "claims", "86d"],
+	"keywords": [
+		"commerce",
+		"warranties",
+		"warranty",
+		"claims",
+		"86d"
+	],
 	"license": "MIT",
 	"author": "86d <chat@86d.app>",
 	"repository": {

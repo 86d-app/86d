@@ -2,7 +2,12 @@
 	"name": "@86d-app/auctions",
 	"version": "0.0.1",
 	"description": "Time-limited product auctions with bidding, reserve prices, and buy-it-now for 86d commerce platform",
-	"keywords": ["commerce", "auctions", "bidding", "86d"],
+	"keywords": [
+		"commerce",
+		"auctions",
+		"bidding",
+		"86d"
+	],
 	"license": "MIT",
 	"author": "86d <chat@86d.app>",
 	"repository": {

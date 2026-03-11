@@ -2,7 +2,13 @@
 	"name": "@86d-app/preorders",
 	"version": "0.0.1",
 	"description": "Preorder campaign management module for 86d commerce platform",
-	"keywords": ["commerce", "preorders", "pre-order", "product-launch", "86d"],
+	"keywords": [
+		"commerce",
+		"preorders",
+		"pre-order",
+		"product-launch",
+		"86d"
+	],
 	"license": "MIT",
 	"author": "86d <chat@86d.app>",
 	"repository": {
