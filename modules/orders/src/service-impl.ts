@@ -834,6 +834,13 @@ export function createOrderController(
 					await data.delete("returnRequest", r.id);
 				}
 
+				const notes = (await data.findMany("orderNote", {
+					where: { orderId: id },
+				})) as OrderNote[];
+				for (const note of notes) {
+					await data.delete("orderNote", note.id);
+				}
+
 				await data.delete("order", id);
 				deleted++;
 			}

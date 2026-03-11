@@ -1,56 +1,73 @@
 # Inventory Module
 
-Stock tracking for products and variants. Manages on-hand quantity, reservations, backorder support, and low-stock alerts. Standalone — integrates with products conceptually but has no direct module imports.
+Stock tracking for products across variants and locations. Supports reservations, deductions, low-stock alerts, back-in-stock subscriptions, and backorder control.
 
 ## Structure
 
 ```
 src/
   index.ts          Factory: inventory(options?) => Module
-  schema.ts         Model: inventoryItem
+  schema.ts         Zod models: inventoryItem, backInStockSubscription
   service.ts        InventoryController interface + types
-  service-impl.ts   InventoryController implementation
-  endpoints/
-    store/          Customer-facing
-      check-stock.ts        GET  /inventory/check?productId&variantId&locationId&quantity
-    admin/          Protected (store admin only)
-      list-items.ts         GET  /admin/inventory
-      set-stock.ts          POST /admin/inventory/set
-      adjust-stock.ts       POST /admin/inventory/adjust
-      low-stock.ts          GET  /admin/inventory/low-stock
+  service-impl.ts   InventoryController implementation (17 methods)
+  store/
+    endpoints/      Customer-facing
+      check-stock.ts              GET  /inventory/check
+      back-in-stock-subscribe.ts  POST /inventory/back-in-stock/subscribe
+      back-in-stock-unsubscribe.ts POST /inventory/back-in-stock/unsubscribe
+      back-in-stock-check.ts      GET  /inventory/back-in-stock/check
+    components/     StockStatus, StockAvailability, BackInStockForm
+  admin/
+    endpoints/      Protected
+      list-items.ts               GET    /admin/inventory
+      set-stock.ts                POST   /admin/inventory/set
+      adjust-stock.ts             POST   /admin/inventory/adjust
+      low-stock.ts                GET    /admin/inventory/low-stock
+      back-in-stock-list.ts       GET    /admin/inventory/back-in-stock
+      back-in-stock-stats.ts      GET    /admin/inventory/back-in-stock/stats
+      back-in-stock-delete.ts     DELETE /admin/inventory/back-in-stock/:id
+    components/     InventoryList, BackInStockAdmin
   __tests__/
-    service-impl.test.ts    27 tests
+    service-impl.test.ts          86 tests (core logic, events, subscriptions)
+    controllers.test.ts           38 tests (edge cases, isolation, lifecycle)
 ```
 
-## Data model
+## Options
 
-- **inventoryItem**: id (composite key), productId, variantId?, locationId?, quantity, reserved, available (computed), lowStockThreshold?, allowBackorder, createdAt, updatedAt
+```ts
+InventoryOptions {
+  defaultLowStockThreshold?: number
+}
+```
+
+## Data models
+
+- **inventoryItem**: id (composite: productId:variantId:locationId), productId, variantId?, locationId?, quantity, reserved, available (computed: max(0, quantity - reserved)), lowStockThreshold?, allowBackorder, createdAt, updatedAt
+- **backInStockSubscription**: id (composite: productId:variantId:email), productId, variantId?, email (lowercase), customerId?, productName?, status (active|notified), subscribedAt, notifiedAt?
 
 ## Composite key
 
-Items are identified by a composite key: `productId:variantId:locationId`, using `_` as a placeholder for missing segments.
+Items identified by `productId:variantId:locationId` (uses `_` as placeholder). E.g. `prod_1:_:_`, `prod_1:var_1:loc_1`.
 
-Examples:
-- `prod_1:_:_` — product-level, no variant, no location
-- `prod_1:var_1:_` — specific variant
-- `prod_1:_:loc_1` — product at a specific location
+## Key patterns
+
+- `available` is computed, never stored: `Math.max(0, quantity - reserved)`
+- `setStock` preserves existing `reserved` count (upsert, not overwrite)
+- `reserve` returns null if available < requested AND allowBackorder is false
+- `deduct` decrements both quantity and reserved (used at fulfillment)
+- `release` floors reserved at zero (safe over-release)
+- Untracked products (`getStock` returns null) are treated as always in stock
+- Subscriptions are idempotent: same productId+variantId+email returns existing active sub
+- Email is normalized to lowercase for subscription IDs
+- `exactOptionalPropertyTypes` compatible: all optional params use `T | undefined`
+- `findMany` uses spread pattern for optional take/skip
+
+## Events emitted
+
+- `inventory.updated` — on any stock mutation (set, adjust, reserve, release, deduct)
+- `inventory.low` — when available ≤ lowStockThreshold (only if threshold is set)
+- `inventory.back-in-stock` — when stock transitions from 0 to >0; includes subscriber list; auto-marks as notified
 
 ## Exports (for inter-module contracts)
 
-Types exported: `InventoryItem`, `InventoryController`
-
-## Patterns
-
-- `available` is computed: `Math.max(0, quantity - reserved)` — never negative
-- `isInStock` returns `true` if no tracking record exists (unmanaged product = always in stock)
-- `setStock` preserves existing `reserved` when updating quantity
-- `reserve` returns `null` if available < requested quantity AND `allowBackorder` is false
-- `deduct` decrements both `quantity` and `reserved` (called at fulfillment/shipment)
-- `adjustStock` applies a signed delta (positive = restock, negative = shrinkage); returns `null` if item not found
-- `getLowStockItems` returns items where `available <= lowStockThreshold` (only items WITH a threshold set)
-- `exactOptionalPropertyTypes` compatible: all optional params use `T | undefined`
-- `findMany` uses spread pattern for optional take/skip to satisfy exactOptionalPropertyTypes:
-  ```ts
-  ...(params?.take !== undefined ? { take: params.take } : {}),
-  ...(params?.skip !== undefined ? { skip: params.skip } : {}),
-  ```
+read: `stockQuantity`, `stockAvailability`; readWrite: `stockReservation`

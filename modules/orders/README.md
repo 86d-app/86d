@@ -19,7 +19,7 @@
 
 # Orders Module
 
-Order lifecycle management. Handles order creation, status transitions, and customer/admin access to order history. Designed to be called by the checkout module on order confirmation.
+Full order lifecycle management. Handles order creation, status transitions, fulfillment tracking, returns, invoices, notes, bulk operations, guest tracking, and reordering.
 
 ## Installation
 
@@ -51,16 +51,38 @@ All store endpoints require an authenticated session.
 |---|---|---|
 | `GET` | `/orders/me` | List all orders for the authenticated customer |
 | `GET` | `/orders/me/:id` | Get a specific order (with items and addresses) |
-| `POST` | `/orders/me/:id/cancel` | Request cancellation of a pending/processing order |
+| `POST` | `/orders/me/:id/cancel` | Cancel a pending/processing/on_hold order |
+| `GET` | `/orders/me/:id/fulfillments` | List fulfillments with overall status |
+| `GET` | `/orders/me/:id/invoice` | Get invoice data for an order |
+| `GET` | `/orders/me/:id/returns` | List return requests for an order |
+| `POST` | `/orders/me/:id/returns/create` | Submit a return request |
+| `GET` | `/orders/me/returns` | List all returns across orders |
+| `POST` | `/orders/me/:id/reorder` | Get cart-ready items from a previous order |
+| `POST` | `/orders/track` | Guest order tracking (order number + email) |
+| `GET` | `/orders/store-search` | Store search integration |
 
 ## Admin Endpoints
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/admin/orders` | List all orders (filterable by status, payment status) |
-| `GET` | `/admin/orders/:id` | Get a full order with items and addresses |
-| `PUT` | `/admin/orders/:id/update` | Update order notes or metadata |
-| `DELETE` | `/admin/orders/:id/delete` | Hard-delete an order |
+| `GET` | `/admin/orders` | List orders (filterable by status, payment, search) |
+| `GET` | `/admin/orders/:id` | Get full order with items and addresses |
+| `PUT` | `/admin/orders/:id` | Update status, payment, notes, metadata |
+| `DELETE` | `/admin/orders/:id` | Hard-delete an order |
+| `GET` | `/admin/orders/export` | Export orders with details (date range support) |
+| `POST` | `/admin/orders/bulk` | Bulk update status, payment, or delete |
+| `GET` | `/admin/orders/:id/fulfillments` | List fulfillments for an order |
+| `POST` | `/admin/orders/:id/fulfillments/create` | Create a fulfillment with items |
+| `PUT` | `/admin/fulfillments/:id/update` | Update fulfillment tracking/status |
+| `DELETE` | `/admin/fulfillments/:id/delete` | Delete a fulfillment |
+| `GET` | `/admin/orders/:id/notes` | List notes for an order |
+| `POST` | `/admin/orders/:id/notes/add` | Add a note to an order |
+| `POST` | `/admin/orders/notes/:id/delete` | Delete a note |
+| `GET` | `/admin/returns` | List all returns (filterable by status) |
+| `GET` | `/admin/returns/:id` | Get return with items and order context |
+| `PUT` | `/admin/returns/:id/update` | Update return status, notes, refund |
+| `DELETE` | `/admin/returns/:id/delete` | Delete a return request |
+| `GET` | `/admin/orders/:id/returns` | List returns for a specific order |
 
 ## Status Flows
 
@@ -73,233 +95,135 @@ Order status:
 Payment status:
   unpaid → paid → partially_paid → refunded
                 ↘ voided
+
+Return status:
+  requested → approved → shipped_back → received → refunded → completed
+            → rejected
+
+Fulfillment status:
+  unfulfilled | partially_fulfilled | fulfilled
 ```
 
-Orders can only be cancelled when their status is `pending`, `processing`, or `on_hold`. Attempting to cancel a `completed`, `cancelled`, or `refunded` order returns `null`.
+Orders can only be cancelled when status is `pending`, `processing`, or `on_hold`.
+
+## Events
+
+| Event | Trigger |
+|---|---|
+| `order.placed` | Order created |
+| `order.updated` | Order metadata changed |
+| `order.fulfilled` | Order completed |
+| `order.cancelled` | Order cancelled |
+| `order.shipped` | Fulfillment shipped with tracking |
+| `shipment.delivered` | Fulfillment delivered |
+| `return.requested` | Return created |
+| `return.approved` | Return approved |
+| `return.rejected` | Return rejected |
+| `return.refunded` | Return refunded |
+| `return.completed` | Return completed |
 
 ## Controller API
 
 ```ts
 interface OrderController {
-  /** Create a new order with line items and optional addresses */
+  // Order CRUD
   create(params: CreateOrderParams): Promise<Order>;
-
-  /** Get a full order by ID (includes items and addresses) */
   getById(id: string): Promise<OrderWithDetails | null>;
-
-  /** Get a full order by its human-readable order number */
   getByOrderNumber(orderNumber: string): Promise<OrderWithDetails | null>;
-
-  /** List orders for a specific customer */
-  listForCustomer(
-    customerId: string,
-    params?: { limit?: number; offset?: number },
-  ): Promise<{ orders: Order[]; total: number }>;
-
-  /** List all orders (admin) with optional filters */
-  list(params: {
-    limit?: number;
-    offset?: number;
-    search?: string;
-    status?: OrderStatus;
-    paymentStatus?: PaymentStatus;
-  }): Promise<{ orders: Order[]; total: number }>;
-
-  /** Transition the fulfillment status of an order */
+  listForCustomer(customerId: string, params?): Promise<{ orders; total }>;
+  list(params): Promise<{ orders; total }>;
+  listForExport(params): Promise<{ orders: OrderWithDetails[]; total }>;
   updateStatus(id: string, status: OrderStatus): Promise<Order | null>;
-
-  /** Transition the payment status of an order */
-  updatePaymentStatus(
-    id: string,
-    paymentStatus: PaymentStatus,
-  ): Promise<Order | null>;
-
-  /** Update free-form notes or metadata on an order */
-  update(
-    id: string,
-    params: {
-      notes?: string;
-      metadata?: Record<string, unknown>;
-    },
-  ): Promise<Order | null>;
-
-  /**
-   * Cancel an order. Returns null if the order is not cancellable
-   * (i.e. already completed, cancelled, or refunded).
-   */
+  updatePaymentStatus(id, paymentStatus): Promise<Order | null>;
+  update(id, { notes?, metadata? }): Promise<Order | null>;
   cancel(id: string): Promise<Order | null>;
-
-  /** Hard-delete an order (admin only) */
   delete(id: string): Promise<void>;
-
-  /** Get the line items for an order */
   getItems(orderId: string): Promise<OrderItem[]>;
-
-  /** Get the billing and shipping addresses for an order */
   getAddresses(orderId: string): Promise<OrderAddress[]>;
+
+  // Fulfillments
+  createFulfillment(params): Promise<Fulfillment>;
+  getFulfillment(id: string): Promise<FulfillmentWithItems | null>;
+  listFulfillments(orderId: string): Promise<FulfillmentWithItems[]>;
+  updateFulfillment(id, params): Promise<Fulfillment | null>;
+  deleteFulfillment(id: string): Promise<void>;
+  getOrderFulfillmentStatus(orderId): Promise<OrderFulfillmentStatus>;
+
+  // Returns
+  createReturn(params): Promise<ReturnRequest>;
+  getReturn(id: string): Promise<ReturnRequestWithItems | null>;
+  listReturns(orderId: string): Promise<ReturnRequestWithItems[]>;
+  listAllReturns(params): Promise<{ returns; total }>;
+  updateReturn(id, params): Promise<ReturnRequest | null>;
+  deleteReturn(id: string): Promise<void>;
+  listReturnsForCustomer(customerId, params?): Promise<{ returns; total }>;
+
+  // Bulk Operations
+  bulkUpdateStatus(ids, status): Promise<{ updated: number }>;
+  bulkUpdatePaymentStatus(ids, paymentStatus): Promise<{ updated: number }>;
+  bulkDelete(ids): Promise<{ deleted: number }>;
+
+  // Notes
+  addNote(params): Promise<OrderNote>;
+  listNotes(orderId: string): Promise<OrderNote[]>;
+  deleteNote(id: string): Promise<void>;
+
+  // Invoice, Tracking, Reorder
+  getInvoiceData(orderId, storeName): Promise<InvoiceData | null>;
+  getByTracking(orderNumber, email): Promise<OrderWithDetails | null>;
+  getReorderItems(orderId): Promise<ReorderItem[] | null>;
 }
 ```
 
 ## Types
 
 ```ts
-type OrderStatus =
-  | "pending"
-  | "processing"
-  | "on_hold"
-  | "completed"
-  | "cancelled"
-  | "refunded";
-
-type PaymentStatus =
-  | "unpaid"
-  | "paid"
-  | "partially_paid"
-  | "refunded"
-  | "voided";
-
-interface Order {
-  id: string;
-  /** Auto-generated: "ORD-{base36timestamp}-{random}" */
-  orderNumber: string;
-  customerId?: string;
-  guestEmail?: string;
-  status: OrderStatus;
-  paymentStatus: PaymentStatus;
-  subtotal: number;            // in cents
-  taxAmount: number;
-  shippingAmount: number;
-  discountAmount: number;
-  total: number;
-  currency: string;
-  notes?: string;
-  metadata?: Record<string, unknown>;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-interface OrderItem {
-  id: string;
-  orderId: string;
-  productId: string;
-  variantId?: string;
-  name: string;                // snapshot at time of purchase
-  sku?: string;
-  price: number;               // snapshot in cents
-  quantity: number;
-  subtotal: number;
-  metadata?: Record<string, unknown>;
-}
-
-interface OrderAddress {
-  id: string;
-  orderId: string;
-  type: "billing" | "shipping";
-  firstName: string;
-  lastName: string;
-  company?: string;
-  line1: string;
-  line2?: string;
-  city: string;
-  state: string;
-  postalCode: string;
-  country: string;
-  phone?: string;
-}
-
-interface OrderWithDetails extends Order {
-  items: OrderItem[];
-  addresses: OrderAddress[];
-}
-
-interface CreateOrderParams {
-  id?: string;
-  customerId?: string;
-  guestEmail?: string;
-  currency?: string;
-  subtotal: number;
-  taxAmount?: number;
-  shippingAmount?: number;
-  discountAmount?: number;
-  total: number;
-  notes?: string;
-  metadata?: Record<string, unknown>;
-  items: Array<{
-    productId: string;
-    variantId?: string;
-    name: string;
-    sku?: string;
-    price: number;
-    quantity: number;
-  }>;
-  billingAddress?: Omit<OrderAddress, "id" | "orderId" | "type">;
-  shippingAddress?: Omit<OrderAddress, "id" | "orderId" | "type">;
-}
+type OrderStatus = "pending" | "processing" | "on_hold" | "completed" | "cancelled" | "refunded";
+type PaymentStatus = "unpaid" | "paid" | "partially_paid" | "refunded" | "voided";
+type ReturnStatus = "requested" | "approved" | "rejected" | "shipped_back" | "received" | "refunded" | "completed";
+type ReturnType = "refund" | "exchange" | "store_credit";
+type OrderFulfillmentStatus = "unfulfilled" | "partially_fulfilled" | "fulfilled";
 ```
 
 ## Store Components
 
 ### OrderHistory
 
-Paginated list of a customer's orders. Fetches its own data. Requires authentication — shows sign-in prompt for unauthenticated users.
-
-#### Props
+Paginated list of a customer's orders. Requires authentication.
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `onSelectOrder` | `(id: string) => void` | — | Callback when an order is clicked. If omitted, navigates via URL query param |
+| `onSelectOrder` | `(id: string) => void` | — | Callback when an order is clicked |
 | `pageSize` | `number` | `10` | Orders per page |
-
-#### Usage in MDX
-
-```mdx
-<OrderHistory />
-
-<OrderHistory pageSize={5} onSelectOrder={handleSelect} />
-```
-
-Typically placed on a customer account page (e.g. `templates/brisa/account/orders.mdx`).
 
 ### OrderDetail
 
-Full order detail view with items, totals, fulfillment tracking, shipping/billing addresses, order notes, and cancel button. Fetches its own data.
-
-#### Props
+Full order view with items, totals, fulfillment, addresses, and cancel button.
 
 | Prop | Type | Description |
 |------|------|-------------|
 | `orderId` | `string` | Order ID to display |
-| `onBack` | `() => void` | Callback for back navigation. If omitted, navigates via URL |
-
-#### Usage in MDX
-
-```mdx
-<OrderDetail orderId={selectedOrderId} onBack={handleBack} />
-```
+| `onBack` | `() => void` | Back navigation callback |
 
 ### OrderReturns
 
-Returns section within an order detail view. Shows existing return requests and a form to submit new ones. Fetches its own data.
-
-#### Props
+Return requests section. Shows existing returns and form to submit new ones.
 
 | Prop | Type | Description |
 |------|------|-------------|
 | `orderId` | `string` | Order ID |
-| `items` | `OrderItem[]` | Order items (for return item selection) |
-| `orderStatus` | `string` | Current order status (determines if returns are allowed) |
+| `items` | `OrderItem[]` | Order items for return selection |
+| `orderStatus` | `string` | Current status (returns allowed for completed/processing) |
 
-#### Usage in MDX
+### OrderTracker
 
-```mdx
-<OrderReturns orderId={order.id} items={order.items} orderStatus={order.status} />
-```
-
-Returns are available for orders with status "completed" or "processing".
+Public order tracking form (no auth required). Matches order number + email.
 
 ## Notes
 
-- Order numbers are auto-generated as `ORD-{base36timestamp}-{random}` and are guaranteed unique.
-- Item `name` and `price` are snapshotted at creation time and do not reflect future catalog changes.
-- Customer-facing endpoints verify that `order.customerId === session.user.id` before returning data.
-- The `OrderController` type is exported for use in the checkout module and other inter-module contracts.
+- Order numbers auto-generated as `ORD-{base36timestamp}-{random}`.
+- Item `name` and `price` are snapshotted at creation and don't update with catalog changes.
+- Customer endpoints verify `order.customerId === session.user.id` (return 404, not 403).
+- Tracking URLs auto-generated for UPS, USPS, FedEx, DHL carriers.
+- `bulkDelete` cascades: items, addresses, fulfillments, returns, and notes.
+- Invoice numbers: `INV-{YYYYMMDD}-{orderSuffix}`.
