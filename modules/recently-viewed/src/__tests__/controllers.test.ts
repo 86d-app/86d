@@ -42,11 +42,10 @@ describe("createRecentlyViewedController – edge cases", () => {
 				...first,
 				viewedAt: new Date(Date.now() - 6 * 60 * 1000),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: test mock
 			await mockData.upsert(
 				"productView",
 				first.id,
-				backdated as Record<string, any>,
+				backdated as Record<string, unknown>,
 			);
 
 			const second = await controller.trackView(
@@ -141,11 +140,10 @@ describe("createRecentlyViewedController – edge cases", () => {
 					...v,
 					viewedAt: new Date(Date.now() - (5 - i) * 60_000),
 				};
-				// biome-ignore lint/suspicious/noExplicitAny: test mock
 				await mockData.upsert(
 					"productView",
 					v.id,
-					backdated as Record<string, any>,
+					backdated as Record<string, unknown>,
 				);
 			}
 
@@ -180,11 +178,10 @@ describe("createRecentlyViewedController – edge cases", () => {
 					...v,
 					viewedAt: new Date(Date.now() - (20 - i) * 60_000),
 				};
-				// biome-ignore lint/suspicious/noExplicitAny: test mock
 				await mockData.upsert(
 					"productView",
 					v.id,
-					backdated as Record<string, any>,
+					backdated as Record<string, unknown>,
 				);
 			}
 
@@ -618,11 +615,10 @@ describe("createRecentlyViewedController – edge cases", () => {
 				...old,
 				viewedAt: new Date(Date.now() - 120_000),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: test mock
 			await mockData.upsert(
 				"productView",
 				old.id,
-				backdated as Record<string, any>,
+				backdated as Record<string, unknown>,
 			);
 
 			await controller.trackView(

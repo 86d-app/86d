@@ -23,7 +23,8 @@ src/
       update-plan.ts            PUT    /admin/subscriptions/plans/:id/update
       delete-plan.ts            DELETE /admin/subscriptions/plans/:id/delete
   __tests__/
-    service-impl.test.ts    44 tests
+    service-impl.test.ts    49 tests (CRUD, lifecycle, events)
+    controllers.test.ts     47 tests (edge cases, intervals, data integrity)
 ```
 
 ## Data models
