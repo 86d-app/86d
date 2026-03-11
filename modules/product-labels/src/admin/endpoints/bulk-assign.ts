@@ -30,10 +30,8 @@ export const bulkAssign = createAdminEndpoint(
 				position: ctx.body.position as LabelPosition | undefined,
 			});
 			return { assigned };
-		} catch (err) {
-			const message =
-				err instanceof Error ? err.message : "Failed to assign labels";
-			return { error: message, status: 400 };
+		} catch {
+			return { error: "Failed to assign labels", status: 400 };
 		}
 	},
 );

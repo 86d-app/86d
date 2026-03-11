@@ -24,10 +24,8 @@ export const subscribe = createStoreEndpoint(
 				planId: ctx.body.planId,
 			});
 			return { membership };
-		} catch (err) {
-			const message =
-				err instanceof Error ? err.message : "Subscription failed";
-			return { error: message, status: 400 };
+		} catch {
+			return { error: "Subscription failed", status: 400 };
 		}
 	},
 );

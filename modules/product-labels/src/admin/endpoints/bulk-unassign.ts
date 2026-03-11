@@ -20,10 +20,8 @@ export const bulkUnassign = createAdminEndpoint(
 				labelId: ctx.body.labelId,
 			});
 			return { removed };
-		} catch (err) {
-			const message =
-				err instanceof Error ? err.message : "Failed to unassign labels";
-			return { error: message, status: 400 };
+		} catch {
+			return { error: "Failed to unassign labels", status: 400 };
 		}
 	},
 );

@@ -13,7 +13,10 @@ export const createTier = createAdminEndpoint(
 				.regex(/^[a-z0-9-]+$/),
 			minPoints: z.number().int().min(0),
 			multiplier: z.number().min(0).optional(),
-			perks: z.record(z.string(), z.unknown()).optional(),
+			perks: z
+				.record(z.string().max(100), z.unknown())
+				.refine((r) => Object.keys(r).length <= 50, "Too many keys")
+				.optional(),
 		}),
 	},
 	async (ctx) => {
@@ -40,7 +43,10 @@ export const updateTier = createAdminEndpoint(
 			name: z.string().max(100).transform(sanitizeText).optional(),
 			minPoints: z.number().int().min(0).optional(),
 			multiplier: z.number().min(0).optional(),
-			perks: z.record(z.string(), z.unknown()).optional(),
+			perks: z
+				.record(z.string().max(100), z.unknown())
+				.refine((r) => Object.keys(r).length <= 50, "Too many keys")
+				.optional(),
 		}),
 	},
 	async (ctx) => {

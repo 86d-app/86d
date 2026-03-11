@@ -13,7 +13,10 @@ export const indexItem = createAdminEndpoint(
 			tags: z.array(z.string().max(100)).max(50).optional(),
 			url: z.string().min(1).max(500),
 			image: z.string().max(500).optional(),
-			metadata: z.record(z.string(), z.unknown()).optional(),
+			metadata: z
+				.record(z.string().max(100), z.unknown())
+				.refine((r) => Object.keys(r).length <= 50, "Too many keys")
+				.optional(),
 		}),
 	},
 	async (ctx) => {

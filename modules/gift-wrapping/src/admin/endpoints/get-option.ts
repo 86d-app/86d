@@ -14,7 +14,7 @@ export const getOption = createAdminEndpoint(
 			.giftWrapping as GiftWrappingController;
 		const option = await controller.getOption(ctx.params.id);
 		if (!option) {
-			throw new Error("Wrap option not found");
+			return { error: "Wrap option not found", status: 404 };
 		}
 		return { option };
 	},

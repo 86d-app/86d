@@ -30,7 +30,7 @@ export const updateOption = createAdminEndpoint(
 		if (ctx.body.sortOrder != null) params.sortOrder = ctx.body.sortOrder;
 		const option = await controller.updateOption(ctx.params.id, params);
 		if (!option) {
-			throw new Error("Wrap option not found");
+			return { error: "Wrap option not found", status: 404 };
 		}
 		return { option };
 	},

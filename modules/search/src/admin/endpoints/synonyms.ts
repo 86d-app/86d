@@ -42,7 +42,7 @@ export const removeSynonym = createAdminEndpoint(
 		const controller = ctx.context.controllers.search as SearchController;
 		const removed = await controller.removeSynonym(ctx.params.id);
 		if (!removed) {
-			throw new Error("Synonym not found");
+			return { error: "Synonym not found", status: 404 };
 		}
 		return { success: true };
 	},

@@ -14,7 +14,7 @@ export const getForm = createAdminEndpoint(
 		const form = await formsController.getForm(ctx.params.id);
 
 		if (!form) {
-			throw new Error(`Form ${ctx.params.id} not found`);
+			return { error: "Form not found", status: 404 };
 		}
 
 		return { form };

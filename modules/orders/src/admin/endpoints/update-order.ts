@@ -25,7 +25,10 @@ export const adminUpdateOrder = createAdminEndpoint(
 				.enum(["unpaid", "paid", "partially_paid", "refunded", "voided"])
 				.optional(),
 			notes: z.string().max(5000).transform(sanitizeText).optional(),
-			metadata: z.record(z.string(), z.unknown()).optional(),
+			metadata: z
+				.record(z.string().max(100), z.unknown())
+				.refine((r) => Object.keys(r).length <= 50, "Too many keys")
+				.optional(),
 		}),
 	},
 	async (ctx) => {

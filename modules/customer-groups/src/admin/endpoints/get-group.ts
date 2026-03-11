@@ -16,7 +16,7 @@ export const getGroup = createAdminEndpoint(
 		const group = await controller.getGroup(ctx.params.id);
 
 		if (!group) {
-			throw new Error(`Customer group ${ctx.params.id} not found`);
+			return { error: "Customer group not found", status: 404 };
 		}
 
 		return { group };

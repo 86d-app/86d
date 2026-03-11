@@ -21,7 +21,7 @@ export const adjustCredit = createAdminEndpoint(
 		const { amount, description } = ctx.body;
 
 		if (amount === 0) {
-			throw new Error("Adjustment amount cannot be zero");
+			return { error: "Adjustment amount cannot be zero", status: 400 };
 		}
 
 		const transaction =

@@ -26,7 +26,10 @@ export const upsertMetaEndpoint = createAdminEndpoint(
 			twitterImage: z.string().url().max(2000).optional(),
 			noIndex: z.boolean().optional(),
 			noFollow: z.boolean().optional(),
-			jsonLd: z.record(z.string(), z.unknown()).optional(),
+			jsonLd: z
+				.record(z.string().max(100), z.unknown())
+				.refine((r) => Object.keys(r).length <= 50, "Too many keys")
+				.optional(),
 		}),
 	},
 	async (ctx) => {

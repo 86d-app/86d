@@ -30,10 +30,8 @@ export const assignLabel = createAdminEndpoint(
 				position: ctx.body.position as LabelPosition | undefined,
 			});
 			return { assignment };
-		} catch (err) {
-			const message =
-				err instanceof Error ? err.message : "Failed to assign label";
-			return { error: message, status: 400 };
+		} catch {
+			return { error: "Failed to assign label", status: 400 };
 		}
 	},
 );

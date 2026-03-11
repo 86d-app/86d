@@ -16,7 +16,7 @@ export const getAnnouncement = createAdminEndpoint(
 		const announcement = await controller.getAnnouncement(ctx.params.id);
 
 		if (!announcement) {
-			throw new Error(`Announcement ${ctx.params.id} not found`);
+			return { error: "Announcement not found", status: 404 };
 		}
 
 		return { announcement };

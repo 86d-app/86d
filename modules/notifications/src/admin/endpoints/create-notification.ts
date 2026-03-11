@@ -22,7 +22,10 @@ export const createNotificationEndpoint = createAdminEndpoint(
 			title: z.string().max(500).transform(sanitizeText),
 			body: z.string().max(5000).transform(sanitizeText),
 			actionUrl: z.string().url().max(2000).optional(),
-			metadata: z.record(z.string(), z.unknown()).optional(),
+			metadata: z
+				.record(z.string().max(100), z.unknown())
+				.refine((r) => Object.keys(r).length <= 50, "Too many keys")
+				.optional(),
 		}),
 	},
 	async (ctx) => {

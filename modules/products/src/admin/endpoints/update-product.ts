@@ -25,7 +25,10 @@ export const updateProduct = createAdminEndpoint(
 			categoryId: z.string().nullable().optional(),
 			images: z.array(z.string()).optional(),
 			tags: z.array(z.string()).optional(),
-			metadata: z.record(z.string(), z.any()).optional(),
+			metadata: z
+				.record(z.string().max(100), z.unknown())
+				.refine((r) => Object.keys(r).length <= 50, "Too many metadata keys")
+				.optional(),
 			weight: z.number().positive().nullable().optional(),
 			weightUnit: z.enum(["kg", "lb", "oz", "g"]).nullable().optional(),
 			isFeatured: z.boolean().optional(),

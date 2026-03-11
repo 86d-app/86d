@@ -25,9 +25,8 @@ export const createBlackout = createAdminEndpoint(
 		try {
 			const blackout = await controller.createBlackout(params);
 			return { blackout };
-		} catch (err) {
-			const message = err instanceof Error ? err.message : "Create failed";
-			return { error: message, status: 400 };
+		} catch {
+			return { error: "Failed to create blackout date", status: 400 };
 		}
 	},
 );

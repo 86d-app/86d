@@ -30,10 +30,8 @@ export const updatePickupStatus = createAdminEndpoint(
 				return { error: "Pickup not found", status: 404 };
 			}
 			return { pickup };
-		} catch (err) {
-			const message =
-				err instanceof Error ? err.message : "Status update failed";
-			return { error: message, status: 400 };
+		} catch {
+			return { error: "Failed to update pickup status", status: 400 };
 		}
 	},
 );

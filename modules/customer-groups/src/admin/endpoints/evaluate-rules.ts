@@ -6,7 +6,9 @@ export const evaluateRules = createAdminEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			customerData: z.record(z.string(), z.unknown()),
+			customerData: z
+				.record(z.string().max(100), z.unknown())
+				.refine((r) => Object.keys(r).length <= 100, "Too many keys"),
 		}),
 	},
 	async (ctx) => {

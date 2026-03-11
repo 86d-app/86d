@@ -35,10 +35,8 @@ export const adminCreateCreditNote = createAdminEndpoint(
 				lineItems: ctx.body.lineItems,
 			});
 			return { creditNote };
-		} catch (err) {
-			const message =
-				err instanceof Error ? err.message : "Failed to create credit note";
-			return { error: message, status: 422 };
+		} catch {
+			return { error: "Failed to create credit note", status: 422 };
 		}
 	},
 );

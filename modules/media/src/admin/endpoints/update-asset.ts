@@ -17,7 +17,10 @@ export const updateAssetEndpoint = createAdminEndpoint(
 			url: z.string().url().optional(),
 			folder: z.string().max(200).optional().nullable(),
 			tags: z.array(z.string().max(100)).max(50).optional(),
-			metadata: z.record(z.string(), z.unknown()).optional(),
+			metadata: z
+				.record(z.string().max(100), z.unknown())
+				.refine((r) => Object.keys(r).length <= 50, "Too many keys")
+				.optional(),
 		}),
 	},
 	async (ctx) => {

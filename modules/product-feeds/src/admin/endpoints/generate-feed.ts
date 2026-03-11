@@ -22,7 +22,10 @@ const productDataSchema = z.object({
 	color: z.string().optional(),
 	size: z.string().optional(),
 	material: z.string().optional(),
-	customFields: z.record(z.string(), z.string()).optional(),
+	customFields: z
+		.record(z.string().max(100), z.string())
+		.refine((r) => Object.keys(r).length <= 50, "Too many keys")
+		.optional(),
 });
 
 export const generateFeed = createAdminEndpoint(

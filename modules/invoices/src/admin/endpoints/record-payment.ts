@@ -49,10 +49,8 @@ export const adminRecordPayment = createAdminEndpoint(
 
 			const updated = await controller.getById(ctx.params.id);
 			return { payment, invoice: updated };
-		} catch (err) {
-			const message =
-				err instanceof Error ? err.message : "Failed to record payment";
-			return { error: message, status: 422 };
+		} catch {
+			return { error: "Failed to record payment", status: 422 };
 		}
 	},
 );

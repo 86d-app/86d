@@ -25,7 +25,9 @@ const actionSchema = z.object({
 		"webhook",
 		"log",
 	]),
-	config: z.record(z.string(), z.unknown()),
+	config: z
+		.record(z.string().max(100), z.unknown())
+		.refine((r) => Object.keys(r).length <= 100, "Too many keys"),
 });
 
 export const createAutomation = createAdminEndpoint(

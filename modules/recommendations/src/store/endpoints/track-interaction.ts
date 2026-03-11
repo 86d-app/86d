@@ -34,10 +34,8 @@ export const trackInteraction = createStoreEndpoint(
 				productCategory: ctx.body.productCategory,
 			});
 			return { interaction };
-		} catch (err) {
-			const message =
-				err instanceof Error ? err.message : "Failed to track interaction";
-			return { error: message, status: 400 };
+		} catch {
+			return { error: "Failed to track interaction", status: 400 };
 		}
 	},
 );

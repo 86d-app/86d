@@ -28,9 +28,8 @@ export const cancelPickupStore = createStoreEndpoint(
 			}
 
 			return { pickup };
-		} catch (err) {
-			const message = err instanceof Error ? err.message : "Cancel failed";
-			return { error: message, status: 400 };
+		} catch {
+			return { error: "Failed to cancel pickup", status: 400 };
 		}
 	},
 );

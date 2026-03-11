@@ -12,7 +12,10 @@ export const createCategory = createAdminEndpoint(
 			image: z.string().optional(),
 			position: z.number().int().min(0).optional(),
 			isVisible: z.boolean().optional(),
-			metadata: z.record(z.string(), z.any()).optional(),
+			metadata: z
+				.record(z.string().max(100), z.unknown())
+				.refine((r) => Object.keys(r).length <= 50, "Too many metadata keys")
+				.optional(),
 		}),
 	},
 	async (ctx) => {

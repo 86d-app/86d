@@ -14,7 +14,7 @@ export const getSubmission = createAdminEndpoint(
 		const submission = await formsController.getSubmission(ctx.params.id);
 
 		if (!submission) {
-			throw new Error(`Submission ${ctx.params.id} not found`);
+			return { error: "Submission not found", status: 404 };
 		}
 
 		// Auto-mark as read when viewing
