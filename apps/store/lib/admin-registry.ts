@@ -191,6 +191,59 @@ const SUBGROUP_CONFIG: Record<
 			],
 		},
 	],
+	Content: [
+		{
+			label: "Publishing",
+			icon: "Article",
+			segments: ["pages", "blog", "announcements"],
+		},
+		{
+			label: "Knowledge",
+			icon: "BookOpen",
+			segments: ["faq", "forms"],
+		},
+		{
+			label: "Site",
+			icon: "Globe",
+			segments: ["navigation", "media", "seo", "store-locator"],
+		},
+	],
+	Finance: [
+		{
+			label: "Gateways",
+			icon: "CreditCard",
+			segments: ["stripe", "paypal", "square", "braintree"],
+		},
+		{
+			label: "Configuration",
+			icon: "Sliders",
+			segments: ["tax", "currencies"],
+		},
+	],
+	Support: [
+		{
+			label: "Helpdesk",
+			icon: "Ticket",
+			segments: ["tickets"],
+		},
+		{
+			label: "Messaging",
+			icon: "Bell",
+			segments: ["notifications"],
+		},
+	],
+	System: [
+		{
+			label: "Monitoring",
+			icon: "ChartBar",
+			segments: ["analytics", "audit-log"],
+		},
+		{
+			label: "Tools",
+			icon: "Wrench",
+			segments: ["settings", "search", "automations", "import-export"],
+		},
+	],
 };
 
 /**

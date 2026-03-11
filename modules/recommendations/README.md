@@ -99,6 +99,40 @@ const module = recommendations({
 |---|---|---|
 | `take` | `number` | Max results (1-50) |
 
+## Store Components
+
+The module exports customer-facing components for MDX templates:
+
+### ProductRecommendations
+
+Responsive grid of recommended products for a given product page.
+
+```mdx
+<ProductRecommendations productId="prod-123" />
+<ProductRecommendations productId="prod-123" title="Frequently bought together" strategy="bought_together" limit={4} />
+```
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `productId` | `string` | **required** | Product ID to get recommendations for |
+| `title` | `string` | `"You may also like"` | Section heading |
+| `strategy` | `"manual" \| "bought_together"` | — | Filter by strategy |
+| `limit` | `number` | `6` | Max number of products |
+
+### TrendingProducts
+
+Horizontal scrollable row of trending products, suitable for homepage or category pages.
+
+```mdx
+<TrendingProducts />
+<TrendingProducts title="Popular this week" limit={10} />
+```
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `title` | `string` | `"Trending now"` | Section heading |
+| `limit` | `number` | `8` | Max number of products |
+
 ## Admin Endpoints
 
 | Method | Path | Description |

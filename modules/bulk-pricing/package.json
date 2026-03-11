@@ -19,8 +19,9 @@
 	},
 	"type": "module",
 	"exports": {
-		"./*": "./src/*",
-		"./admin-components": "./src/admin/components"
+		"./components": "./src/store/components",
+		"./admin-components": "./src/admin/components",
+		"./*": "./src/*"
 	},
 	"scripts": {
 		"build": "tsc",
@@ -35,6 +36,8 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "catalog:",
+		"@types/mdx": "catalog:mdx",
+		"@types/react": "catalog:react",
 		"typescript": "catalog:",
 		"vitest": "catalog:vite"
 	}

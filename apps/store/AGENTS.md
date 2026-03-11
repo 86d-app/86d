@@ -64,7 +64,7 @@ The sidebar uses a 2-level collapsible navigation system:
 - **Level 2 (Subgroups)**: Larger groups have collapsible subgroups (e.g., Sales → Orders, Cart, Billing, Scheduling, Promotions, Add-ons)
 - Subgroup assignment is centralized in `lib/admin-registry.ts` via `SUBGROUP_CONFIG` — maps first path segment after `/admin/` to a subgroup
 - Modules can override subgroup via `subgroup` field on `AdminPage` declarations
-- Smaller groups (Content, Finance, Support, System) stay flat — no subgroups
+- All 9 groups have subgroups: Content (Publishing, Knowledge, Site), Finance (Gateways, Configuration), Support (Helpdesk, Messaging), System (Monitoring, Tools)
 - Both group and subgroup collapse state persists in localStorage (`86d-admin-sidebar-collapsed`)
 - Active items auto-expand their parent group and subgroup
 

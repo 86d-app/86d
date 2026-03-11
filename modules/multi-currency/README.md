@@ -78,6 +78,41 @@ POST /currencies/product-price
 | `/admin/currencies/price-overrides/:productId` | GET | List overrides for a product |
 | `/admin/currencies/price-overrides/:id/delete` | POST | Delete a price override |
 
+## Store Components
+
+The module exports customer-facing components for MDX templates:
+
+### CurrencySelector
+
+Dropdown to switch the active currency. Hidden when only one currency is active.
+
+```mdx
+<CurrencySelector value={selectedCurrency} onChange={setCurrency} />
+<CurrencySelector compact />
+```
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `value` | `string` | — | Currently selected currency code (ISO 4217) |
+| `onChange` | `(code: string) => void` | — | Called when user selects a different currency |
+| `compact` | `boolean` | `false` | Show code only (no full name) |
+
+### PriceDisplay
+
+Show a price converted to the selected currency, with optional compare-at (sale) display.
+
+```mdx
+<PriceDisplay productId="prod-123" basePriceInCents={9999} currencyCode="EUR" />
+```
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `productId` | `string` | — | Product ID (used for price override lookup) |
+| `basePriceInCents` | `number` | **required** | Base price in smallest currency unit |
+| `currencyCode` | `string` | — | Target currency code |
+| `compareAtPriceInCents` | `number` | — | Compare-at price for sale display |
+| `className` | `string` | — | Additional CSS class |
+
 ## Admin UI
 
 The module includes admin UI components in `src/admin/components/index.tsx` (client components using `useModuleClient`):

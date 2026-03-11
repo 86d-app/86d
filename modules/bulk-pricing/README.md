@@ -25,6 +25,26 @@ const module = bulkPricing({
 | POST | `/bulk-pricing/resolve` | Resolve the bulk price for a product at a given quantity |
 | GET | `/bulk-pricing/product/:productId/tiers` | Get tier previews for a product |
 
+## Store Components
+
+The module exports customer-facing components for MDX templates:
+
+### BulkPricingTiers
+
+Volume pricing table showing quantity tiers with unit prices and savings. Highlights the currently active tier based on cart quantity.
+
+```mdx
+<BulkPricingTiers productId="prod-123" basePriceInCents={1999} />
+<BulkPricingTiers productId="prod-123" basePriceInCents={1999} quantity={10} title="Bulk discounts" />
+```
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `productId` | `string` | **required** | Product ID to show tiers for |
+| `basePriceInCents` | `number` | **required** | Base price in smallest currency unit |
+| `title` | `string` | `"Volume pricing"` | Section heading |
+| `quantity` | `number` | — | Current quantity (highlights matching tier) |
+
 ## Admin endpoints
 
 ### Rules

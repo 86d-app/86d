@@ -11,6 +11,13 @@ src/
   service.ts            Controller interface + types
   service-impl.ts       Controller implementation
   store/endpoints/      Public endpoints (3)
+  store/components/
+    index.tsx             Store UI exports (CurrencySelector, PriceDisplay) — "use client"
+    _hooks.ts             useCurrencyApi() hook
+    currency-selector.tsx Currency dropdown for switching active currency
+    currency-selector.mdx Presentation template
+    price-display.tsx     Show price in selected currency with compare-at support
+    price-display.mdx     Presentation template
   admin/endpoints/      Protected admin endpoints (12)
   admin/components/
     index.tsx             Admin UI (CurrencyList, CurrencyForm, CurrencyDetail) — "use client"

@@ -19,6 +19,8 @@
 	"homepage": "https://86d.app",
 	"type": "module",
 	"exports": {
+		"./components": "./src/store/components",
+		"./admin-components": "./src/admin/components",
 		"./*": "./src/*"
 	},
 	"scripts": {
@@ -36,6 +38,7 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "catalog:",
+		"@types/mdx": "catalog:mdx",
 		"@types/react": "catalog:react",
 		"typescript": "catalog:",
 		"vitest": "catalog:vite"

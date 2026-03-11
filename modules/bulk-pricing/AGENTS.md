@@ -12,6 +12,12 @@ src/
   service-impl.ts       Controller implementation
   store/
     endpoints/          2 customer endpoints (resolve, product tiers)
+    components/
+      index.tsx           Store UI exports (BulkPricingTiers) — "use client"
+      _hooks.ts           useBulkPricingApi() hook
+      _utils.ts           formatPrice helper
+      bulk-pricing-tiers.tsx  Volume pricing table for product pages
+      bulk-pricing-tiers.mdx  Presentation template
   admin/
     endpoints/          12 admin endpoints (rules CRUD, tiers CRUD, preview, summary)
   __tests__/

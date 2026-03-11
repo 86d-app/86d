@@ -25,6 +25,15 @@ src/
       record-purchase.ts         POST /admin/recommendations/record-purchase
       get-co-occurrences.ts      GET  /admin/recommendations/co-occurrences/:productId
       get-stats.ts               GET  /admin/recommendations/stats
+  store/
+    components/
+      index.tsx              Store UI exports (ProductRecommendations, TrendingProducts)
+      _hooks.ts              useRecommendationsApi() hook
+      _utils.ts              formatPrice helper
+      product-recommendations.tsx  Product-based recommendation grid
+      product-recommendations.mdx  Presentation template
+      trending-products.tsx        Trending products horizontal scroll
+      trending-products.mdx        Presentation template
   admin/
     components/
       index.tsx              RecommendationAdmin (stats, create rule, filter, list)
