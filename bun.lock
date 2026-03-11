@@ -897,6 +897,20 @@
         "vitest": "catalog:vite",
       },
     },
+    "modules/redirects": {
+      "name": "@86d-app/redirects",
+      "version": "0.0.1",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
     "modules/referrals": {
       "name": "@86d-app/referrals",
       "version": "0.0.1",
@@ -1507,6 +1521,8 @@
     "@86d-app/recently-viewed": ["@86d-app/recently-viewed@workspace:modules/recently-viewed"],
 
     "@86d-app/recommendations": ["@86d-app/recommendations@workspace:modules/recommendations"],
+
+    "@86d-app/redirects": ["@86d-app/redirects@workspace:modules/redirects"],
 
     "@86d-app/referrals": ["@86d-app/referrals@workspace:modules/referrals"],
 
