@@ -33,14 +33,12 @@ test.describe("Storefront — Homepage", () => {
 		});
 	});
 
-	test("'Browse collection' CTA links to products page", async ({
-		storefront,
-	}) => {
+	test("catalog CTA links to products page", async ({ storefront }) => {
 		await storefront.goto("/");
 		const cta = storefront.page
 			.locator("a")
-			.filter({ hasText: "Browse collection" });
-		await expect(cta).toHaveAttribute("href", "/products");
+			.filter({ hasText: /View all products|Shop now/i });
+		await expect(cta.first()).toHaveAttribute("href", "/products");
 	});
 
 	test("cart button is visible in the navbar", async ({ storefront }) => {
