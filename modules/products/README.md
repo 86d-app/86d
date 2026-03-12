@@ -54,9 +54,13 @@ const module = products({
 | `GET` | `/products` | List active products (paginated, filterable) |
 | `GET` | `/products/featured` | Get featured products |
 | `GET` | `/products/:slug` | Get a single product by slug (includes variants) |
-| `GET` | `/products/search?q=` | Search products by name, description, or SKU |
+| `GET` | `/products/search?q=` | Search products by name, description, or tags |
+| `GET` | `/products/store-search` | Full-text product search |
+| `GET` | `/products/related/:id` | Get related products by category/tag scoring |
 | `GET` | `/categories` | List visible categories |
 | `GET` | `/categories/:slug` | Get a single category by slug |
+| `GET` | `/collections` | List visible collections |
+| `GET` | `/collections/:slug` | Get a collection with its active products |
 
 Query parameters for `GET /products`:
 
@@ -84,10 +88,32 @@ Query parameters for `GET /products`:
 | `GET` | `/admin/categories/list` | List all categories |
 | `PUT` | `/admin/categories/:id` | Update a category |
 | `DELETE` | `/admin/categories/:id` | Delete a category |
+| `POST` | `/admin/collections` | Create a collection |
+| `GET` | `/admin/collections/list` | List all collections |
+| `PUT` | `/admin/collections/:id` | Update a collection |
+| `DELETE` | `/admin/collections/:id` | Delete a collection |
+| `POST` | `/admin/collections/:id/products` | Add product to collection |
+| `DELETE` | `/admin/collections/:id/products/:productId` | Remove product from collection |
+| `POST` | `/admin/products/bulk-action` | Bulk update status or delete |
+| `POST` | `/admin/products/import` | Import products from CSV data |
+
+## Service API
+
+A typed service layer is available via `createProductController(data)` from `service-impl.ts`:
+
+```ts
+import { createProductController } from "@86d-app/products/service-impl";
+
+const ctrl = createProductController(dataService);
+const product = await ctrl.createProduct({ name: "Widget", slug: "widget", price: 2999 });
+const variants = await ctrl.getVariantsByProduct(product.id);
+await ctrl.addProductToCollection(collectionId, product.id);
+const result = await ctrl.importProducts([{ name: "Gadget", price: 19.99 }]);
+```
 
 ## Controller API
 
-Controllers are accessed via the runtime context. Three sub-controllers are available: `product`, `variant`, and `category`.
+Controllers are accessed via the runtime context. Five sub-controllers are available: `product`, `variant`, `category`, `bulk`, `collection`, and `import`.
 
 ```ts
 // product controller
@@ -425,6 +451,11 @@ Complete review section with rating summary, review list with pagination, and re
 ## Notes
 
 - Store endpoints return only `active` products; admin endpoints return all statuses (`draft`, `active`, `archived`).
-- Product IDs are prefixed: `prod_${timestamp}`. Variant IDs: `var_${timestamp}`.
-- Deleting a category orphans its child categories and products (sets `categoryId` to `null`) rather than cascading.
+- Product IDs are prefixed: `prod_` (UUID in service-impl, timestamp in raw controllers). Variant: `var_`, Category: `cat_`, Collection: `col_`.
+- Deleting a category orphans its child categories and products (sets `categoryId`/`parentId` to `undefined`) rather than cascading.
+- Deleting a product cascades to all its variants. Deleting a collection cascades to collection-product links.
 - `getTree()` builds a hierarchical category tree from the flat list using `parentId` references.
+- `addProductToCollection` prevents duplicates — returns existing link if product is already in the collection.
+- Import converts dollar prices to cents (`price * 100`), resolves categories by name (case-insensitive), and deduplicates slugs.
+- Inventory decrement has no floor — inventory can go negative (documented behavior).
+- Products with `trackInventory: false` skip all inventory decrement/increment operations.
