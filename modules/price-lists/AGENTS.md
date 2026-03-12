@@ -61,6 +61,12 @@ PriceListsOptions {
 - `bulkSetPrices` processes up to 500 entries per call
 - Deleting a price list cascades to remove all its entries
 
+## Tests
+
+- `controllers.test.ts` — controller unit tests
+- `service-impl.test.ts` — service implementation tests
+- `endpoint-security.test.ts` — 36 tests covering resolution visibility, customer group scoping, currency filtering, quantity tier matching, priority ordering, cascade deletion, nonexistent resource guards, CRUD integrity, bulk operations, stats accuracy, and update semantics
+
 ## Gotchas
 
 - `exactOptionalPropertyTypes` is enabled — cast Zod-parsed bodies via `as Parameters<...>` when passing to controller methods

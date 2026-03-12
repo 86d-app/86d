@@ -22,12 +22,20 @@ Handles product reviews and ratings. Reviews start as `pending` and require admi
 
 ### Store
 - `POST /reviews` — submit a review
+- `GET /reviews/me` — list authenticated user's reviews
 - `GET /reviews/products/:productId` — list approved reviews + summary
+- `POST /reviews/:id/helpful` — mark review as helpful
 
 ### Admin
 - `GET /admin/reviews` — list all reviews (status/productId filters)
+- `GET /admin/reviews/analytics` — review analytics
+- `GET /admin/reviews/requests` — list review requests
+- `GET /admin/reviews/request-stats` — review request stats
+- `POST /admin/reviews/send-request` — send review request email
+- `GET /admin/reviews/:id` — get a single review
 - `PUT /admin/reviews/:id/approve` — approve
 - `PUT /admin/reviews/:id/reject` — reject
+- `POST /admin/reviews/:id/respond` — add merchant response
 - `DELETE /admin/reviews/:id/delete` — delete
 
 ## Options
@@ -44,4 +52,5 @@ Handles product reviews and ratings. Reviews start as `pending` and require admi
 
 ## Tests
 
-28 tests in `tests/service-impl.test.ts` covering all controller methods.
+- `service-impl.test.ts` — controller unit tests
+- `endpoint-security.test.ts` — 45 security regression tests covering identity derivation, ownership isolation, nonexistent resource guards, moderation integrity, helpful count safety, review request deduplication, analytics accuracy, pagination, and rating summary edge cases

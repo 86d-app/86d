@@ -60,3 +60,8 @@ ProductQaOptions {
 - Deleting a question cascades to delete all its answers
 - Store endpoints only return published questions/answers; admin endpoints return all statuses
 - Upvote counts are increment-only (no undo)
+
+## Tests
+
+- `service-impl.test.ts` — controller unit tests
+- `endpoint-security.test.ts` — 36 tests covering storefront/answer visibility, cascade deletion, answer count tracking, upvote safety, product scoping, nonexistent resource guards, analytics accuracy, product QA summary, and autoPublish mode

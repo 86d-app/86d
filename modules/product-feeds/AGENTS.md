@@ -30,6 +30,7 @@ src/
     delete-category-mapping.ts    POST /admin/product-feeds/:id/mappings/:mappingId/delete
   __tests__/
     service-impl.test.ts          78 tests
+    endpoint-security.test.ts     41 tests (cascade deletion, generation, filters, output formats, category mappings, validation, stats)
 ```
 
 ## Data model

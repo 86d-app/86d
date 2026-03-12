@@ -48,6 +48,11 @@ WishlistOptions {
 - Unauthenticated users get `401` on add/remove/list, or `{ inWishlist: false }` on check
 - Remove endpoint verifies item ownership (`item.customerId === session.user.id`) before deletion
 
+## Tests
+
+- `service-impl.test.ts` — controller unit tests
+- `endpoint-security.test.ts` — 29 tests covering ownership isolation, duplicate prevention, cross-customer data leaks, removeByProduct scoping, nonexistent resource guards, admin listAll filtering, summary accuracy, and pagination
+
 ## Patterns
 
 - Registers `search: { store: "/wishlist/store-search" }` for search module integration
