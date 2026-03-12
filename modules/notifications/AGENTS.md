@@ -1,22 +1,24 @@
 # Notifications Module
 
-In-app and email notification system for customers with per-user preferences and unread tracking.
+In-app and email notification system with templates, batch send, priority levels, and per-customer preferences.
 
 ## Structure
 
 ```
 src/
   index.ts          Factory: notifications(options?) => Module
-  schema.ts         Zod models: notification, preference
+  schema.ts         Zod models: notification, template, preference
   service.ts        NotificationsController interface + types
   service-impl.ts   NotificationsController implementation
   admin/
     components/
-      index.tsx                  Admin component exports
-      notification-list.tsx      Notification list table (.tsx logic)
-      notification-list.mdx      Admin template
-      notification-composer.tsx  Compose notification UI (.tsx logic)
-      notification-composer.mdx  Admin template
+      index.tsx                           Admin component exports
+      notification-list.tsx               Notification list table
+      notification-list.mdx               Admin template
+      notification-composer.tsx            Compose notification UI
+      notification-composer.mdx            Admin template
+      notification-template-list.tsx       Template management UI
+      notification-template-list.mdx       Admin template
     endpoints/
       index.ts                   Endpoint map
       list-notifications.ts      GET  /admin/notifications
@@ -26,6 +28,13 @@ src/
       delete-notification.ts     DELETE /admin/notifications/:id/delete
       stats.ts                   GET  /admin/notifications/stats
       bulk-delete.ts             POST /admin/notifications/bulk-delete
+      batch-send.ts              POST /admin/notifications/batch-send
+      list-templates.ts          GET  /admin/notifications/templates
+      create-template.ts         POST /admin/notifications/templates/create
+      get-template.ts            GET  /admin/notifications/templates/:id
+      update-template.ts         POST /admin/notifications/templates/:id/update
+      delete-template.ts         POST /admin/notifications/templates/:id/delete
+      send-from-template.ts      POST /admin/notifications/templates/send
   store/
     components/
       _hooks.ts                  Client-side hooks
@@ -58,13 +67,17 @@ NotificationsOptions {
 
 ## Data models
 
-- **notification**: id, customerId, type (info|success|warning|error|order|shipping|promotion), channel (in_app|email|both), title, body, actionUrl?, metadata, read, readAt?, createdAt
+- **notification**: id, customerId, type, channel, priority (low|normal|high|urgent), title, body, actionUrl?, metadata, read, readAt?, createdAt
+- **template**: id, slug, name, type, channel, priority, titleTemplate, bodyTemplate, actionUrlTemplate?, variables (string[]), active, createdAt, updatedAt
 - **preference**: id, customerId, orderUpdates, promotions, shippingAlerts, accountAlerts, updatedAt
 
-## Patterns
+## Key patterns
 
-- Preferences are per-customer toggles controlling which notification categories they receive
-- `unreadCount` endpoint is optimized for badge display (returns just a number)
-- `markAllRead` returns the count of notifications marked
-- Admin can compose and send notifications to specific customers
-- Stats endpoint returns total, unread, and per-type breakdown
+- Templates use `{{variable}}` interpolation — unknown variables are left as-is
+- `sendFromTemplate` takes templateId + customerIds + variables → creates one notification per customer
+- `batchSend` sends identical notifications to up to 500 customers at once
+- Preferences are lazy-created: defaults returned without persisting until first update
+- Stats include both `byType` and `byPriority` breakdowns
+- Admin can filter notifications by type, priority, and read status
+- Template slugs must be unique (lowercase alphanumeric with hyphens)
+- Inactive templates cannot be used to send notifications

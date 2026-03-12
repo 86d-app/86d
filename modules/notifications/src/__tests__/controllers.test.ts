@@ -486,10 +486,10 @@ describe("notifications controller edge cases", () => {
 			const before = new Date();
 			const marked = await controller.markRead(created.id);
 			const after = new Date();
-			expect(marked!.readAt!.getTime()).toBeGreaterThanOrEqual(
+			expect(marked?.readAt?.getTime()).toBeGreaterThanOrEqual(
 				before.getTime(),
 			);
-			expect(marked!.readAt!.getTime()).toBeLessThanOrEqual(after.getTime());
+			expect(marked?.readAt?.getTime()).toBeLessThanOrEqual(after.getTime());
 		});
 	});
 

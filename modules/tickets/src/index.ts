@@ -88,6 +88,22 @@ export default function tickets(options?: TicketsOptions): Module {
 				},
 			],
 		},
+		store: {
+			pages: [
+				{
+					path: "/support/tickets",
+					component: "MyTickets",
+				},
+				{
+					path: "/support/tickets/new",
+					component: "TicketForm",
+				},
+				{
+					path: "/support/tickets/:id",
+					component: "TicketDetail",
+				},
+			],
+		},
 		options,
 	};
 }

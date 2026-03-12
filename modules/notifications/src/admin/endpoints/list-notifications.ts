@@ -1,5 +1,9 @@
 import { createAdminEndpoint, z } from "@86d-app/core";
-import type { NotificationsController, NotificationType } from "../../service";
+import type {
+	NotificationPriority,
+	NotificationsController,
+	NotificationType,
+} from "../../service";
 
 export const listNotificationsEndpoint = createAdminEndpoint(
 	"/admin/notifications",
@@ -18,6 +22,7 @@ export const listNotificationsEndpoint = createAdminEndpoint(
 					"promotion",
 				])
 				.optional(),
+			priority: z.enum(["low", "normal", "high", "urgent"]).optional(),
 			read: z
 				.enum(["true", "false"])
 				.transform((v) => v === "true")
@@ -35,6 +40,7 @@ export const listNotificationsEndpoint = createAdminEndpoint(
 		const notifications = await controller.list({
 			customerId: ctx.query.customerId,
 			type: ctx.query.type as NotificationType | undefined,
+			priority: ctx.query.priority as NotificationPriority | undefined,
 			read: ctx.query.read,
 			take: limit,
 			skip,

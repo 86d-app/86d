@@ -5,11 +5,14 @@ import { createNotificationsController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints";
 
 export type {
+	BatchSendResult,
 	Notification,
 	NotificationChannel,
 	NotificationPreference,
+	NotificationPriority,
 	NotificationStats,
 	NotificationsController,
+	NotificationTemplate,
 	NotificationType,
 } from "./service";
 
@@ -55,6 +58,13 @@ export default function notifications(options?: NotificationsOptions): Module {
 					component: "NotificationComposer",
 					label: "Compose",
 					icon: "PaperPlaneTilt",
+					group: "Support",
+				},
+				{
+					path: "/admin/notifications/templates",
+					component: "NotificationTemplateList",
+					label: "Templates",
+					icon: "FileText",
 					group: "Support",
 				},
 			],

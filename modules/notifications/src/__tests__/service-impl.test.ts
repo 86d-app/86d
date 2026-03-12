@@ -588,6 +588,466 @@ describe("createNotificationsController", () => {
 		});
 	});
 
+	// ── priority ───────────────────────────────────────────────────────
+
+	describe("priority", () => {
+		it("defaults to normal", async () => {
+			const n = await controller.create({
+				customerId: "cust-1",
+				title: "Test",
+				body: "body",
+			});
+			expect(n.priority).toBe("normal");
+		});
+
+		it("creates with custom priority", async () => {
+			const n = await controller.create({
+				customerId: "cust-1",
+				priority: "urgent",
+				title: "Urgent",
+				body: "Something urgent",
+			});
+			expect(n.priority).toBe("urgent");
+		});
+
+		it("filters by priority", async () => {
+			await controller.create({
+				customerId: "cust-1",
+				priority: "high",
+				title: "High",
+				body: "h",
+			});
+			await controller.create({
+				customerId: "cust-1",
+				priority: "low",
+				title: "Low",
+				body: "l",
+			});
+			const high = await controller.list({ priority: "high" });
+			expect(high).toHaveLength(1);
+			expect(high[0].title).toBe("High");
+		});
+
+		it("includes priority in stats", async () => {
+			await controller.create({
+				customerId: "cust-1",
+				priority: "high",
+				title: "A",
+				body: "a",
+			});
+			await controller.create({
+				customerId: "cust-1",
+				priority: "high",
+				title: "B",
+				body: "b",
+			});
+			await controller.create({
+				customerId: "cust-1",
+				priority: "low",
+				title: "C",
+				body: "c",
+			});
+			const stats = await controller.getStats();
+			expect(stats.byPriority.high).toBe(2);
+			expect(stats.byPriority.low).toBe(1);
+		});
+	});
+
+	// ── createTemplate ─────────────────────────────────────────────────
+
+	describe("createTemplate", () => {
+		it("creates a template with defaults", async () => {
+			const tpl = await controller.createTemplate({
+				slug: "order-shipped",
+				name: "Order Shipped",
+				titleTemplate: "Order {{orderNumber}} shipped",
+				bodyTemplate:
+					"Your order {{orderNumber}} has been shipped via {{carrier}}.",
+			});
+			expect(tpl.id).toBeDefined();
+			expect(tpl.slug).toBe("order-shipped");
+			expect(tpl.name).toBe("Order Shipped");
+			expect(tpl.type).toBe("info");
+			expect(tpl.channel).toBe("in_app");
+			expect(tpl.priority).toBe("normal");
+			expect(tpl.active).toBe(true);
+			expect(tpl.variables).toEqual([]);
+			expect(tpl.createdAt).toBeInstanceOf(Date);
+			expect(tpl.updatedAt).toBeInstanceOf(Date);
+		});
+
+		it("creates with custom type, channel, priority and variables", async () => {
+			const tpl = await controller.createTemplate({
+				slug: "payment-received",
+				name: "Payment Received",
+				type: "order",
+				channel: "both",
+				priority: "high",
+				titleTemplate: "Payment of {{amount}} received",
+				bodyTemplate: "We received {{amount}} for order {{orderNumber}}.",
+				actionUrlTemplate: "https://store.example.com/orders/{{orderId}}",
+				variables: ["amount", "orderNumber", "orderId"],
+			});
+			expect(tpl.type).toBe("order");
+			expect(tpl.channel).toBe("both");
+			expect(tpl.priority).toBe("high");
+			expect(tpl.variables).toEqual(["amount", "orderNumber", "orderId"]);
+			expect(tpl.actionUrlTemplate).toBe(
+				"https://store.example.com/orders/{{orderId}}",
+			);
+		});
+	});
+
+	// ── getTemplate / getTemplateBySlug ────────────────────────────────
+
+	describe("getTemplate", () => {
+		it("returns template by id", async () => {
+			const created = await controller.createTemplate({
+				slug: "test",
+				name: "Test",
+				titleTemplate: "Hello",
+				bodyTemplate: "World",
+			});
+			const found = await controller.getTemplate(created.id);
+			expect(found?.slug).toBe("test");
+		});
+
+		it("returns null for non-existent id", async () => {
+			const found = await controller.getTemplate("missing");
+			expect(found).toBeNull();
+		});
+	});
+
+	describe("getTemplateBySlug", () => {
+		it("returns template by slug", async () => {
+			await controller.createTemplate({
+				slug: "welcome-email",
+				name: "Welcome Email",
+				titleTemplate: "Welcome",
+				bodyTemplate: "Welcome to the store!",
+			});
+			const found = await controller.getTemplateBySlug("welcome-email");
+			expect(found?.name).toBe("Welcome Email");
+		});
+
+		it("returns null for non-existent slug", async () => {
+			const found = await controller.getTemplateBySlug("does-not-exist");
+			expect(found).toBeNull();
+		});
+	});
+
+	// ── updateTemplate ─────────────────────────────────────────────────
+
+	describe("updateTemplate", () => {
+		it("updates template name and body", async () => {
+			const created = await controller.createTemplate({
+				slug: "test",
+				name: "Original",
+				titleTemplate: "Title",
+				bodyTemplate: "Body",
+			});
+			const updated = await controller.updateTemplate(created.id, {
+				name: "Updated",
+				bodyTemplate: "New body",
+			});
+			expect(updated?.name).toBe("Updated");
+			expect(updated?.bodyTemplate).toBe("New body");
+			expect(updated?.titleTemplate).toBe("Title");
+		});
+
+		it("deactivates a template", async () => {
+			const created = await controller.createTemplate({
+				slug: "test",
+				name: "Test",
+				titleTemplate: "T",
+				bodyTemplate: "B",
+			});
+			const updated = await controller.updateTemplate(created.id, {
+				active: false,
+			});
+			expect(updated?.active).toBe(false);
+		});
+
+		it("returns null for non-existent template", async () => {
+			const result = await controller.updateTemplate("missing", {
+				name: "Nope",
+			});
+			expect(result).toBeNull();
+		});
+
+		it("preserves fields not being updated", async () => {
+			const created = await controller.createTemplate({
+				slug: "test",
+				name: "Test",
+				type: "order",
+				priority: "high",
+				titleTemplate: "Title",
+				bodyTemplate: "Body",
+			});
+			const updated = await controller.updateTemplate(created.id, {
+				name: "Changed",
+			});
+			expect(updated?.type).toBe("order");
+			expect(updated?.priority).toBe("high");
+			expect(updated?.slug).toBe("test");
+		});
+	});
+
+	// ── deleteTemplate ─────────────────────────────────────────────────
+
+	describe("deleteTemplate", () => {
+		it("deletes an existing template", async () => {
+			const created = await controller.createTemplate({
+				slug: "delete-me",
+				name: "Delete Me",
+				titleTemplate: "T",
+				bodyTemplate: "B",
+			});
+			const result = await controller.deleteTemplate(created.id);
+			expect(result).toBe(true);
+			const found = await controller.getTemplate(created.id);
+			expect(found).toBeNull();
+		});
+
+		it("returns false for non-existent template", async () => {
+			const result = await controller.deleteTemplate("missing");
+			expect(result).toBe(false);
+		});
+	});
+
+	// ── listTemplates ──────────────────────────────────────────────────
+
+	describe("listTemplates", () => {
+		it("lists all templates", async () => {
+			await controller.createTemplate({
+				slug: "a",
+				name: "A",
+				titleTemplate: "A",
+				bodyTemplate: "a",
+			});
+			await controller.createTemplate({
+				slug: "b",
+				name: "B",
+				titleTemplate: "B",
+				bodyTemplate: "b",
+			});
+			const all = await controller.listTemplates();
+			expect(all).toHaveLength(2);
+		});
+
+		it("filters by active status", async () => {
+			const tpl = await controller.createTemplate({
+				slug: "active",
+				name: "Active",
+				titleTemplate: "A",
+				bodyTemplate: "a",
+			});
+			await controller.createTemplate({
+				slug: "inactive",
+				name: "Inactive",
+				titleTemplate: "I",
+				bodyTemplate: "i",
+			});
+			await controller.updateTemplate(tpl.id, { active: false });
+
+			const active = await controller.listTemplates({ active: true });
+			expect(active).toHaveLength(1);
+			expect(active[0].slug).toBe("inactive");
+		});
+
+		it("supports pagination", async () => {
+			for (let i = 0; i < 5; i++) {
+				await controller.createTemplate({
+					slug: `tpl-${i}`,
+					name: `Template ${i}`,
+					titleTemplate: `T${i}`,
+					bodyTemplate: `B${i}`,
+				});
+			}
+			const page = await controller.listTemplates({ take: 2, skip: 1 });
+			expect(page).toHaveLength(2);
+		});
+	});
+
+	// ── sendFromTemplate ───────────────────────────────────────────────
+
+	describe("sendFromTemplate", () => {
+		it("sends notification from template with variable interpolation", async () => {
+			const tpl = await controller.createTemplate({
+				slug: "order-shipped",
+				name: "Order Shipped",
+				type: "shipping",
+				channel: "both",
+				priority: "high",
+				titleTemplate: "Order {{orderNumber}} shipped!",
+				bodyTemplate: "Your order {{orderNumber}} was shipped via {{carrier}}.",
+				actionUrlTemplate: "https://example.com/track/{{trackingId}}",
+				variables: ["orderNumber", "carrier", "trackingId"],
+			});
+
+			const result = await controller.sendFromTemplate({
+				templateId: tpl.id,
+				customerIds: ["cust-1", "cust-2"],
+				variables: {
+					orderNumber: "ORD-1234",
+					carrier: "FedEx",
+					trackingId: "TRACK-5678",
+				},
+			});
+
+			expect(result.sent).toBe(2);
+			expect(result.failed).toBe(0);
+			expect(result.errors).toHaveLength(0);
+
+			const cust1Notifications = await controller.list({
+				customerId: "cust-1",
+			});
+			expect(cust1Notifications).toHaveLength(1);
+			expect(cust1Notifications[0].title).toBe("Order ORD-1234 shipped!");
+			expect(cust1Notifications[0].body).toBe(
+				"Your order ORD-1234 was shipped via FedEx.",
+			);
+			expect(cust1Notifications[0].actionUrl).toBe(
+				"https://example.com/track/TRACK-5678",
+			);
+			expect(cust1Notifications[0].type).toBe("shipping");
+			expect(cust1Notifications[0].channel).toBe("both");
+			expect(cust1Notifications[0].priority).toBe("high");
+			expect(cust1Notifications[0].metadata).toEqual({
+				templateId: tpl.id,
+				templateSlug: "order-shipped",
+			});
+		});
+
+		it("fails when template does not exist", async () => {
+			const result = await controller.sendFromTemplate({
+				templateId: "missing",
+				customerIds: ["cust-1"],
+			});
+			expect(result.sent).toBe(0);
+			expect(result.failed).toBe(1);
+			expect(result.errors[0].error).toBe("Template not found");
+		});
+
+		it("fails when template is inactive", async () => {
+			const tpl = await controller.createTemplate({
+				slug: "inactive-tpl",
+				name: "Inactive",
+				titleTemplate: "T",
+				bodyTemplate: "B",
+			});
+			await controller.updateTemplate(tpl.id, { active: false });
+
+			const result = await controller.sendFromTemplate({
+				templateId: tpl.id,
+				customerIds: ["cust-1"],
+			});
+			expect(result.sent).toBe(0);
+			expect(result.failed).toBe(1);
+			expect(result.errors[0].error).toBe("Template is inactive");
+		});
+
+		it("leaves unknown variables as placeholders", async () => {
+			const tpl = await controller.createTemplate({
+				slug: "test",
+				name: "Test",
+				titleTemplate: "Hello {{name}} — {{unknown}}",
+				bodyTemplate: "Body",
+			});
+
+			const result = await controller.sendFromTemplate({
+				templateId: tpl.id,
+				customerIds: ["cust-1"],
+				variables: { name: "Alice" },
+			});
+
+			expect(result.sent).toBe(1);
+			const notifications = await controller.list({ customerId: "cust-1" });
+			expect(notifications[0].title).toBe("Hello Alice — {{unknown}}");
+		});
+
+		it("sends with no variables", async () => {
+			const tpl = await controller.createTemplate({
+				slug: "static",
+				name: "Static",
+				titleTemplate: "Welcome!",
+				bodyTemplate: "Thanks for joining.",
+			});
+
+			const result = await controller.sendFromTemplate({
+				templateId: tpl.id,
+				customerIds: ["cust-1"],
+			});
+			expect(result.sent).toBe(1);
+			const notifications = await controller.list({ customerId: "cust-1" });
+			expect(notifications[0].title).toBe("Welcome!");
+		});
+	});
+
+	// ── batchSend ──────────────────────────────────────────────────────
+
+	describe("batchSend", () => {
+		it("sends to multiple customers", async () => {
+			const result = await controller.batchSend({
+				customerIds: ["cust-1", "cust-2", "cust-3"],
+				type: "promotion",
+				priority: "low",
+				title: "Big Sale!",
+				body: "50% off everything.",
+			});
+
+			expect(result.sent).toBe(3);
+			expect(result.failed).toBe(0);
+
+			const cust1 = await controller.list({ customerId: "cust-1" });
+			expect(cust1).toHaveLength(1);
+			expect(cust1[0].title).toBe("Big Sale!");
+			expect(cust1[0].type).toBe("promotion");
+			expect(cust1[0].priority).toBe("low");
+
+			const cust3 = await controller.list({ customerId: "cust-3" });
+			expect(cust3).toHaveLength(1);
+		});
+
+		it("sends with defaults", async () => {
+			const result = await controller.batchSend({
+				customerIds: ["cust-1"],
+				title: "Hello",
+				body: "World",
+			});
+
+			expect(result.sent).toBe(1);
+			const notifications = await controller.list({ customerId: "cust-1" });
+			expect(notifications[0].type).toBe("info");
+			expect(notifications[0].channel).toBe("in_app");
+			expect(notifications[0].priority).toBe("normal");
+		});
+
+		it("creates unique notifications per customer", async () => {
+			await controller.batchSend({
+				customerIds: ["cust-1", "cust-2"],
+				title: "Same",
+				body: "Same body",
+			});
+
+			const cust1 = await controller.list({ customerId: "cust-1" });
+			const cust2 = await controller.list({ customerId: "cust-2" });
+			expect(cust1[0].id).not.toBe(cust2[0].id);
+		});
+
+		it("sends with metadata", async () => {
+			await controller.batchSend({
+				customerIds: ["cust-1"],
+				title: "Sale",
+				body: "Check it",
+				metadata: { campaignId: "camp-1" },
+			});
+
+			const notifications = await controller.list({ customerId: "cust-1" });
+			expect(notifications[0].metadata).toEqual({ campaignId: "camp-1" });
+		});
+	});
+
 	// ── full lifecycle ──────────────────────────────────────────────────
 
 	describe("full lifecycle", () => {

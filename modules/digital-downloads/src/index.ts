@@ -50,6 +50,14 @@ export default function digitalDownloads(
 				},
 			],
 		},
+		store: {
+			pages: [
+				{
+					path: "/downloads",
+					component: "MyDownloads",
+				},
+			],
+		},
 		options,
 	};
 }

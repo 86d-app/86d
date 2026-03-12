@@ -1,12 +1,12 @@
 import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { NotificationsController } from "../../service";
 
-export const createNotificationEndpoint = createAdminEndpoint(
-	"/admin/notifications/create",
+export const batchSendEndpoint = createAdminEndpoint(
+	"/admin/notifications/batch-send",
 	{
 		method: "POST",
 		body: z.object({
-			customerId: z.string(),
+			customerIds: z.array(z.string()).min(1).max(500),
 			type: z
 				.enum([
 					"info",
@@ -32,8 +32,8 @@ export const createNotificationEndpoint = createAdminEndpoint(
 	async (ctx) => {
 		const controller = ctx.context.controllers
 			.notifications as NotificationsController;
-		const notification = await controller.create({
-			customerId: ctx.body.customerId,
+		const result = await controller.batchSend({
+			customerIds: ctx.body.customerIds,
 			type: ctx.body.type,
 			channel: ctx.body.channel,
 			priority: ctx.body.priority,
@@ -42,6 +42,6 @@ export const createNotificationEndpoint = createAdminEndpoint(
 			actionUrl: ctx.body.actionUrl,
 			metadata: ctx.body.metadata,
 		});
-		return { notification };
+		return result;
 	},
 );

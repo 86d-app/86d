@@ -97,6 +97,14 @@ export default function loyalty(options?: LoyaltyOptions): Module {
 				},
 			],
 		},
+		store: {
+			pages: [
+				{
+					path: "/loyalty",
+					component: "LoyaltyPage",
+				},
+			],
+		},
 		options,
 	};
 }

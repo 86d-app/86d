@@ -70,6 +70,22 @@ export default function quotes(options?: QuotesOptions): Module {
 				},
 			],
 		},
+		store: {
+			pages: [
+				{
+					path: "/quotes",
+					component: "MyQuotes",
+				},
+				{
+					path: "/quotes/request",
+					component: "QuoteRequest",
+				},
+				{
+					path: "/quotes/:id",
+					component: "QuoteDetail",
+				},
+			],
+		},
 		options,
 	};
 }

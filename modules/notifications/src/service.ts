@@ -11,11 +11,14 @@ export type NotificationType =
 
 export type NotificationChannel = "in_app" | "email" | "both";
 
+export type NotificationPriority = "low" | "normal" | "high" | "urgent";
+
 export interface Notification {
 	id: string;
 	customerId: string;
 	type: NotificationType;
 	channel: NotificationChannel;
+	priority: NotificationPriority;
 	title: string;
 	body: string;
 	actionUrl?: string | undefined;
@@ -23,6 +26,23 @@ export interface Notification {
 	read: boolean;
 	readAt?: Date | undefined;
 	createdAt: Date;
+}
+
+export interface NotificationTemplate {
+	id: string;
+	slug: string;
+	name: string;
+	type: NotificationType;
+	channel: NotificationChannel;
+	priority: NotificationPriority;
+	titleTemplate: string;
+	bodyTemplate: string;
+	actionUrlTemplate?: string | undefined;
+	/** Variable names expected by this template (e.g. ["orderNumber", "trackingUrl"]) */
+	variables: string[];
+	active: boolean;
+	createdAt: Date;
+	updatedAt: Date;
 }
 
 export interface NotificationPreference {
@@ -39,6 +59,13 @@ export interface NotificationStats {
 	total: number;
 	unread: number;
 	byType: Record<string, number>;
+	byPriority: Record<string, number>;
+}
+
+export interface BatchSendResult {
+	sent: number;
+	failed: number;
+	errors: Array<{ customerId: string; error: string }>;
 }
 
 export interface NotificationsController extends ModuleController {
@@ -46,6 +73,7 @@ export interface NotificationsController extends ModuleController {
 		customerId: string;
 		type?: NotificationType | undefined;
 		channel?: NotificationChannel | undefined;
+		priority?: NotificationPriority | undefined;
 		title: string;
 		body: string;
 		actionUrl?: string | undefined;
@@ -70,6 +98,7 @@ export interface NotificationsController extends ModuleController {
 		customerId?: string | undefined;
 		type?: NotificationType | undefined;
 		read?: boolean | undefined;
+		priority?: NotificationPriority | undefined;
 		take?: number | undefined;
 		skip?: number | undefined;
 	}): Promise<Notification[]>;
@@ -95,4 +124,64 @@ export interface NotificationsController extends ModuleController {
 			accountAlerts?: boolean | undefined;
 		},
 	): Promise<NotificationPreference>;
+
+	// --- Template methods ---
+
+	createTemplate(params: {
+		slug: string;
+		name: string;
+		type?: NotificationType | undefined;
+		channel?: NotificationChannel | undefined;
+		priority?: NotificationPriority | undefined;
+		titleTemplate: string;
+		bodyTemplate: string;
+		actionUrlTemplate?: string | undefined;
+		variables?: string[] | undefined;
+	}): Promise<NotificationTemplate>;
+
+	getTemplate(id: string): Promise<NotificationTemplate | null>;
+
+	getTemplateBySlug(slug: string): Promise<NotificationTemplate | null>;
+
+	updateTemplate(
+		id: string,
+		params: {
+			name?: string | undefined;
+			type?: NotificationType | undefined;
+			channel?: NotificationChannel | undefined;
+			priority?: NotificationPriority | undefined;
+			titleTemplate?: string | undefined;
+			bodyTemplate?: string | undefined;
+			actionUrlTemplate?: string | undefined;
+			variables?: string[] | undefined;
+			active?: boolean | undefined;
+		},
+	): Promise<NotificationTemplate | null>;
+
+	deleteTemplate(id: string): Promise<boolean>;
+
+	listTemplates(params?: {
+		active?: boolean | undefined;
+		take?: number | undefined;
+		skip?: number | undefined;
+	}): Promise<NotificationTemplate[]>;
+
+	// --- Batch + template-based send ---
+
+	sendFromTemplate(params: {
+		templateId: string;
+		customerIds: string[];
+		variables?: Record<string, string> | undefined;
+	}): Promise<BatchSendResult>;
+
+	batchSend(params: {
+		customerIds: string[];
+		type?: NotificationType | undefined;
+		channel?: NotificationChannel | undefined;
+		priority?: NotificationPriority | undefined;
+		title: string;
+		body: string;
+		actionUrl?: string | undefined;
+		metadata?: Record<string, unknown> | undefined;
+	}): Promise<BatchSendResult>;
 }

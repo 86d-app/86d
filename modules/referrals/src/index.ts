@@ -68,6 +68,14 @@ export default function referrals(options?: ReferralsOptions): Module {
 				},
 			],
 		},
+		store: {
+			pages: [
+				{
+					path: "/referrals",
+					component: "ReferralDashboard",
+				},
+			],
+		},
 		options,
 	};
 }
