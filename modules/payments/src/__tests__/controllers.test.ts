@@ -750,7 +750,7 @@ describe("payment controller edge cases", () => {
 			});
 
 			// The refund should be retrievable
-			const refund = await ctrl.getRefund(result!.refund.id);
+			const refund = result ? await ctrl.getRefund(result.refund.id) : null;
 			expect(refund).not.toBeNull();
 			expect(refund?.amount).toBe(3000);
 		});
