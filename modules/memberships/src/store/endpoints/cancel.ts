@@ -18,12 +18,14 @@ export const cancel = createStoreEndpoint(
 		const controller = ctx.context.controllers
 			.memberships as MembershipController;
 
-		const membership = await controller.cancelMembership(ctx.body.membershipId);
-		if (!membership) {
+		// Verify ownership before mutating
+		const existing = await controller.getMembership(ctx.body.membershipId);
+		if (!existing || existing.customerId !== session.user.id) {
 			return { error: "Membership not found", status: 404 };
 		}
 
-		if (membership.customerId !== session.user.id) {
+		const membership = await controller.cancelMembership(ctx.body.membershipId);
+		if (!membership) {
 			return { error: "Membership not found", status: 404 };
 		}
 

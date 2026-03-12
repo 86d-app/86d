@@ -6,16 +6,20 @@ export const checkAccess = createStoreEndpoint(
 	{
 		method: "GET",
 		query: z.object({
-			customerId: z.string().min(1),
-			productId: z.string().min(1),
+			productId: z.string().min(1).max(200),
 		}),
 	},
 	async (ctx) => {
+		const session = ctx.context.session;
+		if (!session) {
+			return { hasAccess: false };
+		}
+
 		const controller = ctx.context.controllers
 			.memberships as MembershipController;
 
 		const hasAccess = await controller.canAccessProduct({
-			customerId: ctx.query.customerId,
+			customerId: session.user.id,
 			productId: ctx.query.productId,
 		});
 

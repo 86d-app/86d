@@ -80,6 +80,18 @@ export default function memberships(options?: MembershipsOptions): Module {
 				},
 			],
 		},
+		store: {
+			pages: [
+				{
+					path: "/memberships",
+					component: "PlanListing",
+				},
+				{
+					path: "/memberships/:slug",
+					component: "PlanDetail",
+				},
+			],
+		},
 		options,
 	};
 }

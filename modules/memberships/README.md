@@ -57,20 +57,24 @@ GET /memberships/plans/gold
 → { plan: MembershipPlan, benefits: MembershipBenefit[] }
 ```
 
-### Subscribe
+### Subscribe (requires auth)
 
 ```
 POST /memberships/subscribe
-{ customerId: string, planId: string }
+{ planId: string }
 → { membership: Membership }
 ```
 
-### Check product access
+Customer ID is derived from the session — never provided by the client.
+
+### Check product access (requires auth)
 
 ```
-GET /memberships/check-access?customerId=cust_1&productId=prod_1
+GET /memberships/check-access?productId=prod_1
 → { hasAccess: boolean }
 ```
+
+Returns `{ hasAccess: false }` for unauthenticated requests. Customer ID is derived from the session.
 
 ## Admin Endpoints
 
@@ -90,6 +94,16 @@ GET /memberships/check-access?customerId=cust_1&productId=prod_1
 | POST | `/admin/memberships/benefits/:id/remove` | Remove a benefit |
 | POST | `/admin/memberships/plans/:planId/products/gate` | Gate products to plan |
 | POST | `/admin/memberships/plans/:planId/products/ungate` | Ungate products |
+
+## Store UI
+
+The module includes customer-facing store components in `src/store/components/` (TSX logic + MDX templates):
+
+| Page | Component | Description |
+|------|-----------|-------------|
+| `/memberships` | `PlanListing` | Browse all active membership plans with pricing and features |
+| `/memberships/:slug` | `PlanDetail` | Plan detail with benefits, features list, and subscribe action |
+| (embeddable) | `MyMembership` | Customer membership dashboard — view status, benefits, cancel |
 
 ## Admin UI
 

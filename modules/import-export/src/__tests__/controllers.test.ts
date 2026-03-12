@@ -403,10 +403,10 @@ describe("import-export controller edge cases", () => {
 			const before = new Date();
 			const completed = await controller.completeImport(job.id);
 			const after = new Date();
-			expect(completed!.completedAt!.getTime()).toBeGreaterThanOrEqual(
+			expect(completed?.completedAt?.getTime()).toBeGreaterThanOrEqual(
 				before.getTime(),
 			);
-			expect(completed!.completedAt!.getTime()).toBeLessThanOrEqual(
+			expect(completed?.completedAt?.getTime()).toBeLessThanOrEqual(
 				after.getTime(),
 			);
 		});
