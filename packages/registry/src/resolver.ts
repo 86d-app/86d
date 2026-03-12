@@ -260,6 +260,8 @@ export function readLocalManifest(
  * Walks the `requires` field in the registry manifest to find all modules
  * that must be installed for `moduleName` to work. Returns module names
  * in installation order (dependencies before dependents).
+ *
+ * Throws if a circular dependency is detected.
  */
 export function getModuleDependencies(
 	moduleName: string,
@@ -269,24 +271,60 @@ export function getModuleDependencies(
 
 	const modules = manifest.modules;
 	const visited = new Set<string>();
+	const inStack = new Set<string>();
 	const result: string[] = [];
 
-	function walk(name: string) {
+	function walk(name: string, path: string[]) {
+		if (inStack.has(name)) {
+			const cycleStart = path.indexOf(name);
+			const cycle = [...path.slice(cycleStart), name];
+			throw new Error(`Circular dependency detected: ${cycle.join(" → ")}`);
+		}
 		if (visited.has(name)) return;
+
 		visited.add(name);
+		inStack.add(name);
 
 		const entry = modules[name];
-		if (!entry) return;
-
-		for (const dep of entry.requires) {
-			walk(dep);
+		if (entry) {
+			for (const dep of entry.requires) {
+				walk(dep, [...path, name]);
+			}
 		}
 
+		inStack.delete(name);
 		result.push(name);
 	}
 
-	walk(moduleName);
+	walk(moduleName, []);
 
 	// Remove the module itself from its own dependency list
 	return result.filter((n) => n !== moduleName);
+}
+
+/**
+ * Detect circular dependencies across all modules in a manifest.
+ *
+ * Returns an array of cycle descriptions (empty if no cycles found).
+ * Each cycle is a string like "a → b → c → a".
+ */
+export function detectCircularDependencies(
+	manifest: RegistryManifest,
+): string[] {
+	const cycles: string[] = [];
+
+	for (const name of Object.keys(manifest.modules)) {
+		try {
+			getModuleDependencies(name, manifest);
+		} catch (err) {
+			if (err instanceof Error && err.message.includes("Circular")) {
+				const cycle = err.message.replace("Circular dependency detected: ", "");
+				if (!cycles.includes(cycle)) {
+					cycles.push(cycle);
+				}
+			}
+		}
+	}
+
+	return cycles;
 }

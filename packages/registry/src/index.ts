@@ -11,8 +11,16 @@ export {
 	fetchModule,
 	fetchWithRetry,
 } from "./fetcher.js";
+export {
+	generateLockfile,
+	isLockfileSatisfied,
+	readLockfile,
+	verifyLockfile,
+	writeLockfile,
+} from "./lockfile.js";
 export { buildManifest } from "./manifest.js";
 export {
+	detectCircularDependencies,
 	getLocalModuleNames,
 	getModuleDependencies,
 	readLocalManifest,
@@ -28,6 +36,7 @@ export {
 
 // ── Types ─────────────────────────────────────────────────────────────
 
+export type { LockedModule, Lockfile, LockfileDiff } from "./lockfile.js";
 export type { ResolvedTemplate } from "./template.js";
 export type {
 	FetchResult,

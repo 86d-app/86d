@@ -27,9 +27,15 @@ import {
 } from "node:fs";
 import { join, resolve } from "node:path";
 import {
+	detectCircularDependencies,
 	fetchModule,
+	generateLockfile,
+	isLockfileSatisfied,
+	readLockfile,
 	readStoreConfig,
 	resolveModules,
+	verifyLockfile,
+	writeLockfile,
 } from "../packages/registry/src/index.js";
 import type { ResolvedModule } from "../packages/registry/src/index.js";
 
@@ -901,12 +907,62 @@ function getCachedResolved(): ResolvedModule[] {
 	return _cachedResolved;
 }
 
+const isFrozen = process.argv.includes("--frozen");
+
 // Run all generators
 async function runGenerators() {
 	// Pre-resolve modules once for all generators (with buildtime fetch)
 	console.log("Resolving modules...");
 	_cachedResolved = await resolveModulesFromRegistry();
 	_cachedModules = resolvedToPackageNames(_cachedResolved);
+
+	// Check for circular dependencies in the registry manifest
+	const { readLocalManifest } = await import(
+		"../packages/registry/src/index.js"
+	);
+	const manifest = readLocalManifest(join(WORKSPACE_ROOT, "registry.json"));
+	if (manifest) {
+		const cycles = detectCircularDependencies(manifest);
+		if (cycles.length > 0) {
+			console.error("✗ Circular dependencies detected:");
+			for (const cycle of cycles) {
+				console.error(`  ${cycle}`);
+			}
+			process.exit(1);
+		}
+	}
+
+	// Lock file: verify (--frozen) or generate
+	if (isFrozen) {
+		const existingLock = readLockfile(WORKSPACE_ROOT);
+		if (!existingLock) {
+			console.error(
+				"✗ --frozen requires registry.lock.json but none was found",
+			);
+			process.exit(1);
+		}
+		const diff = verifyLockfile(existingLock, _cachedResolved);
+		if (!isLockfileSatisfied(diff)) {
+			console.error("✗ registry.lock.json is out of date:");
+			if (diff.added.length > 0)
+				console.error(`  Added: ${diff.added.join(", ")}`);
+			if (diff.removed.length > 0)
+				console.error(`  Removed: ${diff.removed.join(", ")}`);
+			if (diff.changed.length > 0)
+				console.error(`  Changed: ${diff.changed.join(", ")}`);
+			console.error(
+				"  Run without --frozen to regenerate the lock file.",
+			);
+			process.exit(1);
+		}
+		console.log("✓ registry.lock.json is up to date");
+	} else {
+		const lockfile = generateLockfile(_cachedResolved, WORKSPACE_ROOT);
+		writeLockfile(WORKSPACE_ROOT, lockfile);
+		console.log(
+			`✓ Generated registry.lock.json with ${Object.keys(lockfile.modules).length} module(s)`,
+		);
+	}
 
 	await generateModulesFile();
 	await generateApiRouter();

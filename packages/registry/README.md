@@ -29,6 +29,8 @@ The registry provides the module resolution layer for 86d stores. When a store's
 - Resolve modules and templates from local workspace, GitHub repos, or npm
 - Generate and consume `registry.json` manifests with integrity verification
 - Support `"*"` wildcard for including all available modules
+- **Lock file** (`registry.lock.json`) for reproducible builds with `--frozen` CI support
+- **Circular dependency detection** — throws on cycles with descriptive error messages
 - Template resolution — fetch store templates from GitHub or npm
 - Graceful handling of missing modules/templates with warnings
 - Retry with exponential backoff for transient network failures
@@ -223,7 +225,25 @@ Scan the `modules/` directory and build a registry manifest with full metadata f
 Read and parse a store's `config.json` file.
 
 ### `getModuleDependencies(name, manifest): string[]`
-Get the full transitive dependency list for a module, topologically sorted (dependencies before dependents). Handles circular dependencies gracefully.
+Get the full transitive dependency list for a module, topologically sorted (dependencies before dependents). Throws if a circular dependency is detected.
+
+### `detectCircularDependencies(manifest): string[]`
+Scan all modules in a manifest for circular dependencies. Returns an array of cycle descriptions (e.g., `"a → b → c → a"`). Returns empty array if no cycles exist.
+
+### `generateLockfile(resolved, root): Lockfile`
+Generate a lock file from resolved modules, capturing source, version, integrity hash, and location.
+
+### `writeLockfile(root, lockfile): void`
+Write the lock file to `registry.lock.json` at the project root.
+
+### `readLockfile(root): Lockfile | undefined`
+Read the lock file from the project root. Returns undefined if not found or invalid.
+
+### `verifyLockfile(lockfile, resolved): LockfileDiff`
+Compare a lock file against current resolved modules. Returns `{ added, removed, changed }`.
+
+### `isLockfileSatisfied(diff): boolean`
+Returns true if the diff has no added, removed, or changed modules.
 
 ### `getLocalModuleNames(root): string[]`
 Get sorted list of all locally available module names.
@@ -252,6 +272,46 @@ The registry is used at buildtime by `scripts/generate-modules.ts`:
 3. Generates the store's import files in `apps/store/generated/`
 
 This means `bun run generate:modules` will pull any missing modules before generating code. Modules that fail to fetch are skipped with warnings.
+
+## Lock File
+
+The `registry.lock.json` file captures the exact resolved state of all modules for reproducible builds. It is generated automatically by `bun run generate:modules`.
+
+```json
+{
+  "lockfileVersion": 1,
+  "generatedAt": "2026-03-12T18:00:00.000Z",
+  "modules": {
+    "products": {
+      "source": "local",
+      "packageName": "@86d-app/products",
+      "version": "0.0.4",
+      "integrity": "sha256-...",
+      "localPath": "modules/products"
+    }
+  }
+}
+```
+
+### Frozen Installs (CI)
+
+Use `--frozen` to fail if the lock file is outdated:
+
+```sh
+bun run generate:modules -- --frozen
+```
+
+This ensures CI builds use the exact same module resolution as the developer who last generated the lock file.
+
+## Circular Dependency Detection
+
+The registry detects circular dependencies in the module dependency graph and throws descriptive errors:
+
+```
+Circular dependency detected: cart → checkout → orders → cart
+```
+
+This runs automatically during `generate:modules` and will fail the build if cycles are found.
 
 ## Notes
 

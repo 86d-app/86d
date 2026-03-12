@@ -2,6 +2,7 @@ import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
+	detectCircularDependencies,
 	getLocalModuleNames,
 	getModuleDependencies,
 	readLocalManifest,
@@ -322,7 +323,7 @@ describe("getModuleDependencies", () => {
 		expect(deps).toEqual([]);
 	});
 
-	it("handles circular dependencies gracefully", () => {
+	it("throws on circular dependencies", () => {
 		const circularManifest: RegistryManifest = {
 			version: 1,
 			baseUrl: "https://github.com/86d-app/86d",
@@ -353,8 +354,138 @@ describe("getModuleDependencies", () => {
 				},
 			},
 		};
-		// Should not infinite loop — visited set prevents it
-		const deps = getModuleDependencies("a", circularManifest);
-		expect(deps).toEqual(["b"]);
+		expect(() => getModuleDependencies("a", circularManifest)).toThrow(
+			"Circular dependency detected: a → b → a",
+		);
+	});
+
+	it("throws on three-node cycle", () => {
+		const manifest: RegistryManifest = {
+			version: 1,
+			baseUrl: "https://github.com/86d-app/86d",
+			defaultRef: "main",
+			templates: {},
+			modules: {
+				a: {
+					name: "@86d-app/a",
+					description: "",
+					version: "0.0.1",
+					category: "general",
+					path: "modules/a",
+					requires: ["b"],
+					hasStoreComponents: false,
+					hasAdminComponents: false,
+					hasStorePages: false,
+				},
+				b: {
+					name: "@86d-app/b",
+					description: "",
+					version: "0.0.1",
+					category: "general",
+					path: "modules/b",
+					requires: ["c"],
+					hasStoreComponents: false,
+					hasAdminComponents: false,
+					hasStorePages: false,
+				},
+				c: {
+					name: "@86d-app/c",
+					description: "",
+					version: "0.0.1",
+					category: "general",
+					path: "modules/c",
+					requires: ["a"],
+					hasStoreComponents: false,
+					hasAdminComponents: false,
+					hasStorePages: false,
+				},
+			},
+		};
+		expect(() => getModuleDependencies("a", manifest)).toThrow(
+			"Circular dependency detected: a → b → c → a",
+		);
+	});
+});
+
+describe("detectCircularDependencies", () => {
+	it("returns empty array for acyclic graph", () => {
+		const manifest: RegistryManifest = {
+			version: 1,
+			baseUrl: "https://github.com/86d-app/86d",
+			defaultRef: "main",
+			templates: {},
+			modules: {
+				a: {
+					name: "@86d-app/a",
+					description: "",
+					version: "0.0.1",
+					category: "general",
+					path: "modules/a",
+					requires: ["b"],
+					hasStoreComponents: false,
+					hasAdminComponents: false,
+					hasStorePages: false,
+				},
+				b: {
+					name: "@86d-app/b",
+					description: "",
+					version: "0.0.1",
+					category: "general",
+					path: "modules/b",
+					requires: [],
+					hasStoreComponents: false,
+					hasAdminComponents: false,
+					hasStorePages: false,
+				},
+			},
+		};
+		expect(detectCircularDependencies(manifest)).toEqual([]);
+	});
+
+	it("detects cycles across all modules", () => {
+		const manifest: RegistryManifest = {
+			version: 1,
+			baseUrl: "https://github.com/86d-app/86d",
+			defaultRef: "main",
+			templates: {},
+			modules: {
+				a: {
+					name: "@86d-app/a",
+					description: "",
+					version: "0.0.1",
+					category: "general",
+					path: "modules/a",
+					requires: ["b"],
+					hasStoreComponents: false,
+					hasAdminComponents: false,
+					hasStorePages: false,
+				},
+				b: {
+					name: "@86d-app/b",
+					description: "",
+					version: "0.0.1",
+					category: "general",
+					path: "modules/b",
+					requires: ["a"],
+					hasStoreComponents: false,
+					hasAdminComponents: false,
+					hasStorePages: false,
+				},
+				c: {
+					name: "@86d-app/c",
+					description: "",
+					version: "0.0.1",
+					category: "general",
+					path: "modules/c",
+					requires: [],
+					hasStoreComponents: false,
+					hasAdminComponents: false,
+					hasStorePages: false,
+				},
+			},
+		};
+		const cycles = detectCircularDependencies(manifest);
+		expect(cycles.length).toBeGreaterThan(0);
+		expect(cycles[0]).toContain("→");
 	});
 });
