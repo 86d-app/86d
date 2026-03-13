@@ -6,7 +6,11 @@ import { storeEndpoints } from "./store/endpoints";
 
 export type {
 	CalculatedRate,
+	Shipment,
+	ShipmentStatus,
+	ShippingCarrier,
 	ShippingController,
+	ShippingMethod,
 	ShippingRate,
 	ShippingZone,
 } from "./service";
@@ -19,13 +23,26 @@ export interface ShippingOptions extends ModuleConfig {
 export default function shipping(options?: ShippingOptions): Module {
 	return {
 		id: "shipping",
-		version: "0.0.1",
+		version: "0.1.0",
 		schema: shippingSchema,
 		exports: {
-			read: ["shippingRates", "shippingZones"],
+			read: [
+				"shippingRates",
+				"shippingZones",
+				"shippingMethods",
+				"shippingCarriers",
+				"shipments",
+			],
 		},
 		events: {
-			emits: ["shipment.created", "shipment.delivered"],
+			emits: [
+				"shipment.created",
+				"shipment.shipped",
+				"shipment.in_transit",
+				"shipment.delivered",
+				"shipment.returned",
+				"shipment.failed",
+			],
 		},
 		init: async (ctx: ModuleContext) => {
 			const controller = createShippingController(ctx.data);
@@ -42,6 +59,20 @@ export default function shipping(options?: ShippingOptions): Module {
 					component: "ShippingAdmin",
 					label: "Shipping",
 					icon: "Truck",
+					group: "Fulfillment",
+				},
+				{
+					path: "/admin/shipping/carriers",
+					component: "ShippingCarriersAdmin",
+					label: "Carriers",
+					icon: "Building2",
+					group: "Fulfillment",
+				},
+				{
+					path: "/admin/shipping/shipments",
+					component: "ShipmentsAdmin",
+					label: "Shipments",
+					icon: "Package",
 					group: "Fulfillment",
 				},
 			],

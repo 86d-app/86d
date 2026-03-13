@@ -54,4 +54,76 @@ export const shippingSchema = {
 			},
 		},
 	},
+	shippingMethod: {
+		fields: {
+			id: { type: "string", required: true },
+			name: { type: "string", required: true },
+			description: { type: "string", required: false },
+			/** Minimum estimated delivery days */
+			estimatedDaysMin: { type: "number", required: true },
+			/** Maximum estimated delivery days */
+			estimatedDaysMax: { type: "number", required: true },
+			isActive: { type: "boolean", required: true, defaultValue: true },
+			/** Display order (lower = first) */
+			sortOrder: { type: "number", required: true, defaultValue: 0 },
+			createdAt: {
+				type: "date",
+				required: true,
+				defaultValue: () => new Date(),
+			},
+			updatedAt: {
+				type: "date",
+				required: true,
+				defaultValue: () => new Date(),
+				onUpdate: () => new Date(),
+			},
+		},
+	},
+	shippingCarrier: {
+		fields: {
+			id: { type: "string", required: true },
+			name: { type: "string", required: true },
+			/** Unique code identifier, e.g. "fedex", "ups" */
+			code: { type: "string", required: true, unique: true },
+			/** Tracking URL template with {tracking} placeholder */
+			trackingUrlTemplate: { type: "string", required: false },
+			isActive: { type: "boolean", required: true, defaultValue: true },
+			createdAt: {
+				type: "date",
+				required: true,
+				defaultValue: () => new Date(),
+			},
+			updatedAt: {
+				type: "date",
+				required: true,
+				defaultValue: () => new Date(),
+				onUpdate: () => new Date(),
+			},
+		},
+	},
+	shipment: {
+		fields: {
+			id: { type: "string", required: true },
+			orderId: { type: "string", required: true },
+			carrierId: { type: "string", required: false },
+			methodId: { type: "string", required: false },
+			trackingNumber: { type: "string", required: false },
+			status: { type: "string", required: true, defaultValue: "pending" },
+			shippedAt: { type: "date", required: false },
+			deliveredAt: { type: "date", required: false },
+			estimatedDelivery: { type: "date", required: false },
+			notes: { type: "string", required: false },
+			createdAt: {
+				type: "date",
+				required: true,
+				defaultValue: () => new Date(),
+			},
+			updatedAt: {
+				type: "date",
+				required: true,
+				defaultValue: () => new Date(),
+				onUpdate: () => new Date(),
+			},
+		},
+	},
 } satisfies ModuleSchema;

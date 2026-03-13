@@ -1,0 +1,16 @@
+import { createAdminEndpoint, z } from "@86d-app/core";
+import type { ShippingController } from "../../service";
+
+export const deleteMethod = createAdminEndpoint(
+	"/admin/shipping/methods/:id/delete",
+	{
+		method: "DELETE",
+		params: z.object({ id: z.string() }),
+	},
+	async (ctx) => {
+		const controller = ctx.context.controllers.shipping as ShippingController;
+		const deleted = await controller.deleteMethod(ctx.params.id);
+		if (!deleted) return { error: "Shipping method not found", status: 404 };
+		return { success: true };
+	},
+);

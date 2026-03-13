@@ -5,9 +5,9 @@ import { createShippingController } from "../service-impl";
 /**
  * Admin workflow and edge-case tests for the shipping module.
  *
- * Covers: zone management, rate management, rate calculation with
- * complex conditions, wildcard zones, weight-based shipping, cascading
- * deletes, and multi-zone rate resolution.
+ * Covers: zone management, rate management, rate calculation,
+ * shipping methods, carriers, shipments with status transitions,
+ * tracking URL generation, and multi-zone rate resolution.
  */
 
 describe("shipping — admin workflows", () => {
@@ -593,6 +593,292 @@ describe("shipping — admin workflows", () => {
 			});
 			expect(rates[0].zoneName).toBe("North America");
 			expect(rates[0].rateName).toBe("Standard");
+		});
+	});
+
+	// ── Shipping Methods ──────────────────────────────────────────
+
+	describe("method management", () => {
+		it("creates and retrieves a shipping method", async () => {
+			const method = await controller.createMethod({
+				name: "Standard",
+				estimatedDaysMin: 5,
+				estimatedDaysMax: 7,
+			});
+			const fetched = await controller.getMethod(method.id);
+			expect(fetched?.name).toBe("Standard");
+			expect(fetched?.estimatedDaysMin).toBe(5);
+			expect(fetched?.estimatedDaysMax).toBe(7);
+		});
+
+		it("lists only active methods", async () => {
+			await controller.createMethod({
+				name: "Standard",
+				estimatedDaysMin: 5,
+				estimatedDaysMax: 7,
+			});
+			await controller.createMethod({
+				name: "Express",
+				estimatedDaysMin: 1,
+				estimatedDaysMax: 2,
+			});
+			await controller.createMethod({
+				name: "Draft",
+				estimatedDaysMin: 3,
+				estimatedDaysMax: 4,
+				isActive: false,
+			});
+
+			const active = await controller.listMethods({ activeOnly: true });
+			expect(active).toHaveLength(2);
+		});
+
+		it("updates method delivery estimates", async () => {
+			const method = await controller.createMethod({
+				name: "Standard",
+				estimatedDaysMin: 5,
+				estimatedDaysMax: 7,
+			});
+			const updated = await controller.updateMethod(method.id, {
+				estimatedDaysMin: 3,
+				estimatedDaysMax: 5,
+			});
+			expect(updated?.estimatedDaysMin).toBe(3);
+			expect(updated?.estimatedDaysMax).toBe(5);
+		});
+
+		it("deletes a method and confirms removal", async () => {
+			const method = await controller.createMethod({
+				name: "Overnight",
+				estimatedDaysMin: 0,
+				estimatedDaysMax: 1,
+			});
+			expect(await controller.deleteMethod(method.id)).toBe(true);
+			expect(await controller.getMethod(method.id)).toBeNull();
+		});
+
+		it("respects sort order", async () => {
+			await controller.createMethod({
+				name: "Express",
+				estimatedDaysMin: 1,
+				estimatedDaysMax: 2,
+				sortOrder: 1,
+			});
+			await controller.createMethod({
+				name: "Standard",
+				estimatedDaysMin: 5,
+				estimatedDaysMax: 7,
+				sortOrder: 2,
+			});
+			await controller.createMethod({
+				name: "Overnight",
+				estimatedDaysMin: 0,
+				estimatedDaysMax: 1,
+				sortOrder: 0,
+			});
+
+			const all = await controller.listMethods();
+			expect(all).toHaveLength(3);
+		});
+	});
+
+	// ── Carriers ──────────────────────────────────────────────────
+
+	describe("carrier management", () => {
+		it("creates a carrier with tracking URL template", async () => {
+			const carrier = await controller.createCarrier({
+				name: "FedEx",
+				code: "fedex",
+				trackingUrlTemplate:
+					"https://www.fedex.com/fedextrack/?trknbr={tracking}",
+			});
+			expect(carrier.name).toBe("FedEx");
+			expect(carrier.code).toBe("fedex");
+			expect(carrier.trackingUrlTemplate).toContain("{tracking}");
+		});
+
+		it("normalizes carrier codes to lowercase", async () => {
+			const carrier = await controller.createCarrier({
+				name: "UPS",
+				code: "UPS",
+			});
+			expect(carrier.code).toBe("ups");
+		});
+
+		it("lists active carriers only", async () => {
+			await controller.createCarrier({ name: "FedEx", code: "fedex" });
+			await controller.createCarrier({ name: "UPS", code: "ups" });
+			await controller.createCarrier({
+				name: "Defunct",
+				code: "defunct",
+				isActive: false,
+			});
+
+			const active = await controller.listCarriers({ activeOnly: true });
+			expect(active).toHaveLength(2);
+		});
+
+		it("updates carrier tracking URL", async () => {
+			const carrier = await controller.createCarrier({
+				name: "Custom",
+				code: "custom",
+			});
+			const updated = await controller.updateCarrier(carrier.id, {
+				trackingUrlTemplate: "https://track.custom.com/{tracking}",
+			});
+			expect(updated?.trackingUrlTemplate).toBe(
+				"https://track.custom.com/{tracking}",
+			);
+		});
+
+		it("deletes a carrier", async () => {
+			const carrier = await controller.createCarrier({
+				name: "Old",
+				code: "old",
+			});
+			expect(await controller.deleteCarrier(carrier.id)).toBe(true);
+			expect(await controller.getCarrier(carrier.id)).toBeNull();
+		});
+	});
+
+	// ── Shipments ─────────────────────────────────────────────────
+
+	describe("shipment workflows", () => {
+		it("creates a shipment with all details", async () => {
+			const carrier = await controller.createCarrier({
+				name: "FedEx",
+				code: "fedex",
+				trackingUrlTemplate:
+					"https://www.fedex.com/fedextrack/?trknbr={tracking}",
+			});
+			const method = await controller.createMethod({
+				name: "Express",
+				estimatedDaysMin: 1,
+				estimatedDaysMax: 2,
+			});
+
+			const shipment = await controller.createShipment({
+				orderId: "order-42",
+				carrierId: carrier.id,
+				methodId: method.id,
+				trackingNumber: "794644790132",
+				notes: "Signature required",
+			});
+
+			expect(shipment.orderId).toBe("order-42");
+			expect(shipment.carrierId).toBe(carrier.id);
+			expect(shipment.methodId).toBe(method.id);
+			expect(shipment.trackingNumber).toBe("794644790132");
+			expect(shipment.status).toBe("pending");
+		});
+
+		it("full lifecycle: pending → shipped → in_transit → delivered", async () => {
+			const shipment = await controller.createShipment({
+				orderId: "order-1",
+			});
+			expect(shipment.status).toBe("pending");
+
+			const shipped = await controller.updateShipmentStatus(
+				shipment.id,
+				"shipped",
+			);
+			expect(shipped?.status).toBe("shipped");
+			expect(shipped?.shippedAt).toBeInstanceOf(Date);
+
+			const inTransit = await controller.updateShipmentStatus(
+				shipment.id,
+				"in_transit",
+			);
+			expect(inTransit?.status).toBe("in_transit");
+
+			const delivered = await controller.updateShipmentStatus(
+				shipment.id,
+				"delivered",
+			);
+			expect(delivered?.status).toBe("delivered");
+			expect(delivered?.deliveredAt).toBeInstanceOf(Date);
+		});
+
+		it("lists shipments by order", async () => {
+			await controller.createShipment({ orderId: "order-1" });
+			await controller.createShipment({ orderId: "order-1" });
+			await controller.createShipment({ orderId: "order-2" });
+
+			const forOrder1 = await controller.listShipments({
+				orderId: "order-1",
+			});
+			expect(forOrder1).toHaveLength(2);
+		});
+
+		it("lists shipments by status", async () => {
+			const s1 = await controller.createShipment({ orderId: "order-1" });
+			await controller.createShipment({ orderId: "order-2" });
+			await controller.updateShipmentStatus(s1.id, "shipped");
+
+			const shipped = await controller.listShipments({
+				status: "shipped",
+			});
+			expect(shipped).toHaveLength(1);
+			expect(shipped[0].orderId).toBe("order-1");
+		});
+
+		it("generates tracking URL for shipment with carrier", async () => {
+			const carrier = await controller.createCarrier({
+				name: "UPS",
+				code: "ups",
+				trackingUrlTemplate: "https://www.ups.com/track?tracknum={tracking}",
+			});
+			const shipment = await controller.createShipment({
+				orderId: "order-1",
+				carrierId: carrier.id,
+				trackingNumber: "1Z999AA10123456784",
+			});
+
+			const url = await controller.getTrackingUrl(shipment.id);
+			expect(url).toBe("https://www.ups.com/track?tracknum=1Z999AA10123456784");
+		});
+
+		it("returns null tracking URL for shipment without carrier", async () => {
+			const shipment = await controller.createShipment({
+				orderId: "order-1",
+				trackingNumber: "TRACK123",
+			});
+			expect(await controller.getTrackingUrl(shipment.id)).toBeNull();
+		});
+
+		it("rejects invalid status transitions", async () => {
+			const shipment = await controller.createShipment({
+				orderId: "order-1",
+			});
+			// Can't go pending → delivered
+			expect(
+				await controller.updateShipmentStatus(shipment.id, "delivered"),
+			).toBeNull();
+			// Can't go pending → in_transit
+			expect(
+				await controller.updateShipmentStatus(shipment.id, "in_transit"),
+			).toBeNull();
+		});
+
+		it("updates shipment details without changing status", async () => {
+			const shipment = await controller.createShipment({
+				orderId: "order-1",
+			});
+			const updated = await controller.updateShipment(shipment.id, {
+				trackingNumber: "NEW-TRACK-123",
+				notes: "Updated tracking info",
+			});
+			expect(updated?.trackingNumber).toBe("NEW-TRACK-123");
+			expect(updated?.notes).toBe("Updated tracking info");
+			expect(updated?.status).toBe("pending");
+		});
+
+		it("deletes a shipment", async () => {
+			const shipment = await controller.createShipment({
+				orderId: "order-1",
+			});
+			expect(await controller.deleteShipment(shipment.id)).toBe(true);
+			expect(await controller.getShipment(shipment.id)).toBeNull();
 		});
 	});
 });

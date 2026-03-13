@@ -32,6 +32,56 @@ export interface CalculatedRate {
 	price: number;
 }
 
+export interface ShippingMethod {
+	id: string;
+	name: string;
+	description?: string | undefined;
+	/** Minimum estimated delivery days */
+	estimatedDaysMin: number;
+	/** Maximum estimated delivery days */
+	estimatedDaysMax: number;
+	isActive: boolean;
+	/** Display order (lower = first) */
+	sortOrder: number;
+	createdAt: Date;
+	updatedAt: Date;
+}
+
+export interface ShippingCarrier {
+	id: string;
+	name: string;
+	/** Unique code identifier, e.g. "fedex", "ups" */
+	code: string;
+	/** Tracking URL template with {tracking} placeholder */
+	trackingUrlTemplate?: string | undefined;
+	isActive: boolean;
+	createdAt: Date;
+	updatedAt: Date;
+}
+
+export type ShipmentStatus =
+	| "pending"
+	| "shipped"
+	| "in_transit"
+	| "delivered"
+	| "returned"
+	| "failed";
+
+export interface Shipment {
+	id: string;
+	orderId: string;
+	carrierId?: string | undefined;
+	methodId?: string | undefined;
+	trackingNumber?: string | undefined;
+	status: ShipmentStatus;
+	shippedAt?: Date | undefined;
+	deliveredAt?: Date | undefined;
+	estimatedDelivery?: Date | undefined;
+	notes?: string | undefined;
+	createdAt: Date;
+	updatedAt: Date;
+}
+
 export interface ShippingController extends ModuleController {
 	// ── Zones ────────────────────────────────────────────────────────────
 	createZone(params: {
@@ -91,14 +141,102 @@ export interface ShippingController extends ModuleController {
 
 	deleteRate(id: string): Promise<boolean>;
 
-	/**
-	 * Return all rates applicable to a given destination + order context.
-	 * Zones are matched by country (empty countries list = wildcard).
-	 * Rates are filtered by amount/weight conditions.
-	 */
 	calculateRates(params: {
 		country: string;
 		orderAmount: number;
 		weight?: number | undefined;
 	}): Promise<CalculatedRate[]>;
+
+	// ── Methods ──────────────────────────────────────────────────────────
+	createMethod(params: {
+		name: string;
+		description?: string | undefined;
+		estimatedDaysMin: number;
+		estimatedDaysMax: number;
+		isActive?: boolean | undefined;
+		sortOrder?: number | undefined;
+	}): Promise<ShippingMethod>;
+
+	getMethod(id: string): Promise<ShippingMethod | null>;
+
+	listMethods(params?: {
+		activeOnly?: boolean | undefined;
+	}): Promise<ShippingMethod[]>;
+
+	updateMethod(
+		id: string,
+		params: {
+			name?: string | undefined;
+			description?: string | undefined;
+			estimatedDaysMin?: number | undefined;
+			estimatedDaysMax?: number | undefined;
+			isActive?: boolean | undefined;
+			sortOrder?: number | undefined;
+		},
+	): Promise<ShippingMethod | null>;
+
+	deleteMethod(id: string): Promise<boolean>;
+
+	// ── Carriers ─────────────────────────────────────────────────────────
+	createCarrier(params: {
+		name: string;
+		code: string;
+		trackingUrlTemplate?: string | undefined;
+		isActive?: boolean | undefined;
+	}): Promise<ShippingCarrier>;
+
+	getCarrier(id: string): Promise<ShippingCarrier | null>;
+
+	listCarriers(params?: {
+		activeOnly?: boolean | undefined;
+	}): Promise<ShippingCarrier[]>;
+
+	updateCarrier(
+		id: string,
+		params: {
+			name?: string | undefined;
+			code?: string | undefined;
+			trackingUrlTemplate?: string | undefined;
+			isActive?: boolean | undefined;
+		},
+	): Promise<ShippingCarrier | null>;
+
+	deleteCarrier(id: string): Promise<boolean>;
+
+	// ── Shipments ────────────────────────────────────────────────────────
+	createShipment(params: {
+		orderId: string;
+		carrierId?: string | undefined;
+		methodId?: string | undefined;
+		trackingNumber?: string | undefined;
+		estimatedDelivery?: Date | undefined;
+		notes?: string | undefined;
+	}): Promise<Shipment>;
+
+	getShipment(id: string): Promise<Shipment | null>;
+
+	listShipments(params?: {
+		orderId?: string | undefined;
+		status?: ShipmentStatus | undefined;
+	}): Promise<Shipment[]>;
+
+	updateShipment(
+		id: string,
+		params: {
+			carrierId?: string | undefined;
+			methodId?: string | undefined;
+			trackingNumber?: string | undefined;
+			estimatedDelivery?: Date | undefined;
+			notes?: string | undefined;
+		},
+	): Promise<Shipment | null>;
+
+	updateShipmentStatus(
+		id: string,
+		status: ShipmentStatus,
+	): Promise<Shipment | null>;
+
+	deleteShipment(id: string): Promise<boolean>;
+
+	getTrackingUrl(shipmentId: string): Promise<string | null>;
 }

@@ -1,10 +1,23 @@
 import type { ModuleDataService } from "@86d-app/core";
 import type {
 	CalculatedRate,
+	Shipment,
+	ShipmentStatus,
+	ShippingCarrier,
 	ShippingController,
+	ShippingMethod,
 	ShippingRate,
 	ShippingZone,
 } from "./service";
+
+const VALID_SHIPMENT_TRANSITIONS: Record<ShipmentStatus, ShipmentStatus[]> = {
+	pending: ["shipped", "failed"],
+	shipped: ["in_transit", "delivered", "returned", "failed"],
+	in_transit: ["delivered", "returned", "failed"],
+	delivered: ["returned"],
+	returned: [],
+	failed: ["pending"],
+};
 
 export function createShippingController(
 	data: ModuleDataService,
@@ -220,6 +233,251 @@ export function createShippingController(
 
 			// Sort cheapest first
 			return results.sort((a, b) => a.price - b.price);
+		},
+
+		// ── Methods ──────────────────────────────────────────────────────────
+
+		async createMethod(params): Promise<ShippingMethod> {
+			const id = crypto.randomUUID();
+			const now = new Date();
+			const method: ShippingMethod = {
+				id,
+				name: params.name,
+				description: params.description,
+				estimatedDaysMin: params.estimatedDaysMin,
+				estimatedDaysMax: params.estimatedDaysMax,
+				isActive: params.isActive ?? true,
+				sortOrder: params.sortOrder ?? 0,
+				createdAt: now,
+				updatedAt: now,
+			};
+			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+			await data.upsert("shippingMethod", id, method as Record<string, any>);
+			return method;
+		},
+
+		async getMethod(id): Promise<ShippingMethod | null> {
+			return (await data.get("shippingMethod", id)) as ShippingMethod | null;
+		},
+
+		async listMethods(params): Promise<ShippingMethod[]> {
+			if (params?.activeOnly) {
+				return (await data.findMany("shippingMethod", {
+					where: { isActive: true },
+				})) as ShippingMethod[];
+			}
+			return (await data.findMany("shippingMethod", {})) as ShippingMethod[];
+		},
+
+		async updateMethod(id, params): Promise<ShippingMethod | null> {
+			const existing = (await data.get(
+				"shippingMethod",
+				id,
+			)) as ShippingMethod | null;
+			if (!existing) return null;
+
+			const updated: ShippingMethod = {
+				...existing,
+				...(params.name !== undefined ? { name: params.name } : {}),
+				...(params.description !== undefined
+					? { description: params.description }
+					: {}),
+				...(params.estimatedDaysMin !== undefined
+					? { estimatedDaysMin: params.estimatedDaysMin }
+					: {}),
+				...(params.estimatedDaysMax !== undefined
+					? { estimatedDaysMax: params.estimatedDaysMax }
+					: {}),
+				...(params.isActive !== undefined ? { isActive: params.isActive } : {}),
+				...(params.sortOrder !== undefined
+					? { sortOrder: params.sortOrder }
+					: {}),
+				updatedAt: new Date(),
+			};
+			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+			await data.upsert("shippingMethod", id, updated as Record<string, any>);
+			return updated;
+		},
+
+		async deleteMethod(id): Promise<boolean> {
+			const existing = (await data.get(
+				"shippingMethod",
+				id,
+			)) as ShippingMethod | null;
+			if (!existing) return false;
+			await data.delete("shippingMethod", id);
+			return true;
+		},
+
+		// ── Carriers ─────────────────────────────────────────────────────────
+
+		async createCarrier(params): Promise<ShippingCarrier> {
+			const id = crypto.randomUUID();
+			const now = new Date();
+			const carrier: ShippingCarrier = {
+				id,
+				name: params.name,
+				code: params.code.toLowerCase(),
+				trackingUrlTemplate: params.trackingUrlTemplate,
+				isActive: params.isActive ?? true,
+				createdAt: now,
+				updatedAt: now,
+			};
+			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+			await data.upsert("shippingCarrier", id, carrier as Record<string, any>);
+			return carrier;
+		},
+
+		async getCarrier(id): Promise<ShippingCarrier | null> {
+			return (await data.get("shippingCarrier", id)) as ShippingCarrier | null;
+		},
+
+		async listCarriers(params): Promise<ShippingCarrier[]> {
+			if (params?.activeOnly) {
+				return (await data.findMany("shippingCarrier", {
+					where: { isActive: true },
+				})) as ShippingCarrier[];
+			}
+			return (await data.findMany("shippingCarrier", {})) as ShippingCarrier[];
+		},
+
+		async updateCarrier(id, params): Promise<ShippingCarrier | null> {
+			const existing = (await data.get(
+				"shippingCarrier",
+				id,
+			)) as ShippingCarrier | null;
+			if (!existing) return null;
+
+			const updated: ShippingCarrier = {
+				...existing,
+				...(params.name !== undefined ? { name: params.name } : {}),
+				...(params.code !== undefined
+					? { code: params.code.toLowerCase() }
+					: {}),
+				...(params.trackingUrlTemplate !== undefined
+					? { trackingUrlTemplate: params.trackingUrlTemplate }
+					: {}),
+				...(params.isActive !== undefined ? { isActive: params.isActive } : {}),
+				updatedAt: new Date(),
+			};
+			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+			await data.upsert("shippingCarrier", id, updated as Record<string, any>);
+			return updated;
+		},
+
+		async deleteCarrier(id): Promise<boolean> {
+			const existing = (await data.get(
+				"shippingCarrier",
+				id,
+			)) as ShippingCarrier | null;
+			if (!existing) return false;
+			await data.delete("shippingCarrier", id);
+			return true;
+		},
+
+		// ── Shipments ────────────────────────────────────────────────────────
+
+		async createShipment(params): Promise<Shipment> {
+			const id = crypto.randomUUID();
+			const now = new Date();
+			const shipment: Shipment = {
+				id,
+				orderId: params.orderId,
+				carrierId: params.carrierId,
+				methodId: params.methodId,
+				trackingNumber: params.trackingNumber,
+				status: "pending",
+				estimatedDelivery: params.estimatedDelivery,
+				notes: params.notes,
+				createdAt: now,
+				updatedAt: now,
+			};
+			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+			await data.upsert("shipment", id, shipment as Record<string, any>);
+			return shipment;
+		},
+
+		async getShipment(id): Promise<Shipment | null> {
+			return (await data.get("shipment", id)) as Shipment | null;
+		},
+
+		async listShipments(params): Promise<Shipment[]> {
+			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
+			const where: Record<string, any> = {};
+			if (params?.orderId) where.orderId = params.orderId;
+			if (params?.status) where.status = params.status;
+
+			return (await data.findMany("shipment", { where })) as Shipment[];
+		},
+
+		async updateShipment(id, params): Promise<Shipment | null> {
+			const existing = (await data.get("shipment", id)) as Shipment | null;
+			if (!existing) return null;
+
+			const updated: Shipment = {
+				...existing,
+				...(params.carrierId !== undefined
+					? { carrierId: params.carrierId }
+					: {}),
+				...(params.methodId !== undefined ? { methodId: params.methodId } : {}),
+				...(params.trackingNumber !== undefined
+					? { trackingNumber: params.trackingNumber }
+					: {}),
+				...(params.estimatedDelivery !== undefined
+					? { estimatedDelivery: params.estimatedDelivery }
+					: {}),
+				...(params.notes !== undefined ? { notes: params.notes } : {}),
+				updatedAt: new Date(),
+			};
+			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+			await data.upsert("shipment", id, updated as Record<string, any>);
+			return updated;
+		},
+
+		async updateShipmentStatus(id, status): Promise<Shipment | null> {
+			const existing = (await data.get("shipment", id)) as Shipment | null;
+			if (!existing) return null;
+
+			const allowed = VALID_SHIPMENT_TRANSITIONS[existing.status];
+			if (!allowed.includes(status)) return null;
+
+			const now = new Date();
+			const updated: Shipment = {
+				...existing,
+				status,
+				...(status === "shipped" ? { shippedAt: now } : {}),
+				...(status === "delivered" ? { deliveredAt: now } : {}),
+				updatedAt: now,
+			};
+			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+			await data.upsert("shipment", id, updated as Record<string, any>);
+			return updated;
+		},
+
+		async deleteShipment(id): Promise<boolean> {
+			const existing = (await data.get("shipment", id)) as Shipment | null;
+			if (!existing) return false;
+			await data.delete("shipment", id);
+			return true;
+		},
+
+		async getTrackingUrl(shipmentId): Promise<string | null> {
+			const shipment = (await data.get(
+				"shipment",
+				shipmentId,
+			)) as Shipment | null;
+			if (!shipment?.trackingNumber || !shipment.carrierId) return null;
+
+			const carrier = (await data.get(
+				"shippingCarrier",
+				shipment.carrierId,
+			)) as ShippingCarrier | null;
+			if (!carrier?.trackingUrlTemplate) return null;
+
+			return carrier.trackingUrlTemplate.replace(
+				"{tracking}",
+				shipment.trackingNumber,
+			);
 		},
 	};
 }

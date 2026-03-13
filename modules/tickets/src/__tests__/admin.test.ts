@@ -126,7 +126,8 @@ describe("tickets — admin workflows", () => {
 		it("creates a ticket with defaults", async () => {
 			const ticket = await controller.createTicket({
 				subject: "Order not received",
-				description: "I placed an order 2 weeks ago and still haven't received it.",
+				description:
+					"I placed an order 2 weeks ago and still haven't received it.",
 				customerEmail: "alice@example.com",
 				customerName: "Alice Johnson",
 			});

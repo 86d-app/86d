@@ -15,9 +15,7 @@ function makeInvoice(
 ): CreateInvoiceParams {
 	return {
 		subtotal: 10000,
-		lineItems: [
-			{ description: "Widget", quantity: 2, unitPrice: 5000 },
-		],
+		lineItems: [{ description: "Widget", quantity: 2, unitPrice: 5000 }],
 		...overrides,
 	};
 }
@@ -58,9 +56,7 @@ describe("invoices — admin workflows", () => {
 		});
 
 		it("creates an invoice with order reference", async () => {
-			const inv = await controller.create(
-				makeInvoice({ orderId: "order_42" }),
-			);
+			const inv = await controller.create(makeInvoice({ orderId: "order_42" }));
 			expect(inv.orderId).toBe("order_42");
 		});
 
@@ -163,9 +159,7 @@ describe("invoices — admin workflows", () => {
 		});
 
 		it("gets invoice by order", async () => {
-			const inv = await controller.create(
-				makeInvoice({ orderId: "order_42" }),
-			);
+			const inv = await controller.create(makeInvoice({ orderId: "order_42" }));
 			const found = await controller.getByOrder("order_42");
 			expect(found?.id).toBe(inv.id);
 		});
@@ -449,9 +443,7 @@ describe("invoices — admin workflows", () => {
 			const inv = await controller.create(makeInvoice());
 			const cn = await controller.createCreditNote({
 				invoiceId: inv.id,
-				lineItems: [
-					{ description: "Item", quantity: 1, unitPrice: 5000 },
-				],
+				lineItems: [{ description: "Item", quantity: 1, unitPrice: 5000 }],
 			});
 			const found = await controller.getCreditNote(cn.id);
 			expect(found?.lineItems).toHaveLength(1);
@@ -466,15 +458,11 @@ describe("invoices — admin workflows", () => {
 			const inv = await controller.create(makeInvoice());
 			await controller.createCreditNote({
 				invoiceId: inv.id,
-				lineItems: [
-					{ description: "Item 1", quantity: 1, unitPrice: 2000 },
-				],
+				lineItems: [{ description: "Item 1", quantity: 1, unitPrice: 2000 }],
 			});
 			await controller.createCreditNote({
 				invoiceId: inv.id,
-				lineItems: [
-					{ description: "Item 2", quantity: 1, unitPrice: 3000 },
-				],
+				lineItems: [{ description: "Item 2", quantity: 1, unitPrice: 3000 }],
 			});
 			const notes = await controller.listCreditNotes(inv.id);
 			expect(notes).toHaveLength(2);
@@ -484,9 +472,7 @@ describe("invoices — admin workflows", () => {
 			const inv = await controller.create(makeInvoice());
 			const cn = await controller.createCreditNote({
 				invoiceId: inv.id,
-				lineItems: [
-					{ description: "Item", quantity: 1, unitPrice: 5000 },
-				],
+				lineItems: [{ description: "Item", quantity: 1, unitPrice: 5000 }],
 			});
 			const issued = await controller.issueCreditNote(cn.id);
 			expect(issued?.status).toBe("issued");
@@ -497,9 +483,7 @@ describe("invoices — admin workflows", () => {
 			const inv = await controller.create(makeInvoice());
 			const cn = await controller.createCreditNote({
 				invoiceId: inv.id,
-				lineItems: [
-					{ description: "Item", quantity: 1, unitPrice: 5000 },
-				],
+				lineItems: [{ description: "Item", quantity: 1, unitPrice: 5000 }],
 			});
 			await controller.issueCreditNote(cn.id);
 			const applied = await controller.applyCreditNote(cn.id);
@@ -510,9 +494,7 @@ describe("invoices — admin workflows", () => {
 			const inv = await controller.create(makeInvoice());
 			const cn = await controller.createCreditNote({
 				invoiceId: inv.id,
-				lineItems: [
-					{ description: "Item", quantity: 1, unitPrice: 5000 },
-				],
+				lineItems: [{ description: "Item", quantity: 1, unitPrice: 5000 }],
 			});
 			const voided = await controller.voidCreditNote(cn.id);
 			expect(voided?.status).toBe("void");

@@ -19,9 +19,9 @@
 
 # Shipping Module
 
-Shipping zone and rate management for the 86d commerce platform. Supports multi-zone configuration with per-zone rates filtered by order amount and weight.
+Complete shipping management for the 86d commerce platform. Supports multi-zone rate configuration, named shipping methods with delivery estimates, carrier definitions with tracking URL generation, and full shipment lifecycle tracking.
 
-![version](https://img.shields.io/badge/version-0.0.1-blue) ![license](https://img.shields.io/badge/license-MIT-green)
+![version](https://img.shields.io/badge/version-0.1.0-blue) ![license](https://img.shields.io/badge/license-MIT-green)
 
 ## Installation
 
@@ -53,10 +53,21 @@ const client = createModuleClient([
 | Method | Path | Description |
 |---|---|---|
 | `POST` | `/shipping/calculate` | Calculate applicable rates for a destination and order |
+| `GET` | `/shipping/methods` | List active shipping methods sorted by display order |
+| `GET` | `/shipping/carriers` | List active shipping carriers |
+| `GET` | `/shipping/track/:id` | Get shipment tracking info and URL |
+
+### POST /shipping/calculate
 
 Request body: `{ country: string, orderAmount: number, weight?: number }`
 
+### GET /shipping/track/:id
+
+Returns: `{ shipment: { id, orderId, trackingNumber, status, shippedAt, deliveredAt, estimatedDelivery }, trackingUrl: string | null }`
+
 ## Admin Endpoints
+
+### Zones
 
 | Method | Path | Description |
 |---|---|---|
@@ -68,6 +79,35 @@ Request body: `{ country: string, orderAmount: number, weight?: number }`
 | `POST` | `/admin/shipping/zones/:id/rates/add` | Add a rate to a zone |
 | `PUT` | `/admin/shipping/rates/:id/update` | Update a shipping rate |
 | `DELETE` | `/admin/shipping/rates/:id/delete` | Delete a shipping rate |
+
+### Methods
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/admin/shipping/methods` | List shipping methods |
+| `POST` | `/admin/shipping/methods/create` | Create a shipping method |
+| `PUT` | `/admin/shipping/methods/:id/update` | Update a shipping method |
+| `DELETE` | `/admin/shipping/methods/:id/delete` | Delete a shipping method |
+
+### Carriers
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/admin/shipping/carriers` | List shipping carriers |
+| `POST` | `/admin/shipping/carriers/create` | Create a shipping carrier |
+| `PUT` | `/admin/shipping/carriers/:id/update` | Update a shipping carrier |
+| `DELETE` | `/admin/shipping/carriers/:id/delete` | Delete a shipping carrier |
+
+### Shipments
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/admin/shipping/shipments` | List shipments (filter by orderId, status) |
+| `POST` | `/admin/shipping/shipments/create` | Create a shipment for an order |
+| `GET` | `/admin/shipping/shipments/:id` | Get shipment details + tracking URL |
+| `PUT` | `/admin/shipping/shipments/:id/update` | Update shipment details |
+| `PUT` | `/admin/shipping/shipments/:id/status` | Update shipment status |
+| `DELETE` | `/admin/shipping/shipments/:id/delete` | Delete a shipment |
 
 ## Rate Calculation
 
@@ -81,10 +121,22 @@ Request body: `{ country: string, orderAmount: number, weight?: number }`
 const rates = await controller.calculateRates({
   country: "US",
   orderAmount: 5000, // in cents
-  weight: 1.2,       // optional, in your chosen unit
+  weight: 1200,      // optional, in grams
 });
 // => [{ rateId, zoneName, rateName, price }, ...]
 ```
+
+## Shipment Status Lifecycle
+
+```
+pending → shipped → in_transit → delivered → returned
+   ↓        ↓          ↓
+ failed   failed     failed
+   ↓
+ pending (retry)
+```
+
+Status transitions are enforced — invalid transitions return `null`. Timestamps `shippedAt` and `deliveredAt` are auto-set on the corresponding transitions.
 
 ## Controller API
 
@@ -98,19 +150,9 @@ controller.createZone(params: {
 }): Promise<ShippingZone>
 
 controller.getZone(id: string): Promise<ShippingZone | null>
-
-controller.listZones(params?: {
-  activeOnly?: boolean;
-}): Promise<ShippingZone[]>
-
-controller.updateZone(id: string, params: {
-  name?: string;
-  countries?: string[];
-  isActive?: boolean;
-}): Promise<ShippingZone | null>
-
-// Cascades: removes all rates for the zone before deleting it
-controller.deleteZone(id: string): Promise<boolean>
+controller.listZones(params?: { activeOnly?: boolean }): Promise<ShippingZone[]>
+controller.updateZone(id, params): Promise<ShippingZone | null>
+controller.deleteZone(id: string): Promise<boolean> // cascades rates
 
 // ── Rates ──────────────────────────────────────────────────────────────
 
@@ -126,48 +168,109 @@ controller.addRate(params: {
 }): Promise<ShippingRate>
 
 controller.getRate(id: string): Promise<ShippingRate | null>
-
-controller.listRates(params: {
-  zoneId: string;
-  activeOnly?: boolean;
-}): Promise<ShippingRate[]>
-
-controller.updateRate(id: string, params: {
-  name?: string;
-  price?: number;
-  minOrderAmount?: number;
-  maxOrderAmount?: number;
-  minWeight?: number;
-  maxWeight?: number;
-  isActive?: boolean;
-}): Promise<ShippingRate | null>
-
+controller.listRates(params: { zoneId: string; activeOnly?: boolean }): Promise<ShippingRate[]>
+controller.updateRate(id, params): Promise<ShippingRate | null>
 controller.deleteRate(id: string): Promise<boolean>
+controller.calculateRates(params: { country: string; orderAmount: number; weight?: number }): Promise<CalculatedRate[]>
 
-// ── Calculation ─────────────────────────────────────────────────────────
+// ── Methods ────────────────────────────────────────────────────────────
 
-controller.calculateRates(params: {
-  country: string;    // ISO 3166-1 alpha-2
-  orderAmount: number;
-  weight?: number;
-}): Promise<CalculatedRate[]>
+controller.createMethod(params: {
+  name: string;
+  description?: string;
+  estimatedDaysMin: number;
+  estimatedDaysMax: number;
+  isActive?: boolean;
+  sortOrder?: number;
+}): Promise<ShippingMethod>
+
+controller.getMethod(id: string): Promise<ShippingMethod | null>
+controller.listMethods(params?: { activeOnly?: boolean }): Promise<ShippingMethod[]>
+controller.updateMethod(id, params): Promise<ShippingMethod | null>
+controller.deleteMethod(id: string): Promise<boolean>
+
+// ── Carriers ───────────────────────────────────────────────────────────
+
+controller.createCarrier(params: {
+  name: string;
+  code: string;                    // normalized to lowercase
+  trackingUrlTemplate?: string;    // e.g. "https://track.ups.com/{tracking}"
+  isActive?: boolean;
+}): Promise<ShippingCarrier>
+
+controller.getCarrier(id: string): Promise<ShippingCarrier | null>
+controller.listCarriers(params?: { activeOnly?: boolean }): Promise<ShippingCarrier[]>
+controller.updateCarrier(id, params): Promise<ShippingCarrier | null>
+controller.deleteCarrier(id: string): Promise<boolean>
+
+// ── Shipments ──────────────────────────────────────────────────────────
+
+controller.createShipment(params: {
+  orderId: string;
+  carrierId?: string;
+  methodId?: string;
+  trackingNumber?: string;
+  estimatedDelivery?: Date;
+  notes?: string;
+}): Promise<Shipment>
+
+controller.getShipment(id: string): Promise<Shipment | null>
+controller.listShipments(params?: { orderId?: string; status?: ShipmentStatus }): Promise<Shipment[]>
+controller.updateShipment(id, params): Promise<Shipment | null>
+controller.updateShipmentStatus(id, status: ShipmentStatus): Promise<Shipment | null>
+controller.deleteShipment(id: string): Promise<boolean>
+controller.getTrackingUrl(shipmentId: string): Promise<string | null>
 ```
 
-## Example: Multi-zone Setup
+## Example: Multi-zone Setup with Carriers
 
 ```ts
-// Domestic zone
+// Create carriers
+const fedex = await controller.createCarrier({
+  name: "FedEx",
+  code: "fedex",
+  trackingUrlTemplate: "https://www.fedex.com/fedextrack/?trknbr={tracking}",
+});
+const ups = await controller.createCarrier({
+  name: "UPS",
+  code: "ups",
+  trackingUrlTemplate: "https://www.ups.com/track?tracknum={tracking}",
+});
+
+// Create shipping methods
+await controller.createMethod({
+  name: "Standard Shipping",
+  estimatedDaysMin: 5,
+  estimatedDaysMax: 7,
+  sortOrder: 2,
+});
+await controller.createMethod({
+  name: "Express Shipping",
+  estimatedDaysMin: 1,
+  estimatedDaysMax: 2,
+  sortOrder: 1,
+});
+
+// Create zones and rates
 const us = await controller.createZone({ name: "United States", countries: ["US"] });
 await controller.addRate({ zoneId: us.id, name: "Standard", price: 599 });
 await controller.addRate({ zoneId: us.id, name: "Free Shipping", price: 0, minOrderAmount: 5000 });
 
-// International zone
-const intl = await controller.createZone({ name: "International", countries: ["GB", "CA", "AU"] });
-await controller.addRate({ zoneId: intl.id, name: "International Standard", price: 1499 });
+// Create a shipment for an order
+const shipment = await controller.createShipment({
+  orderId: "order-42",
+  carrierId: fedex.id,
+  trackingNumber: "794644790132",
+});
 
-// Wildcard fallback
-const rest = await controller.createZone({ name: "Rest of World", countries: [] });
-await controller.addRate({ zoneId: rest.id, name: "Global", price: 1999 });
+// Advance through lifecycle
+await controller.updateShipmentStatus(shipment.id, "shipped");
+await controller.updateShipmentStatus(shipment.id, "in_transit");
+await controller.updateShipmentStatus(shipment.id, "delivered");
+
+// Get tracking URL
+const url = await controller.getTrackingUrl(shipment.id);
+// => "https://www.fedex.com/fedextrack/?trknbr=794644790132"
 ```
 
 ## Types
@@ -176,7 +279,6 @@ await controller.addRate({ zoneId: rest.id, name: "Global", price: 1999 });
 interface ShippingZone {
   id: string;
   name: string;
-  /** ISO 3166-1 alpha-2 codes; empty array = all countries */
   countries: string[];
   isActive: boolean;
   createdAt: Date;
@@ -187,13 +289,51 @@ interface ShippingRate {
   id: string;
   zoneId: string;
   name: string;
-  /** Price in cents */
   price: number;
   minOrderAmount?: number;
   maxOrderAmount?: number;
   minWeight?: number;
   maxWeight?: number;
   isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface ShippingMethod {
+  id: string;
+  name: string;
+  description?: string;
+  estimatedDaysMin: number;
+  estimatedDaysMax: number;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface ShippingCarrier {
+  id: string;
+  name: string;
+  code: string;
+  trackingUrlTemplate?: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+type ShipmentStatus = "pending" | "shipped" | "in_transit" | "delivered" | "returned" | "failed";
+
+interface Shipment {
+  id: string;
+  orderId: string;
+  carrierId?: string;
+  methodId?: string;
+  trackingNumber?: string;
+  status: ShipmentStatus;
+  shippedAt?: Date;
+  deliveredAt?: Date;
+  estimatedDelivery?: Date;
+  notes?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -212,17 +352,11 @@ interface CalculatedRate {
 
 Shipping cost estimator form. Customers select a country and optionally enter an order total to see available shipping rates and prices.
 
-#### Props
-
-None. The component manages its own state and fetches rates via the module client.
-
 #### Usage in MDX
 
 ```mdx
 <ShippingEstimator />
 ```
-
-Suitable for product pages, cart pages, or a dedicated shipping info page.
 
 ### ShippingOptions
 
@@ -238,17 +372,9 @@ Displays available shipping rates as selectable radio buttons. Auto-fetches rate
 | `onSelect` | `(rate) => void` | No | Callback when a rate is selected |
 | `selectedRateId` | `string` | No | Pre-selected rate ID |
 
-#### Usage in MDX
-
-```mdx
-<ShippingOptions country="US" orderAmount={5000} onSelect={handleSelect} />
-```
-
-Designed for checkout flows where the customer picks a shipping method.
-
 ### ShippingRateSummary
 
-Displays a selected shipping method and its cost. Shows a truck icon, rate name, optional zone name, and price. Free shipping is highlighted in green.
+Displays a selected shipping method and its cost. Free shipping is highlighted in green.
 
 #### Props
 
@@ -258,11 +384,10 @@ Displays a selected shipping method and its cost. Shows a truck icon, rate name,
 | `zoneName` | `string` | No | Name of the shipping zone |
 | `price` | `number` | Yes | Price in cents (0 = free) |
 
-#### Usage in MDX
+## Notes
 
-```mdx
-<ShippingRateSummary rateName="Standard Shipping" price={599} />
-<ShippingRateSummary rateName="Free Shipping" zoneName="Domestic" price={0} />
-```
-
-Use in order summaries, confirmation pages, or checkout review steps.
+- All prices are in cents (integer). Convert to display currency on the frontend.
+- Carrier codes are always normalized to lowercase.
+- Shipment status transitions are enforced — invalid transitions return null.
+- Zone deletion cascades to all associated rates.
+- Weight fields use grams as the unit.
