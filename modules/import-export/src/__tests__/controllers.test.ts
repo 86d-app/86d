@@ -68,7 +68,7 @@ describe("import-export controller edge cases", () => {
 		});
 
 		it("handles very long filename", async () => {
-			const longName = "A".repeat(10000) + ".csv";
+			const longName = `${"A".repeat(10000)}.csv`;
 			const job = await controller.createImport({
 				type: "orders",
 				filename: longName,

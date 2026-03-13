@@ -54,11 +54,11 @@ const module = importExport({
 | `GET` | `/admin/import-export/imports` | List import jobs (filterable by type, status) |
 | `POST` | `/admin/import-export/imports/create` | Create a new import job |
 | `GET` | `/admin/import-export/imports/:id` | Get import job details |
-| `PUT` | `/admin/import-export/imports/:id/status` | Update import job status |
+| `POST` | `/admin/import-export/imports/:id/status` | Update import job status |
 | `POST` | `/admin/import-export/imports/:id/process-row` | Process a single import row |
 | `POST` | `/admin/import-export/imports/:id/complete` | Mark import as completed |
 | `POST` | `/admin/import-export/imports/:id/cancel` | Cancel an import job |
-| `DELETE` | `/admin/import-export/imports/:id/delete` | Delete an import job |
+| `POST` | `/admin/import-export/imports/:id/delete` | Delete an import job |
 
 ### Exports
 
@@ -67,7 +67,10 @@ const module = importExport({
 | `GET` | `/admin/import-export/exports` | List export jobs (filterable by type, status) |
 | `POST` | `/admin/import-export/exports/create` | Create a new export job |
 | `GET` | `/admin/import-export/exports/:id` | Get export job details |
-| `DELETE` | `/admin/import-export/exports/:id/delete` | Delete an export job |
+| `POST` | `/admin/import-export/exports/:id/status` | Update export job status |
+| `POST` | `/admin/import-export/exports/:id/data` | Set export file data and row count |
+| `POST` | `/admin/import-export/exports/:id/complete` | Mark export as completed |
+| `POST` | `/admin/import-export/exports/:id/delete` | Delete an export job |
 
 This module has no store-facing endpoints.
 
@@ -154,10 +157,26 @@ interface ExportJob {
 }
 ```
 
+## Events
+
+Events are emitted via `ScopedEventEmitter` (fire-and-forget):
+
+| Event | Payload | When |
+|---|---|---|
+| `import.created` | `{ jobId, type, filename, totalRows }` | Import job created |
+| `import.started` | `{ jobId, type, status }` | Status transitions to validating or processing |
+| `import.completed` | `{ jobId, type, processedRows, failedRows }` | Import completes (not all rows failed) |
+| `import.failed` | `{ jobId, type, processedRows, failedRows }` | Import completes (all rows failed) |
+| `import.cancelled` | `{ jobId, type, processedRows }` | Import is cancelled |
+| `export.created` | `{ jobId, type, format }` | Export job created |
+| `export.started` | `{ jobId, type }` | Status transitions to processing |
+| `export.completed` | `{ jobId, type, totalRows }` | Export marked as completed |
+
 ## Notes
 
 - This is an admin-only module with no customer-facing endpoints.
 - Import processing is row-by-row via `processRow()`, allowing granular error tracking per row.
 - Export data is stored as a serialized string in the `fileData` field (CSV string or JSON string).
 - Import options support `updateExisting`, `skipDuplicates`, and `dryRun` modes.
+- `maxConcurrentImports` enforced on `createImport()` — throws if exceeded (counts pending/validating/processing jobs).
 - Configuration values are strings (not numbers) for module config compatibility.

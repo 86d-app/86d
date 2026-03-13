@@ -50,7 +50,15 @@ export default function importExport(options?: ImportExportOptions): Module {
 		},
 
 		init: async (ctx: ModuleContext) => {
-			const controller = createImportExportController(ctx.data);
+			const maxStr = options?.maxConcurrentImports;
+			const maxConcurrent = maxStr ? Number.parseInt(maxStr, 10) : undefined;
+			const controller = createImportExportController(
+				ctx.data,
+				ctx.events,
+				maxConcurrent && !Number.isNaN(maxConcurrent)
+					? { maxConcurrentImports: maxConcurrent }
+					: undefined,
+			);
 			return {
 				controllers: { importExport: controller },
 			};

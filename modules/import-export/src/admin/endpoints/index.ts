@@ -1,4 +1,5 @@
 import { cancelImport } from "./cancel-import";
+import { completeExport } from "./complete-export";
 import { completeImport } from "./complete-import";
 import { createExport } from "./create-export";
 import { createImport } from "./create-import";
@@ -9,6 +10,8 @@ import { getImport } from "./get-import";
 import { listExports } from "./list-exports";
 import { listImports } from "./list-imports";
 import { processImportRow } from "./process-import-row";
+import { setExportData } from "./set-export-data";
+import { updateExportStatus } from "./update-export-status";
 import { updateImportStatus } from "./update-import-status";
 
 export const adminEndpoints = {
@@ -23,5 +26,8 @@ export const adminEndpoints = {
 	"/admin/import-export/exports": listExports,
 	"/admin/import-export/exports/create": createExport,
 	"/admin/import-export/exports/:id": getExport,
+	"/admin/import-export/exports/:id/status": updateExportStatus,
+	"/admin/import-export/exports/:id/data": setExportData,
+	"/admin/import-export/exports/:id/complete": completeExport,
 	"/admin/import-export/exports/:id/delete": deleteExport,
 };

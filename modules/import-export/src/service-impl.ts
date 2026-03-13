@@ -1,4 +1,4 @@
-import type { ModuleDataService } from "@86d-app/core";
+import type { ModuleDataService, ScopedEventEmitter } from "@86d-app/core";
 import type {
 	CreateExportParams,
 	CreateImportParams,
@@ -10,13 +10,39 @@ import type {
 	ImportStatus,
 } from "./service";
 
+export interface ImportExportControllerOptions {
+	/** Maximum concurrent import jobs allowed (pending/validating/processing) */
+	maxConcurrentImports?: number | undefined;
+}
+
 export function createImportExportController(
 	data: ModuleDataService,
+	events?: ScopedEventEmitter | undefined,
+	options?: ImportExportControllerOptions | undefined,
 ): ImportExportController {
 	return {
 		// ── Import operations ──────────────────────────────────────────
 
 		async createImport(params: CreateImportParams): Promise<ImportJob> {
+			// Enforce maxConcurrentImports
+			if (options?.maxConcurrentImports) {
+				const all = (await data.findMany(
+					"importJob",
+					{},
+				)) as unknown as ImportJob[];
+				const active = all.filter(
+					(j) =>
+						j.status === "pending" ||
+						j.status === "validating" ||
+						j.status === "processing",
+				);
+				if (active.length >= options.maxConcurrentImports) {
+					throw new Error(
+						`Maximum concurrent imports (${options.maxConcurrentImports}) reached`,
+					);
+				}
+			}
+
 			const id = crypto.randomUUID();
 			const now = new Date();
 
@@ -38,6 +64,16 @@ export function createImportExportController(
 
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any for JSONB
 			await data.upsert("importJob", id, job as Record<string, any>);
+
+			if (events) {
+				void events.emit("import.created", {
+					jobId: id,
+					type: params.type,
+					filename: params.filename,
+					totalRows: params.totalRows,
+				});
+			}
+
 			return job;
 		},
 
@@ -80,6 +116,17 @@ export function createImportExportController(
 
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("importJob", id, updated as Record<string, any>);
+
+			if (events) {
+				if (status === "validating" || status === "processing") {
+					void events.emit("import.started", {
+						jobId: id,
+						type: job.type,
+						status,
+					});
+				}
+			}
+
 			return updated;
 		},
 
@@ -125,18 +172,31 @@ export function createImportExportController(
 
 			const job = existing as unknown as ImportJob;
 			const now = new Date();
+			const finalStatus =
+				job.failedRows > 0 && job.processedRows === job.failedRows
+					? "failed"
+					: "completed";
 			const updated: ImportJob = {
 				...job,
-				status:
-					job.failedRows > 0 && job.processedRows === job.failedRows
-						? "failed"
-						: "completed",
+				status: finalStatus,
 				completedAt: now,
 				updatedAt: now,
 			};
 
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("importJob", id, updated as Record<string, any>);
+
+			if (events) {
+				const eventName =
+					finalStatus === "failed" ? "import.failed" : "import.completed";
+				void events.emit(eventName, {
+					jobId: id,
+					type: job.type,
+					processedRows: job.processedRows,
+					failedRows: job.failedRows,
+				});
+			}
+
 			return updated;
 		},
 
@@ -159,6 +219,15 @@ export function createImportExportController(
 
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("importJob", id, updated as Record<string, any>);
+
+			if (events) {
+				void events.emit("import.cancelled", {
+					jobId: id,
+					type: job.type,
+					processedRows: job.processedRows,
+				});
+			}
+
 			return updated;
 		},
 
@@ -189,6 +258,15 @@ export function createImportExportController(
 
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any for JSONB
 			await data.upsert("exportJob", id, job as Record<string, any>);
+
+			if (events) {
+				void events.emit("export.created", {
+					jobId: id,
+					type: params.type,
+					format: job.format,
+				});
+			}
+
 			return job;
 		},
 
@@ -231,6 +309,14 @@ export function createImportExportController(
 
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("exportJob", id, updated as Record<string, any>);
+
+			if (events && status === "processing") {
+				void events.emit("export.started", {
+					jobId: id,
+					type: job.type,
+				});
+			}
+
 			return updated;
 		},
 
@@ -270,6 +356,15 @@ export function createImportExportController(
 
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("exportJob", id, updated as Record<string, any>);
+
+			if (events) {
+				void events.emit("export.completed", {
+					jobId: id,
+					type: job.type,
+					totalRows: job.totalRows,
+				});
+			}
+
 			return updated;
 		},
 
