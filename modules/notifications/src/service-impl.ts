@@ -1,4 +1,4 @@
-import type { ModuleDataService } from "@86d-app/core";
+import type { ModuleDataService, ScopedEventEmitter } from "@86d-app/core";
 import type {
 	BatchSendResult,
 	Notification,
@@ -16,6 +16,11 @@ const DEFAULT_PREFERENCES: Omit<NotificationPreference, "id" | "customerId"> = {
 	updatedAt: new Date(),
 };
 
+export interface NotificationsControllerOptions {
+	/** Max notifications per customer before oldest are auto-deleted */
+	maxPerCustomer?: number | undefined;
+}
+
 /**
  * Interpolate `{{variable}}` placeholders in a template string.
  * Unknown variables are left as-is.
@@ -31,7 +36,30 @@ function interpolate(
 
 export function createNotificationsController(
 	data: ModuleDataService,
+	events?: ScopedEventEmitter | undefined,
+	options?: NotificationsControllerOptions | undefined,
 ): NotificationsController {
+	/** Remove oldest notifications when a customer exceeds maxPerCustomer */
+	async function enforceMaxPerCustomer(customerId: string): Promise<void> {
+		const max = options?.maxPerCustomer;
+		if (!max) return;
+
+		const all = (await data.findMany("notification", {
+			where: { customerId },
+		})) as unknown as Notification[];
+
+		if (all.length <= max) return;
+
+		// Sort oldest-first
+		const sorted = [...all].sort(
+			(a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
+		);
+		const toRemove = sorted.slice(0, all.length - max);
+		for (const n of toRemove) {
+			await data.delete("notification", n.id);
+		}
+	}
+
 	return {
 		async create(params) {
 			const id = crypto.randomUUID();
@@ -55,6 +83,18 @@ export function createNotificationsController(
 				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires Record<string, any>
 				notification as Record<string, any>,
 			);
+
+			await enforceMaxPerCustomer(params.customerId);
+
+			if (events) {
+				void events.emit("notifications.created", {
+					notificationId: id,
+					customerId: params.customerId,
+					type: notification.type,
+					priority: notification.priority,
+				});
+			}
+
 			return notification;
 		},
 
@@ -121,6 +161,14 @@ export function createNotificationsController(
 			};
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("notification", id, updated as Record<string, any>);
+
+			if (events) {
+				void events.emit("notifications.read", {
+					notificationId: id,
+					customerId: notification.customerId,
+				});
+			}
+
 			return updated;
 		},
 
@@ -142,6 +190,14 @@ export function createNotificationsController(
 				);
 				count++;
 			}
+
+			if (events && count > 0) {
+				void events.emit("notifications.all_read", {
+					customerId,
+					count,
+				});
+			}
+
 			return count;
 		},
 
@@ -230,6 +286,27 @@ export function createNotificationsController(
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("preference", id, updated as Record<string, any>);
 			return updated;
+		},
+
+		async deletePreferences(customerId) {
+			const matches = await data.findMany("preference", {
+				where: { customerId },
+				take: 1,
+			});
+			const existing = matches[0] as unknown as
+				| NotificationPreference
+				| undefined;
+			if (!existing) return false;
+			await data.delete("preference", existing.id);
+			return true;
+		},
+
+		async listPreferences(params) {
+			const all = await data.findMany("preference", {
+				...(params?.take !== undefined ? { take: params.take } : {}),
+				...(params?.skip !== undefined ? { skip: params.skip } : {}),
+			});
+			return all as unknown as NotificationPreference[];
 		},
 
 		// --- Template CRUD ---

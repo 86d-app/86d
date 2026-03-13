@@ -1,3 +1,4 @@
+import { deleteNotificationEndpoint } from "./delete-notification";
 import { getNotificationEndpoint } from "./get-notification";
 import { getPreferencesEndpoint } from "./get-preferences";
 import { listMyNotificationsEndpoint } from "./list-my-notifications";
@@ -14,4 +15,5 @@ export const storeEndpoints = {
 	"/notifications/preferences/update": updatePreferencesEndpoint,
 	"/notifications/:id": getNotificationEndpoint,
 	"/notifications/:id/read": markReadEndpoint,
+	"/notifications/:id/delete": deleteNotificationEndpoint,
 };

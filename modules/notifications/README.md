@@ -53,6 +53,7 @@ const module = notifications({
 | `POST` | `/notifications/preferences/update` | Update notification preferences |
 | `GET` | `/notifications/:id` | Get a single notification |
 | `POST` | `/notifications/:id/read` | Mark a notification as read |
+| `POST` | `/notifications/:id/delete` | Delete a notification (ownership verified) |
 | `POST` | `/notifications/read-all` | Mark all notifications as read |
 
 ## Admin Endpoints
@@ -69,6 +70,15 @@ const module = notifications({
 | `GET` | `/admin/notifications/:id` | Get a notification |
 | `POST` | `/admin/notifications/:id/update` | Update a notification |
 | `POST` | `/admin/notifications/:id/delete` | Delete a notification |
+
+### Preferences (Admin)
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/admin/notifications/preferences` | List all saved customer preferences |
+| `GET` | `/admin/notifications/preferences/:customerId` | View a customer's notification preferences |
+| `POST` | `/admin/notifications/preferences/:customerId/update` | Update a customer's preferences |
+| `POST` | `/admin/notifications/preferences/:customerId/delete` | Reset a customer's preferences to defaults |
 
 ### Templates
 
@@ -104,6 +114,8 @@ interface NotificationsController {
   // Preferences
   getPreferences(customerId: string): Promise<NotificationPreference>;
   updatePreferences(customerId: string, params: { orderUpdates?: boolean; promotions?: boolean; shippingAlerts?: boolean; accountAlerts?: boolean }): Promise<NotificationPreference>;
+  deletePreferences(customerId: string): Promise<boolean>;
+  listPreferences(params?: { take?: number; skip?: number }): Promise<NotificationPreference[]>;
 
   // Templates
   createTemplate(params: { slug: string; name: string; type?: NotificationType; channel?: NotificationChannel; priority?: NotificationPriority; titleTemplate: string; bodyTemplate: string; actionUrlTemplate?: string; variables?: string[] }): Promise<NotificationTemplate>;
@@ -206,6 +218,16 @@ Toggle switches for notification categories (order updates, promotions, shipping
 
 No props required.
 
+## Events
+
+The module emits these events via `ScopedEventEmitter` (fire-and-forget):
+
+| Event | Payload | When |
+|---|---|---|
+| `notifications.created` | `{ notificationId, customerId, type, priority }` | On every `create()` call |
+| `notifications.read` | `{ notificationId, customerId }` | First time a notification is marked as read |
+| `notifications.all_read` | `{ customerId, count }` | When `markAllRead()` processes >0 notifications |
+
 ## Notes
 
 - Templates use `{{variable}}` syntax for interpolation. Unknown variables are preserved as-is.
@@ -214,3 +236,6 @@ No props required.
 - Template slugs must be unique, lowercase alphanumeric with hyphens.
 - Preferences default to all categories enabled; customers opt out individually.
 - Stats include breakdowns by both notification type and priority level.
+- `maxPerCustomer` enforcement: oldest notifications are auto-deleted after every `create()` when the limit is exceeded.
+- Customers can delete their own notifications via the store endpoint (ownership verified, returns 404 for non-owner).
+- Admins can view, update, and reset customer notification preferences.

@@ -37,7 +37,15 @@ export default function notifications(options?: NotificationsOptions): Module {
 			],
 		},
 		init: async (ctx: ModuleContext) => {
-			const controller = createNotificationsController(ctx.data);
+			const maxStr = options?.maxPerCustomer;
+			const maxPerCustomer = maxStr ? Number.parseInt(maxStr, 10) : undefined;
+			const controller = createNotificationsController(
+				ctx.data,
+				ctx.events,
+				maxPerCustomer && !Number.isNaN(maxPerCustomer)
+					? { maxPerCustomer }
+					: undefined,
+			);
 			return { controllers: { notifications: controller } };
 		},
 		endpoints: {

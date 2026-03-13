@@ -125,6 +125,13 @@ export interface NotificationsController extends ModuleController {
 		},
 	): Promise<NotificationPreference>;
 
+	deletePreferences(customerId: string): Promise<boolean>;
+
+	listPreferences(params?: {
+		take?: number | undefined;
+		skip?: number | undefined;
+	}): Promise<NotificationPreference[]>;
+
 	// --- Template methods ---
 
 	createTemplate(params: {
