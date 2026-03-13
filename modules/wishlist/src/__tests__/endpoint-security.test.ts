@@ -276,9 +276,9 @@ describe("wishlist endpoint security", () => {
 				productName: "B",
 			});
 
-			const items = await controller.listAll({ customerId: "cust_1" });
-			expect(items).toHaveLength(1);
-			expect(items[0]?.customerId).toBe("cust_1");
+			const result = await controller.listAll({ customerId: "cust_1" });
+			expect(result.items).toHaveLength(1);
+			expect(result.items[0]?.customerId).toBe("cust_1");
 		});
 
 		it("filters by productId across all customers", async () => {
@@ -298,8 +298,8 @@ describe("wishlist endpoint security", () => {
 				productName: "Other",
 			});
 
-			const items = await controller.listAll({ productId: "shared_prod" });
-			expect(items).toHaveLength(2);
+			const result = await controller.listAll({ productId: "shared_prod" });
+			expect(result.items).toHaveLength(2);
 		});
 
 		it("returns all items when no filters specified", async () => {
@@ -314,8 +314,8 @@ describe("wishlist endpoint security", () => {
 				productName: "B",
 			});
 
-			const items = await controller.listAll();
-			expect(items).toHaveLength(2);
+			const result = await controller.listAll();
+			expect(result.items).toHaveLength(2);
 		});
 	});
 
@@ -407,8 +407,9 @@ describe("wishlist endpoint security", () => {
 				});
 			}
 
-			const page = await controller.listAll({ take: 3 });
-			expect(page.length).toBeLessThanOrEqual(3);
+			const result = await controller.listAll({ take: 3 });
+			expect(result.items.length).toBeLessThanOrEqual(3);
+			expect(result.total).toBe(5);
 		});
 	});
 

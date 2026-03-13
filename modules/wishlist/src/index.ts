@@ -7,6 +7,7 @@ import { storeEndpoints } from "./store/endpoints";
 export type {
 	WishlistController,
 	WishlistItem,
+	WishlistShare,
 	WishlistSummary,
 } from "./service";
 
@@ -18,16 +19,27 @@ export interface WishlistOptions extends ModuleConfig {
 export default function wishlist(options?: WishlistOptions): Module {
 	return {
 		id: "wishlist",
-		version: "0.0.1",
+		version: "0.0.2",
 		schema: wishlistSchema,
 		exports: {
 			read: ["wishlistItemCount", "isInWishlist"],
 		},
+		requires: {
+			cart: { read: ["addItem"], optional: true },
+		},
 		events: {
-			emits: ["wishlist.itemAdded", "wishlist.itemRemoved"],
+			emits: ["wishlist.itemAdded", "wishlist.itemRemoved", "wishlist.shared"],
 		},
 		init: async (ctx: ModuleContext) => {
-			const controller = createWishlistController(ctx.data);
+			const maxItems = options?.maxItems
+				? Number.parseInt(options.maxItems, 10)
+				: undefined;
+			const controller = createWishlistController(ctx.data, {
+				maxItems:
+					maxItems !== undefined && !Number.isNaN(maxItems)
+						? maxItems
+						: undefined,
+			});
 			return { controllers: { wishlist: controller } };
 		},
 		search: { store: "/wishlist/store-search" },

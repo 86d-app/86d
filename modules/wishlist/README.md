@@ -19,7 +19,7 @@
 
 # Wishlist Module
 
-Customer wishlist and favorites module for 86d commerce platform.
+Customer wishlist and favorites module for 86d commerce platform. Supports per-customer wishlists with sharing via shareable links, bulk operations, and configurable item limits.
 
 ## Installation
 
@@ -41,7 +41,7 @@ const module = wishlist({
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `maxItems` | `string` | — | Maximum number of items per customer wishlist |
+| `maxItems` | `string` | — | Maximum number of items per customer wishlist. Returns 422 when exceeded. |
 
 ## Store Endpoints
 
@@ -50,7 +50,12 @@ const module = wishlist({
 | `GET` | `/wishlist` | List current customer's wishlist items (paginated) |
 | `POST` | `/wishlist/add` | Add an item to the wishlist |
 | `DELETE` | `/wishlist/remove/:id` | Remove an item by ID |
+| `POST` | `/wishlist/bulk-remove` | Remove multiple items by ID array |
 | `GET` | `/wishlist/check/:productId` | Check if a product is in the wishlist |
+| `POST` | `/wishlist/share` | Create a shareable link for the wishlist |
+| `GET` | `/wishlist/shares` | List active share tokens |
+| `POST` | `/wishlist/share/:id/revoke` | Revoke a share token |
+| `GET` | `/wishlist/shared/:token` | View a shared wishlist (public, no auth) |
 
 ## Admin Endpoints
 
@@ -72,22 +77,27 @@ interface WishlistController {
     note?: string;
   }): Promise<WishlistItem>;
 
-  removeItem(id: string): Promise<void>;
-  removeByProduct(customerId: string, productId: string): Promise<void>;
-  getItem(id: string): Promise<WishlistItem>;
+  removeItem(id: string): Promise<boolean>;
+  removeByProduct(customerId: string, productId: string): Promise<boolean>;
+  bulkRemove(customerId: string, itemIds: string[]): Promise<number>;
+  getItem(id: string): Promise<WishlistItem | null>;
   isInWishlist(customerId: string, productId: string): Promise<boolean>;
   listByCustomer(customerId: string, params?: {
-    limit?: number;
-    offset?: number;
-  }): Promise<{ items: WishlistItem[]; total: number }>;
+    take?: number;
+    skip?: number;
+  }): Promise<WishlistItem[]>;
   listAll(params?: {
     customerId?: string;
     productId?: string;
-    limit?: number;
-    offset?: number;
+    take?: number;
+    skip?: number;
   }): Promise<{ items: WishlistItem[]; total: number }>;
   countByCustomer(customerId: string): Promise<number>;
   getSummary(): Promise<WishlistSummary>;
+  createShareToken(customerId: string, expiresAt?: Date): Promise<WishlistShare>;
+  revokeShareToken(customerId: string, tokenId: string): Promise<boolean>;
+  getShareTokens(customerId: string): Promise<WishlistShare[]>;
+  getSharedWishlist(token: string): Promise<WishlistItem[] | null>;
 }
 ```
 
@@ -104,6 +114,15 @@ interface WishlistItem {
   addedAt: Date;
 }
 
+interface WishlistShare {
+  id: string;
+  customerId: string;
+  token: string;
+  active: boolean;
+  createdAt: Date;
+  expiresAt?: Date;
+}
+
 interface WishlistSummary {
   totalItems: number;
   topProducts: Array<{
@@ -113,6 +132,14 @@ interface WishlistSummary {
   }>;
 }
 ```
+
+## Events
+
+| Event | Payload | Description |
+|---|---|---|
+| `wishlist.itemAdded` | `{ customerId, productId, productName, itemId }` | Fired when an item is added |
+| `wishlist.itemRemoved` | `{ customerId, productId, productName, itemId }` | Fired when an item is removed |
+| `wishlist.shared` | `{ customerId, shareId, token }` | Fired when a share link is created |
 
 ## Store Components
 
@@ -180,3 +207,12 @@ Simple heart icon with filled/unfilled states. Used internally by WishlistButton
 
 <HeartIcon filled={true} large={true} />
 ```
+
+## Notes
+
+- `addItem` is idempotent: adding the same product twice returns the existing item
+- `maxItems` is enforced per-customer, not globally
+- Share tokens are opaque 32-character hex strings
+- `getSharedWishlist` is the only public endpoint (no auth) — access controlled by opaque token
+- `bulkRemove` only removes items owned by the requesting customer (ownership checked per item)
+- Requires `cart` module optionally for future move-to-cart integration

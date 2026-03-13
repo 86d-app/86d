@@ -397,9 +397,9 @@ describe("wishlist controller edge cases", () => {
 				customerId: "cust_1",
 				productId: "prod_1",
 			});
-			expect(result).toHaveLength(1);
-			expect(result[0].customerId).toBe("cust_1");
-			expect(result[0].productId).toBe("prod_1");
+			expect(result.items).toHaveLength(1);
+			expect(result.items[0].customerId).toBe("cust_1");
+			expect(result.items[0].productId).toBe("prod_1");
 		});
 
 		it("returns empty when combined filters match nothing", async () => {
@@ -412,7 +412,8 @@ describe("wishlist controller edge cases", () => {
 				customerId: "cust_1",
 				productId: "prod_99",
 			});
-			expect(result).toHaveLength(0);
+			expect(result.items).toHaveLength(0);
+			expect(result.total).toBe(0);
 		});
 
 		it("returns empty array with take=0", async () => {
@@ -422,7 +423,8 @@ describe("wishlist controller edge cases", () => {
 				productName: "A",
 			});
 			const result = await controller.listAll({ take: 0 });
-			expect(result).toHaveLength(0);
+			expect(result.items).toHaveLength(0);
+			expect(result.total).toBe(1);
 		});
 
 		it("returns empty when skip exceeds total", async () => {
@@ -432,7 +434,8 @@ describe("wishlist controller edge cases", () => {
 				productName: "A",
 			});
 			const result = await controller.listAll({ skip: 100 });
-			expect(result).toHaveLength(0);
+			expect(result.items).toHaveLength(0);
+			expect(result.total).toBe(1);
 		});
 
 		it("paginates all items correctly", async () => {
@@ -446,9 +449,10 @@ describe("wishlist controller edge cases", () => {
 			const page1 = await controller.listAll({ take: 3, skip: 0 });
 			const page2 = await controller.listAll({ take: 3, skip: 3 });
 			const page3 = await controller.listAll({ take: 3, skip: 6 });
-			expect(page1).toHaveLength(3);
-			expect(page2).toHaveLength(3);
-			expect(page3).toHaveLength(1);
+			expect(page1.items).toHaveLength(3);
+			expect(page2.items).toHaveLength(3);
+			expect(page3.items).toHaveLength(1);
+			expect(page1.total).toBe(7);
 		});
 
 		it("returns all items with empty params object", async () => {
@@ -463,7 +467,8 @@ describe("wishlist controller edge cases", () => {
 				productName: "B",
 			});
 			const result = await controller.listAll({});
-			expect(result).toHaveLength(2);
+			expect(result.items).toHaveLength(2);
+			expect(result.total).toBe(2);
 		});
 
 		it("applies pagination with filters", async () => {
@@ -484,8 +489,9 @@ describe("wishlist controller edge cases", () => {
 				take: 2,
 				skip: 1,
 			});
-			expect(result).toHaveLength(2);
-			for (const item of result) {
+			expect(result.items).toHaveLength(2);
+			expect(result.total).toBe(5);
+			for (const item of result.items) {
 				expect(item.customerId).toBe("cust_1");
 			}
 		});
@@ -870,7 +876,8 @@ describe("wishlist controller edge cases", () => {
 				});
 			}
 			const all = await controller.listAll();
-			expect(all).toHaveLength(10);
+			expect(all.items).toHaveLength(10);
+			expect(all.total).toBe(10);
 		});
 
 		it("listByCustomer with skip=0 and take=undefined returns all", async () => {
@@ -975,20 +982,20 @@ describe("wishlist controller edge cases", () => {
 
 			// Filter by prod_1 - should get 2
 			let filtered = await controller.listAll({ productId: "prod_1" });
-			expect(filtered).toHaveLength(2);
+			expect(filtered.items).toHaveLength(2);
 
 			// Remove cust_1's prod_1
 			await controller.removeByProduct("cust_1", "prod_1");
 
 			// Now filter by prod_1 - should get 1
 			filtered = await controller.listAll({ productId: "prod_1" });
-			expect(filtered).toHaveLength(1);
-			expect(filtered[0].customerId).toBe("cust_2");
+			expect(filtered.items).toHaveLength(1);
+			expect(filtered.items[0].customerId).toBe("cust_2");
 
 			// Filter by cust_1 - should get 1 (prod_2)
 			filtered = await controller.listAll({ customerId: "cust_1" });
-			expect(filtered).toHaveLength(1);
-			expect(filtered[0].productId).toBe("prod_2");
+			expect(filtered.items).toHaveLength(1);
+			expect(filtered.items[0].productId).toBe("prod_2");
 		});
 	});
 });

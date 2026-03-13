@@ -272,7 +272,7 @@ describe("createWishlistController", () => {
 	// ── listAll ──────────────────────────────────────────────────────────
 
 	describe("listAll", () => {
-		it("lists all wishlist items", async () => {
+		it("lists all wishlist items with total", async () => {
 			await controller.addItem({
 				customerId: "cust_1",
 				productId: "prod_1",
@@ -284,7 +284,8 @@ describe("createWishlistController", () => {
 				productName: "B",
 			});
 			const all = await controller.listAll();
-			expect(all).toHaveLength(2);
+			expect(all.items).toHaveLength(2);
+			expect(all.total).toBe(2);
 		});
 
 		it("filters by customerId", async () => {
@@ -299,7 +300,8 @@ describe("createWishlistController", () => {
 				productName: "B",
 			});
 			const result = await controller.listAll({ customerId: "cust_1" });
-			expect(result).toHaveLength(1);
+			expect(result.items).toHaveLength(1);
+			expect(result.total).toBe(1);
 		});
 
 		it("filters by productId", async () => {
@@ -319,10 +321,11 @@ describe("createWishlistController", () => {
 				productName: "B",
 			});
 			const result = await controller.listAll({ productId: "prod_1" });
-			expect(result).toHaveLength(2);
+			expect(result.items).toHaveLength(2);
+			expect(result.total).toBe(2);
 		});
 
-		it("supports take and skip", async () => {
+		it("supports take and skip with correct total", async () => {
 			for (let i = 0; i < 5; i++) {
 				await controller.addItem({
 					customerId: `cust_${i}`,
@@ -331,12 +334,14 @@ describe("createWishlistController", () => {
 				});
 			}
 			const page = await controller.listAll({ take: 2, skip: 1 });
-			expect(page).toHaveLength(2);
+			expect(page.items).toHaveLength(2);
+			expect(page.total).toBe(5);
 		});
 
-		it("returns empty array when no items", async () => {
+		it("returns empty result when no items", async () => {
 			const all = await controller.listAll();
-			expect(all).toHaveLength(0);
+			expect(all.items).toHaveLength(0);
+			expect(all.total).toBe(0);
 		});
 
 		it("returns empty for non-matching filter", async () => {
@@ -346,7 +351,8 @@ describe("createWishlistController", () => {
 				productName: "A",
 			});
 			const result = await controller.listAll({ customerId: "cust_99" });
-			expect(result).toHaveLength(0);
+			expect(result.items).toHaveLength(0);
+			expect(result.total).toBe(0);
 		});
 	});
 

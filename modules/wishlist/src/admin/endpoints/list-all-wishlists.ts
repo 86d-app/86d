@@ -14,12 +14,12 @@ export const listAllWishlists = createAdminEndpoint(
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers.wishlist as WishlistController;
-		const items = await controller.listAll({
+		const result = await controller.listAll({
 			customerId: ctx.query.customerId,
 			productId: ctx.query.productId,
 			take: ctx.query.take ?? 50,
 			skip: ctx.query.skip ?? 0,
 		});
-		return { items, total: items.length };
+		return { items: result.items, total: result.total };
 	},
 );

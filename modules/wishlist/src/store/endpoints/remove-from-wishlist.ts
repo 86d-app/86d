@@ -19,6 +19,16 @@ export const removeFromWishlist = createStoreEndpoint(
 		}
 		const removed = await controller.removeItem(ctx.params.id);
 		if (!removed) return { error: "Wishlist item not found", status: 404 };
+
+		if (ctx.context.events) {
+			await ctx.context.events.emit("wishlist.itemRemoved", {
+				customerId,
+				productId: item.productId,
+				productName: item.productName,
+				itemId: item.id,
+			});
+		}
+
 		return { removed };
 	},
 );

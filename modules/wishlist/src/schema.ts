@@ -16,4 +16,18 @@ export const wishlistSchema = {
 			},
 		},
 	},
+	wishlistShare: {
+		fields: {
+			id: { type: "string", required: true },
+			customerId: { type: "string", required: true },
+			token: { type: "string", required: true },
+			active: { type: "boolean", required: true, defaultValue: true },
+			createdAt: {
+				type: "date",
+				required: true,
+				defaultValue: () => new Date(),
+			},
+			expiresAt: { type: "date", required: false },
+		},
+	},
 } satisfies ModuleSchema;

@@ -6,7 +6,7 @@ export const addToWishlist = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			productId: z.string(),
+			productId: z.string().max(200),
 			productName: z.string().max(500).transform(sanitizeText),
 			productImage: z.string().max(2000).optional(),
 			note: z.string().max(1000).transform(sanitizeText).optional(),
@@ -18,13 +18,33 @@ export const addToWishlist = createStoreEndpoint(
 			return { error: "Unauthorized", status: 401 };
 		}
 		const controller = ctx.context.controllers.wishlist as WishlistController;
-		const item = await controller.addItem({
-			customerId,
-			productId: ctx.body.productId,
-			productName: ctx.body.productName,
-			productImage: ctx.body.productImage,
-			note: ctx.body.note,
-		});
-		return { item };
+		try {
+			const item = await controller.addItem({
+				customerId,
+				productId: ctx.body.productId,
+				productName: ctx.body.productName,
+				productImage: ctx.body.productImage,
+				note: ctx.body.note,
+			});
+
+			if (ctx.context.events) {
+				await ctx.context.events.emit("wishlist.itemAdded", {
+					customerId,
+					productId: item.productId,
+					productName: item.productName,
+					itemId: item.id,
+				});
+			}
+
+			return { item };
+		} catch (err) {
+			if (
+				err instanceof Error &&
+				err.message.includes("Wishlist limit reached")
+			) {
+				return { error: err.message, status: 422 };
+			}
+			throw err;
+		}
 	},
 );

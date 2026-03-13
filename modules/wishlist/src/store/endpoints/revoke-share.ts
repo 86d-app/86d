@@ -1,0 +1,25 @@
+import { createStoreEndpoint, z } from "@86d-app/core";
+import type { WishlistController } from "../../service";
+
+export const revokeWishlistShare = createStoreEndpoint(
+	"/wishlist/share/:id/revoke",
+	{
+		method: "POST",
+		params: z.object({ id: z.string() }),
+	},
+	async (ctx) => {
+		const customerId = ctx.context.session?.user.id;
+		if (!customerId) {
+			return { error: "Unauthorized", status: 401 };
+		}
+		const controller = ctx.context.controllers.wishlist as WishlistController;
+		const revoked = await controller.revokeShareToken(
+			customerId,
+			ctx.params.id,
+		);
+		if (!revoked) {
+			return { error: "Share token not found", status: 404 };
+		}
+		return { revoked };
+	},
+);
