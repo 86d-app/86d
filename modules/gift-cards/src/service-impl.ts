@@ -1,10 +1,15 @@
 import type { ModuleDataService } from "@86d-app/core";
 import type {
+	BulkCreateParams,
 	CreateGiftCardParams,
 	GiftCard,
 	GiftCardController,
+	GiftCardStats,
 	GiftCardTransaction,
+	PurchaseGiftCardParams,
 	RedeemResult,
+	SendGiftCardParams,
+	TopUpParams,
 } from "./service";
 
 /**
@@ -41,7 +46,15 @@ export function createGiftCardController(
 				status: "active",
 				expiresAt: params.expiresAt,
 				recipientEmail: params.recipientEmail,
+				recipientName: params.recipientName,
 				customerId: params.customerId,
+				purchasedByCustomerId: params.purchasedByCustomerId,
+				senderName: params.senderName,
+				senderEmail: params.senderEmail,
+				message: params.message,
+				deliveryMethod: params.deliveryMethod,
+				delivered: false,
+				scheduledDeliveryAt: params.scheduledDeliveryAt,
 				purchaseOrderId: params.purchaseOrderId,
 				note: params.note,
 				createdAt: now,
@@ -96,6 +109,15 @@ export function createGiftCardController(
 				...(updates.note !== undefined ? { note: updates.note } : {}),
 				...(updates.recipientEmail !== undefined
 					? { recipientEmail: updates.recipientEmail }
+					: {}),
+				...(updates.recipientName !== undefined
+					? { recipientName: updates.recipientName }
+					: {}),
+				...(updates.delivered !== undefined
+					? { delivered: updates.delivered }
+					: {}),
+				...(updates.deliveredAt !== undefined
+					? { deliveredAt: updates.deliveredAt }
 					: {}),
 				updatedAt: new Date(),
 			};
@@ -270,6 +292,237 @@ export function createGiftCardController(
 		async countAll(): Promise<number> {
 			const all = await data.findMany("giftCard", {});
 			return (all as unknown as GiftCard[]).length;
+		},
+
+		async purchase(params: PurchaseGiftCardParams): Promise<GiftCard> {
+			const card = await this.create({
+				initialBalance: params.amount,
+				currency: params.currency,
+				purchasedByCustomerId: params.customerId,
+				senderEmail: params.customerEmail,
+				senderName: params.senderName,
+				recipientEmail: params.recipientEmail,
+				recipientName: params.recipientName,
+				message: params.message,
+				deliveryMethod: params.deliveryMethod ?? "digital",
+				scheduledDeliveryAt: params.scheduledDeliveryAt,
+				// If buying for self, assign to own customer ID
+				customerId: params.recipientEmail ? undefined : params.customerId,
+			});
+
+			// Record purchase transaction
+			const txnId = crypto.randomUUID();
+			const txn: GiftCardTransaction = {
+				id: txnId,
+				giftCardId: card.id,
+				type: "purchase",
+				amount: params.amount,
+				balanceAfter: params.amount,
+				customerId: params.customerId,
+				note: params.recipientEmail
+					? `Gift card purchased for ${params.recipientEmail}`
+					: "Gift card purchased for self",
+				createdAt: new Date(),
+			};
+
+			await data.upsert(
+				"giftCardTransaction",
+				txnId,
+				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+				txn as Record<string, any>,
+			);
+
+			return card;
+		},
+
+		async topUp(params: TopUpParams): Promise<RedeemResult | null> {
+			const existing = await data.get("giftCard", params.giftCardId);
+			if (!existing) return null;
+
+			const card = existing as unknown as GiftCard;
+
+			// Customer can only top up their own cards
+			if (card.customerId !== params.customerId) return null;
+			if (card.status === "disabled") return null;
+			if (params.amount <= 0) return null;
+
+			const newBalance = card.currentBalance + params.amount;
+
+			const updatedCard: GiftCard = {
+				...card,
+				currentBalance: newBalance,
+				status: "active",
+				updatedAt: new Date(),
+			};
+
+			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+			await data.upsert(
+				"giftCard",
+				params.giftCardId,
+				updatedCard as Record<string, any>,
+			);
+
+			const txnId = crypto.randomUUID();
+			const txn: GiftCardTransaction = {
+				id: txnId,
+				giftCardId: params.giftCardId,
+				type: "topup",
+				amount: params.amount,
+				balanceAfter: newBalance,
+				customerId: params.customerId,
+				note: "Balance top-up",
+				createdAt: new Date(),
+			};
+
+			await data.upsert(
+				"giftCardTransaction",
+				txnId,
+				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+				txn as Record<string, any>,
+			);
+
+			return { transaction: txn, giftCard: updatedCard };
+		},
+
+		async sendGiftCard(params: SendGiftCardParams): Promise<GiftCard | null> {
+			const existing = await data.get("giftCard", params.giftCardId);
+			if (!existing) return null;
+
+			const card = existing as unknown as GiftCard;
+
+			// Only the owner or purchaser can send the card
+			if (
+				card.customerId !== params.customerId &&
+				card.purchasedByCustomerId !== params.customerId
+			) {
+				return null;
+			}
+
+			// Card must be active
+			if (card.status !== "active") return null;
+
+			// Already delivered to someone else
+			if (card.delivered && card.recipientEmail) return null;
+
+			const now = new Date();
+			const updated: GiftCard = {
+				...card,
+				recipientEmail: params.recipientEmail,
+				recipientName: params.recipientName,
+				senderName: params.senderName,
+				message: params.message,
+				deliveryMethod: "email",
+				delivered: true,
+				deliveredAt: now,
+				updatedAt: now,
+			};
+
+			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+			await data.upsert("giftCard", card.id, updated as Record<string, any>);
+			return updated;
+		},
+
+		async listByCustomer(customerId, params): Promise<GiftCard[]> {
+			// Find cards owned by this customer
+			const owned = await data.findMany("giftCard", {
+				where: { customerId },
+				...(params?.take !== undefined ? { take: params.take } : {}),
+				...(params?.skip !== undefined ? { skip: params.skip } : {}),
+			});
+
+			return owned as unknown as GiftCard[];
+		},
+
+		async bulkCreate(params: BulkCreateParams): Promise<GiftCard[]> {
+			const cards: GiftCard[] = [];
+			for (let i = 0; i < params.count; i++) {
+				const card = await this.create({
+					initialBalance: params.initialBalance,
+					currency: params.currency,
+					expiresAt: params.expiresAt,
+					note: params.note,
+				});
+				cards.push(card);
+			}
+			return cards;
+		},
+
+		async getStats(): Promise<GiftCardStats> {
+			const allCards = (await data.findMany(
+				"giftCard",
+				{},
+			)) as unknown as GiftCard[];
+
+			let totalActive = 0;
+			let totalDepleted = 0;
+			let totalDisabled = 0;
+			let totalExpired = 0;
+			let totalIssuedValue = 0;
+			let totalOutstandingBalance = 0;
+
+			const now = new Date();
+			for (const card of allCards) {
+				totalIssuedValue += card.initialBalance;
+				totalOutstandingBalance += card.currentBalance;
+
+				// Count expired cards (expiresAt in the past) regardless of stored status
+				if (card.expiresAt && new Date(card.expiresAt) < now) {
+					totalExpired++;
+				} else if (card.status === "depleted") {
+					totalDepleted++;
+				} else if (card.status === "disabled") {
+					totalDisabled++;
+				} else {
+					totalActive++;
+				}
+			}
+
+			// Calculate redeemed value from transactions
+			const allTxns = (await data.findMany(
+				"giftCardTransaction",
+				{},
+			)) as unknown as GiftCardTransaction[];
+
+			let totalRedeemedValue = 0;
+			for (const txn of allTxns) {
+				if (txn.type === "debit") {
+					totalRedeemedValue += txn.amount;
+				}
+			}
+
+			return {
+				totalIssued: allCards.length,
+				totalActive,
+				totalDepleted,
+				totalDisabled,
+				totalExpired,
+				totalIssuedValue,
+				totalRedeemedValue,
+				totalOutstandingBalance,
+			};
+		},
+
+		async disableExpired(): Promise<number> {
+			const allCards = (await data.findMany(
+				"giftCard",
+				{},
+			)) as unknown as GiftCard[];
+
+			const now = new Date();
+			let count = 0;
+
+			for (const card of allCards) {
+				if (
+					card.expiresAt &&
+					new Date(card.expiresAt) < now &&
+					card.status === "active"
+				) {
+					await this.update(card.id, { status: "expired" });
+					count++;
+				}
+			}
+
+			return count;
 		},
 	};
 }

@@ -9,7 +9,16 @@ export interface GiftCard {
 	status: "active" | "disabled" | "expired" | "depleted";
 	expiresAt?: string | undefined;
 	recipientEmail?: string | undefined;
+	recipientName?: string | undefined;
 	customerId?: string | undefined;
+	purchasedByCustomerId?: string | undefined;
+	senderName?: string | undefined;
+	senderEmail?: string | undefined;
+	message?: string | undefined;
+	deliveryMethod?: "email" | "physical" | "digital" | undefined;
+	delivered?: boolean | undefined;
+	deliveredAt?: Date | undefined;
+	scheduledDeliveryAt?: string | undefined;
 	purchaseOrderId?: string | undefined;
 	note?: string | undefined;
 	createdAt: Date;
@@ -19,10 +28,11 @@ export interface GiftCard {
 export interface GiftCardTransaction {
 	id: string;
 	giftCardId: string;
-	type: "debit" | "credit";
+	type: "debit" | "credit" | "purchase" | "topup";
 	amount: number;
 	balanceAfter: number;
 	orderId?: string | undefined;
+	customerId?: string | undefined;
 	note?: string | undefined;
 	createdAt: Date;
 }
@@ -32,9 +42,70 @@ export interface CreateGiftCardParams {
 	currency?: string | undefined;
 	expiresAt?: string | undefined;
 	recipientEmail?: string | undefined;
+	recipientName?: string | undefined;
 	customerId?: string | undefined;
+	purchasedByCustomerId?: string | undefined;
+	senderName?: string | undefined;
+	senderEmail?: string | undefined;
+	message?: string | undefined;
+	deliveryMethod?: "email" | "physical" | "digital" | undefined;
+	scheduledDeliveryAt?: string | undefined;
 	purchaseOrderId?: string | undefined;
 	note?: string | undefined;
+}
+
+export interface PurchaseGiftCardParams {
+	amount: number;
+	currency?: string | undefined;
+	/** Purchasing customer ID (derived from session) */
+	customerId: string;
+	/** Purchasing customer email (derived from session) */
+	customerEmail: string;
+	/** If buying as a gift */
+	recipientEmail?: string | undefined;
+	recipientName?: string | undefined;
+	senderName?: string | undefined;
+	message?: string | undefined;
+	deliveryMethod?: "email" | "digital" | undefined;
+	scheduledDeliveryAt?: string | undefined;
+}
+
+export interface TopUpParams {
+	/** Gift card ID */
+	giftCardId: string;
+	/** Customer performing the top-up (derived from session) */
+	customerId: string;
+	amount: number;
+}
+
+export interface SendGiftCardParams {
+	/** Gift card ID */
+	giftCardId: string;
+	/** Customer who owns the card (derived from session) */
+	customerId: string;
+	recipientEmail: string;
+	recipientName?: string | undefined;
+	senderName?: string | undefined;
+	message?: string | undefined;
+}
+
+export interface BulkCreateParams {
+	count: number;
+	initialBalance: number;
+	currency?: string | undefined;
+	expiresAt?: string | undefined;
+	note?: string | undefined;
+}
+
+export interface GiftCardStats {
+	totalIssued: number;
+	totalActive: number;
+	totalDepleted: number;
+	totalDisabled: number;
+	totalExpired: number;
+	totalIssuedValue: number;
+	totalRedeemedValue: number;
+	totalOutstandingBalance: number;
 }
 
 export interface RedeemResult {
@@ -59,7 +130,16 @@ export interface GiftCardController extends ModuleController {
 	update(
 		id: string,
 		data: Partial<
-			Pick<GiftCard, "status" | "expiresAt" | "note" | "recipientEmail">
+			Pick<
+				GiftCard,
+				| "status"
+				| "expiresAt"
+				| "note"
+				| "recipientEmail"
+				| "recipientName"
+				| "delivered"
+				| "deliveredAt"
+			>
 		>,
 	): Promise<GiftCard | null>;
 
@@ -93,4 +173,31 @@ export interface GiftCardController extends ModuleController {
 	): Promise<GiftCardTransaction[]>;
 
 	countAll(): Promise<number>;
+
+	/** Purchase a gift card (customer-facing) */
+	purchase(params: PurchaseGiftCardParams): Promise<GiftCard>;
+
+	/** Top up an existing gift card */
+	topUp(params: TopUpParams): Promise<RedeemResult | null>;
+
+	/** Send a gift card to a recipient via email */
+	sendGiftCard(params: SendGiftCardParams): Promise<GiftCard | null>;
+
+	/** List gift cards for a specific customer */
+	listByCustomer(
+		customerId: string,
+		params?: {
+			take?: number | undefined;
+			skip?: number | undefined;
+		},
+	): Promise<GiftCard[]>;
+
+	/** Bulk create gift cards (admin) */
+	bulkCreate(params: BulkCreateParams): Promise<GiftCard[]>;
+
+	/** Get gift card statistics (admin) */
+	getStats(): Promise<GiftCardStats>;
+
+	/** Disable all expired gift cards */
+	disableExpired(): Promise<number>;
 }

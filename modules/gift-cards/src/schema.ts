@@ -14,8 +14,26 @@ export const giftCardSchema = {
 			expiresAt: { type: "string", required: false },
 			/** Customer who received the gift card */
 			recipientEmail: { type: "string", required: false },
+			/** Name of the recipient */
+			recipientName: { type: "string", required: false },
 			/** Customer ID if linked to an account */
 			customerId: { type: "string", required: false },
+			/** Customer who purchased the gift card */
+			purchasedByCustomerId: { type: "string", required: false },
+			/** Name of the sender */
+			senderName: { type: "string", required: false },
+			/** Email of the sender */
+			senderEmail: { type: "string", required: false },
+			/** Personal message from sender to recipient */
+			message: { type: "string", required: false },
+			/** email | physical | digital */
+			deliveryMethod: { type: "string", required: false },
+			/** Whether the gift card has been delivered to the recipient */
+			delivered: { type: "boolean", required: false },
+			/** When the delivery was sent */
+			deliveredAt: { type: "date", required: false },
+			/** Scheduled delivery date (for delayed sending) */
+			scheduledDeliveryAt: { type: "string", required: false },
 			/** Order that purchased this gift card */
 			purchaseOrderId: { type: "string", required: false },
 			/** Admin note for manual issuances */
@@ -36,12 +54,14 @@ export const giftCardSchema = {
 		fields: {
 			id: { type: "string", required: true },
 			giftCardId: { type: "string", required: true },
-			/** debit (redemption) or credit (refund/topup) */
+			/** debit (redemption) | credit (refund/topup) | purchase | topup */
 			type: { type: "string", required: true },
 			amount: { type: "number", required: true },
 			balanceAfter: { type: "number", required: true },
 			/** Order that triggered this transaction */
 			orderId: { type: "string", required: false },
+			/** Customer who initiated the transaction */
+			customerId: { type: "string", required: false },
 			note: { type: "string", required: false },
 			createdAt: {
 				type: "date",
