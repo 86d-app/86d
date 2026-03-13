@@ -5,10 +5,14 @@ import { createSearchController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints";
 
 export type {
+	SearchClick,
 	SearchController,
+	SearchFacets,
+	SearchHighlight,
 	SearchIndexItem,
 	SearchQuery,
 	SearchResult,
+	SearchSortField,
 	SearchSynonym,
 } from "./service";
 
@@ -20,13 +24,18 @@ export interface SearchOptions extends ModuleConfig {
 export default function search(options?: SearchOptions): Module {
 	return {
 		id: "search",
-		version: "0.0.1",
+		version: "0.1.0",
 		schema: searchSchema,
 		exports: {
 			read: ["searchIndexCount", "popularTerms"],
 		},
 		events: {
-			emits: ["search.queried", "search.indexed", "search.removed"],
+			emits: [
+				"search.queried",
+				"search.indexed",
+				"search.removed",
+				"search.clicked",
+			],
 		},
 		init: async (ctx: ModuleContext) => {
 			const controller = createSearchController(ctx.data);

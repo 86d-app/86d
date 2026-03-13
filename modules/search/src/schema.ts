@@ -45,4 +45,19 @@ export const searchSchema = {
 			},
 		},
 	},
+	searchClick: {
+		fields: {
+			id: { type: "string", required: true },
+			queryId: { type: "string", required: true },
+			term: { type: "string", required: true },
+			entityType: { type: "string", required: true },
+			entityId: { type: "string", required: true },
+			position: { type: "number", required: true },
+			clickedAt: {
+				type: "date",
+				required: true,
+				defaultValue: () => new Date(),
+			},
+		},
+	},
 } satisfies ModuleSchema;

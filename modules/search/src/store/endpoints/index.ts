@@ -1,3 +1,4 @@
+import { clickEndpoint } from "./click";
 import { recentEndpoint } from "./recent";
 import { searchEndpoint } from "./search";
 import { storeSearch } from "./store-search";
@@ -8,4 +9,5 @@ export const storeEndpoints = {
 	"/search": searchEndpoint,
 	"/search/suggest": suggestEndpoint,
 	"/search/recent": recentEndpoint,
+	"/search/click": clickEndpoint,
 };

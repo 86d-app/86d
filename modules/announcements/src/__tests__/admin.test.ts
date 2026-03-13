@@ -260,10 +260,10 @@ describe("announcements admin workflows", () => {
 			const a1Record = await controller.getAnnouncement(a1.id);
 			if (a1Record) {
 				a1Record.createdAt = older;
-				// biome-ignore lint/suspicious/noExplicitAny: test helper
 				await data.upsert(
 					"announcement",
 					a1.id,
+					// biome-ignore lint/suspicious/noExplicitAny: test helper
 					a1Record as Record<string, any>,
 				);
 			}

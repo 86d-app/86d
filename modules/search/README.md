@@ -19,7 +19,7 @@
 
 # Search Module
 
-Unified search, autocomplete, and search analytics module for 86d commerce platform.
+Full-text search with fuzzy matching, faceted filtering, autocomplete, click tracking, and search analytics for 86d commerce platform.
 
 ## Installation
 
@@ -47,55 +47,128 @@ const module = search({
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/search?q=...&type=...&limit=...&skip=...` | Full-text search with optional entity type filtering |
-| `GET` | `/search/suggest?prefix=...&limit=...` | Autocomplete suggestions |
+| `GET` | `/search?q=...&type=...&tags=...&sort=...&fuzzy=...&limit=...&skip=...` | Full-text search with facets, sorting, fuzzy matching, and did-you-mean |
+| `GET` | `/search/suggest?q=...&limit=...` | Autocomplete suggestions |
 | `GET` | `/search/recent?sessionId=...&limit=...` | Recent search queries by session |
+| `POST` | `/search/click` | Record a search result click (queryId, term, entityType, entityId, position) |
+
+### Search query parameters
+
+| Param | Type | Default | Description |
+|---|---|---|---|
+| `q` | `string` | required | Search query text |
+| `type` | `string` | — | Filter by entity type |
+| `tags` | `string` | — | Comma-separated tag filter |
+| `sort` | `string` | `relevance` | Sort: `relevance`, `newest`, `oldest`, `title_asc`, `title_desc` |
+| `fuzzy` | `boolean` | `true` | Enable fuzzy/typo-tolerant matching |
+| `limit` | `number` | `20` | Results per page (max 100) |
+| `skip` | `number` | `0` | Offset for pagination |
+| `sessionId` | `string` | — | Session ID for analytics tracking |
+
+### Search response
+
+```ts
+{
+  results: Array<{
+    id: string;
+    entityType: string;
+    entityId: string;
+    title: string;
+    url: string;
+    image?: string;
+    tags: string[];
+    score: number;
+    highlights?: { title?: string; body?: string };
+  }>;
+  total: number;
+  facets: {
+    entityTypes: Array<{ type: string; count: number }>;
+    tags: Array<{ tag: string; count: number }>;
+  };
+  didYouMean?: string;
+}
+```
 
 ## Admin Endpoints
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/admin/search/analytics` | Search analytics summary |
+| `GET` | `/admin/search/analytics` | Search analytics summary (includes CTR and avg click position) |
 | `GET` | `/admin/search/popular` | Most popular search terms |
 | `GET` | `/admin/search/zero-results` | Queries that returned zero results |
+| `GET` | `/admin/search/clicks` | Click-through rate analytics |
 | `GET` | `/admin/search/synonyms` | List all synonym groups |
 | `POST` | `/admin/search/synonyms/add` | Add a synonym group |
 | `POST` | `/admin/search/synonyms/:id/delete` | Delete a synonym group |
 | `POST` | `/admin/search/index` | Manually index an item |
 | `POST` | `/admin/search/index/remove` | Remove an item from the index |
+| `POST` | `/admin/search/index/bulk` | Bulk index up to 500 items |
 
 ## Controller API
 
 ```ts
 interface SearchController {
+  // Indexing
   indexItem(params: {
     entityType: string;
     entityId: string;
     title: string;
     body?: string;
     tags?: string[];
-    url?: string;
+    url: string;
     image?: string;
     metadata?: Record<string, unknown>;
   }): Promise<SearchIndexItem>;
 
-  removeFromIndex(entityType: string, entityId: string): Promise<void>;
+  bulkIndex(items: Array<{
+    entityType: string;
+    entityId: string;
+    title: string;
+    body?: string;
+    tags?: string[];
+    url: string;
+    image?: string;
+    metadata?: Record<string, unknown>;
+  }>): Promise<{ indexed: number; errors: number }>;
 
+  removeFromIndex(entityType: string, entityId: string): Promise<boolean>;
+
+  // Search
   search(query: string, options?: {
     entityType?: string;
+    tags?: string[];
+    sort?: SearchSortField;
+    fuzzy?: boolean;
     limit?: number;
     skip?: number;
-  }): Promise<{ results: SearchResult[]; total: number }>;
+  }): Promise<{
+    results: SearchResult[];
+    total: number;
+    facets: SearchFacets;
+    didYouMean?: string;
+  }>;
 
   suggest(prefix: string, limit?: number): Promise<string[]>;
-  recordQuery(term: string, resultCount: number, sessionId?: string): Promise<void>;
+
+  // Analytics
+  recordQuery(term: string, resultCount: number, sessionId?: string): Promise<SearchQuery>;
+  recordClick(params: {
+    queryId: string;
+    term: string;
+    entityType: string;
+    entityId: string;
+    position: number;
+  }): Promise<SearchClick>;
   getRecentQueries(sessionId: string, limit?: number): Promise<SearchQuery[]>;
   getPopularTerms(limit?: number): Promise<PopularTerm[]>;
-  getZeroResultQueries(limit?: number): Promise<SearchQuery[]>;
+  getZeroResultQueries(limit?: number): Promise<PopularTerm[]>;
   getAnalytics(): Promise<SearchAnalyticsSummary>;
+
+  // Synonyms
   addSynonym(term: string, synonyms: string[]): Promise<SearchSynonym>;
-  removeSynonym(id: string): Promise<void>;
+  removeSynonym(id: string): Promise<boolean>;
   listSynonyms(): Promise<SearchSynonym[]>;
+
   getIndexCount(): Promise<number>;
 }
 ```
@@ -103,22 +176,27 @@ interface SearchController {
 ## Types
 
 ```ts
-interface SearchIndexItem {
-  id: string;
-  entityType: string;
-  entityId: string;
-  title: string;
-  body?: string;
-  tags: string[];
-  url?: string;
-  image?: string;
-  metadata?: Record<string, unknown>;
-  indexedAt: Date;
-}
+type SearchSortField = "relevance" | "newest" | "oldest" | "title_asc" | "title_desc";
 
 interface SearchResult {
   item: SearchIndexItem;
   score: number;
+  highlights?: { title?: string; body?: string };
+}
+
+interface SearchFacets {
+  entityTypes: Array<{ type: string; count: number }>;
+  tags: Array<{ tag: string; count: number }>;
+}
+
+interface SearchClick {
+  id: string;
+  queryId: string;
+  term: string;
+  entityType: string;
+  entityId: string;
+  position: number;
+  clickedAt: Date;
 }
 
 interface SearchAnalyticsSummary {
@@ -127,12 +205,8 @@ interface SearchAnalyticsSummary {
   avgResultCount: number;
   zeroResultCount: number;
   zeroResultRate: number;
-}
-
-interface PopularTerm {
-  term: string;
-  count: number;
-  avgResultCount: number;
+  clickThroughRate: number;
+  avgClickPosition: number;
 }
 ```
 
@@ -195,3 +269,12 @@ Displays search results for a given query, with loading and empty states. Fetche
 ```
 
 Best used below a search bar to display results, or on a category page for filtered search results.
+
+## Notes
+
+- **Fuzzy search** uses Levenshtein distance. Edit tolerance scales with word length: 0 for ≤3 chars, 1 for 4-5 chars, 2 for 6+ chars. Enabled by default.
+- **Facets** are computed from all matching results before pagination, giving accurate counts regardless of page.
+- **Did-you-mean** only activates when zero results are found, checking against indexed titles and historically successful search terms.
+- **Click tracking** records which result was clicked and at what position, enabling CTR and rank quality analytics.
+- **Synonyms** are bidirectional: adding "tee" → ["t-shirt"] means searching for either term finds both.
+- **Highlights** wrap matched terms in `<mark>` tags for rendering in search result UIs.

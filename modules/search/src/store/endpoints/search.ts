@@ -1,5 +1,13 @@
 import { createStoreEndpoint, z } from "@86d-app/core";
-import type { SearchController } from "../../service";
+import type { SearchController, SearchSortField } from "../../service";
+
+const sortFields = [
+	"relevance",
+	"newest",
+	"oldest",
+	"title_asc",
+	"title_desc",
+] as const;
 
 export const searchEndpoint = createStoreEndpoint(
 	"/search",
@@ -8,6 +16,9 @@ export const searchEndpoint = createStoreEndpoint(
 		query: z.object({
 			q: z.string().min(1).max(500),
 			type: z.string().optional(),
+			tags: z.string().optional(),
+			sort: z.enum(sortFields).optional(),
+			fuzzy: z.coerce.boolean().optional(),
 			limit: z.coerce.number().int().min(1).max(100).optional(),
 			skip: z.coerce.number().int().min(0).optional(),
 			sessionId: z.string().optional(),
@@ -15,11 +26,24 @@ export const searchEndpoint = createStoreEndpoint(
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers.search as SearchController;
-		const { results, total } = await controller.search(ctx.query.q, {
-			entityType: ctx.query.type,
-			limit: ctx.query.limit ?? 20,
-			skip: ctx.query.skip ?? 0,
-		});
+		const parsedTags = ctx.query.tags
+			? ctx.query.tags
+					.split(",")
+					.map((t) => t.trim())
+					.filter(Boolean)
+			: undefined;
+
+		const { results, total, facets, didYouMean } = await controller.search(
+			ctx.query.q,
+			{
+				entityType: ctx.query.type,
+				tags: parsedTags,
+				sort: ctx.query.sort as SearchSortField | undefined,
+				fuzzy: ctx.query.fuzzy,
+				limit: ctx.query.limit ?? 20,
+				skip: ctx.query.skip ?? 0,
+			},
+		);
 
 		// Record query for analytics (fire-and-forget)
 		controller
@@ -34,9 +58,13 @@ export const searchEndpoint = createStoreEndpoint(
 				title: r.item.title,
 				url: r.item.url,
 				image: r.item.image,
+				tags: r.item.tags,
 				score: r.score,
+				highlights: r.highlights,
 			})),
 			total,
+			facets,
+			didYouMean,
 		};
 	},
 );
