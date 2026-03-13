@@ -6,7 +6,7 @@ export const checkHours = createStoreEndpoint(
 	{
 		method: "GET",
 		params: z.object({
-			id: z.string(),
+			id: z.string().max(200),
 		}),
 	},
 	async (ctx) => {

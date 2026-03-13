@@ -6,8 +6,8 @@ export const bookAppointment = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			serviceId: z.string().min(1),
-			staffId: z.string().min(1),
+			serviceId: z.string().min(1).max(200),
+			staffId: z.string().min(1).max(200),
 			customerName: z.string().min(1).max(200).transform(sanitizeText),
 			customerEmail: z.string().email().max(320),
 			customerPhone: z.string().max(50).transform(sanitizeText).optional(),

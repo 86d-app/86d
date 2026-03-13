@@ -5,7 +5,7 @@ export const updateAddress = createStoreEndpoint(
 	"/customers/me/addresses/:id",
 	{
 		method: "PUT",
-		params: z.object({ id: z.string() }),
+		params: z.object({ id: z.string().max(200) }),
 		body: z.object({
 			type: z.enum(["billing", "shipping"]).optional(),
 			firstName: z.string().min(1).max(200).transform(sanitizeText).optional(),
@@ -20,9 +20,9 @@ export const updateAddress = createStoreEndpoint(
 			line2: z.string().max(500).transform(sanitizeText).nullable().optional(),
 			city: z.string().min(1).max(200).transform(sanitizeText).optional(),
 			state: z.string().min(1).max(200).transform(sanitizeText).optional(),
-			postalCode: z.string().min(1).optional(),
+			postalCode: z.string().min(1).max(20).optional(),
 			country: z.string().length(2).optional(),
-			phone: z.string().nullable().optional(),
+			phone: z.string().max(50).nullable().optional(),
 			isDefault: z.boolean().optional(),
 		}),
 	},

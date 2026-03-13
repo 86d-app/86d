@@ -6,7 +6,7 @@ export const updateCartItem = createStoreEndpoint(
 	{
 		method: "PATCH",
 		params: z.object({
-			id: z.string(),
+			id: z.string().max(200),
 		}),
 		body: z.object({
 			quantity: z.number().positive().int(),

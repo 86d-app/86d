@@ -6,7 +6,7 @@ export const submitForm = createStoreEndpoint(
 	{
 		method: "POST",
 		params: z.object({
-			slug: z.string(),
+			slug: z.string().max(200),
 		}),
 		body: z.object({
 			values: z

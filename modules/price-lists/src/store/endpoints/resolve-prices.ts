@@ -7,7 +7,7 @@ export const resolvePrices = createStoreEndpoint(
 		method: "POST",
 		body: z.object({
 			productIds: z.array(z.string().min(1)).min(1).max(100),
-			customerGroupId: z.string().optional(),
+			customerGroupId: z.string().max(200).optional(),
 			quantity: z.number().int().min(1).optional(),
 			currency: z.string().max(3).optional(),
 		}),

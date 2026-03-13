@@ -6,8 +6,8 @@ export const removeItemEndpoint = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			quoteId: z.string(),
-			itemId: z.string(),
+			quoteId: z.string().max(200),
+			itemId: z.string().max(200),
 		}),
 	},
 	async (ctx) => {

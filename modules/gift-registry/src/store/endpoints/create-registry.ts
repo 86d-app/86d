@@ -27,7 +27,7 @@ export const createRegistry = createStoreEndpoint(
 				.optional(),
 			visibility: z.enum(["public", "unlisted", "private"]).optional(),
 			eventDate: z.coerce.date().optional(),
-			coverImageUrl: z.string().url().optional(),
+			coverImageUrl: z.string().url().max(2048).optional(),
 			thankYouMessage: z.string().max(1000).transform(sanitizeText).optional(),
 		}),
 	},

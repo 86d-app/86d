@@ -2,8 +2,8 @@ import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { AbandonedCartController, CartItemSnapshot } from "../../service";
 
 const cartItemSchema = z.object({
-	productId: z.string().min(1),
-	variantId: z.string().optional(),
+	productId: z.string().min(1).max(200),
+	variantId: z.string().max(200).optional(),
 	name: z.string().min(1).max(200).transform(sanitizeText),
 	sku: z.string().max(100).optional(),
 	price: z.number().min(0),

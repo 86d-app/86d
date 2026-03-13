@@ -6,7 +6,7 @@ export const voteFaq = createStoreEndpoint(
 	{
 		method: "POST",
 		params: z.object({
-			id: z.string(),
+			id: z.string().max(200),
 		}),
 		body: z.object({
 			helpful: z.boolean(),

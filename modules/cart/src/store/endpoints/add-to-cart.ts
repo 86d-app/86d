@@ -6,26 +6,30 @@ export const addToCart = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			productId: z.string(),
-			variantId: z.string().optional(),
+			productId: z.string().max(200),
+			variantId: z.string().max(200).optional(),
 			quantity: z.number().positive().int(),
 			price: z.number().positive(),
 			productName: z
 				.string()
 				.min(1)
+				.max(500)
 				.transform(sanitizeText)
 				.refine((s) => s.length >= 1, "Product name is required"),
 			productSlug: z
 				.string()
 				.min(1)
+				.max(500)
 				.transform(sanitizeText)
 				.refine((s) => s.length >= 1, "Product slug is required"),
 			productImage: z
 				.string()
+				.max(2000)
 				.optional()
 				.transform((s) => (s === undefined ? undefined : sanitizeText(s))),
 			variantName: z
 				.string()
+				.max(500)
 				.optional()
 				.transform((s) => (s === undefined ? undefined : sanitizeText(s))),
 			variantOptions: z

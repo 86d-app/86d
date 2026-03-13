@@ -6,7 +6,7 @@ export const getPriceList = createStoreEndpoint(
 	{
 		method: "GET",
 		params: z.object({
-			slug: z.string().min(1),
+			slug: z.string().min(1).max(200),
 		}),
 	},
 	async (ctx) => {

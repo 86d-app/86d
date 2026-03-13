@@ -6,14 +6,18 @@ export const leaveWaitlist = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			email: z.string().email(),
-			productId: z.string(),
+			productId: z.string().max(200),
 		}),
 	},
 	async (ctx) => {
+		const session = ctx.context.session;
+		if (!session) {
+			return { error: "Authentication required", status: 401 };
+		}
+
 		const controller = ctx.context.controllers.waitlist as WaitlistController;
 		const cancelled = await controller.cancelByEmail(
-			ctx.body.email,
+			session.user.email,
 			ctx.body.productId,
 		);
 		return { cancelled };

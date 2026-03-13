@@ -6,15 +6,19 @@ export const listTransactions = createStoreEndpoint(
 	{
 		method: "GET",
 		query: z.object({
-			customerId: z.string(),
 			type: z.enum(["earn", "redeem", "adjust", "expire"]).optional(),
 			take: z.coerce.number().int().min(1).max(100).optional(),
 			skip: z.coerce.number().int().min(0).optional(),
 		}),
 	},
 	async (ctx) => {
+		const session = ctx.context.session;
+		if (!session) {
+			return { error: "Authentication required", status: 401 };
+		}
+
 		const controller = ctx.context.controllers.loyalty as LoyaltyController;
-		const account = await controller.getAccount(ctx.query.customerId);
+		const account = await controller.getAccount(session.user.id);
 		if (!account) {
 			return { transactions: [], total: 0 };
 		}

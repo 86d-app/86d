@@ -8,27 +8,28 @@ export const calculateTax = createStoreEndpoint(
 		body: z.object({
 			address: z.object({
 				country: z.string().length(2),
-				state: z.string().min(1),
-				city: z.string().optional(),
-				postalCode: z.string().optional(),
+				state: z.string().min(1).max(100),
+				city: z.string().max(200).optional(),
+				postalCode: z.string().max(20).optional(),
 			}),
-			lineItems: z.array(
-				z.object({
-					productId: z.string(),
-					categoryId: z.string().optional(),
-					amount: z.number().min(0),
-					quantity: z.number().int().min(1),
-				}),
-			),
+			lineItems: z
+				.array(
+					z.object({
+						productId: z.string().max(200),
+						categoryId: z.string().max(200).optional(),
+						amount: z.number().min(0),
+						quantity: z.number().int().min(1),
+					}),
+				)
+				.max(200),
 			shippingAmount: z.number().min(0).optional(),
-			customerId: z.string().optional(),
 		}),
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers.tax as TaxController;
 
-		// If authenticated, prefer session user ID for exemption checks
-		const customerId = ctx.body.customerId ?? ctx.context.session?.user.id;
+		// Derive customerId from session for exemption checks
+		const customerId = ctx.context.session?.user.id;
 
 		const calculation = await controller.calculate({
 			address: ctx.body.address,

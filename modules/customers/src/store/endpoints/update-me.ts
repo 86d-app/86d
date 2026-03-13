@@ -8,7 +8,7 @@ export const updateMe = createStoreEndpoint(
 		body: z.object({
 			firstName: z.string().min(1).max(200).transform(sanitizeText).optional(),
 			lastName: z.string().min(1).max(200).transform(sanitizeText).optional(),
-			phone: z.string().nullable().optional(),
+			phone: z.string().max(50).nullable().optional(),
 			dateOfBirth: z
 				.string()
 				.datetime()

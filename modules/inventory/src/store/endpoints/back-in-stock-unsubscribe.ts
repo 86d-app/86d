@@ -6,9 +6,9 @@ export const backInStockUnsubscribe = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			productId: z.string(),
-			variantId: z.string().optional(),
-			email: z.string().email(),
+			productId: z.string().max(200),
+			variantId: z.string().max(200).optional(),
+			email: z.string().email().max(320),
 		}),
 	},
 	async (ctx) => {

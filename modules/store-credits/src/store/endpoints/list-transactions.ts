@@ -6,17 +6,21 @@ export const listTransactions = createStoreEndpoint(
 	{
 		method: "GET",
 		query: z.object({
-			customerId: z.string(),
 			type: z.enum(["credit", "debit"]).optional(),
 			take: z.coerce.number().int().min(1).max(100).optional(),
 			skip: z.coerce.number().int().min(0).optional(),
 		}),
 	},
 	async (ctx) => {
+		const session = ctx.context.session;
+		if (!session) {
+			return { error: "Authentication required", status: 401 };
+		}
+
 		const controller = ctx.context.controllers[
 			"store-credits"
 		] as StoreCreditController;
-		const account = await controller.getAccount(ctx.query.customerId);
+		const account = await controller.getAccount(session.user.id);
 		if (!account) {
 			return { transactions: [] };
 		}

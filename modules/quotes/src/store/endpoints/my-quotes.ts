@@ -6,7 +6,7 @@ export const myQuotesEndpoint = createStoreEndpoint(
 	{
 		method: "GET",
 		query: z.object({
-			status: z.string().optional(),
+			status: z.string().max(50).optional(),
 			skip: z.coerce.number().int().min(0).optional(),
 			take: z.coerce.number().int().min(1).max(100).optional(),
 		}),

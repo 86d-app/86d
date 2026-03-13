@@ -6,25 +6,24 @@ export const getTicket = createStoreEndpoint(
 	{
 		method: "GET",
 		params: z.object({
-			id: z.string(),
+			id: z.string().max(200),
 		}),
-		query: z
-			.object({
-				email: z.string().email(),
-			})
-			.optional(),
 	},
 	async (ctx) => {
+		const session = ctx.context.session;
+		if (!session) {
+			return { error: "Authentication required", status: 401 };
+		}
+
 		const controller = ctx.context.controllers.tickets as TicketController;
-		const { query } = ctx;
 
 		const ticket = await controller.getTicket(ctx.params.id);
 		if (!ticket) {
 			return { error: "Ticket not found", status: 404 };
 		}
 
-		// Customers must provide their email to view a ticket
-		if (query?.email && ticket.customerEmail !== query.email) {
+		// Verify ownership — return 404 to avoid leaking existence
+		if (ticket.customerEmail !== session.user.email) {
 			return { error: "Ticket not found", status: 404 };
 		}
 

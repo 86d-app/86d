@@ -8,8 +8,8 @@ export const validateCode = createStoreEndpoint(
 		body: z.object({
 			code: z.string().min(1).max(50),
 			subtotal: z.number().int().nonnegative(),
-			productIds: z.array(z.string()).optional(),
-			categoryIds: z.array(z.string()).optional(),
+			productIds: z.array(z.string().max(200)).max(100).optional(),
+			categoryIds: z.array(z.string().max(200)).max(100).optional(),
 		}),
 	},
 	async (ctx) => {

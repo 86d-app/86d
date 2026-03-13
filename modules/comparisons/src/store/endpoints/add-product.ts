@@ -6,7 +6,7 @@ export const addProduct = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			productId: z.string(),
+			productId: z.string().max(200),
 			productName: z.string().max(500).transform(sanitizeText),
 			productSlug: z.string().max(500),
 			productImage: z.string().max(2000).optional(),

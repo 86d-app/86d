@@ -6,15 +6,18 @@ export const customerReply = createStoreEndpoint(
 	{
 		method: "POST",
 		params: z.object({
-			id: z.string(),
+			id: z.string().max(200),
 		}),
 		body: z.object({
 			body: z.string().min(1).max(5000).transform(sanitizeText),
-			customerEmail: z.string().email(),
-			customerName: z.string().min(1).max(200).transform(sanitizeText),
 		}),
 	},
 	async (ctx) => {
+		const session = ctx.context.session;
+		if (!session) {
+			return { error: "Authentication required", status: 401 };
+		}
+
 		const controller = ctx.context.controllers.tickets as TicketController;
 
 		const ticket = await controller.getTicket(ctx.params.id);
@@ -22,8 +25,8 @@ export const customerReply = createStoreEndpoint(
 			return { error: "Ticket not found", status: 404 };
 		}
 
-		// Verify the reply is from the ticket owner
-		if (ticket.customerEmail !== ctx.body.customerEmail) {
+		// Verify ownership — return 404 to avoid leaking existence
+		if (ticket.customerEmail !== session.user.email) {
 			return { error: "Ticket not found", status: 404 };
 		}
 
@@ -35,8 +38,8 @@ export const customerReply = createStoreEndpoint(
 			ticketId: ticket.id,
 			body: ctx.body.body,
 			authorType: "customer",
-			authorName: ctx.body.customerName,
-			authorEmail: ctx.body.customerEmail,
+			authorName: session.user.name ?? session.user.email,
+			authorEmail: session.user.email,
 		});
 
 		return { message };

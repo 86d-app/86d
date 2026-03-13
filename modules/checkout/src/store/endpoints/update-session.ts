@@ -18,9 +18,9 @@ export const updateSession = createStoreEndpoint(
 	"/checkout/sessions/:id",
 	{
 		method: "PUT",
-		params: z.object({ id: z.string() }),
+		params: z.object({ id: z.string().max(200) }),
 		body: z.object({
-			guestEmail: z.string().email().optional(),
+			guestEmail: z.string().email().max(320).optional(),
 			shippingAddress: addressSchema.optional(),
 			billingAddress: addressSchema.optional(),
 			shippingAmount: z.number().int().nonnegative().optional(),

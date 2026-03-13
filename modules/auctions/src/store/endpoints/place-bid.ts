@@ -6,7 +6,7 @@ export const placeBid = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			auctionId: z.string(),
+			auctionId: z.string().max(200),
 			amount: z.number().int().min(1),
 			maxAutoBid: z.number().int().min(1).optional(),
 		}),

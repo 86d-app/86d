@@ -6,7 +6,7 @@ export const checkWaitlist = createStoreEndpoint(
 	{
 		method: "GET",
 		query: z.object({
-			email: z.string().email(),
+			email: z.string().email().max(320),
 		}),
 	},
 	async (ctx) => {

@@ -6,21 +6,22 @@ export const myBackorders = createStoreEndpoint(
 	{
 		method: "GET",
 		query: z.object({
-			customerId: z.string(),
 			take: z.coerce.number().int().min(1).max(100).optional(),
 			skip: z.coerce.number().int().min(0).optional(),
 		}),
 	},
 	async (ctx) => {
+		const session = ctx.context.session;
+		if (!session) {
+			return { error: "Authentication required", status: 401 };
+		}
+
 		const controller = ctx.context.controllers
 			.backorders as BackordersController;
-		const backorders = await controller.getCustomerBackorders(
-			ctx.query.customerId,
-			{
-				take: ctx.query.take ?? 50,
-				skip: ctx.query.skip ?? 0,
-			},
-		);
+		const backorders = await controller.getCustomerBackorders(session.user.id, {
+			take: ctx.query.take ?? 50,
+			skip: ctx.query.skip ?? 0,
+		});
 		return { backorders };
 	},
 );

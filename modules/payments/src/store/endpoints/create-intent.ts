@@ -9,8 +9,8 @@ export const createIntent = createStoreEndpoint(
 			amount: z.number().int().positive(),
 			currency: z.string().max(3).optional(),
 			email: z.string().email().optional(),
-			orderId: z.string().optional(),
-			checkoutSessionId: z.string().optional(),
+			orderId: z.string().max(200).optional(),
+			checkoutSessionId: z.string().max(200).optional(),
 			metadata: z
 				.record(
 					z

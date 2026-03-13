@@ -6,7 +6,7 @@ export const recoverCart = createStoreEndpoint(
 	{
 		method: "GET",
 		params: z.object({
-			token: z.string().min(1),
+			token: z.string().min(1).max(200),
 		}),
 	},
 	async (ctx) => {

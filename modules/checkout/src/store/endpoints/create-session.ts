@@ -9,9 +9,9 @@ const addressSchema = z.object({
 	line2: z.string().max(500).transform(sanitizeText).optional(),
 	city: z.string().min(1).max(200).transform(sanitizeText),
 	state: z.string().min(1).max(200).transform(sanitizeText),
-	postalCode: z.string().min(1),
+	postalCode: z.string().min(1).max(20),
 	country: z.string().length(2),
-	phone: z.string().optional(),
+	phone: z.string().max(50).optional(),
 });
 
 export const createSession = createStoreEndpoint(
@@ -19,23 +19,25 @@ export const createSession = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			cartId: z.string().optional(),
-			guestEmail: z.string().email().optional(),
+			cartId: z.string().max(200).optional(),
+			guestEmail: z.string().email().max(320).optional(),
 			currency: z.string().length(3).optional(),
 			subtotal: z.number().int().nonnegative(),
 			taxAmount: z.number().int().nonnegative().optional(),
 			shippingAmount: z.number().int().nonnegative().optional(),
 			total: z.number().int().nonnegative(),
-			lineItems: z.array(
-				z.object({
-					productId: z.string(),
-					variantId: z.string().optional(),
-					name: z.string().min(1).max(500).transform(sanitizeText),
-					sku: z.string().optional(),
-					price: z.number().int().positive(),
-					quantity: z.number().int().positive(),
-				}),
-			),
+			lineItems: z
+				.array(
+					z.object({
+						productId: z.string().max(200),
+						variantId: z.string().max(200).optional(),
+						name: z.string().min(1).max(500).transform(sanitizeText),
+						sku: z.string().max(100).optional(),
+						price: z.number().int().positive(),
+						quantity: z.number().int().positive(),
+					}),
+				)
+				.max(100),
 			shippingAddress: addressSchema.optional(),
 			billingAddress: addressSchema.optional(),
 		}),

@@ -5,7 +5,7 @@ export const listProductReviews = createStoreEndpoint(
 	"/reviews/products/:productId",
 	{
 		method: "GET",
-		params: z.object({ productId: z.string() }),
+		params: z.object({ productId: z.string().max(200) }),
 		query: z.object({
 			take: z.coerce.number().int().min(1).max(100).optional(),
 			skip: z.coerce.number().int().min(0).optional(),

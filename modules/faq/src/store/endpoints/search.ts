@@ -6,9 +6,9 @@ export const searchFaqs = createStoreEndpoint(
 	{
 		method: "GET",
 		query: z.object({
-			q: z.string(),
-			categoryId: z.string().optional(),
-			limit: z.string().optional(),
+			q: z.string().max(500),
+			categoryId: z.string().max(200).optional(),
+			limit: z.string().max(5).optional(),
 		}),
 	},
 	async (ctx) => {

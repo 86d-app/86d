@@ -6,7 +6,7 @@ export const subscribeEndpoint = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			email: z.string().email(),
+			email: z.string().email().max(320),
 			firstName: z.string().max(200).transform(sanitizeText).optional(),
 			lastName: z.string().max(200).transform(sanitizeText).optional(),
 			source: z.string().max(200).transform(sanitizeText).optional(),

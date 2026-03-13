@@ -6,7 +6,7 @@ export const submitReview = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			productId: z.string(),
+			productId: z.string().max(200),
 			authorName: z.string().max(200).transform(sanitizeText),
 			authorEmail: z.string().email(),
 			rating: z.number().int().min(1).max(5),

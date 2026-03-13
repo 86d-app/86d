@@ -6,7 +6,7 @@ export const recordClick = createStoreEndpoint(
 	{
 		method: "POST",
 		params: z.object({
-			id: z.string().min(1),
+			id: z.string().min(1).max(200),
 		}),
 	},
 	async (ctx) => {

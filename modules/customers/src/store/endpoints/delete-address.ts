@@ -5,7 +5,7 @@ export const deleteAddress = createStoreEndpoint(
 	"/customers/me/addresses/:id",
 	{
 		method: "DELETE",
-		params: z.object({ id: z.string() }),
+		params: z.object({ id: z.string().max(200) }),
 	},
 	async (ctx) => {
 		const userId = ctx.context.session?.user.id;

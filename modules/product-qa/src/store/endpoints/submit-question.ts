@@ -6,7 +6,7 @@ export const submitQuestion = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			productId: z.string(),
+			productId: z.string().max(200),
 			authorName: z.string().max(200).transform(sanitizeText),
 			authorEmail: z.string().email(),
 			body: z.string().max(5000).transform(sanitizeText),

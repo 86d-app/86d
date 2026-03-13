@@ -6,7 +6,7 @@ export const getFeaturedProducts = createStoreEndpoint(
 		method: "GET",
 		query: z
 			.object({
-				limit: z.string().optional(),
+				limit: z.string().max(10).optional(),
 			})
 			.optional(),
 	},

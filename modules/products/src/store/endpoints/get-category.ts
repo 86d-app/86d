@@ -6,11 +6,11 @@ export const getCategory = createStoreEndpoint(
 	{
 		method: "GET",
 		params: z.object({
-			id: z.string(),
+			id: z.string().max(200),
 		}),
 		query: z
 			.object({
-				includeProducts: z.string().optional(),
+				includeProducts: z.string().max(10).optional(),
 			})
 			.optional(),
 	},

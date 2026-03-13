@@ -6,7 +6,7 @@ export const removeProduct = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			productId: z.string(),
+			productId: z.string().max(200),
 			sessionId: z.string().max(200).optional(),
 		}),
 	},

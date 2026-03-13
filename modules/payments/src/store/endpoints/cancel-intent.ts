@@ -5,7 +5,7 @@ export const cancelIntent = createStoreEndpoint(
 	"/payments/intents/:id/cancel",
 	{
 		method: "POST",
-		params: z.object({ id: z.string() }),
+		params: z.object({ id: z.string().max(200) }),
 	},
 	async (ctx) => {
 		const session = ctx.context.session;

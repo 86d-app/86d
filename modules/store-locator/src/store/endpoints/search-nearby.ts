@@ -6,12 +6,12 @@ export const searchNearby = createStoreEndpoint(
 	{
 		method: "GET",
 		query: z.object({
-			lat: z.string(),
-			lng: z.string(),
-			radius: z.string().optional(),
+			lat: z.string().max(20),
+			lng: z.string().max(20),
+			radius: z.string().max(10).optional(),
 			unit: z.enum(["km", "mi"]).optional(),
-			limit: z.string().optional(),
-			pickup: z.string().optional(),
+			limit: z.string().max(5).optional(),
+			pickup: z.string().max(5).optional(),
 		}),
 	},
 	async (ctx) => {

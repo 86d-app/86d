@@ -5,11 +5,11 @@ export const getRelatedProducts = createStoreEndpoint(
 	{
 		method: "GET",
 		params: z.object({
-			id: z.string(),
+			id: z.string().max(200),
 		}),
 		query: z
 			.object({
-				limit: z.string().optional(),
+				limit: z.string().max(10).optional(),
 			})
 			.optional(),
 	},

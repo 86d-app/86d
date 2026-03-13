@@ -6,10 +6,10 @@ export const resolvePrice = createStoreEndpoint(
 	{
 		method: "GET",
 		params: z.object({
-			productId: z.string().min(1),
+			productId: z.string().min(1).max(200),
 		}),
 		query: z.object({
-			customerGroupId: z.string().optional(),
+			customerGroupId: z.string().max(200).optional(),
 			quantity: z.coerce.number().int().min(1).optional(),
 			currency: z.string().max(3).optional(),
 		}),

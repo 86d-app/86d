@@ -6,9 +6,9 @@ export const listCollections = createStoreEndpoint(
 		method: "GET",
 		query: z
 			.object({
-				page: z.string().optional(),
-				limit: z.string().optional(),
-				featured: z.string().optional(),
+				page: z.string().max(10).optional(),
+				limit: z.string().max(10).optional(),
+				featured: z.string().max(10).optional(),
 			})
 			.optional(),
 	},

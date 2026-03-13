@@ -6,18 +6,20 @@ export const createMyReturn = createStoreEndpoint(
 	"/orders/me/:id/returns",
 	{
 		method: "POST",
-		params: z.object({ id: z.string() }),
+		params: z.object({ id: z.string().max(200) }),
 		body: z.object({
 			type: z.enum(["refund", "exchange", "store_credit"]).optional(),
 			reason: z.enum(RETURN_REASONS),
 			customerNotes: z.string().max(2000).transform(sanitizeText).optional(),
-			items: z.array(
-				z.object({
-					orderItemId: z.string(),
-					quantity: z.number().int().min(1),
-					reason: z.string().max(500).transform(sanitizeText).optional(),
-				}),
-			),
+			items: z
+				.array(
+					z.object({
+						orderItemId: z.string().max(200),
+						quantity: z.number().int().min(1),
+						reason: z.string().max(500).transform(sanitizeText).optional(),
+					}),
+				)
+				.max(50),
 		}),
 	},
 	async (ctx) => {

@@ -11,7 +11,7 @@ export const apply = createStoreEndpoint(
 			email: z.string().email().max(320),
 			phone: z.string().max(50).transform(sanitizeText).optional(),
 			description: z.string().max(5000).transform(sanitizeText).optional(),
-			website: z.string().max(500).optional(),
+			website: z.string().url().max(2000).optional(),
 		}),
 	},
 	async (ctx) => {

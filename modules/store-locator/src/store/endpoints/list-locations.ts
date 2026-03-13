@@ -7,13 +7,13 @@ export const listLocations = createStoreEndpoint(
 		method: "GET",
 		query: z
 			.object({
-				country: z.string().optional(),
-				region: z.string().optional(),
-				city: z.string().optional(),
-				pickup: z.string().optional(),
-				featured: z.string().optional(),
-				limit: z.string().optional(),
-				offset: z.string().optional(),
+				country: z.string().max(10).optional(),
+				region: z.string().max(200).optional(),
+				city: z.string().max(200).optional(),
+				pickup: z.string().max(5).optional(),
+				featured: z.string().max(5).optional(),
+				limit: z.string().max(5).optional(),
+				offset: z.string().max(10).optional(),
 			})
 			.optional(),
 	},

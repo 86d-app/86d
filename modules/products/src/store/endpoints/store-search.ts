@@ -36,7 +36,7 @@ export const storeSearch = createStoreEndpoint(
 		method: "GET",
 		query: z.object({
 			q: z.string().min(0).max(500),
-			limit: z.string().optional(),
+			limit: z.string().max(10).optional(),
 		}),
 	},
 	async (ctx) => {

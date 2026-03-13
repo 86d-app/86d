@@ -6,12 +6,11 @@ export const joinWaitlist = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			productId: z.string(),
+			productId: z.string().max(200),
 			productName: z.string().max(500).transform(sanitizeText),
 			variantId: z.string().max(200).optional(),
 			variantLabel: z.string().max(200).transform(sanitizeText).optional(),
 			email: z.string().email().max(320),
-			customerId: z.string().optional(),
 		}),
 	},
 	async (ctx) => {
@@ -22,7 +21,7 @@ export const joinWaitlist = createStoreEndpoint(
 			variantId: ctx.body.variantId,
 			variantLabel: ctx.body.variantLabel,
 			email: ctx.body.email,
-			customerId: ctx.body.customerId,
+			customerId: ctx.context.session?.user?.id,
 		});
 		return { entry };
 	},

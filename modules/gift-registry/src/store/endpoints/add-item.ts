@@ -6,12 +6,12 @@ export const addItem = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			registryId: z.string(),
-			productId: z.string(),
+			registryId: z.string().max(200),
+			productId: z.string().max(200),
 			productName: z.string().min(1).max(300).transform(sanitizeText),
-			variantId: z.string().optional(),
+			variantId: z.string().max(200).optional(),
 			variantName: z.string().max(200).transform(sanitizeText).optional(),
-			imageUrl: z.string().url().optional(),
+			imageUrl: z.string().url().max(2048).optional(),
 			priceInCents: z.number().int().min(1),
 			quantityDesired: z.number().int().min(1).max(100).optional(),
 			priority: z.enum(["must_have", "nice_to_have", "dream"]).optional(),
