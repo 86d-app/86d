@@ -2,6 +2,7 @@ import type { ModuleDataService } from "@86d-app/core";
 import type {
 	CreateTaxCategoryParams,
 	CreateTaxExemptionParams,
+	CreateTaxNexusParams,
 	CreateTaxRateParams,
 	TaxAddress,
 	TaxCalculation,
@@ -10,7 +11,10 @@ import type {
 	TaxExemption,
 	TaxLineItem,
 	TaxLineResult,
+	TaxNexus,
 	TaxRate,
+	TaxReportSummary,
+	TaxTransaction,
 	UpdateTaxRateParams,
 } from "./service";
 
@@ -286,6 +290,30 @@ export function createTaxController(data: ModuleDataService): TaxController {
 			shippingAmount?: number | undefined;
 			customerId?: string | undefined;
 		}): Promise<TaxCalculation> {
+			// Check nexus — if nexus records exist, only collect tax where we have nexus
+			const nexusActive = await this.hasNexus(params.address);
+			if (!nexusActive) {
+				const zeroLines = params.lineItems.map((item) => ({
+					productId: item.productId,
+					taxableAmount: item.amount,
+					taxAmount: 0,
+					rate: 0,
+					rateNames: [],
+				}));
+				return {
+					totalTax: 0,
+					shippingTax: 0,
+					lines: zeroLines,
+					effectiveRate: 0,
+					inclusive: false,
+					jurisdiction: {
+						country: params.address.country,
+						state: params.address.state,
+						city: params.address.city ?? "*",
+					},
+				};
+			}
+
 			// Fetch all enabled rates
 			const allRates = (await data.findMany("taxRate", {
 				where: { enabled: true },
@@ -312,6 +340,15 @@ export function createTaxController(data: ModuleDataService): TaxController {
 			let totalItemTax = 0;
 			let totalTaxableAmount = 0;
 
+			// Determine if rates are inclusive (check default category rates)
+			const defaultRates = findMatchingRates(
+				allRates,
+				params.address,
+				"default",
+			);
+			const inclusive =
+				defaultRates.length > 0 ? defaultRates[0].inclusive : false;
+
 			for (const item of params.lineItems) {
 				const categoryId = item.categoryId ?? "default";
 
@@ -332,13 +369,33 @@ export function createTaxController(data: ModuleDataService): TaxController {
 					params.address,
 					categoryId,
 				);
-				const { tax, effectiveRate } = applyRates(item.amount, matchingRates);
+
+				// Check if these specific rates are inclusive
+				const itemInclusive =
+					matchingRates.length > 0 ? matchingRates[0].inclusive : false;
+
+				let tax: number;
+				let itemEffectiveRate: number;
+
+				if (itemInclusive) {
+					// Tax-inclusive: extract tax from the price
+					// price = base + tax = base + base * rate = base * (1 + rate)
+					// base = price / (1 + rate), tax = price - base
+					const { effectiveRate: combinedRate } = applyRates(1, matchingRates);
+					const base = item.amount / (1 + combinedRate);
+					tax = roundCurrency(item.amount - base);
+					itemEffectiveRate = combinedRate;
+				} else {
+					const result = applyRates(item.amount, matchingRates);
+					tax = result.tax;
+					itemEffectiveRate = result.effectiveRate;
+				}
 
 				lines.push({
 					productId: item.productId,
 					taxableAmount: item.amount,
 					taxAmount: tax,
-					rate: effectiveRate,
+					rate: itemEffectiveRate,
 					rateNames: matchingRates.map((r) => r.name),
 				});
 
@@ -358,21 +415,22 @@ export function createTaxController(data: ModuleDataService): TaxController {
 					params.address,
 					"default",
 				);
-				shippingTax = applyRates(params.shippingAmount, shippingRates).tax;
+
+				if (inclusive && shippingRates.length > 0) {
+					const { effectiveRate: shippingCombinedRate } = applyRates(
+						1,
+						shippingRates,
+					);
+					const base = params.shippingAmount / (1 + shippingCombinedRate);
+					shippingTax = roundCurrency(params.shippingAmount - base);
+				} else {
+					shippingTax = applyRates(params.shippingAmount, shippingRates).tax;
+				}
 			}
 
 			const totalTax = roundCurrency(totalItemTax + shippingTax);
 			const effectiveRate =
 				totalTaxableAmount > 0 ? totalItemTax / totalTaxableAmount : 0;
-
-			// Determine if rates are inclusive
-			const matchedRates = findMatchingRates(
-				allRates,
-				params.address,
-				"default",
-			);
-			const inclusive =
-				matchedRates.length > 0 ? matchedRates[0].inclusive : false;
 
 			return {
 				totalTax,
@@ -400,6 +458,214 @@ export function createTaxController(data: ModuleDataService): TaxController {
 						matchScore(b, address) - matchScore(a, address) ||
 						b.priority - a.priority,
 				);
+		},
+
+		// --- Tax Nexus ---
+		async createNexus(params: CreateTaxNexusParams): Promise<TaxNexus> {
+			const id = crypto.randomUUID();
+			const nexus: TaxNexus = {
+				id,
+				country: params.country,
+				state: params.state ?? "*",
+				type: params.type ?? "physical",
+				enabled: true,
+				notes: params.notes,
+				createdAt: new Date(),
+			};
+
+			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
+			await data.upsert("taxNexus", id, nexus as Record<string, any>);
+			return nexus;
+		},
+
+		async getNexus(id: string): Promise<TaxNexus | null> {
+			return (await data.get("taxNexus", id)) as TaxNexus | null;
+		},
+
+		async listNexus(params): Promise<TaxNexus[]> {
+			// biome-ignore lint/suspicious/noExplicitAny: dynamic where clause
+			const where: Record<string, any> = {};
+			if (params?.country) where.country = params.country;
+			if (params?.enabled !== undefined) where.enabled = params.enabled;
+
+			return (await data.findMany("taxNexus", { where })) as TaxNexus[];
+		},
+
+		async deleteNexus(id: string): Promise<boolean> {
+			const existing = (await data.get("taxNexus", id)) as TaxNexus | null;
+			if (!existing) return false;
+			await data.delete("taxNexus", id);
+			return true;
+		},
+
+		async hasNexus(address: TaxAddress): Promise<boolean> {
+			const allNexus = (await data.findMany("taxNexus", {})) as TaxNexus[];
+
+			// If no nexus records exist, nexus enforcement is off — tax everywhere
+			if (allNexus.length === 0) return true;
+
+			return allNexus.some(
+				(n) =>
+					n.enabled &&
+					n.country === address.country &&
+					(n.state === "*" || n.state === address.state),
+			);
+		},
+
+		// --- Tax Transactions ---
+		async logTransaction(params: {
+			orderId?: string | undefined;
+			customerId?: string | undefined;
+			address: TaxAddress;
+			calculation: TaxCalculation;
+			subtotal: number;
+			shippingAmount: number;
+		}): Promise<TaxTransaction> {
+			const id = crypto.randomUUID();
+			const allRateNames = new Set<string>();
+			for (const line of params.calculation.lines) {
+				for (const name of line.rateNames) {
+					allRateNames.add(name);
+				}
+			}
+
+			const transaction: TaxTransaction = {
+				id,
+				orderId: params.orderId,
+				customerId: params.customerId,
+				country: params.address.country,
+				state: params.address.state,
+				city: params.address.city,
+				postalCode: params.address.postalCode,
+				subtotal: params.subtotal,
+				shippingAmount: params.shippingAmount,
+				totalTax: params.calculation.totalTax,
+				shippingTax: params.calculation.shippingTax,
+				effectiveRate: params.calculation.effectiveRate,
+				inclusive: params.calculation.inclusive,
+				exempt: params.calculation.totalTax === 0 && params.subtotal > 0,
+				lineDetails: params.calculation.lines,
+				rateNames: [...allRateNames],
+				createdAt: new Date(),
+			};
+
+			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
+			await data.upsert(
+				"taxTransaction",
+				id,
+				transaction as Record<string, any>,
+			);
+			return transaction;
+		},
+
+		async listTransactions(params): Promise<TaxTransaction[]> {
+			const allTransactions = (await data.findMany(
+				"taxTransaction",
+				{},
+			)) as TaxTransaction[];
+
+			let filtered = allTransactions;
+
+			if (params?.country) {
+				filtered = filtered.filter((t) => t.country === params.country);
+			}
+			if (params?.state) {
+				filtered = filtered.filter((t) => t.state === params.state);
+			}
+			if (params?.startDate) {
+				const start = params.startDate;
+				filtered = filtered.filter((t) => new Date(t.createdAt) >= start);
+			}
+			if (params?.endDate) {
+				const end = params.endDate;
+				filtered = filtered.filter((t) => new Date(t.createdAt) <= end);
+			}
+
+			// Sort by newest first
+			filtered.sort(
+				(a, b) =>
+					new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+			);
+
+			const offset = params?.offset ?? 0;
+			const limit = params?.limit ?? 200;
+			return filtered.slice(offset, offset + limit);
+		},
+
+		async linkTransactionToOrder(
+			transactionId: string,
+			orderId: string,
+		): Promise<TaxTransaction | null> {
+			const existing = (await data.get(
+				"taxTransaction",
+				transactionId,
+			)) as TaxTransaction | null;
+			if (!existing) return null;
+
+			const updated: TaxTransaction = { ...existing, orderId };
+
+			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
+			await data.upsert(
+				"taxTransaction",
+				transactionId,
+				updated as Record<string, any>,
+			);
+			return updated;
+		},
+
+		// --- Tax Reporting ---
+		async getReport(params): Promise<TaxReportSummary[]> {
+			const transactions = await this.listTransactions({
+				startDate: params?.startDate,
+				endDate: params?.endDate,
+				country: params?.country,
+				state: params?.state,
+				limit: 10000,
+			});
+
+			// Group by country + state
+			const groups = new Map<
+				string,
+				{
+					country: string;
+					state: string;
+					totalTax: number;
+					totalShippingTax: number;
+					totalSubtotal: number;
+					count: number;
+				}
+			>();
+
+			for (const t of transactions) {
+				const key = `${t.country}:${t.state}`;
+				const existing = groups.get(key);
+				if (existing) {
+					existing.totalTax += t.totalTax;
+					existing.totalShippingTax += t.shippingTax;
+					existing.totalSubtotal += t.subtotal;
+					existing.count += 1;
+				} else {
+					groups.set(key, {
+						country: t.country,
+						state: t.state,
+						totalTax: t.totalTax,
+						totalShippingTax: t.shippingTax,
+						totalSubtotal: t.subtotal,
+						count: 1,
+					});
+				}
+			}
+
+			return [...groups.values()]
+				.map((g) => ({
+					jurisdiction: { country: g.country, state: g.state },
+					totalTax: roundCurrency(g.totalTax),
+					totalShippingTax: roundCurrency(g.totalShippingTax),
+					totalSubtotal: roundCurrency(g.totalSubtotal),
+					transactionCount: g.count,
+					effectiveRate: g.totalSubtotal > 0 ? g.totalTax / g.totalSubtotal : 0,
+				}))
+				.sort((a, b) => b.totalTax - a.totalTax);
 		},
 	};
 }

@@ -1,13 +1,19 @@
 import { adminCreateCategory } from "./create-category";
 import { adminCreateExemption } from "./create-exemption";
+import { adminCreateNexus } from "./create-nexus";
 import { adminCreateRate } from "./create-rate";
 import { adminDeleteCategory } from "./delete-category";
 import { adminDeleteExemption } from "./delete-exemption";
+import { adminDeleteNexus } from "./delete-nexus";
 import { adminDeleteRate } from "./delete-rate";
 import { adminGetRate } from "./get-rate";
+import { adminGetReport } from "./get-report";
+import { adminLinkTransaction } from "./link-transaction";
 import { adminListCategories } from "./list-categories";
 import { adminListExemptions } from "./list-exemptions";
+import { adminListNexus } from "./list-nexus";
 import { adminListRates } from "./list-rates";
+import { adminListTransactions } from "./list-transactions";
 import { adminUpdateRate } from "./update-rate";
 
 export const adminEndpoints = {
@@ -22,4 +28,10 @@ export const adminEndpoints = {
 	"/admin/tax/exemptions": adminListExemptions,
 	"/admin/tax/exemptions/create": adminCreateExemption,
 	"/admin/tax/exemptions/:id/delete": adminDeleteExemption,
+	"/admin/tax/nexus": adminListNexus,
+	"/admin/tax/nexus/create": adminCreateNexus,
+	"/admin/tax/nexus/:id/delete": adminDeleteNexus,
+	"/admin/tax/transactions": adminListTransactions,
+	"/admin/tax/transactions/:id/link": adminLinkTransaction,
+	"/admin/tax/report": adminGetReport,
 };

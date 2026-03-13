@@ -7,6 +7,7 @@ import { storeEndpoints } from "./store/endpoints";
 export type {
 	CreateTaxCategoryParams,
 	CreateTaxExemptionParams,
+	CreateTaxNexusParams,
 	CreateTaxRateParams,
 	TaxAddress,
 	TaxCalculation,
@@ -16,8 +17,13 @@ export type {
 	TaxExemptionType,
 	TaxLineItem,
 	TaxLineResult,
+	TaxNexus,
+	TaxNexusType,
 	TaxRate,
 	TaxRateType,
+	TaxReportParams,
+	TaxReportSummary,
+	TaxTransaction,
 	UpdateTaxRateParams,
 } from "./service";
 
@@ -35,7 +41,14 @@ export default function tax(options?: TaxOptions): Module {
 		version: "0.0.1",
 		schema: taxSchema,
 		exports: {
-			read: ["taxRate", "taxCalculation", "taxExemptionStatus"],
+			read: [
+				"taxRate",
+				"taxCalculation",
+				"taxExemptionStatus",
+				"taxNexus",
+				"taxTransaction",
+				"taxReport",
+			],
 		},
 		events: {
 			emits: [
@@ -44,6 +57,9 @@ export default function tax(options?: TaxOptions): Module {
 				"tax.rate_deleted",
 				"tax.exemption_created",
 				"tax.exemption_deleted",
+				"tax.nexus_created",
+				"tax.nexus_deleted",
+				"tax.transaction_logged",
 			],
 		},
 
@@ -64,8 +80,15 @@ export default function tax(options?: TaxOptions): Module {
 				{
 					path: "/admin/tax",
 					component: "TaxRates",
-					label: "Tax",
+					label: "Tax Rates",
 					icon: "CurrencyDollar",
+					group: "Finance",
+				},
+				{
+					path: "/admin/tax/reporting",
+					component: "TaxReporting",
+					label: "Tax Reporting",
+					icon: "ChartBar",
 					group: "Finance",
 				},
 			],

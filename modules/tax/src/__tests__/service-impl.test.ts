@@ -672,7 +672,8 @@ describe("TaxController", () => {
 			});
 
 			expect(result.inclusive).toBe(true);
-			expect(result.totalTax).toBe(24);
+			// Tax-inclusive: 120 / 1.2 = 100 base, tax = 20 (extracted, not added)
+			expect(result.totalTax).toBe(20);
 		});
 	});
 

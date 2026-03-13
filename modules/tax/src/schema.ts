@@ -105,4 +105,75 @@ export const taxSchema = {
 			},
 		},
 	},
+
+	/**
+	 * Tax nexus — jurisdictions where the store has tax collection obligations.
+	 * Only rates matching a nexus jurisdiction will be applied during calculation.
+	 */
+	taxNexus: {
+		fields: {
+			id: { type: "string", required: true },
+			/** Two-letter ISO country code */
+			country: { type: "string", required: true },
+			/** State/province code or "*" for entire country */
+			state: { type: "string", required: true, defaultValue: "*" },
+			/** Nexus type: physical presence, economic activity, or voluntary registration */
+			type: {
+				type: ["physical", "economic", "voluntary"],
+				required: true,
+				defaultValue: "physical",
+			},
+			/** Whether this nexus is currently active */
+			enabled: { type: "boolean", required: true, defaultValue: true },
+			/** Optional notes (e.g. "warehouse in Dallas", "exceeded $100k threshold") */
+			notes: { type: "string", required: false },
+			createdAt: {
+				type: "date",
+				required: true,
+				defaultValue: () => new Date(),
+			},
+		},
+	},
+
+	/**
+	 * Tax transaction log — immutable audit trail of every tax calculation.
+	 * Records the full calculation result and context for compliance reporting.
+	 */
+	taxTransaction: {
+		fields: {
+			id: { type: "string", required: true },
+			/** Associated order ID (set after checkout completes) */
+			orderId: { type: "string", required: false },
+			/** Customer ID if authenticated */
+			customerId: { type: "string", required: false },
+			/** Shipping address used for jurisdiction matching */
+			country: { type: "string", required: true },
+			state: { type: "string", required: true },
+			city: { type: "string", required: false },
+			postalCode: { type: "string", required: false },
+			/** Taxable subtotal (sum of line item amounts) */
+			subtotal: { type: "number", required: true },
+			/** Shipping amount that was taxed */
+			shippingAmount: { type: "number", required: true, defaultValue: 0 },
+			/** Total tax collected */
+			totalTax: { type: "number", required: true },
+			/** Tax on shipping */
+			shippingTax: { type: "number", required: true, defaultValue: 0 },
+			/** Effective combined rate */
+			effectiveRate: { type: "number", required: true },
+			/** Whether prices were tax-inclusive */
+			inclusive: { type: "boolean", required: true, defaultValue: false },
+			/** Whether customer was fully exempt */
+			exempt: { type: "boolean", required: true, defaultValue: false },
+			/** JSON snapshot of per-line breakdown */
+			lineDetails: { type: "json", required: true },
+			/** JSON snapshot of rate names applied */
+			rateNames: { type: "json", required: true },
+			createdAt: {
+				type: "date",
+				required: true,
+				defaultValue: () => new Date(),
+			},
+		},
+	},
 } satisfies ModuleSchema;

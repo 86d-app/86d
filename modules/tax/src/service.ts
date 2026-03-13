@@ -2,6 +2,7 @@ import type { ModuleController } from "@86d-app/core";
 
 export type TaxRateType = "percentage" | "fixed";
 export type TaxExemptionType = "full" | "category";
+export type TaxNexusType = "physical" | "economic" | "voluntary";
 
 export interface TaxRate {
 	id: string;
@@ -126,6 +127,61 @@ export interface CreateTaxExemptionParams {
 	expiresAt?: Date | undefined;
 }
 
+export interface TaxNexus {
+	id: string;
+	country: string;
+	state: string;
+	type: TaxNexusType;
+	enabled: boolean;
+	notes?: string | undefined;
+	createdAt: Date;
+}
+
+export interface CreateTaxNexusParams {
+	country: string;
+	state?: string | undefined;
+	type?: TaxNexusType | undefined;
+	notes?: string | undefined;
+}
+
+export interface TaxTransaction {
+	id: string;
+	orderId?: string | undefined;
+	customerId?: string | undefined;
+	country: string;
+	state: string;
+	city?: string | undefined;
+	postalCode?: string | undefined;
+	subtotal: number;
+	shippingAmount: number;
+	totalTax: number;
+	shippingTax: number;
+	effectiveRate: number;
+	inclusive: boolean;
+	exempt: boolean;
+	lineDetails: TaxLineResult[];
+	rateNames: string[];
+	createdAt: Date;
+}
+
+export interface TaxReportSummary {
+	jurisdiction: { country: string; state: string };
+	totalTax: number;
+	totalShippingTax: number;
+	totalSubtotal: number;
+	transactionCount: number;
+	effectiveRate: number;
+}
+
+export interface TaxReportParams {
+	startDate?: Date | undefined;
+	endDate?: Date | undefined;
+	country?: string | undefined;
+	state?: string | undefined;
+	limit?: number | undefined;
+	offset?: number | undefined;
+}
+
 export interface TaxController extends ModuleController {
 	// --- Tax Rates ---
 	createRate(params: CreateTaxRateParams): Promise<TaxRate>;
@@ -174,4 +230,51 @@ export interface TaxController extends ModuleController {
 	 * Useful for displaying "estimated tax" before full address is entered.
 	 */
 	getRatesForAddress(address: TaxAddress): Promise<TaxRate[]>;
+
+	// --- Tax Nexus ---
+	createNexus(params: CreateTaxNexusParams): Promise<TaxNexus>;
+	getNexus(id: string): Promise<TaxNexus | null>;
+	listNexus(params?: {
+		country?: string | undefined;
+		enabled?: boolean | undefined;
+	}): Promise<TaxNexus[]>;
+	deleteNexus(id: string): Promise<boolean>;
+
+	/**
+	 * Check whether the store has nexus in a given jurisdiction.
+	 * Returns true if any enabled nexus covers the country + state.
+	 * When no nexus records exist at all, returns true (nexus enforcement off).
+	 */
+	hasNexus(address: TaxAddress): Promise<boolean>;
+
+	// --- Tax Transactions (audit log) ---
+	/**
+	 * Record a tax calculation for audit purposes.
+	 * Called automatically by calculate() to build the audit trail.
+	 */
+	logTransaction(params: {
+		orderId?: string | undefined;
+		customerId?: string | undefined;
+		address: TaxAddress;
+		calculation: TaxCalculation;
+		subtotal: number;
+		shippingAmount: number;
+	}): Promise<TaxTransaction>;
+
+	listTransactions(params?: TaxReportParams): Promise<TaxTransaction[]>;
+
+	/**
+	 * Link a transaction to an order after checkout completes.
+	 */
+	linkTransactionToOrder(
+		transactionId: string,
+		orderId: string,
+	): Promise<TaxTransaction | null>;
+
+	// --- Tax Reporting ---
+	/**
+	 * Aggregate tax collected by jurisdiction for compliance reporting.
+	 * Groups transactions by country + state and sums totals.
+	 */
+	getReport(params?: TaxReportParams): Promise<TaxReportSummary[]>;
 }
