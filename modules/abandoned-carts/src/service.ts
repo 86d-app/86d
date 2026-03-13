@@ -72,6 +72,15 @@ export interface AbandonedCartWithAttempts extends AbandonedCart {
 	attempts: RecoveryAttempt[];
 }
 
+export interface AbandonedCartControllerOptions {
+	/** Maximum recovery attempts per cart (default: 3) */
+	maxRecoveryAttempts: number;
+	/** Days before auto-expiration (default: 30) */
+	expirationDays: number;
+	/** Minutes of inactivity before cart considered abandoned (default: 60) */
+	abandonmentThresholdMinutes: number;
+}
+
 export interface AbandonedCartController extends ModuleController {
 	create(params: CreateAbandonedCartParams): Promise<AbandonedCart>;
 
@@ -111,5 +120,8 @@ export interface AbandonedCartController extends ModuleController {
 
 	countAll(): Promise<number>;
 
-	bulkExpire(olderThanDays: number): Promise<number>;
+	bulkExpire(olderThanDays?: number): Promise<number>;
+
+	/** Returns the resolved controller options */
+	getOptions(): AbandonedCartControllerOptions;
 }

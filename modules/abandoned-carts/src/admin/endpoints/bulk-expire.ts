@@ -6,7 +6,7 @@ export const bulkExpire = createAdminEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			olderThanDays: z.number().int().min(1).max(365),
+			olderThanDays: z.number().int().min(1).max(365).optional(),
 		}),
 	},
 	async (ctx) => {

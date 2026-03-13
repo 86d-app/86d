@@ -348,4 +348,195 @@ describe("abandoned-carts endpoint security", () => {
 			expect(stats.totalRecoveredValue).toBe(0);
 		});
 	});
+
+	// ── Max Recovery Attempts Enforcement ──────────────────────────
+
+	describe("maxRecoveryAttempts enforcement", () => {
+		it("default limit prevents 4th attempt", async () => {
+			// Default maxRecoveryAttempts is 3
+			const cart = await controller.create(makeCartParams());
+
+			for (let i = 0; i < 3; i++) {
+				await controller.recordAttempt({
+					abandonedCartId: cart.id,
+					channel: "email",
+					recipient: `r${i}@test.com`,
+				});
+			}
+
+			await expect(
+				controller.recordAttempt({
+					abandonedCartId: cart.id,
+					channel: "email",
+					recipient: "over@test.com",
+				}),
+			).rejects.toThrow("Maximum recovery attempts");
+		});
+
+		it("custom limit is enforced", async () => {
+			const limited = createAbandonedCartController(mockData, {
+				maxRecoveryAttempts: 1,
+			});
+			const cart = await limited.create(makeCartParams());
+
+			await limited.recordAttempt({
+				abandonedCartId: cart.id,
+				channel: "email",
+				recipient: "first@test.com",
+			});
+
+			await expect(
+				limited.recordAttempt({
+					abandonedCartId: cart.id,
+					channel: "sms",
+					recipient: "+1234567890",
+				}),
+			).rejects.toThrow("Maximum recovery attempts (1)");
+		});
+
+		it("limit is per-cart, not global", async () => {
+			const limited = createAbandonedCartController(mockData, {
+				maxRecoveryAttempts: 1,
+			});
+			const cart1 = await limited.create(makeCartParams());
+			const cart2 = await limited.create(makeCartParams());
+
+			await limited.recordAttempt({
+				abandonedCartId: cart1.id,
+				channel: "email",
+				recipient: "a@test.com",
+			});
+
+			// cart2 should still accept attempts
+			const attempt = await limited.recordAttempt({
+				abandonedCartId: cart2.id,
+				channel: "email",
+				recipient: "b@test.com",
+			});
+			expect(attempt.id).toBeDefined();
+		});
+	});
+
+	// ── Data Integrity Under Status Changes ───────────────────────
+
+	describe("data integrity under status changes", () => {
+		it("recovery token remains valid after status change", async () => {
+			const cart = await controller.create(
+				makeCartParams({ email: "integrity@test.com" }),
+			);
+			const token = cart.recoveryToken;
+
+			await controller.markExpired(cart.id);
+
+			const found = await controller.getByToken(token);
+			expect(found).not.toBeNull();
+			expect(found?.status).toBe("expired");
+			expect(found?.email).toBe("integrity@test.com");
+		});
+
+		it("cartId lookup works after status change", async () => {
+			const cart = await controller.create(
+				makeCartParams({ cartId: "stable_cart_id" }),
+			);
+
+			await controller.markRecovered(cart.id, "order_1");
+
+			const found = await controller.getByCartId("stable_cart_id");
+			expect(found).not.toBeNull();
+			expect(found?.status).toBe("recovered");
+		});
+
+		it("attempts survive cart status transitions", async () => {
+			const cart = await controller.create(makeCartParams());
+
+			await controller.recordAttempt({
+				abandonedCartId: cart.id,
+				channel: "email",
+				recipient: "user@test.com",
+			});
+
+			await controller.markRecovered(cart.id, "order_1");
+
+			const attempts = await controller.listAttempts(cart.id);
+			expect(attempts).toHaveLength(1);
+			expect(attempts[0].channel).toBe("email");
+		});
+
+		it("updatedAt changes on each transition", async () => {
+			const cart = await controller.create(makeCartParams());
+			const original = cart.updatedAt;
+
+			// Small delay to ensure timestamp differs
+			await new Promise((resolve) => setTimeout(resolve, 5));
+
+			const recovered = await controller.markRecovered(cart.id, "order_1");
+			expect(
+				new Date(recovered?.updatedAt ?? 0).getTime(),
+			).toBeGreaterThanOrEqual(new Date(original).getTime());
+		});
+	});
+
+	// ── Delete Safety ─────────────────────────────────────────────
+
+	describe("delete safety", () => {
+		it("deleting non-existent cart returns false", async () => {
+			const result = await controller.delete("nonexistent-id");
+			expect(result).toBe(false);
+		});
+
+		it("double delete returns false on second call", async () => {
+			const cart = await controller.create(makeCartParams());
+
+			expect(await controller.delete(cart.id)).toBe(true);
+			expect(await controller.delete(cart.id)).toBe(false);
+		});
+
+		it("deleted cart is removed from list", async () => {
+			const cart = await controller.create(makeCartParams());
+			const beforeCount = (await controller.list()).length;
+
+			await controller.delete(cart.id);
+
+			const afterCount = (await controller.list()).length;
+			expect(afterCount).toBe(beforeCount - 1);
+		});
+
+		it("deleted cart does not appear in stats", async () => {
+			const cart = await controller.create(makeCartParams({ cartTotal: 1000 }));
+			await controller.markRecovered(cart.id, "order_1");
+
+			const statsBefore = await controller.getStats();
+			expect(statsBefore.totalRecovered).toBe(1);
+
+			await controller.delete(cart.id);
+
+			const statsAfter = await controller.getStats();
+			expect(statsAfter.totalRecovered).toBe(0);
+			expect(statsAfter.totalRecoveredValue).toBe(0);
+		});
+	});
+
+	// ── Pagination Safety ─────────────────────────────────────────
+
+	describe("pagination safety", () => {
+		it("list with take=0 returns empty array", async () => {
+			await controller.create(makeCartParams());
+			const results = await controller.list({ take: 0 });
+			expect(results).toHaveLength(0);
+		});
+
+		it("list with skip beyond results returns empty", async () => {
+			await controller.create(makeCartParams());
+			const results = await controller.list({ skip: 100 });
+			expect(results).toHaveLength(0);
+		});
+
+		it("list with large take returns all available", async () => {
+			for (let i = 0; i < 5; i++) {
+				await controller.create(makeCartParams());
+			}
+			const results = await controller.list({ take: 1000 });
+			expect(results).toHaveLength(5);
+		});
+	});
 });

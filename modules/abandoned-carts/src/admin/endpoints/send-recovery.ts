@@ -23,11 +23,26 @@ export const sendRecovery = createAdminEndpoint(
 			return { error: "Cart is no longer active", status: 400 };
 		}
 
+		const opts = controller.getOptions();
+		if (cart.attemptCount >= opts.maxRecoveryAttempts) {
+			return {
+				error: `Maximum recovery attempts (${opts.maxRecoveryAttempts}) reached`,
+				status: 400,
+			};
+		}
+
 		const attempt = await controller.recordAttempt({
 			abandonedCartId: ctx.params.id,
 			channel: ctx.body.channel,
 			recipient: ctx.body.recipient,
 			subject: ctx.body.subject,
+		});
+
+		await ctx.context.events?.emit("cart.recoveryAttempted", {
+			cartId: ctx.params.id,
+			channel: ctx.body.channel,
+			recipient: ctx.body.recipient,
+			attemptId: attempt.id,
 		});
 
 		return { attempt };

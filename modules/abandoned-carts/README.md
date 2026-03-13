@@ -44,14 +44,19 @@ const module = abandonedCarts({
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `abandonmentThresholdMinutes` | `number` | `60` | Minutes of inactivity before a cart is considered abandoned |
-| `maxRecoveryAttempts` | `number` | `3` | Maximum number of recovery attempts per cart |
-| `expirationDays` | `number` | `30` | Days after which abandoned carts are automatically expired |
+| `maxRecoveryAttempts` | `number` | `3` | Maximum recovery attempts per cart (enforced at controller and endpoint level) |
+| `expirationDays` | `number` | `30` | Default days for `bulkExpire()` when called without arguments |
+
+All options are enforced at runtime:
+- **`maxRecoveryAttempts`**: `recordAttempt()` throws an error and the send-recovery endpoint returns HTTP 400 when the limit is reached.
+- **`expirationDays`**: `bulkExpire()` uses this value when no explicit `olderThanDays` argument is provided.
+- **`abandonmentThresholdMinutes`**: Exposed via `getOptions()` for consumers to query the configured threshold.
 
 ## Store Endpoints
 
 | Method | Path | Description |
 |---|---|---|
-| `POST` | `/abandoned-carts/track` | Report a cart as abandoned |
+| `POST` | `/abandoned-carts/track` | Report a cart as abandoned (emits `cart.abandoned`) |
 | `GET` | `/abandoned-carts/recover/:token` | Recover a cart using a unique recovery token |
 
 ## Admin Endpoints
@@ -60,9 +65,9 @@ const module = abandonedCarts({
 |---|---|---|
 | `GET` | `/admin/abandoned-carts` | List abandoned carts (filterable by status, email) |
 | `GET` | `/admin/abandoned-carts/stats` | Get recovery statistics |
-| `POST` | `/admin/abandoned-carts/bulk-expire` | Bulk-expire carts older than N days |
+| `POST` | `/admin/abandoned-carts/bulk-expire` | Bulk-expire carts older than N days (defaults to `expirationDays`) |
 | `GET` | `/admin/abandoned-carts/:id` | Get a single abandoned cart with recovery attempts |
-| `POST` | `/admin/abandoned-carts/:id/recover` | Send a recovery message |
+| `POST` | `/admin/abandoned-carts/:id/recover` | Send a recovery message (emits `cart.recoveryAttempted`) |
 | `POST` | `/admin/abandoned-carts/:id/dismiss` | Dismiss an abandoned cart |
 | `DELETE` | `/admin/abandoned-carts/:id/delete` | Delete an abandoned cart and its attempts |
 
@@ -87,9 +92,22 @@ interface AbandonedCartController {
   getWithAttempts(id: string): Promise<AbandonedCartWithAttempts | null>;
   getStats(): Promise<AbandonedCartStats>;
   countAll(): Promise<number>;
-  bulkExpire(olderThanDays: number): Promise<number>;
+  bulkExpire(olderThanDays?: number): Promise<number>;
+  getOptions(): AbandonedCartControllerOptions;
 }
 ```
+
+## Events
+
+The module emits the following events:
+
+| Event | Source | Payload |
+|---|---|---|
+| `cart.abandoned` | Track endpoint | `{ cartId, email, cartTotal, currency, itemCount }` |
+| `cart.recoveryAttempted` | Send-recovery endpoint | `{ cartId, channel, recipient, attemptId }` |
+| `cart.recovered` | `markRecovered()` controller | `{ cartId, orderId, email, cartTotal, currency }` |
+| `cart.expired` | `markExpired()` / `bulkExpire()` | `{ cartId, email, cartTotal }` |
+| `cart.dismissed` | `dismiss()` controller | `{ cartId, email, cartTotal }` |
 
 ## Types
 
@@ -145,6 +163,12 @@ interface AbandonedCartStats {
   recoveryRate: number;
   totalRecoveredValue: number;
 }
+
+interface AbandonedCartControllerOptions {
+  maxRecoveryAttempts: number;
+  expirationDays: number;
+  abandonmentThresholdMinutes: number;
+}
 ```
 
 ## Store Components
@@ -172,5 +196,7 @@ Use this component on a dedicated cart recovery landing page linked from recover
 - Requires the `cart` module (reads cartItems, cartTotal) and `customers` module (reads customerEmail).
 - Each abandoned cart gets a unique `recoveryToken` (UUID) used in recovery links.
 - Recovery attempts track engagement: sent, delivered, opened, clicked, or failed.
-- Bulk expire iterates all active carts and expires those older than the specified threshold.
+- `maxRecoveryAttempts` is enforced both in the controller (`recordAttempt` throws) and in the send-recovery admin endpoint (returns 400).
+- `bulkExpire()` called without arguments uses the configured `expirationDays` option (default 30).
 - Cart items are stored as a JSON snapshot at the time of abandonment, decoupled from live cart data.
+- Event emitter is injected at module init; controller uses a no-op fallback when no emitter is available.

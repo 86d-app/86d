@@ -44,6 +44,14 @@ export const trackAbandoned = createStoreEndpoint(
 			currency: ctx.body.currency,
 		});
 
+		await ctx.context.events?.emit("cart.abandoned", {
+			cartId: cart.id,
+			email: cart.email,
+			cartTotal: cart.cartTotal,
+			currency: cart.currency,
+			itemCount: cart.items.length,
+		});
+
 		return { tracked: true, id: cart.id };
 	},
 );

@@ -9,7 +9,7 @@ src/
   index.ts          Factory: abandonedCarts(options?) => Module
   schema.ts         Zod models: abandonedCart, recoveryAttempt
   service.ts        AbandonedCartController interface + types
-  service-impl.ts   AbandonedCartController implementation
+  service-impl.ts   AbandonedCartController implementation (accepts options + event emitter)
   store/
     components/     Cart recovery MDX + TSX components
     endpoints/
@@ -29,11 +29,13 @@ src/
 
 ## Options
 
+All options are enforced at runtime:
+
 ```ts
 AbandonedCartOptions {
   abandonmentThresholdMinutes?: number  // default 60
-  maxRecoveryAttempts?: number          // default 3
-  expirationDays?: number              // default 30
+  maxRecoveryAttempts?: number          // default 3 — enforced in recordAttempt + send-recovery endpoint
+  expirationDays?: number              // default 30 — used as bulkExpire() default when no arg passed
 }
 ```
 
@@ -46,7 +48,10 @@ AbandonedCartOptions {
 
 - Requires `cart` module (reads cartItems, cartTotal) and `customers` module (reads customerEmail)
 - Recovery uses unique token per cart — store endpoint `/abandoned-carts/recover/:token` looks up by token
-- `bulkExpire(olderThanDays)` batch-expires active carts older than threshold
-- Emits events: cart.abandoned, cart.recoveryAttempted, cart.recovered, cart.expired, cart.dismissed
+- `maxRecoveryAttempts` enforced: `recordAttempt()` throws if limit reached; send-recovery endpoint returns 400
+- `bulkExpire(olderThanDays?)` defaults to configured `expirationDays`; batch-expires active carts older than threshold
+- Emits events: cart.abandoned (from track endpoint), cart.recoveryAttempted (from send-recovery endpoint), cart.recovered, cart.expired, cart.dismissed (from controller status transitions)
+- Event emitter passed to controller at init; no-op fallback if none provided
 - Deleting a cart cascades to its recovery attempts (manual loop, not DB cascade)
 - Stats computed in-memory by iterating all carts (no aggregate queries)
+- `getOptions()` returns a copy of resolved options (safe from mutation)

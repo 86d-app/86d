@@ -7,6 +7,7 @@ import { storeEndpoints } from "./store/endpoints";
 export type {
 	AbandonedCart,
 	AbandonedCartController,
+	AbandonedCartControllerOptions,
 	AbandonedCartStats,
 	AbandonedCartWithAttempts,
 	CartItemSnapshot,
@@ -44,7 +45,23 @@ export default function abandonedCarts(options?: AbandonedCartOptions): Module {
 			],
 		},
 		init: async (ctx: ModuleContext) => {
-			const controller = createAbandonedCartController(ctx.data);
+			const opts = ctx.options as Record<string, unknown>;
+			const controllerOpts: Record<string, number> = {};
+			if (typeof opts?.maxRecoveryAttempts === "number") {
+				controllerOpts.maxRecoveryAttempts = opts.maxRecoveryAttempts;
+			}
+			if (typeof opts?.expirationDays === "number") {
+				controllerOpts.expirationDays = opts.expirationDays;
+			}
+			if (typeof opts?.abandonmentThresholdMinutes === "number") {
+				controllerOpts.abandonmentThresholdMinutes =
+					opts.abandonmentThresholdMinutes;
+			}
+			const controller = createAbandonedCartController(
+				ctx.data,
+				controllerOpts,
+				ctx.events,
+			);
 			return { controllers: { abandonedCarts: controller } };
 		},
 		endpoints: {

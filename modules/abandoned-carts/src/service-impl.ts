@@ -2,6 +2,7 @@ import type { ModuleDataService } from "@86d-app/core";
 import type {
 	AbandonedCart,
 	AbandonedCartController,
+	AbandonedCartControllerOptions,
 	AbandonedCartStats,
 	AbandonedCartWithAttempts,
 	CreateAbandonedCartParams,
@@ -9,9 +10,29 @@ import type {
 	RecoveryAttempt,
 } from "./service";
 
+const DEFAULT_OPTIONS: AbandonedCartControllerOptions = {
+	maxRecoveryAttempts: 3,
+	expirationDays: 30,
+	abandonmentThresholdMinutes: 60,
+};
+
+export type EventEmitter = {
+	emit(event: string, payload: Record<string, unknown>): Promise<void>;
+};
+
 export function createAbandonedCartController(
 	data: ModuleDataService,
+	opts?: Partial<AbandonedCartControllerOptions>,
+	eventEmitter?: EventEmitter,
 ): AbandonedCartController {
+	const options: AbandonedCartControllerOptions = {
+		...DEFAULT_OPTIONS,
+		...opts,
+	};
+
+	const events = eventEmitter ?? {
+		emit: async () => {},
+	};
 	async function getAttempts(
 		abandonedCartId: string,
 	): Promise<RecoveryAttempt[]> {
@@ -110,6 +131,15 @@ export function createAbandonedCartController(
 
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("abandonedCart", id, updated as Record<string, any>);
+
+			await events.emit("cart.recovered", {
+				cartId: id,
+				orderId,
+				email: cart.email,
+				cartTotal: cart.cartTotal,
+				currency: cart.currency,
+			});
+
 			return updated;
 		},
 
@@ -126,6 +156,13 @@ export function createAbandonedCartController(
 
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("abandonedCart", id, updated as Record<string, any>);
+
+			await events.emit("cart.expired", {
+				cartId: id,
+				email: cart.email,
+				cartTotal: cart.cartTotal,
+			});
+
 			return updated;
 		},
 
@@ -142,6 +179,13 @@ export function createAbandonedCartController(
 
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("abandonedCart", id, updated as Record<string, any>);
+
+			await events.emit("cart.dismissed", {
+				cartId: id,
+				email: cart.email,
+				cartTotal: cart.cartTotal,
+			});
+
 			return updated;
 		},
 
@@ -159,6 +203,20 @@ export function createAbandonedCartController(
 		},
 
 		async recordAttempt(params: RecordAttemptParams): Promise<RecoveryAttempt> {
+			// Enforce maxRecoveryAttempts
+			const existingCart = await data.get(
+				"abandonedCart",
+				params.abandonedCartId,
+			);
+			if (existingCart) {
+				const c = existingCart as unknown as AbandonedCart;
+				if (c.attemptCount >= options.maxRecoveryAttempts) {
+					throw new Error(
+						`Maximum recovery attempts (${options.maxRecoveryAttempts}) reached for this cart`,
+					);
+				}
+			}
+
 			const id = crypto.randomUUID();
 			const now = new Date();
 
@@ -177,9 +235,8 @@ export function createAbandonedCartController(
 			await data.upsert("recoveryAttempt", id, attempt as Record<string, any>);
 
 			// Increment attempt count on the cart
-			const cart = await data.get("abandonedCart", params.abandonedCartId);
-			if (cart) {
-				const c = cart as unknown as AbandonedCart;
+			if (existingCart) {
+				const c = existingCart as unknown as AbandonedCart;
 				await data.upsert("abandonedCart", c.id, {
 					...c,
 					attemptCount: c.attemptCount + 1,
@@ -274,10 +331,15 @@ export function createAbandonedCartController(
 			return carts.length;
 		},
 
-		async bulkExpire(olderThanDays: number): Promise<number> {
+		getOptions(): AbandonedCartControllerOptions {
+			return { ...options };
+		},
+
+		async bulkExpire(olderThanDays?: number): Promise<number> {
+			const days = olderThanDays ?? options.expirationDays;
 			const carts = await allCarts();
 			const cutoff = new Date();
-			cutoff.setDate(cutoff.getDate() - olderThanDays);
+			cutoff.setDate(cutoff.getDate() - days);
 
 			let expired = 0;
 			for (const cart of carts) {
@@ -288,6 +350,13 @@ export function createAbandonedCartController(
 						updatedAt: new Date(),
 						// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 					} as Record<string, any>);
+
+					await events.emit("cart.expired", {
+						cartId: cart.id,
+						email: cart.email,
+						cartTotal: cart.cartTotal,
+					});
+
 					expired++;
 				}
 			}
