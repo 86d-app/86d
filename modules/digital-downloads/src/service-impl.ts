@@ -99,6 +99,12 @@ export function createDigitalDownloadsController(
 			return downloadToken;
 		},
 
+		async getToken(id) {
+			const raw = await data.get("downloadToken", id);
+			if (!raw) return null;
+			return raw as unknown as DownloadToken;
+		},
+
 		async getTokenByValue(tokenValue) {
 			const matches = await data.findMany("downloadToken", {
 				where: { token: tokenValue },
@@ -159,6 +165,21 @@ export function createDigitalDownloadsController(
 			return true;
 		},
 
+		async revokeTokenById(id) {
+			const raw = await data.get("downloadToken", id);
+			if (!raw) return false;
+			const tokenRecord = raw as unknown as DownloadToken;
+			const updated: DownloadToken = {
+				...tokenRecord,
+				revokedAt: new Date(),
+				updatedAt: new Date(),
+			};
+			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+			const updatedRecord = updated as Record<string, any>;
+			await data.upsert("downloadToken", id, updatedRecord);
+			return true;
+		},
+
 		async listTokensByEmail(params) {
 			const all = await data.findMany("downloadToken", {
 				where: { email: params.email },
@@ -181,6 +202,36 @@ export function createDigitalDownloadsController(
 				...(params?.skip !== undefined ? { skip: params.skip } : {}),
 			});
 			return all as unknown as DownloadToken[];
+		},
+
+		async createTokenBatch(params) {
+			const tokens: DownloadToken[] = [];
+			for (const fileId of params.fileIds) {
+				const id = crypto.randomUUID();
+				const token = crypto.randomUUID();
+				const now = new Date();
+				const downloadToken: DownloadToken = {
+					id,
+					token,
+					fileId,
+					email: params.email,
+					...(params.orderId !== undefined ? { orderId: params.orderId } : {}),
+					...(params.maxDownloads !== undefined
+						? { maxDownloads: params.maxDownloads }
+						: {}),
+					downloadCount: 0,
+					...(params.expiresAt !== undefined
+						? { expiresAt: params.expiresAt }
+						: {}),
+					createdAt: now,
+					updatedAt: now,
+				};
+				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+				const tokenRecord = downloadToken as Record<string, any>;
+				await data.upsert("downloadToken", id, tokenRecord);
+				tokens.push(downloadToken);
+			}
+			return tokens;
 		},
 	};
 }

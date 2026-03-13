@@ -67,6 +67,8 @@ export interface DigitalDownloadsController extends ModuleController {
 		expiresAt?: Date | undefined;
 	}): Promise<DownloadToken>;
 
+	getToken(id: string): Promise<DownloadToken | null>;
+
 	getTokenByValue(token: string): Promise<DownloadToken | null>;
 
 	useToken(token: string): Promise<{
@@ -77,6 +79,8 @@ export interface DigitalDownloadsController extends ModuleController {
 	}>;
 
 	revokeToken(token: string): Promise<boolean>;
+
+	revokeTokenById(id: string): Promise<boolean>;
 
 	listTokensByEmail(params: {
 		email: string;
@@ -90,5 +94,14 @@ export interface DigitalDownloadsController extends ModuleController {
 		email?: string | undefined;
 		take?: number | undefined;
 		skip?: number | undefined;
+	}): Promise<DownloadToken[]>;
+
+	/** Create tokens for multiple files at once (e.g., for an order with multiple digital products) */
+	createTokenBatch(params: {
+		fileIds: string[];
+		email: string;
+		orderId?: string | undefined;
+		maxDownloads?: number | undefined;
+		expiresAt?: Date | undefined;
 	}): Promise<DownloadToken[]>;
 }
