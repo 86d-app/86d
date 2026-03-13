@@ -554,4 +554,233 @@ describe("audit-log endpoint security", () => {
 			expect(summary.recentActors).toHaveLength(0);
 		});
 	});
+
+	// ── Pagination Safety ──────────────────────────────────────────────
+
+	describe("pagination safety", () => {
+		it("list with skip beyond total returns empty", async () => {
+			await controller.log(makeEntry());
+			await controller.log(makeEntry());
+
+			const result = await controller.list({ skip: 100 });
+			expect(result.entries).toHaveLength(0);
+		});
+
+		it("listForActor with take=0 returns empty", async () => {
+			await controller.log(makeEntry({ actorId: "admin_1", description: "A" }));
+			await controller.log(makeEntry({ actorId: "admin_1", description: "B" }));
+
+			const entries = await controller.listForActor("admin_1", {
+				take: 0,
+			});
+			expect(entries).toHaveLength(0);
+		});
+
+		it("listForResource with skip beyond count returns empty", async () => {
+			await controller.log(
+				makeEntry({ resource: "product", resourceId: "prod_1" }),
+			);
+
+			const entries = await controller.listForResource("product", "prod_1", {
+				skip: 100,
+			});
+			expect(entries).toHaveLength(0);
+		});
+
+		it("list with take and skip pages correctly", async () => {
+			for (let i = 0; i < 10; i++) {
+				await controller.log(makeEntry({ description: `Entry ${i}` }));
+			}
+
+			const page1 = await controller.list({ take: 3, skip: 0 });
+			const page2 = await controller.list({ take: 3, skip: 3 });
+			expect(page1.entries).toHaveLength(3);
+			expect(page2.entries).toHaveLength(3);
+			// Pages should not overlap
+			const ids1 = page1.entries.map((e) => e.id);
+			const ids2 = page2.entries.map((e) => e.id);
+			expect(ids1.some((id) => ids2.includes(id))).toBe(false);
+		});
+	});
+
+	// ── IP Address and User Agent Tracking ─────────────────────────────
+
+	describe("IP and user agent tracking", () => {
+		it("preserves IP address across entries", async () => {
+			const e1 = await controller.log(makeEntry({ ipAddress: "192.168.1.1" }));
+			const e2 = await controller.log(makeEntry({ ipAddress: "10.0.0.1" }));
+			const e3 = await controller.log(makeEntry());
+
+			expect((await controller.getById(e1.id))?.ipAddress).toBe("192.168.1.1");
+			expect((await controller.getById(e2.id))?.ipAddress).toBe("10.0.0.1");
+			expect((await controller.getById(e3.id))?.ipAddress).toBeUndefined();
+		});
+
+		it("preserves user agent across entries", async () => {
+			const entry = await controller.log(
+				makeEntry({ userAgent: "CustomBot/2.0" }),
+			);
+			const fetched = await controller.getById(entry.id);
+			expect(fetched?.userAgent).toBe("CustomBot/2.0");
+		});
+	});
+
+	// ── Changes Tracking Integrity ────────────────────────────────────
+
+	describe("changes tracking integrity", () => {
+		it("changes for same resource are not merged across entries", async () => {
+			const e1 = await controller.log(
+				makeEntry({
+					resource: "product",
+					resourceId: "prod_1",
+					changes: { name: { from: "A", to: "B" } },
+					description: "Name change",
+				}),
+			);
+			const e2 = await controller.log(
+				makeEntry({
+					resource: "product",
+					resourceId: "prod_1",
+					changes: { price: { from: 100, to: 200 } },
+					description: "Price change",
+				}),
+			);
+
+			const fetched1 = await controller.getById(e1.id);
+			const fetched2 = await controller.getById(e2.id);
+			expect(fetched1?.changes).toEqual({
+				name: { from: "A", to: "B" },
+			});
+			expect(fetched2?.changes).toEqual({
+				price: { from: 100, to: 200 },
+			});
+		});
+
+		it("entries without changes have undefined changes field", async () => {
+			const entry = await controller.log(makeEntry());
+			expect(entry.changes).toBeUndefined();
+		});
+	});
+
+	// ── Purge Boundary Precision ──────────────────────────────────────
+
+	describe("purge boundary precision", () => {
+		it("purge with future cutoff deletes all entries", async () => {
+			for (let i = 0; i < 5; i++) {
+				await controller.log(makeEntry({ description: `E${i}` }));
+			}
+
+			const future = new Date();
+			future.setDate(future.getDate() + 1);
+			const deleted = await controller.purge(future);
+			expect(deleted).toBe(5);
+
+			const result = await controller.list();
+			expect(result.total).toBe(0);
+		});
+
+		it("purge on empty log is safe", async () => {
+			const deleted = await controller.purge(new Date());
+			expect(deleted).toBe(0);
+		});
+
+		it("repeated purge with same cutoff is idempotent", async () => {
+			const entry = await controller.log(makeEntry());
+			const oldDate = new Date();
+			oldDate.setDate(oldDate.getDate() - 60);
+			await mockData.upsert("auditEntry", entry.id, {
+				...entry,
+				createdAt: oldDate,
+			} as Record<string, unknown>);
+
+			const cutoff = new Date();
+			cutoff.setDate(cutoff.getDate() - 30);
+
+			const first = await controller.purge(cutoff);
+			expect(first).toBe(1);
+
+			const second = await controller.purge(cutoff);
+			expect(second).toBe(0);
+		});
+	});
+
+	// ── Actor Email in Summary ─────────────────────────────────────────
+
+	describe("summary actor email tracking", () => {
+		it("preserves actor email in recentActors", async () => {
+			await controller.log(
+				makeEntry({
+					actorId: "admin_1",
+					actorEmail: "admin1@store.com",
+				}),
+			);
+			await controller.log(
+				makeEntry({
+					actorId: "admin_2",
+					actorEmail: "admin2@store.com",
+				}),
+			);
+
+			const summary = await controller.getSummary();
+			const admin1 = summary.recentActors.find((a) => a.actorId === "admin_1");
+			const admin2 = summary.recentActors.find((a) => a.actorId === "admin_2");
+			expect(admin1?.actorEmail).toBe("admin1@store.com");
+			expect(admin2?.actorEmail).toBe("admin2@store.com");
+		});
+
+		it("entries by resource counts multiple resources correctly", async () => {
+			await controller.log(
+				makeEntry({ resource: "product", action: "create" }),
+			);
+			await controller.log(
+				makeEntry({ resource: "product", action: "update" }),
+			);
+			await controller.log(makeEntry({ resource: "order", action: "create" }));
+			await controller.log(
+				makeEntry({ resource: "customer", action: "delete" }),
+			);
+
+			const summary = await controller.getSummary();
+			expect(summary.entriesByResource.product).toBe(2);
+			expect(summary.entriesByResource.order).toBe(1);
+			expect(summary.entriesByResource.customer).toBe(1);
+		});
+	});
+
+	// ── All Action Types Filterable ────────────────────────────────────
+
+	describe("all action types are filterable", () => {
+		const allActions = [
+			"create",
+			"update",
+			"delete",
+			"bulk_create",
+			"bulk_update",
+			"bulk_delete",
+			"login",
+			"logout",
+			"export",
+			"import",
+			"settings_change",
+			"status_change",
+			"custom",
+		] as const;
+
+		it("each action type can be logged and filtered", async () => {
+			for (const action of allActions) {
+				await controller.log(
+					makeEntry({
+						action,
+						description: `Test ${action}`,
+					}),
+				);
+			}
+
+			for (const action of allActions) {
+				const result = await controller.list({ action });
+				expect(result.total).toBeGreaterThanOrEqual(1);
+				expect(result.entries[0]?.action).toBe(action);
+			}
+		});
+	});
 });

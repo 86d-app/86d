@@ -207,19 +207,16 @@ describe("reviews new features", () => {
 			const stored2 = await autoCtrl.getReview(r2.id);
 			const stored3 = await autoCtrl.getReview(r3.id);
 			if (stored1 && stored2 && stored3) {
-				// biome-ignore lint/suspicious/noExplicitAny: test-only timestamp override
 				await mockData.upsert("review", r1.id, {
-					...(stored1 as Record<string, any>),
+					...(stored1 as unknown as Record<string, unknown>),
 					createdAt: new Date("2024-01-01"),
 				});
-				// biome-ignore lint/suspicious/noExplicitAny: test-only timestamp override
 				await mockData.upsert("review", r2.id, {
-					...(stored2 as Record<string, any>),
+					...(stored2 as unknown as Record<string, unknown>),
 					createdAt: new Date("2024-06-01"),
 				});
-				// biome-ignore lint/suspicious/noExplicitAny: test-only timestamp override
 				await mockData.upsert("review", r3.id, {
-					...(stored3 as Record<string, any>),
+					...(stored3 as unknown as Record<string, unknown>),
 					createdAt: new Date("2024-12-01"),
 				});
 			}
@@ -247,19 +244,16 @@ describe("reviews new features", () => {
 			const stored2 = await autoCtrl.getReview(r2.id);
 			const stored3 = await autoCtrl.getReview(r3.id);
 			if (stored1 && stored2 && stored3) {
-				// biome-ignore lint/suspicious/noExplicitAny: test-only timestamp override
 				await mockData.upsert("review", r1.id, {
-					...(stored1 as Record<string, any>),
+					...(stored1 as unknown as Record<string, unknown>),
 					createdAt: new Date("2024-01-01"),
 				});
-				// biome-ignore lint/suspicious/noExplicitAny: test-only timestamp override
 				await mockData.upsert("review", r2.id, {
-					...(stored2 as Record<string, any>),
+					...(stored2 as unknown as Record<string, unknown>),
 					createdAt: new Date("2024-06-01"),
 				});
-				// biome-ignore lint/suspicious/noExplicitAny: test-only timestamp override
 				await mockData.upsert("review", r3.id, {
-					...(stored3 as Record<string, any>),
+					...(stored3 as unknown as Record<string, unknown>),
 					createdAt: new Date("2024-12-01"),
 				});
 			}
