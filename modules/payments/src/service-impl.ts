@@ -12,8 +12,23 @@ export function createPaymentController(
 	data: ModuleDataService,
 	provider?: PaymentProvider,
 ): PaymentController {
+	/** Sum of all succeeded refund amounts for an intent. */
+	async function totalRefunded(intentId: string): Promise<number> {
+		const refunds = await data.findMany("refund", {
+			where: { paymentIntentId: intentId },
+		});
+		return (refunds as unknown as Refund[]).reduce(
+			(sum, r) => sum + (r.status !== "failed" ? r.amount : 0),
+			0,
+		);
+	}
+
 	return {
 		async createIntent(params) {
+			if (!Number.isInteger(params.amount) || params.amount <= 0) {
+				throw new Error("Amount must be a positive integer");
+			}
+
 			const id = crypto.randomUUID();
 			const now = new Date();
 
@@ -64,6 +79,15 @@ export function createPaymentController(
 			const intent = existing as unknown as PaymentIntent;
 			if (intent.status === "succeeded") return intent;
 
+			const terminalStates: PaymentIntentStatus[] = [
+				"cancelled",
+				"failed",
+				"refunded",
+			];
+			if (terminalStates.includes(intent.status)) {
+				throw new Error(`Cannot confirm intent in '${intent.status}' state`);
+			}
+
 			let newStatus: PaymentIntentStatus = "succeeded";
 			let newProviderMetadata = intent.providerMetadata;
 
@@ -89,6 +113,15 @@ export function createPaymentController(
 			if (!existing) return null;
 			const intent = existing as unknown as PaymentIntent;
 			if (intent.status === "cancelled") return intent;
+
+			const nonCancellable: PaymentIntentStatus[] = [
+				"succeeded",
+				"failed",
+				"refunded",
+			];
+			if (nonCancellable.includes(intent.status)) {
+				throw new Error(`Cannot cancel intent in '${intent.status}' state`);
+			}
 
 			let newProviderMetadata = intent.providerMetadata;
 
@@ -192,7 +225,22 @@ export function createPaymentController(
 			if (!intent) throw new Error("Payment intent not found");
 			const pi = intent as unknown as PaymentIntent;
 
+			const refundableStates: PaymentIntentStatus[] = ["succeeded", "refunded"];
+			if (!refundableStates.includes(pi.status)) {
+				throw new Error(`Cannot refund intent in '${pi.status}' state`);
+			}
+
 			const refundAmount = params.amount ?? pi.amount;
+			if (refundAmount <= 0) {
+				throw new Error("Refund amount must be positive");
+			}
+
+			const alreadyRefunded = await totalRefunded(params.intentId);
+			if (alreadyRefunded + refundAmount > pi.amount) {
+				throw new Error(
+					`Refund amount ${refundAmount} exceeds remaining refundable amount ${pi.amount - alreadyRefunded}`,
+				);
+			}
 
 			let providerRefundId: string;
 			let refundStatus: Refund["status"] = "succeeded";
@@ -298,6 +346,18 @@ export function createPaymentController(
 			const intent = intents[0];
 			const now = new Date();
 			const refundAmount = params.amount ?? intent.amount;
+
+			// Deduplicate by providerRefundId — webhook retries must be idempotent
+			const existingRefunds = await data.findMany("refund", {
+				where: {
+					paymentIntentId: intent.id,
+					providerRefundId: params.providerRefundId,
+				},
+			});
+			const existing = existingRefunds as unknown as Refund[];
+			if (existing.length > 0) {
+				return { intent, refund: existing[0] };
+			}
 
 			const refundId = crypto.randomUUID();
 			const refund: Refund = {

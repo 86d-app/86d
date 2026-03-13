@@ -15,11 +15,16 @@ export const createRefund = createAdminEndpoint(
 		const controller = ctx.context.controllers.payments as PaymentController;
 		const intent = await controller.getIntent(ctx.params.id);
 		if (!intent) return { error: "Payment intent not found", status: 404 };
-		const refund = await controller.createRefund({
-			intentId: ctx.params.id,
-			amount: ctx.body.amount,
-			reason: ctx.body.reason,
-		});
-		return { refund };
+		try {
+			const refund = await controller.createRefund({
+				intentId: ctx.params.id,
+				amount: ctx.body.amount,
+				reason: ctx.body.reason,
+			});
+			return { refund };
+		} catch (err) {
+			const message = err instanceof Error ? err.message : "Refund failed";
+			return { error: message, status: 400 };
+		}
 	},
 );

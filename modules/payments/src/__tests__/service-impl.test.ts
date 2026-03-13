@@ -343,8 +343,9 @@ describe("createPaymentController", () => {
 	// ── createRefund ─────────────────────────────────────────────────────
 
 	describe("createRefund", () => {
-		it("creates a full refund", async () => {
+		it("creates a full refund on succeeded intent", async () => {
 			const intent = await controller.createIntent({ amount: 5000 });
+			await controller.confirmIntent(intent.id);
 			const refund = await controller.createRefund({
 				intentId: intent.id,
 			});
@@ -359,6 +360,7 @@ describe("createPaymentController", () => {
 
 		it("creates a partial refund", async () => {
 			const intent = await controller.createIntent({ amount: 5000 });
+			await controller.confirmIntent(intent.id);
 			const refund = await controller.createRefund({
 				intentId: intent.id,
 				amount: 2000,
@@ -372,6 +374,21 @@ describe("createPaymentController", () => {
 			await expect(
 				controller.createRefund({ intentId: "missing" }),
 			).rejects.toThrow("Payment intent not found");
+		});
+
+		it("throws when refunding a pending intent", async () => {
+			const intent = await controller.createIntent({ amount: 5000 });
+			await expect(
+				controller.createRefund({ intentId: intent.id }),
+			).rejects.toThrow("Cannot refund intent in 'pending' state");
+		});
+
+		it("throws when refunding a cancelled intent", async () => {
+			const intent = await controller.createIntent({ amount: 5000 });
+			await controller.cancelIntent(intent.id);
+			await expect(
+				controller.createRefund({ intentId: intent.id }),
+			).rejects.toThrow("Cannot refund intent in 'cancelled' state");
 		});
 
 		it("delegates to provider when available", async () => {
@@ -390,6 +407,7 @@ describe("createPaymentController", () => {
 			};
 			const ctrl = createPaymentController(mockData, mockProvider);
 			const intent = await ctrl.createIntent({ amount: 3000 });
+			// Provider-created intent already has succeeded status
 			const refund = await ctrl.createRefund({ intentId: intent.id });
 			expect(refund.providerRefundId).toBe("re_ext_123");
 			expect(mockProvider.createRefund).toHaveBeenCalledOnce();
@@ -397,6 +415,7 @@ describe("createPaymentController", () => {
 
 		it("generates local refund ID for local-only intents", async () => {
 			const intent = await controller.createIntent({ amount: 2000 });
+			await controller.confirmIntent(intent.id);
 			const refund = await controller.createRefund({
 				intentId: intent.id,
 			});
@@ -404,8 +423,6 @@ describe("createPaymentController", () => {
 		});
 
 		it("throws when provider intent exists but provider is not configured", async () => {
-			// Simulate an intent that was created through a provider
-			// but the controller no longer has the provider attached
 			const mockProvider: PaymentProvider = {
 				createIntent: vi.fn().mockResolvedValue({
 					providerIntentId: "pi_stripe_orphan",
@@ -416,17 +433,23 @@ describe("createPaymentController", () => {
 				cancelIntent: vi.fn(),
 				createRefund: vi.fn(),
 			};
-			// Create intent WITH provider
 			const ctrlWithProvider = createPaymentController(mockData, mockProvider);
 			const intent = await ctrlWithProvider.createIntent({ amount: 5000 });
 
-			// Try to refund WITHOUT provider (simulates misconfiguration)
 			const ctrlWithout = createPaymentController(mockData);
 			await expect(
 				ctrlWithout.createRefund({ intentId: intent.id }),
 			).rejects.toThrow(
 				"Cannot refund: payment was created through a provider but no provider is configured",
 			);
+		});
+
+		it("rejects refund exceeding intent amount", async () => {
+			const intent = await controller.createIntent({ amount: 5000 });
+			await controller.confirmIntent(intent.id);
+			await expect(
+				controller.createRefund({ intentId: intent.id, amount: 6000 }),
+			).rejects.toThrow("exceeds remaining refundable amount");
 		});
 	});
 
@@ -435,6 +458,7 @@ describe("createPaymentController", () => {
 	describe("getRefund", () => {
 		it("returns an existing refund", async () => {
 			const intent = await controller.createIntent({ amount: 1000 });
+			await controller.confirmIntent(intent.id);
 			const refund = await controller.createRefund({
 				intentId: intent.id,
 			});
@@ -451,6 +475,7 @@ describe("createPaymentController", () => {
 	describe("listRefunds", () => {
 		it("lists refunds for an intent", async () => {
 			const intent = await controller.createIntent({ amount: 5000 });
+			await controller.confirmIntent(intent.id);
 			await controller.createRefund({
 				intentId: intent.id,
 				amount: 1000,

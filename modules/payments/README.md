@@ -103,7 +103,7 @@ interface PaymentProvider {
 // ── Payment intents ─────────────────────────────────────────────────────────
 
 controller.createIntent(params: {
-  amount: number;             // in smallest currency unit (e.g. cents)
+  amount: number;             // positive integer, smallest currency unit (e.g. cents)
   currency?: string;          // default: module currency option
   customerId?: string;
   email?: string;
@@ -111,12 +111,15 @@ controller.createIntent(params: {
   checkoutSessionId?: string;
   metadata?: Record<string, unknown>;
 }): Promise<PaymentIntent>
+// Throws: "Amount must be a positive integer"
 
 controller.getIntent(id: string): Promise<PaymentIntent | null>
 
 controller.confirmIntent(id: string): Promise<PaymentIntent | null>
+// Throws: "Cannot confirm intent in '{status}' state" for terminal states
 
 controller.cancelIntent(id: string): Promise<PaymentIntent | null>
+// Throws: "Cannot cancel intent in '{status}' state" for succeeded/failed/refunded
 
 controller.listIntents(params?: {
   customerId?: string;
@@ -148,12 +151,16 @@ controller.deletePaymentMethod(id: string): Promise<boolean>
 
 // ── Refunds ─────────────────────────────────────────────────────────────────
 
-// Throws if payment intent not found; marks intent status as "refunded"
+// Only on succeeded/refunded intents. Cumulative refunds capped at intent amount.
 controller.createRefund(params: {
   intentId: string;
-  amount?: number;   // omit for full refund
+  amount?: number;   // positive integer; omit for full refund
   reason?: string;
 }): Promise<Refund>
+// Throws: "Payment intent not found"
+// Throws: "Cannot refund intent in '{status}' state"
+// Throws: "Refund amount must be positive"
+// Throws: "Refund amount {n} exceeds remaining refundable amount {m}"
 
 controller.getRefund(id: string): Promise<Refund | null>
 
@@ -205,7 +212,21 @@ const method = await controller.savePaymentMethod({
 | `succeeded` | Payment completed successfully |
 | `failed` | Payment failed |
 | `cancelled` | Intent was cancelled |
-| `refunded` | Payment has been refunded |
+| `refunded` | Payment has been (partially or fully) refunded |
+
+## Financial Safety Guards
+
+The payments controller enforces several financial safety rules at the controller level:
+
+| Rule | Description |
+|---|---|
+| **Amount validation** | `createIntent` rejects zero, negative, and fractional amounts. Amount must be a positive integer (smallest currency unit). |
+| **Confirm guards** | `confirmIntent` only works on `pending` or `processing` intents. Throws on `cancelled`, `failed`, `refunded`. |
+| **Cancel guards** | `cancelIntent` only works on `pending` or `processing` intents. Throws on `succeeded`, `failed`, `refunded`. |
+| **Refund guards** | `createRefund` only works on `succeeded` or `refunded` intents. Throws on `pending`, `processing`, `cancelled`, `failed`. |
+| **Refund cap** | Cumulative non-failed refunds cannot exceed the original intent amount. Partial refunds are tracked and summed. |
+| **Refund amount** | Refund amount must be positive. Zero and negative amounts are rejected. |
+| **Webhook dedup** | `handleWebhookRefund` deduplicates by `providerRefundId` — webhook retries return the existing refund instead of creating duplicates. |
 
 ## Types
 

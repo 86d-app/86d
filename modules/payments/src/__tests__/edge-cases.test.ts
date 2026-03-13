@@ -135,6 +135,7 @@ describe("payments edge cases", () => {
 			};
 			const ctrl = createPaymentController(mockData, mockProvider);
 			const intent = await ctrl.createIntent({ amount: 5000 });
+			// Provider-created intent already has 'succeeded' status
 			await expect(ctrl.createRefund({ intentId: intent.id })).rejects.toThrow(
 				"Refund limit exceeded",
 			);
@@ -199,6 +200,7 @@ describe("payments edge cases", () => {
 			};
 			const ctrl = createPaymentController(mockData, mockProvider);
 			const intent = await ctrl.createIntent({ amount: 5000 });
+			// Provider-created intent already has 'succeeded' status
 			const refund = await ctrl.createRefund({ intentId: intent.id });
 			expect(refund.status).toBe("pending");
 		});
@@ -209,6 +211,7 @@ describe("payments edge cases", () => {
 	describe("multiple refunds", () => {
 		it("supports multiple partial refunds on the same intent", async () => {
 			const intent = await controller.createIntent({ amount: 10000 });
+			await controller.confirmIntent(intent.id);
 			const r1 = await controller.createRefund({
 				intentId: intent.id,
 				amount: 3000,
@@ -230,6 +233,7 @@ describe("payments edge cases", () => {
 
 		it("each refund gets a unique ID", async () => {
 			const intent = await controller.createIntent({ amount: 10000 });
+			await controller.confirmIntent(intent.id);
 			const r1 = await controller.createRefund({
 				intentId: intent.id,
 				amount: 1000,
@@ -265,7 +269,7 @@ describe("payments edge cases", () => {
 				status: "succeeded",
 			});
 			expect(results).toHaveLength(1);
-			expect(results[0].amount).toBe(200);
+			expect(results[0]?.amount).toBe(200);
 		});
 
 		it("combines orderId and status filters", async () => {
@@ -484,6 +488,7 @@ describe("payments edge cases", () => {
 	describe("refund edge cases", () => {
 		it("refund reason is optional", async () => {
 			const intent = await controller.createIntent({ amount: 5000 });
+			await controller.confirmIntent(intent.id);
 			const refund = await controller.createRefund({
 				intentId: intent.id,
 			});
@@ -492,6 +497,7 @@ describe("payments edge cases", () => {
 
 		it("refund preserves paymentIntentId", async () => {
 			const intent = await controller.createIntent({ amount: 2000 });
+			await controller.confirmIntent(intent.id);
 			const refund = await controller.createRefund({
 				intentId: intent.id,
 				amount: 500,
@@ -501,6 +507,7 @@ describe("payments edge cases", () => {
 
 		it("refund sets createdAt and updatedAt", async () => {
 			const intent = await controller.createIntent({ amount: 2000 });
+			await controller.confirmIntent(intent.id);
 			const refund = await controller.createRefund({
 				intentId: intent.id,
 			});
@@ -528,6 +535,7 @@ describe("payments edge cases", () => {
 
 		it("createRefund works without provider for local intents", async () => {
 			const intent = await controller.createIntent({ amount: 3000 });
+			await controller.confirmIntent(intent.id);
 			const refund = await controller.createRefund({
 				intentId: intent.id,
 				amount: 1000,

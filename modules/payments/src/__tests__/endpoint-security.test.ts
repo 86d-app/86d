@@ -177,6 +177,7 @@ describe("payments endpoint security", () => {
 
 		it("createRefund defaults to full intent amount when no amount specified", async () => {
 			const intent = await controller.createIntent({ amount: 7500 });
+			await controller.confirmIntent(intent.id);
 			const refund = await controller.createRefund({
 				intentId: intent.id,
 			});
@@ -187,6 +188,7 @@ describe("payments endpoint security", () => {
 
 		it("createRefund marks intent as refunded", async () => {
 			const intent = await controller.createIntent({ amount: 5000 });
+			await controller.confirmIntent(intent.id);
 			await controller.createRefund({ intentId: intent.id });
 
 			const updated = await controller.getIntent(intent.id);
@@ -195,7 +197,9 @@ describe("payments endpoint security", () => {
 
 		it("listRefunds scoped to intentId does not leak refunds from other intents", async () => {
 			const intent1 = await controller.createIntent({ amount: 1000 });
+			await controller.confirmIntent(intent1.id);
 			const intent2 = await controller.createIntent({ amount: 2000 });
+			await controller.confirmIntent(intent2.id);
 
 			await controller.createRefund({
 				intentId: intent1.id,

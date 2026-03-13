@@ -17,22 +17,23 @@ describe("payment controller edge cases", () => {
 	describe("createIntent edge cases", () => {
 		it("each intent gets a unique id", async () => {
 			const ids = new Set<string>();
-			for (let i = 0; i < 20; i++) {
+			for (let i = 1; i <= 20; i++) {
 				const intent = await controller.createIntent({ amount: 100 * i });
 				ids.add(intent.id);
 			}
 			expect(ids.size).toBe(20);
 		});
 
-		it("handles zero amount", async () => {
-			const intent = await controller.createIntent({ amount: 0 });
-			expect(intent.amount).toBe(0);
-			expect(intent.status).toBe("pending");
+		it("rejects zero amount", async () => {
+			await expect(controller.createIntent({ amount: 0 })).rejects.toThrow(
+				"Amount must be a positive integer",
+			);
 		});
 
-		it("handles negative amount", async () => {
-			const intent = await controller.createIntent({ amount: -500 });
-			expect(intent.amount).toBe(-500);
+		it("rejects negative amount", async () => {
+			await expect(controller.createIntent({ amount: -500 })).rejects.toThrow(
+				"Amount must be a positive integer",
+			);
 		});
 
 		it("handles very large amount", async () => {
@@ -42,9 +43,10 @@ describe("payment controller edge cases", () => {
 			expect(intent.amount).toBe(Number.MAX_SAFE_INTEGER);
 		});
 
-		it("handles fractional amount", async () => {
-			const intent = await controller.createIntent({ amount: 99.99 });
-			expect(intent.amount).toBe(99.99);
+		it("rejects fractional amount", async () => {
+			await expect(controller.createIntent({ amount: 99.99 })).rejects.toThrow(
+				"Amount must be a positive integer",
+			);
 		});
 
 		it("preserves special characters in metadata keys and values", async () => {
@@ -112,13 +114,13 @@ describe("payment controller edge cases", () => {
 
 		it("returns correct intent among many", async () => {
 			const intents = [];
-			for (let i = 0; i < 15; i++) {
+			for (let i = 1; i <= 15; i++) {
 				const intent = await controller.createIntent({ amount: i * 100 });
 				intents.push(intent);
 			}
 			const middle = await controller.getIntent(intents[7].id);
 			expect(middle).not.toBeNull();
-			expect(middle?.amount).toBe(700);
+			expect(middle?.amount).toBe(800);
 		});
 
 		it("reflects updated status after confirm", async () => {
@@ -132,20 +134,21 @@ describe("payment controller edge cases", () => {
 	// ── confirmIntent edge cases ────────────────────────────────────────
 
 	describe("confirmIntent edge cases", () => {
-		it("confirm after cancel still produces a result", async () => {
+		it("confirm after cancel throws status guard error", async () => {
 			const intent = await controller.createIntent({ amount: 1000 });
 			await controller.cancelIntent(intent.id);
-			// Confirming a cancelled intent - it transitions to succeeded (no guard against it)
-			const confirmed = await controller.confirmIntent(intent.id);
-			expect(confirmed?.status).toBe("succeeded");
+			await expect(controller.confirmIntent(intent.id)).rejects.toThrow(
+				"Cannot confirm intent in 'cancelled' state",
+			);
 		});
 
-		it("confirm after refund still produces a result", async () => {
+		it("confirm after refund throws status guard error", async () => {
 			const intent = await controller.createIntent({ amount: 1000 });
+			await controller.confirmIntent(intent.id);
 			await controller.createRefund({ intentId: intent.id });
-			// Confirming a refunded intent - it transitions to succeeded (no guard)
-			const confirmed = await controller.confirmIntent(intent.id);
-			expect(confirmed?.status).toBe("succeeded");
+			await expect(controller.confirmIntent(intent.id)).rejects.toThrow(
+				"Cannot confirm intent in 'refunded' state",
+			);
 		});
 
 		it("provider confirmIntent returning failed preserves that status", async () => {
@@ -210,11 +213,12 @@ describe("payment controller edge cases", () => {
 	// ── cancelIntent edge cases ─────────────────────────────────────────
 
 	describe("cancelIntent edge cases", () => {
-		it("cancel after confirm sets status to cancelled", async () => {
+		it("cancel after confirm throws status guard error", async () => {
 			const intent = await controller.createIntent({ amount: 1000 });
 			await controller.confirmIntent(intent.id);
-			const cancelled = await controller.cancelIntent(intent.id);
-			expect(cancelled?.status).toBe("cancelled");
+			await expect(controller.cancelIntent(intent.id)).rejects.toThrow(
+				"Cannot cancel intent in 'succeeded' state",
+			);
 		});
 
 		it("cancel preserves original intent data", async () => {
@@ -498,6 +502,7 @@ describe("payment controller edge cases", () => {
 	describe("createRefund edge cases", () => {
 		it("refund amount equal to intent amount creates full refund", async () => {
 			const intent = await controller.createIntent({ amount: 5000 });
+			await controller.confirmIntent(intent.id);
 			const refund = await controller.createRefund({
 				intentId: intent.id,
 				amount: 5000,
@@ -505,18 +510,21 @@ describe("payment controller edge cases", () => {
 			expect(refund.amount).toBe(5000);
 		});
 
-		it("refund with zero amount", async () => {
+		it("rejects refund with zero amount", async () => {
 			const intent = await controller.createIntent({ amount: 5000 });
-			const refund = await controller.createRefund({
-				intentId: intent.id,
-				amount: 0,
-			});
-			expect(refund.amount).toBe(0);
+			await controller.confirmIntent(intent.id);
+			await expect(
+				controller.createRefund({
+					intentId: intent.id,
+					amount: 0,
+				}),
+			).rejects.toThrow("Refund amount must be positive");
 		});
 
 		it("refund with very long reason string", async () => {
 			const longReason = "R".repeat(5000);
 			const intent = await controller.createIntent({ amount: 1000 });
+			await controller.confirmIntent(intent.id);
 			const refund = await controller.createRefund({
 				intentId: intent.id,
 				reason: longReason,
@@ -526,6 +534,7 @@ describe("payment controller edge cases", () => {
 
 		it("refund with special characters in reason", async () => {
 			const intent = await controller.createIntent({ amount: 1000 });
+			await controller.confirmIntent(intent.id);
 			const refund = await controller.createRefund({
 				intentId: intent.id,
 				reason: 'Customer said: "I don\'t want it!" <script>alert(1)</script>',
@@ -537,6 +546,7 @@ describe("payment controller edge cases", () => {
 
 		it("multiple refunds are all stored under refund entity type", async () => {
 			const intent = await controller.createIntent({ amount: 10000 });
+			await controller.confirmIntent(intent.id);
 			await controller.createRefund({
 				intentId: intent.id,
 				amount: 1000,
@@ -552,19 +562,37 @@ describe("payment controller edge cases", () => {
 			expect(mockData.size("refund")).toBe(3);
 		});
 
-		it("refund on already-refunded intent still works", async () => {
+		it("partial refund on already-refunded intent respects cap", async () => {
 			const intent = await controller.createIntent({ amount: 10000 });
+			await controller.confirmIntent(intent.id);
 			await controller.createRefund({
 				intentId: intent.id,
 				amount: 5000,
 			});
-			// Second refund should still succeed
+			// Second refund within remaining cap should succeed
 			const r2 = await controller.createRefund({
 				intentId: intent.id,
 				amount: 3000,
 			});
 			expect(r2.amount).toBe(3000);
 			expect(r2.status).toBe("succeeded");
+		});
+
+		it("rejects refund exceeding remaining refundable amount", async () => {
+			const intent = await controller.createIntent({ amount: 10000 });
+			await controller.confirmIntent(intent.id);
+			await controller.createRefund({
+				intentId: intent.id,
+				amount: 7000,
+			});
+			await expect(
+				controller.createRefund({
+					intentId: intent.id,
+					amount: 5000,
+				}),
+			).rejects.toThrow(
+				"Refund amount 5000 exceeds remaining refundable amount 3000",
+			);
 		});
 
 		it("provider createRefund receives correct parameters", async () => {
@@ -574,7 +602,10 @@ describe("payment controller edge cases", () => {
 					status: "succeeded",
 					providerMetadata: {},
 				}),
-				confirmIntent: vi.fn(),
+				confirmIntent: vi.fn().mockResolvedValue({
+					status: "succeeded",
+					providerMetadata: {},
+				}),
 				cancelIntent: vi.fn(),
 				createRefund: vi.fn().mockResolvedValue({
 					providerRefundId: "re_check",
@@ -583,6 +614,7 @@ describe("payment controller edge cases", () => {
 			};
 			const ctrl = createPaymentController(mockData, mockProvider);
 			const intent = await ctrl.createIntent({ amount: 5000 });
+			await ctrl.confirmIntent(intent.id);
 			await ctrl.createRefund({
 				intentId: intent.id,
 				amount: 2000,
@@ -606,7 +638,9 @@ describe("payment controller edge cases", () => {
 
 		it("does not return refunds from other intents", async () => {
 			const i1 = await controller.createIntent({ amount: 1000 });
+			await controller.confirmIntent(i1.id);
 			const i2 = await controller.createIntent({ amount: 2000 });
+			await controller.confirmIntent(i2.id);
 			await controller.createRefund({ intentId: i1.id, amount: 500 });
 			await controller.createRefund({ intentId: i2.id, amount: 1000 });
 			const refunds = await controller.listRefunds(i1.id);
@@ -843,6 +877,7 @@ describe("payment controller edge cases", () => {
 				providerMethodId: "pm_1",
 			});
 			const intent = await controller.createIntent({ amount: 2000 });
+			await controller.confirmIntent(intent.id);
 			await controller.createRefund({ intentId: intent.id });
 
 			expect(mockData.size("paymentIntent")).toBe(2);
@@ -886,13 +921,21 @@ describe("payment controller edge cases", () => {
 			const afterRefund = await controller.getIntent(intent.id);
 			expect(afterRefund?.status).toBe("refunded");
 
-			// Another partial refund
+			// Another partial refund (within cap: 10000 - 3000 = 7000 remaining)
 			const r2 = await controller.createRefund({
 				intentId: intent.id,
 				amount: 2000,
 				reason: "Item missing",
 			});
 			expect(r2.amount).toBe(2000);
+
+			// Refund exceeding cap should fail (5000 remaining)
+			await expect(
+				controller.createRefund({
+					intentId: intent.id,
+					amount: 6000,
+				}),
+			).rejects.toThrow("exceeds remaining refundable amount");
 
 			// List all refunds
 			const refunds = await controller.listRefunds(intent.id);
@@ -926,7 +969,7 @@ describe("payment controller edge cases", () => {
 			await controller.confirmIntent(intentA.id);
 			await controller.confirmIntent(intentB.id);
 
-			// Refund A only
+			// Full refund A only (defaults to intent amount)
 			await controller.createRefund({ intentId: intentA.id });
 
 			// Verify states
@@ -945,6 +988,11 @@ describe("payment controller edge cases", () => {
 			// Methods are independent
 			expect(await controller.listPaymentMethods("cust_a")).toHaveLength(1);
 			expect(await controller.listPaymentMethods("cust_b")).toHaveLength(1);
+
+			// Can't refund A again (fully refunded)
+			await expect(
+				controller.createRefund({ intentId: intentA.id }),
+			).rejects.toThrow("exceeds remaining refundable amount");
 		});
 
 		it("webhook event and manual operations interleave correctly", async () => {

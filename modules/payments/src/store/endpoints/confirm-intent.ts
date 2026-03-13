@@ -14,13 +14,19 @@ export const confirmIntent = createStoreEndpoint(
 		}
 
 		const controller = ctx.context.controllers.payments as PaymentController;
-		const intent = await controller.confirmIntent(ctx.params.id);
-		if (!intent) return { error: "Payment intent not found", status: 404 };
+		try {
+			const intent = await controller.confirmIntent(ctx.params.id);
+			if (!intent) return { error: "Payment intent not found", status: 404 };
 
-		if (intent.customerId && intent.customerId !== session.user.id) {
-			return { error: "Payment intent not found", status: 404 };
+			if (intent.customerId && intent.customerId !== session.user.id) {
+				return { error: "Payment intent not found", status: 404 };
+			}
+
+			return { intent };
+		} catch (err) {
+			const message =
+				err instanceof Error ? err.message : "Cannot confirm payment";
+			return { error: message, status: 400 };
 		}
-
-		return { intent };
 	},
 );
