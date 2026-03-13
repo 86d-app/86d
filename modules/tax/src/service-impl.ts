@@ -549,10 +549,10 @@ export function createTaxController(data: ModuleDataService): TaxController {
 				createdAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
 			await data.upsert(
 				"taxTransaction",
 				id,
+				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
 				transaction as Record<string, any>,
 			);
 			return transaction;
@@ -604,10 +604,10 @@ export function createTaxController(data: ModuleDataService): TaxController {
 
 			const updated: TaxTransaction = { ...existing, orderId };
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
 			await data.upsert(
 				"taxTransaction",
 				transactionId,
+				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
 				updated as Record<string, any>,
 			);
 			return updated;

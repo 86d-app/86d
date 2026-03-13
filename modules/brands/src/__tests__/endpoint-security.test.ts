@@ -283,7 +283,7 @@ describe("brands endpoint security", () => {
 			await makeBrand({ slug: "gone-slug" });
 			expect(await controller.getBrandBySlug("gone-slug")).not.toBeNull();
 			const brand = await controller.getBrandBySlug("gone-slug");
-			await controller.deleteBrand(brand!.id);
+			await controller.deleteBrand(brand?.id ?? "");
 			expect(await controller.getBrandBySlug("gone-slug")).toBeNull();
 		});
 	});

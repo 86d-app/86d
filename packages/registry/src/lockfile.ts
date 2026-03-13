@@ -63,7 +63,7 @@ export function readLockfile(root: string): Lockfile | undefined {
  */
 export function writeLockfile(root: string, lockfile: Lockfile): void {
 	const lockPath = join(root, LOCKFILE_NAME);
-	writeFileSync(lockPath, JSON.stringify(lockfile, null, 2) + "\n");
+	writeFileSync(lockPath, `${JSON.stringify(lockfile, null, 2)}\n`);
 }
 
 // ── Generate ─────────────────────────────────────────────────────────
