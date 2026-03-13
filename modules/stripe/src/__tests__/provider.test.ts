@@ -115,6 +115,62 @@ describe("StripePaymentProvider", () => {
 				.calls[0];
 			expect(fetchCall[1].body).toContain("currency=eur");
 		});
+
+		it("maps requires_capture to processing", async () => {
+			globalThis.fetch = mockFetchResponse({
+				id: "pi_cap",
+				object: "payment_intent",
+				amount: 3000,
+				currency: "usd",
+				status: "requires_capture",
+				client_secret: "secret_cap",
+				metadata: {},
+			});
+			const result = await provider.createIntent({
+				amount: 3000,
+				currency: "USD",
+			});
+			expect(result.status).toBe("processing");
+		});
+
+		it("maps requires_confirmation to pending", async () => {
+			globalThis.fetch = mockFetchResponse({
+				id: "pi_conf",
+				object: "payment_intent",
+				amount: 1500,
+				currency: "usd",
+				status: "requires_confirmation",
+				client_secret: "secret_conf",
+				metadata: {},
+			});
+			const result = await provider.createIntent({
+				amount: 1500,
+				currency: "USD",
+			});
+			expect(result.status).toBe("pending");
+		});
+
+		it("passes metadata through in the request body", async () => {
+			globalThis.fetch = mockFetchResponse({
+				id: "pi_meta",
+				object: "payment_intent",
+				amount: 4000,
+				currency: "usd",
+				status: "requires_payment_method",
+				client_secret: "secret_meta",
+				metadata: {},
+			});
+			await provider.createIntent({
+				amount: 4000,
+				currency: "USD",
+			});
+			const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock
+				.calls[0];
+			const body = fetchCall[1].body as string;
+			expect(body).toContain("amount=4000");
+			expect(body).toContain("currency=usd");
+			expect(body).toContain("automatic_payment_methods%5Benabled%5D=true");
+		});
 	});
 
 	// ── confirmIntent ────────────────────────────────────────────────────
@@ -154,6 +210,17 @@ describe("StripePaymentProvider", () => {
 			const result = await provider.confirmIntent("pi_3ds");
 			expect(result.status).toBe("pending");
 		});
+
+		it("handles error response without message field (falls back to HTTP status)", async () => {
+			globalThis.fetch = mockFetchResponse(
+				{ error: { type: "api_error" } },
+				false,
+				500,
+			);
+			await expect(provider.confirmIntent("pi_err")).rejects.toThrow(
+				"Stripe error: HTTP 500",
+			);
+		});
 	});
 
 	// ── cancelIntent ─────────────────────────────────────────────────────
@@ -177,6 +244,23 @@ describe("StripePaymentProvider", () => {
 				"https://api.stripe.com/v1/payment_intents/pi_cancel/cancel",
 				expect.objectContaining({ method: "POST" }),
 			);
+		});
+
+		it("maps canceled status to cancelled explicitly", async () => {
+			globalThis.fetch = mockFetchResponse({
+				id: "pi_cancel_explicit",
+				object: "payment_intent",
+				amount: 1200,
+				currency: "usd",
+				status: "canceled",
+				client_secret: "secret_cancel",
+				metadata: {},
+			});
+
+			const result = await provider.cancelIntent("pi_cancel_explicit");
+			expect(result.providerIntentId).toBe("pi_cancel_explicit");
+			expect(result.status).toBe("cancelled");
+			expect(result.providerMetadata?.stripeStatus).toBe("canceled");
 		});
 	});
 
@@ -252,6 +336,65 @@ describe("StripePaymentProvider", () => {
 				providerIntentId: "pi_1",
 			});
 			expect(result.status).toBe("pending");
+		});
+
+		it("maps canceled refund to pending status", async () => {
+			globalThis.fetch = mockFetchResponse({
+				id: "re_canceled",
+				object: "refund",
+				amount: 800,
+				charge: "ch_cancel",
+				payment_intent: "pi_cancel_refund",
+				status: "canceled",
+				reason: null,
+			});
+			const result = await provider.createRefund({
+				providerIntentId: "pi_cancel_refund",
+			});
+			// "canceled" is not "succeeded" or "failed", so it falls to "pending"
+			expect(result.status).toBe("pending");
+			expect(result.providerMetadata?.stripeStatus).toBe("canceled");
+		});
+
+		it("sends reason when provided", async () => {
+			globalThis.fetch = mockFetchResponse({
+				id: "re_reason",
+				object: "refund",
+				amount: 3000,
+				charge: "ch_reason",
+				payment_intent: "pi_reason",
+				status: "succeeded",
+				reason: "duplicate",
+			});
+			await provider.createRefund({
+				providerIntentId: "pi_reason",
+				reason: "duplicate",
+			});
+			const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock
+				.calls[0];
+			const body = fetchCall[1].body as string;
+			expect(body).toContain("reason=duplicate");
+		});
+
+		it("does not send amount or reason when not provided", async () => {
+			globalThis.fetch = mockFetchResponse({
+				id: "re_minimal",
+				object: "refund",
+				amount: 5000,
+				charge: "ch_min",
+				payment_intent: "pi_minimal",
+				status: "succeeded",
+				reason: null,
+			});
+			await provider.createRefund({
+				providerIntentId: "pi_minimal",
+			});
+			const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock
+				.calls[0];
+			const body = fetchCall[1].body as string;
+			expect(body).not.toContain("amount=");
+			expect(body).not.toContain("reason=");
+			expect(body).toContain("payment_intent=pi_minimal");
 		});
 	});
 });

@@ -112,6 +112,82 @@ describe("SquarePaymentProvider", () => {
 			expect(body.amount_money.currency).toBe("EUR");
 		});
 
+		it("maps PENDING status to pending", async () => {
+			globalThis.fetch = mockFetchResponse({
+				payment: {
+					id: "sq_pay_pend",
+					status: "PENDING",
+					amount_money: { amount: 1000, currency: "USD" },
+				},
+			});
+			const result = await provider.createIntent({
+				amount: 1000,
+				currency: "USD",
+			});
+			expect(result.status).toBe("pending");
+		});
+
+		it("includes idempotency_key in request body", async () => {
+			globalThis.fetch = mockFetchResponse({
+				payment: {
+					id: "sq_pay_idem",
+					status: "APPROVED",
+					amount_money: { amount: 2000, currency: "USD" },
+				},
+			});
+			await provider.createIntent({ amount: 2000, currency: "USD" });
+			const body = JSON.parse(
+				(globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body,
+			);
+			expect(body.idempotency_key).toBeDefined();
+			expect(typeof body.idempotency_key).toBe("string");
+			expect(body.idempotency_key.length).toBeGreaterThan(0);
+		});
+
+		it("sets autocomplete to false", async () => {
+			globalThis.fetch = mockFetchResponse({
+				payment: {
+					id: "sq_pay_auto",
+					status: "APPROVED",
+					amount_money: { amount: 3000, currency: "USD" },
+				},
+			});
+			await provider.createIntent({ amount: 3000, currency: "USD" });
+			const body = JSON.parse(
+				(globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body,
+			);
+			expect(body.autocomplete).toBe(false);
+		});
+
+		it("sets source_id to EXTERNAL", async () => {
+			globalThis.fetch = mockFetchResponse({
+				payment: {
+					id: "sq_pay_src",
+					status: "APPROVED",
+					amount_money: { amount: 1500, currency: "USD" },
+				},
+			});
+			await provider.createIntent({ amount: 1500, currency: "USD" });
+			const body = JSON.parse(
+				(globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body,
+			);
+			expect(body.source_id).toBe("EXTERNAL");
+		});
+
+		it("includes Square-Version header", async () => {
+			globalThis.fetch = mockFetchResponse({
+				payment: {
+					id: "sq_pay_ver",
+					status: "APPROVED",
+					amount_money: { amount: 1000, currency: "USD" },
+				},
+			});
+			await provider.createIntent({ amount: 1000, currency: "USD" });
+			const callArgs = (globalThis.fetch as ReturnType<typeof vi.fn>).mock
+				.calls[0][1];
+			expect(callArgs.headers["Square-Version"]).toBe("2024-01-18");
+		});
+
 		it("throws on Square API error", async () => {
 			globalThis.fetch = mockFetchResponse(
 				{
@@ -154,6 +230,23 @@ describe("SquarePaymentProvider", () => {
 				expect.objectContaining({ method: "POST" }),
 			);
 		});
+
+		it("calls correct URL with /complete suffix", async () => {
+			globalThis.fetch = mockFetchResponse({
+				payment: {
+					id: "sq_pay_xyz",
+					status: "COMPLETED",
+					amount_money: { amount: 7000, currency: "USD" },
+				},
+			});
+
+			await provider.confirmIntent("sq_pay_xyz");
+			const url = (globalThis.fetch as ReturnType<typeof vi.fn>).mock
+				.calls[0][0];
+			expect(url).toBe(
+				"https://connect.squareup.com/v2/payments/sq_pay_xyz/complete",
+			);
+		});
 	});
 
 	// ── cancelIntent ─────────────────────────────────────────────────────
@@ -174,6 +267,23 @@ describe("SquarePaymentProvider", () => {
 			expect(globalThis.fetch).toHaveBeenCalledWith(
 				"https://connect.squareup.com/v2/payments/sq_pay_cancel/cancel",
 				expect.objectContaining({ method: "POST" }),
+			);
+		});
+
+		it("calls correct URL with /cancel suffix", async () => {
+			globalThis.fetch = mockFetchResponse({
+				payment: {
+					id: "sq_pay_abc",
+					status: "CANCELED",
+					amount_money: { amount: 4000, currency: "USD" },
+				},
+			});
+
+			await provider.cancelIntent("sq_pay_abc");
+			const url = (globalThis.fetch as ReturnType<typeof vi.fn>).mock
+				.calls[0][0];
+			expect(url).toBe(
+				"https://connect.squareup.com/v2/payments/sq_pay_abc/cancel",
 			);
 		});
 	});
@@ -277,6 +387,43 @@ describe("SquarePaymentProvider", () => {
 				(globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body,
 			);
 			expect(body.reason).toBe("Customer request");
+		});
+
+		it("includes idempotency_key in refund request", async () => {
+			globalThis.fetch = mockFetchResponse({
+				refund: {
+					id: "sq_ref_idem",
+					status: "COMPLETED",
+					amount_money: { amount: 500, currency: "USD" },
+				},
+			});
+
+			await provider.createRefund({ providerIntentId: "sq_pay_1" });
+
+			const body = JSON.parse(
+				(globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body,
+			);
+			expect(body.idempotency_key).toBeDefined();
+			expect(typeof body.idempotency_key).toBe("string");
+			expect(body.idempotency_key.length).toBeGreaterThan(0);
+		});
+
+		it("does not send amount_money when no amount specified", async () => {
+			globalThis.fetch = mockFetchResponse({
+				refund: {
+					id: "sq_ref_noamt",
+					status: "COMPLETED",
+					amount_money: { amount: 5000, currency: "USD" },
+				},
+			});
+
+			await provider.createRefund({ providerIntentId: "sq_pay_1" });
+
+			const body = JSON.parse(
+				(globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body,
+			);
+			expect(body.amount_money).toBeUndefined();
+			expect(body.payment_id).toBe("sq_pay_1");
 		});
 	});
 });

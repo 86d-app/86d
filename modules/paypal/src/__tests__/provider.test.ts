@@ -98,6 +98,18 @@ describe("PayPalPaymentProvider", () => {
 			expect(result.status).toBe("cancelled");
 		});
 
+		it("maps SAVED status to pending", async () => {
+			globalThis.fetch = createMockFetch({
+				id: "pp_order_saved",
+				status: "SAVED",
+			});
+			const result = await provider.createIntent({
+				amount: 1000,
+				currency: "USD",
+			});
+			expect(result.status).toBe("pending");
+		});
+
 		it("maps PAYER_ACTION_REQUIRED to pending", async () => {
 			globalThis.fetch = createMockFetch({
 				id: "pp_order_par",
@@ -108,6 +120,39 @@ describe("PayPalPaymentProvider", () => {
 				currency: "USD",
 			});
 			expect(result.status).toBe("pending");
+		});
+
+		it("uses sandbox URL when sandbox=true", async () => {
+			const sandboxProvider = new PayPalPaymentProvider(
+				"client_id",
+				"client_secret",
+				true,
+			);
+			globalThis.fetch = createMockFetch({
+				id: "pp_sandbox",
+				status: "CREATED",
+			});
+			await sandboxProvider.createIntent({ amount: 1000, currency: "USD" });
+			const calledUrl = (globalThis.fetch as ReturnType<typeof vi.fn>).mock
+				.calls[0]?.[0] as string;
+			expect(calledUrl).toContain("sandbox.paypal.com");
+		});
+
+		it("uses production URL when sandbox=false", async () => {
+			const prodProvider = new PayPalPaymentProvider(
+				"client_id",
+				"client_secret",
+				false,
+			);
+			globalThis.fetch = createMockFetch({
+				id: "pp_prod",
+				status: "CREATED",
+			});
+			await prodProvider.createIntent({ amount: 1000, currency: "USD" });
+			const calledUrl = (globalThis.fetch as ReturnType<typeof vi.fn>).mock
+				.calls[0]?.[0] as string;
+			expect(calledUrl).toContain("https://api-m.paypal.com");
+			expect(calledUrl).not.toContain("sandbox");
 		});
 
 		it("formats amount correctly (cents to dollars)", async () => {
@@ -201,6 +246,24 @@ describe("PayPalPaymentProvider", () => {
 			});
 			const result = await provider.cancelIntent("pp_order_voided");
 			expect(result.status).toBe("cancelled");
+		});
+
+		it("returns cancelled for APPROVED order (not yet captured)", async () => {
+			globalThis.fetch = createMockFetch({
+				id: "pp_order_approved",
+				status: "APPROVED",
+			});
+			const result = await provider.cancelIntent("pp_order_approved");
+			expect(result.status).toBe("cancelled");
+		});
+
+		it("sets providerMetadata paypalStatus to VOIDED", async () => {
+			globalThis.fetch = createMockFetch({
+				id: "pp_order_meta",
+				status: "CREATED",
+			});
+			const result = await provider.cancelIntent("pp_order_meta");
+			expect(result.providerMetadata?.paypalStatus).toBe("VOIDED");
 		});
 	});
 
@@ -328,6 +391,150 @@ describe("PayPalPaymentProvider", () => {
 				providerIntentId: "pp_order_1",
 			});
 			expect(result.status).toBe("failed");
+		});
+
+		it("sends reason as note_to_payer in refund body", async () => {
+			let capturedRefundBody: string | undefined;
+			globalThis.fetch = vi
+				.fn()
+				.mockImplementation((url: string, init?: RequestInit) => {
+					if (url.includes("/oauth2/token")) {
+						return Promise.resolve({
+							ok: true,
+							status: 200,
+							json: () =>
+								Promise.resolve({
+									access_token: "tok",
+									expires_in: 3600,
+								}),
+						});
+					}
+					if (url.includes("/checkout/orders/")) {
+						return Promise.resolve({
+							ok: true,
+							status: 200,
+							json: () =>
+								Promise.resolve({
+									id: "ord",
+									status: "COMPLETED",
+									purchase_units: [
+										{
+											payments: {
+												captures: [{ id: "cap_reason", status: "COMPLETED" }],
+											},
+										},
+									],
+								}),
+						});
+					}
+					// Capture the refund request body
+					capturedRefundBody = init?.body as string;
+					return Promise.resolve({
+						ok: true,
+						status: 200,
+						json: () =>
+							Promise.resolve({ id: "ref_reason", status: "COMPLETED" }),
+					});
+				});
+
+			await provider.createRefund({
+				providerIntentId: "pp_order_reason",
+				reason: "Customer request",
+			});
+
+			expect(capturedRefundBody).toBeDefined();
+			const parsed = JSON.parse(capturedRefundBody as string);
+			expect(parsed.note_to_payer).toBe("Customer request");
+		});
+
+		it("maps PENDING refund status to pending", async () => {
+			globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+				if (url.includes("/oauth2/token")) {
+					return Promise.resolve({
+						ok: true,
+						status: 200,
+						json: () =>
+							Promise.resolve({
+								access_token: "tok",
+								expires_in: 3600,
+							}),
+					});
+				}
+				if (url.includes("/checkout/orders/")) {
+					return Promise.resolve({
+						ok: true,
+						status: 200,
+						json: () =>
+							Promise.resolve({
+								id: "ord",
+								status: "COMPLETED",
+								purchase_units: [
+									{
+										payments: {
+											captures: [{ id: "cap_pend", status: "COMPLETED" }],
+										},
+									},
+								],
+							}),
+					});
+				}
+				return Promise.resolve({
+					ok: true,
+					status: 200,
+					json: () => Promise.resolve({ id: "ref_pend", status: "PENDING" }),
+				});
+			});
+
+			const result = await provider.createRefund({
+				providerIntentId: "pp_order_pend",
+			});
+			expect(result.status).toBe("pending");
+			expect(result.providerMetadata?.paypalStatus).toBe("PENDING");
+		});
+
+		it("maps CANCELLED refund status to pending", async () => {
+			globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+				if (url.includes("/oauth2/token")) {
+					return Promise.resolve({
+						ok: true,
+						status: 200,
+						json: () =>
+							Promise.resolve({
+								access_token: "tok",
+								expires_in: 3600,
+							}),
+					});
+				}
+				if (url.includes("/checkout/orders/")) {
+					return Promise.resolve({
+						ok: true,
+						status: 200,
+						json: () =>
+							Promise.resolve({
+								id: "ord",
+								status: "COMPLETED",
+								purchase_units: [
+									{
+										payments: {
+											captures: [{ id: "cap_canc", status: "COMPLETED" }],
+										},
+									},
+								],
+							}),
+					});
+				}
+				return Promise.resolve({
+					ok: true,
+					status: 200,
+					json: () => Promise.resolve({ id: "ref_canc", status: "CANCELLED" }),
+				});
+			});
+
+			const result = await provider.createRefund({
+				providerIntentId: "pp_order_canc",
+			});
+			expect(result.status).toBe("pending");
+			expect(result.providerMetadata?.paypalStatus).toBe("CANCELLED");
 		});
 	});
 

@@ -26,6 +26,91 @@ describe("BraintreePaymentProvider", () => {
 		globalThis.fetch = originalFetch;
 	});
 
+	// ── constructor ──────────────────────────────────────────────────────
+
+	describe("constructor", () => {
+		it("uses sandbox URL when sandbox=true", async () => {
+			const sandboxProvider = new BraintreePaymentProvider(
+				"merchant_123",
+				"public_key",
+				"private_key",
+				true,
+			);
+			globalThis.fetch = mockFetchResponse({
+				transaction: {
+					id: "bt_sandbox_url",
+					status: "authorized",
+					amount: "10.00",
+					currencyIsoCode: "USD",
+				},
+			});
+			await sandboxProvider.createIntent({
+				amount: 1000,
+				currency: "USD",
+				metadata: { paymentMethodNonce: "nonce" },
+			});
+			expect(globalThis.fetch).toHaveBeenCalledWith(
+				expect.stringContaining("api.sandbox.braintreegateway.com"),
+				expect.anything(),
+			);
+		});
+
+		it("uses production URL when sandbox=false", async () => {
+			const prodProvider = new BraintreePaymentProvider(
+				"merchant_123",
+				"public_key",
+				"private_key",
+				false,
+			);
+			globalThis.fetch = mockFetchResponse({
+				transaction: {
+					id: "bt_prod_url",
+					status: "authorized",
+					amount: "10.00",
+					currencyIsoCode: "USD",
+				},
+			});
+			await prodProvider.createIntent({
+				amount: 1000,
+				currency: "USD",
+				metadata: { paymentMethodNonce: "nonce" },
+			});
+			expect(globalThis.fetch).toHaveBeenCalledWith(
+				expect.stringContaining("api.braintreegateway.com"),
+				expect.anything(),
+			);
+			expect(globalThis.fetch).not.toHaveBeenCalledWith(
+				expect.stringContaining("sandbox"),
+				expect.anything(),
+			);
+		});
+
+		it("defaults to production URL when sandbox is omitted", async () => {
+			const defaultProvider = new BraintreePaymentProvider(
+				"merchant_123",
+				"public_key",
+				"private_key",
+			);
+			globalThis.fetch = mockFetchResponse({
+				transaction: {
+					id: "bt_default_url",
+					status: "authorized",
+					amount: "10.00",
+					currencyIsoCode: "USD",
+				},
+			});
+			await defaultProvider.createIntent({
+				amount: 1000,
+				currency: "USD",
+				metadata: { paymentMethodNonce: "nonce" },
+			});
+			expect(globalThis.fetch).not.toHaveBeenCalledWith(
+				expect.stringContaining("sandbox"),
+				expect.anything(),
+			);
+		});
+	});
+
 	// ── createIntent ─────────────────────────────────────────────────────
 
 	describe("createIntent", () => {
@@ -276,6 +361,93 @@ describe("BraintreePaymentProvider", () => {
 				}),
 			).rejects.toThrow("Braintree error: Transaction failed");
 		});
+
+		it("maps settlement_declined to failed", async () => {
+			globalThis.fetch = mockFetchResponse({
+				transaction: {
+					id: "bt_sd",
+					status: "settlement_declined",
+					amount: "10.00",
+					currencyIsoCode: "USD",
+				},
+			});
+			const result = await provider.createIntent({
+				amount: 1000,
+				currency: "USD",
+				metadata: validMeta,
+			});
+			expect(result.status).toBe("failed");
+		});
+
+		it("maps settlement_confirmed to processing", async () => {
+			globalThis.fetch = mockFetchResponse({
+				transaction: {
+					id: "bt_sc",
+					status: "settlement_confirmed",
+					amount: "10.00",
+					currencyIsoCode: "USD",
+				},
+			});
+			const result = await provider.createIntent({
+				amount: 1000,
+				currency: "USD",
+				metadata: validMeta,
+			});
+			expect(result.status).toBe("processing");
+		});
+
+		it("maps settlement_pending to processing", async () => {
+			globalThis.fetch = mockFetchResponse({
+				transaction: {
+					id: "bt_sp",
+					status: "settlement_pending",
+					amount: "10.00",
+					currencyIsoCode: "USD",
+				},
+			});
+			const result = await provider.createIntent({
+				amount: 1000,
+				currency: "USD",
+				metadata: validMeta,
+			});
+			expect(result.status).toBe("processing");
+		});
+
+		it("includes Basic auth header in request", async () => {
+			globalThis.fetch = mockFetchResponse({
+				transaction: {
+					id: "bt_auth",
+					status: "authorized",
+					amount: "10.00",
+					currencyIsoCode: "USD",
+				},
+			});
+			await provider.createIntent({
+				amount: 1000,
+				currency: "USD",
+				metadata: validMeta,
+			});
+			const expectedAuth = `Basic ${btoa("public_key:private_key")}`;
+			expect(globalThis.fetch).toHaveBeenCalledWith(
+				expect.anything(),
+				expect.objectContaining({
+					headers: expect.objectContaining({
+						Authorization: expectedAuth,
+					}),
+				}),
+			);
+		});
+
+		it("throws with HTTP status when no apiErrorResponse message", async () => {
+			globalThis.fetch = mockFetchResponse({}, false, 500);
+			await expect(
+				provider.createIntent({
+					amount: 1000,
+					currency: "USD",
+					metadata: validMeta,
+				}),
+			).rejects.toThrow("Braintree error: HTTP 500");
+		});
 	});
 
 	// ── confirmIntent ────────────────────────────────────────────────────
@@ -302,6 +474,47 @@ describe("BraintreePaymentProvider", () => {
 				expect.objectContaining({ method: "POST" }),
 			);
 		});
+
+		it("maps settling to processing", async () => {
+			globalThis.fetch = mockFetchResponse({
+				transaction: {
+					id: "bt_confirm_settling",
+					status: "settling",
+					amount: "25.00",
+					currencyIsoCode: "USD",
+				},
+			});
+			const result = await provider.confirmIntent("bt_confirm_settling");
+			expect(result.status).toBe("processing");
+		});
+
+		it("maps settled to succeeded", async () => {
+			globalThis.fetch = mockFetchResponse({
+				transaction: {
+					id: "bt_confirm_settled",
+					status: "settled",
+					amount: "25.00",
+					currencyIsoCode: "USD",
+				},
+			});
+			const result = await provider.confirmIntent("bt_confirm_settled");
+			expect(result.status).toBe("succeeded");
+		});
+
+		it("includes braintreeStatus in providerMetadata", async () => {
+			globalThis.fetch = mockFetchResponse({
+				transaction: {
+					id: "bt_confirm_meta",
+					status: "submitted_for_settlement",
+					amount: "10.00",
+					currencyIsoCode: "USD",
+				},
+			});
+			const result = await provider.confirmIntent("bt_confirm_meta");
+			expect(result.providerMetadata?.braintreeStatus).toBe(
+				"submitted_for_settlement",
+			);
+		});
 	});
 
 	// ── cancelIntent ─────────────────────────────────────────────────────
@@ -323,6 +536,36 @@ describe("BraintreePaymentProvider", () => {
 			expect(globalThis.fetch).toHaveBeenCalledWith(
 				expect.stringContaining("/transactions/bt_txn_void/void"),
 				expect.objectContaining({ method: "POST" }),
+			);
+		});
+
+		it("maps voided status to cancelled explicitly", async () => {
+			globalThis.fetch = mockFetchResponse({
+				transaction: {
+					id: "bt_cancel_voided",
+					status: "voided",
+					amount: "30.00",
+					currencyIsoCode: "USD",
+				},
+			});
+			const result = await provider.cancelIntent("bt_cancel_voided");
+			expect(result.status).toBe("cancelled");
+			expect(result.providerMetadata?.braintreeStatus).toBe("voided");
+		});
+
+		it("calls void endpoint with correct path", async () => {
+			globalThis.fetch = mockFetchResponse({
+				transaction: {
+					id: "bt_cancel_path",
+					status: "voided",
+					amount: "15.00",
+					currencyIsoCode: "USD",
+				},
+			});
+			await provider.cancelIntent("bt_cancel_path");
+			expect(globalThis.fetch).toHaveBeenCalledWith(
+				expect.stringContaining("/transactions/bt_cancel_path/void"),
+				expect.anything(),
 			);
 		});
 	});
@@ -414,6 +657,70 @@ describe("BraintreePaymentProvider", () => {
 			});
 			const result = await provider.createRefund({
 				providerIntentId: "bt_txn_1",
+			});
+			expect(result.status).toBe("pending");
+		});
+
+		it("maps settling to succeeded for refund", async () => {
+			globalThis.fetch = mockFetchResponse({
+				transaction: {
+					id: "bt_ref_settling",
+					status: "settling",
+					amount: "10.00",
+					currencyIsoCode: "USD",
+				},
+			});
+			const result = await provider.createRefund({
+				providerIntentId: "bt_txn_settling",
+			});
+			expect(result.status).toBe("succeeded");
+		});
+
+		it("sends refund without amount when not provided (full refund)", async () => {
+			globalThis.fetch = mockFetchResponse({
+				transaction: {
+					id: "bt_ref_full",
+					status: "settled",
+					amount: "50.00",
+					currencyIsoCode: "USD",
+				},
+			});
+			await provider.createRefund({
+				providerIntentId: "bt_txn_full",
+			});
+			const body = JSON.parse(
+				(globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body,
+			);
+			expect(body.refund).toEqual({});
+			expect(body.refund.amount).toBeUndefined();
+		});
+
+		it("includes braintreeStatus in refund providerMetadata", async () => {
+			globalThis.fetch = mockFetchResponse({
+				transaction: {
+					id: "bt_ref_meta",
+					status: "settled",
+					amount: "10.00",
+					currencyIsoCode: "USD",
+				},
+			});
+			const result = await provider.createRefund({
+				providerIntentId: "bt_txn_meta",
+			});
+			expect(result.providerMetadata?.braintreeStatus).toBe("settled");
+		});
+
+		it("maps authorized status to pending for refund", async () => {
+			globalThis.fetch = mockFetchResponse({
+				transaction: {
+					id: "bt_ref_auth",
+					status: "authorized",
+					amount: "10.00",
+					currencyIsoCode: "USD",
+				},
+			});
+			const result = await provider.createRefund({
+				providerIntentId: "bt_txn_auth",
 			});
 			expect(result.status).toBe("pending");
 		});

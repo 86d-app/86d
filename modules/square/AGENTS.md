@@ -2,39 +2,79 @@
 
 Square payment provider implementing the `PaymentProvider` interface from `@86d-app/payments`.
 
-## Usage
+## Structure
+
+```
+src/
+  index.ts              Factory: square(options) => Module + admin nav
+  provider.ts           SquarePaymentProvider class (Bearer token auth)
+  mdx.d.ts              MDX module type declaration
+  store/
+    endpoints/
+      index.ts          Store endpoint exports
+      webhook.ts        POST /square/webhook — HMAC-SHA256 signature verification
+  admin/
+    endpoints/
+      index.ts          Admin endpoint exports
+      get-settings.ts   GET /admin/square/settings — masked credentials
+    components/
+      index.tsx         Component exports
+      square-admin.tsx  "use client" admin dashboard
+      square-admin.mdx  Admin page template
+  __tests__/
+    provider.test.ts          23 tests (payment lifecycle, status mapping, idempotency)
+    webhook.test.ts           13 tests (signature verification, event handling)
+    endpoint-security.test.ts 25 tests (payload safety, provider auth, idempotency keys)
+    admin-settings.test.ts    18 tests (key masking, webhook config, URL handling)
+    module-factory.test.ts    11 tests (module identity, options, admin pages, endpoints)
+```
+
+## Options
 
 ```ts
-import { SquarePaymentProvider } from "@86d-app/square";
-import payments from "@86d-app/payments";
-
-const provider = new SquarePaymentProvider("your-access-token");
-const paymentsModule = payments({ currency: "USD", provider });
+SquareOptions {
+  accessToken: string              // Square access token
+  webhookSignatureKey?: string     // HMAC key for webhook verification
+  webhookNotificationUrl?: string  // URL for signature verification
+}
 ```
 
 ## API Mapping
 
-| PaymentProvider method | Square API endpoint |
+| Method | Square endpoint |
 |---|---|
-| `createIntent` | `POST /v2/payments` (autocomplete: false) |
-| `confirmIntent` | `POST /v2/payments/{id}/complete` |
-| `cancelIntent` | `POST /v2/payments/{id}/cancel` |
-| `createRefund` | `POST /v2/refunds` |
+| createIntent | POST /v2/payments (autocomplete: false, source_id: EXTERNAL) |
+| confirmIntent | POST /v2/payments/{id}/complete |
+| cancelIntent | POST /v2/payments/{id}/cancel |
+| createRefund | POST /v2/refunds |
 
-## Status Mapping
+## Status mapping
 
 | Square status | Provider status |
 |---|---|
-| `COMPLETED` | `succeeded` |
-| `CANCELED` | `cancelled` |
-| `FAILED` | `failed` |
-| `APPROVED`, `PENDING` | `pending` |
+| COMPLETED | succeeded |
+| CANCELED | cancelled |
+| FAILED | failed |
+| APPROVED, PENDING | pending |
+
+| Refund status | Provider status |
+|---|---|
+| COMPLETED | succeeded |
+| FAILED, REJECTED | failed |
+| PENDING | pending |
 
 ## Webhook
 
-`POST /square/webhook` — receives Square webhook events. Returns `{ received: true, type }`.
+- HMAC-SHA256 signature verification (when key + URL provided)
+- Timing-safe comparison prevents timing attacks
+- Event map: `payment.completed`, `payment.failed`, `payment.canceled`
+- Refund events: `refund.completed`, `refund.updated`
+- Domain events: `payment.completed`, `payment.failed`, `payment.refunded`
 
-## Tests
+## Patterns
 
-Tests mock global `fetch` via `vi.stubGlobal`. No real Square API calls are made.
-Run: `bun test` from this directory.
+- Every createIntent/createRefund generates unique idempotency_key via crypto.randomUUID()
+- Amounts stay in cents (matches Square API)
+- Square-Version header: 2024-01-18
+- Admin endpoint masks tokens (first 7 chars visible)
+- Tests mock `globalThis.fetch` — no real Square calls
