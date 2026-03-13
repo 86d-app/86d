@@ -1,5 +1,5 @@
 import { createStoreEndpoint, z } from "@86d-app/core";
-import type { ReviewController } from "../../service";
+import type { ReviewController, ReviewSortBy } from "../../service";
 
 export const listProductReviews = createStoreEndpoint(
 	"/reviews/products/:productId",
@@ -9,6 +9,9 @@ export const listProductReviews = createStoreEndpoint(
 		query: z.object({
 			take: z.coerce.number().int().min(1).max(100).optional(),
 			skip: z.coerce.number().int().min(0).optional(),
+			sortBy: z
+				.enum(["recent", "oldest", "highest", "lowest", "helpful"])
+				.optional(),
 		}),
 	},
 	async (ctx) => {
@@ -18,6 +21,7 @@ export const listProductReviews = createStoreEndpoint(
 				approvedOnly: true,
 				take: ctx.query.take ?? 20,
 				skip: ctx.query.skip ?? 0,
+				sortBy: (ctx.query.sortBy as ReviewSortBy | undefined) ?? "recent",
 			}),
 			controller.getProductRatingSummary(ctx.params.productId),
 		]);

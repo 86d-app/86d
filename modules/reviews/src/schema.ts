@@ -18,6 +18,7 @@ export const reviewsSchema = {
 				defaultValue: false,
 			},
 			helpfulCount: { type: "number", required: true, defaultValue: 0 },
+			images: { type: "json", required: false },
 			merchantResponse: { type: "string", required: false },
 			merchantResponseAt: { type: "date", required: false },
 			moderationNote: { type: "string", required: false },
@@ -31,6 +32,33 @@ export const reviewsSchema = {
 				required: true,
 				defaultValue: () => new Date(),
 				onUpdate: () => new Date(),
+			},
+		},
+	},
+	reviewVote: {
+		fields: {
+			id: { type: "string", required: true },
+			reviewId: { type: "string", required: true },
+			voterId: { type: "string", required: true },
+			createdAt: {
+				type: "date",
+				required: true,
+				defaultValue: () => new Date(),
+			},
+		},
+	},
+	reviewReport: {
+		fields: {
+			id: { type: "string", required: true },
+			reviewId: { type: "string", required: true },
+			reporterId: { type: "string", required: false },
+			reason: { type: "string", required: true },
+			details: { type: "string", required: false },
+			status: { type: "string", required: true, defaultValue: "pending" },
+			createdAt: {
+				type: "date",
+				required: true,
+				defaultValue: () => new Date(),
 			},
 		},
 	},

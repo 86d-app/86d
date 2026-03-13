@@ -6,12 +6,17 @@ import { storeEndpoints } from "./store/endpoints";
 
 export type {
 	RatingSummary,
+	ReportStatus,
 	Review,
 	ReviewAnalytics,
 	ReviewController,
+	ReviewImage,
+	ReviewReport,
 	ReviewRequest,
 	ReviewRequestStats,
+	ReviewSortBy,
 	ReviewStatus,
+	ReviewVote,
 } from "./service";
 
 export interface ReviewsOptions extends ModuleConfig {
@@ -22,7 +27,7 @@ export interface ReviewsOptions extends ModuleConfig {
 export default function reviews(options?: ReviewsOptions): Module {
 	return {
 		id: "reviews",
-		version: "0.0.1",
+		version: "0.0.2",
 		schema: reviewsSchema,
 		exports: {
 			read: ["productRating", "reviewCount"],
@@ -34,6 +39,7 @@ export default function reviews(options?: ReviewsOptions): Module {
 				"review.rejected",
 				"review.responded",
 				"review.requested",
+				"review.reported",
 			],
 		},
 		init: async (ctx: ModuleContext) => {

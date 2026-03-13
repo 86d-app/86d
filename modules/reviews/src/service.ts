@@ -1,6 +1,18 @@
 import type { ModuleController } from "@86d-app/core";
 
 export type ReviewStatus = "pending" | "approved" | "rejected";
+export type ReportStatus = "pending" | "resolved" | "dismissed";
+export type ReviewSortBy =
+	| "recent"
+	| "oldest"
+	| "highest"
+	| "lowest"
+	| "helpful";
+
+export interface ReviewImage {
+	url: string;
+	caption?: string | undefined;
+}
 
 export interface Review {
 	id: string;
@@ -14,6 +26,7 @@ export interface Review {
 	status: ReviewStatus;
 	isVerifiedPurchase: boolean;
 	helpfulCount: number;
+	images?: ReviewImage[] | undefined;
 	merchantResponse?: string | undefined;
 	merchantResponseAt?: Date | undefined;
 	moderationNote?: string | undefined;
@@ -27,6 +40,23 @@ export interface RatingSummary {
 	distribution: Record<string, number>;
 }
 
+export interface ReviewVote {
+	id: string;
+	reviewId: string;
+	voterId: string;
+	createdAt: Date;
+}
+
+export interface ReviewReport {
+	id: string;
+	reviewId: string;
+	reporterId?: string | undefined;
+	reason: string;
+	details?: string | undefined;
+	status: ReportStatus;
+	createdAt: Date;
+}
+
 export interface ReviewController extends ModuleController {
 	createReview(params: {
 		productId: string;
@@ -37,6 +67,7 @@ export interface ReviewController extends ModuleController {
 		body: string;
 		customerId?: string | undefined;
 		isVerifiedPurchase?: boolean | undefined;
+		images?: ReviewImage[] | undefined;
 	}): Promise<Review>;
 
 	getReview(id: string): Promise<Review | null>;
@@ -47,6 +78,7 @@ export interface ReviewController extends ModuleController {
 			approvedOnly?: boolean | undefined;
 			take?: number | undefined;
 			skip?: number | undefined;
+			sortBy?: ReviewSortBy | undefined;
 		},
 	): Promise<Review[]>;
 
@@ -70,6 +102,11 @@ export interface ReviewController extends ModuleController {
 	addMerchantResponse(id: string, response: string): Promise<Review | null>;
 
 	markHelpful(id: string): Promise<Review | null>;
+
+	voteHelpful(
+		reviewId: string,
+		voterId: string,
+	): Promise<{ review: Review; alreadyVoted: boolean } | null>;
 
 	getReviewAnalytics(): Promise<ReviewAnalytics>;
 
@@ -98,6 +135,29 @@ export interface ReviewController extends ModuleController {
 			skip?: number | undefined;
 		},
 	): Promise<{ reviews: Review[]; total: number }>;
+
+	hasReviewedProduct(customerId: string, productId: string): Promise<boolean>;
+
+	reportReview(params: {
+		reviewId: string;
+		reporterId?: string | undefined;
+		reason: string;
+		details?: string | undefined;
+	}): Promise<ReviewReport>;
+
+	listReports(params?: {
+		status?: ReportStatus | undefined;
+		reviewId?: string | undefined;
+		take?: number | undefined;
+		skip?: number | undefined;
+	}): Promise<ReviewReport[]>;
+
+	updateReportStatus(
+		id: string,
+		status: ReportStatus,
+	): Promise<ReviewReport | null>;
+
+	getReportCount(reviewId: string): Promise<number>;
 }
 
 export interface ReviewAnalytics {
@@ -108,6 +168,7 @@ export interface ReviewAnalytics {
 	averageRating: number;
 	ratingsDistribution: Record<string, number>;
 	withMerchantResponse: number;
+	reportedCount: number;
 }
 
 export interface ReviewRequest {

@@ -20,7 +20,7 @@ export const listMyReviews = createStoreEndpoint(
 		const { page, limit, status } = ctx.query;
 		const skip = (page - 1) * limit;
 
-		const controller = ctx.context.controllers.review as ReviewController;
+		const controller = ctx.context.controllers.reviews as ReviewController;
 		const { reviews, total } = await controller.listReviewsByCustomer(userId, {
 			status: status as ReviewStatus | undefined,
 			take: limit,

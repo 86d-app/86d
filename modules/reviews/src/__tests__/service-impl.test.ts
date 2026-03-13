@@ -1333,7 +1333,7 @@ describe("reviews module factory", () => {
 	it("returns a module with correct id and version", () => {
 		const mod = reviewsModule();
 		expect(mod.id).toBe("reviews");
-		expect(mod.version).toBe("0.0.1");
+		expect(mod.version).toBe("0.0.2");
 	});
 
 	it("exports the reviews schema", () => {

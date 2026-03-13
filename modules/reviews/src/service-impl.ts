@@ -2,9 +2,34 @@ import type { ModuleDataService } from "@86d-app/core";
 import type {
 	Review,
 	ReviewController,
+	ReviewReport,
 	ReviewRequest,
+	ReviewSortBy,
 	ReviewStatus,
+	ReviewVote,
 } from "./service";
+
+function sortReviews(reviews: Review[], sortBy: ReviewSortBy): Review[] {
+	const sorted = [...reviews];
+	switch (sortBy) {
+		case "recent":
+			return sorted.sort(
+				(a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+			);
+		case "oldest":
+			return sorted.sort(
+				(a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
+			);
+		case "highest":
+			return sorted.sort((a, b) => b.rating - a.rating);
+		case "lowest":
+			return sorted.sort((a, b) => a.rating - b.rating);
+		case "helpful":
+			return sorted.sort((a, b) => b.helpfulCount - a.helpfulCount);
+		default:
+			return sorted;
+	}
+}
 
 export function createReviewController(
 	data: ModuleDataService,
@@ -28,6 +53,9 @@ export function createReviewController(
 				status,
 				isVerifiedPurchase: params.isVerifiedPurchase ?? false,
 				helpfulCount: 0,
+				...(params.images && params.images.length > 0
+					? { images: params.images }
+					: {}),
 				createdAt: now,
 				updatedAt: now,
 			};
@@ -49,10 +77,23 @@ export function createReviewController(
 
 			const all = await data.findMany("review", {
 				where,
-				...(params?.take !== undefined ? { take: params.take } : {}),
-				...(params?.skip !== undefined ? { skip: params.skip } : {}),
 			});
-			return all as unknown as Review[];
+			let reviews = all as unknown as Review[];
+
+			if (params?.sortBy) {
+				reviews = sortReviews(reviews, params.sortBy);
+			}
+
+			const skip = params?.skip ?? 0;
+			const take = params?.take;
+			if (skip > 0 || take !== undefined) {
+				reviews = reviews.slice(
+					skip,
+					take !== undefined ? skip + take : undefined,
+				);
+			}
+
+			return reviews;
 		},
 
 		async listReviews(params) {
@@ -120,6 +161,45 @@ export function createReviewController(
 			return updated;
 		},
 
+		async voteHelpful(reviewId, voterId) {
+			const existing = await data.get("review", reviewId);
+			if (!existing) return null;
+			const review = existing as unknown as Review;
+
+			// Check if voter already voted
+			const existingVotes = await data.findMany("reviewVote", {
+				where: { reviewId, voterId },
+				take: 1,
+			});
+			const votes = existingVotes as unknown as ReviewVote[];
+
+			if (votes.length > 0) {
+				return { review, alreadyVoted: true };
+			}
+
+			// Record the vote
+			const voteId = crypto.randomUUID();
+			const vote: ReviewVote = {
+				id: voteId,
+				reviewId,
+				voterId,
+				createdAt: new Date(),
+			};
+			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+			await data.upsert("reviewVote", voteId, vote as Record<string, any>);
+
+			// Increment helpful count
+			const updated: Review = {
+				...review,
+				helpfulCount: review.helpfulCount + 1,
+				updatedAt: new Date(),
+			};
+			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+			await data.upsert("review", reviewId, updated as Record<string, any>);
+
+			return { review: updated, alreadyVoted: false };
+		},
+
 		async getReviewAnalytics() {
 			const all = await data.findMany("review", {});
 			const reviews = all as unknown as Review[];
@@ -150,6 +230,13 @@ export function createReviewController(
 				if (r.merchantResponse) withMerchantResponse++;
 			}
 
+			// Count reported reviews
+			const allReports = await data.findMany("reviewReport", {
+				where: { status: "pending" },
+			});
+			const reports = allReports as unknown as ReviewReport[];
+			const reportedReviewIds = new Set(reports.map((r) => r.reviewId));
+
 			return {
 				totalReviews: reviews.length,
 				pendingCount,
@@ -161,6 +248,7 @@ export function createReviewController(
 						: 0,
 				ratingsDistribution: distribution,
 				withMerchantResponse,
+				reportedCount: reportedReviewIds.size,
 			};
 		},
 
@@ -248,6 +336,66 @@ export function createReviewController(
 			);
 
 			return { reviews: filtered, total: reviews.length };
+		},
+
+		async hasReviewedProduct(customerId, productId) {
+			const all = await data.findMany("review", {
+				where: { customerId, productId },
+				take: 1,
+			});
+			const reviews = all as unknown as Review[];
+			return reviews.length > 0;
+		},
+
+		async reportReview(params) {
+			const id = crypto.randomUUID();
+			const report: ReviewReport = {
+				id,
+				reviewId: params.reviewId,
+				reporterId: params.reporterId,
+				reason: params.reason,
+				details: params.details,
+				status: "pending",
+				createdAt: new Date(),
+			};
+			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+			await data.upsert("reviewReport", id, report as Record<string, any>);
+			return report;
+		},
+
+		async listReports(params) {
+			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
+			const where: Record<string, any> = {};
+			if (params?.status) where.status = params.status;
+			if (params?.reviewId) where.reviewId = params.reviewId;
+
+			const all = await data.findMany("reviewReport", {
+				...(Object.keys(where).length > 0 ? { where } : {}),
+				...(params?.take !== undefined ? { take: params.take } : {}),
+				...(params?.skip !== undefined ? { skip: params.skip } : {}),
+			});
+			return all as unknown as ReviewReport[];
+		},
+
+		async updateReportStatus(id, status) {
+			const existing = await data.get("reviewReport", id);
+			if (!existing) return null;
+			const report = existing as unknown as ReviewReport;
+			const updated: ReviewReport = {
+				...report,
+				status,
+			};
+			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+			await data.upsert("reviewReport", id, updated as Record<string, any>);
+			return updated;
+		},
+
+		async getReportCount(reviewId) {
+			const all = await data.findMany("reviewReport", {
+				where: { reviewId, status: "pending" },
+			});
+			const reports = all as unknown as ReviewReport[];
+			return reports.length;
 		},
 
 		async getReviewRequestStats() {
