@@ -355,10 +355,10 @@ export function createGiftCardController(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert(
 				"giftCard",
 				params.giftCardId,
+				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 				updatedCard as Record<string, any>,
 			);
 

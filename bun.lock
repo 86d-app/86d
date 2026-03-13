@@ -722,6 +722,20 @@
         "vitest": "catalog:vite",
       },
     },
+    "modules/order-notes": {
+      "name": "@86d-app/order-notes",
+      "version": "0.0.1",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
     "modules/orders": {
       "name": "@86d-app/orders",
       "version": "0.0.4",
@@ -947,6 +961,20 @@
     "modules/reviews": {
       "name": "@86d-app/reviews",
       "version": "0.0.4",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
+    "modules/saved-addresses": {
+      "name": "@86d-app/saved-addresses",
+      "version": "0.0.1",
       "dependencies": {
         "@86d-app/core": "workspace:*",
       },
@@ -1515,6 +1543,8 @@
 
     "@86d-app/notifications": ["@86d-app/notifications@workspace:modules/notifications"],
 
+    "@86d-app/order-notes": ["@86d-app/order-notes@workspace:modules/order-notes"],
+
     "@86d-app/orders": ["@86d-app/orders@workspace:modules/orders"],
 
     "@86d-app/pages": ["@86d-app/pages@workspace:modules/pages"],
@@ -1552,6 +1582,8 @@
     "@86d-app/reviews": ["@86d-app/reviews@workspace:modules/reviews"],
 
     "@86d-app/runtime": ["@86d-app/runtime@workspace:packages/runtime"],
+
+    "@86d-app/saved-addresses": ["@86d-app/saved-addresses@workspace:modules/saved-addresses"],
 
     "@86d-app/sdk": ["@86d-app/sdk@workspace:packages/sdk"],
 
