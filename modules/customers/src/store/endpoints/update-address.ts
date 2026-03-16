@@ -22,7 +22,14 @@ export const updateAddress = createStoreEndpoint(
 			state: z.string().min(1).max(200).transform(sanitizeText).optional(),
 			postalCode: z.string().min(1).max(20).optional(),
 			country: z.string().length(2).optional(),
-			phone: z.string().max(50).nullable().optional(),
+			phone: z
+				.string()
+				.max(50)
+				.nullable()
+				.optional()
+				.transform((s) =>
+					s === undefined ? undefined : s === null ? null : sanitizeText(s),
+				),
 			isDefault: z.boolean().optional(),
 		}),
 	},

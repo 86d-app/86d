@@ -6,7 +6,7 @@ export const submitClaim = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			warrantyRegistrationId: z.string(),
+			warrantyRegistrationId: z.string().max(200),
 			issueType: z.enum([
 				"defect",
 				"malfunction",

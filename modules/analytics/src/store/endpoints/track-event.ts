@@ -8,7 +8,6 @@ export const trackEventEndpoint = createStoreEndpoint(
 		body: z.object({
 			type: z.string().min(1).max(100).transform(sanitizeText),
 			sessionId: z.string().max(200).optional(),
-			customerId: z.string().max(200).optional(),
 			productId: z.string().max(200).optional(),
 			orderId: z.string().max(200).optional(),
 			value: z.number().optional(),
@@ -22,10 +21,11 @@ export const trackEventEndpoint = createStoreEndpoint(
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers.analytics as AnalyticsController;
+		const customerId = ctx.context.session?.user.id;
 		const event = await controller.track({
 			type: ctx.body.type,
-			sessionId: ctx.body.sessionId,
-			customerId: ctx.body.customerId,
+			sessionId: !customerId ? ctx.body.sessionId : undefined,
+			customerId,
 			productId: ctx.body.productId,
 			orderId: ctx.body.orderId,
 			value: ctx.body.value,

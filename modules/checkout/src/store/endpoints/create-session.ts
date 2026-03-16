@@ -11,7 +11,11 @@ const addressSchema = z.object({
 	state: z.string().min(1).max(200).transform(sanitizeText),
 	postalCode: z.string().min(1).max(20),
 	country: z.string().length(2),
-	phone: z.string().max(50).optional(),
+	phone: z
+		.string()
+		.max(50)
+		.optional()
+		.transform((s) => (s === undefined ? undefined : sanitizeText(s))),
 });
 
 export const createSession = createStoreEndpoint(
@@ -32,7 +36,13 @@ export const createSession = createStoreEndpoint(
 						productId: z.string().max(200),
 						variantId: z.string().max(200).optional(),
 						name: z.string().min(1).max(500).transform(sanitizeText),
-						sku: z.string().max(100).optional(),
+						sku: z
+							.string()
+							.max(100)
+							.optional()
+							.transform((s) =>
+								s === undefined ? undefined : sanitizeText(s),
+							),
 						price: z.number().int().positive(),
 						quantity: z.number().int().positive(),
 					}),

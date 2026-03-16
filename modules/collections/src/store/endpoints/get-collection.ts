@@ -6,7 +6,7 @@ export const getCollection = createStoreEndpoint(
 	{
 		method: "GET",
 		params: z.object({
-			slug: z.string(),
+			slug: z.string().max(200),
 		}),
 	},
 	async (ctx) => {

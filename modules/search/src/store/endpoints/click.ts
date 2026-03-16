@@ -8,7 +8,7 @@ export const clickEndpoint = createStoreEndpoint(
 		body: z.object({
 			queryId: z.string().min(1).max(200),
 			term: z.string().min(1).max(500).transform(sanitizeText),
-			entityType: z.string().min(1).max(100),
+			entityType: z.string().min(1).max(100).transform(sanitizeText),
 			entityId: z.string().min(1).max(200),
 			position: z.number().int().min(0).max(1000),
 		}),

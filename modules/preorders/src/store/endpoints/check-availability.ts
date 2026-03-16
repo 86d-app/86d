@@ -6,10 +6,10 @@ export const checkAvailability = createStoreEndpoint(
 	{
 		method: "GET",
 		params: z.object({
-			productId: z.string(),
+			productId: z.string().max(200),
 		}),
 		query: z.object({
-			variantId: z.string().optional(),
+			variantId: z.string().max(200).optional(),
 		}),
 	},
 	async (ctx) => {

@@ -6,7 +6,7 @@ export const submitQuoteEndpoint = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			quoteId: z.string(),
+			quoteId: z.string().max(200),
 		}),
 	},
 	async (ctx) => {

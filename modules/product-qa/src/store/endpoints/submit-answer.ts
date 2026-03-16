@@ -10,7 +10,7 @@ export const submitAnswer = createStoreEndpoint(
 		}),
 		body: z.object({
 			authorName: z.string().max(200).transform(sanitizeText),
-			authorEmail: z.string().email(),
+			authorEmail: z.string().email().max(320),
 			body: z.string().max(5000).transform(sanitizeText),
 		}),
 	},
@@ -24,11 +24,16 @@ export const submitAnswer = createStoreEndpoint(
 		}
 
 		const customerId = ctx.context.session?.user.id;
+		// Use session email when authenticated to prevent spoofing
+		const authorEmail = customerId
+			? (ctx.context.session?.user.email ?? ctx.body.authorEmail)
+			: ctx.body.authorEmail;
+
 		const answer = await controller.createAnswer({
 			questionId: ctx.params.questionId,
 			productId: question.productId,
 			authorName: ctx.body.authorName,
-			authorEmail: ctx.body.authorEmail,
+			authorEmail,
 			body: ctx.body.body,
 			customerId,
 		});

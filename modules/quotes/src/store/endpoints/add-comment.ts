@@ -6,7 +6,7 @@ export const addCommentEndpoint = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			quoteId: z.string(),
+			quoteId: z.string().max(200),
 			authorName: z.string().min(1).max(200).transform(sanitizeText),
 			message: z.string().min(1).max(2000).transform(sanitizeText),
 		}),

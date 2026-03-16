@@ -8,8 +8,12 @@ export const trackEvent = createStoreEndpoint(
 		body: z.object({
 			productId: z.string().min(1).max(200),
 			productName: z.string().min(1).max(500).transform(sanitizeText),
-			productSlug: z.string().min(1).max(500),
-			productImage: z.string().max(2000).optional(),
+			productSlug: z.string().min(1).max(500).transform(sanitizeText),
+			productImage: z
+				.string()
+				.max(2000)
+				.optional()
+				.transform((s) => (s === undefined ? undefined : sanitizeText(s))),
 			eventType: z.enum(["purchase", "view", "cart_add", "wishlist_add"]),
 			region: z.string().max(200).transform(sanitizeText).optional(),
 			country: z.string().max(100).transform(sanitizeText).optional(),

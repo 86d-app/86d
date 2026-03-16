@@ -1,4 +1,4 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
+import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { DiscountController } from "../../service";
 
 export const validateCode = createStoreEndpoint(
@@ -6,7 +6,7 @@ export const validateCode = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			code: z.string().min(1).max(50),
+			code: z.string().min(1).max(50).transform(sanitizeText),
 			subtotal: z.number().int().nonnegative(),
 			productIds: z.array(z.string().max(200)).max(100).optional(),
 			categoryIds: z.array(z.string().max(200)).max(100).optional(),

@@ -6,12 +6,12 @@ export const purchaseItem = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			registryId: z.string(),
-			registryItemId: z.string(),
+			registryId: z.string().max(200),
+			registryItemId: z.string().max(200),
 			purchaserName: z.string().min(1).max(200).transform(sanitizeText),
 			quantity: z.number().int().min(1).max(100),
 			amountInCents: z.number().int().min(1),
-			orderId: z.string().optional(),
+			orderId: z.string().max(200).optional(),
 			giftMessage: z.string().max(1000).transform(sanitizeText).optional(),
 			isAnonymous: z.boolean().optional(),
 		}),

@@ -6,7 +6,7 @@ export const unwatchAuction = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			auctionId: z.string(),
+			auctionId: z.string().max(200),
 		}),
 	},
 	async (ctx) => {

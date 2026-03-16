@@ -8,7 +8,7 @@ export const createIntent = createStoreEndpoint(
 		body: z.object({
 			amount: z.number().int().positive(),
 			currency: z.string().max(3).optional(),
-			email: z.string().email().optional(),
+			email: z.string().email().max(320).optional(),
 			orderId: z.string().max(200).optional(),
 			checkoutSessionId: z.string().max(200).optional(),
 			metadata: z
@@ -27,10 +27,12 @@ export const createIntent = createStoreEndpoint(
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers.payments as PaymentController;
+		// Use session email when authenticated to prevent spoofing
+		const email = ctx.context.session?.user.email ?? ctx.body.email;
 		const intent = await controller.createIntent({
 			amount: ctx.body.amount,
 			currency: ctx.body.currency,
-			email: ctx.body.email,
+			email,
 			orderId: ctx.body.orderId,
 			checkoutSessionId: ctx.body.checkoutSessionId,
 			metadata: ctx.body.metadata,

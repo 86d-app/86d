@@ -6,8 +6,8 @@ export const listPostsEndpoint = createStoreEndpoint(
 	{
 		method: "GET",
 		query: z.object({
-			category: z.string().optional(),
-			tag: z.string().optional(),
+			category: z.string().max(200).optional(),
+			tag: z.string().max(200).optional(),
 			page: z.coerce.number().int().min(1).optional(),
 			limit: z.coerce.number().int().min(1).max(100).optional(),
 		}),

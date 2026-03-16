@@ -1,4 +1,4 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
+import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { FaqController } from "../../service";
 
 export const searchFaqs = createStoreEndpoint(
@@ -6,7 +6,7 @@ export const searchFaqs = createStoreEndpoint(
 	{
 		method: "GET",
 		query: z.object({
-			q: z.string().max(500),
+			q: z.string().max(500).transform(sanitizeText),
 			categoryId: z.string().max(200).optional(),
 			limit: z.string().max(5).optional(),
 		}),

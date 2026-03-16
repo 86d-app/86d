@@ -6,8 +6,8 @@ export const updateItemEndpoint = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			quoteId: z.string(),
-			itemId: z.string(),
+			quoteId: z.string().max(200),
+			itemId: z.string().max(200),
 			quantity: z.number().int().min(1).optional(),
 			unitPrice: z.number().min(0).optional(),
 			notes: z.string().max(1000).transform(sanitizeText).optional(),

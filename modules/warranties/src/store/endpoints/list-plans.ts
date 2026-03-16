@@ -6,7 +6,7 @@ export const listAvailablePlans = createStoreEndpoint(
 	{
 		method: "GET",
 		query: z.object({
-			productId: z.string().optional(),
+			productId: z.string().max(200).optional(),
 		}),
 	},
 	async (ctx) => {

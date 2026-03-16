@@ -1,4 +1,4 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
+import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { SearchController, SearchSortField } from "../../service";
 
 const sortFields = [
@@ -14,14 +14,14 @@ export const searchEndpoint = createStoreEndpoint(
 	{
 		method: "GET",
 		query: z.object({
-			q: z.string().min(1).max(500),
-			type: z.string().optional(),
-			tags: z.string().optional(),
+			q: z.string().min(1).max(500).transform(sanitizeText),
+			type: z.string().max(100).optional(),
+			tags: z.string().max(2000).optional(),
 			sort: z.enum(sortFields).optional(),
 			fuzzy: z.coerce.boolean().optional(),
 			limit: z.coerce.number().int().min(1).max(100).optional(),
 			skip: z.coerce.number().int().min(0).optional(),
-			sessionId: z.string().optional(),
+			sessionId: z.string().max(200).optional(),
 		}),
 	},
 	async (ctx) => {

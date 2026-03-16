@@ -13,7 +13,7 @@ export const submitReview = createStoreEndpoint(
 		body: z.object({
 			productId: z.string().max(200),
 			authorName: z.string().max(200).transform(sanitizeText),
-			authorEmail: z.string().email(),
+			authorEmail: z.string().email().max(320),
 			rating: z.number().int().min(1).max(5),
 			title: z.string().max(500).transform(sanitizeText).optional(),
 			body: z.string().max(10000).transform(sanitizeText),
@@ -38,10 +38,15 @@ export const submitReview = createStoreEndpoint(
 			}
 		}
 
+		// Use session email when authenticated to prevent spoofing
+		const authorEmail = customerId
+			? (ctx.context.session?.user.email ?? ctx.body.authorEmail)
+			: ctx.body.authorEmail;
+
 		const review = await controller.createReview({
 			productId: ctx.body.productId,
 			authorName: ctx.body.authorName,
-			authorEmail: ctx.body.authorEmail,
+			authorEmail,
 			rating: ctx.body.rating,
 			title: ctx.body.title,
 			body: ctx.body.body,

@@ -5,10 +5,18 @@ const cartItemSchema = z.object({
 	productId: z.string().min(1).max(200),
 	variantId: z.string().max(200).optional(),
 	name: z.string().min(1).max(200).transform(sanitizeText),
-	sku: z.string().max(100).optional(),
+	sku: z
+		.string()
+		.max(100)
+		.optional()
+		.transform((s) => (s === undefined ? undefined : sanitizeText(s))),
 	price: z.number().min(0),
 	quantity: z.number().int().min(1),
-	imageUrl: z.string().max(2000).optional(),
+	imageUrl: z
+		.string()
+		.max(2000)
+		.optional()
+		.transform((s) => (s === undefined ? undefined : sanitizeText(s))),
 });
 
 export const trackAbandoned = createStoreEndpoint(

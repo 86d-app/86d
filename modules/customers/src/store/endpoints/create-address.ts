@@ -16,7 +16,11 @@ export const createAddress = createStoreEndpoint(
 			state: z.string().min(1).max(200).transform(sanitizeText),
 			postalCode: z.string().min(1).max(20),
 			country: z.string().length(2),
-			phone: z.string().max(50).optional(),
+			phone: z
+				.string()
+				.max(50)
+				.optional()
+				.transform((s) => (s === undefined ? undefined : sanitizeText(s))),
 			isDefault: z.boolean().optional(),
 		}),
 	},

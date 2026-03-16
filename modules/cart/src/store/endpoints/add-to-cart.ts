@@ -33,7 +33,8 @@ export const addToCart = createStoreEndpoint(
 				.optional()
 				.transform((s) => (s === undefined ? undefined : sanitizeText(s))),
 			variantOptions: z
-				.record(z.string(), z.string())
+				.record(z.string().max(100), z.string().max(500))
+				.refine((r) => Object.keys(r).length <= 50, "Too many variant options")
 				.optional()
 				.transform((rec) => {
 					if (!rec) return undefined;

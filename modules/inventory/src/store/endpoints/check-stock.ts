@@ -6,9 +6,9 @@ export const checkStock = createStoreEndpoint(
 	{
 		method: "GET",
 		query: z.object({
-			productId: z.string(),
-			variantId: z.string().optional(),
-			locationId: z.string().optional(),
+			productId: z.string().max(200),
+			variantId: z.string().max(200).optional(),
+			locationId: z.string().max(200).optional(),
 			quantity: z.coerce.number().int().min(1).optional(),
 		}),
 	},

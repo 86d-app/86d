@@ -6,7 +6,7 @@ export const listProductQuestions = createStoreEndpoint(
 	{
 		method: "GET",
 		params: z.object({
-			productId: z.string(),
+			productId: z.string().max(200),
 		}),
 		query: z.object({
 			take: z.coerce.number().int().min(1).max(100).optional(),

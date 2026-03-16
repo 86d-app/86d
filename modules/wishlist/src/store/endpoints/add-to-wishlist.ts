@@ -8,7 +8,11 @@ export const addToWishlist = createStoreEndpoint(
 		body: z.object({
 			productId: z.string().max(200),
 			productName: z.string().max(500).transform(sanitizeText),
-			productImage: z.string().max(2000).optional(),
+			productImage: z
+				.string()
+				.max(2000)
+				.optional()
+				.transform((s) => (s === undefined ? undefined : sanitizeText(s))),
 			note: z.string().max(1000).transform(sanitizeText).optional(),
 		}),
 	},

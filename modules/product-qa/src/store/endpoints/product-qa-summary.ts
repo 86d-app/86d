@@ -6,7 +6,7 @@ export const productQaSummary = createStoreEndpoint(
 	{
 		method: "GET",
 		params: z.object({
-			productId: z.string(),
+			productId: z.string().max(200),
 		}),
 	},
 	async (ctx) => {

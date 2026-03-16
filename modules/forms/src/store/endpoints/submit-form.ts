@@ -1,4 +1,4 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
+import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { FormsController } from "../../service";
 
 export const submitForm = createStoreEndpoint(
@@ -34,9 +34,16 @@ export const submitForm = createStoreEndpoint(
 			};
 		}
 
+		// Sanitize string values to prevent XSS
+		const sanitizedValues: Record<string, unknown> = {};
+		for (const [key, value] of Object.entries(ctx.body.values)) {
+			sanitizedValues[sanitizeText(key)] =
+				typeof value === "string" ? sanitizeText(value) : value;
+		}
+
 		const submission = await formsController.submitForm({
 			formId: form.id,
-			values: ctx.body.values,
+			values: sanitizedValues,
 		});
 
 		return {

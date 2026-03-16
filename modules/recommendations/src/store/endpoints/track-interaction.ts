@@ -6,11 +6,15 @@ export const trackInteraction = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			productId: z.string(),
+			productId: z.string().max(200),
 			type: z.enum(["view", "purchase", "add_to_cart"]),
 			productName: z.string().max(500).transform(sanitizeText),
-			productSlug: z.string().max(500),
-			productImage: z.string().max(2000).optional(),
+			productSlug: z.string().max(500).transform(sanitizeText),
+			productImage: z
+				.string()
+				.max(2000)
+				.optional()
+				.transform((s) => (s === undefined ? undefined : sanitizeText(s))),
 			productPrice: z.number().min(0).optional(),
 			productCategory: z.string().max(200).transform(sanitizeText).optional(),
 			sessionId: z.string().max(200).optional(),

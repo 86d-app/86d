@@ -6,7 +6,7 @@ export const submitReturn = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			orderId: z.string(),
+			orderId: z.string().max(200),
 			reason: z.string().min(1).max(1000).transform(sanitizeText),
 			refundMethod: z
 				.enum(["original_payment", "store_credit", "exchange"])
@@ -15,9 +15,9 @@ export const submitReturn = createStoreEndpoint(
 			items: z
 				.array(
 					z.object({
-						orderItemId: z.string(),
+						orderItemId: z.string().max(200),
 						productName: z.string().max(500).transform(sanitizeText),
-						sku: z.string().optional(),
+						sku: z.string().max(200).optional(),
 						quantity: z.number().int().min(1),
 						unitPrice: z.number().min(0),
 						reason: z.enum([
