@@ -1,17 +1,21 @@
 import { execSync } from "node:child_process";
 import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
+import { createConnection } from "node:net";
 import { join } from "node:path";
+import { createInterface } from "node:readline";
 import {
 	c,
 	error,
 	findProjectRoot,
 	heading,
 	info,
+	parseEnvFile,
 	success,
 	warn,
 } from "../utils.js";
 
-export function init(_args: string[]) {
+export async function init(args: string[]) {
+	const yes = args.includes("--yes") || args.includes("-y");
 	const root = findProjectRoot();
 
 	heading("Initializing 86d store");
@@ -71,12 +75,79 @@ export function init(_args: string[]) {
 		warn("generate-modules.ts not found, skipping code generation");
 	}
 
+	// 5. Optional database setup (migrate + seed)
+	const envVars = existsSync(envPath) ? parseEnvFile(envPath) : {};
+	const dbUrl = envVars.DATABASE_URL ?? process.env.DATABASE_URL ?? "";
+
+	if (dbUrl.trim()) {
+		const reachable = await checkDbReachable(dbUrl);
+		if (reachable) {
+			info(`Database reachable`);
+			console.log();
+
+			// 5a. Migrations
+			const runMigrate = yes || (await confirm("Run database migrations?"));
+			if (runMigrate) {
+				const dbPkg = join(root, "packages/db");
+				const hasMigrations = existsSync(join(dbPkg, "prisma", "migrations"));
+				const migrateCmd = hasMigrations
+					? "bun prisma migrate deploy --schema prisma"
+					: "bun prisma db push --schema prisma --skip-generate";
+				try {
+					execSync(migrateCmd, { cwd: dbPkg, stdio: "inherit" });
+					success("Database migrations applied");
+				} catch {
+					warn("Migration failed — retry with: bun prisma migrate deploy");
+				}
+			}
+
+			// 5b. Seed demo data
+			const runSeed = yes || (await confirm("Seed demo data?"));
+			if (runSeed) {
+				const seedScript = join(root, "scripts/seed.ts");
+				if (existsSync(seedScript)) {
+					try {
+						execSync(`bun run ${seedScript}`, {
+							cwd: root,
+							stdio: "inherit",
+							env: { ...process.env, DATABASE_URL: dbUrl },
+						});
+						success("Demo data seeded");
+						console.log();
+						console.log(`  ${c.dim("Admin credentials:")}`);
+						console.log(`    Email:    ${c.cyan("admin@example.com")}`);
+						console.log(`    Password: ${c.cyan("password123")}`);
+					} catch {
+						warn("Seeding failed — retry with: bun run db:seed");
+					}
+				} else {
+					warn("scripts/seed.ts not found, skipping seed");
+				}
+			}
+		} else {
+			warn(
+				`Database at ${redactUrl(dbUrl)} is not reachable — skipping migrations and seed.`,
+			);
+			warn(
+				"Start your database, then run: bun run db:migrate && bun run db:seed",
+			);
+		}
+	} else {
+		console.log();
+		heading("Store initialized");
+		console.log();
+		console.log(`  Next steps:`);
+		console.log(`  ${c.dim("1.")} Set ${c.cyan("DATABASE_URL")} in .env`);
+		console.log(`  ${c.dim("2.")} Set ${c.cyan("STORE_ID")} in .env`);
+		console.log(`  ${c.dim("3.")} Run: ${c.bold("86d dev")}`);
+		console.log();
+		return;
+	}
+
+	console.log();
 	heading("Store initialized");
 	console.log();
-	console.log(`  Next steps:`);
-	console.log(`  ${c.dim("1.")} Set ${c.cyan("DATABASE_URL")} in .env`);
-	console.log(`  ${c.dim("2.")} Set ${c.cyan("STORE_ID")} in .env`);
-	console.log(`  ${c.dim("3.")} Run: ${c.bold("86d dev")}`);
+	console.log(`  Run: ${c.bold("86d dev")}`);
 	console.log();
 }
 
@@ -84,4 +155,50 @@ function generateSecret(): string {
 	const bytes = new Uint8Array(32);
 	crypto.getRandomValues(bytes);
 	return Buffer.from(bytes).toString("base64url");
+}
+
+async function checkDbReachable(dbUrl: string): Promise<boolean> {
+	try {
+		const url = new URL(dbUrl);
+		const host = url.hostname;
+		const port = Number.parseInt(url.port, 10) || 5432;
+		await new Promise<void>((resolve, reject) => {
+			const sock = createConnection({ host, port, timeout: 3000 });
+			sock.on("connect", () => {
+				sock.destroy();
+				resolve();
+			});
+			sock.on("error", reject);
+			sock.on("timeout", () => {
+				sock.destroy();
+				reject(new Error("timeout"));
+			});
+		});
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+/** Prompt user for yes/no (defaults to yes on Enter). Skips in non-TTY. */
+async function confirm(question: string): Promise<boolean> {
+	if (!process.stdin.isTTY) return false;
+	return new Promise((resolve) => {
+		const rl = createInterface({
+			input: process.stdin,
+			output: process.stdout,
+		});
+		rl.question(`  ${question} ${c.dim("[Y/n]")} `, (answer) => {
+			rl.close();
+			resolve(answer.trim().toLowerCase() !== "n");
+		});
+	});
+}
+
+function redactUrl(url: string): string {
+	try {
+		return url.replace(/\/\/[^@]*@/, "//***@");
+	} catch {
+		return "[url]";
+	}
 }

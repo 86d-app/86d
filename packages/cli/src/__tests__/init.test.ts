@@ -35,7 +35,28 @@ describe("init", () => {
 		vi.restoreAllMocks();
 	});
 
-	async function runInit() {
+	/** Build a net mock. If `reachable=true`, fires "connect"; otherwise fires "error". */
+	function makeNetMock(reachable = false) {
+		return {
+			createConnection: vi.fn(() => {
+				const handlers: Record<string, () => void> = {};
+				const emitter = {
+					on: vi.fn((evt: string, cb: () => void) => {
+						handlers[evt] = cb;
+						return emitter;
+					}),
+					destroy: vi.fn(),
+				};
+				setTimeout(
+					() => (reachable ? handlers.connect?.() : handlers.error?.()),
+					0,
+				);
+				return emitter;
+			}),
+		};
+	}
+
+	async function runInit(args: string[] = [], netReachable = false) {
 		vi.resetModules();
 		vi.doMock("../utils.js", async () => {
 			const actual =
@@ -51,8 +72,11 @@ describe("init", () => {
 			execSync: vi.fn(),
 		}));
 
+		// Mock net.createConnection so DB reachability check doesn't hang
+		vi.doMock("node:net", () => makeNetMock(netReachable));
+
 		const { init } = await import("../commands/init.js");
-		init([]);
+		await init(args);
 	}
 
 	it("copies .env.example to .env", async () => {
@@ -86,5 +110,83 @@ describe("init", () => {
 		const envContent = readFileSync(join(tempDir, ".env"), "utf-8");
 		expect(envContent).toContain("DATABASE_URL=");
 		expect(envContent).toContain("STORE_ID=");
+	});
+
+	it("accepts --yes flag without prompting", async () => {
+		// .env with no DATABASE_URL — skips DB section cleanly
+		writeFileSync(
+			join(tempDir, ".env"),
+			"DATABASE_URL=\nSTORE_ID=test\nBETTER_AUTH_SECRET=already-set\n",
+		);
+		// Does not throw — no readline.question calls expected
+		await runInit(["--yes"]);
+	});
+
+	it("accepts -y short flag without prompting", async () => {
+		writeFileSync(
+			join(tempDir, ".env"),
+			"DATABASE_URL=\nSTORE_ID=test\nBETTER_AUTH_SECRET=already-set\n",
+		);
+		await runInit(["-y"]);
+	});
+
+	it("skips DB setup when DATABASE_URL is not set", async () => {
+		// .env has empty DATABASE_URL (default from .env.example)
+		await runInit();
+
+		// Should complete without errors
+		expect(existsSync(join(tempDir, ".env"))).toBe(true);
+	});
+
+	it("runs migrate and seed when --yes and db is reachable", async () => {
+		vi.resetModules();
+		vi.doMock("../utils.js", async () => {
+			const actual =
+				await vi.importActual<typeof import("../utils.js")>("../utils.js");
+			return {
+				...actual,
+				findProjectRoot: () => tempDir,
+			};
+		});
+
+		const execSyncMock = vi.fn();
+		vi.doMock("node:child_process", () => ({ execSync: execSyncMock }));
+
+		// Simulate reachable DB — fire "connect" callback
+		vi.doMock("node:net", () => ({
+			createConnection: vi.fn(() => {
+				const handlers: Record<string, () => void> = {};
+				const emitter = {
+					on: vi.fn((evt: string, cb: () => void) => {
+						handlers[evt] = cb;
+						return emitter;
+					}),
+					destroy: vi.fn(),
+				};
+				setTimeout(() => handlers.connect?.(), 0);
+				return emitter;
+			}),
+		}));
+
+		// Seed script exists
+		writeFileSync(join(tempDir, "scripts/seed.ts"), "// seed");
+		// packages/db with migration directory
+		mkdirSync(join(tempDir, "packages/db/prisma/migrations"), {
+			recursive: true,
+		});
+
+		writeFileSync(
+			join(tempDir, ".env"),
+			"DATABASE_URL=postgresql://user:pass@localhost:5432/db\nSTORE_ID=test\nBETTER_AUTH_SECRET=already-set\n",
+		);
+
+		const { init } = await import("../commands/init.js");
+		await init(["--yes"]);
+
+		// Should have called bun install + migrate + seed
+		const calls = execSyncMock.mock.calls.map((c: unknown[]) => String(c[0]));
+		expect(calls.some((c) => c.includes("bun install"))).toBe(true);
+		expect(calls.some((c) => c.includes("migrate deploy"))).toBe(true);
+		expect(calls.some((c) => c.includes("seed.ts"))).toBe(true);
 	});
 });

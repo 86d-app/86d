@@ -32,7 +32,7 @@ npm install -g @86d-app/86d
 | Command | Description |
 |---|---|
 | `86d dev` | Start the store development server |
-| `86d init` | Configure a local store (env, deps, codegen) |
+| `86d init [--yes\|-y]` | Configure a local store (env, deps, migrate, seed) |
 | `86d status` | Show project health and configuration |
 | `86d module create <name>` | Scaffold a new module |
 | `86d module list` | List all modules |
@@ -48,8 +48,11 @@ npm install -g @86d-app/86d
 ## Usage
 
 ```sh
-# Initialize a new store
+# Initialize a new store (interactive: prompts for migrate + seed if DATABASE_URL is set)
 86d init
+
+# Initialize non-interactively — auto-confirms all prompts (useful for CI/scripts)
+86d init --yes
 
 # Check project health
 86d status

@@ -63,7 +63,7 @@ ${c.dim("Usage:")} 86d <command> [options]
 
 ${c.bold("Commands:")}
   ${c.cyan("dev")}                     Start the store development server
-  ${c.cyan("init")}                    Configure a local store (env, deps, codegen)
+  ${c.cyan("init")} ${c.dim("[--yes]")}             Configure a local store (env, deps, migrate, seed)
   ${c.cyan("status")}                  Show project health and configuration
   ${c.cyan("doctor")}                  Diagnose project issues with fix suggestions
   ${c.cyan("module create")} <name>    Scaffold a new module

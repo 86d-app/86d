@@ -10,7 +10,7 @@ src/
   utils.ts              findProjectRoot, getVersion, ANSI colors, parseEnvFile, readJson
   commands/
     dev.ts              Start store dev server (spawns Next.js)
-    init.ts             Configure local store (env, deps, codegen)
+    init.ts             Configure local store (env, deps, codegen, optional migrate+seed)
     status.ts           Show project health and configuration
     doctor.ts           Diagnose issues with fix suggestions
     module.ts           Module subcommands (create, list, info, enable, disable)
@@ -25,7 +25,7 @@ src/
 | Command | Description |
 |---|---|
 | `86d dev [--port N]` | Start the store dev server |
-| `86d init` | Configure a local store (env, deps, codegen) |
+| `86d init [--yes\|-y]` | Configure a local store (env, deps, migrate, seed) |
 | `86d status` | Show project health and configuration |
 | `86d doctor` | Diagnose project issues with fix suggestions |
 | `86d module create <name>` | Scaffold a new module |
@@ -54,3 +54,6 @@ src/
 - No external CLI framework — uses raw `process.argv` parsing
 - `findProjectRoot` requires both `turbo.json` and `package.json` with name `"86d"`
 - Tests use Vitest — run with `bun run test` or `vitest run`
+- `init --yes` / `-y`: skips all interactive Y/N prompts, auto-confirms migrate + seed
+- `init` with a reachable DATABASE_URL: prompts to run migrations then seed (prints admin credentials on success)
+- `init` in non-TTY (CI, pipes): skips DB setup automatically since stdin is not interactive
