@@ -1,8 +1,43 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { toNextJsHandler } from "better-auth/next-js";
-import { admin } from "better-auth/plugins";
+import { admin, genericOAuth } from "better-auth/plugins";
 import { db } from "db";
+
+const apiUrl = process.env["86D_API_URL"] ?? "https://api.86d.app";
+const apiKey = process.env["86D_API_KEY"];
+
+/**
+ * When 86D_API_KEY is set, enable 86d.app SSO as a social login provider.
+ * This allows store owners to sign in with their 86d.app account
+ * and automatically get admin access.
+ */
+const socialProviders = apiKey
+	? [
+			genericOAuth({
+				config: [
+					{
+						providerId: "86d",
+						discoveryUrl: `${apiUrl}/.well-known/openid-configuration`,
+						clientId: apiKey,
+						clientSecret: apiKey,
+						scopes: ["openid", "profile", "email", "store:admin"],
+						mapProfileToUser: (profile) => {
+							const user: Record<string, string> = {
+								name: profile.name as string,
+								email: profile.email as string,
+								role: "admin",
+							};
+							if (profile.picture) {
+								user.image = profile.picture as string;
+							}
+							return user;
+						},
+					},
+				],
+			}),
+		]
+	: [];
 
 export const auth = betterAuth({
 	database: prismaAdapter(db, { provider: "postgresql" }),
@@ -10,7 +45,7 @@ export const auth = betterAuth({
 	session: {
 		cookieCache: { enabled: true, maxAge: 60 * 5 },
 	},
-	plugins: [admin()],
+	plugins: [admin(), ...socialProviders],
 });
 
 export const handler = toNextJsHandler(auth);

@@ -35,7 +35,7 @@ export default function brands(options?: BrandsOptions): Module {
 			],
 		},
 		init: async (ctx: ModuleContext) => {
-			const controller = createBrandController(ctx.data);
+			const controller = createBrandController(ctx.data, ctx.events);
 			return { controllers: { brands: controller } };
 		},
 		endpoints: {

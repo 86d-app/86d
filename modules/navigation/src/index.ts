@@ -34,7 +34,7 @@ export default function navigation(options?: NavigationOptions): Module {
 			emits: ["menu.created", "menu.updated", "menu.deleted"],
 		},
 		init: async (ctx: ModuleContext) => {
-			const controller = createNavigationController(ctx.data);
+			const controller = createNavigationController(ctx.data, ctx.events);
 			return { controllers: { navigation: controller } };
 		},
 		endpoints: {

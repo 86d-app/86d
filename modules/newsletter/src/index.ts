@@ -34,7 +34,7 @@ export default function newsletter(options?: NewsletterOptions): Module {
 			],
 		},
 		init: async (ctx: ModuleContext) => {
-			const controller = createNewsletterController(ctx.data);
+			const controller = createNewsletterController(ctx.data, ctx.events);
 			return { controllers: { newsletter: controller } };
 		},
 		endpoints: {

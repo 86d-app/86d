@@ -38,7 +38,7 @@ export default function recommendations(
 			emits: ["recommendation.served", "recommendation.interaction.tracked"],
 		},
 		init: async (ctx: ModuleContext) => {
-			const controller = createRecommendationController(ctx.data);
+			const controller = createRecommendationController(ctx.data, ctx.events);
 			return { controllers: { recommendations: controller } };
 		},
 		endpoints: {

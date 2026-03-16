@@ -64,3 +64,11 @@ NavigationOptions {
 - `MenuWithItems` combines a menu with its nested `MenuItemTree[]`
 - Reorder endpoint accepts an ordered array of item IDs to set positions in bulk
 - Item `type` determines whether `url` (for links) or `resourceId` (for category/collection/page/product) is used
+
+## Events
+
+| Event | Trigger | Payload |
+|---|---|---|
+| `menu.created` | Menu created via admin endpoint | `menuId`, `name`, `slug`, `location` |
+| `menu.updated` | Menu updated via admin endpoint | `menuId`, `name`, `slug`, `location` |
+| `menu.deleted` | Menu deleted via admin endpoint | `menuId` |

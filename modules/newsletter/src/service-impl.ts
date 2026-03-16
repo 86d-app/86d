@@ -1,4 +1,4 @@
-import type { ModuleDataService } from "@86d-app/core";
+import type { ModuleDataService, ScopedEventEmitter } from "@86d-app/core";
 import type {
 	Campaign,
 	CampaignStats,
@@ -9,6 +9,7 @@ import type {
 
 export function createNewsletterController(
 	data: ModuleDataService,
+	events?: ScopedEventEmitter | undefined,
 ): NewsletterController {
 	return {
 		async subscribe(params) {
@@ -58,6 +59,11 @@ export function createNewsletterController(
 			};
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("subscriber", id, subscriber as Record<string, any>);
+			void events?.emit("newsletter.subscribed", {
+				subscriberId: subscriber.id,
+				email: subscriber.email,
+				source: subscriber.source,
+			});
 			return subscriber;
 		},
 
@@ -82,6 +88,10 @@ export function createNewsletterController(
 				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 				updated as Record<string, any>,
 			);
+			void events?.emit("newsletter.unsubscribed", {
+				subscriberId: updated.id,
+				email: updated.email,
+			});
 			return updated;
 		},
 
@@ -282,6 +292,11 @@ export function createNewsletterController(
 			};
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("campaign", id, updated as Record<string, any>);
+			void events?.emit("newsletter.campaign.sent", {
+				campaignId: updated.id,
+				subject: updated.subject,
+				recipientCount: updated.recipientCount,
+			});
 			return updated;
 		},
 

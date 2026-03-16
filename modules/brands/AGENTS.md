@@ -54,3 +54,13 @@ BrandsOptions {
 - `getBrandForProduct` returns null for inactive brands
 - Deleting a brand cascades to remove all brand-product links
 - Bulk operations skip already-assigned products and count only new assignments
+
+## Events
+
+| Event | Trigger | Payload |
+|---|---|---|
+| `brand.created` | Brand created via admin endpoint | `brandId`, `name`, `slug` |
+| `brand.updated` | Brand updated via admin endpoint | `brandId`, `name`, `slug` |
+| `brand.deleted` | Brand deleted via admin endpoint | `brandId` |
+| `brand.product.assigned` | Product assigned to a brand | `brandId`, `productId` |
+| `brand.product.unassigned` | Product unassigned from a brand | `brandId`, `productId` |

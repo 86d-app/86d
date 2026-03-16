@@ -1,4 +1,4 @@
-import type { ModuleDataService } from "@86d-app/core";
+import type { ModuleDataService, ScopedEventEmitter } from "@86d-app/core";
 import type {
 	Menu,
 	MenuItem,
@@ -42,6 +42,7 @@ function buildTree(items: MenuItem[]): MenuItemTree[] {
 
 export function createNavigationController(
 	data: ModuleDataService,
+	events?: ScopedEventEmitter | undefined,
 ): NavigationController {
 	return {
 		// ── Menu CRUD ────────────────────────────────────────────
@@ -61,6 +62,12 @@ export function createNavigationController(
 			};
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("menu", id, menu as Record<string, any>);
+			void events?.emit("menu.created", {
+				menuId: menu.id,
+				name: menu.name,
+				slug: menu.slug,
+				location: menu.location,
+			});
 			return menu;
 		},
 
@@ -80,6 +87,12 @@ export function createNavigationController(
 			};
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("menu", id, updated as Record<string, any>);
+			void events?.emit("menu.updated", {
+				menuId: updated.id,
+				name: updated.name,
+				slug: updated.slug,
+				location: updated.location,
+			});
 			return updated;
 		},
 
@@ -97,6 +110,7 @@ export function createNavigationController(
 			}
 
 			await data.delete("menu", id);
+			void events?.emit("menu.deleted", { menuId: id });
 			return true;
 		},
 

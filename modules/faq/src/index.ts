@@ -38,7 +38,7 @@ export default function faq(options?: FaqOptions): Module {
 		},
 
 		init: async (ctx: ModuleContext) => {
-			const faqController = createFaqControllers(ctx.data);
+			const faqController = createFaqControllers(ctx.data, ctx.events);
 
 			return {
 				controllers: { faq: faqController },

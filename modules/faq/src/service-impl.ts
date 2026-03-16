@@ -1,7 +1,10 @@
-import type { ModuleDataService } from "@86d-app/core";
+import type { ModuleDataService, ScopedEventEmitter } from "@86d-app/core";
 import type { FaqCategory, FaqController, FaqItem } from "./service";
 
-export function createFaqControllers(data: ModuleDataService): FaqController {
+export function createFaqControllers(
+	data: ModuleDataService,
+	events?: ScopedEventEmitter | undefined,
+): FaqController {
 	return {
 		async createCategory(params) {
 			const id = crypto.randomUUID();
@@ -22,6 +25,11 @@ export function createFaqControllers(data: ModuleDataService): FaqController {
 
 			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
 			await data.upsert("faqCategory", id, category as Record<string, any>);
+			void events?.emit("faq.category.created", {
+				categoryId: category.id,
+				name: category.name,
+				slug: category.slug,
+			});
 
 			return category;
 		},
@@ -79,6 +87,11 @@ export function createFaqControllers(data: ModuleDataService): FaqController {
 
 			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
 			await data.upsert("faqCategory", id, updated as Record<string, any>);
+			void events?.emit("faq.category.updated", {
+				categoryId: updated.id,
+				name: updated.name,
+				slug: updated.slug,
+			});
 
 			return updated;
 		},
@@ -94,6 +107,7 @@ export function createFaqControllers(data: ModuleDataService): FaqController {
 			}
 
 			await data.delete("faqCategory", id);
+			void events?.emit("faq.category.deleted", { categoryId: id });
 		},
 
 		async createItem(params) {
@@ -118,6 +132,12 @@ export function createFaqControllers(data: ModuleDataService): FaqController {
 
 			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
 			await data.upsert("faqItem", id, item as Record<string, any>);
+			void events?.emit("faq.item.created", {
+				itemId: item.id,
+				categoryId: item.categoryId,
+				question: item.question,
+				slug: item.slug,
+			});
 
 			return item;
 		},
@@ -178,12 +198,19 @@ export function createFaqControllers(data: ModuleDataService): FaqController {
 
 			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
 			await data.upsert("faqItem", id, updated as Record<string, any>);
+			void events?.emit("faq.item.updated", {
+				itemId: updated.id,
+				categoryId: updated.categoryId,
+				question: updated.question,
+				slug: updated.slug,
+			});
 
 			return updated;
 		},
 
 		async deleteItem(id: string) {
 			await data.delete("faqItem", id);
+			void events?.emit("faq.item.deleted", { itemId: id });
 		},
 
 		async search(query, opts = {}) {

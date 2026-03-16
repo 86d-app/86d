@@ -1,4 +1,4 @@
-import type { ModuleDataService } from "@86d-app/core";
+import type { ModuleDataService, ScopedEventEmitter } from "@86d-app/core";
 import type {
 	CoOccurrence,
 	ProductInteraction,
@@ -11,6 +11,7 @@ const DEFAULT_TAKE = 10;
 
 export function createRecommendationController(
 	data: ModuleDataService,
+	events?: ScopedEventEmitter | undefined,
 ): RecommendationController {
 	return {
 		// --- Rules ---
@@ -210,6 +211,12 @@ export function createRecommendationController(
 				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 				interaction as Record<string, any>,
 			);
+			void events?.emit("recommendation.interaction.tracked", {
+				productId: interaction.productId,
+				type: interaction.type,
+				customerId: interaction.customerId,
+				sessionId: interaction.sessionId,
+			});
 			return interaction;
 		},
 
@@ -290,7 +297,15 @@ export function createRecommendationController(
 			}
 
 			// Sort by score descending, limit
-			return results.sort((a, b) => b.score - a.score).slice(0, take);
+			const sorted = results.sort((a, b) => b.score - a.score).slice(0, take);
+			if (sorted.length > 0) {
+				void events?.emit("recommendation.served", {
+					productId,
+					count: sorted.length,
+					strategies: [...new Set(sorted.map((r) => r.strategy))],
+				});
+			}
+			return sorted;
 		},
 
 		async getTrending(params) {

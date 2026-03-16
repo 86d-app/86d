@@ -74,3 +74,14 @@ FaqOptions {
 - `deleteCategory` cascades to all items in that category
 - Store endpoints filter to `isVisible: true` only; admin endpoints show all
 - `exactOptionalPropertyTypes` is on — all optional params use `| undefined`
+
+## Events
+
+| Event | Trigger | Payload |
+|---|---|---|
+| `faq.category.created` | Category created via admin endpoint | `categoryId`, `name`, `slug` |
+| `faq.category.updated` | Category updated via admin endpoint | `categoryId`, `name`, `slug` |
+| `faq.category.deleted` | Category deleted via admin endpoint | `categoryId` |
+| `faq.item.created` | FAQ item created via admin endpoint | `itemId`, `categoryId`, `question`, `slug` |
+| `faq.item.updated` | FAQ item updated via admin endpoint | `itemId`, `categoryId`, `question`, `slug` |
+| `faq.item.deleted` | FAQ item deleted via admin endpoint | `itemId` |

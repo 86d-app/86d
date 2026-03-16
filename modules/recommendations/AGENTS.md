@@ -72,3 +72,10 @@ RecommendationsOptions {
 - Product info for recommendations is resolved from interaction history (denormalized snapshot)
 - Rules can be deactivated without deletion (isActive flag)
 - `recordPurchase` generates all product pairs from a single order for co-occurrence tracking
+
+## Events
+
+| Event | Trigger | Payload |
+|---|---|---|
+| `recommendation.interaction.tracked` | User interaction recorded via store endpoint | `productId`, `type`, `customerId`, `sessionId` |
+| `recommendation.served` | Recommendations returned to a user | `productId`, `count`, `strategies` |

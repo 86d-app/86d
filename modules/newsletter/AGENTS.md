@@ -39,3 +39,11 @@ Manages an email subscriber list. Does NOT send emails — that is left to exter
 ## Tests
 
 30 tests in `tests/service-impl.test.ts` covering all controller methods.
+
+## Events
+
+| Event | Trigger | Payload |
+|---|---|---|
+| `newsletter.subscribed` | New subscriber added or reactivated | `subscriberId`, `email`, `source` |
+| `newsletter.unsubscribed` | Subscriber opts out | `subscriberId`, `email` |
+| `newsletter.campaign.sent` | Campaign sent to subscriber list | `campaignId`, `subject`, `recipientCount` |

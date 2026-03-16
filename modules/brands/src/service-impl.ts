@@ -1,4 +1,4 @@
-import type { ModuleDataService } from "@86d-app/core";
+import type { ModuleDataService, ScopedEventEmitter } from "@86d-app/core";
 import type {
 	Brand,
 	BrandController,
@@ -22,6 +22,7 @@ function buildFindOptions(opts: {
 
 export function createBrandController(
 	data: ModuleDataService,
+	events?: ScopedEventEmitter | undefined,
 ): BrandController {
 	return {
 		async createBrand(params) {
@@ -51,6 +52,11 @@ export function createBrandController(
 			};
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("brand", id, brand as Record<string, any>);
+			void events?.emit("brand.created", {
+				brandId: brand.id,
+				name: brand.name,
+				slug: brand.slug,
+			});
 			return brand;
 		},
 
@@ -119,6 +125,11 @@ export function createBrandController(
 
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("brand", id, updated as Record<string, any>);
+			void events?.emit("brand.updated", {
+				brandId: updated.id,
+				name: updated.name,
+				slug: updated.slug,
+			});
 			return updated;
 		},
 
@@ -135,6 +146,7 @@ export function createBrandController(
 			}
 
 			await data.delete("brand", id);
+			void events?.emit("brand.deleted", { brandId: id });
 			return true;
 		},
 
@@ -196,6 +208,10 @@ export function createBrandController(
 				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 				brandProduct as Record<string, any>,
 			);
+			void events?.emit("brand.product.assigned", {
+				brandId: params.brandId,
+				productId: params.productId,
+			});
 			return brandProduct;
 		},
 
@@ -212,6 +228,10 @@ export function createBrandController(
 			for (const item of existing) {
 				await data.delete("brandProduct", item.id);
 			}
+			void events?.emit("brand.product.unassigned", {
+				brandId: params.brandId,
+				productId: params.productId,
+			});
 			return true;
 		},
 
