@@ -150,3 +150,39 @@
 		@apply font-sans;
 	}
 }
+
+/* ─── Template animations ──────────────────────────────────────────────── */
+
+@keyframes marquee {
+	from {
+		transform: translateX(0);
+	}
+	to {
+		transform: translateX(-50%);
+	}
+}
+
+.animate-marquee {
+	animation: marquee 30s linear infinite;
+}
+
+@keyframes fade-in {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.animate-fade-in {
+	animation: fade-in 0.5s ease-out both;
+}
+
+/* ─── Display font fallback ────────────────────────────────────────────── */
+
+.font-display {
+	font-family: var(--font-display, var(--font-sans));
+}

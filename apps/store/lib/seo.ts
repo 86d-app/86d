@@ -295,6 +295,53 @@ export function buildCollectionJsonLd(collection: CollectionSeo): object {
 	return jsonLd;
 }
 
+interface BlogPostSeo {
+	title: string;
+	slug: string;
+	excerpt: string | null;
+	coverImage: string | null;
+	author: string | null;
+	category: string | null;
+	updatedAt: string;
+}
+
+/**
+ * Fetch a single blog post by slug for metadata generation.
+ */
+export const fetchBlogPostForSeo = cache(
+	async (slug: string): Promise<BlogPostSeo | null> => {
+		const moduleId = await getModuleIdByName("@86d-app/blog");
+		if (!moduleId) return null;
+
+		const row = await db.moduleData.findFirst({
+			where: {
+				moduleId,
+				entityType: "blogPost",
+				data: {
+					path: ["slug"],
+					equals: slug,
+				},
+			},
+			select: { data: true, updatedAt: true },
+		});
+
+		if (!row?.data) return null;
+
+		const d = row.data as JsonData;
+		if (d.status !== "published") return null;
+
+		return {
+			title: d.title ?? "",
+			slug: d.slug ?? slug,
+			excerpt: d.excerpt ?? null,
+			coverImage: d.coverImage ?? null,
+			author: d.author ?? null,
+			category: d.category ?? null,
+			updatedAt: row.updatedAt.toISOString(),
+		};
+	},
+);
+
 /**
  * Fetch all published blog post slugs + updatedAt for the sitemap.
  */
