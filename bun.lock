@@ -1731,6 +1731,7 @@
         "@types/node": "catalog:node",
         "@vercel/blob": "2.0.0",
         "typescript": "catalog:",
+        "vitest": "catalog:vite",
       },
       "peerDependencies": {
         "@vercel/blob": ">=2.0.0",

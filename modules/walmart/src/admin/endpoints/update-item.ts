@@ -1,0 +1,44 @@
+import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
+import type { WalmartController } from "../../service";
+
+export const updateItemEndpoint = createAdminEndpoint(
+	"/admin/walmart/items/:id",
+	{
+		method: "PUT",
+		params: z.object({ id: z.string() }),
+		body: z.object({
+			title: z.string().min(1).max(500).transform(sanitizeText).optional(),
+			price: z.number().min(0).optional(),
+			quantity: z.number().int().min(0).optional(),
+			upc: z.string().max(20).optional(),
+			gtin: z.string().max(20).optional(),
+			brand: z.string().max(200).transform(sanitizeText).optional(),
+			category: z.string().max(200).transform(sanitizeText).optional(),
+			fulfillmentType: z.enum(["seller", "wfs"]).optional(),
+			walmartItemId: z.string().max(200).optional(),
+			status: z
+				.enum(["published", "unpublished", "retired", "system-error"])
+				.optional(),
+			publishStatus: z.string().max(200).optional(),
+			metadata: z.record(z.string().max(100), z.unknown()).optional(),
+		}),
+	},
+	async (ctx) => {
+		const controller = ctx.context.controllers.walmart as WalmartController;
+		const item = await controller.updateItem(ctx.params.id, {
+			title: ctx.body.title,
+			price: ctx.body.price,
+			quantity: ctx.body.quantity,
+			upc: ctx.body.upc,
+			gtin: ctx.body.gtin,
+			brand: ctx.body.brand,
+			category: ctx.body.category,
+			fulfillmentType: ctx.body.fulfillmentType,
+			walmartItemId: ctx.body.walmartItemId,
+			status: ctx.body.status,
+			publishStatus: ctx.body.publishStatus,
+			metadata: ctx.body.metadata,
+		});
+		return { item };
+	},
+);

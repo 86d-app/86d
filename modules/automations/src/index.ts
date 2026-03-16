@@ -2,7 +2,7 @@ import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
 import { adminEndpoints } from "./admin/endpoints";
 import { automationsSchema } from "./schema";
 import { createAutomationsController } from "./service-impl";
-import { storeEndpoints } from "./store/endpoints";
+import { createStoreEndpoints } from "./store/endpoints";
 
 export type {
 	ActionType,
@@ -30,6 +30,14 @@ export interface AutomationsOptions extends ModuleConfig {
 	 * @default 0
 	 */
 	maxExecutionHistory?: number;
+
+	/**
+	 * Shared secret for the `/automations/webhooks` store endpoint.
+	 * When set, incoming webhook requests must include a matching
+	 * `x-webhook-secret` header. Leave unset to disable authentication
+	 * (not recommended in production).
+	 */
+	webhookSecret?: string;
 }
 
 /**
@@ -72,7 +80,9 @@ export default function automations(options?: AutomationsOptions): Module {
 		},
 
 		endpoints: {
-			store: storeEndpoints,
+			store: createStoreEndpoints({
+				webhookSecret: options?.webhookSecret,
+			}),
 			admin: adminEndpoints,
 		},
 

@@ -45,13 +45,26 @@ const module = pinterestShop({
 | `adAccountId` | `string` | - | Pinterest ad account ID |
 | `catalogId` | `string` | - | Pinterest catalog ID |
 
-## Store Endpoints
-
-No store endpoints are currently registered.
-
 ## Admin Endpoints
 
-No admin endpoints are currently registered. The controller API is available programmatically.
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/admin/pinterest-shop/items` | List catalog items with optional status, availability, page, and limit filters |
+| POST | `/admin/pinterest-shop/items/create` | Create a new catalog item |
+| GET | `/admin/pinterest-shop/items/:id` | Get a single catalog item by ID |
+| PUT | `/admin/pinterest-shop/items/:id/update` | Update catalog item fields |
+| DELETE | `/admin/pinterest-shop/items/:id/delete` | Delete a catalog item |
+| POST | `/admin/pinterest-shop/sync` | Trigger a catalog sync |
+| GET | `/admin/pinterest-shop/syncs` | List catalog sync history |
+| GET | `/admin/pinterest-shop/pins` | List shopping pins with optional catalog item filter |
+| POST | `/admin/pinterest-shop/pins/create` | Create a new shopping pin |
+| GET | `/admin/pinterest-shop/stats` | Get channel statistics |
+
+## Store Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/pinterest-shop/webhooks` | Receive Pinterest webhook events |
 
 ## Controller API
 
@@ -88,4 +101,4 @@ interface PinterestShopController extends ModuleController {
 - Sync statuses: `pending`, `syncing`, `synced`, `failed`
 - Pin analytics rates are computed as ratios to impressions (0 if no impressions)
 - Admin page appears under the **Sales** group with the **Pin** icon
-- Store and admin HTTP endpoints are not yet implemented; use the controller API directly
+- Admin and store endpoints are fully wired via `createAdminEndpoint` and `createStoreEndpoint`

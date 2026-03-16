@@ -1,6 +1,8 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
+import { adminEndpoints } from "./admin/endpoints";
 import { wishSchema } from "./schema";
 import { createWishController } from "./service-impl";
+import { storeEndpoints } from "./store/endpoints";
 
 export type {
 	ChannelStats,
@@ -43,6 +45,10 @@ export default function wish(options?: WishOptions): Module {
 		init: async (ctx: ModuleContext) => {
 			const controller = createWishController(ctx.data);
 			return { controllers: { wish: controller } };
+		},
+		endpoints: {
+			store: storeEndpoints,
+			admin: adminEndpoints,
 		},
 		admin: {
 			pages: [

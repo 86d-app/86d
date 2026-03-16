@@ -54,7 +54,11 @@ const module = auditLog({
 | `GET` | `/admin/audit-log/summary` | Get aggregate activity summary |
 | `POST` | `/admin/audit-log/purge` | Purge entries older than a specified date |
 
-This module has no store-facing endpoints.
+## Store Endpoints
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/audit-log/my-activity` | Get the authenticated user's own audit history (paginated via `take`/`skip` query params). Requires an active session. |
 
 ## Controller API
 
@@ -110,7 +114,7 @@ interface AuditSummary {
 
 ## Notes
 
-- This is an admin-only module with no customer-facing endpoints.
+- The `/audit-log/my-activity` store endpoint lets authenticated customers view their own audit trail.
 - Other modules should use `AuditLogController.log()` to record audit entries through inter-module contracts.
 - Date range filtering is performed in-memory since ModuleDataService does not support range queries.
 - The summary endpoint returns counts grouped by action, resource, and the top 10 most active actors.

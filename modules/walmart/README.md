@@ -45,13 +45,29 @@ const module = walmart({
 | `clientSecret` | `string` | - | Walmart API client secret |
 | `partnerId` | `string` | - | Walmart partner ID |
 
-## Store Endpoints
-
-No store endpoints are currently registered.
-
 ## Admin Endpoints
 
-No admin endpoints are currently registered. The controller API is available programmatically.
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/admin/walmart/items` | List items with optional status, fulfillment type, page, and limit filters |
+| POST | `/admin/walmart/items/create` | Create a new marketplace item |
+| GET | `/admin/walmart/items/health` | Get item health breakdown by status and fulfillment type |
+| GET | `/admin/walmart/items/:id` | Get a single item by ID |
+| PUT | `/admin/walmart/items/:id/update` | Update item fields |
+| PUT | `/admin/walmart/items/:id/retire` | Retire an item (sets status to retired, lifecycle to archived) |
+| GET | `/admin/walmart/orders` | List orders with optional status, page, and limit filters |
+| PUT | `/admin/walmart/orders/:id/acknowledge` | Acknowledge an order |
+| PUT | `/admin/walmart/orders/:id/ship` | Ship an order with tracking number and carrier |
+| PUT | `/admin/walmart/orders/:id/cancel` | Cancel an order |
+| GET | `/admin/walmart/feeds` | List feed submissions with optional type and status filters |
+| POST | `/admin/walmart/feeds/submit` | Submit a feed (item, inventory, price, or order) |
+| GET | `/admin/walmart/stats` | Get channel statistics |
+
+## Store Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/walmart/webhooks` | Receive Walmart webhook events |
 
 ## Controller API
 
@@ -92,4 +108,4 @@ interface WalmartController extends ModuleController {
 - Feed types: `item`, `inventory`, `price`, `order`
 - `retireItem()` archives the item (sets status to `retired`, lifecycle to `archived`)
 - Admin page appears under the **Sales** group with the **Store** icon
-- Store and admin HTTP endpoints are not yet implemented; use the controller API directly
+- Admin and store endpoints are fully wired via `createAdminEndpoint` and `createStoreEndpoint`

@@ -10,8 +10,8 @@ src/
   schema.ts         Zod models: wishProduct, wishOrder
   service.ts        WishController interface
   service-impl.ts   WishController implementation via ModuleDataService
-  store/endpoints/  (empty)
-  admin/endpoints/  (empty)
+  store/endpoints/  webhooks.ts
+  admin/endpoints/  create-product, get-product, list-products, update-product, disable-product, list-orders, ship-order, pending-shipments, stats
   admin/components/ index.tsx, wish-admin.tsx, wish-admin.mdx
   __tests__/        (none)
 ```
@@ -39,4 +39,22 @@ interface WishOptions extends ModuleConfig {
 - `disableProduct()` sets status to `disabled`
 - `getPendingShipments()` returns orders with `approved` status ordered by creation date (oldest first)
 - pendingShipments stat counts orders with `pending` or `approved` status
-- No store or admin endpoints are wired yet (both empty objects)
+### Admin Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/admin/wish/products` | List products with optional status filter |
+| POST | `/admin/wish/products/create` | Create a new product |
+| GET | `/admin/wish/products/:id` | Get a single product by ID |
+| PUT | `/admin/wish/products/:id/update` | Update product fields |
+| PUT | `/admin/wish/products/:id/disable` | Disable a product |
+| GET | `/admin/wish/orders` | List orders with optional status filter |
+| GET | `/admin/wish/orders/pending` | Get pending shipments (approved orders, oldest first) |
+| PUT | `/admin/wish/orders/:id/ship` | Ship an order (trackingNumber, carrier) |
+| GET | `/admin/wish/stats` | Get channel stats |
+
+### Store Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/wish/webhooks` | Receive Wish webhook events |

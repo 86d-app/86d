@@ -43,13 +43,25 @@ const module = wish({
 | `accessToken` | `string` | - | Wish API access token |
 | `merchantId` | `string` | - | Wish merchant ID |
 
-## Store Endpoints
-
-No store endpoints are currently registered.
-
 ## Admin Endpoints
 
-No admin endpoints are currently registered. The controller API is available programmatically.
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/admin/wish/products` | List products with optional status, page, and limit filters |
+| POST | `/admin/wish/products/create` | Create a new product listing |
+| GET | `/admin/wish/products/:id` | Get a single product by ID |
+| PUT | `/admin/wish/products/:id/update` | Update product fields |
+| PUT | `/admin/wish/products/:id/disable` | Disable a product |
+| GET | `/admin/wish/orders` | List orders with optional status, page, and limit filters |
+| GET | `/admin/wish/orders/pending` | Get pending shipments (approved orders sorted oldest-first) |
+| PUT | `/admin/wish/orders/:id/ship` | Ship an order with tracking number and carrier |
+| GET | `/admin/wish/stats` | Get channel statistics |
+
+## Store Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/wish/webhooks` | Receive Wish webhook events |
 
 ## Controller API
 
@@ -83,4 +95,4 @@ interface WishController extends ModuleController {
 - Products include `shippingPrice` as a required field (Wish requires separate shipping pricing)
 - `getPendingShipments()` returns `approved` orders sorted oldest-first for priority fulfillment
 - Admin page appears under the **Sales** group with the **Star** icon
-- Store and admin HTTP endpoints are not yet implemented; use the controller API directly
+- Admin and store endpoints are fully wired via `createAdminEndpoint` and `createStoreEndpoint`

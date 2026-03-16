@@ -1,6 +1,8 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
+import { adminEndpoints } from "./admin/endpoints";
 import { walmartSchema } from "./schema";
 import { createWalmartController } from "./service-impl";
+import { storeEndpoints } from "./store/endpoints";
 
 export type {
 	ChannelStats,
@@ -46,6 +48,10 @@ export default function walmart(options?: WalmartOptions): Module {
 		init: async (ctx: ModuleContext) => {
 			const controller = createWalmartController(ctx.data);
 			return { controllers: { walmart: controller } };
+		},
+		endpoints: {
+			store: storeEndpoints,
+			admin: adminEndpoints,
 		},
 		admin: {
 			pages: [

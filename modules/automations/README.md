@@ -47,6 +47,13 @@ const mod = automations({
 | `GET` | `/admin/automations/executions/:id` | Get execution detail |
 | `POST` | `/admin/automations/executions/purge` | Delete old executions |
 
+## Store Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/automations/trigger` | Trigger automation events from the storefront. Only allowlisted `storefront.*` event types are accepted (e.g. `storefront.form_submitted`, `storefront.page_viewed`, `storefront.cart_updated`). |
+| `POST` | `/automations/webhooks` | Receive events from external services (Zapier, custom integrations). Any event type is accepted. Authenticated via `x-webhook-secret` header when `webhookSecret` is configured. |
+
 ## Controller API
 
 ```ts
@@ -123,7 +130,7 @@ type ActionType = "send_notification" | "send_email" | "update_field" | "create_
 
 ## Notes
 
-- Automations are admin-only — no store-facing endpoints.
+- Two store-facing endpoints allow the storefront and external integrations to trigger automations.
 - `evaluateEvent()` is the primary integration point for the platform event system.
 - Duplicating an automation resets its status to `draft` and run count to `0`.
 - Deleting an automation cascades to all its execution records.

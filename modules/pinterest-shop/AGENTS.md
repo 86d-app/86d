@@ -10,8 +10,8 @@ src/
   schema.ts         Zod models: catalogItem, shoppingPin, catalogSync
   service.ts        PinterestShopController interface
   service-impl.ts   PinterestShopController implementation via ModuleDataService
-  store/endpoints/  (empty)
-  admin/endpoints/  (empty)
+  store/endpoints/  webhooks.ts
+  admin/endpoints/  create-catalog-item, get-catalog-item, list-catalog-items, update-catalog-item, delete-catalog-item, sync-catalog, list-syncs, create-pin, list-pins, stats
   admin/components/ index.tsx, pinterest-shop-admin.mdx, pinterest-shop-admin.tsx
   __tests__/        service-impl.test.ts
 ```
@@ -39,6 +39,26 @@ interface PinterestShopOptions extends ModuleConfig {
 - Controller key: `pinterestShop`
 - Events emitted: `pinterest.product.synced`, `pinterest.pin.created`, `pinterest.order.received`, `pinterest.catalog.synced`, `pinterest.webhook.received`
 - Exports read fields: `catalogItemTitle`, `catalogItemStatus`, `catalogItemPrice`, `pinterestItemId`
-- No store or admin endpoints are wired yet (both empty objects)
 - `syncCatalog()` syncs only active items and immediately marks as synced
+
+### Admin Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/admin/pinterest-shop/items` | List catalog items with optional filters |
+| POST | `/admin/pinterest-shop/items/create` | Create a new catalog item |
+| GET | `/admin/pinterest-shop/items/:id` | Get a single catalog item by ID |
+| PUT | `/admin/pinterest-shop/items/:id/update` | Update catalog item fields |
+| DELETE | `/admin/pinterest-shop/items/:id/delete` | Delete a catalog item |
+| POST | `/admin/pinterest-shop/sync` | Trigger a catalog sync |
+| GET | `/admin/pinterest-shop/syncs` | List catalog sync history |
+| GET | `/admin/pinterest-shop/pins` | List shopping pins |
+| POST | `/admin/pinterest-shop/pins/create` | Create a new shopping pin |
+| GET | `/admin/pinterest-shop/stats` | Get channel stats |
+
+### Store Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/pinterest-shop/webhooks` | Receive Pinterest webhook events |
 - `getPinAnalytics()` computes clickRate and saveRate from impressions

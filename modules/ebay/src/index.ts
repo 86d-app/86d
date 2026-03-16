@@ -1,6 +1,8 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
+import { adminEndpoints } from "./admin/endpoints";
 import { ebaySchema } from "./schema";
 import { createEbayController } from "./service-impl";
+import { storeEndpoints } from "./store/endpoints";
 
 export type {
 	ChannelStats,
@@ -45,6 +47,10 @@ export default function ebay(options?: EbayOptions): Module {
 		init: async (ctx: ModuleContext) => {
 			const controller = createEbayController(ctx.data);
 			return { controllers: { ebay: controller } };
+		},
+		endpoints: {
+			store: storeEndpoints,
+			admin: adminEndpoints,
 		},
 		admin: {
 			pages: [

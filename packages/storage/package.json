@@ -2,6 +2,11 @@
 	"name": "@86d-app/storage",
 	"version": "0.0.4",
 	"type": "module",
+	"scripts": {
+		"build": "tsc",
+		"test": "vitest run",
+		"check": "biome check src/"
+	},
 	"exports": {
 		".": "./src/index.ts"
 	},
@@ -19,6 +24,7 @@
 	"devDependencies": {
 		"@biomejs/biome": "catalog:",
 		"@vercel/blob": "2.0.0",
+		"vitest": "catalog:vite",
 		"typescript": "catalog:",
 		"@types/node": "catalog:node"
 	}

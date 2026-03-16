@@ -47,13 +47,25 @@ const module = ebay({
 | `refreshToken` | `string` | - | eBay API refresh token |
 | `siteId` | `string` | `"EBAY_US"` | eBay site ID |
 
-## Store Endpoints
-
-No store endpoints are currently registered.
-
 ## Admin Endpoints
 
-No admin endpoints are currently registered. The controller API is available for custom endpoint wiring.
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/admin/ebay/listings` | List listings with optional status, listing type, page, and limit filters |
+| POST | `/admin/ebay/listings/create` | Create a new listing (fixed-price or auction) |
+| GET | `/admin/ebay/listings/:id` | Get a single listing by ID |
+| PUT | `/admin/ebay/listings/:id/update` | Update listing fields (title, price, quantity, condition, etc.) |
+| PUT | `/admin/ebay/listings/:id/end` | End a listing |
+| GET | `/admin/ebay/orders` | List orders with optional status, page, and limit filters |
+| PUT | `/admin/ebay/orders/:id/ship` | Ship an order with tracking number and carrier |
+| GET | `/admin/ebay/stats` | Get channel statistics |
+| GET | `/admin/ebay/auctions` | Get active auction listings |
+
+## Store Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/ebay/webhooks` | Receive eBay webhook events (e.g. `order.created` triggers order ingestion) |
 
 ## Controller API
 
@@ -90,4 +102,4 @@ type EbayOrderStatus = "pending" | "paid" | "shipped" | "delivered" | "cancelled
 - `endListing()` marks the listing as ended and records the end timestamp.
 - Fee tracking includes both eBay fees and payment processing fees per order.
 - Channel stats calculate average price across active listings.
-- Admin and store endpoints are not yet wired; use the controller directly for now.
+- Admin and store endpoints are fully wired via `createAdminEndpoint` and `createStoreEndpoint`.

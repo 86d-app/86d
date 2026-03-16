@@ -1,6 +1,8 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
+import { adminEndpoints } from "./admin/endpoints";
 import { pinterestShopSchema } from "./schema";
 import { createPinterestShopController } from "./service-impl";
+import { storeEndpoints } from "./store/endpoints";
 
 export type {
 	Availability,
@@ -48,6 +50,10 @@ export default function pinterestShop(options?: PinterestShopOptions): Module {
 		init: async (ctx: ModuleContext) => {
 			const controller = createPinterestShopController(ctx.data);
 			return { controllers: { pinterestShop: controller } };
+		},
+		endpoints: {
+			store: storeEndpoints,
+			admin: adminEndpoints,
 		},
 		admin: {
 			pages: [

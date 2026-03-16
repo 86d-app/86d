@@ -12,7 +12,9 @@ src/
   service-impl.ts       Controller implementation (condition eval, action dispatch)
   mdx.d.ts              MDX module declaration
   store/endpoints/
-    index.ts            Empty (no public endpoints)
+    index.ts            Store endpoint factory (createStoreEndpoints)
+    trigger-event.ts    POST /automations/trigger (storefront event allowlist)
+    webhook.ts          POST /automations/webhooks (external webhook reception)
   admin/endpoints/
     index.ts            Endpoint registry (13 admin endpoints)
     list-automations.ts GET  /admin/automations
@@ -89,7 +91,8 @@ interface AutomationsOptions {
 
 ## Gotchas
 
-- No store-facing endpoints — automations are admin-only
+- Two store endpoints: `/automations/trigger` (public, allowlisted storefront events only) and `/automations/webhooks` (external integrations, authenticated via `x-webhook-secret` header)
+- `createStoreEndpoints(opts?)` factory accepts optional `webhookSecret` for webhook authentication
 - Action execution is synchronous validation; real side-effects (email, webhook) require integration with the notification/email modules
 - `evaluateEvent` is the main entry point for the event system to invoke automations
 - `duplicate()` resets status to draft and runCount to 0

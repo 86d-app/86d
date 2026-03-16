@@ -10,8 +10,8 @@ src/
   schema.ts         Zod models: listing, ebayOrder
   service.ts        EbayController interface
   service-impl.ts   EbayController implementation via ModuleDataService
-  store/endpoints/  (empty)
-  admin/endpoints/  (empty)
+  store/endpoints/  webhooks.ts
+  admin/endpoints/  create-listing, get-listing, list-listings, update-listing, end-listing, list-orders, ship-order, stats, active-auctions
   admin/components/ index.tsx, ebay-admin.tsx, ebay-admin.mdx
   __tests__/        service-impl.test.ts
 ```
@@ -39,6 +39,25 @@ interface EbayOptions extends ModuleConfig {
 - Supports both fixed-price and auction listing types
 - `endListing()` sets status to "ended" and records endTime
 - `getActiveAuctions()` filters by status=active AND listingType=auction
-- No admin or store endpoints are wired yet (both export empty objects)
 - Admin page: `/admin/ebay` (single page)
+
+### Admin Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/admin/ebay/listings` | List listings with optional status/type/page/limit filters |
+| POST | `/admin/ebay/listings/create` | Create a new listing (fixed-price or auction) |
+| GET | `/admin/ebay/listings/:id` | Get a single listing by ID |
+| PUT | `/admin/ebay/listings/:id/update` | Update listing fields |
+| PUT | `/admin/ebay/listings/:id/end` | End a listing |
+| GET | `/admin/ebay/orders` | List orders with optional status/page/limit filters |
+| PUT | `/admin/ebay/orders/:id/ship` | Ship an order (trackingNumber, carrier) |
+| GET | `/admin/ebay/stats` | Get channel stats |
+| GET | `/admin/ebay/auctions` | Get active auctions |
+
+### Store Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/ebay/webhooks` | Receive eBay webhook events (e.g. order.created) |
 - Events: `ebay.listing.created`, `ebay.listing.ended`, `ebay.order.received`, `ebay.order.shipped`, `ebay.bid.received`, `ebay.catalog.synced`

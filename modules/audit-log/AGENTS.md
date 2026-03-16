@@ -12,7 +12,8 @@ src/
   service-impl.ts   AuditLogController implementation
   store/
     endpoints/
-      index.ts              Empty — no store-facing endpoints
+      index.ts              Store endpoint registry
+      my-activity.ts        GET /audit-log/my-activity
   admin/
     components/
       audit-log-list.*      List view MDX + TSX
@@ -40,7 +41,7 @@ AuditLogOptions {
 
 ## Patterns
 
-- No store endpoints — admin-only module
+- One store endpoint: `/audit-log/my-activity` returns the authenticated user's own audit trail (requires session)
 - Other modules record entries via `AuditLogController.log()` through inter-module contracts
 - Date filtering done in-memory (ModuleDataService lacks range queries)
 - `purge(olderThan)` deletes all entries before a given date

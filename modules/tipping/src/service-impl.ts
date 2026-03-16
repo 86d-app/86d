@@ -210,10 +210,10 @@ export function createTippingController(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert(
 				"tipSettings",
 				DEFAULT_SETTINGS_ID,
+				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 				defaults as Record<string, any>,
 			);
 			return defaults;
@@ -244,10 +244,10 @@ export function createTippingController(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert(
 				"tipSettings",
 				DEFAULT_SETTINGS_ID,
+				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 				updated as Record<string, any>,
 			);
 			return updated;
