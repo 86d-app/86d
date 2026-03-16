@@ -26,8 +26,15 @@ COPY packages/sdk/package.json packages/sdk/
 COPY packages/cli/package.json packages/cli/
 COPY packages/storage/package.json packages/storage/
 
-# Copy all module package.json files
-COPY modules/ modules/
+# Copy only module package.json files (not source code) for better layer caching
+COPY modules/ /tmp/all-modules/
+RUN mkdir -p modules && \
+    for dir in /tmp/all-modules/*/; do \
+      name=$(basename "$dir"); \
+      mkdir -p "modules/$name" && \
+      cp "$dir/package.json" "modules/$name/package.json" 2>/dev/null || true; \
+    done && \
+    rm -rf /tmp/all-modules
 
 # Install all dependencies
 RUN bun install --frozen-lockfile
@@ -75,6 +82,10 @@ COPY --from=builder /app/packages/db/prisma ./packages/db/prisma
 COPY --from=builder /app/packages/core/prisma ./packages/core/prisma
 COPY --from=builder /app/packages/core/src/prisma ./packages/core/src/prisma
 
+# Copy Prisma CLI + engine for runtime migrations (not traced by standalone)
+COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
+COPY --from=builder /app/node_modules/@prisma/engines ./node_modules/@prisma/engines
+
 # Copy seed script and its dependencies
 COPY --from=builder /app/scripts/seed.ts ./scripts/seed.ts
 COPY --from=builder /app/package.json ./package.json
@@ -95,6 +106,6 @@ ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
-  CMD curl -f http://localhost:3000/api/health || exit 1
+  CMD bun -e "fetch('http://localhost:3000/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
 
 ENTRYPOINT ["/app/entrypoint.sh"]

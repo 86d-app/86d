@@ -126,9 +126,10 @@ async function handleRequest(req: NextRequest, ctx: RouteParams) {
 	const isAdmin = fullPath.startsWith("/admin");
 
 	// ── Session-based authentication ─────────────────────────────────────
-	if (isAdmin) {
-		const session = await getSession();
+	// Fetch session once and reuse for both auth checks and the handler.
+	const session = await getSession();
 
+	if (isAdmin) {
 		if (!session) {
 			return NextResponse.json(
 				{ error: { code: "UNAUTHORIZED", message: "Admin access required." } },
@@ -179,7 +180,6 @@ async function handleRequest(req: NextRequest, ctx: RouteParams) {
 		}
 	}
 
-	const session = await getSession();
 	return handleAuthedRequest(req, fullPath, session);
 }
 

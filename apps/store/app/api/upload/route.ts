@@ -3,7 +3,11 @@ import { verifyStoreAdminAccess } from "auth/store-access";
 import env from "env";
 import { NextResponse } from "next/server";
 import { logger } from "utils/logger";
+import { createRateLimiter } from "utils/rate-limit";
 import { getStorage } from "~/lib/storage";
+
+/** Upload rate limit: 30 uploads per 5 minutes per user. */
+const uploadLimiter = createRateLimiter({ limit: 30, window: 300_000 });
 
 const ALLOWED_TYPES = new Set([
 	"image/jpeg",
@@ -75,14 +79,25 @@ function getMaxSizeForType(mime: string): number {
 /** Reject SVGs containing script tags, event handlers, or JS URIs. */
 function isSvgSafe(buffer: ArrayBuffer): boolean {
 	const text = new TextDecoder().decode(new Uint8Array(buffer));
-	// Block script elements
-	if (/<script[\s>]/i.test(text)) return false;
+	// Block script elements (including namespace variants)
+	if (/<script[\s>/]/i.test(text)) return false;
 	// Block event handler attributes (onclick, onload, onerror, etc.)
 	if (/\bon\w+\s*=/i.test(text)) return false;
-	// Block javascript: URIs
-	if (/javascript\s*:/i.test(text)) return false;
-	// Block data: URIs in href/src (can embed scripts)
+	// Block javascript: URIs (including entity-encoded variants)
+	if (/j\s*a\s*v\s*a\s*s\s*c\s*r\s*i\s*p\s*t\s*:/i.test(text)) return false;
+	// Block data: URIs in href/src/xlink:href (can embed scripts)
 	if (/(?:href|src)\s*=\s*["']?\s*data\s*:/i.test(text)) return false;
+	// Block foreignObject (can embed arbitrary HTML including scripts)
+	if (/<foreignObject[\s>]/i.test(text)) return false;
+	// Block use/iframe/embed/object elements (external content injection)
+	if (/<(?:iframe|embed|object)[\s>]/i.test(text)) return false;
+	// Block SVG animation elements that can trigger navigation or events
+	if (
+		/<(?:animate|set|animateTransform)\b[^>]*(?:onbegin|onend|onrepeat|attributeName\s*=\s*["']?href)/i.test(
+			text,
+		)
+	)
+		return false;
 	return true;
 }
 
@@ -103,6 +118,15 @@ export async function POST(request: Request) {
 	const access = verifyStoreAdminAccess(session.user);
 	if (!access.hasAccess) {
 		return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+	}
+
+	const rateResult = uploadLimiter.check(`upload:${session.user.id}`);
+	if (!rateResult.allowed) {
+		const retryAfter = Math.ceil((rateResult.resetAt - Date.now()) / 1000);
+		return NextResponse.json(
+			{ error: "Rate limit exceeded. Please slow down." },
+			{ status: 429, headers: { "Retry-After": String(retryAfter) } },
+		);
 	}
 
 	try {
@@ -189,6 +213,11 @@ export async function DELETE(request: Request) {
 
 		if (!key) {
 			return NextResponse.json({ error: "Missing file key" }, { status: 400 });
+		}
+
+		// Reject path traversal attempts
+		if (key.includes("..") || key.includes("\0")) {
+			return NextResponse.json({ error: "Invalid key" }, { status: 400 });
 		}
 
 		// Ensure the key belongs to this store to prevent cross-store deletion

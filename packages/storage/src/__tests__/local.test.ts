@@ -103,6 +103,43 @@ describe("LocalStorageProvider", () => {
 				provider.delete({ key: "nonexistent.txt" }),
 			).resolves.toBeUndefined();
 		});
+
+		it("rejects path traversal in delete", async () => {
+			await expect(
+				provider.delete({ key: "../../../etc/passwd" }),
+			).rejects.toThrow("path traversal");
+		});
+	});
+
+	describe("path traversal protection", () => {
+		it("rejects upload keys with .. segments", async () => {
+			await expect(
+				provider.upload({
+					key: "../outside/file.txt",
+					content: Buffer.from("malicious"),
+					contentType: "text/plain",
+				}),
+			).rejects.toThrow("path traversal");
+		});
+
+		it("rejects upload keys that escape via nested traversal", async () => {
+			await expect(
+				provider.upload({
+					key: "stores/abc/../../../../../../../etc/passwd",
+					content: Buffer.from("malicious"),
+					contentType: "text/plain",
+				}),
+			).rejects.toThrow("path traversal");
+		});
+
+		it("allows keys with legitimate nested paths", async () => {
+			const result = await provider.upload({
+				key: "stores/abc123/image.png",
+				content: Buffer.from("ok"),
+				contentType: "image/png",
+			});
+			expect(result.key).toBe("stores/abc123/image.png");
+		});
 	});
 
 	describe("getUrl", () => {

@@ -45,12 +45,16 @@ export async function GET(
 	const headers: Record<string, string> = {
 		"Content-Type": contentType,
 		"Cache-Control": "public, max-age=31536000, immutable",
+		"X-Content-Type-Options": "nosniff",
 	};
 
-	// SVGs can contain scripts — prevent inline execution via CSP
+	// SVGs and PDFs can contain scripts — prevent inline execution
 	if (contentType === "image/svg+xml") {
 		headers["Content-Security-Policy"] =
 			"default-src 'none'; style-src 'unsafe-inline'";
+	}
+	if (contentType === "application/pdf") {
+		headers["Content-Disposition"] = "attachment";
 	}
 
 	return new NextResponse(content, { status: 200, headers });

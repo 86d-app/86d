@@ -31,10 +31,19 @@ fi
 if [ "$SKIP_MIGRATIONS" != "true" ] && [ -d "packages/db/prisma" ]; then
   echo "→ Running database migrations..."
   cd packages/db
-  bunx prisma db push --schema prisma --skip-generate --accept-data-loss 2>&1 || {
-    echo "✗ Migration failed"
-    exit 1
-  }
+  if [ -d "prisma/migrations" ]; then
+    # Production: use migrate deploy when migration files exist
+    bunx prisma migrate deploy --schema prisma 2>&1 || {
+      echo "✗ Migration failed"
+      exit 1
+    }
+  else
+    # Development: use db push when no migration files exist (never accept-data-loss)
+    bunx prisma db push --schema prisma --skip-generate 2>&1 || {
+      echo "✗ Schema push failed"
+      exit 1
+    }
+  fi
   cd /app
   echo "✓ Migrations complete"
 fi

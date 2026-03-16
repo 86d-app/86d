@@ -22,8 +22,7 @@
  *   - Inventory records for all products
  */
 
-import { randomUUID } from "node:crypto";
-import { scryptSync, randomBytes } from "node:crypto";
+import { createHash, scryptSync, randomBytes } from "node:crypto";
 
 /* ------------------------------------------------------------------ */
 /* Database connection (raw SQL via pg, no Prisma generation needed)   */
@@ -46,8 +45,24 @@ const pool = new pg.Pool({ connectionString: DATABASE_URL });
 const STORE_ID = process.env.STORE_ID || "demo5b9d-c517-4c65-896e-8edef5cf5a94";
 const now = new Date().toISOString();
 
-function uuid(): string {
-	return randomUUID();
+/**
+ * Generate a deterministic UUID from a stable key.
+ * This ensures re-running the seed produces the same IDs,
+ * allowing ON CONFLICT upserts to work correctly.
+ */
+const SEED_NAMESPACE = "86d-seed-v1";
+function uuid(key: string): string {
+	const hash = createHash("sha256")
+		.update(`${SEED_NAMESPACE}:${key}`)
+		.digest("hex");
+	// Format as UUID v4-compatible (set version nibble to 4, variant bits to 10xx)
+	return [
+		hash.slice(0, 8),
+		hash.slice(8, 12),
+		`4${hash.slice(13, 16)}`,
+		`${(0x8 | (Number.parseInt(hash[16], 16) & 0x3)).toString(16)}${hash.slice(17, 20)}`,
+		hash.slice(20, 32),
+	].join("-");
 }
 
 /** Hash password using Better Auth's scrypt format: hex-salt:hex-key */
@@ -82,8 +97,8 @@ function slug(text: string): string {
 /* IDs — pre-generated so we can cross-reference                      */
 /* ------------------------------------------------------------------ */
 
-const adminUserId = uuid();
-const adminAccountId = uuid();
+const adminUserId = uuid("admin-user");
+const adminAccountId = uuid("admin-account");
 
 const moduleIds: Record<string, string> = {};
 const moduleNames = [
@@ -165,7 +180,7 @@ const moduleNames = [
 ];
 
 for (const name of moduleNames) {
-	moduleIds[name] = uuid();
+	moduleIds[name] = uuid(`module:${name}`);
 }
 
 /* ------------------------------------------------------------------ */
@@ -193,12 +208,12 @@ interface Product {
 }
 
 const categoryIds = {
-	clothing: uuid(),
-	accessories: uuid(),
-	electronics: uuid(),
-	foodDrink: uuid(),
-	homeKitchen: uuid(),
-	sportsOutdoors: uuid(),
+	clothing: uuid("category:clothing"),
+	accessories: uuid("category:accessories"),
+	electronics: uuid("category:electronics"),
+	foodDrink: uuid("category:food-drink"),
+	homeKitchen: uuid("category:home-kitchen"),
+	sportsOutdoors: uuid("category:sports-outdoors"),
 };
 
 const categories = [
@@ -254,7 +269,7 @@ const categories = [
 
 const products: Product[] = [
 	{
-		id: uuid(),
+		id: uuid("product:classic-white-t-shirt"),
 		name: "Classic White T-Shirt",
 		slug: "classic-white-t-shirt",
 		description:
@@ -279,7 +294,7 @@ const products: Product[] = [
 		weightUnit: "kg",
 	},
 	{
-		id: uuid(),
+		id: uuid("entity:leather-messenger-bag"),
 		name: "Leather Messenger Bag",
 		slug: "leather-messenger-bag",
 		description:
@@ -304,7 +319,7 @@ const products: Product[] = [
 		weightUnit: "kg",
 	},
 	{
-		id: uuid(),
+		id: uuid("entity:wireless-bluetooth-headphones"),
 		name: "Wireless Bluetooth Headphones",
 		slug: "wireless-bluetooth-headphones",
 		description:
@@ -328,7 +343,7 @@ const products: Product[] = [
 		weightUnit: "kg",
 	},
 	{
-		id: uuid(),
+		id: uuid("entity:organic-coffee-beans"),
 		name: "Organic Coffee Beans",
 		slug: "organic-coffee-beans",
 		description:
@@ -352,7 +367,7 @@ const products: Product[] = [
 		weightUnit: "kg",
 	},
 	{
-		id: uuid(),
+		id: uuid("entity:handcrafted-ceramic-mug"),
 		name: "Handcrafted Ceramic Mug",
 		slug: "handcrafted-ceramic-mug",
 		description:
@@ -376,7 +391,7 @@ const products: Product[] = [
 		weightUnit: "kg",
 	},
 	{
-		id: uuid(),
+		id: uuid("entity:running-shoes-pro"),
 		name: "Running Shoes Pro",
 		slug: "running-shoes-pro",
 		description:
@@ -401,7 +416,7 @@ const products: Product[] = [
 		weightUnit: "kg",
 	},
 	{
-		id: uuid(),
+		id: uuid("entity:bamboo-water-bottle"),
 		name: "Bamboo Water Bottle",
 		slug: "bamboo-water-bottle",
 		description:
@@ -425,7 +440,7 @@ const products: Product[] = [
 		weightUnit: "kg",
 	},
 	{
-		id: uuid(),
+		id: uuid("entity:wool-blend-scarf"),
 		name: "Wool Blend Scarf",
 		slug: "wool-blend-scarf",
 		description:
@@ -451,9 +466,9 @@ const products: Product[] = [
 ];
 
 const collectionIds = {
-	featured: uuid(),
-	newArrivals: uuid(),
-	bestSellers: uuid(),
+	featured: uuid("collection-ids:featured"),
+	newArrivals: uuid("collection-ids:newArrivals"),
+	bestSellers: uuid("collection-ids:bestSellers"),
 };
 
 const collections = [
@@ -486,7 +501,7 @@ const collections = [
 	},
 ];
 
-const customerIds = { john: uuid(), jane: uuid() };
+const customerIds = { john: uuid("seed-line-504"), jane: uuid("seed-1") };
 
 const customers = [
 	{
@@ -591,7 +606,7 @@ async function insertModuleData(
 		`INSERT INTO "ModuleData" (id, cuid, "entityType", "entityId", data, "moduleId", "createdAt", "updatedAt")
 		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		 ON CONFLICT ("moduleId", "entityType", "entityId") DO UPDATE SET data = $5, "updatedAt" = $8`,
-		[uuid(), cuid(), entityType, entityId, JSON.stringify(data), modId, now, now],
+		[uuid("insert-module-data"), cuid(), entityType, entityId, JSON.stringify(data), modId, now, now],
 	);
 }
 
@@ -631,7 +646,7 @@ async function seedCollections(client: pg.PoolClient) {
 	// Link featured products to the Featured collection
 	const featuredProducts = products.filter((p) => p.isFeatured);
 	for (let i = 0; i < featuredProducts.length; i++) {
-		const linkId = uuid();
+		const linkId = uuid("seed-2");
 		await insertModuleData(
 			client,
 			"collections",
@@ -649,7 +664,7 @@ async function seedCollections(client: pg.PoolClient) {
 
 	// Link all products to New Arrivals
 	for (let i = 0; i < products.length; i++) {
-		const linkId = uuid();
+		const linkId = uuid("seed-3");
 		await insertModuleData(
 			client,
 			"collections",
@@ -667,7 +682,7 @@ async function seedCollections(client: pg.PoolClient) {
 
 	// Top 4 as best sellers
 	for (let i = 0; i < 4; i++) {
-		const linkId = uuid();
+		const linkId = uuid("seed-4");
 		await insertModuleData(
 			client,
 			"collections",
@@ -695,7 +710,7 @@ async function seedCustomers(client: pg.PoolClient) {
 	}
 
 	// Add an address for John
-	const addressId = uuid();
+	const addressId = uuid("seed-5");
 	await insertModuleData(client, "customers", "customerAddress", addressId, {
 		id: addressId,
 		customerId: customerIds.john,
@@ -716,7 +731,7 @@ async function seedCustomers(client: pg.PoolClient) {
 async function seedSettings(client: pg.PoolClient) {
 	console.log("  Creating store settings...");
 	for (const setting of settings) {
-		const settingId = uuid();
+		const settingId = uuid("seed-6");
 		await insertModuleData(client, "settings", "storeSetting", settingId, {
 			id: settingId,
 			key: setting.key,
@@ -730,7 +745,7 @@ async function seedSettings(client: pg.PoolClient) {
 async function seedInventory(client: pg.PoolClient) {
 	console.log("  Creating inventory records...");
 	for (const product of products) {
-		const itemId = uuid();
+		const itemId = uuid("seed-7");
 		await insertModuleData(client, "inventory", "inventoryItem", itemId, {
 			id: itemId,
 			productId: product.id,
@@ -746,7 +761,7 @@ async function seedInventory(client: pg.PoolClient) {
 
 async function seedNavigation(client: pg.PoolClient) {
 	console.log("  Creating navigation menus...");
-	const mainMenuId = uuid();
+	const mainMenuId = uuid("seed-8");
 	await insertModuleData(client, "navigation", "menu", mainMenuId, {
 		id: mainMenuId,
 		name: "Main Navigation",
@@ -766,7 +781,7 @@ async function seedNavigation(client: pg.PoolClient) {
 	];
 
 	for (const item of menuItems) {
-		const itemId = uuid();
+		const itemId = uuid("seed-9");
 		await insertModuleData(client, "navigation", "menuItem", itemId, {
 			id: itemId,
 			menuId: mainMenuId,
@@ -782,7 +797,7 @@ async function seedNavigation(client: pg.PoolClient) {
 
 async function seedDemoOrder(client: pg.PoolClient) {
 	console.log("  Creating demo order...");
-	const orderId = uuid();
+	const orderId = uuid("seed-10");
 	const orderNumber = "ORD-1001";
 
 	await insertModuleData(client, "orders", "order", orderId, {
@@ -802,7 +817,7 @@ async function seedDemoOrder(client: pg.PoolClient) {
 	});
 
 	// Order items
-	const item1Id = uuid();
+	const item1Id = uuid("seed-11");
 	await insertModuleData(client, "orders", "orderItem", item1Id, {
 		id: item1Id,
 		orderId,
@@ -814,7 +829,7 @@ async function seedDemoOrder(client: pg.PoolClient) {
 		sku: products[0].sku,
 	});
 
-	const item2Id = uuid();
+	const item2Id = uuid("seed-12");
 	await insertModuleData(client, "orders", "orderItem", item2Id, {
 		id: item2Id,
 		orderId,
@@ -827,7 +842,7 @@ async function seedDemoOrder(client: pg.PoolClient) {
 	});
 
 	// Shipping address
-	const addressId = uuid();
+	const addressId = uuid("seed-13");
 	await insertModuleData(client, "orders", "orderAddress", addressId, {
 		id: addressId,
 		orderId,
@@ -850,7 +865,7 @@ async function seedBrands(client: pg.PoolClient) {
 	console.log("  Creating brands...");
 	const brands = [
 		{
-			id: uuid(),
+			id: uuid("entity:artisan-co."),
 			name: "Artisan Co.",
 			slug: "artisan-co",
 			description: "Handcrafted goods made with care and tradition.",
@@ -861,7 +876,7 @@ async function seedBrands(client: pg.PoolClient) {
 			position: 0,
 		},
 		{
-			id: uuid(),
+			id: uuid("entity:techedge"),
 			name: "TechEdge",
 			slug: "techedge",
 			description: "Cutting-edge consumer electronics and accessories.",
@@ -872,7 +887,7 @@ async function seedBrands(client: pg.PoolClient) {
 			position: 1,
 		},
 		{
-			id: uuid(),
+			id: uuid("entity:verde-naturals"),
 			name: "Verde Naturals",
 			slug: "verde-naturals",
 			description: "Sustainable, eco-friendly products for everyday life.",
@@ -893,7 +908,7 @@ async function seedBrands(client: pg.PoolClient) {
 
 	// Link some products to brands
 	for (let i = 0; i < Math.min(products.length, brands.length); i++) {
-		const linkId = uuid();
+		const linkId = uuid("seed-14");
 		await insertModuleData(client, "brands", "brandProduct", linkId, {
 			id: linkId,
 			brandId: brands[i].id,
@@ -958,7 +973,7 @@ async function seedReviews(client: pg.PoolClient) {
 	];
 
 	for (const review of reviewData) {
-		const reviewId = uuid();
+		const reviewId = uuid("seed-15");
 		await insertModuleData(client, "reviews", "review", reviewId, {
 			id: reviewId,
 			...review,
@@ -973,7 +988,7 @@ async function seedBlog(client: pg.PoolClient) {
 	console.log("  Creating blog posts...");
 	const posts = [
 		{
-			id: uuid(),
+			id: uuid("seed-16"),
 			title: "Welcome to Our Store",
 			slug: "welcome-to-our-store",
 			content:
@@ -986,7 +1001,7 @@ async function seedBlog(client: pg.PoolClient) {
 			publishedAt: now,
 		},
 		{
-			id: uuid(),
+			id: uuid("seed-17"),
 			title: "The Art of Leather Craftsmanship",
 			slug: "art-of-leather-craftsmanship",
 			content:
@@ -1000,7 +1015,7 @@ async function seedBlog(client: pg.PoolClient) {
 			publishedAt: now,
 		},
 		{
-			id: uuid(),
+			id: uuid("seed-18"),
 			title: "Sustainable Living Guide",
 			slug: "sustainable-living-guide",
 			content:
@@ -1027,7 +1042,7 @@ async function seedPages(client: pg.PoolClient) {
 	console.log("  Creating pages...");
 	const pageData = [
 		{
-			id: uuid(),
+			id: uuid("seed-19"),
 			title: "About Us",
 			slug: "about",
 			content:
@@ -1037,7 +1052,7 @@ async function seedPages(client: pg.PoolClient) {
 			position: 0,
 		},
 		{
-			id: uuid(),
+			id: uuid("seed-20"),
 			title: "Contact",
 			slug: "contact",
 			content:
@@ -1047,7 +1062,7 @@ async function seedPages(client: pg.PoolClient) {
 			position: 1,
 		},
 		{
-			id: uuid(),
+			id: uuid("seed-21"),
 			title: "Shipping Policy",
 			slug: "shipping-policy",
 			content:
@@ -1057,7 +1072,7 @@ async function seedPages(client: pg.PoolClient) {
 			position: 2,
 		},
 		{
-			id: uuid(),
+			id: uuid("seed-22"),
 			title: "Return Policy",
 			slug: "return-policy",
 			content:
@@ -1067,7 +1082,7 @@ async function seedPages(client: pg.PoolClient) {
 			position: 3,
 		},
 		{
-			id: uuid(),
+			id: uuid("seed-23"),
 			title: "Privacy Policy",
 			slug: "privacy-policy",
 			content:
@@ -1090,8 +1105,8 @@ async function seedPages(client: pg.PoolClient) {
 
 async function seedShipping(client: pg.PoolClient) {
 	console.log("  Creating shipping zones and rates...");
-	const domesticZoneId = uuid();
-	const internationalZoneId = uuid();
+	const domesticZoneId = uuid("seed-24");
+	const internationalZoneId = uuid("seed-25");
 
 	await insertModuleData(client, "shipping", "shippingZone", domesticZoneId, {
 		id: domesticZoneId,
@@ -1119,7 +1134,7 @@ async function seedShipping(client: pg.PoolClient) {
 
 	const rates = [
 		{
-			id: uuid(),
+			id: uuid("seed-26"),
 			zoneId: domesticZoneId,
 			name: "Standard Shipping",
 			price: 599,
@@ -1127,7 +1142,7 @@ async function seedShipping(client: pg.PoolClient) {
 			isActive: true,
 		},
 		{
-			id: uuid(),
+			id: uuid("seed-27"),
 			zoneId: domesticZoneId,
 			name: "Free Shipping",
 			price: 0,
@@ -1135,7 +1150,7 @@ async function seedShipping(client: pg.PoolClient) {
 			isActive: true,
 		},
 		{
-			id: uuid(),
+			id: uuid("seed-28"),
 			zoneId: domesticZoneId,
 			name: "Express Shipping",
 			price: 999,
@@ -1143,7 +1158,7 @@ async function seedShipping(client: pg.PoolClient) {
 			isActive: true,
 		},
 		{
-			id: uuid(),
+			id: uuid("seed-29"),
 			zoneId: internationalZoneId,
 			name: "International Standard",
 			price: 1499,
@@ -1165,7 +1180,7 @@ async function seedTax(client: pg.PoolClient) {
 	console.log("  Creating tax rates...");
 	const taxRates = [
 		{
-			id: uuid(),
+			id: uuid("entity:california-sales-tax"),
 			name: "California Sales Tax",
 			country: "US",
 			state: "CA",
@@ -1177,7 +1192,7 @@ async function seedTax(client: pg.PoolClient) {
 			inclusive: false,
 		},
 		{
-			id: uuid(),
+			id: uuid("entity:new-york-sales-tax"),
 			name: "New York Sales Tax",
 			country: "US",
 			state: "NY",
@@ -1189,7 +1204,7 @@ async function seedTax(client: pg.PoolClient) {
 			inclusive: false,
 		},
 		{
-			id: uuid(),
+			id: uuid("entity:texas-sales-tax"),
 			name: "Texas Sales Tax",
 			country: "US",
 			state: "TX",
@@ -1210,7 +1225,7 @@ async function seedTax(client: pg.PoolClient) {
 		});
 	}
 
-	const categoryId = uuid();
+	const categoryId = uuid("seed-30");
 	await insertModuleData(client, "tax", "taxCategory", categoryId, {
 		id: categoryId,
 		name: "Standard Rate",
@@ -1222,7 +1237,7 @@ async function seedTax(client: pg.PoolClient) {
 
 async function seedDiscounts(client: pg.PoolClient) {
 	console.log("  Creating discounts...");
-	const discountId = uuid();
+	const discountId = uuid("seed-31");
 	await insertModuleData(client, "discounts", "discount", discountId, {
 		id: discountId,
 		name: "Welcome 10% Off",
@@ -1236,7 +1251,7 @@ async function seedDiscounts(client: pg.PoolClient) {
 		updatedAt: now,
 	});
 
-	const codeId = uuid();
+	const codeId = uuid("seed-32");
 	await insertModuleData(client, "discounts", "discountCode", codeId, {
 		id: codeId,
 		discountId,
@@ -1247,7 +1262,7 @@ async function seedDiscounts(client: pg.PoolClient) {
 		updatedAt: now,
 	});
 
-	const freeShipId = uuid();
+	const freeShipId = uuid("seed-33");
 	await insertModuleData(client, "discounts", "discount", freeShipId, {
 		id: freeShipId,
 		name: "Free Shipping Over $75",
@@ -1262,7 +1277,7 @@ async function seedDiscounts(client: pg.PoolClient) {
 		updatedAt: now,
 	});
 
-	const freeShipCodeId = uuid();
+	const freeShipCodeId = uuid("seed-34");
 	await insertModuleData(
 		client,
 		"discounts",
@@ -1282,9 +1297,9 @@ async function seedDiscounts(client: pg.PoolClient) {
 
 async function seedFaq(client: pg.PoolClient) {
 	console.log("  Creating FAQ...");
-	const shippingCatId = uuid();
-	const returnsCatId = uuid();
-	const generalCatId = uuid();
+	const shippingCatId = uuid("seed-35");
+	const returnsCatId = uuid("seed-36");
+	const generalCatId = uuid("seed-37");
 
 	await insertModuleData(client, "faq", "faqCategory", shippingCatId, {
 		id: shippingCatId,
@@ -1379,7 +1394,7 @@ async function seedFaq(client: pg.PoolClient) {
 	];
 
 	for (const item of faqItems) {
-		const itemId = uuid();
+		const itemId = uuid("seed-38");
 		await insertModuleData(client, "faq", "faqItem", itemId, {
 			id: itemId,
 			...item,
@@ -1394,7 +1409,7 @@ async function seedFaq(client: pg.PoolClient) {
 
 async function seedAnnouncements(client: pg.PoolClient) {
 	console.log("  Creating announcements...");
-	const announcementId = uuid();
+	const announcementId = uuid("seed-39");
 	await insertModuleData(
 		client,
 		"announcements",
@@ -1457,7 +1472,7 @@ async function seedSeo(client: pg.PoolClient) {
 	];
 
 	for (const meta of metaTags) {
-		const metaId = uuid();
+		const metaId = uuid("seed-40");
 		await insertModuleData(client, "seo", "metaTag", metaId, {
 			id: metaId,
 			...meta,
@@ -1472,7 +1487,7 @@ async function seedSeo(client: pg.PoolClient) {
 async function seedSearch(client: pg.PoolClient) {
 	console.log("  Creating search index...");
 	for (const product of products) {
-		const indexId = uuid();
+		const indexId = uuid("seed-41");
 		await insertModuleData(client, "search", "searchIndex", indexId, {
 			id: indexId,
 			entityType: "product",
@@ -1501,7 +1516,7 @@ async function seedSearch(client: pg.PoolClient) {
 	];
 
 	for (const syn of synonyms) {
-		const synId = uuid();
+		const synId = uuid("seed-42");
 		await insertModuleData(client, "search", "searchSynonym", synId, {
 			id: synId,
 			term: syn.term,
@@ -1539,7 +1554,7 @@ async function seedNewsletter(client: pg.PoolClient) {
 	];
 
 	for (const sub of subscribers) {
-		const subId = uuid();
+		const subId = uuid("seed-43");
 		await insertModuleData(client, "newsletter", "subscriber", subId, {
 			id: subId,
 			...sub,
@@ -1582,7 +1597,7 @@ async function seedSocialProof(client: pg.PoolClient) {
 	];
 
 	for (const badge of badges) {
-		const badgeId = uuid();
+		const badgeId = uuid("seed-44");
 		await insertModuleData(client, "social-proof", "trustBadge", badgeId, {
 			id: badgeId,
 			...badge,
@@ -1618,7 +1633,7 @@ async function seedSocialProof(client: pg.PoolClient) {
 	];
 
 	for (const event of events) {
-		const eventId = uuid();
+		const eventId = uuid("seed-45");
 		await insertModuleData(
 			client,
 			"social-proof",
@@ -1638,7 +1653,7 @@ async function seedProductLabels(client: pg.PoolClient) {
 	console.log("  Creating product labels...");
 	const labels = [
 		{
-			id: uuid(),
+			id: uuid("entity:sale"),
 			name: "Sale",
 			slug: "sale",
 			displayText: "Sale",
@@ -1649,7 +1664,7 @@ async function seedProductLabels(client: pg.PoolClient) {
 			isActive: true,
 		},
 		{
-			id: uuid(),
+			id: uuid("entity:new"),
 			name: "New",
 			slug: "new",
 			displayText: "New",
@@ -1660,7 +1675,7 @@ async function seedProductLabels(client: pg.PoolClient) {
 			isActive: true,
 		},
 		{
-			id: uuid(),
+			id: uuid("entity:best-seller"),
 			name: "Best Seller",
 			slug: "best-seller",
 			displayText: "Best Seller",
@@ -1683,7 +1698,7 @@ async function seedProductLabels(client: pg.PoolClient) {
 	// Assign "Sale" label to products with compareAtPrice
 	const saleProducts = products.filter((p) => p.compareAtPrice);
 	for (const product of saleProducts) {
-		const linkId = uuid();
+		const linkId = uuid("seed-46");
 		await insertModuleData(
 			client,
 			"product-labels",
@@ -1735,7 +1750,7 @@ async function seedRedirects(client: pg.PoolClient) {
 	];
 
 	for (const redirect of redirects) {
-		const redirectId = uuid();
+		const redirectId = uuid("seed-47");
 		await insertModuleData(client, "redirects", "redirect", redirectId, {
 			id: redirectId,
 			...redirect,
@@ -1747,7 +1762,7 @@ async function seedRedirects(client: pg.PoolClient) {
 
 async function seedSitemap(client: pg.PoolClient) {
 	console.log("  Creating sitemap config...");
-	const configId = uuid();
+	const configId = uuid("seed-48");
 	await insertModuleData(client, "sitemap", "sitemapConfig", configId, {
 		id: configId,
 		baseUrl: "https://demo.86d.app",
@@ -1775,7 +1790,7 @@ async function seedStoreLocator(client: pg.PoolClient) {
 	console.log("  Creating store locations...");
 	const locations = [
 		{
-			id: uuid(),
+			id: uuid("entity:86d-flagship---san-francisco"),
 			name: "86d Flagship - San Francisco",
 			slug: "sf-flagship",
 			description: "Our flagship store in the heart of San Francisco.",
@@ -1803,7 +1818,7 @@ async function seedStoreLocator(client: pg.PoolClient) {
 			pickupEnabled: true,
 		},
 		{
-			id: uuid(),
+			id: uuid("entity:86d-downtown---new-york"),
 			name: "86d Downtown - New York",
 			slug: "nyc-downtown",
 			description:
@@ -1850,7 +1865,7 @@ async function seedStoreLocator(client: pg.PoolClient) {
 
 async function seedStorePickup(client: pg.PoolClient) {
 	console.log("  Creating store pickup locations and windows...");
-	const pickupLocationId = uuid();
+	const pickupLocationId = uuid("seed-49");
 	await insertModuleData(
 		client,
 		"store-pickup",
@@ -1878,7 +1893,7 @@ async function seedStorePickup(client: pg.PoolClient) {
 
 	// Pickup windows for weekdays
 	for (let day = 1; day <= 5; day++) {
-		const windowId = uuid();
+		const windowId = uuid("seed-50");
 		await insertModuleData(
 			client,
 			"store-pickup",
@@ -1936,7 +1951,7 @@ async function seedDeliverySlots(client: pg.PoolClient) {
 	];
 
 	for (const schedule of schedules) {
-		const scheduleId = uuid();
+		const scheduleId = uuid("seed-51");
 		await insertModuleData(
 			client,
 			"delivery-slots",

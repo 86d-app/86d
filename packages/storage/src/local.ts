@@ -20,12 +20,18 @@ export class LocalStorageProvider implements StorageProvider {
 		}
 	}
 
-	async upload(options: StorageUploadOptions): Promise<StorageUploadResult> {
-		const filePath = join(this.baseDir, options.key);
-		const dir = dirname(filePath);
-		if (!existsSync(dir)) {
-			mkdirSync(dir, { recursive: true });
+	private resolveAndValidate(key: string): string {
+		const filePath = resolve(join(this.baseDir, key));
+		if (!filePath.startsWith(this.baseDir)) {
+			throw new Error("Invalid storage key: path traversal detected");
 		}
+		return filePath;
+	}
+
+	async upload(options: StorageUploadOptions): Promise<StorageUploadResult> {
+		const filePath = this.resolveAndValidate(options.key);
+		const dir = dirname(filePath);
+		mkdirSync(dir, { recursive: true });
 		const buffer =
 			options.content instanceof ArrayBuffer
 				? Buffer.from(options.content)
@@ -38,9 +44,11 @@ export class LocalStorageProvider implements StorageProvider {
 	}
 
 	async delete(options: StorageDeleteOptions): Promise<void> {
-		const filePath = join(this.baseDir, options.key);
-		if (existsSync(filePath)) {
+		const filePath = this.resolveAndValidate(options.key);
+		try {
 			unlinkSync(filePath);
+		} catch (err) {
+			if ((err as NodeJS.ErrnoException).code !== "ENOENT") throw err;
 		}
 	}
 
