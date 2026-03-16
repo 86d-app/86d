@@ -5,7 +5,12 @@ import { blogSchema } from "./schema";
 import { createBlogController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints";
 
-export type { BlogController, BlogPost, PostStatus } from "./service";
+export type {
+	BlogController,
+	BlogPost,
+	PostStats,
+	PostStatus,
+} from "./service";
 
 export interface BlogOptions extends ModuleConfig {
 	/** Default number of posts per page (default: "20") */
@@ -15,13 +20,26 @@ export interface BlogOptions extends ModuleConfig {
 export default function blog(options?: BlogOptions): Module {
 	return {
 		id: "blog",
-		version: "0.0.1",
+		version: "0.1.0",
 		schema: blogSchema,
 		exports: {
-			read: ["postTitle", "postSlug", "postExcerpt"],
+			read: [
+				"postTitle",
+				"postSlug",
+				"postExcerpt",
+				"postCategory",
+				"postTags",
+				"postFeatured",
+			],
 		},
 		events: {
-			emits: ["blog.published", "blog.unpublished", "blog.deleted"],
+			emits: [
+				"blog.published",
+				"blog.unpublished",
+				"blog.deleted",
+				"blog.scheduled",
+				"blog.featured",
+			],
 		},
 		init: async (ctx: ModuleContext) => {
 			const controller = createBlogController(ctx.data);

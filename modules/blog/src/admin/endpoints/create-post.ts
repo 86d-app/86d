@@ -12,9 +12,13 @@ export const createPostEndpoint = createAdminEndpoint(
 			excerpt: z.string().max(1000).transform(sanitizeText).optional(),
 			coverImage: z.string().url().optional(),
 			author: z.string().max(200).transform(sanitizeText).optional(),
-			status: z.enum(["draft", "published"]).optional(),
+			status: z.enum(["draft", "published", "scheduled"]).optional(),
 			tags: z.array(z.string().max(100)).max(20).optional(),
 			category: z.string().max(200).transform(sanitizeText).optional(),
+			featured: z.boolean().optional(),
+			metaTitle: z.string().max(200).transform(sanitizeText).optional(),
+			metaDescription: z.string().max(500).transform(sanitizeText).optional(),
+			scheduledAt: z.coerce.date().optional(),
 		}),
 	},
 	async (ctx) => {
@@ -29,6 +33,10 @@ export const createPostEndpoint = createAdminEndpoint(
 			status: ctx.body.status,
 			tags: ctx.body.tags,
 			category: ctx.body.category,
+			featured: ctx.body.featured,
+			metaTitle: ctx.body.metaTitle,
+			metaDescription: ctx.body.metaDescription,
+			scheduledAt: ctx.body.scheduledAt,
 		});
 		return { post };
 	},

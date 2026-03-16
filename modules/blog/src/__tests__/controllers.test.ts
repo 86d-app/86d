@@ -140,6 +140,25 @@ describe("blog controller edge cases", () => {
 			});
 			expect(post.tags).toHaveLength(100);
 		});
+
+		it("reading time strips HTML tags before counting", async () => {
+			const post = await controller.createPost({
+				title: "HTML Post",
+				slug: "html-post",
+				content: "<p>Just a few words here.</p><div>And some more.</div>",
+			});
+			expect(post.readingTime).toBe(1);
+		});
+
+		it("reading time strips markdown syntax before counting", async () => {
+			const words = Array(250).fill("word").join(" ");
+			const post = await controller.createPost({
+				title: "Markdown Post",
+				slug: "markdown-post",
+				content: `# Title\n\n**${words}**\n\n- item\n- item`,
+			});
+			expect(post.readingTime).toBe(2);
+		});
 	});
 
 	// ── updatePost edge cases ──────────────────────────────────────────
@@ -448,6 +467,89 @@ describe("blog controller edge cases", () => {
 		});
 	});
 
+	// ── duplicatePost edge cases ───────────────────────────────────────
+
+	describe("duplicatePost edge cases", () => {
+		it("duplicate preserves content and tags", async () => {
+			const original = await controller.createPost({
+				title: "Original",
+				slug: "original",
+				content: "Some content.",
+				tags: ["a", "b"],
+				category: "Cat",
+				metaTitle: "Meta",
+				metaDescription: "Desc",
+			});
+
+			const dup = await controller.duplicatePost(original.id);
+			expect(dup?.content).toBe("Some content.");
+			expect(dup?.tags).toEqual(["a", "b"]);
+			expect(dup?.category).toBe("Cat");
+			expect(dup?.metaTitle).toBe("Meta");
+			expect(dup?.metaDescription).toBe("Desc");
+		});
+
+		it("duplicate resets views to 0", async () => {
+			const original = await controller.createPost({
+				title: "Popular",
+				slug: "popular",
+				content: "Content.",
+			});
+			await controller.incrementViews(original.id);
+			await controller.incrementViews(original.id);
+
+			const dup = await controller.duplicatePost(original.id);
+			expect(dup?.views).toBe(0);
+		});
+
+		it("duplicate does not increment data store beyond 1 new record", async () => {
+			const original = await controller.createPost({
+				title: "Original",
+				slug: "original",
+				content: "Content.",
+			});
+
+			await controller.duplicatePost(original.id);
+			expect(mockData.size("post")).toBe(2);
+		});
+	});
+
+	// ── incrementViews edge cases ──────────────────────────────────────
+
+	describe("incrementViews edge cases", () => {
+		it("many increments accumulate correctly", async () => {
+			const post = await controller.createPost({
+				title: "Viral",
+				slug: "viral",
+				content: "Content.",
+			});
+
+			for (let i = 0; i < 50; i++) {
+				await controller.incrementViews(post.id);
+			}
+
+			const fetched = await controller.getPost(post.id);
+			expect(fetched?.views).toBe(50);
+		});
+
+		it("incrementing does not change other fields", async () => {
+			const post = await controller.createPost({
+				title: "Stable",
+				slug: "stable",
+				content: "Content.",
+				tags: ["tag"],
+				featured: true,
+			});
+
+			await controller.incrementViews(post.id);
+
+			const fetched = await controller.getPost(post.id);
+			expect(fetched?.title).toBe("Stable");
+			expect(fetched?.tags).toEqual(["tag"]);
+			expect(fetched?.featured).toBe(true);
+		});
+	});
+
 	// ── listPosts edge cases ───────────────────────────────────────────
 
 	describe("listPosts edge cases", () => {
@@ -646,6 +748,39 @@ describe("blog controller edge cases", () => {
 			const posts = await controller.listPosts({ tag: "common", take: 3 });
 			expect(posts).toHaveLength(3);
 		});
+
+		it("search returns empty for no matches", async () => {
+			await controller.createPost({
+				title: "React Post",
+				slug: "react",
+				content: "Content about React.",
+			});
+
+			const results = await controller.listPosts({ search: "angular" });
+			expect(results).toHaveLength(0);
+		});
+
+		it("search combined with other filters", async () => {
+			await controller.createPost({
+				title: "React Draft",
+				slug: "react-draft",
+				content: "Content.",
+				status: "draft",
+			});
+			await controller.createPost({
+				title: "React Published",
+				slug: "react-published",
+				content: "Content.",
+				status: "published",
+			});
+
+			const results = await controller.listPosts({
+				search: "react",
+				status: "published",
+			});
+			expect(results).toHaveLength(1);
+			expect(results[0].title).toBe("React Published");
+		});
 	});
 
 	// ── lifecycle transition edge cases ────────────────────────────────
@@ -806,6 +941,21 @@ describe("blog controller edge cases", () => {
 			const raw = await mockData.get("post", post.id);
 			expect((raw as Record<string, unknown>).status).toBe("published");
 		});
+
+		it("bulkDelete removes all specified posts from store", async () => {
+			const ids: string[] = [];
+			for (let i = 0; i < 5; i++) {
+				const post = await controller.createPost({
+					title: `Post ${i}`,
+					slug: `post-${i}`,
+					content: `Content ${i}`,
+				});
+				ids.push(post.id);
+			}
+
+			await controller.bulkDelete(ids.slice(0, 3));
+			expect(mockData.size("post")).toBe(2);
+		});
 	});
 
 	// ── boundary / stress ──────────────────────────────────────────────
@@ -899,6 +1049,95 @@ describe("blog controller edge cases", () => {
 				content: "Content.",
 			});
 			expect(post.slug).toBe("react-18-new-features");
+		});
+	});
+
+	// ── getStats edge cases ────────────────────────────────────────────
+
+	describe("getStats edge cases", () => {
+		it("handles posts without category", async () => {
+			await controller.createPost({
+				title: "No Category",
+				slug: "no-cat",
+				content: "Content.",
+			});
+
+			const stats = await controller.getStats();
+			expect(stats.total).toBe(1);
+			expect(stats.categories).toEqual([]);
+		});
+
+		it("handles posts without tags", async () => {
+			await controller.createPost({
+				title: "No Tags",
+				slug: "no-tags",
+				content: "Content.",
+				tags: [],
+			});
+
+			const stats = await controller.getStats();
+			expect(stats.total).toBe(1);
+			expect(stats.tags).toEqual([]);
+		});
+
+		it("sorts categories and tags by count descending", async () => {
+			for (let i = 0; i < 3; i++) {
+				await controller.createPost({
+					title: `Tech ${i}`,
+					slug: `tech-${i}`,
+					content: "Content.",
+					category: "Tech",
+					tags: ["react"],
+				});
+			}
+			await controller.createPost({
+				title: "News",
+				slug: "news",
+				content: "Content.",
+				category: "News",
+				tags: ["react", "vue"],
+			});
+
+			const stats = await controller.getStats();
+			expect(stats.categories[0]?.category).toBe("Tech");
+			expect(stats.categories[0]?.count).toBe(3);
+			expect(stats.tags[0]?.tag).toBe("react");
+			expect(stats.tags[0]?.count).toBe(4);
+		});
+	});
+
+	// ── bulkUpdateStatus edge cases ────────────────────────────────────
+
+	describe("bulkUpdateStatus edge cases", () => {
+		it("handles empty array of ids", async () => {
+			const result = await controller.bulkUpdateStatus([], "published");
+			expect(result.updated).toBe(0);
+			expect(result.failed).toEqual([]);
+		});
+
+		it("all non-existent ids are reported as failed", async () => {
+			const result = await controller.bulkUpdateStatus(
+				["fake-1", "fake-2"],
+				"published",
+			);
+			expect(result.updated).toBe(0);
+			expect(result.failed).toEqual(["fake-1", "fake-2"]);
+		});
+	});
+
+	// ── bulkDelete edge cases ──────────────────────────────────────────
+
+	describe("bulkDelete edge cases", () => {
+		it("handles empty array of ids", async () => {
+			const result = await controller.bulkDelete([]);
+			expect(result.deleted).toBe(0);
+			expect(result.failed).toEqual([]);
+		});
+
+		it("all non-existent ids are reported as failed", async () => {
+			const result = await controller.bulkDelete(["fake-1", "fake-2"]);
+			expect(result.deleted).toBe(0);
+			expect(result.failed).toEqual(["fake-1", "fake-2"]);
 		});
 	});
 });

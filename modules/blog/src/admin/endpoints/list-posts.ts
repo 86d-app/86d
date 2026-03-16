@@ -6,8 +6,16 @@ export const adminListPostsEndpoint = createAdminEndpoint(
 	{
 		method: "GET",
 		query: z.object({
-			status: z.enum(["draft", "published", "archived"]).optional(),
+			status: z
+				.enum(["draft", "published", "scheduled", "archived"])
+				.optional(),
 			category: z.string().optional(),
+			tag: z.string().optional(),
+			featured: z
+				.enum(["true", "false"])
+				.transform((v) => v === "true")
+				.optional(),
+			search: z.string().max(200).optional(),
 			page: z.coerce.number().int().min(1).optional(),
 			limit: z.coerce.number().int().min(1).max(100).optional(),
 		}),
@@ -20,6 +28,9 @@ export const adminListPostsEndpoint = createAdminEndpoint(
 		const posts = await controller.listPosts({
 			status: ctx.query.status as PostStatus | undefined,
 			category: ctx.query.category,
+			tag: ctx.query.tag,
+			featured: ctx.query.featured,
+			search: ctx.query.search,
 			take: limit,
 			skip,
 		});

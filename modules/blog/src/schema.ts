@@ -13,7 +13,13 @@ export const blogSchema = {
 			status: { type: "string", required: true, defaultValue: "draft" },
 			tags: { type: "json", required: true, defaultValue: [] },
 			category: { type: "string", required: false },
+			featured: { type: "boolean", required: true, defaultValue: false },
+			readingTime: { type: "number", required: true, defaultValue: 0 },
+			metaTitle: { type: "string", required: false },
+			metaDescription: { type: "string", required: false },
+			scheduledAt: { type: "date", required: false },
 			publishedAt: { type: "date", required: false },
+			views: { type: "number", required: true, defaultValue: 0 },
 			createdAt: {
 				type: "date",
 				required: true,

@@ -15,6 +15,9 @@ import { createBlogController } from "../service-impl";
  * 5. Pagination bounds: skip/take cannot expose unintended data
  * 6. Content sanitization expectations: raw content stored as-is
  * 7. Status transition integrity: lifecycle changes are consistent
+ * 8. Featured flag isolation: featuring one post does not affect others
+ * 9. View count isolation: incrementing views does not affect other posts
+ * 10. Bulk operation safety: bulk ops do not corrupt unrelated data
  */
 
 describe("blog endpoint security", () => {
@@ -65,7 +68,6 @@ describe("blog endpoint security", () => {
 
 			const found = await controller.getPostBySlug("dup-slug");
 			expect(found).not.toBeNull();
-			// The implementation returns the first match from findMany with take: 1
 			expect(found?.slug).toBe("dup-slug");
 		});
 
@@ -121,6 +123,20 @@ describe("blog endpoint security", () => {
 			});
 
 			await controller.archivePost(post.id);
+
+			const published = await controller.listPosts({ status: "published" });
+			expect(published).toHaveLength(0);
+		});
+
+		it("scheduled posts are excluded when filtering by published status", async () => {
+			const futureDate = new Date(Date.now() + 86400000);
+			await controller.createPost({
+				title: "Scheduled Post",
+				slug: "scheduled-post",
+				content: "Coming soon.",
+				status: "scheduled",
+				scheduledAt: futureDate,
+			});
 
 			const published = await controller.listPosts({ status: "published" });
 			expect(published).toHaveLength(0);
@@ -339,7 +355,6 @@ describe("blog endpoint security", () => {
 				content: "Content.",
 			});
 
-			// Negative skip should not crash; mock data service treats it as 0
 			const posts = await controller.listPosts({ skip: -1 });
 			expect(posts.length).toBeGreaterThanOrEqual(0);
 		});
@@ -485,6 +500,141 @@ describe("blog endpoint security", () => {
 
 			const fetched = await controller.getPost(existing.id);
 			expect(fetched?.title).toBe("Real Post");
+		});
+	});
+
+	// -- Featured Flag Isolation ----------------------------------------------
+
+	describe("featured flag isolation", () => {
+		it("featuring one post does not affect other posts", async () => {
+			const postA = await controller.createPost({
+				title: "Post A",
+				slug: "post-a",
+				content: "Content.",
+			});
+			const postB = await controller.createPost({
+				title: "Post B",
+				slug: "post-b",
+				content: "Content.",
+			});
+
+			await controller.updatePost(postA.id, { featured: true });
+
+			const fetchedB = await controller.getPost(postB.id);
+			expect(fetchedB?.featured).toBe(false);
+		});
+
+		it("unfeaturing does not affect other featured posts", async () => {
+			const postA = await controller.createPost({
+				title: "Post A",
+				slug: "post-a",
+				content: "Content.",
+				featured: true,
+			});
+			const postB = await controller.createPost({
+				title: "Post B",
+				slug: "post-b",
+				content: "Content.",
+				featured: true,
+			});
+
+			await controller.updatePost(postA.id, { featured: false });
+
+			const fetchedB = await controller.getPost(postB.id);
+			expect(fetchedB?.featured).toBe(true);
+		});
+	});
+
+	// -- View Count Isolation -------------------------------------------------
+
+	describe("view count isolation", () => {
+		it("incrementing views on one post does not affect other posts", async () => {
+			const postA = await controller.createPost({
+				title: "Post A",
+				slug: "post-a",
+				content: "Content.",
+			});
+			const postB = await controller.createPost({
+				title: "Post B",
+				slug: "post-b",
+				content: "Content.",
+			});
+
+			await controller.incrementViews(postA.id);
+			await controller.incrementViews(postA.id);
+
+			const fetchedB = await controller.getPost(postB.id);
+			expect(fetchedB?.views).toBe(0);
+
+			const fetchedA = await controller.getPost(postA.id);
+			expect(fetchedA?.views).toBe(2);
+		});
+	});
+
+	// -- Bulk Operation Safety ------------------------------------------------
+
+	describe("bulk operation safety", () => {
+		it("bulk publish does not affect posts not in the id list", async () => {
+			const postA = await controller.createPost({
+				title: "To Publish",
+				slug: "to-publish",
+				content: "Content.",
+			});
+			const postB = await controller.createPost({
+				title: "Stay Draft",
+				slug: "stay-draft",
+				content: "Content.",
+			});
+
+			await controller.bulkUpdateStatus([postA.id], "published");
+
+			const fetchedB = await controller.getPost(postB.id);
+			expect(fetchedB?.status).toBe("draft");
+		});
+
+		it("bulk delete does not affect posts not in the id list", async () => {
+			const postA = await controller.createPost({
+				title: "To Delete",
+				slug: "to-delete",
+				content: "Content.",
+			});
+			const postB = await controller.createPost({
+				title: "Keep",
+				slug: "keep",
+				content: "Content.",
+			});
+
+			await controller.bulkDelete([postA.id]);
+
+			const fetchedB = await controller.getPost(postB.id);
+			expect(fetchedB).not.toBeNull();
+			expect(fetchedB?.title).toBe("Keep");
+			expect(mockData.size("post")).toBe(1);
+		});
+
+		it("duplicate post is independent from original", async () => {
+			const original = await controller.createPost({
+				title: "Original",
+				slug: "original",
+				content: "Content.",
+				status: "published",
+			});
+
+			const dup = await controller.duplicatePost(original.id);
+			expect(dup).not.toBeNull();
+			const dupId = dup?.id ?? "";
+
+			// Modifying original should not affect duplicate
+			await controller.updatePost(original.id, { title: "Changed" });
+
+			const fetchedDup = await controller.getPost(dupId);
+			expect(fetchedDup?.title).toBe("Original (Copy)");
+
+			// Deleting duplicate should not affect original
+			await controller.deletePost(dupId);
+
+			const fetchedOriginal = await controller.getPost(original.id);
+			expect(fetchedOriginal?.title).toBe("Changed");
 		});
 	});
 });
