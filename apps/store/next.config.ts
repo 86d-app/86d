@@ -61,8 +61,11 @@ const securityHeaders = [
 const withMDX = createMDX({});
 
 export default withMDX({
+	...(process.env.DOCKER_BUILD === "true"
+		? { output: "standalone" as const }
+		: {}),
 	pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
-	transpilePackages: loadTranspilePackages(),
+	transpilePackages: [...loadTranspilePackages(), "@86d-app/storage"],
 	turbopack: {
 		rules: {
 			"*.txt": {

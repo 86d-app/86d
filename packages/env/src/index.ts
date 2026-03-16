@@ -14,6 +14,12 @@ const envSchema = z.object({
 	NEXT_PUBLIC_STORE_URL: z.url().optional(),
 	NEXT_PUBLIC_GOOGLE_TAG_MANAGER_ID: z.string().optional(),
 	VERCEL_BLOB_STORAGE_HOSTNAME: z.string().optional(),
+	STORAGE_PROVIDER: z
+		.enum(["local", "vercel", "s3"])
+		.optional()
+		.default("local"),
+	STORAGE_LOCAL_DIR: z.string().optional(),
+	STORAGE_LOCAL_BASE_URL: z.string().optional(),
 	RESEND_API_KEY: z.string().optional(),
 	BETTER_AUTH_SECRET: z.string().optional(),
 });

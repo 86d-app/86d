@@ -2,18 +2,29 @@
 
 Modular, open-source commerce platform. Modules are isolated, interchangeable units — not monolithic plugins. Single-tenant stores with full data ownership.
 
+## Quick start
+
+```bash
+# Docker (recommended — zero config)
+docker compose up                  # postgres + store on :3000 (auto-migrates, seeds, creates admin)
+
+# Local development
+bun install                        # install dependencies
+bun run generate:modules           # regenerate module imports from config
+bun run db:seed                    # seed demo data (requires DATABASE_URL)
+bun run dev                        # start store dev server (port 3000)
+```
+
+Default admin credentials: `admin@example.com` / `password123`
+
 ## Build & test
 
 ```bash
-bun install                  # install dependencies
-bun run dev                  # start store dev server (port 3000)
 bun run build                # build everything
 bun run typecheck            # TypeScript check all packages
 bun run check                # Biome lint/format all packages
 bun run test                 # Vitest unit tests
 bun run test:e2e             # Playwright E2E tests
-bun run db:seed              # seed demo data (requires DATABASE_URL)
-bun run generate:modules     # regenerate module imports from config
 bun run 86d init             # configure a local store
 bun run 86d module create x  # scaffold a new module
 bun run 86d template create x  # scaffold a new template
@@ -23,18 +34,33 @@ bun run 86d template create x  # scaffold a new template
 
 ```
 apps/store/          Next.js storefront + per-store admin
-modules/             75 modules (cart, products, orders, checkout, collections, brands, announcements, backorders, preorders, affiliates, appointments, auctions, automations, comparisons, recommendations, multi-currency, faq, forms, tickets, customer-groups, quotes, product-qa, product-labels, product-feeds, social-proof, store-locator, returns, store-credits, audit-log, vendors, flash-sales, warranties, gift-registry, gift-wrapping, delivery-slots, invoices, store-pickup, bulk-pricing, redirects, sitemap, etc.)
+docker/              Docker entrypoint + config
+modules/             75 modules (cart, products, orders, checkout, collections, brands, etc.)
 packages/
   core/              Module system (isolation boundary, contracts, test-utils)
   runtime/           Store runtime engine (data service, registry)
   cli/               CLI tool (dev, init, module, template, generate)
   registry/          Git-based module registry (resolve, fetch, cache modules)
+  storage/           Storage abstraction (local FS, Vercel Blob, S3-compatible)
 templates/
   brisa/             Default store template (config.json, MDX pages, global.css)
 tests/e2e/           Playwright E2E tests (storefront, admin, checkout, visual)
 scripts/             Code generation + seed (generate-modules.ts, seed.ts)
 internals/github/    CI setup action
+Dockerfile           Multi-stage build (deps → build → runtime)
+docker-compose.yml   One-command local deployment (postgres + store)
 ```
+
+## Deployment modes
+
+### Docker (self-hosted)
+`docker compose up` — starts PostgreSQL + store app. Auto-runs migrations, seeds demo data, creates admin user. Uses local filesystem for blob storage. Set `BETTER_AUTH_SECRET` to a secure random string in production.
+
+### Vercel + Neon (managed)
+The 86d API deploys this repo to Vercel with a Neon database and Vercel Blob storage. Set `86D_API_KEY` and `STORE_ID` env vars. When `86D_API_KEY` is set, 86d.app SSO is enabled for admin authentication.
+
+### Storage providers
+Set `STORAGE_PROVIDER` env var: `local` (default in Docker), `vercel` (Vercel deployments), `s3` (MinIO, AWS S3, R2). See `.env.example` for full config.
 
 ## Module system
 
@@ -64,8 +90,8 @@ Components follow a two-file pattern: `.tsx` (logic) + `.mdx` (presentation). Nu
 | Package | Status | Purpose |
 |---------|--------|---------|
 | `db` | Complete | Prisma client singleton (PrismaPg adapter) |
-| `env` | Complete | Zod env validation |
-| `auth` | Complete | Better Auth (sessions, admin role) |
+| `env` | Complete | Zod env validation (includes STORAGE_PROVIDER) |
+| `auth` | Complete | Better Auth (sessions, admin role, 86d.app SSO) |
 | `utils` | Complete | Logger, rate-limit, url, sanitize |
 | `lib` | Complete | API keys, webhooks, carrier tracking, LLM content |
 | `emails` | Complete | React Email + Resend (16 templates) |
@@ -73,6 +99,15 @@ Components follow a two-file pattern: `.tsx` (logic) + `.mdx` (presentation). Nu
 | `runtime` | Complete | ModuleRegistry, UniversalDataService |
 | `sdk` | Complete | Store config, template loading, API client |
 | `cli` | Complete | `86d dev/init/module/template/generate` (69 tests) |
+| `storage` | Complete | Storage abstraction (local, Vercel Blob, S3) |
+
+## API endpoints
+
+- `GET /api/health` — Health check (DB connectivity, store status). Used by Docker HEALTHCHECK.
+- `POST /api/upload` — File upload (admin only, uses storage abstraction).
+- `GET /uploads/[...path]` — Serve local storage files (when STORAGE_PROVIDER=local).
+- `GET/POST /api/auth/[...all]` — Better Auth handlers (sign-in, sign-up, SSO).
+- `ALL /api/[...path]` — Module endpoints (rate-limited, session-authenticated).
 
 ## Code conventions
 
@@ -94,6 +129,28 @@ Components follow a two-file pattern: `.tsx` (logic) + `.mdx` (presentation). Nu
 - **Never trust client-provided identity**: store endpoints must derive `customerId` from `ctx.context.session.user.id`, not from request body/query. Same for email (`session.user.email`). Never accept `isVerifiedPurchase` or similar trust-elevation flags from clients.
 - **Ownership verification on mutations**: before updating or deleting user-scoped resources, verify `resource.customerId === session.user.id`. Return 404 (not 403) to avoid leaking resource existence.
 - **Bound array lengths**: always add `.max()` to arrays accepting user input (e.g., tags, product IDs) to prevent DoS via oversized payloads.
+
+## Production readiness goals
+
+The platform is working toward production-ready status. Key areas for future agents to continue:
+
+### High priority
+1. **E2E test coverage with visual snapshots** — Generate and commit Playwright visual baselines. Tests should cover: guest shopping flow (browse → cart → checkout), business owner admin flow (dashboard → manage products → configure modules). All 75 modules should be exercised.
+2. **Template polish** — Fix missing content, loading skeletons, empty states, error states in templates/brisa. Polish spacing, typography, responsive behavior. Install axe-core for accessibility assertions.
+3. **Module component customization** — Make it easy to override module components from templates. Currently there's no mechanism for templates to extend module TSX/MDX.
+4. **Init flow improvements** — `86d init` should run migrations, seed, create admin interactively. `86d dev` should pre-flight check DATABASE_URL. `86d doctor` should validate everything.
+
+### Medium priority
+5. **External template sourcing** — Templates should be fetchable from GitHub repos during deployment, similar to how modules use the registry.
+6. **86d API integration** — When `86D_API_KEY` is set, the store communicates with 86d.app for config, modules, billing. The SSO auth flow is wired but the API doesn't exist yet.
+7. **Module data seeding** — Each module should have its own seed data function that creates realistic demo content.
+8. **Admin experience** — More polished admin dashboard, better module management UI, settings pages for all modules.
+
+### Ongoing
+9. **Security audit** — Continuous: unvalidated input, missing auth, SQL injection, XSS, rate limiting gaps.
+10. **Test coverage** — Target 100% unit test coverage for every module. E2E tests for all critical paths.
+11. **Documentation** — AGENTS.md + README.md for every module, package, and directory.
+12. **Performance** — Core Web Vitals, bundle size, lazy loading, caching.
 
 ## Detailed docs
 

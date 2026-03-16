@@ -1,0 +1,25 @@
+{
+	"name": "@86d-app/storage",
+	"version": "0.0.4",
+	"type": "module",
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"dependencies": {
+		"zod": "catalog:"
+	},
+	"peerDependencies": {
+		"@vercel/blob": ">=2.0.0"
+	},
+	"peerDependenciesMeta": {
+		"@vercel/blob": {
+			"optional": true
+		}
+	},
+	"devDependencies": {
+		"@biomejs/biome": "catalog:",
+		"@vercel/blob": "2.0.0",
+		"typescript": "catalog:",
+		"@types/node": "catalog:node"
+	}
+}

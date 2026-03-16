@@ -1,9 +1,9 @@
-import { put } from "@vercel/blob";
 import { getSession } from "auth/actions";
 import { verifyStoreAdminAccess } from "auth/store-access";
 import env from "env";
 import { NextResponse } from "next/server";
 import { logger } from "utils/logger";
+import { getStorage } from "~/lib/storage";
 
 const ALLOWED_TYPES = new Set([
 	"image/jpeg",
@@ -91,12 +91,15 @@ export async function POST(request: Request) {
 			);
 		}
 
-		const blob = await put(`stores/${storeId}/${crypto.randomUUID()}`, buffer, {
-			access: "public",
+		const storage = getStorage();
+		const key = `stores/${storeId}/${crypto.randomUUID()}`;
+		const result = await storage.upload({
+			key,
+			content: buffer,
 			contentType: file.type,
 		});
 
-		return NextResponse.json({ url: blob.url });
+		return NextResponse.json({ url: result.url });
 	} catch (error) {
 		logger.error("Upload failed", { error: String(error) });
 		return NextResponse.json({ error: "Upload failed" }, { status: 500 });

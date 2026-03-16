@@ -94,6 +94,7 @@
         "@86d-app/sitemap": "workspace:*",
         "@86d-app/social-proof": "workspace:*",
         "@86d-app/square": "workspace:*",
+        "@86d-app/storage": "workspace:*",
         "@86d-app/store-credits": "workspace:*",
         "@86d-app/store-locator": "workspace:*",
         "@86d-app/store-pickup": "workspace:*",
@@ -1391,6 +1392,25 @@
         "typescript": "catalog:",
       },
     },
+    "packages/storage": {
+      "name": "@86d-app/storage",
+      "version": "0.0.4",
+      "dependencies": {
+        "zod": "catalog:",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/node": "catalog:node",
+        "@vercel/blob": "2.0.0",
+        "typescript": "catalog:",
+      },
+      "peerDependencies": {
+        "@vercel/blob": ">=2.0.0",
+      },
+      "optionalPeers": [
+        "@vercel/blob",
+      ],
+    },
     "packages/utils": {
       "name": "utils",
       "version": "0.0.4",
@@ -1600,6 +1620,8 @@
     "@86d-app/social-proof": ["@86d-app/social-proof@workspace:modules/social-proof"],
 
     "@86d-app/square": ["@86d-app/square@workspace:modules/square"],
+
+    "@86d-app/storage": ["@86d-app/storage@workspace:packages/storage"],
 
     "@86d-app/store-credits": ["@86d-app/store-credits@workspace:modules/store-credits"],
 

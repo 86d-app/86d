@@ -5,6 +5,8 @@ export const metadata = {
 	title: "Sign in — 86d Store",
 };
 
+const show86dSso = !!process.env["86D_API_KEY"];
+
 export default function SignInPage() {
 	return (
 		<div className="rounded-xl border border-border bg-background p-6 shadow-sm">
@@ -15,7 +17,7 @@ export default function SignInPage() {
 				</p>
 			</div>
 			<Suspense>
-				<SignInForm />
+				<SignInForm show86dSso={show86dSso} />
 			</Suspense>
 			<div className="mt-4 flex items-center justify-between text-sm">
 				<a

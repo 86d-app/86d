@@ -1,0 +1,66 @@
+# ============================================================================
+# 86d Store — Docker Compose
+# ============================================================================
+# Quick start:
+#   docker compose up
+#
+# This starts:
+#   - PostgreSQL 16 database
+#   - 86d store app (port 3000)
+#
+# The store auto-runs migrations and seeds demo data on first boot.
+# Default admin: admin@example.com / password123
+# ============================================================================
+
+services:
+  # ── PostgreSQL Database ──────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: "86d"
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d 86d"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ── 86d Store Application ────────────────────────────────────────────────
+  store:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/86d"
+      DATABASE_URL_UNPOOLED: "postgresql://postgres:postgres@postgres:5432/86d"
+      BETTER_AUTH_SECRET: "${BETTER_AUTH_SECRET:-docker-dev-secret-change-in-production}"
+      STORE_ID: "${STORE_ID:-demo5b9d-c517-4c65-896e-8edef5cf5a94}"
+      NODE_ENV: "${NODE_ENV:-production}"
+      AUTO_SEED: "true"
+      # Storage — local filesystem by default in Docker
+      STORAGE_PROVIDER: "local"
+      STORAGE_LOCAL_DIR: "/app/uploads"
+      STORAGE_LOCAL_BASE_URL: "/uploads"
+      # Optional: 86d API integration
+      86D_API_URL: "${86D_API_URL:-}"
+      86D_API_KEY: "${86D_API_KEY:-}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - uploads_data:/app/uploads
+
+volumes:
+  postgres_data:
+    driver: local
+  uploads_data:
+    driver: local

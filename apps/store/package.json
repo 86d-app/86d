@@ -34,6 +34,7 @@
 		"@86d-app/reviews": "workspace:*",
 		"@86d-app/shipping": "workspace:*",
 		"@86d-app/sdk": "workspace:*",
+		"@86d-app/storage": "workspace:*",
 		"@86d-app/square": "workspace:*",
 		"@86d-app/stripe": "workspace:*",
 		"@86d-app/subscriptions": "workspace:*",
