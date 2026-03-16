@@ -602,11 +602,16 @@ async function insertModuleData(
 ) {
 	const modId = moduleIds[moduleName];
 	if (!modId) return;
+	// Derive a stable, unique row id from the entity's identity so that:
+	// 1. Each (module, entityType, entityId) gets a deterministic primary key.
+	// 2. Re-running the seed conflicts on BOTH the primary key AND the
+	//    composite unique constraint — the ON CONFLICT handler matches.
+	const rowId = uuid(`module-data:${moduleName}:${entityType}:${entityId}`);
 	await client.query(
 		`INSERT INTO "ModuleData" (id, cuid, "entityType", "entityId", data, "moduleId", "createdAt", "updatedAt")
 		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		 ON CONFLICT ("moduleId", "entityType", "entityId") DO UPDATE SET data = $5, "updatedAt" = $8`,
-		[uuid("insert-module-data"), cuid(), entityType, entityId, JSON.stringify(data), modId, now, now],
+		[rowId, cuid(), entityType, entityId, JSON.stringify(data), modId, now, now],
 	);
 }
 
@@ -646,7 +651,7 @@ async function seedCollections(client: pg.PoolClient) {
 	// Link featured products to the Featured collection
 	const featuredProducts = products.filter((p) => p.isFeatured);
 	for (let i = 0; i < featuredProducts.length; i++) {
-		const linkId = uuid("seed-2");
+		const linkId = uuid(`collection-product:${collectionIds.featured}:${featuredProducts[i].id}`);
 		await insertModuleData(
 			client,
 			"collections",
@@ -664,7 +669,7 @@ async function seedCollections(client: pg.PoolClient) {
 
 	// Link all products to New Arrivals
 	for (let i = 0; i < products.length; i++) {
-		const linkId = uuid("seed-3");
+		const linkId = uuid(`collection-product:${collectionIds.newArrivals}:${products[i].id}`);
 		await insertModuleData(
 			client,
 			"collections",
@@ -682,7 +687,7 @@ async function seedCollections(client: pg.PoolClient) {
 
 	// Top 4 as best sellers
 	for (let i = 0; i < 4; i++) {
-		const linkId = uuid("seed-4");
+		const linkId = uuid(`collection-product:${collectionIds.bestSellers}:${products[i].id}`);
 		await insertModuleData(
 			client,
 			"collections",
@@ -731,7 +736,7 @@ async function seedCustomers(client: pg.PoolClient) {
 async function seedSettings(client: pg.PoolClient) {
 	console.log("  Creating store settings...");
 	for (const setting of settings) {
-		const settingId = uuid("seed-6");
+		const settingId = uuid(`setting:${setting.key}`);
 		await insertModuleData(client, "settings", "storeSetting", settingId, {
 			id: settingId,
 			key: setting.key,
@@ -745,7 +750,7 @@ async function seedSettings(client: pg.PoolClient) {
 async function seedInventory(client: pg.PoolClient) {
 	console.log("  Creating inventory records...");
 	for (const product of products) {
-		const itemId = uuid("seed-7");
+		const itemId = uuid(`inventory:${product.id}`);
 		await insertModuleData(client, "inventory", "inventoryItem", itemId, {
 			id: itemId,
 			productId: product.id,
@@ -781,7 +786,7 @@ async function seedNavigation(client: pg.PoolClient) {
 	];
 
 	for (const item of menuItems) {
-		const itemId = uuid("seed-9");
+		const itemId = uuid(`menu-item:${mainMenuId}:${item.url}`);
 		await insertModuleData(client, "navigation", "menuItem", itemId, {
 			id: itemId,
 			menuId: mainMenuId,
@@ -908,7 +913,7 @@ async function seedBrands(client: pg.PoolClient) {
 
 	// Link some products to brands
 	for (let i = 0; i < Math.min(products.length, brands.length); i++) {
-		const linkId = uuid("seed-14");
+		const linkId = uuid(`brand-product:${brands[i].id}:${products[i].id}`);
 		await insertModuleData(client, "brands", "brandProduct", linkId, {
 			id: linkId,
 			brandId: brands[i].id,
@@ -973,7 +978,7 @@ async function seedReviews(client: pg.PoolClient) {
 	];
 
 	for (const review of reviewData) {
-		const reviewId = uuid("seed-15");
+		const reviewId = uuid(`review:${review.productId}:${review.authorEmail}`);
 		await insertModuleData(client, "reviews", "review", reviewId, {
 			id: reviewId,
 			...review,
@@ -1394,7 +1399,7 @@ async function seedFaq(client: pg.PoolClient) {
 	];
 
 	for (const item of faqItems) {
-		const itemId = uuid("seed-38");
+		const itemId = uuid(`faq-item:${item.slug}`);
 		await insertModuleData(client, "faq", "faqItem", itemId, {
 			id: itemId,
 			...item,
@@ -1472,7 +1477,7 @@ async function seedSeo(client: pg.PoolClient) {
 	];
 
 	for (const meta of metaTags) {
-		const metaId = uuid("seed-40");
+		const metaId = uuid(`seo-meta:${meta.path}`);
 		await insertModuleData(client, "seo", "metaTag", metaId, {
 			id: metaId,
 			...meta,
@@ -1487,7 +1492,7 @@ async function seedSeo(client: pg.PoolClient) {
 async function seedSearch(client: pg.PoolClient) {
 	console.log("  Creating search index...");
 	for (const product of products) {
-		const indexId = uuid("seed-41");
+		const indexId = uuid(`search-index:${product.id}`);
 		await insertModuleData(client, "search", "searchIndex", indexId, {
 			id: indexId,
 			entityType: "product",
@@ -1516,7 +1521,7 @@ async function seedSearch(client: pg.PoolClient) {
 	];
 
 	for (const syn of synonyms) {
-		const synId = uuid("seed-42");
+		const synId = uuid(`search-synonym:${syn.term}`);
 		await insertModuleData(client, "search", "searchSynonym", synId, {
 			id: synId,
 			term: syn.term,
@@ -1554,7 +1559,7 @@ async function seedNewsletter(client: pg.PoolClient) {
 	];
 
 	for (const sub of subscribers) {
-		const subId = uuid("seed-43");
+		const subId = uuid(`newsletter-subscriber:${sub.email}`);
 		await insertModuleData(client, "newsletter", "subscriber", subId, {
 			id: subId,
 			...sub,
@@ -1597,7 +1602,7 @@ async function seedSocialProof(client: pg.PoolClient) {
 	];
 
 	for (const badge of badges) {
-		const badgeId = uuid("seed-44");
+		const badgeId = uuid(`trust-badge:${badge.name}`);
 		await insertModuleData(client, "social-proof", "trustBadge", badgeId, {
 			id: badgeId,
 			...badge,
@@ -1633,7 +1638,7 @@ async function seedSocialProof(client: pg.PoolClient) {
 	];
 
 	for (const event of events) {
-		const eventId = uuid("seed-45");
+		const eventId = uuid(`activity-event:${event.productId}:${event.eventType}`);
 		await insertModuleData(
 			client,
 			"social-proof",
@@ -1698,7 +1703,7 @@ async function seedProductLabels(client: pg.PoolClient) {
 	// Assign "Sale" label to products with compareAtPrice
 	const saleProducts = products.filter((p) => p.compareAtPrice);
 	for (const product of saleProducts) {
-		const linkId = uuid("seed-46");
+		const linkId = uuid(`product-label-sale:${product.id}`);
 		await insertModuleData(
 			client,
 			"product-labels",
@@ -1750,7 +1755,7 @@ async function seedRedirects(client: pg.PoolClient) {
 	];
 
 	for (const redirect of redirects) {
-		const redirectId = uuid("seed-47");
+		const redirectId = uuid(`redirect:${redirect.sourcePath}`);
 		await insertModuleData(client, "redirects", "redirect", redirectId, {
 			id: redirectId,
 			...redirect,
@@ -1893,7 +1898,7 @@ async function seedStorePickup(client: pg.PoolClient) {
 
 	// Pickup windows for weekdays
 	for (let day = 1; day <= 5; day++) {
-		const windowId = uuid("seed-50");
+		const windowId = uuid(`pickup-window:${pickupLocationId}:day-${day}`);
 		await insertModuleData(
 			client,
 			"store-pickup",
@@ -1951,7 +1956,7 @@ async function seedDeliverySlots(client: pg.PoolClient) {
 	];
 
 	for (const schedule of schedules) {
-		const scheduleId = uuid("seed-51");
+		const scheduleId = uuid(`delivery-schedule:${schedule.name}`);
 		await insertModuleData(
 			client,
 			"delivery-slots",
