@@ -22,6 +22,7 @@
 		"test:e2e:ui": "playwright test --ui",
 		"generate:modules": "tsx scripts/generate-modules.ts",
 		"generate:registry": "tsx scripts/generate-registry.ts",
+		"generate:docs": "tsx scripts/generate-component-docs.ts",
 		"changeset": "changeset",
 		"version-packages": "changeset version",
 		"release": "turbo run build --filter=./packages/* --filter=./modules/* && changeset publish",

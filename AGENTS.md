@@ -11,6 +11,7 @@ docker compose up                  # postgres + store on :3000 (auto-migrates, s
 # Local development
 bun install                        # install dependencies
 bun run generate:modules           # regenerate module imports from config
+bun run generate:docs              # regenerate docs/component-api.md
 bun run db:seed                    # seed demo data (requires DATABASE_URL)
 bun run dev                        # start store dev server (port 3000)
 ```
@@ -45,7 +46,8 @@ packages/
 templates/
   brisa/             Default store template (config.json, MDX pages, global.css)
 tests/e2e/           Playwright E2E tests (storefront, admin, checkout, visual)
-scripts/             Code generation + seed (generate-modules.ts, seed.ts)
+scripts/             Code generation + seed (generate-modules.ts, generate-component-docs.ts, seed.ts)
+docs/                Generated documentation (component-api.md — run bun generate:docs)
 internals/github/    CI setup action
 Dockerfile           Multi-stage build (deps → build → runtime)
 docker-compose.yml   One-command local deployment (postgres + store)
@@ -137,21 +139,19 @@ The platform is working toward production-ready status. Key areas for future age
 
 ### High priority
 1. **E2E test coverage with visual snapshots** — Generate and commit Playwright visual baselines. Tests should cover: guest shopping flow (browse → cart → checkout), business owner admin flow (dashboard → manage products → configure modules). All 75 modules should be exercised.
-2. **Template polish** — Fix missing content, loading skeletons, empty states, error states in templates/brisa. Polish spacing, typography, responsive behavior. Install axe-core for accessibility assertions.
-3. **Module component customization** — Make it easy to override module components from templates. Currently there's no mechanism for templates to extend module TSX/MDX.
-4. **Init flow improvements** — `86d init` should run migrations, seed, create admin interactively. `86d dev` should pre-flight check DATABASE_URL. `86d doctor` should validate everything.
+2. **Module component customization** — Make it easy to override module components from templates. Currently there's no mechanism for templates to extend module TSX/MDX.
+3. **External template sourcing** — Templates should be fetchable from GitHub repos during deployment, similar to how modules use the registry.
 
 ### Medium priority
-5. **External template sourcing** — Templates should be fetchable from GitHub repos during deployment, similar to how modules use the registry.
-6. **86d API integration** — When `86D_API_KEY` is set, the store communicates with 86d.app for config, modules, billing. The SSO auth flow is wired but the API doesn't exist yet.
-7. **Module data seeding** — Each module should have its own seed data function that creates realistic demo content.
-8. **Admin experience** — More polished admin dashboard, better module management UI, settings pages for all modules.
+4. **86d API integration** — When `86D_API_KEY` is set, the store communicates with 86d.app for config, modules, billing. The SSO auth flow is wired but the API doesn't exist yet.
+5. **Module data seeding** — Each module should have its own seed data function that creates realistic demo content.
+6. **Admin experience** — More polished admin dashboard, better module management UI, settings pages for all modules.
 
 ### Ongoing
-9. **Security audit** — Continuous: unvalidated input, missing auth, SQL injection, XSS, rate limiting gaps.
-10. **Test coverage** — Target 100% unit test coverage for every module. E2E tests for all critical paths.
-11. **Documentation** — AGENTS.md + README.md for every module, package, and directory.
-12. **Performance** — Core Web Vitals, bundle size, lazy loading, caching.
+7. **Security audit** — Continuous: unvalidated input, missing auth, SQL injection, XSS, rate limiting gaps.
+8. **Test coverage** — Target 100% unit test coverage for every module. E2E tests for all critical paths.
+9. **Documentation** — AGENTS.md + README.md for every module, package, and directory.
+10. **Performance** — Core Web Vitals, bundle size, lazy loading, caching.
 
 ## Detailed docs
 
