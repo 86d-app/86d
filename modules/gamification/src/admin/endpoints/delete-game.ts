@@ -1,0 +1,16 @@
+import { createAdminEndpoint, z } from "@86d-app/core";
+import type { GamificationController } from "../../service";
+
+export const deleteGameEndpoint = createAdminEndpoint(
+	"/admin/gamification/games/:id",
+	{
+		method: "DELETE",
+		params: z.object({ id: z.string() }),
+	},
+	async (ctx) => {
+		const controller = ctx.context.controllers
+			.gamification as GamificationController;
+		const deleted = await controller.deleteGame(ctx.params.id);
+		return { deleted };
+	},
+);

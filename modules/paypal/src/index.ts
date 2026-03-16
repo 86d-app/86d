@@ -23,6 +23,14 @@ export default function paypal(options: PayPalOptions): Module {
 		id: "paypal",
 		version: "0.0.1",
 		schema: {},
+		events: {
+			emits: [
+				"paypal.payment.captured",
+				"paypal.payment.failed",
+				"paypal.refund.created",
+				"paypal.webhook.received",
+			],
+		},
 		init: async () => {
 			return {};
 		},

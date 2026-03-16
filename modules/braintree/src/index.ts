@@ -16,6 +16,14 @@ export default function braintree(options: BraintreeOptions): Module {
 		id: "braintree",
 		version: "0.0.1",
 		schema: {},
+		events: {
+			emits: [
+				"braintree.payment.settled",
+				"braintree.payment.failed",
+				"braintree.refund.created",
+				"braintree.webhook.received",
+			],
+		},
 		init: async () => {
 			return {};
 		},

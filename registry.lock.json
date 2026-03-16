@@ -1,6 +1,6 @@
 {
   "lockfileVersion": 1,
-  "generatedAt": "2026-03-13T01:56:40.012Z",
+  "generatedAt": "2026-03-16T08:04:34.633Z",
   "modules": {
     "abandoned-carts": {
       "source": "local",
@@ -15,6 +15,13 @@
       "version": "0.0.1",
       "integrity": "sha256-21bcb5299c8f83d0a36f3e2f99a472ceeedd4159802835090343994d761b6b61",
       "localPath": "modules/affiliates"
+    },
+    "amazon": {
+      "source": "local",
+      "packageName": "@86d-app/amazon",
+      "version": "0.0.4",
+      "integrity": "sha256-f2557d4d00e8634bf247eecd5e825ae7f186eaa8ab87546b5ca6578652cc4881",
+      "localPath": "modules/amazon"
     },
     "analytics": {
       "source": "local",
@@ -163,12 +170,47 @@
       "integrity": "sha256-b7f6a65a9f1da4bc5fcb5697c1a1d5a67eb79438fcd281671981dcbd1b2f6de3",
       "localPath": "modules/discounts"
     },
+    "doordash": {
+      "source": "local",
+      "packageName": "@86d-app/doordash",
+      "version": "0.0.4",
+      "integrity": "sha256-16e46b4981cd79336e27c41512ce997ae2a42ccf3695ca961e159df9bdf088f6",
+      "localPath": "modules/doordash"
+    },
+    "ebay": {
+      "source": "local",
+      "packageName": "@86d-app/ebay",
+      "version": "0.0.4",
+      "integrity": "sha256-688478ea78836679ba4c2c50d439368de98befa5239cb87ab4fea8ca5b9dcd96",
+      "localPath": "modules/ebay"
+    },
+    "etsy": {
+      "source": "local",
+      "packageName": "@86d-app/etsy",
+      "version": "0.0.4",
+      "integrity": "sha256-abd96b6a8225d316d1a6d1f135c59e15e999bd7d53d85e41d1d1dc5285a81fa7",
+      "localPath": "modules/etsy"
+    },
+    "facebook-shop": {
+      "source": "local",
+      "packageName": "@86d-app/facebook-shop",
+      "version": "0.0.4",
+      "integrity": "sha256-a6fb6d8654f8091b0fb92f770e8b4013ee194a6a8eea1458f8160ac1c9bde7f6",
+      "localPath": "modules/facebook-shop"
+    },
     "faq": {
       "source": "local",
       "packageName": "@86d-app/faq",
       "version": "0.0.1",
       "integrity": "sha256-42775fe9598eacc7dff494950553b22b5cd011135527dab3c7ef46d140598123",
       "localPath": "modules/faq"
+    },
+    "favor": {
+      "source": "local",
+      "packageName": "@86d-app/favor",
+      "version": "0.0.4",
+      "integrity": "sha256-5997a4717e3eba15f836184735b463273af3ceae267a6fea2514128fe1d05d7e",
+      "localPath": "modules/favor"
     },
     "flash-sales": {
       "source": "local",
@@ -191,6 +233,13 @@
       "integrity": "sha256-b695b9b73fb4f0e2997722ea5a163a556c7bdc345c6e322a07a9fd7d7d38f056",
       "localPath": "modules/fulfillment"
     },
+    "gamification": {
+      "source": "local",
+      "packageName": "@86d-app/gamification",
+      "version": "0.0.4",
+      "integrity": "sha256-6901f045bd24781fdc37312aa5bc5bf51ab4773f7a76f7a72b5f1fc149ca585a",
+      "localPath": "modules/gamification"
+    },
     "gift-cards": {
       "source": "local",
       "packageName": "@86d-app/gift-cards",
@@ -212,12 +261,26 @@
       "integrity": "sha256-dd3bab9ebd6d197205facb4d54cf11da05ca299327448edd2bb7ed20a17a3561",
       "localPath": "modules/gift-wrapping"
     },
+    "google-shopping": {
+      "source": "local",
+      "packageName": "@86d-app/google-shopping",
+      "version": "0.0.4",
+      "integrity": "sha256-136c256bea35bd386174a6a2a2a6b599901f3ddf28d1e2a12b0529b06c67a6ad",
+      "localPath": "modules/google-shopping"
+    },
     "import-export": {
       "source": "local",
       "packageName": "@86d-app/import-export",
       "version": "0.0.1",
       "integrity": "sha256-ae7efbd974f96f9086f4b449a5d14d0e8d0a4a8d9e0abdc325a76294c06eb143",
       "localPath": "modules/import-export"
+    },
+    "instagram-shop": {
+      "source": "local",
+      "packageName": "@86d-app/instagram-shop",
+      "version": "0.0.4",
+      "integrity": "sha256-bc5c1cf282a616f8c435043f2248c54d02137b5e3d29818b7626c60ee68946b0",
+      "localPath": "modules/instagram-shop"
     },
     "inventory": {
       "source": "local",
@@ -232,6 +295,13 @@
       "version": "0.0.1",
       "integrity": "sha256-68d429fbee09fd9dd76f2403c48961c940548d92eaa9f6a091c54d7fcc0fc8c3",
       "localPath": "modules/invoices"
+    },
+    "kiosk": {
+      "source": "local",
+      "packageName": "@86d-app/kiosk",
+      "version": "0.0.4",
+      "integrity": "sha256-57114779a9544559a054367f2f244f32d6fc3eb3b5dd9f26406023382c49ecf0",
+      "localPath": "modules/kiosk"
     },
     "loyalty": {
       "source": "local",
@@ -282,6 +352,13 @@
       "integrity": "sha256-f3a01a9e83920df0163e6aafdfcea6a90fe8ec125597bc046cce91b912bcab08",
       "localPath": "modules/notifications"
     },
+    "order-notes": {
+      "source": "local",
+      "packageName": "@86d-app/order-notes",
+      "version": "0.0.1",
+      "integrity": "sha256-4a51a415d7f0240d18be5f85f828e7ada572e0eff5fc381800f70e06dc3db0d0",
+      "localPath": "modules/order-notes"
+    },
     "orders": {
       "source": "local",
       "packageName": "@86d-app/orders",
@@ -309,6 +386,20 @@
       "version": "0.0.4",
       "integrity": "sha256-d42e06814c00a10b39362d414c8d6992ee583d4b51060d8cdd071e46093f0520",
       "localPath": "modules/paypal"
+    },
+    "photo-booth": {
+      "source": "local",
+      "packageName": "@86d-app/photo-booth",
+      "version": "0.0.4",
+      "integrity": "sha256-f4481c77b933ed10a015370827956aa75271e3d39a1ebdad6db543e686a5f0e1",
+      "localPath": "modules/photo-booth"
+    },
+    "pinterest-shop": {
+      "source": "local",
+      "packageName": "@86d-app/pinterest-shop",
+      "version": "0.0.4",
+      "integrity": "sha256-8e13c41b85cdc6f8e4f4d2b29b3fe90082ac6e6bb7c4f4e164f8fa6953bb74af",
+      "localPath": "modules/pinterest-shop"
     },
     "preorders": {
       "source": "local",
@@ -351,6 +442,13 @@
       "version": "0.0.4",
       "integrity": "sha256-5cee81c825d24719f9c1c53e8c45ab59f867639ff4b75439cdfa41ebd3285827",
       "localPath": "modules/products"
+    },
+    "qr-code": {
+      "source": "local",
+      "packageName": "@86d-app/qr-code",
+      "version": "0.0.4",
+      "integrity": "sha256-758cd2023bdbb1c82c341470e875fec1fdb44621b6a846e5eb5535e2643ac08d",
+      "localPath": "modules/qr-code"
     },
     "quotes": {
       "source": "local",
@@ -401,6 +499,13 @@
       "integrity": "sha256-480eced1235f2b3ea6e295039dcf28a10cab362ef8a9931e0ee0988173555461",
       "localPath": "modules/reviews"
     },
+    "saved-addresses": {
+      "source": "local",
+      "packageName": "@86d-app/saved-addresses",
+      "version": "0.0.1",
+      "integrity": "sha256-34671270a7334d2d02b5ec79d13b6d92ba00ea047fec03fd816e29c0057d21c7",
+      "localPath": "modules/saved-addresses"
+    },
     "search": {
       "source": "local",
       "packageName": "@86d-app/search",
@@ -442,6 +547,13 @@
       "version": "0.0.1",
       "integrity": "sha256-0c11da28cab5cc455231be3d9a853ace644f37b2f079246f1df9333d6e49c267",
       "localPath": "modules/social-proof"
+    },
+    "social-sharing": {
+      "source": "local",
+      "packageName": "@86d-app/social-sharing",
+      "version": "0.0.4",
+      "integrity": "sha256-44ea2fe374648a2611ae44c9d28df1942c8c3e802e23449c56ac2f823b500155",
+      "localPath": "modules/social-sharing"
     },
     "square": {
       "source": "local",
@@ -499,6 +611,41 @@
       "integrity": "sha256-da1177c70c59be6759e876cfd72f243b4b01895d2c519cbcb5ad81abf4ebe7d7",
       "localPath": "modules/tickets"
     },
+    "tiktok-shop": {
+      "source": "local",
+      "packageName": "@86d-app/tiktok-shop",
+      "version": "0.0.4",
+      "integrity": "sha256-8114ec4707e17c6d000f44277e28e511299f81a5a2cd57da3fcde2090db08305",
+      "localPath": "modules/tiktok-shop"
+    },
+    "tipping": {
+      "source": "local",
+      "packageName": "@86d-app/tipping",
+      "version": "0.0.4",
+      "integrity": "sha256-092504c148dfa2b36683d4a19805be1e3ccce481cd730d72d1a9b9897838d4f8",
+      "localPath": "modules/tipping"
+    },
+    "toast": {
+      "source": "local",
+      "packageName": "@86d-app/toast",
+      "version": "0.0.4",
+      "integrity": "sha256-9a35157a2c32decbf4c9ca0138a8e61458e92578449f3ff8676eeebf2f8c15e0",
+      "localPath": "modules/toast"
+    },
+    "uber-direct": {
+      "source": "local",
+      "packageName": "@86d-app/uber-direct",
+      "version": "0.0.4",
+      "integrity": "sha256-7171a832047c1a243f92bb8e88c2892aa781f02818b12cd3fed45e0dc06aee46",
+      "localPath": "modules/uber-direct"
+    },
+    "uber-eats": {
+      "source": "local",
+      "packageName": "@86d-app/uber-eats",
+      "version": "0.0.4",
+      "integrity": "sha256-4d51a8984bbb555ee8a70f8b539c26216b013994fa3f08726b0e9fd9b0e54aca",
+      "localPath": "modules/uber-eats"
+    },
     "vendors": {
       "source": "local",
       "packageName": "@86d-app/vendors",
@@ -513,6 +660,13 @@
       "integrity": "sha256-9f5bd3d25466775d76d2e9a51dadb64b6177a759a6513c3399ef1e77b3940892",
       "localPath": "modules/waitlist"
     },
+    "walmart": {
+      "source": "local",
+      "packageName": "@86d-app/walmart",
+      "version": "0.0.4",
+      "integrity": "sha256-d248d10d52d6c50cb7a42adfc6b47a9b9c6f51eb5a7ee374dc7bd0087cba1323",
+      "localPath": "modules/walmart"
+    },
     "warranties": {
       "source": "local",
       "packageName": "@86d-app/warranties",
@@ -520,12 +674,26 @@
       "integrity": "sha256-710956d9a3dae92bd577b802e692e2ea1eca9e217692b21aff62f948d5894a5a",
       "localPath": "modules/warranties"
     },
+    "wish": {
+      "source": "local",
+      "packageName": "@86d-app/wish",
+      "version": "0.0.4",
+      "integrity": "sha256-93a24376b69f02ff04c4253658fbc74958539ae56b7bfb0ed7799afe1fdf38f5",
+      "localPath": "modules/wish"
+    },
     "wishlist": {
       "source": "local",
       "packageName": "@86d-app/wishlist",
       "version": "0.0.4",
       "integrity": "sha256-ddfad075dc0d28689cbc69041c24bee9509dd2ec7e150908206155787ec99afb",
       "localPath": "modules/wishlist"
+    },
+    "x-shop": {
+      "source": "local",
+      "packageName": "@86d-app/x-shop",
+      "version": "0.0.4",
+      "integrity": "sha256-050b7475e306a1f3177e440503c2a4a5862dbf797b2293edd887276b37059c03",
+      "localPath": "modules/x-shop"
     }
   }
 }

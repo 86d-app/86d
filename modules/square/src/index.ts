@@ -28,6 +28,14 @@ export default function square(options: SquareOptions): Module {
 		id: "square",
 		version: "0.0.1",
 		schema: {},
+		events: {
+			emits: [
+				"square.payment.completed",
+				"square.payment.failed",
+				"square.refund.created",
+				"square.webhook.received",
+			],
+		},
 		init: async () => {
 			return {};
 		},

@@ -1,0 +1,188 @@
+import type { ModuleDataService, ScopedEventEmitter } from "@86d-app/core";
+import type {
+	MenuMapping,
+	SyncDirection,
+	SyncEntityType,
+	SyncRecord,
+	SyncStats,
+	ToastController,
+} from "./service";
+
+function createSyncRecord(
+	data: ModuleDataService,
+	events: ScopedEventEmitter | undefined,
+	entityType: SyncEntityType,
+	eventName: string,
+	params: {
+		entityId: string;
+		externalId: string;
+		direction?: SyncDirection | undefined;
+	},
+): Promise<SyncRecord> {
+	const now = new Date();
+	const id = crypto.randomUUID();
+	const record: SyncRecord = {
+		id,
+		entityType,
+		entityId: params.entityId,
+		externalId: params.externalId,
+		direction: params.direction ?? "outbound",
+		status: "synced",
+		syncedAt: now,
+		createdAt: now,
+		updatedAt: now,
+	};
+	return (async () => {
+		// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+		await data.upsert("syncRecord", id, record as Record<string, any>);
+		void events?.emit(eventName, {
+			syncRecordId: record.id,
+			entityType,
+			entityId: record.entityId,
+			externalId: record.externalId,
+		});
+		return record;
+	})();
+}
+
+export function createToastController(
+	data: ModuleDataService,
+	events?: ScopedEventEmitter | undefined,
+): ToastController {
+	return {
+		async syncMenu(params) {
+			return createSyncRecord(
+				data,
+				events,
+				"menu-item",
+				"toast.menu.synced",
+				params,
+			);
+		},
+
+		async syncOrder(params) {
+			return createSyncRecord(
+				data,
+				events,
+				"order",
+				"toast.order.synced",
+				params,
+			);
+		},
+
+		async syncInventory(params) {
+			return createSyncRecord(
+				data,
+				events,
+				"inventory",
+				"toast.inventory.updated",
+				params,
+			);
+		},
+
+		async getSyncRecord(id) {
+			const raw = await data.get("syncRecord", id);
+			if (!raw) return null;
+			return raw as unknown as SyncRecord;
+		},
+
+		async listSyncRecords(params) {
+			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
+			const where: Record<string, any> = {};
+			if (params?.entityType) where.entityType = params.entityType;
+			if (params?.status) where.status = params.status;
+
+			const all = await data.findMany("syncRecord", {
+				...(Object.keys(where).length > 0 ? { where } : {}),
+				...(params?.take !== undefined ? { take: params.take } : {}),
+				...(params?.skip !== undefined ? { skip: params.skip } : {}),
+			});
+			return all as unknown as SyncRecord[];
+		},
+
+		async createMenuMapping(params) {
+			const now = new Date();
+			const id = crypto.randomUUID();
+			const mapping: MenuMapping = {
+				id,
+				localProductId: params.localProductId,
+				externalMenuItemId: params.externalMenuItemId,
+				isActive: true,
+				createdAt: now,
+				updatedAt: now,
+			};
+			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+			await data.upsert("menuMapping", id, mapping as Record<string, any>);
+			return mapping;
+		},
+
+		async getMenuMapping(id) {
+			const raw = await data.get("menuMapping", id);
+			if (!raw) return null;
+			return raw as unknown as MenuMapping;
+		},
+
+		async listMenuMappings(params) {
+			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
+			const where: Record<string, any> = {};
+			if (params?.isActive !== undefined) where.isActive = params.isActive;
+
+			const all = await data.findMany("menuMapping", {
+				...(Object.keys(where).length > 0 ? { where } : {}),
+				...(params?.take !== undefined ? { take: params.take } : {}),
+				...(params?.skip !== undefined ? { skip: params.skip } : {}),
+			});
+			return all as unknown as MenuMapping[];
+		},
+
+		async deleteMenuMapping(id) {
+			const existing = await data.get("menuMapping", id);
+			if (!existing) return false;
+			await data.delete("menuMapping", id);
+			return true;
+		},
+
+		async getLastSyncTime(entityType) {
+			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
+			const where: Record<string, any> = { status: "synced" };
+			if (entityType) where.entityType = entityType;
+
+			const records = await data.findMany("syncRecord", { where });
+			const synced = records as unknown as SyncRecord[];
+
+			if (synced.length === 0) return null;
+
+			let latest: Date | null = null;
+			for (const r of synced) {
+				if (r.syncedAt && (!latest || r.syncedAt > latest)) {
+					latest = r.syncedAt;
+				}
+			}
+			return latest;
+		},
+
+		async getSyncStats() {
+			const all = await data.findMany("syncRecord", {});
+			const records = all as unknown as SyncRecord[];
+
+			const stats: SyncStats = {
+				total: records.length,
+				pending: 0,
+				synced: 0,
+				failed: 0,
+				byEntityType: {},
+			};
+
+			for (const r of records) {
+				if (r.status === "pending") stats.pending++;
+				else if (r.status === "synced") stats.synced++;
+				else if (r.status === "failed") stats.failed++;
+
+				stats.byEntityType[r.entityType] =
+					(stats.byEntityType[r.entityType] ?? 0) + 1;
+			}
+
+			return stats;
+		},
+	};
+}

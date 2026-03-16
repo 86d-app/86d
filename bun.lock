@@ -30,6 +30,7 @@
       "dependencies": {
         "@86d-app/abandoned-carts": "workspace:*",
         "@86d-app/affiliates": "workspace:*",
+        "@86d-app/amazon": "workspace:*",
         "@86d-app/analytics": "workspace:*",
         "@86d-app/announcements": "workspace:*",
         "@86d-app/appointments": "workspace:*",
@@ -52,16 +53,25 @@
         "@86d-app/delivery-slots": "workspace:*",
         "@86d-app/digital-downloads": "workspace:*",
         "@86d-app/discounts": "workspace:*",
+        "@86d-app/doordash": "workspace:*",
+        "@86d-app/ebay": "workspace:*",
+        "@86d-app/etsy": "workspace:*",
+        "@86d-app/facebook-shop": "workspace:*",
         "@86d-app/faq": "workspace:*",
+        "@86d-app/favor": "workspace:*",
         "@86d-app/flash-sales": "workspace:*",
         "@86d-app/forms": "workspace:*",
         "@86d-app/fulfillment": "workspace:*",
+        "@86d-app/gamification": "workspace:*",
         "@86d-app/gift-cards": "workspace:*",
         "@86d-app/gift-registry": "workspace:*",
         "@86d-app/gift-wrapping": "workspace:*",
+        "@86d-app/google-shopping": "workspace:*",
         "@86d-app/import-export": "workspace:*",
+        "@86d-app/instagram-shop": "workspace:*",
         "@86d-app/inventory": "workspace:*",
         "@86d-app/invoices": "workspace:*",
+        "@86d-app/kiosk": "workspace:*",
         "@86d-app/loyalty": "workspace:*",
         "@86d-app/media": "workspace:*",
         "@86d-app/memberships": "workspace:*",
@@ -69,16 +79,20 @@
         "@86d-app/navigation": "workspace:*",
         "@86d-app/newsletter": "workspace:*",
         "@86d-app/notifications": "workspace:*",
+        "@86d-app/order-notes": "workspace:*",
         "@86d-app/orders": "workspace:*",
         "@86d-app/pages": "workspace:*",
         "@86d-app/payments": "workspace:*",
         "@86d-app/paypal": "workspace:*",
+        "@86d-app/photo-booth": "workspace:*",
+        "@86d-app/pinterest-shop": "workspace:*",
         "@86d-app/preorders": "workspace:*",
         "@86d-app/price-lists": "workspace:*",
         "@86d-app/product-feeds": "workspace:*",
         "@86d-app/product-labels": "workspace:*",
         "@86d-app/product-qa": "workspace:*",
         "@86d-app/products": "workspace:*",
+        "@86d-app/qr-code": "workspace:*",
         "@86d-app/quotes": "workspace:*",
         "@86d-app/recently-viewed": "workspace:*",
         "@86d-app/recommendations": "workspace:*",
@@ -86,6 +100,7 @@
         "@86d-app/referrals": "workspace:*",
         "@86d-app/returns": "workspace:*",
         "@86d-app/reviews": "workspace:*",
+        "@86d-app/saved-addresses": "workspace:*",
         "@86d-app/sdk": "workspace:*",
         "@86d-app/search": "workspace:*",
         "@86d-app/seo": "workspace:*",
@@ -93,6 +108,7 @@
         "@86d-app/shipping": "workspace:*",
         "@86d-app/sitemap": "workspace:*",
         "@86d-app/social-proof": "workspace:*",
+        "@86d-app/social-sharing": "workspace:*",
         "@86d-app/square": "workspace:*",
         "@86d-app/storage": "workspace:*",
         "@86d-app/store-credits": "workspace:*",
@@ -102,10 +118,18 @@
         "@86d-app/subscriptions": "workspace:*",
         "@86d-app/tax": "workspace:*",
         "@86d-app/tickets": "workspace:*",
+        "@86d-app/tiktok-shop": "workspace:*",
+        "@86d-app/tipping": "workspace:*",
+        "@86d-app/toast": "workspace:*",
+        "@86d-app/uber-direct": "workspace:*",
+        "@86d-app/uber-eats": "workspace:*",
         "@86d-app/vendors": "workspace:*",
         "@86d-app/waitlist": "workspace:*",
+        "@86d-app/walmart": "workspace:*",
         "@86d-app/warranties": "workspace:*",
+        "@86d-app/wish": "workspace:*",
         "@86d-app/wishlist": "workspace:*",
+        "@86d-app/x-shop": "workspace:*",
         "@base-ui/react": "^1.2.0",
         "@mdx-js/loader": "catalog:mdx",
         "@mdx-js/react": "catalog:mdx",
@@ -183,6 +207,20 @@
     "modules/affiliates": {
       "name": "@86d-app/affiliates",
       "version": "0.0.1",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
+    "modules/amazon": {
+      "name": "@86d-app/amazon",
+      "version": "0.0.4",
       "dependencies": {
         "@86d-app/core": "workspace:*",
       },
@@ -486,9 +524,79 @@
         "vitest": "catalog:vite",
       },
     },
+    "modules/doordash": {
+      "name": "@86d-app/doordash",
+      "version": "0.0.4",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
+    "modules/ebay": {
+      "name": "@86d-app/ebay",
+      "version": "0.0.4",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
+    "modules/etsy": {
+      "name": "@86d-app/etsy",
+      "version": "0.0.4",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
+    "modules/facebook-shop": {
+      "name": "@86d-app/facebook-shop",
+      "version": "0.0.4",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
     "modules/faq": {
       "name": "@86d-app/faq",
       "version": "0.0.1",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
+    "modules/favor": {
+      "name": "@86d-app/favor",
+      "version": "0.0.4",
       "dependencies": {
         "@86d-app/core": "workspace:*",
       },
@@ -541,6 +649,19 @@
         "vitest": "catalog:vite",
       },
     },
+    "modules/gamification": {
+      "name": "@86d-app/gamification",
+      "version": "0.0.4",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
     "modules/gift-cards": {
       "name": "@86d-app/gift-cards",
       "version": "0.0.4",
@@ -583,9 +704,37 @@
         "vitest": "catalog:vite",
       },
     },
+    "modules/google-shopping": {
+      "name": "@86d-app/google-shopping",
+      "version": "0.0.4",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
     "modules/import-export": {
       "name": "@86d-app/import-export",
       "version": "0.0.1",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
+    "modules/instagram-shop": {
+      "name": "@86d-app/instagram-shop",
+      "version": "0.0.4",
       "dependencies": {
         "@86d-app/core": "workspace:*",
       },
@@ -614,6 +763,20 @@
     "modules/invoices": {
       "name": "@86d-app/invoices",
       "version": "0.0.1",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
+    "modules/kiosk": {
+      "name": "@86d-app/kiosk",
+      "version": "0.0.4",
       "dependencies": {
         "@86d-app/core": "workspace:*",
       },
@@ -791,6 +954,33 @@
         "vitest": "catalog:vite",
       },
     },
+    "modules/photo-booth": {
+      "name": "@86d-app/photo-booth",
+      "version": "0.0.4",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
+    "modules/pinterest-shop": {
+      "name": "@86d-app/pinterest-shop",
+      "version": "0.0.4",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
     "modules/preorders": {
       "name": "@86d-app/preorders",
       "version": "0.0.1",
@@ -863,6 +1053,20 @@
     },
     "modules/products": {
       "name": "@86d-app/products",
+      "version": "0.0.4",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
+    "modules/qr-code": {
+      "name": "@86d-app/qr-code",
       "version": "0.0.4",
       "dependencies": {
         "@86d-app/core": "workspace:*",
@@ -1071,6 +1275,18 @@
         "vitest": "catalog:vite",
       },
     },
+    "modules/social-sharing": {
+      "name": "@86d-app/social-sharing",
+      "version": "0.0.4",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
     "modules/square": {
       "name": "@86d-app/square",
       "version": "0.0.4",
@@ -1181,6 +1397,76 @@
         "vitest": "catalog:vite",
       },
     },
+    "modules/tiktok-shop": {
+      "name": "@86d-app/tiktok-shop",
+      "version": "0.0.4",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
+    "modules/tipping": {
+      "name": "@86d-app/tipping",
+      "version": "0.0.4",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
+    "modules/toast": {
+      "name": "@86d-app/toast",
+      "version": "0.0.4",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
+    "modules/uber-direct": {
+      "name": "@86d-app/uber-direct",
+      "version": "0.0.4",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
+    "modules/uber-eats": {
+      "name": "@86d-app/uber-eats",
+      "version": "0.0.4",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
     "modules/vendors": {
       "name": "@86d-app/vendors",
       "version": "0.0.1",
@@ -1209,6 +1495,20 @@
         "vitest": "catalog:vite",
       },
     },
+    "modules/walmart": {
+      "name": "@86d-app/walmart",
+      "version": "0.0.4",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
     "modules/warranties": {
       "name": "@86d-app/warranties",
       "version": "0.0.1",
@@ -1223,8 +1523,36 @@
         "vitest": "catalog:vite",
       },
     },
+    "modules/wish": {
+      "name": "@86d-app/wish",
+      "version": "0.0.4",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
     "modules/wishlist": {
       "name": "@86d-app/wishlist",
+      "version": "0.0.4",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/mdx": "catalog:mdx",
+        "@types/react": "catalog:react",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
+    "modules/x-shop": {
+      "name": "@86d-app/x-shop",
       "version": "0.0.4",
       "dependencies": {
         "@86d-app/core": "workspace:*",
@@ -1485,6 +1813,8 @@
 
     "@86d-app/affiliates": ["@86d-app/affiliates@workspace:modules/affiliates"],
 
+    "@86d-app/amazon": ["@86d-app/amazon@workspace:modules/amazon"],
+
     "@86d-app/analytics": ["@86d-app/analytics@workspace:modules/analytics"],
 
     "@86d-app/announcements": ["@86d-app/announcements@workspace:modules/announcements"],
@@ -1529,7 +1859,17 @@
 
     "@86d-app/discounts": ["@86d-app/discounts@workspace:modules/discounts"],
 
+    "@86d-app/doordash": ["@86d-app/doordash@workspace:modules/doordash"],
+
+    "@86d-app/ebay": ["@86d-app/ebay@workspace:modules/ebay"],
+
+    "@86d-app/etsy": ["@86d-app/etsy@workspace:modules/etsy"],
+
+    "@86d-app/facebook-shop": ["@86d-app/facebook-shop@workspace:modules/facebook-shop"],
+
     "@86d-app/faq": ["@86d-app/faq@workspace:modules/faq"],
+
+    "@86d-app/favor": ["@86d-app/favor@workspace:modules/favor"],
 
     "@86d-app/flash-sales": ["@86d-app/flash-sales@workspace:modules/flash-sales"],
 
@@ -1537,17 +1877,25 @@
 
     "@86d-app/fulfillment": ["@86d-app/fulfillment@workspace:modules/fulfillment"],
 
+    "@86d-app/gamification": ["@86d-app/gamification@workspace:modules/gamification"],
+
     "@86d-app/gift-cards": ["@86d-app/gift-cards@workspace:modules/gift-cards"],
 
     "@86d-app/gift-registry": ["@86d-app/gift-registry@workspace:modules/gift-registry"],
 
     "@86d-app/gift-wrapping": ["@86d-app/gift-wrapping@workspace:modules/gift-wrapping"],
 
+    "@86d-app/google-shopping": ["@86d-app/google-shopping@workspace:modules/google-shopping"],
+
     "@86d-app/import-export": ["@86d-app/import-export@workspace:modules/import-export"],
+
+    "@86d-app/instagram-shop": ["@86d-app/instagram-shop@workspace:modules/instagram-shop"],
 
     "@86d-app/inventory": ["@86d-app/inventory@workspace:modules/inventory"],
 
     "@86d-app/invoices": ["@86d-app/invoices@workspace:modules/invoices"],
+
+    "@86d-app/kiosk": ["@86d-app/kiosk@workspace:modules/kiosk"],
 
     "@86d-app/loyalty": ["@86d-app/loyalty@workspace:modules/loyalty"],
 
@@ -1573,6 +1921,10 @@
 
     "@86d-app/paypal": ["@86d-app/paypal@workspace:modules/paypal"],
 
+    "@86d-app/photo-booth": ["@86d-app/photo-booth@workspace:modules/photo-booth"],
+
+    "@86d-app/pinterest-shop": ["@86d-app/pinterest-shop@workspace:modules/pinterest-shop"],
+
     "@86d-app/preorders": ["@86d-app/preorders@workspace:modules/preorders"],
 
     "@86d-app/price-lists": ["@86d-app/price-lists@workspace:modules/price-lists"],
@@ -1584,6 +1936,8 @@
     "@86d-app/product-qa": ["@86d-app/product-qa@workspace:modules/product-qa"],
 
     "@86d-app/products": ["@86d-app/products@workspace:modules/products"],
+
+    "@86d-app/qr-code": ["@86d-app/qr-code@workspace:modules/qr-code"],
 
     "@86d-app/quotes": ["@86d-app/quotes@workspace:modules/quotes"],
 
@@ -1619,6 +1973,8 @@
 
     "@86d-app/social-proof": ["@86d-app/social-proof@workspace:modules/social-proof"],
 
+    "@86d-app/social-sharing": ["@86d-app/social-sharing@workspace:modules/social-sharing"],
+
     "@86d-app/square": ["@86d-app/square@workspace:modules/square"],
 
     "@86d-app/storage": ["@86d-app/storage@workspace:packages/storage"],
@@ -1637,13 +1993,29 @@
 
     "@86d-app/tickets": ["@86d-app/tickets@workspace:modules/tickets"],
 
+    "@86d-app/tiktok-shop": ["@86d-app/tiktok-shop@workspace:modules/tiktok-shop"],
+
+    "@86d-app/tipping": ["@86d-app/tipping@workspace:modules/tipping"],
+
+    "@86d-app/toast": ["@86d-app/toast@workspace:modules/toast"],
+
+    "@86d-app/uber-direct": ["@86d-app/uber-direct@workspace:modules/uber-direct"],
+
+    "@86d-app/uber-eats": ["@86d-app/uber-eats@workspace:modules/uber-eats"],
+
     "@86d-app/vendors": ["@86d-app/vendors@workspace:modules/vendors"],
 
     "@86d-app/waitlist": ["@86d-app/waitlist@workspace:modules/waitlist"],
 
+    "@86d-app/walmart": ["@86d-app/walmart@workspace:modules/walmart"],
+
     "@86d-app/warranties": ["@86d-app/warranties@workspace:modules/warranties"],
 
+    "@86d-app/wish": ["@86d-app/wish@workspace:modules/wish"],
+
     "@86d-app/wishlist": ["@86d-app/wishlist@workspace:modules/wishlist"],
+
+    "@86d-app/x-shop": ["@86d-app/x-shop@workspace:modules/x-shop"],
 
     "@alloc/quick-lru": ["@alloc/quick-lru@5.2.0", "", {}, "sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw=="],
 

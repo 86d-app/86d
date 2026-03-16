@@ -16,6 +16,14 @@ export default function stripe(options: StripeOptions): Module {
 		id: "stripe",
 		version: "0.0.1",
 		schema: {},
+		events: {
+			emits: [
+				"stripe.payment.succeeded",
+				"stripe.payment.failed",
+				"stripe.refund.created",
+				"stripe.webhook.received",
+			],
+		},
 		init: async () => {
 			return {};
 		},

@@ -1,0 +1,17 @@
+import { createStoreEndpoint, z } from "@86d-app/core";
+import type { GamificationController } from "../../service";
+
+export const redeemPrizeEndpoint = createStoreEndpoint(
+	"/gamification/plays/:id/redeem",
+	{
+		method: "POST",
+		params: z.object({ id: z.string() }),
+	},
+	async (ctx) => {
+		const controller = ctx.context.controllers
+			.gamification as GamificationController;
+		const play = await controller.redeemPrize(ctx.params.id);
+		if (!play) return { play: null, error: "Play not found or not redeemable" };
+		return { play };
+	},
+);
