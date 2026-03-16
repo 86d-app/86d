@@ -76,13 +76,13 @@ export async function ensureBooted(): Promise<ModuleRegistry> {
 		bootPromise = reg.boot().catch((err) => {
 			registry = null;
 			bootPromise = null;
+			subscribersRegistered = false;
 			throw err;
 		});
 	}
 	await bootPromise;
 
 	if (!subscribersRegistered) {
-		subscribersRegistered = true;
 		const bus = reg.getEventBus();
 		if (bus) {
 			// Email notifications
@@ -164,6 +164,7 @@ export async function ensureBooted(): Promise<ModuleRegistry> {
 				});
 			}
 		}
+		subscribersRegistered = true;
 	}
 
 	return reg;
