@@ -83,6 +83,16 @@ interface SocialSharingController extends ModuleController {
 - **ShareEvent** — Individual share tracking record with network and referrer
 - **ShareSettings** — Global settings for enabled networks, default message, hashtags, and per-network templates
 
+## Components
+
+### Store
+
+- **ShareButtons** — Social share button row for any target. Renders buttons for Twitter, Facebook, Pinterest, LinkedIn, WhatsApp, Email, and Copy Link. Records share events and shows total count. Requires `targetType`, `targetId`, `url` props.
+
+### Admin
+
+- **SocialSharingAdmin** — Admin dashboard with share stats by network, top shared content, recent events table (filterable by target type and network), and settings panel (enabled networks, default message, hashtags).
+
 ## Notes
 
 - `generateShareUrl` is a synchronous method that builds platform-specific URLs (e.g., `https://twitter.com/intent/tweet?url=...`).

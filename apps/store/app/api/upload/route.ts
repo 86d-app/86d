@@ -105,3 +105,45 @@ export async function POST(request: Request) {
 		return NextResponse.json({ error: "Upload failed" }, { status: 500 });
 	}
 }
+
+export async function DELETE(request: Request) {
+	const session = await getSession();
+	if (!session) {
+		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+	}
+
+	const storeId = env.STORE_ID;
+	if (!storeId) {
+		return NextResponse.json(
+			{ error: "Store not configured" },
+			{ status: 500 },
+		);
+	}
+
+	const access = verifyStoreAdminAccess(session.user);
+	if (!access.hasAccess) {
+		return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+	}
+
+	try {
+		const body = await request.json();
+		const key = typeof body?.key === "string" ? body.key : "";
+
+		if (!key) {
+			return NextResponse.json({ error: "Missing file key" }, { status: 400 });
+		}
+
+		// Ensure the key belongs to this store to prevent cross-store deletion
+		if (!key.startsWith(`stores/${storeId}/`)) {
+			return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+		}
+
+		const storage = getStorage();
+		await storage.delete({ key });
+
+		return NextResponse.json({ success: true });
+	} catch (error) {
+		logger.error("Delete failed", { error: String(error) });
+		return NextResponse.json({ error: "Delete failed" }, { status: 500 });
+	}
+}

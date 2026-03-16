@@ -12,7 +12,9 @@ src/
   service-impl.ts       Controller implementation
   mdx.d.ts              MDX type declarations
   store/endpoints/      4 customer-facing endpoints
+  store/components/     OrderNotes (customer note list + add form)
   admin/endpoints/      5 admin endpoints
+  admin/components/     OrderNotesOverview (filterable notes list, stats, pin/delete)
   __tests__/            45 tests (service-impl, access-control)
 ```
 

@@ -90,6 +90,16 @@ interface Address {
 }
 ```
 
+## Components
+
+### Store
+
+- **AddressBook** — Customer-facing address management. Card grid with add/edit form, default shipping/billing selection, delete with confirmation. Requires `customerId` prop.
+
+### Admin
+
+- **AddressOverview** — Admin address list with summary stats (total addresses, country breakdown), filterable table with pagination, and delete actions.
+
 ## Notes
 
 - First address is automatically set as both default shipping and billing

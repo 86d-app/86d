@@ -89,6 +89,13 @@ interface QrCodeController extends ModuleController {
 - **QrCode** — QR code with target reference, format settings, and scan counter
 - **QrScan** — Individual scan record with user agent, IP, and referrer
 
+## Components
+
+### Admin
+
+- **QrCodeList** — Paginated QR code list with target type and active status filters. Inline create form (single + batch mode). Delete with confirmation.
+- **QrCodeDetail** — Single QR code view with editable fields, overview cards (target type, status, scan count, format), and scan history table with pagination.
+
 ## Notes
 
 - `recordScan` both increments the QR code's `scanCount` and creates a separate `QrScan` record for detailed analytics.

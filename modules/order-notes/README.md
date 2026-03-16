@@ -70,6 +70,16 @@ interface OrderNote {
 }
 ```
 
+## Components
+
+### Store
+
+- **OrderNotes** — Customer-facing note list for an order. Shows non-internal notes, add note form, edit/delete own notes. Requires `orderId` and optional `customerId` props.
+
+### Admin
+
+- **OrderNotesOverview** — Admin notes dashboard with summary stats (total, by author type, internal count), filterable list (orderId, authorType, internal toggle), pin/unpin, delete with confirmation, and pagination.
+
 ## Notes
 
 - Internal notes (`isInternal: true`) are never exposed through store endpoints

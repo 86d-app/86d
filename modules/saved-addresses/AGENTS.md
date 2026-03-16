@@ -12,7 +12,9 @@ src/
   service-impl.ts       Controller implementation
   mdx.d.ts              MDX type declarations
   store/endpoints/      9 customer-facing endpoints
+  store/components/     AddressBook (customer address management)
   admin/endpoints/      3 admin endpoints
+  admin/components/     AddressOverview (admin address list + stats)
   __tests__/            52 tests (service-impl, endpoint-security)
 ```
 

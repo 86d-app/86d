@@ -6,13 +6,15 @@ Generate and track QR codes for products, collections, pages, orders, or custom 
 
 ```
 src/
-  index.ts          Factory: qrCode(options?) => Module + admin nav (Marketing)
-  schema.ts         Zod models: qrCode, qrScan
-  service.ts        QrCodeController interface
-  service-impl.ts   QrCodeController implementation
-  store/endpoints/  get-qr-code, record-scan
-  admin/endpoints/  CRUD qr-codes, batch create, list-scans
-  __tests__/        controllers (39), endpoint-security (15), events (12)
+  index.ts              Factory: qrCode(options?) => Module + admin nav (Marketing)
+  schema.ts             Zod models: qrCode, qrScan
+  service.ts            QrCodeController interface
+  service-impl.ts       QrCodeController implementation
+  mdx.d.ts              MDX type declarations
+  store/endpoints/      get-qr-code, record-scan
+  admin/endpoints/      CRUD qr-codes, batch create, list-scans
+  admin/components/     QrCodeList (filterable list + create form), QrCodeDetail (view/edit + scans)
+  __tests__/            controllers (39), endpoint-security (15), events (12)
 ```
 
 ## Options

@@ -6,13 +6,16 @@ Track and generate share links for products, collections, pages, and blog posts 
 
 ```
 src/
-  index.ts          Factory: socialSharing(options?) => Module + admin nav (Marketing)
-  schema.ts         Zod models: shareEvent, shareSettings
-  service.ts        SocialSharingController interface
-  service-impl.ts   SocialSharingController implementation
-  store/endpoints/  share, count, url
-  admin/endpoints/  list-shares, stats, top, get-settings, update-settings
-  __tests__/        controllers (40), endpoint-security (16), events (8)
+  index.ts              Factory: socialSharing(options?) => Module + admin nav (Marketing)
+  schema.ts             Zod models: shareEvent, shareSettings
+  service.ts            SocialSharingController interface
+  service-impl.ts       SocialSharingController implementation
+  mdx.d.ts              MDX type declarations
+  store/endpoints/      share, count, url
+  store/components/     ShareButtons (social share button row with counts)
+  admin/endpoints/      list-shares, stats, top, get-settings, update-settings
+  admin/components/     SocialSharingAdmin (stats, top content, events list, settings)
+  __tests__/            controllers (40), endpoint-security (16), events (8)
 ```
 
 ## Options
