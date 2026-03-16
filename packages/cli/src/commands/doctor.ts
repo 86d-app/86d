@@ -1,5 +1,6 @@
 import { execSync } from "node:child_process";
 import { existsSync, readdirSync } from "node:fs";
+import { createConnection } from "node:net";
 import { join } from "node:path";
 import {
 	c,
@@ -18,7 +19,7 @@ interface Check {
 	fix?: string;
 }
 
-export function doctor() {
+export async function doctor() {
 	const checks: Check[] = [];
 	let root: string | undefined;
 
@@ -257,7 +258,47 @@ export function doctor() {
 		});
 	}
 
-	// 8. Generation scripts
+	// 8. Database connectivity
+	const dbUrlVal = existsSync(join(root, ".env"))
+		? parseEnvFile(join(root, ".env")).DATABASE_URL
+		: process.env.DATABASE_URL;
+	if (dbUrlVal) {
+		try {
+			const url = new URL(dbUrlVal);
+			const host = url.hostname;
+			const dbPort = Number.parseInt(url.port, 10) || 5432;
+			await new Promise<void>((resolve, reject) => {
+				const sock = createConnection({
+					host,
+					port: dbPort,
+					timeout: 3000,
+				});
+				sock.on("connect", () => {
+					sock.destroy();
+					resolve();
+				});
+				sock.on("error", reject);
+				sock.on("timeout", () => {
+					sock.destroy();
+					reject(new Error("timeout"));
+				});
+			});
+			checks.push({
+				label: "Database",
+				status: "pass",
+				message: `reachable at ${host}:${dbPort}`,
+			});
+		} catch {
+			checks.push({
+				label: "Database",
+				status: "fail",
+				message: "not reachable",
+				fix: "Start your database or check DATABASE_URL in .env",
+			});
+		}
+	}
+
+	// 9a. Generation scripts
 	const genModules = existsSync(join(root, "scripts/generate-modules.ts"));
 	const genDocs = existsSync(join(root, "scripts/generate-component-docs.ts"));
 	if (genModules && genDocs) {
@@ -278,7 +319,7 @@ export function doctor() {
 		});
 	}
 
-	// 9. TypeScript config
+	// 9b. TypeScript config
 	const storeTsconfig = join(root, "apps/store/tsconfig.json");
 	const baseTsconfig = join(root, "tsconfig.base.json");
 	if (existsSync(storeTsconfig) && existsSync(baseTsconfig)) {

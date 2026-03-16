@@ -36,5 +36,12 @@ if (!parsed.success) {
 
 const env = parsed.data;
 
+// Warn in production when critical secrets are missing
+if (env.NODE_ENV === "production" && !env.BETTER_AUTH_SECRET) {
+	console.warn(
+		"⚠ BETTER_AUTH_SECRET is not set. Session tokens will use a weak default. Set this to a secure random string in production.",
+	);
+}
+
 export default env;
 export type Env = z.infer<typeof envSchema>;

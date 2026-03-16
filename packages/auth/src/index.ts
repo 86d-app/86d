@@ -23,10 +23,21 @@ const socialProviders = apiKey
 						clientSecret: apiKey,
 						scopes: ["openid", "profile", "email", "store:admin"],
 						mapProfileToUser: (profile) => {
+							// Verify the IdP actually granted store:admin scope/role
+							const grantedScopes =
+								typeof profile.scope === "string"
+									? profile.scope.split(" ")
+									: Array.isArray(profile.scope)
+										? (profile.scope as string[])
+										: [];
+							const hasAdminRole =
+								profile.role === "admin" ||
+								grantedScopes.includes("store:admin");
+
 							const user: Record<string, string> = {
 								name: profile.name as string,
 								email: profile.email as string,
-								role: "admin",
+								role: hasAdminRole ? "admin" : "user",
 							};
 							if (profile.picture) {
 								user.image = profile.picture as string;

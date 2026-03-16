@@ -110,8 +110,17 @@ describe("doctor", () => {
 			},
 		}));
 
+		// Mock net.createConnection for database connectivity check
+		vi.doMock("node:net", () => ({
+			createConnection: () => {
+				const ee = new (require("node:events").EventEmitter)();
+				setTimeout(() => ee.emit("connect"), 1);
+				return Object.assign(ee, { destroy: () => {} });
+			},
+		}));
+
 		const { doctor } = await import("../commands/doctor.js");
-		doctor();
+		await doctor();
 	}
 
 	it("reports healthy project with no issues", async () => {
