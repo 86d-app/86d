@@ -42,11 +42,16 @@ export async function GET(
 	const contentType = MIME_TYPES[ext] ?? "application/octet-stream";
 	const content = readFileSync(filePath);
 
-	return new NextResponse(content, {
-		status: 200,
-		headers: {
-			"Content-Type": contentType,
-			"Cache-Control": "public, max-age=31536000, immutable",
-		},
-	});
+	const headers: Record<string, string> = {
+		"Content-Type": contentType,
+		"Cache-Control": "public, max-age=31536000, immutable",
+	};
+
+	// SVGs can contain scripts — prevent inline execution via CSP
+	if (contentType === "image/svg+xml") {
+		headers["Content-Security-Policy"] =
+			"default-src 'none'; style-src 'unsafe-inline'";
+	}
+
+	return new NextResponse(content, { status: 200, headers });
 }

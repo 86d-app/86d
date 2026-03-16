@@ -131,6 +131,18 @@ Payment provider modules (stripe, square, paypal, braintree) each implement webh
 - Verifies HMAC signatures with timing-safe comparison
 - Returns 401 on invalid or expired signatures; passthrough when no secret configured
 
+## File upload & storage
+
+- `POST /api/upload` — Admin-only file upload. Accepts JPEG, PNG, WebP, GIF, SVG, PDF.
+  - Magic-byte validation prevents MIME spoofing
+  - SVG files are checked for XSS (scripts, event handlers, javascript URIs)
+  - Size limits: 4.5 MB for images, 10 MB for PDFs
+  - Files stored at `stores/{storeId}/{uuid}` via `@86d-app/storage` abstraction
+- `DELETE /api/upload` — Admin-only file deletion with store isolation (cross-store deletion prevented)
+- `GET /uploads/[...path]` — Serves locally-stored files (when `STORAGE_PROVIDER=local`)
+  - Path traversal protection, immutable cache headers
+  - SVGs served with restrictive CSP (`default-src 'none'; style-src 'unsafe-inline'`)
+
 ## Key details
 
 - MDX support enabled — pages can be `.md` or `.mdx` (configured in next.config.ts)

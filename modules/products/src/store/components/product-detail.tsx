@@ -36,12 +36,13 @@ export function ProductDetail(props: ProductDetailProps) {
 	// biome-ignore lint/suspicious/noExplicitAny: store context shape varies per app
 	const store = useStoreContext<{ cart: any }>();
 
-	const { data, isLoading } = api.getProduct.useQuery(
+	const { data, isLoading, isError } = api.getProduct.useQuery(
 		{ params: { id: slug ?? "" } },
 		{ enabled: !!slug },
 	) as {
 		data: { product: ProductWithVariants } | undefined;
 		isLoading: boolean;
+		isError: boolean;
 	};
 
 	const product = data?.product ?? null;
@@ -132,6 +133,25 @@ export function ProductDetail(props: ProductDetailProps) {
 						<div className="h-20 animate-pulse rounded bg-muted" />
 					</div>
 				</div>
+			</div>
+		);
+	}
+
+	if (isError) {
+		return (
+			<div className="flex flex-col items-center justify-center py-24 text-center">
+				<p className="font-medium text-foreground text-sm">
+					Something went wrong
+				</p>
+				<p className="mt-1 text-muted-foreground text-sm">
+					We couldn&apos;t load this product. Please try again.
+				</p>
+				<a
+					href="/products"
+					className="mt-3 text-muted-foreground text-sm transition-colors hover:text-foreground"
+				>
+					Back to products
+				</a>
 			</div>
 		);
 	}

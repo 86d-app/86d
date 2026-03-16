@@ -10,36 +10,80 @@ const ALLOWED_TYPES = new Set([
 	"image/png",
 	"image/jpg",
 	"image/webp",
+	"image/gif",
+	"image/svg+xml",
+	"application/pdf",
 ]);
-const MAX_SIZE = 4.5 * 1024 * 1024; // 4.5 MB
+const MAX_SIZE = 10 * 1024 * 1024; // 10 MB (PDFs can be larger)
+const MAX_IMAGE_SIZE = 4.5 * 1024 * 1024; // 4.5 MB for raster images
 
-/** Magic-byte signatures for allowed image types (detect spoofed MIME). */
-const JPEG_SIG = new Uint8Array([0xff, 0xd8, 0xff]);
+/** Magic-byte signatures for allowed file types (detect spoofed MIME). */
 const PNG_SIG = new Uint8Array([
 	0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
 ]);
 const WEBP_RIFF = new Uint8Array([0x52, 0x49, 0x46, 0x46]); // RIFF
 const WEBP_WEBP = new Uint8Array([0x57, 0x45, 0x42, 0x50]); // WEBP at bytes 8–11
+const GIF87_SIG = new Uint8Array([0x47, 0x49, 0x46, 0x38, 0x37, 0x61]); // GIF87a
+const GIF89_SIG = new Uint8Array([0x47, 0x49, 0x46, 0x38, 0x39, 0x61]); // GIF89a
+const PDF_SIG = new Uint8Array([0x25, 0x50, 0x44, 0x46]); // %PDF
 
 function matchesMagicBytes(buffer: ArrayBuffer, mime: string): boolean {
 	const bytes = new Uint8Array(buffer);
-	if (bytes.length < 12) return false;
 	if (mime === "image/jpeg" || mime === "image/jpg") {
 		return (
-			bytes[0] === JPEG_SIG[0] &&
-			bytes[1] === JPEG_SIG[1] &&
-			bytes[2] === JPEG_SIG[2]
+			bytes.length >= 3 &&
+			bytes[0] === 0xff &&
+			bytes[1] === 0xd8 &&
+			bytes[2] === 0xff
 		);
 	}
 	if (mime === "image/png") {
-		return PNG_SIG.every((b, i) => bytes[i] === b);
+		return bytes.length >= 8 && PNG_SIG.every((b, i) => bytes[i] === b);
 	}
 	if (mime === "image/webp") {
-		const riff = WEBP_RIFF.every((b, i) => bytes[i] === b);
-		const webp = WEBP_WEBP.every((b, i) => bytes[i + 8] === b);
-		return riff && webp;
+		return (
+			bytes.length >= 12 &&
+			WEBP_RIFF.every((b, i) => bytes[i] === b) &&
+			WEBP_WEBP.every((b, i) => bytes[i + 8] === b)
+		);
+	}
+	if (mime === "image/gif") {
+		return (
+			bytes.length >= 6 &&
+			(GIF87_SIG.every((b, i) => bytes[i] === b) ||
+				GIF89_SIG.every((b, i) => bytes[i] === b))
+		);
+	}
+	if (mime === "image/svg+xml") {
+		// SVG is text-based — check for XML declaration or <svg tag
+		const text = new TextDecoder().decode(
+			bytes.subarray(0, Math.min(256, bytes.length)),
+		);
+		return text.includes("<svg") || text.startsWith("<?xml");
+	}
+	if (mime === "application/pdf") {
+		return bytes.length >= 4 && PDF_SIG.every((b, i) => bytes[i] === b);
 	}
 	return false;
+}
+
+function getMaxSizeForType(mime: string): number {
+	if (mime === "application/pdf") return MAX_SIZE;
+	return MAX_IMAGE_SIZE;
+}
+
+/** Reject SVGs containing script tags, event handlers, or JS URIs. */
+function isSvgSafe(buffer: ArrayBuffer): boolean {
+	const text = new TextDecoder().decode(new Uint8Array(buffer));
+	// Block script elements
+	if (/<script[\s>]/i.test(text)) return false;
+	// Block event handler attributes (onclick, onload, onerror, etc.)
+	if (/\bon\w+\s*=/i.test(text)) return false;
+	// Block javascript: URIs
+	if (/javascript\s*:/i.test(text)) return false;
+	// Block data: URIs in href/src (can embed scripts)
+	if (/(?:href|src)\s*=\s*["']?\s*data\s*:/i.test(text)) return false;
+	return true;
 }
 
 export async function POST(request: Request) {
@@ -71,14 +115,18 @@ export async function POST(request: Request) {
 
 		if (!ALLOWED_TYPES.has(file.type)) {
 			return NextResponse.json(
-				{ error: "File type must be JPEG, PNG, or WebP" },
+				{
+					error: "File type must be JPEG, PNG, WebP, GIF, SVG, or PDF",
+				},
 				{ status: 400 },
 			);
 		}
 
-		if (file.size > MAX_SIZE) {
+		const maxSize = getMaxSizeForType(file.type);
+		if (file.size > maxSize) {
+			const limitMB = Math.round((maxSize / (1024 * 1024)) * 10) / 10;
 			return NextResponse.json(
-				{ error: "File size must be less than 4.5 MB" },
+				{ error: `File size must be less than ${limitMB} MB` },
 				{ status: 400 },
 			);
 		}
@@ -86,7 +134,17 @@ export async function POST(request: Request) {
 		const buffer = await file.arrayBuffer();
 		if (!matchesMagicBytes(buffer, file.type)) {
 			return NextResponse.json(
-				{ error: "File content does not match declared image type" },
+				{ error: "File content does not match declared file type" },
+				{ status: 400 },
+			);
+		}
+
+		if (file.type === "image/svg+xml" && !isSvgSafe(buffer)) {
+			return NextResponse.json(
+				{
+					error:
+						"SVG contains potentially unsafe content (scripts, event handlers, or javascript URIs)",
+				},
 				{ status: 400 },
 			);
 		}

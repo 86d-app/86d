@@ -44,11 +44,14 @@ export function ProductListing({
 	if (inStock) queryInput.inStock = "true";
 	if (tag) queryInput.tag = tag;
 
-	const { data: productsData, isLoading } = api.listProducts.useQuery(
-		queryInput,
-	) as {
+	const {
+		data: productsData,
+		isLoading,
+		isError,
+	} = api.listProducts.useQuery(queryInput) as {
 		data: { products: Product[]; total: number } | undefined;
 		isLoading: boolean;
+		isError: boolean;
 	};
 
 	const { data: categoriesData } = api.listCategories.useQuery() as {
@@ -350,7 +353,23 @@ export function ProductListing({
 			</div>
 		) : null;
 
-	const gridContent = isLoading ? (
+	const gridContent = isError ? (
+		<div className="flex flex-col items-center justify-center py-20 text-center">
+			<p className="font-medium text-foreground text-sm">
+				Something went wrong
+			</p>
+			<p className="mt-1 text-muted-foreground text-sm">
+				We couldn&apos;t load products right now. Please try again.
+			</p>
+			<button
+				type="button"
+				onClick={() => window.location.reload()}
+				className="mt-4 rounded-full border border-border px-4 py-1.5 text-foreground text-xs transition-colors hover:bg-muted"
+			>
+				Refresh page
+			</button>
+		</div>
+	) : isLoading ? (
 		<div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
 			{Array.from({ length: pageSize }).map((_, i) => (
 				<div key={i}>

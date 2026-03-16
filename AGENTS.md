@@ -35,7 +35,7 @@ bun run 86d template create x  # scaffold a new template
 ```
 apps/store/          Next.js storefront + per-store admin
 docker/              Docker entrypoint + config
-modules/             75 modules (cart, products, orders, checkout, collections, brands, etc.)
+modules/             99 modules (cart, products, orders, checkout, collections, brands, etc.)
 packages/
   core/              Module system (isolation boundary, contracts, test-utils)
   runtime/           Store runtime engine (data service, registry)
@@ -104,8 +104,9 @@ Components follow a two-file pattern: `.tsx` (logic) + `.mdx` (presentation). Nu
 ## API endpoints
 
 - `GET /api/health` — Health check (DB connectivity, store status). Used by Docker HEALTHCHECK.
-- `POST /api/upload` — File upload (admin only, uses storage abstraction).
-- `GET /uploads/[...path]` — Serve local storage files (when STORAGE_PROVIDER=local).
+- `POST /api/upload` — File upload (admin only, JPEG/PNG/WebP/GIF/SVG/PDF, magic-byte validated, SVG XSS checked).
+- `DELETE /api/upload` — File deletion (admin only, store-isolated).
+- `GET /uploads/[...path]` — Serve local storage files (when STORAGE_PROVIDER=local, SVGs served with restrictive CSP).
 - `GET/POST /api/auth/[...all]` — Better Auth handlers (sign-in, sign-up, SSO).
 - `ALL /api/[...path]` — Module endpoints (rate-limited, session-authenticated).
 

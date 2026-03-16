@@ -21,12 +21,16 @@ export function CollectionGrid({
 	const queryInput: Record<string, any> = {};
 	if (featured) queryInput.featured = "true";
 
-	const { data, isLoading } = listCollections.useQuery(queryInput) as {
+	const { data, isLoading, isError } = listCollections.useQuery(queryInput) as {
 		data: { collections: CollectionCardData[] } | undefined;
 		isLoading: boolean;
+		isError: boolean;
 	};
 
 	const collections = data?.collections ?? [];
+
+	// Silently hide on error — homepage sections are non-critical
+	if (isError) return null;
 
 	if (isLoading) {
 		return (

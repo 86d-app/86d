@@ -14,14 +14,18 @@ export function FeaturedProducts({
 	title = "Featured Products",
 }: FeaturedProductsProps) {
 	const api = useProductsApi();
-	const { data, isLoading } = api.getFeaturedProducts.useQuery({
+	const { data, isLoading, isError } = api.getFeaturedProducts.useQuery({
 		limit: String(limit),
 	}) as {
 		data: { products: import("./_types").Product[] } | undefined;
 		isLoading: boolean;
+		isError: boolean;
 	};
 
 	const products = data?.products ?? [];
+
+	// Silently hide on error — homepage sections are non-critical
+	if (isError) return null;
 
 	if (isLoading) {
 		return (

@@ -15,7 +15,7 @@ export function CollectionDetail(props: CollectionDetailProps) {
 	const client = useModuleClient();
 	const getCollection = client.module("products").store["/collections/:id"];
 
-	const { data, isLoading } = getCollection.useQuery(
+	const { data, isLoading, isError } = getCollection.useQuery(
 		{ params: { id: slug ?? "" } },
 		{ enabled: !!slug },
 	) as {
@@ -25,6 +25,7 @@ export function CollectionDetail(props: CollectionDetailProps) {
 			  }
 			| undefined;
 		isLoading: boolean;
+		isError: boolean;
 	};
 
 	const collection = data?.collection ?? null;
@@ -59,6 +60,25 @@ export function CollectionDetail(props: CollectionDetailProps) {
 						</div>
 					))}
 				</div>
+			</div>
+		);
+	}
+
+	if (isError) {
+		return (
+			<div className="flex flex-col items-center justify-center py-24 text-center">
+				<p className="font-medium text-foreground text-sm">
+					Something went wrong
+				</p>
+				<p className="mt-1 text-muted-foreground text-sm">
+					We couldn&apos;t load this collection. Please try again.
+				</p>
+				<a
+					href="/collections"
+					className="mt-3 text-muted-foreground text-sm transition-colors hover:text-foreground"
+				>
+					Back to collections
+				</a>
 			</div>
 		);
 	}
