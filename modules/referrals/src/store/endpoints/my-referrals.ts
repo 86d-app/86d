@@ -12,7 +12,7 @@ export const myReferralsEndpoint = createStoreEndpoint(
 	},
 	async (ctx) => {
 		const customerId = ctx.context.session?.user.id;
-		if (!customerId) return { error: "Not authenticated" };
+		if (!customerId) return { error: "Not authenticated", status: 401 };
 
 		const controller = ctx.context.controllers.referrals as ReferralController;
 		const limit = ctx.query.limit ?? 20;

@@ -13,9 +13,16 @@ export const addCommentEndpoint = createStoreEndpoint(
 	},
 	async (ctx) => {
 		const customerId = ctx.context.session?.user.id;
-		if (!customerId) return { error: "Authentication required" };
+		if (!customerId) return { error: "Authentication required", status: 401 };
 
 		const controller = ctx.context.controllers.quotes as QuoteController;
+
+		// Verify ownership before adding a comment
+		const quote = await controller.getQuote(ctx.body.quoteId);
+		if (!quote || quote.customerId !== customerId) {
+			return { error: "Quote not found", status: 404 };
+		}
+
 		const comment = await controller.addComment({
 			quoteId: ctx.body.quoteId,
 			authorType: "customer",

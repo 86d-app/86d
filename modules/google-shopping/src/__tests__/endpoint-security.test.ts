@@ -171,8 +171,7 @@ describe("google-shopping endpoint security", () => {
 				link: "https://example.com/shared",
 				imageLink: "https://example.com/shared.jpg",
 			});
-			const result =
-				await controllerA.getFeedItemByProduct("shared-prod-id");
+			const result = await controllerA.getFeedItemByProduct("shared-prod-id");
 			expect(result).toBeNull();
 		});
 
@@ -235,10 +234,7 @@ describe("google-shopping endpoint security", () => {
 				total: 29.5,
 				shippingAddress: {},
 			});
-			await controllerA.updateOrderStatus(
-				order.id,
-				"confirmed",
-			);
+			await controllerA.updateOrderStatus(order.id, "confirmed");
 			const fetched = await controllerA.getOrder(order.id);
 			expect(fetched?.status).toBe("confirmed");
 		});
@@ -356,8 +352,7 @@ describe("google-shopping endpoint security", () => {
 				imageLink: "https://example.com/ghost.jpg",
 			});
 			await controllerA.deleteFeedItem(item.id);
-			const result =
-				await controllerA.getFeedItemByProduct("prod-del-5");
+			const result = await controllerA.getFeedItemByProduct("prod-del-5");
 			expect(result).toBeNull();
 		});
 
@@ -373,9 +368,7 @@ describe("google-shopping endpoint security", () => {
 			const statsBefore = await controllerA.getChannelStats();
 			await controllerA.deleteFeedItem(item.id);
 			const statsAfter = await controllerA.getChannelStats();
-			expect(statsAfter.totalFeedItems).toBe(
-				statsBefore.totalFeedItems - 1,
-			);
+			expect(statsAfter.totalFeedItems).toBe(statsBefore.totalFeedItems - 1);
 		});
 	});
 
@@ -388,8 +381,7 @@ describe("google-shopping endpoint security", () => {
 		});
 
 		it("getFeedItemByProduct returns null for non-existent product", async () => {
-			const result =
-				await controllerA.getFeedItemByProduct("no-such-product");
+			const result = await controllerA.getFeedItemByProduct("no-such-product");
 			expect(result).toBeNull();
 		});
 

@@ -157,8 +157,7 @@ describe("etsy endpoint security", () => {
 				title: "Shared Title",
 				price: 15,
 			});
-			const result =
-				await controllerA.getListingByProduct("shared-prod-id");
+			const result = await controllerA.getListingByProduct("shared-prod-id");
 			expect(result).toBeNull();
 		});
 
@@ -342,8 +341,7 @@ describe("etsy endpoint security", () => {
 				price: 12.0,
 			});
 			await controllerA.deleteListing(listing.id);
-			const result =
-				await controllerA.getListingByProduct("prod-del-5");
+			const result = await controllerA.getListingByProduct("prod-del-5");
 			expect(result).toBeNull();
 		});
 
@@ -370,8 +368,7 @@ describe("etsy endpoint security", () => {
 		});
 
 		it("getListingByProduct returns null for non-existent product", async () => {
-			const result =
-				await controllerA.getListingByProduct("no-such-product");
+			const result = await controllerA.getListingByProduct("no-such-product");
 			expect(result).toBeNull();
 		});
 

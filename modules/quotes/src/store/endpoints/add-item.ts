@@ -16,7 +16,17 @@ export const addItemEndpoint = createStoreEndpoint(
 		}),
 	},
 	async (ctx) => {
+		const customerId = ctx.context.session?.user.id;
+		if (!customerId) return { error: "Authentication required", status: 401 };
+
 		const controller = ctx.context.controllers.quotes as QuoteController;
+
+		// Verify ownership before mutating
+		const quote = await controller.getQuote(ctx.body.quoteId);
+		if (!quote || quote.customerId !== customerId) {
+			return { error: "Quote not found", status: 404 };
+		}
+
 		const item = await controller.addItem({
 			quoteId: ctx.body.quoteId,
 			productId: ctx.body.productId,
@@ -26,7 +36,7 @@ export const addItemEndpoint = createStoreEndpoint(
 			unitPrice: ctx.body.unitPrice,
 			notes: ctx.body.notes,
 		});
-		if (!item) return { error: "Cannot add item to this quote" };
+		if (!item) return { error: "Cannot add item to this quote", status: 422 };
 		return { item };
 	},
 );

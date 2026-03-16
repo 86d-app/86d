@@ -154,11 +154,7 @@ describe("wish endpoint security", () => {
 				wishFee: 4.99,
 			});
 
-			const result = await controllerB.shipOrder(
-				orderA.id,
-				"TRK001",
-				"USPS",
-			);
+			const result = await controllerB.shipOrder(orderA.id, "TRK001", "USPS");
 			expect(result).toBeNull();
 		});
 

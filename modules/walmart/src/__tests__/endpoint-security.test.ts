@@ -151,11 +151,7 @@ describe("walmart endpoint security", () => {
 				tax: 8,
 			});
 
-			const result = await controllerB.shipOrder(
-				orderA.id,
-				"TRK001",
-				"FedEx",
-			);
+			const result = await controllerB.shipOrder(orderA.id, "TRK001", "FedEx");
 			expect(result).toBeNull();
 		});
 
@@ -317,11 +313,7 @@ describe("walmart endpoint security", () => {
 			});
 			await controllerA.acknowledgeOrder(orderA.id);
 
-			const result = await controllerB.shipOrder(
-				orderA.id,
-				"TRK-CROSS",
-				"UPS",
-			);
+			const result = await controllerB.shipOrder(orderA.id, "TRK-CROSS", "UPS");
 			expect(result).toBeNull();
 		});
 
@@ -353,11 +345,7 @@ describe("walmart endpoint security", () => {
 			const acknowledged = await controllerA.acknowledgeOrder(order.id);
 			expect(acknowledged?.status).toBe("acknowledged");
 
-			const shipped = await controllerA.shipOrder(
-				order.id,
-				"TRK001",
-				"FedEx",
-			);
+			const shipped = await controllerA.shipOrder(order.id, "TRK001", "FedEx");
 			expect(shipped?.status).toBe("shipped");
 			expect(shipped?.trackingNumber).toBe("TRK001");
 			expect(shipped?.carrier).toBe("FedEx");

@@ -269,10 +269,7 @@ describe("facebook-shop endpoint security", () => {
 			});
 			await controllerA.updateOrderStatus(order.id, "delivered");
 
-			const result = await controllerB.updateOrderStatus(
-				order.id,
-				"cancelled",
-			);
+			const result = await controllerB.updateOrderStatus(order.id, "cancelled");
 			expect(result).toBeNull();
 		});
 

@@ -17,15 +17,21 @@ export const declineQuoteEndpoint = createStoreEndpoint(
 		}
 
 		const controller = ctx.context.controllers.quotes as QuoteController;
+
+		// Verify ownership BEFORE mutating
+		const existing = await controller.getQuote(ctx.body.quoteId);
+		if (
+			!existing ||
+			(existing.customerId && existing.customerId !== session.user.id)
+		) {
+			return { error: "Quote not found", status: 404 };
+		}
+
 		const quote = await controller.declineQuote(
 			ctx.body.quoteId,
 			ctx.body.reason,
 		);
-		if (!quote) return { error: "Cannot decline this quote", status: 400 };
-
-		if (quote.customerId && quote.customerId !== session.user.id) {
-			return { error: "Quote not found", status: 404 };
-		}
+		if (!quote) return { error: "Cannot decline this quote", status: 422 };
 
 		return { quote };
 	},

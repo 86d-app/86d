@@ -415,8 +415,7 @@ describe("ebay endpoint security", () => {
 		});
 
 		it("getListingByProduct returns null for non-existent product", async () => {
-			const result =
-				await controllerA.getListingByProduct("no-such-product");
+			const result = await controllerA.getListingByProduct("no-such-product");
 			expect(result).toBeNull();
 		});
 

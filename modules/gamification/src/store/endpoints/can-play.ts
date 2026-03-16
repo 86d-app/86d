@@ -7,17 +7,25 @@ export const canPlayEndpoint = createStoreEndpoint(
 		method: "GET",
 		params: z.object({ id: z.string() }),
 		query: z.object({
+			// email only accepted for anonymous (unauthenticated) checks
 			email: z.string().optional(),
-			customerId: z.string().optional(),
 			ipAddress: z.string().optional(),
 		}),
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers
 			.gamification as GamificationController;
+
+		// Derive identity from session — never trust client-provided customerId
+		const customerId = ctx.context.session?.user.id;
+		// For authenticated users, use session email; for anonymous, accept query email
+		const email = customerId
+			? (ctx.context.session?.user.email ?? ctx.query.email)
+			: ctx.query.email;
+
 		const result = await controller.canPlay(ctx.params.id, {
-			email: ctx.query.email,
-			customerId: ctx.query.customerId,
+			email,
+			customerId,
 			ipAddress: ctx.query.ipAddress,
 		});
 		return result;

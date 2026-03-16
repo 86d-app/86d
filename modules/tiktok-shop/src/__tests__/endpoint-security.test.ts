@@ -324,10 +324,7 @@ describe("tiktok-shop endpoint security", () => {
 			});
 			await controllerA.updateOrderStatus(orderA.id, "delivered");
 
-			const result = await controllerB.updateOrderStatus(
-				orderA.id,
-				"refunded",
-			);
+			const result = await controllerB.updateOrderStatus(orderA.id, "refunded");
 			expect(result).toBeNull();
 		});
 	});
@@ -371,9 +368,7 @@ describe("tiktok-shop endpoint security", () => {
 
 			await controllerA.deleteListing(listing.id);
 
-			expect(
-				await controllerA.getListingByProduct("prod-gone"),
-			).toBeNull();
+			expect(await controllerA.getListingByProduct("prod-gone")).toBeNull();
 		});
 
 		it("deleted listing cannot be updated", async () => {

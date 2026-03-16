@@ -7,17 +7,25 @@ export const playGameEndpoint = createStoreEndpoint(
 		method: "POST",
 		params: z.object({ id: z.string() }),
 		body: z.object({
-			email: z.string().email().max(320).optional(),
-			customerId: z.string().max(200).transform(sanitizeText).optional(),
+			// email is only accepted for anonymous (unauthenticated) players
+			email: z.string().email().max(320).transform(sanitizeText).optional(),
 		}),
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers
 			.gamification as GamificationController;
+
+		// Derive identity from session — never trust client-provided customerId
+		const customerId = ctx.context.session?.user.id;
+		// For authenticated users, use session email; for anonymous, accept body email
+		const email = customerId
+			? (ctx.context.session?.user.email ?? ctx.body.email)
+			: ctx.body.email;
+
 		try {
 			const play = await controller.play(ctx.params.id, {
-				email: ctx.body.email,
-				customerId: ctx.body.customerId,
+				email,
+				customerId,
 			});
 			return { play };
 		} catch (err) {

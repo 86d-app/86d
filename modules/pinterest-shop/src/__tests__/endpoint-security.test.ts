@@ -169,8 +169,7 @@ describe("pinterest-shop endpoint security", () => {
 				imageUrl: "https://example.com/shared.jpg",
 				price: 15,
 			});
-			const result =
-				await controllerA.getCatalogItemByProduct("shared-prod");
+			const result = await controllerA.getCatalogItemByProduct("shared-prod");
 			expect(result).toBeNull();
 		});
 	});
@@ -250,8 +249,7 @@ describe("pinterest-shop endpoint security", () => {
 				price: 12,
 			});
 			await controllerA.deleteCatalogItem(item.id);
-			const result =
-				await controllerA.getCatalogItemByProduct("prod-del-5");
+			const result = await controllerA.getCatalogItemByProduct("prod-del-5");
 			expect(result).toBeNull();
 		});
 

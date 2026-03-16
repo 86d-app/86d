@@ -10,9 +10,19 @@ export const submitQuoteEndpoint = createStoreEndpoint(
 		}),
 	},
 	async (ctx) => {
+		const customerId = ctx.context.session?.user.id;
+		if (!customerId) return { error: "Authentication required", status: 401 };
+
 		const controller = ctx.context.controllers.quotes as QuoteController;
+
+		// Verify ownership before mutating
+		const existing = await controller.getQuote(ctx.body.quoteId);
+		if (!existing || existing.customerId !== customerId) {
+			return { error: "Quote not found", status: 404 };
+		}
+
 		const quote = await controller.submitQuote(ctx.body.quoteId);
-		if (!quote) return { error: "Cannot submit this quote" };
+		if (!quote) return { error: "Cannot submit this quote", status: 422 };
 		return { quote };
 	},
 );

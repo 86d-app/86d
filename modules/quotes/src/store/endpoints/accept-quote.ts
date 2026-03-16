@@ -16,12 +16,18 @@ export const acceptQuoteEndpoint = createStoreEndpoint(
 		}
 
 		const controller = ctx.context.controllers.quotes as QuoteController;
-		const quote = await controller.acceptQuote(ctx.body.quoteId);
-		if (!quote) return { error: "Cannot accept this quote", status: 400 };
 
-		if (quote.customerId && quote.customerId !== session.user.id) {
+		// Verify ownership BEFORE mutating
+		const existing = await controller.getQuote(ctx.body.quoteId);
+		if (
+			!existing ||
+			(existing.customerId && existing.customerId !== session.user.id)
+		) {
 			return { error: "Quote not found", status: 404 };
 		}
+
+		const quote = await controller.acceptQuote(ctx.body.quoteId);
+		if (!quote) return { error: "Cannot accept this quote", status: 422 };
 
 		return { quote };
 	},

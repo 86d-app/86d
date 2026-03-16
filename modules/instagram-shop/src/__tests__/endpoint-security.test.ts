@@ -301,10 +301,7 @@ describe("instagram-shop endpoint security", () => {
 			});
 			await controllerA.updateOrderStatus(orderA.id, "delivered");
 
-			const result = await controllerB.updateOrderStatus(
-				orderA.id,
-				"refunded",
-			);
+			const result = await controllerB.updateOrderStatus(orderA.id, "refunded");
 			expect(result).toBeNull();
 		});
 	});

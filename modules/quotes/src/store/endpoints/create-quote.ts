@@ -14,12 +14,16 @@ export const createQuoteEndpoint = createStoreEndpoint(
 	},
 	async (ctx) => {
 		const customerId = ctx.context.session?.user.id;
-		if (!customerId) return { error: "Authentication required" };
+		if (!customerId) return { error: "Authentication required", status: 401 };
+
+		// Use session email for authenticated users to prevent spoofing
+		const customerEmail =
+			ctx.context.session?.user.email ?? ctx.body.customerEmail;
 
 		const controller = ctx.context.controllers.quotes as QuoteController;
 		const quote = await controller.createQuote({
 			customerId,
-			customerEmail: ctx.body.customerEmail,
+			customerEmail,
 			customerName: ctx.body.customerName,
 			companyName: ctx.body.companyName,
 			notes: ctx.body.notes,

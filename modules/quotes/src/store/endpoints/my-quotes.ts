@@ -13,7 +13,7 @@ export const myQuotesEndpoint = createStoreEndpoint(
 	},
 	async (ctx) => {
 		const customerId = ctx.context.session?.user.id;
-		if (!customerId) return { error: "Authentication required" };
+		if (!customerId) return { error: "Authentication required", status: 401 };
 
 		const controller = ctx.context.controllers.quotes as QuoteController;
 		const quotes = await controller.getMyQuotes({

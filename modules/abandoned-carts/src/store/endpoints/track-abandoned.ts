@@ -43,10 +43,14 @@ export const trackAbandoned = createStoreEndpoint(
 		}
 
 		const customerId = ctx.context.session?.user.id;
+		// For authenticated users, use session email to prevent spoofing
+		const email = customerId
+			? (ctx.context.session?.user.email ?? ctx.body.email)
+			: ctx.body.email;
 		const cart = await controller.create({
 			cartId: ctx.body.cartId,
 			customerId,
-			email: ctx.body.email,
+			email,
 			items: ctx.body.items as CartItemSnapshot[],
 			cartTotal: ctx.body.cartTotal,
 			currency: ctx.body.currency,

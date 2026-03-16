@@ -205,11 +205,7 @@ describe("amazon endpoint security", () => {
 				netProceeds: 43,
 				shippingAddress: { city: "Portland" },
 			});
-			const shipped = await controllerA.shipOrder(
-				order.id,
-				"TRACK-001",
-				"UPS",
-			);
+			const shipped = await controllerA.shipOrder(order.id, "TRACK-001", "UPS");
 			expect(shipped?.status).toBe("shipped");
 			expect(shipped?.trackingNumber).toBe("TRACK-001");
 			expect(shipped?.carrier).toBe("UPS");
@@ -348,8 +344,7 @@ describe("amazon endpoint security", () => {
 				price: 12.0,
 			});
 			await controllerA.deleteListing(listing.id);
-			const result =
-				await controllerA.getListingByProduct("prod-del-5");
+			const result = await controllerA.getListingByProduct("prod-del-5");
 			expect(result).toBeNull();
 		});
 
@@ -377,8 +372,7 @@ describe("amazon endpoint security", () => {
 		});
 
 		it("getListingByProduct returns null for non-existent product", async () => {
-			const result =
-				await controllerA.getListingByProduct("no-such-product");
+			const result = await controllerA.getListingByProduct("no-such-product");
 			expect(result).toBeNull();
 		});
 
