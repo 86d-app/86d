@@ -72,6 +72,7 @@ function hashPassword(password: string): string {
 		N: 16384,
 		r: 16,
 		p: 1,
+		maxmem: 64 * 1024 * 1024, // 64MB — required for bun/Docker environments
 	});
 	return `${salt}:${key.toString("hex")}`;
 }

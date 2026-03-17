@@ -25,6 +25,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d 86d"]
       interval: 5s
@@ -43,16 +44,16 @@ services:
       DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/86d"
       DATABASE_URL_UNPOOLED: "postgresql://postgres:postgres@postgres:5432/86d"
       BETTER_AUTH_SECRET: "${BETTER_AUTH_SECRET:-docker-dev-secret-change-in-production}"
-      STORE_ID: "${STORE_ID:-demo5b9d-c517-4c65-896e-8edef5cf5a94}"
+      STORE_ID: "${STORE_ID:-2695702a-f4c1-4213-ab74-b66d4915b6e9}"
       NODE_ENV: "${NODE_ENV:-production}"
       AUTO_SEED: "true"
       # Storage — local filesystem by default in Docker
       STORAGE_PROVIDER: "local"
       STORAGE_LOCAL_DIR: "/app/uploads"
       STORAGE_LOCAL_BASE_URL: "/uploads"
-      # Optional: 86d API integration
-      86D_API_URL: "${86D_API_URL:-}"
-      86D_API_KEY: "${86D_API_KEY:-}"
+      # Optional: 86d API integration (quoted to allow digit-prefixed names)
+      "86D_API_URL": ""
+      "86D_API_KEY": ""
     depends_on:
       postgres:
         condition: service_healthy

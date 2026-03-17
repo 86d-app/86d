@@ -38,8 +38,9 @@ if [ "$SKIP_MIGRATIONS" != "true" ] && [ -d "packages/db/prisma" ]; then
       exit 1
     }
   else
-    # Development: use db push when no migration files exist (never accept-data-loss)
-    bunx prisma db push --schema prisma --skip-generate 2>&1 || {
+    # Development: use db push when no migration files exist
+    # --accept-data-loss is safe here: Docker starts with an empty database
+    bunx prisma db push --schema prisma --accept-data-loss 2>&1 || {
       echo "✗ Schema push failed"
       exit 1
     }

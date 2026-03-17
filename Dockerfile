@@ -7,7 +7,7 @@
 # ============================================================================
 
 # ── Stage 1: Install dependencies ──────────────────────────────────────────
-FROM oven/bun:1.3 AS deps
+FROM oven/bun:1.3.6 AS deps
 WORKDIR /app
 
 # Copy package manifests for all workspaces
@@ -37,10 +37,10 @@ RUN mkdir -p modules && \
     rm -rf /tmp/all-modules
 
 # Install all dependencies
-RUN bun install --frozen-lockfile
+RUN bun install --ignore-scripts
 
 # ── Stage 2: Build ─────────────────────────────────────────────────────────
-FROM oven/bun:1.3 AS builder
+FROM oven/bun:1.3.6 AS builder
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
@@ -49,8 +49,8 @@ COPY . .
 # Generate Prisma client
 RUN cd packages/core && bunx prisma generate --schema prisma
 
-# Generate module imports
-RUN bun run generate:modules
+# Generate module imports (run directly with bun — tsx has CJS issues under bun on Linux)
+RUN bun scripts/generate-modules.ts
 
 # Build the store app
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -58,8 +58,16 @@ ENV NODE_ENV=production
 ENV DOCKER_BUILD=true
 RUN bun run build:store
 
-# ── Stage 3: Production runtime ────────────────────────────────────────────
-FROM oven/bun:1.3-slim AS runner
+# ── Stage 3: Install Prisma CLI for runtime migrations ─────────────────────
+# Separate stage so we can copy node_modules/prisma into the slim runner
+FROM oven/bun:1.3.6 AS prisma-installer
+WORKDIR /app
+# prisma: runtime migrations. pg: used by seed.ts via raw SQL.
+RUN echo '{"dependencies":{"prisma":"7.3.0","pg":"8.20.0"}}' > package.json && \
+    bun install --ignore-scripts
+
+# ── Stage 4: Production runtime ────────────────────────────────────────────
+FROM oven/bun:1.3.6-slim AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
@@ -68,23 +76,27 @@ ENV STORAGE_PROVIDER=local
 ENV STORAGE_LOCAL_DIR=/app/uploads
 ENV STORAGE_LOCAL_BASE_URL=/uploads
 
-# Create non-root user
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nextjs
+# Create non-root user (bun:slim is Debian-based, use groupadd/useradd)
+RUN groupadd --system --gid 1001 nodejs && \
+    useradd --system --uid 1001 --gid nodejs nextjs
 
 # Copy built artifacts
 COPY --from=builder /app/apps/store/.next/standalone ./
 COPY --from=builder /app/apps/store/.next/static ./apps/store/.next/static
 COPY --from=builder /app/apps/store/public ./apps/store/public
 
-# Copy Prisma schema + migration files for runtime migrations
+# Copy templates — MDX files are resolved at runtime and not traced by standalone
+COPY --from=builder /app/templates ./templates
+
+# Copy Prisma schema + config for runtime migrations
+# prisma.config.ts is required by Prisma 7 (defines datasource URL + schema path)
 COPY --from=builder /app/packages/db/prisma ./packages/db/prisma
+COPY --from=builder /app/packages/db/prisma.config.ts ./packages/db/prisma.config.ts
 COPY --from=builder /app/packages/core/prisma ./packages/core/prisma
 COPY --from=builder /app/packages/core/src/prisma ./packages/core/src/prisma
 
-# Copy Prisma CLI + engine for runtime migrations (not traced by standalone)
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder /app/node_modules/@prisma/engines ./node_modules/@prisma/engines
+# Copy Prisma CLI for runtime migrations (installed in isolated stage above)
+COPY --from=prisma-installer /app/node_modules ./node_modules
 
 # Copy seed script and its dependencies
 COPY --from=builder /app/scripts/seed.ts ./scripts/seed.ts
@@ -95,7 +107,10 @@ COPY docker/entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
 # Create uploads directory for local storage
-RUN mkdir -p /app/uploads && chown -R nextjs:nodejs /app/uploads
+# Prisma downloads engine binaries into node_modules at runtime — needs write access
+RUN mkdir -p /app/uploads && \
+    chown -R nextjs:nodejs /app/uploads && \
+    chown -R nextjs:nodejs /app/node_modules
 
 # Switch to non-root user
 USER nextjs
