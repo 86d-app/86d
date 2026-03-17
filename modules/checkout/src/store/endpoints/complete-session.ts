@@ -2,6 +2,7 @@ import { createStoreEndpoint, z } from "@86d-app/core";
 import type {
 	CheckoutController,
 	GiftCardCheckController,
+	OrderCreateController,
 	PaymentProcessController,
 } from "../../service";
 
@@ -10,9 +11,11 @@ export const completeSession = createStoreEndpoint(
 	{
 		method: "POST",
 		params: z.object({ id: z.string() }),
-		body: z.object({
-			orderId: z.string().min(1),
-		}),
+		body: z
+			.object({
+				orderId: z.string().min(1).optional(),
+			})
+			.optional(),
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers.checkout as CheckoutController;
@@ -68,7 +71,74 @@ export const completeSession = createStoreEndpoint(
 			}
 		}
 
-		const session = await controller.complete(ctx.params.id, ctx.body.orderId);
+		// Create a real order in the orders module if available
+		let orderId = ctx.body?.orderId;
+		const lineItems = await controller.getLineItems(ctx.params.id);
+
+		const orderController = ctx.context.controllers.orders as unknown as
+			| OrderCreateController
+			| undefined;
+
+		if (orderController) {
+			const order = await orderController.create({
+				customerId: existing.customerId,
+				guestEmail: existing.guestEmail ?? ctx.context.session?.user.email,
+				currency: existing.currency,
+				subtotal: existing.subtotal,
+				taxAmount: existing.taxAmount,
+				shippingAmount: existing.shippingAmount,
+				discountAmount: existing.discountAmount,
+				total: existing.total,
+				metadata: {
+					checkoutSessionId: existing.id,
+					paymentIntentId: existing.paymentIntentId,
+				},
+				items: lineItems.map((item) => ({
+					productId: item.productId,
+					variantId: item.variantId,
+					name: item.name,
+					sku: item.sku,
+					price: item.price,
+					quantity: item.quantity,
+				})),
+				shippingAddress: existing.shippingAddress
+					? {
+							firstName: existing.shippingAddress.firstName,
+							lastName: existing.shippingAddress.lastName,
+							company: existing.shippingAddress.company,
+							line1: existing.shippingAddress.line1,
+							line2: existing.shippingAddress.line2,
+							city: existing.shippingAddress.city,
+							state: existing.shippingAddress.state,
+							postalCode: existing.shippingAddress.postalCode,
+							country: existing.shippingAddress.country,
+							phone: existing.shippingAddress.phone,
+						}
+					: undefined,
+				billingAddress: existing.billingAddress
+					? {
+							firstName: existing.billingAddress.firstName,
+							lastName: existing.billingAddress.lastName,
+							company: existing.billingAddress.company,
+							line1: existing.billingAddress.line1,
+							line2: existing.billingAddress.line2,
+							city: existing.billingAddress.city,
+							state: existing.billingAddress.state,
+							postalCode: existing.billingAddress.postalCode,
+							country: existing.billingAddress.country,
+							phone: existing.billingAddress.phone,
+						}
+					: undefined,
+			});
+			orderId = order.id;
+		}
+
+		// Fall back to generating an order number if no orders module
+		if (!orderId) {
+			orderId = `ORD-${Date.now().toString(36).toUpperCase()}`;
+		}
+
+		const session = await controller.complete(ctx.params.id, orderId);
 		if (!session) {
 			return { error: "Cannot complete this checkout session", status: 422 };
 		}
@@ -83,14 +153,13 @@ export const completeSession = createStoreEndpoint(
 				await giftCardController.redeem(
 					session.giftCardCode,
 					session.giftCardAmount,
-					ctx.body.orderId,
+					orderId,
 				);
 			}
 		}
 
 		// Emit checkout.completed event for email notifications
 		if (ctx.context.events) {
-			const lineItems = await controller.getLineItems(ctx.params.id);
 			const email = session.guestEmail ?? ctx.context.session?.user.email ?? "";
 			const customerName =
 				session.shippingAddress?.firstName ??
@@ -99,8 +168,8 @@ export const completeSession = createStoreEndpoint(
 
 			await ctx.context.events.emit("checkout.completed", {
 				sessionId: session.id,
-				orderId: session.orderId ?? ctx.body.orderId,
-				orderNumber: ctx.body.orderId,
+				orderId,
+				orderNumber: orderId,
 				email,
 				customerName,
 				items: lineItems.map((item) => ({
@@ -119,6 +188,6 @@ export const completeSession = createStoreEndpoint(
 			});
 		}
 
-		return { session };
+		return { session, orderId };
 	},
 );

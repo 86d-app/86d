@@ -896,11 +896,9 @@ const CheckoutPage = observer(function CheckoutPage() {
 				return;
 			}
 
-			// Generate a simple order ID and complete
-			const orderId = `ORD-${Date.now().toString(36).toUpperCase()}`;
-			await completeSessionMut.mutateAsync({
+			// Complete the session — the server creates the real order
+			const completeResult = await completeSessionMut.mutateAsync({
 				params: { id: co.sessionId },
-				orderId,
 			});
 
 			// Clear cart after successful order
@@ -908,7 +906,10 @@ const CheckoutPage = observer(function CheckoutPage() {
 			void api.cart.getCart.invalidate();
 			cartStore.setItemCount(0);
 
-			// Navigate to confirmation
+			// Navigate to confirmation using server-returned orderId
+			const orderId =
+				(completeResult as { orderId?: string })?.orderId ??
+				co.sessionId;
 			window.location.href = `/checkout/confirmation?order=${orderId}`;
 		} catch {
 			// Error handled by mutation onError

@@ -85,6 +85,61 @@ export interface GiftCardCheckController {
  * Checkout accesses the payments controller through the runtime context —
  * no direct module import, just a structural contract.
  */
+/**
+ * Minimal interface for creating orders from completed checkouts.
+ * Checkout accesses the orders controller through the runtime context —
+ * no direct module import, just a structural contract.
+ */
+export interface OrderCreateController {
+	create(params: {
+		customerId?: string | undefined;
+		guestEmail?: string | undefined;
+		currency?: string | undefined;
+		subtotal: number;
+		taxAmount?: number | undefined;
+		shippingAmount?: number | undefined;
+		discountAmount?: number | undefined;
+		total: number;
+		metadata?: Record<string, unknown> | undefined;
+		items: Array<{
+			productId: string;
+			variantId?: string | undefined;
+			name: string;
+			sku?: string | undefined;
+			price: number;
+			quantity: number;
+		}>;
+		shippingAddress?:
+			| {
+					firstName: string;
+					lastName: string;
+					company?: string | undefined;
+					line1: string;
+					line2?: string | undefined;
+					city: string;
+					state: string;
+					postalCode: string;
+					country: string;
+					phone?: string | undefined;
+			  }
+			| undefined;
+		billingAddress?:
+			| {
+					firstName: string;
+					lastName: string;
+					company?: string | undefined;
+					line1: string;
+					line2?: string | undefined;
+					city: string;
+					state: string;
+					postalCode: string;
+					country: string;
+					phone?: string | undefined;
+			  }
+			| undefined;
+	}): Promise<{ id: string }>;
+}
+
 export interface PaymentProcessController {
 	createIntent(params: {
 		amount: number;
