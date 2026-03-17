@@ -180,4 +180,10 @@ export interface GoogleShoppingController extends ModuleController {
 	getChannelStats(): Promise<ChannelStats>;
 
 	getDiagnostics(): Promise<FeedDiagnostics>;
+
+	/** Push a local feed item to Google Merchant Center. Requires API credentials. */
+	pushProduct(id: string): Promise<ProductFeedItem | null>;
+
+	/** Pull products and statuses from Google Merchant Center. Requires API credentials. */
+	syncProducts(): Promise<{ synced: number }>;
 }

@@ -1,4 +1,10 @@
-import type { ModuleDataService } from "@86d-app/core";
+import type { ModuleDataService, ScopedEventEmitter } from "@86d-app/core";
+import type { GoogleProduct } from "./provider";
+import {
+	GoogleShoppingProvider,
+	mapAvailabilityToGoogle,
+	mapProductStatusToInternal,
+} from "./provider";
 import type {
 	ChannelOrder,
 	ChannelStats,
@@ -7,9 +13,24 @@ import type {
 	ProductFeedItem,
 } from "./service";
 
+interface GoogleShoppingControllerOptions {
+	merchantId?: string | undefined;
+	apiKey?: string | undefined;
+	targetCountry?: string | undefined;
+	contentLanguage?: string | undefined;
+}
+
 export function createGoogleShoppingController(
 	data: ModuleDataService,
+	_events?: ScopedEventEmitter | undefined,
+	options?: GoogleShoppingControllerOptions | undefined,
 ): GoogleShoppingController {
+	const provider =
+		options?.merchantId && options?.apiKey
+			? new GoogleShoppingProvider(options.merchantId, options.apiKey)
+			: null;
+	const targetCountry = options?.targetCountry ?? "US";
+	const contentLanguage = options?.contentLanguage ?? "en";
 	return {
 		async createFeedItem(params) {
 			const now = new Date();
@@ -38,8 +59,11 @@ export function createGoogleShoppingController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("productFeed", id, item as Record<string, any>);
+			await data.upsert(
+				"productFeed",
+				id,
+				item as unknown as Record<string, unknown>,
+			);
 			return item;
 		},
 
@@ -89,8 +113,11 @@ export function createGoogleShoppingController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("productFeed", id, updated as Record<string, any>);
+			await data.upsert(
+				"productFeed",
+				id,
+				updated as unknown as Record<string, unknown>,
+			);
 			return updated;
 		},
 
@@ -116,8 +143,7 @@ export function createGoogleShoppingController(
 		},
 
 		async listFeedItems(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status) where.status = params.status;
 
 			const all = await data.findMany("productFeed", {
@@ -154,8 +180,7 @@ export function createGoogleShoppingController(
 			await data.upsert(
 				"feedSubmission",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				submission as Record<string, any>,
+				submission as unknown as Record<string, unknown>,
 			);
 			return submission;
 		},
@@ -195,8 +220,11 @@ export function createGoogleShoppingController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("channelOrder", id, order as Record<string, any>);
+			await data.upsert(
+				"channelOrder",
+				id,
+				order as unknown as Record<string, unknown>,
+			);
 			return order;
 		},
 
@@ -221,14 +249,16 @@ export function createGoogleShoppingController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("channelOrder", id, updated as Record<string, any>);
+			await data.upsert(
+				"channelOrder",
+				id,
+				updated as unknown as Record<string, unknown>,
+			);
 			return updated;
 		},
 
 		async listOrders(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status) where.status = params.status;
 
 			const all = await data.findMany("channelOrder", {
@@ -258,6 +288,103 @@ export function createGoogleShoppingController(
 			};
 
 			return stats;
+		},
+
+		async pushProduct(id) {
+			const raw = await data.get("productFeed", id);
+			if (!raw) return null;
+			if (!provider) return null;
+
+			const item = raw as unknown as ProductFeedItem;
+
+			const googleProduct: GoogleProduct = {
+				offerId: item.localProductId,
+				title: item.title,
+				description: item.description,
+				link: item.link,
+				imageLink: item.imageLink,
+				contentLanguage,
+				targetCountry,
+				channel: "online",
+				availability: mapAvailabilityToGoogle(item.availability),
+				condition: item.condition,
+				price: { value: String(item.price), currency: "USD" },
+				...(item.salePrice !== undefined
+					? {
+							salePrice: {
+								value: String(item.salePrice),
+								currency: "USD",
+							},
+						}
+					: {}),
+				...(item.gtin ? { gtin: item.gtin } : {}),
+				...(item.mpn ? { mpn: item.mpn } : {}),
+				...(item.brand ? { brand: item.brand } : {}),
+				...(item.googleCategory
+					? { googleProductCategory: item.googleCategory }
+					: {}),
+			};
+
+			const inserted = await provider.insertProduct(googleProduct);
+			const now = new Date();
+
+			const updated: ProductFeedItem = {
+				...item,
+				googleProductId: inserted.id ?? item.googleProductId,
+				status: "active",
+				lastSyncedAt: now,
+				updatedAt: now,
+			};
+
+			await data.upsert(
+				"productFeed",
+				id,
+				updated as unknown as Record<string, unknown>,
+			);
+			return updated;
+		},
+
+		async syncProducts() {
+			if (!provider) return { synced: 0 };
+
+			const statusesResponse = await provider.listProductStatuses();
+			const statuses = statusesResponse.resources ?? [];
+			let synced = 0;
+
+			for (const status of statuses) {
+				const allItems = await data.findMany("productFeed", {
+					where: { googleProductId: status.productId },
+					take: 1,
+				});
+				const existing = allItems[0] as unknown as ProductFeedItem | undefined;
+				if (!existing) continue;
+
+				const newStatus = mapProductStatusToInternal(
+					status.destinationStatuses,
+				);
+				const issues = status.itemLevelIssues
+					.filter((i) => i.servability === "disapproved")
+					.map((i) => i.description ?? i.code);
+				const now = new Date();
+
+				const updated: ProductFeedItem = {
+					...existing,
+					status: newStatus,
+					disapprovalReasons:
+						issues.length > 0 ? issues : existing.disapprovalReasons,
+					lastSyncedAt: now,
+					updatedAt: now,
+				};
+
+				await data.upsert(
+					"productFeed",
+					existing.id,
+					updated as unknown as Record<string, unknown>,
+				);
+				synced++;
+			}
+
+			return { synced };
 		},
 
 		async getDiagnostics() {
