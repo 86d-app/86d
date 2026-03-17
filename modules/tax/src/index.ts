@@ -1,5 +1,9 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
-import { adminEndpoints } from "./admin/endpoints";
+import {
+	adminEndpoints,
+	createAdminEndpointsWithSettings,
+} from "./admin/endpoints";
+import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
 import { taxSchema } from "./schema";
 import { createTaxController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints";
@@ -28,14 +32,22 @@ export type {
 } from "./service";
 
 export interface TaxOptions extends ModuleConfig {
-	/**
-	 * Whether to tax shipping by default.
-	 * @default false
-	 */
+	/** Whether to tax shipping by default. @default false */
 	taxShipping?: boolean;
+	/** TaxJar API key for real-time tax calculation */
+	taxjarApiKey?: string | undefined;
+	/** Use TaxJar sandbox environment (default: false) */
+	taxjarSandbox?: boolean | undefined;
 }
 
 export default function tax(options?: TaxOptions): Module {
+	const hasTaxJar = Boolean(options?.taxjarApiKey);
+
+	const settingsEndpoint = createGetSettingsEndpoint({
+		taxjarApiKey: options?.taxjarApiKey,
+		taxjarSandbox: options?.taxjarSandbox,
+	});
+
 	return {
 		id: "tax",
 		version: "0.0.1",
@@ -64,7 +76,10 @@ export default function tax(options?: TaxOptions): Module {
 		},
 
 		init: async (ctx: ModuleContext) => {
-			const controller = createTaxController(ctx.data);
+			const controller = createTaxController(ctx.data, ctx.events, {
+				taxjarApiKey: options?.taxjarApiKey,
+				taxjarSandbox: options?.taxjarSandbox,
+			});
 			return {
 				controllers: { tax: controller },
 			};
@@ -72,7 +87,9 @@ export default function tax(options?: TaxOptions): Module {
 
 		endpoints: {
 			store: storeEndpoints,
-			admin: adminEndpoints,
+			admin: hasTaxJar
+				? createAdminEndpointsWithSettings(settingsEndpoint)
+				: adminEndpoints,
 		},
 
 		admin: {

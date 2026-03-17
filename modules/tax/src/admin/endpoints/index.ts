@@ -8,6 +8,7 @@ import { adminDeleteNexus } from "./delete-nexus";
 import { adminDeleteRate } from "./delete-rate";
 import { adminGetRate } from "./get-rate";
 import { adminGetReport } from "./get-report";
+import type { createGetSettingsEndpoint } from "./get-settings";
 import { adminLinkTransaction } from "./link-transaction";
 import { adminListCategories } from "./list-categories";
 import { adminListExemptions } from "./list-exemptions";
@@ -15,6 +16,15 @@ import { adminListNexus } from "./list-nexus";
 import { adminListRates } from "./list-rates";
 import { adminListTransactions } from "./list-transactions";
 import { adminUpdateRate } from "./update-rate";
+
+export function createAdminEndpointsWithSettings(
+	settingsEndpoint: ReturnType<typeof createGetSettingsEndpoint>,
+) {
+	return {
+		...adminEndpoints,
+		"/admin/tax/settings": settingsEndpoint,
+	};
+}
 
 export const adminEndpoints = {
 	"/admin/tax/rates": adminListRates,

@@ -1,4 +1,5 @@
-import type { ModuleDataService } from "@86d-app/core";
+import type { ModuleDataService, ScopedEventEmitter } from "@86d-app/core";
+import { TaxJarProvider } from "./provider";
 import type {
 	CreateTaxCategoryParams,
 	CreateTaxExemptionParams,
@@ -125,7 +126,20 @@ function roundCurrency(value: number): number {
 	return Math.round(value * 100) / 100;
 }
 
-export function createTaxController(data: ModuleDataService): TaxController {
+interface TaxControllerOptions {
+	taxjarApiKey?: string | undefined;
+	taxjarSandbox?: boolean | undefined;
+}
+
+export function createTaxController(
+	data: ModuleDataService,
+	_events?: ScopedEventEmitter | undefined,
+	options?: TaxControllerOptions | undefined,
+): TaxController {
+	const provider = options?.taxjarApiKey
+		? new TaxJarProvider(options.taxjarApiKey, options.taxjarSandbox ?? false)
+		: null;
+
 	return {
 		// --- Tax Rates ---
 		async createRate(params: CreateTaxRateParams): Promise<TaxRate> {
@@ -150,8 +164,11 @@ export function createTaxController(data: ModuleDataService): TaxController {
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("taxRate", id, rate as Record<string, any>);
+			await data.upsert(
+				"taxRate",
+				id,
+				rate as unknown as Record<string, unknown>,
+			);
 			return rate;
 		},
 
@@ -160,8 +177,7 @@ export function createTaxController(data: ModuleDataService): TaxController {
 		},
 
 		async listRates(params): Promise<TaxRate[]> {
-			// biome-ignore lint/suspicious/noExplicitAny: dynamic where clause
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.country) where.country = params.country;
 			if (params?.state) where.state = params.state;
 			if (params?.enabled !== undefined) where.enabled = params.enabled;
@@ -194,8 +210,11 @@ export function createTaxController(data: ModuleDataService): TaxController {
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("taxRate", id, updated as Record<string, any>);
+			await data.upsert(
+				"taxRate",
+				id,
+				updated as unknown as Record<string, unknown>,
+			);
 			return updated;
 		},
 
@@ -218,8 +237,11 @@ export function createTaxController(data: ModuleDataService): TaxController {
 				createdAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("taxCategory", id, category as Record<string, any>);
+			await data.upsert(
+				"taxCategory",
+				id,
+				category as unknown as Record<string, unknown>,
+			);
 			return category;
 		},
 
@@ -258,8 +280,11 @@ export function createTaxController(data: ModuleDataService): TaxController {
 				createdAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("taxExemption", id, exemption as Record<string, any>);
+			await data.upsert(
+				"taxExemption",
+				id,
+				exemption as unknown as Record<string, unknown>,
+			);
 			return exemption;
 		},
 
@@ -290,6 +315,79 @@ export function createTaxController(data: ModuleDataService): TaxController {
 			shippingAmount?: number | undefined;
 			customerId?: string | undefined;
 		}): Promise<TaxCalculation> {
+			// Use TaxJar API when configured — real-time tax calculation
+			if (provider) {
+				try {
+					// Build nexus addresses from stored nexus records
+					const nexusRecords = (await data.findMany("taxNexus", {
+						where: { enabled: true },
+					})) as TaxNexus[];
+
+					const nexusAddresses = nexusRecords.map((n) => ({
+						country: n.country,
+						state: n.state,
+						zip: "",
+					}));
+
+					const response = await provider.calculateTax({
+						fromAddress: {
+							country: nexusAddresses[0]?.country ?? "US",
+							zip: nexusAddresses[0]?.zip ?? "",
+							state: nexusAddresses[0]?.state ?? "",
+						},
+						toAddress: {
+							country: params.address.country,
+							zip: params.address.postalCode ?? "",
+							state: params.address.state,
+							city: params.address.city,
+						},
+						shipping: params.shippingAmount ?? 0,
+						lineItems: params.lineItems.map((item, idx) => ({
+							id: item.productId ?? String(idx),
+							quantity: 1,
+							unit_price: item.amount,
+							product_tax_code: item.categoryId,
+						})),
+						nexusAddresses:
+							nexusAddresses.length > 0 ? nexusAddresses : undefined,
+					});
+
+					const tax = response.tax;
+					const lines: TaxLineResult[] = params.lineItems.map((item, idx) => {
+						const lineBreakdown = tax.breakdown?.line_items?.find(
+							(li) => li.id === (item.productId ?? String(idx)),
+						);
+						return {
+							productId: item.productId,
+							taxableAmount: lineBreakdown?.taxable_amount ?? item.amount,
+							taxAmount: lineBreakdown?.tax_collectable ?? 0,
+							rate: lineBreakdown?.combined_tax_rate ?? tax.rate,
+							rateNames: [
+								`${tax.jurisdictions?.state ?? params.address.state} (TaxJar)`,
+							],
+						};
+					});
+
+					return {
+						totalTax: tax.amount_to_collect,
+						shippingTax: tax.freight_taxable
+							? roundCurrency((params.shippingAmount ?? 0) * tax.rate)
+							: 0,
+						lines,
+						effectiveRate: tax.rate,
+						inclusive: false,
+						jurisdiction: {
+							country: tax.jurisdictions?.country ?? params.address.country,
+							state: tax.jurisdictions?.state ?? params.address.state,
+							city: tax.jurisdictions?.city ?? params.address.city ?? "*",
+						},
+					};
+				} catch {
+					// Fall back to local calculation if TaxJar call fails
+				}
+			}
+
+			// Local calculation fallback
 			// Check nexus — if nexus records exist, only collect tax where we have nexus
 			const nexusActive = await this.hasNexus(params.address);
 			if (!nexusActive) {
@@ -473,8 +571,11 @@ export function createTaxController(data: ModuleDataService): TaxController {
 				createdAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("taxNexus", id, nexus as Record<string, any>);
+			await data.upsert(
+				"taxNexus",
+				id,
+				nexus as unknown as Record<string, unknown>,
+			);
 			return nexus;
 		},
 
@@ -483,8 +584,7 @@ export function createTaxController(data: ModuleDataService): TaxController {
 		},
 
 		async listNexus(params): Promise<TaxNexus[]> {
-			// biome-ignore lint/suspicious/noExplicitAny: dynamic where clause
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.country) where.country = params.country;
 			if (params?.enabled !== undefined) where.enabled = params.enabled;
 
@@ -552,8 +652,7 @@ export function createTaxController(data: ModuleDataService): TaxController {
 			await data.upsert(
 				"taxTransaction",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				transaction as Record<string, any>,
+				transaction as unknown as Record<string, unknown>,
 			);
 			return transaction;
 		},
@@ -607,8 +706,7 @@ export function createTaxController(data: ModuleDataService): TaxController {
 			await data.upsert(
 				"taxTransaction",
 				transactionId,
-				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				updated as Record<string, any>,
+				updated as unknown as Record<string, unknown>,
 			);
 			return updated;
 		},
