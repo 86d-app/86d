@@ -37,13 +37,49 @@ describe("uber-direct events", () => {
 			clientId: "test-id",
 			clientSecret: "test-secret",
 			customerId: "test-cust",
-			sandbox: "true",
+			webhookSigningKey: "test-key",
 		});
 		expect(mod.options).toEqual({
 			clientId: "test-id",
 			clientSecret: "test-secret",
 			customerId: "test-cust",
-			sandbox: "true",
+			webhookSigningKey: "test-key",
 		});
+	});
+
+	it("includes webhook endpoint when credentials are provided", () => {
+		const mod = uberDirect({
+			clientId: "test-id",
+			clientSecret: "test-secret",
+			customerId: "test-cust",
+		});
+		const storeRoutes = Object.keys(
+			mod.endpoints?.store as Record<string, unknown>,
+		);
+		expect(storeRoutes).toContain("/uber-direct/webhook");
+	});
+
+	it("includes settings endpoint when credentials are provided", () => {
+		const mod = uberDirect({
+			clientId: "test-id",
+			clientSecret: "test-secret",
+			customerId: "test-cust",
+		});
+		const adminRoutes = Object.keys(
+			mod.endpoints?.admin as Record<string, unknown>,
+		);
+		expect(adminRoutes).toContain("/admin/uber-direct/settings");
+	});
+
+	it("excludes webhook and settings without credentials", () => {
+		const mod = uberDirect();
+		const storeRoutes = Object.keys(
+			mod.endpoints?.store as Record<string, unknown>,
+		);
+		const adminRoutes = Object.keys(
+			mod.endpoints?.admin as Record<string, unknown>,
+		);
+		expect(storeRoutes).not.toContain("/uber-direct/webhook");
+		expect(adminRoutes).not.toContain("/admin/uber-direct/settings");
 	});
 });

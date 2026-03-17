@@ -1,4 +1,5 @@
-import type { ModuleDataService } from "@86d-app/core";
+import type { ModuleDataService, ScopedEventEmitter } from "@86d-app/core";
+import { mapUberStatusToInternal, UberDirectProvider } from "./provider";
 import type {
 	CreateDeliveryParams,
 	Delivery,
@@ -8,16 +9,60 @@ import type {
 	UberDirectController,
 } from "./service";
 
+interface UberDirectControllerOptions {
+	clientId?: string | undefined;
+	clientSecret?: string | undefined;
+	customerId?: string | undefined;
+}
+
 export function createUberDirectController(
 	data: ModuleDataService,
+	events?: ScopedEventEmitter | undefined,
+	options?: UberDirectControllerOptions | undefined,
 ): UberDirectController {
+	// Create real Uber Direct API provider when credentials are configured
+	const provider =
+		options?.clientId && options?.clientSecret && options?.customerId
+			? new UberDirectProvider({
+					clientId: options.clientId,
+					clientSecret: options.clientSecret,
+					customerId: options.customerId,
+				})
+			: null;
+
 	return {
 		async requestQuote(params: RequestQuoteParams): Promise<Quote> {
 			const id = crypto.randomUUID();
 			const now = new Date();
-			const fee = Math.round(500 + Math.random() * 1500);
-			const estimatedMinutes = Math.round(15 + Math.random() * 45);
-			const expiresAt = new Date(now.getTime() + 15 * 60 * 1000);
+
+			let fee: number;
+			let estimatedMinutes: number;
+			let expiresAt: Date;
+			let externalId: string | undefined;
+
+			if (provider) {
+				// Real Uber Direct API call
+				const pickupAddr = extractAddress(params.pickupAddress);
+				const dropoffAddr = extractAddress(params.dropoffAddress);
+
+				const uberQuote = await provider.createQuote({
+					pickup_address: pickupAddr,
+					dropoff_address: dropoffAddr,
+				});
+
+				fee = uberQuote.fee ?? 0;
+				// duration is in minutes
+				estimatedMinutes = uberQuote.duration ?? 30;
+				expiresAt = uberQuote.expires
+					? new Date(uberQuote.expires)
+					: new Date(now.getTime() + 15 * 60 * 1000);
+				externalId = uberQuote.id;
+			} else {
+				// No credentials configured — cannot provide real quotes
+				throw new Error(
+					"Uber Direct API credentials are not configured. Set clientId, clientSecret, and customerId in module options.",
+				);
+			}
 
 			const quote: Quote = {
 				id,
@@ -30,8 +75,22 @@ export function createUberDirectController(
 				createdAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any for JSONB
-			await data.upsert("quote", id, quote as Record<string, any>);
+			const quoteRecord = {
+				...quote,
+				...(externalId ? { externalId } : {}),
+			};
+			await data.upsert(
+				"quote",
+				id,
+				quoteRecord as unknown as Record<string, unknown>,
+			);
+
+			void events?.emit("uber-direct.quote.created", {
+				quoteId: id,
+				fee,
+				estimatedMinutes,
+			});
+
 			return quote;
 		},
 
@@ -48,36 +107,151 @@ export function createUberDirectController(
 
 			// Mark quote as used
 			const usedQuote: Quote = { ...quote, status: "used" };
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("quote", quote.id, usedQuote as Record<string, any>);
+			await data.upsert(
+				"quote",
+				quote.id,
+				usedQuote as unknown as Record<string, unknown>,
+			);
 
 			const id = crypto.randomUUID();
 			const now = new Date();
 
+			let externalId: string | undefined;
+			let trackingUrl: string | undefined;
+			let courierName: string | undefined;
+			let courierPhone: string | undefined;
+			let courierVehicle: string | undefined;
+			let estimatedDeliveryTime: Date | undefined;
+			let fee = quote.fee;
+
+			// Call real Uber Direct API when provider is available
+			if (provider) {
+				const pickupAddr = extractAddress(quote.pickupAddress);
+				const dropoffAddr = extractAddress(quote.dropoffAddress);
+
+				const uberDelivery = await provider.createDelivery({
+					pickup_name: extractField(quote.pickupAddress, "name") || "Store",
+					pickup_address: pickupAddr,
+					pickup_phone_number:
+						extractField(quote.pickupAddress, "phone") || "+10000000000",
+					dropoff_name:
+						extractField(quote.dropoffAddress, "name") || "Customer",
+					dropoff_address: dropoffAddr,
+					dropoff_phone_number:
+						extractField(quote.dropoffAddress, "phone") || "+10000000000",
+					manifest_items: [{ name: "Order", quantity: 1, size: "medium" }],
+					pickup_notes: params.pickupNotes,
+					dropoff_notes: params.dropoffNotes,
+					tip: params.tip,
+					quote_id: (quoteRaw as Record<string, unknown>).externalId as
+						| string
+						| undefined,
+					external_id: id,
+				});
+
+				externalId = uberDelivery.id;
+				trackingUrl = uberDelivery.tracking_url;
+				fee = uberDelivery.fee ?? fee;
+				if (uberDelivery.courier) {
+					courierName = uberDelivery.courier.name;
+					courierPhone = uberDelivery.courier.phone_number;
+					courierVehicle = uberDelivery.courier.vehicle_type;
+				}
+				if (uberDelivery.dropoff_eta) {
+					estimatedDeliveryTime = new Date(uberDelivery.dropoff_eta);
+				}
+			}
+
 			const delivery: Delivery = {
 				id,
 				orderId: params.orderId,
+				externalId,
 				status: "pending",
 				pickupAddress: quote.pickupAddress,
 				dropoffAddress: quote.dropoffAddress,
 				pickupNotes: params.pickupNotes,
 				dropoffNotes: params.dropoffNotes,
-				fee: quote.fee,
+				estimatedDeliveryTime,
+				fee,
 				tip: params.tip ?? 0,
+				trackingUrl,
+				courierName,
+				courierPhone,
+				courierVehicle,
 				metadata: params.metadata ?? {},
 				createdAt: now,
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("delivery", id, delivery as Record<string, any>);
+			await data.upsert(
+				"delivery",
+				id,
+				delivery as unknown as Record<string, unknown>,
+			);
+
+			void events?.emit("uber-direct.delivery.created", {
+				deliveryId: delivery.id,
+				orderId: delivery.orderId,
+			});
+
 			return delivery;
 		},
 
 		async getDelivery(id: string): Promise<Delivery | null> {
 			const raw = await data.get("delivery", id);
 			if (!raw) return null;
-			return raw as unknown as Delivery;
+			const delivery = raw as unknown as Delivery;
+
+			// Refresh status from Uber Direct if provider is available
+			if (provider && delivery.externalId) {
+				try {
+					const uberDelivery = await provider.getDelivery(delivery.externalId);
+					const newStatus = mapUberStatusToInternal(
+						uberDelivery.status ?? "pending",
+					);
+					if (newStatus !== delivery.status) {
+						const updated: Delivery = {
+							...delivery,
+							status: newStatus,
+							trackingUrl: uberDelivery.tracking_url ?? delivery.trackingUrl,
+							...(uberDelivery.courier
+								? {
+										courierName:
+											uberDelivery.courier.name ?? delivery.courierName,
+										courierPhone:
+											uberDelivery.courier.phone_number ??
+											delivery.courierPhone,
+										courierVehicle:
+											uberDelivery.courier.vehicle_type ??
+											delivery.courierVehicle,
+									}
+								: {}),
+							...(uberDelivery.dropoff_eta
+								? {
+										estimatedDeliveryTime: new Date(uberDelivery.dropoff_eta),
+									}
+								: {}),
+							...(newStatus === "picked-up"
+								? { actualPickupTime: new Date() }
+								: {}),
+							...(newStatus === "delivered"
+								? { actualDeliveryTime: new Date() }
+								: {}),
+							updatedAt: new Date(),
+						};
+						await data.upsert(
+							"delivery",
+							id,
+							updated as unknown as Record<string, unknown>,
+						);
+						return updated;
+					}
+				} catch {
+					// Fall back to local data if API call fails
+				}
+			}
+
+			return delivery;
 		},
 
 		async cancelDelivery(id: string): Promise<Delivery | null> {
@@ -94,14 +268,32 @@ export function createUberDirectController(
 				return null;
 			}
 
+			// Cancel via Uber Direct API
+			if (provider && delivery.externalId) {
+				try {
+					await provider.cancelDelivery(delivery.externalId);
+				} catch {
+					// Proceed with local cancellation even if API call fails
+				}
+			}
+
 			const updated: Delivery = {
 				...delivery,
 				status: "cancelled",
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("delivery", id, updated as Record<string, any>);
+			await data.upsert(
+				"delivery",
+				id,
+				updated as unknown as Record<string, unknown>,
+			);
+
+			void events?.emit("uber-direct.delivery.cancelled", {
+				deliveryId: updated.id,
+				orderId: updated.orderId,
+			});
+
 			return updated;
 		},
 
@@ -139,14 +331,29 @@ export function createUberDirectController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("delivery", id, updated as Record<string, any>);
+			await data.upsert(
+				"delivery",
+				id,
+				updated as unknown as Record<string, unknown>,
+			);
+
+			if (status === "picked-up") {
+				void events?.emit("uber-direct.delivery.picked-up", {
+					deliveryId: updated.id,
+					orderId: updated.orderId,
+				});
+			} else if (status === "delivered") {
+				void events?.emit("uber-direct.delivery.delivered", {
+					deliveryId: updated.id,
+					orderId: updated.orderId,
+				});
+			}
+
 			return updated;
 		},
 
 		async listDeliveries(params): Promise<Delivery[]> {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status) where.status = params.status;
 			if (params?.orderId) where.orderId = params.orderId;
 
@@ -165,8 +372,7 @@ export function createUberDirectController(
 		},
 
 		async listQuotes(params): Promise<Quote[]> {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status) where.status = params.status;
 
 			const results = await data.findMany("quote", {
@@ -232,4 +438,32 @@ export function createUberDirectController(
 			};
 		},
 	};
+}
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
+
+/** Extract a flat address string from the address object. */
+function extractAddress(addr: Record<string, unknown>): string {
+	if (typeof addr.street === "string") return addr.street;
+	if (typeof addr.address === "string") return addr.address;
+
+	// Try to build from structured fields
+	const parts: string[] = [];
+	if (typeof addr.street_address_1 === "string")
+		parts.push(addr.street_address_1);
+	if (typeof addr.city === "string") parts.push(addr.city);
+	if (typeof addr.state === "string") parts.push(addr.state);
+	if (typeof addr.zip_code === "string") parts.push(addr.zip_code);
+	if (parts.length > 0) return parts.join(", ");
+
+	return JSON.stringify(addr);
+}
+
+/** Safely extract a string field from an address object. */
+function extractField(
+	addr: Record<string, unknown>,
+	field: string,
+): string | undefined {
+	const value = addr[field];
+	return typeof value === "string" ? value : undefined;
 }

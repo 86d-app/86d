@@ -1,8 +1,13 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
-import { adminEndpoints } from "./admin/endpoints";
+import {
+	adminEndpoints,
+	createAdminEndpointsWithSettings,
+} from "./admin/endpoints";
+import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
 import { uberDirectSchema } from "./schema";
 import { createUberDirectController } from "./service-impl";
-import { storeEndpoints } from "./store/endpoints";
+import { createStoreEndpoints, storeEndpoints } from "./store/endpoints";
+import { createUberDirectWebhook } from "./store/endpoints/webhook";
 
 export type {
 	Delivery,
@@ -12,17 +17,29 @@ export type {
 } from "./service";
 
 export interface UberDirectOptions extends ModuleConfig {
-	/** Uber Direct client ID */
+	/** Uber Direct OAuth client ID */
 	clientId?: string;
-	/** Uber Direct client secret */
+	/** Uber Direct OAuth client secret */
 	clientSecret?: string;
 	/** Uber Direct customer ID */
 	customerId?: string;
-	/** Whether to use sandbox mode (default: "true") */
-	sandbox?: string;
+	/** Webhook signing key for signature verification */
+	webhookSigningKey?: string;
 }
 
 export default function uberDirect(options?: UberDirectOptions): Module {
+	const hasCredentials = Boolean(
+		options?.clientId && options?.clientSecret && options?.customerId,
+	);
+
+	// Build endpoints — include webhook and settings when credentials are present
+	const webhookEndpoint = createUberDirectWebhook(options?.webhookSigningKey);
+	const settingsEndpoint = createGetSettingsEndpoint({
+		clientId: options?.clientId,
+		clientSecret: options?.clientSecret,
+		customerId: options?.customerId,
+	});
+
 	return {
 		id: "uber-direct",
 		version: "0.1.0",
@@ -41,12 +58,20 @@ export default function uberDirect(options?: UberDirectOptions): Module {
 			],
 		},
 		init: async (ctx: ModuleContext) => {
-			const controller = createUberDirectController(ctx.data);
+			const controller = createUberDirectController(ctx.data, ctx.events, {
+				clientId: options?.clientId,
+				clientSecret: options?.clientSecret,
+				customerId: options?.customerId,
+			});
 			return { controllers: { uberDirect: controller } };
 		},
 		endpoints: {
-			store: storeEndpoints,
-			admin: adminEndpoints,
+			store: hasCredentials
+				? createStoreEndpoints(webhookEndpoint)
+				: storeEndpoints,
+			admin: hasCredentials
+				? createAdminEndpointsWithSettings(settingsEndpoint)
+				: adminEndpoints,
 		},
 		admin: {
 			pages: [
