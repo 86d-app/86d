@@ -206,7 +206,7 @@ describe("createFacebookShopController", () => {
 			const sync = await controller.syncCatalog();
 
 			expect(sync.id).toBeDefined();
-			expect(sync.status).toBe("syncing");
+			expect(sync.status).toBe("pending");
 			expect(sync.totalProducts).toBe(0);
 		});
 	});
@@ -221,7 +221,7 @@ describe("createFacebookShopController", () => {
 			const last = await controller.getLastSync();
 			expect(last).not.toBeNull();
 			expect(last?.id as string).toBeDefined();
-			expect(last?.status).toBe("syncing");
+			expect(last?.status).toBe("pending");
 		});
 
 		it("returns null when no syncs exist", async () => {

@@ -27,7 +27,7 @@ export interface FacebookShopOptions extends ModuleConfig {
 export default function facebookShop(options?: FacebookShopOptions): Module {
 	return {
 		id: "facebook-shop",
-		version: "0.1.0",
+		version: "0.2.0",
 		schema: facebookShopSchema,
 		exports: {
 			read: ["listingTitle", "listingStatus", "listingSyncStatus"],
@@ -42,7 +42,11 @@ export default function facebookShop(options?: FacebookShopOptions): Module {
 			],
 		},
 		init: async (ctx: ModuleContext) => {
-			const controller = createFacebookShopController(ctx.data);
+			const controller = createFacebookShopController(ctx.data, ctx.events, {
+				accessToken: options?.accessToken,
+				catalogId: options?.catalogId,
+				commerceAccountId: options?.commerceAccountId,
+			});
 			return { controllers: { facebookShop: controller } };
 		},
 		endpoints: {
