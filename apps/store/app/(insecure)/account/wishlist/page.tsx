@@ -1,6 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
+import { useState } from "react";
 import { buttonVariants } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 
@@ -56,8 +57,10 @@ export default function WishlistPage() {
 	};
 
 	const items = wishlistData?.items ?? [];
+	const [removeError, setRemoveError] = useState("");
 
 	async function handleRemove(id: string) {
+		setRemoveError("");
 		try {
 			await removeApi.fetch({
 				method: "DELETE",
@@ -65,7 +68,7 @@ export default function WishlistPage() {
 			});
 			wishlistApi.invalidate();
 		} catch {
-			// Removal failed silently — the UI will still show the item
+			setRemoveError("Failed to remove item. Please try again.");
 		}
 	}
 
@@ -79,6 +82,12 @@ export default function WishlistPage() {
 					Items you&apos;ve saved for later.
 				</p>
 			</div>
+
+			{removeError && (
+				<p className="mb-4 rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-destructive text-sm">
+					{removeError}
+				</p>
+			)}
 
 			{isLoading || !customerId ? (
 				<div className="grid grid-cols-2 gap-3 sm:grid-cols-3">

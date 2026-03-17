@@ -16,10 +16,12 @@ export default function ContactPageClient() {
 	const [submitted, setSubmitted] = useState(false);
 	const [submitting, setSubmitting] = useState(false);
 	const [newsletter, setNewsletter] = useState(true);
+	const [error, setError] = useState("");
 
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
 		setSubmitting(true);
+		setError("");
 		const form = new FormData(e.currentTarget);
 		const name = form.get("name") as string;
 		const email = form.get("email") as string;
@@ -27,12 +29,17 @@ export default function ContactPageClient() {
 		const message = form.get("message") as string;
 
 		try {
-			// Send contact message
-			await fetch("/api/contact", {
+			const res = await fetch("/api/contact", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ name, email, subject, message }),
 			});
+
+			if (!res.ok) {
+				setError("Something went wrong. Please try again.");
+				setSubmitting(false);
+				return;
+			}
 
 			// Optionally subscribe to newsletter
 			if (newsletter && email) {
@@ -42,12 +49,15 @@ export default function ContactPageClient() {
 					// Newsletter subscription is optional — don't fail the form
 				}
 			}
+
+			setSubmitted(true);
 		} catch {
-			// Even on network error, show success — we don't want to lose the user's trust
+			setError(
+				"Could not reach the server. Please check your connection and try again.",
+			);
 		}
 
 		setSubmitting(false);
-		setSubmitted(true);
 	};
 
 	return (
@@ -55,6 +65,7 @@ export default function ContactPageClient() {
 			submitted={submitted}
 			submitting={submitting}
 			newsletter={newsletter}
+			error={error}
 			handleSubmit={handleSubmit}
 			setNewsletter={setNewsletter}
 		/>

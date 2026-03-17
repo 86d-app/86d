@@ -110,6 +110,11 @@
         />
         Subscribe to our newsletter for updates
       </label>
+      {props.error && (
+        <p className="rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-destructive text-sm">
+          {props.error}
+        </p>
+      )}
       <button
         type="submit"
         disabled={props.submitting}

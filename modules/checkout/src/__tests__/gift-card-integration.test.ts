@@ -253,13 +253,16 @@ function createMockGiftCardController(opts?: {
 	_redeemCalls: Array<{
 		code: string;
 		amount: number;
-		orderId?: string;
+		orderId?: string | undefined;
 	}>;
 } {
 	const balance = opts?.balance ?? 5000;
 	let currentBalance = balance;
-	const redeemCalls: Array<{ code: string; amount: number; orderId?: string }> =
-		[];
+	const redeemCalls: Array<{
+		code: string;
+		amount: number;
+		orderId?: string | undefined;
+	}> = [];
 
 	return {
 		_redeemCalls: redeemCalls,
