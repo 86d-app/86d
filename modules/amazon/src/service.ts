@@ -176,4 +176,15 @@ export interface AmazonController extends ModuleController {
 	getChannelStats(): Promise<ChannelStats>;
 
 	getInventoryHealth(): Promise<InventoryHealth>;
+
+	/** Push a local listing to Amazon via SP-API. Returns null if listing not found or provider not configured. */
+	pushListing(id: string): Promise<Listing | null>;
+
+	/** Pull listings from Amazon SP-API and sync locally. Returns count of synced listings. */
+	syncListings(): Promise<{ synced: number }>;
+
+	/** Pull orders from Amazon SP-API and sync locally. Returns count of synced orders. */
+	syncOrders(params?: {
+		createdAfter?: string | undefined;
+	}): Promise<{ synced: number }>;
 }

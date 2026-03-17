@@ -14,20 +14,24 @@ export type {
 } from "./service";
 
 export interface AmazonOptions extends ModuleConfig {
-	/** Amazon Seller ID */
+	/** Amazon Seller ID (required for SP-API) */
 	sellerId?: string;
-	/** MWS Auth Token */
-	mwsAuthToken?: string;
-	/** Amazon Marketplace ID */
+	/** LWA OAuth2 Client ID */
+	clientId?: string;
+	/** LWA OAuth2 Client Secret */
+	clientSecret?: string;
+	/** LWA OAuth2 Refresh Token (obtained when seller authorizes your app) */
+	refreshToken?: string;
+	/** Amazon Marketplace ID (e.g. ATVPDKIKX0DER for US) */
 	marketplaceId?: string;
-	/** Amazon region (default: "NA") */
+	/** Amazon region: "NA" | "EU" | "FE" (default: "NA") */
 	region?: string;
 }
 
 export default function amazon(options?: AmazonOptions): Module {
 	return {
 		id: "amazon",
-		version: "0.1.0",
+		version: "0.2.0",
 		schema: amazonSchema,
 		exports: {
 			read: ["listingTitle", "listingSku", "listingStatus", "listingPrice"],
@@ -43,7 +47,14 @@ export default function amazon(options?: AmazonOptions): Module {
 			],
 		},
 		init: async (ctx: ModuleContext) => {
-			const controller = createAmazonController(ctx.data);
+			const controller = createAmazonController(ctx.data, ctx.events, {
+				sellerId: options?.sellerId,
+				clientId: options?.clientId,
+				clientSecret: options?.clientSecret,
+				refreshToken: options?.refreshToken,
+				marketplaceId: options?.marketplaceId,
+				region: options?.region,
+			});
 			return { controllers: { amazon: controller } };
 		},
 		endpoints: {
