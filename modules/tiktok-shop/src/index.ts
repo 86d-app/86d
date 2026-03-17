@@ -17,6 +17,8 @@ export interface TikTokShopOptions extends ModuleConfig {
 	appKey?: string;
 	/** TikTok Shop app secret */
 	appSecret?: string;
+	/** TikTok Shop access token */
+	accessToken?: string;
 	/** TikTok Shop ID */
 	shopId?: string;
 	/** Use sandbox environment (default: "true") */
@@ -26,7 +28,7 @@ export interface TikTokShopOptions extends ModuleConfig {
 export default function tiktokShop(options?: TikTokShopOptions): Module {
 	return {
 		id: "tiktok-shop",
-		version: "0.1.0",
+		version: "0.2.0",
 		schema: tiktokShopSchema,
 		exports: {
 			read: ["listingTitle", "listingStatus", "listingSyncStatus"],
@@ -42,7 +44,13 @@ export default function tiktokShop(options?: TikTokShopOptions): Module {
 			],
 		},
 		init: async (ctx: ModuleContext) => {
-			const controller = createTikTokShopController(ctx.data);
+			const controller = createTikTokShopController(ctx.data, ctx.events, {
+				appKey: options?.appKey,
+				appSecret: options?.appSecret,
+				accessToken: options?.accessToken,
+				shopId: options?.shopId,
+				sandbox: options?.sandbox !== "false",
+			});
 			return { controllers: { tiktokShop: controller } };
 		},
 		endpoints: {

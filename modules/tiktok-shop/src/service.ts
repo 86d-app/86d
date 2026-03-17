@@ -146,4 +146,13 @@ export interface TikTokShopController extends ModuleController {
 	}): Promise<ChannelOrder[]>;
 
 	getChannelStats(): Promise<ChannelStats>;
+
+	/** Push a local listing to TikTok Shop. Returns null if not found or provider not configured. */
+	pushProduct(id: string): Promise<Listing | null>;
+
+	/** Pull products from TikTok Shop and sync locally. */
+	syncProducts(): Promise<{ synced: number }>;
+
+	/** Pull orders from TikTok Shop and sync locally. */
+	syncOrders(): Promise<{ synced: number }>;
 }
