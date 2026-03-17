@@ -195,4 +195,16 @@ export interface EtsyController extends ModuleController {
 	getChannelStats(): Promise<ChannelStats>;
 
 	getExpiringListings(daysAhead: number): Promise<EtsyListing[]>;
+
+	/** Push a local listing to Etsy (create or update). Requires API credentials. */
+	pushListing(id: string): Promise<EtsyListing | null>;
+
+	/** Pull listings from Etsy and update local records. Requires API credentials. */
+	syncListings(): Promise<{ synced: number }>;
+
+	/** Pull orders from Etsy and store locally. Requires API credentials. */
+	syncOrders(): Promise<{ synced: number }>;
+
+	/** Pull reviews from Etsy and store locally. Requires API credentials. */
+	syncReviews(): Promise<{ synced: number }>;
 }

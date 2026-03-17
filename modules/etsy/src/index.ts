@@ -1,5 +1,9 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
-import { adminEndpoints } from "./admin/endpoints";
+import {
+	adminEndpoints,
+	createAdminEndpointsWithSettings,
+} from "./admin/endpoints";
+import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
 import { etsySchema } from "./schema";
 import { createEtsyController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints";
@@ -13,15 +17,25 @@ export type {
 } from "./service";
 
 export interface EtsyOptions extends ModuleConfig {
-	/** Etsy API key */
-	apiKey?: string;
+	/** Etsy API key (x-api-key) */
+	apiKey?: string | undefined;
 	/** Etsy Shop ID */
-	shopId?: string;
-	/** Etsy access token */
-	accessToken?: string;
+	shopId?: string | undefined;
+	/** Etsy OAuth2 access token */
+	accessToken?: string | undefined;
 }
 
 export default function etsy(options?: EtsyOptions): Module {
+	const hasEtsy = Boolean(
+		options?.apiKey && options?.shopId && options?.accessToken,
+	);
+
+	const settingsEndpoint = createGetSettingsEndpoint({
+		apiKey: options?.apiKey,
+		shopId: options?.shopId,
+		accessToken: options?.accessToken,
+	});
+
 	return {
 		id: "etsy",
 		version: "0.1.0",
@@ -40,12 +54,18 @@ export default function etsy(options?: EtsyOptions): Module {
 			],
 		},
 		init: async (ctx: ModuleContext) => {
-			const controller = createEtsyController(ctx.data);
+			const controller = createEtsyController(ctx.data, ctx.events, {
+				apiKey: options?.apiKey,
+				shopId: options?.shopId,
+				accessToken: options?.accessToken,
+			});
 			return { controllers: { etsy: controller } };
 		},
 		endpoints: {
 			store: storeEndpoints,
-			admin: adminEndpoints,
+			admin: hasEtsy
+				? createAdminEndpointsWithSettings(settingsEndpoint)
+				: adminEndpoints,
 		},
 		admin: {
 			pages: [
