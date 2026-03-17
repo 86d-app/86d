@@ -538,6 +538,26 @@ if (_resolvedProvider) {
 		providerWiringCode = `\n// ── Payment provider wiring (env-var based, first configured provider wins) ──\n${blocks.join("\n\n")}\n`;
 	}
 
+	// Generate search module AI wiring code
+	const hasSearch = modules.includes("@86d-app/search");
+	let searchWiringCode = "";
+	if (hasSearch) {
+		searchWiringCode = `
+// ── Search module AI wiring (env-var based) ──
+if (process.env.OPENAI_API_KEY) {
+  moduleOptions["@86d-app/search"] = {
+    ...moduleOptions["@86d-app/search"],
+    openaiApiKey: process.env.OPENAI_API_KEY,
+  };
+} else if (process.env.OPENROUTER_API_KEY) {
+  moduleOptions["@86d-app/search"] = {
+    ...moduleOptions["@86d-app/search"],
+    openrouterApiKey: process.env.OPENROUTER_API_KEY,
+  };
+}
+`;
+	}
+
 	// Generate API router content
 	const routerContent = `// Auto-generated file - do not edit manually
 // Run 'pnpm generate:modules' to regenerate
@@ -550,7 +570,7 @@ ${moduleImports}
 ${providerImports.length > 0 ? `\n${providerImports.join("\n")}\n` : ""}
 // biome-ignore lint/suspicious/noExplicitAny: module option types are heterogeneous across modules
 const moduleOptions: Record<string, Record<string, any>> = ${JSON.stringify(moduleOptions, null, 2)};
-${providerWiringCode}
+${providerWiringCode}${searchWiringCode}
 const modules = [
 ${moduleInstances}
 ];

@@ -1,4 +1,6 @@
 import type { ModuleDataService } from "@86d-app/core";
+import type { EmbeddingProvider } from "./embedding-provider";
+import { cosineSimilarity } from "./embedding-provider";
 import type {
 	SearchClick,
 	SearchController,
@@ -276,7 +278,30 @@ function findDidYouMean(
 
 export function createSearchController(
 	data: ModuleDataService,
+	embeddingProvider?: EmbeddingProvider,
 ): SearchController {
+	/**
+	 * Generate and store an embedding for an indexed item.
+	 * Combines title + body + tags into a single text for embedding.
+	 * Failures are silent — semantic search degrades gracefully.
+	 */
+	async function embedItem(item: SearchIndexItem): Promise<SearchIndexItem> {
+		if (!embeddingProvider) return item;
+		try {
+			const parts = [item.title];
+			if (item.body) parts.push(item.body);
+			if (item.tags.length > 0) parts.push(item.tags.join(", "));
+			const text = parts.join(". ");
+			const embedding = await embeddingProvider.generateEmbedding(text);
+			if (embedding) {
+				item.metadata = { ...item.metadata, __embedding: embedding };
+			}
+		} catch {
+			// Embedding is best-effort — lexical search still works
+		}
+		return item;
+	}
+
 	return {
 		async indexItem(params) {
 			const existing = await data.findMany("searchIndex", {
@@ -290,7 +315,7 @@ export function createSearchController(
 
 			const id =
 				existingItems.length > 0 ? existingItems[0].id : crypto.randomUUID();
-			const item: SearchIndexItem = {
+			let item: SearchIndexItem = {
 				id,
 				entityType: params.entityType,
 				entityId: params.entityId,
@@ -302,6 +327,7 @@ export function createSearchController(
 				metadata: params.metadata ?? {},
 				indexedAt: new Date(),
 			};
+			item = await embedItem(item);
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("searchIndex", id, item as Record<string, any>);
 			return item;
@@ -310,6 +336,28 @@ export function createSearchController(
 		async bulkIndex(items) {
 			let indexed = 0;
 			let errors = 0;
+
+			// Batch generate embeddings for all items at once
+			if (embeddingProvider && items.length > 0) {
+				const texts = items.map((p) => {
+					const parts = [p.title];
+					if (p.body) parts.push(p.body);
+					if (p.tags && p.tags.length > 0) parts.push(p.tags.join(", "));
+					return parts.join(". ");
+				});
+				const embeddings = await embeddingProvider.generateEmbeddings(texts);
+				for (let i = 0; i < items.length; i++) {
+					if (embeddings[i]) {
+						items[i] = {
+							...items[i],
+							metadata: {
+								...items[i].metadata,
+								__embedding: embeddings[i],
+							},
+						};
+					}
+				}
+			}
 
 			for (const params of items) {
 				try {
@@ -408,11 +456,41 @@ export function createSearchController(
 				...(Object.keys(where).length > 0 ? { where } : {}),
 			})) as unknown as SearchIndexItem[];
 
-			// Score and rank
+			// Generate query embedding for semantic search (if provider is available)
+			let queryEmbedding: number[] | null = null;
+			if (embeddingProvider) {
+				try {
+					queryEmbedding = await embeddingProvider.generateEmbedding(query);
+				} catch {
+					// Semantic search is best-effort
+				}
+			}
+
+			// Score and rank — hybrid lexical + semantic scoring
 			const scored: SearchResult[] = [];
 			for (const item of allItems) {
-				const score = scoreMatch(item, queryTokens, expandedTerms, fuzzy);
-				if (score > 0) {
+				const lexicalScore = scoreMatch(
+					item,
+					queryTokens,
+					expandedTerms,
+					fuzzy,
+				);
+
+				// Compute semantic score if embeddings are available
+				let semanticScore = 0;
+				if (queryEmbedding) {
+					const itemEmbedding = item.metadata?.__embedding as
+						| number[]
+						| undefined;
+					if (Array.isArray(itemEmbedding) && itemEmbedding.length > 0) {
+						semanticScore = cosineSimilarity(queryEmbedding, itemEmbedding);
+					}
+				}
+
+				// Include items with lexical match OR strong semantic similarity
+				const semanticBoost = semanticScore * 80;
+				const score = lexicalScore + semanticBoost;
+				if (lexicalScore > 0 || semanticScore > 0.5) {
 					const highlights: SearchHighlight = {
 						title: highlightText(item.title, queryTokens, expandedTerms),
 						body: item.body
