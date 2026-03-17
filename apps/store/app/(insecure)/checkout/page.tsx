@@ -901,22 +901,58 @@ const CheckoutPage = observer(function CheckoutPage() {
 				params: { id: co.sessionId },
 			});
 
+			// Store order summary for the confirmation page
+			const orderId =
+				(completeResult as { orderId?: string })?.orderId ?? co.sessionId;
+			try {
+				sessionStorage.setItem(
+					"checkout_confirmation",
+					JSON.stringify({
+						orderId,
+						email,
+						items: (cart?.items ?? []).map((item) => ({
+							name: item.product.name,
+							quantity: item.quantity,
+							price: item.variant?.price ?? item.product.price,
+							image: item.product.images?.[0],
+						})),
+						subtotal: session?.subtotal ?? cart?.subtotal ?? 0,
+						taxAmount: session?.taxAmount ?? 0,
+						shippingAmount: session?.shippingAmount ?? 0,
+						discountAmount: session?.discountAmount ?? 0,
+						giftCardAmount: session?.giftCardAmount ?? 0,
+						total: session?.total ?? 0,
+						currency: session?.currency ?? "USD",
+						shippingAddress,
+					}),
+				);
+			} catch {
+				// sessionStorage may not be available
+			}
+
 			// Clear cart after successful order
 			await api.cart.clearCart.mutate(undefined);
 			void api.cart.getCart.invalidate();
 			cartStore.setItemCount(0);
 
-			// Navigate to confirmation using server-returned orderId
-			const orderId =
-				(completeResult as { orderId?: string })?.orderId ??
-				co.sessionId;
+			// Navigate to confirmation
 			window.location.href = `/checkout/confirmation?order=${orderId}`;
 		} catch {
 			// Error handled by mutation onError
 		} finally {
 			co.setProcessing(false);
 		}
-	}, [co, confirmSessionMut, completeSessionMut, api, cartStore]);
+	}, [
+		co,
+		confirmSessionMut,
+		completeSessionMut,
+		api,
+		cartStore,
+		email,
+		cart,
+		session,
+		shippingAddress,
+	]);
 
 	// ── Apply discount
 	const handleApplyDiscount = useCallback(
