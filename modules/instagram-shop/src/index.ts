@@ -19,12 +19,14 @@ export interface InstagramShopOptions extends ModuleConfig {
 	businessId?: string;
 	/** Instagram catalog ID */
 	catalogId?: string;
+	/** Meta Commerce Manager account ID */
+	commerceAccountId?: string;
 }
 
 export default function instagramShop(options?: InstagramShopOptions): Module {
 	return {
 		id: "instagram-shop",
-		version: "0.1.0",
+		version: "0.2.0",
 		schema: instagramShopSchema,
 		exports: {
 			read: ["listingTitle", "listingStatus", "listingSyncStatus"],
@@ -39,7 +41,12 @@ export default function instagramShop(options?: InstagramShopOptions): Module {
 			],
 		},
 		init: async (ctx: ModuleContext) => {
-			const controller = createInstagramShopController(ctx.data);
+			const controller = createInstagramShopController(ctx.data, ctx.events, {
+				accessToken: options?.accessToken,
+				catalogId: options?.catalogId,
+				commerceAccountId: options?.commerceAccountId,
+				businessId: options?.businessId,
+			});
 			return { controllers: { instagramShop: controller } };
 		},
 		endpoints: {

@@ -1,4 +1,10 @@
-import type { ModuleDataService } from "@86d-app/core";
+import type { ModuleDataService, ScopedEventEmitter } from "@86d-app/core";
+import {
+	MetaInstagramProvider,
+	type MetaInstagramProviderConfig,
+	mapMetaOrderStatus,
+	parseMetaMoney,
+} from "./provider";
 import type {
 	CatalogSync,
 	ChannelOrder,
@@ -9,7 +15,24 @@ import type {
 
 export function createInstagramShopController(
 	data: ModuleDataService,
+	events?: ScopedEventEmitter | undefined,
+	options?: {
+		accessToken?: string | undefined;
+		catalogId?: string | undefined;
+		commerceAccountId?: string | undefined;
+		businessId?: string | undefined;
+	},
 ): InstagramShopController {
+	const provider =
+		options?.accessToken && options?.catalogId && options?.commerceAccountId
+			? new MetaInstagramProvider({
+					accessToken: options.accessToken,
+					catalogId: options.catalogId,
+					commerceAccountId: options.commerceAccountId,
+					businessId: options.businessId,
+				} satisfies MetaInstagramProviderConfig)
+			: null;
+
 	return {
 		async createListing(params) {
 			const now = new Date();
@@ -70,6 +93,18 @@ export function createInstagramShopController(
 		async deleteListing(id) {
 			const existing = await data.get("listing", id);
 			if (!existing) return false;
+
+			const listing = existing as unknown as Listing;
+
+			// Delete from catalog if provider configured and has external ID
+			if (provider && listing.externalProductId) {
+				try {
+					await provider.deleteProduct(listing.externalProductId);
+				} catch {
+					// Continue with local deletion even if API call fails
+				}
+			}
+
 			await data.delete("listing", id);
 			return true;
 		},
@@ -120,6 +155,12 @@ export function createInstagramShopController(
 			};
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("listing", listingId, updated as Record<string, any>);
+
+			events?.emit("instagram.product.tagged", {
+				listingId,
+				mediaId,
+			});
+
 			return updated;
 		},
 
@@ -154,10 +195,13 @@ export function createInstagramShopController(
 			const now = new Date();
 			const id = crypto.randomUUID();
 
+			const allListings = await data.findMany("listing", {});
+			const listings = allListings as unknown as Listing[];
+
 			const sync: CatalogSync = {
 				id,
-				status: "syncing",
-				totalProducts: 0,
+				status: provider ? "syncing" : "pending",
+				totalProducts: listings.length,
 				syncedProducts: 0,
 				failedProducts: 0,
 				startedAt: now,
@@ -166,7 +210,80 @@ export function createInstagramShopController(
 			};
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("catalogSync", id, sync as Record<string, any>);
-			return sync;
+
+			if (!provider) return sync;
+
+			let syncedProducts = 0;
+			let failedProducts = 0;
+
+			for (const listing of listings) {
+				try {
+					if (listing.externalProductId) {
+						await provider.updateProduct(listing.externalProductId, {
+							name: listing.title,
+						});
+					} else {
+						const result = await provider.createProduct({
+							retailer_id: listing.localProductId,
+							name: listing.title,
+							price: 0,
+							image_url: "https://placeholder.com/product.jpg",
+						});
+						const updatedListing: Listing = {
+							...listing,
+							externalProductId: result.id,
+							syncStatus: "synced",
+							lastSyncedAt: new Date(),
+							updatedAt: new Date(),
+							error: undefined,
+						};
+						await data.upsert(
+							"listing",
+							listing.id,
+							// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+							updatedListing as Record<string, any>,
+						);
+					}
+					syncedProducts++;
+				} catch (err) {
+					failedProducts++;
+					const errorMsg = err instanceof Error ? err.message : "Unknown error";
+					const updatedListing: Listing = {
+						...listing,
+						syncStatus: "failed",
+						error: errorMsg,
+						updatedAt: new Date(),
+					};
+					await data.upsert(
+						"listing",
+						listing.id,
+						// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+						updatedListing as Record<string, any>,
+					);
+				}
+			}
+
+			const completedSync: CatalogSync = {
+				...sync,
+				status: failedProducts > 0 ? "failed" : "synced",
+				syncedProducts,
+				failedProducts,
+				completedAt: new Date(),
+			};
+			await data.upsert(
+				"catalogSync",
+				id,
+				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+				completedSync as Record<string, any>,
+			);
+
+			events?.emit("instagram.catalog.synced", {
+				syncId: id,
+				syncedProducts,
+				failedProducts,
+			});
+
+			return completedSync;
 		},
 
 		async getLastSync() {
@@ -210,6 +327,13 @@ export function createInstagramShopController(
 			};
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("channelOrder", id, order as Record<string, any>);
+
+			events?.emit("instagram.order.received", {
+				orderId: order.id,
+				externalOrderId: order.externalOrderId,
+				instagramOrderId: order.instagramOrderId,
+			});
+
 			return order;
 		},
 
@@ -225,6 +349,29 @@ export function createInstagramShopController(
 
 			const order = existing as unknown as ChannelOrder;
 			const now = new Date();
+
+			// If shipping with tracking, call Meta API to create shipment
+			if (
+				provider &&
+				status === "shipped" &&
+				trackingNumber &&
+				order.externalOrderId
+			) {
+				try {
+					const items =
+						(order.items as { retailer_id: string; quantity: number }[]) ?? [];
+					await provider.createShipment(order.externalOrderId, {
+						trackingNumber,
+						carrier: "OTHER",
+						items: items.map((i) => ({
+							retailer_id: i.retailer_id,
+							quantity: i.quantity,
+						})),
+					});
+				} catch {
+					// Continue with local update even if API call fails
+				}
+			}
 
 			const updated: ChannelOrder = {
 				...order,
@@ -278,6 +425,197 @@ export function createInstagramShopController(
 					.reduce((sum, o) => sum + o.total, 0),
 			};
 			return stats;
+		},
+
+		async pushProduct(id) {
+			const existing = await data.get("listing", id);
+			if (!existing) return null;
+			if (!provider) return existing as unknown as Listing;
+
+			const listing = existing as unknown as Listing;
+
+			try {
+				if (listing.externalProductId) {
+					await provider.updateProduct(listing.externalProductId, {
+						name: listing.title,
+					});
+				} else {
+					const result = await provider.createProduct({
+						retailer_id: listing.localProductId,
+						name: listing.title,
+						price: 0,
+						image_url: "https://placeholder.com/product.jpg",
+					});
+					listing.externalProductId = result.id;
+				}
+
+				const updatedListing: Listing = {
+					...listing,
+					status: "active",
+					syncStatus: "synced",
+					lastSyncedAt: new Date(),
+					updatedAt: new Date(),
+					error: undefined,
+				};
+
+				await data.upsert(
+					"listing",
+					id,
+					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+					updatedListing as Record<string, any>,
+				);
+
+				events?.emit("instagram.product.synced", {
+					listingId: id,
+					externalProductId: updatedListing.externalProductId,
+				});
+
+				return updatedListing;
+			} catch (err) {
+				const errorMsg = err instanceof Error ? err.message : "Unknown error";
+				const updatedListing: Listing = {
+					...listing,
+					syncStatus: "failed",
+					error: errorMsg,
+					updatedAt: new Date(),
+				};
+				await data.upsert(
+					"listing",
+					id,
+					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+					updatedListing as Record<string, any>,
+				);
+				return updatedListing;
+			}
+		},
+
+		async syncProducts() {
+			if (!provider) return { synced: 0 };
+
+			let synced = 0;
+			let after: string | undefined;
+
+			do {
+				const result = await provider.listProducts({
+					limit: 50,
+					after,
+				});
+
+				for (const product of result.data) {
+					const existingMatches = await data.findMany("listing", {
+						where: { externalProductId: product.id },
+						take: 1,
+					});
+					const existing = (existingMatches[0] as unknown as Listing) ?? null;
+
+					const now = new Date();
+					const listingData: Listing = {
+						id: existing?.id ?? crypto.randomUUID(),
+						localProductId: existing?.localProductId ?? product.retailer_id,
+						externalProductId: product.id,
+						title: product.name,
+						status: product.visibility === "published" ? "active" : "draft",
+						syncStatus: "synced",
+						lastSyncedAt: now,
+						error: undefined,
+						instagramMediaIds: existing?.instagramMediaIds ?? [],
+						metadata: existing?.metadata ?? {},
+						createdAt: existing?.createdAt ?? now,
+						updatedAt: now,
+					};
+
+					await data.upsert(
+						"listing",
+						listingData.id,
+						// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+						listingData as Record<string, any>,
+					);
+					synced++;
+				}
+
+				after = result.paging?.cursors?.after;
+			} while (after);
+
+			return { synced };
+		},
+
+		async syncOrders() {
+			if (!provider) return { synced: 0 };
+
+			let synced = 0;
+			const result = await provider.listOrders({
+				state: "CREATED,IN_PROGRESS",
+			});
+
+			for (const metaOrder of result.data) {
+				const existingMatches = await data.findMany("channelOrder", {
+					where: { externalOrderId: metaOrder.id },
+					take: 1,
+				});
+				const existing =
+					(existingMatches[0] as unknown as ChannelOrder) ?? null;
+
+				const items =
+					metaOrder.items?.data.map((i) => ({
+						product_id: i.product_id,
+						retailer_id: i.retailer_id,
+						quantity: i.quantity,
+						price: parseMetaMoney(i.price_per_unit.amount),
+					})) ?? [];
+
+				const subtotal = parseMetaMoney(
+					metaOrder.estimated_payment_details?.subtotal?.amount,
+				);
+				const shippingFee = parseMetaMoney(
+					metaOrder.estimated_payment_details?.shipping?.amount,
+				);
+				const tax = parseMetaMoney(
+					metaOrder.estimated_payment_details?.tax?.amount,
+				);
+				const total = parseMetaMoney(
+					metaOrder.estimated_payment_details?.total_amount?.amount,
+				);
+
+				const now = new Date();
+				const orderData: ChannelOrder = {
+					id: existing?.id ?? crypto.randomUUID(),
+					externalOrderId: metaOrder.id,
+					instagramOrderId: existing?.instagramOrderId ?? metaOrder.id,
+					igUsername: existing?.igUsername,
+					status: mapMetaOrderStatus(metaOrder.order_status.state),
+					items,
+					subtotal,
+					shippingFee,
+					platformFee: existing?.platformFee ?? tax,
+					total,
+					customerName: metaOrder.buyer_details?.name,
+					shippingAddress: metaOrder.shipping_address
+						? {
+								name: metaOrder.shipping_address.name,
+								street1: metaOrder.shipping_address.street1,
+								street2: metaOrder.shipping_address.street2,
+								city: metaOrder.shipping_address.city,
+								state: metaOrder.shipping_address.state,
+								postalCode: metaOrder.shipping_address.postal_code,
+								country: metaOrder.shipping_address.country,
+							}
+						: (existing?.shippingAddress ?? {}),
+					trackingNumber: existing?.trackingNumber,
+					trackingUrl: existing?.trackingUrl,
+					createdAt: existing?.createdAt ?? now,
+					updatedAt: now,
+				};
+
+				await data.upsert(
+					"channelOrder",
+					orderData.id,
+					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+					orderData as Record<string, any>,
+				);
+				synced++;
+			}
+
+			return { synced };
 		},
 	};
 }

@@ -157,4 +157,13 @@ export interface InstagramShopController extends ModuleController {
 	}): Promise<ChannelOrder[]>;
 
 	getChannelStats(): Promise<ChannelStats>;
+
+	/** Push a local listing to the Instagram catalog. Returns null if not found or provider not configured. */
+	pushProduct(id: string): Promise<Listing | null>;
+
+	/** Pull products from the Instagram catalog and sync locally. */
+	syncProducts(): Promise<{ synced: number }>;
+
+	/** Pull orders from Meta Commerce and sync locally. */
+	syncOrders(): Promise<{ synced: number }>;
 }
