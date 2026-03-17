@@ -423,6 +423,121 @@ export type Router = typeof router;
 		})
 		.join("\n");
 
+	// Detect which payment provider modules are present so we can generate wiring code
+	const hasPayments = modules.includes("@86d-app/payments");
+	const hasStripe = modules.includes("@86d-app/stripe");
+	const hasPayPal = modules.includes("@86d-app/paypal");
+	const hasSquare = modules.includes("@86d-app/square");
+	const hasBraintree = modules.includes("@86d-app/braintree");
+	const hasAnyProvider = hasStripe || hasPayPal || hasSquare || hasBraintree;
+
+	// Generate provider imports (only for present modules)
+	const providerImports: string[] = [];
+	if (hasStripe) providerImports.push(`import { StripePaymentProvider } from "@86d-app/stripe";`);
+	if (hasPayPal) providerImports.push(`import { PayPalPaymentProvider } from "@86d-app/paypal";`);
+	if (hasSquare) providerImports.push(`import { SquarePaymentProvider } from "@86d-app/square";`);
+	if (hasBraintree) providerImports.push(`import { BraintreePaymentProvider } from "@86d-app/braintree";`);
+
+	// Generate runtime env-var wiring code for payment providers
+	let providerWiringCode = "";
+	if (hasPayments && hasAnyProvider) {
+		const blocks: string[] = [];
+
+		if (hasStripe) {
+			blocks.push(`// Wire Stripe options from env vars
+if (process.env.STRIPE_SECRET_KEY) {
+  moduleOptions["@86d-app/stripe"] = {
+    ...moduleOptions["@86d-app/stripe"],
+    apiKey: process.env.STRIPE_SECRET_KEY,
+    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET ?? "",
+  };
+}`);
+		}
+		if (hasPayPal) {
+			blocks.push(`// Wire PayPal options from env vars
+if (process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_CLIENT_SECRET) {
+  moduleOptions["@86d-app/paypal"] = {
+    ...moduleOptions["@86d-app/paypal"],
+    clientId: process.env.PAYPAL_CLIENT_ID,
+    clientSecret: process.env.PAYPAL_CLIENT_SECRET,
+    sandbox: process.env.PAYPAL_SANDBOX ?? "",
+    webhookId: process.env.PAYPAL_WEBHOOK_ID ?? "",
+  };
+}`);
+		}
+		if (hasSquare) {
+			blocks.push(`// Wire Square options from env vars
+if (process.env.SQUARE_ACCESS_TOKEN) {
+  moduleOptions["@86d-app/square"] = {
+    ...moduleOptions["@86d-app/square"],
+    accessToken: process.env.SQUARE_ACCESS_TOKEN,
+    webhookSignatureKey: process.env.SQUARE_WEBHOOK_SIGNATURE_KEY ?? "",
+    webhookNotificationUrl: process.env.SQUARE_WEBHOOK_NOTIFICATION_URL ?? "",
+  };
+}`);
+		}
+		if (hasBraintree) {
+			blocks.push(`// Wire Braintree options from env vars
+if (process.env.BRAINTREE_MERCHANT_ID && process.env.BRAINTREE_PUBLIC_KEY && process.env.BRAINTREE_PRIVATE_KEY) {
+  moduleOptions["@86d-app/braintree"] = {
+    ...moduleOptions["@86d-app/braintree"],
+    merchantId: process.env.BRAINTREE_MERCHANT_ID,
+    publicKey: process.env.BRAINTREE_PUBLIC_KEY,
+    privateKey: process.env.BRAINTREE_PRIVATE_KEY,
+    sandbox: process.env.BRAINTREE_SANDBOX ?? "",
+  };
+}`);
+		}
+
+		// Build the provider resolution function — first configured provider wins
+		const providerChecks: string[] = [];
+		if (hasStripe) {
+			providerChecks.push(`  if (process.env.STRIPE_SECRET_KEY) {
+    return new StripePaymentProvider(process.env.STRIPE_SECRET_KEY);
+  }`);
+		}
+		if (hasPayPal) {
+			providerChecks.push(`  if (process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_CLIENT_SECRET) {
+    return new PayPalPaymentProvider(
+      process.env.PAYPAL_CLIENT_ID,
+      process.env.PAYPAL_CLIENT_SECRET,
+      process.env.PAYPAL_SANDBOX === "true",
+    );
+  }`);
+		}
+		if (hasSquare) {
+			providerChecks.push(`  if (process.env.SQUARE_ACCESS_TOKEN) {
+    return new SquarePaymentProvider(process.env.SQUARE_ACCESS_TOKEN);
+  }`);
+		}
+		if (hasBraintree) {
+			providerChecks.push(`  if (process.env.BRAINTREE_MERCHANT_ID && process.env.BRAINTREE_PUBLIC_KEY && process.env.BRAINTREE_PRIVATE_KEY) {
+    return new BraintreePaymentProvider(
+      process.env.BRAINTREE_MERCHANT_ID,
+      process.env.BRAINTREE_PUBLIC_KEY,
+      process.env.BRAINTREE_PRIVATE_KEY,
+      process.env.BRAINTREE_SANDBOX === "true",
+    );
+  }`);
+		}
+
+		blocks.push(`// Resolve the first available payment provider from env vars and wire it to the payments module
+function resolvePaymentProvider() {
+${providerChecks.join("\n")}
+  return undefined;
+}
+
+const _resolvedProvider = resolvePaymentProvider();
+if (_resolvedProvider) {
+  moduleOptions["@86d-app/payments"] = {
+    ...moduleOptions["@86d-app/payments"],
+    provider: _resolvedProvider,
+  };
+}`);
+
+		providerWiringCode = `\n// ── Payment provider wiring (env-var based, first configured provider wins) ──\n${blocks.join("\n\n")}\n`;
+	}
+
 	// Generate API router content
 	const routerContent = `// Auto-generated file - do not edit manually
 // Run 'pnpm generate:modules' to regenerate
@@ -432,10 +547,10 @@ import { createRouter } from "better-call";
 import type { RouterConfig } from "better-call";
 import type { ModuleContext } from "@86d-app/core";
 ${moduleImports}
-
+${providerImports.length > 0 ? `\n${providerImports.join("\n")}\n` : ""}
 // biome-ignore lint/suspicious/noExplicitAny: module option types are heterogeneous across modules
 const moduleOptions: Record<string, Record<string, any>> = ${JSON.stringify(moduleOptions, null, 2)};
-
+${providerWiringCode}
 const modules = [
 ${moduleInstances}
 ];

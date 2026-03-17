@@ -1,6 +1,6 @@
 {
   "lockfileVersion": 1,
-  "generatedAt": "2026-03-16T08:04:34.633Z",
+  "generatedAt": "2026-03-17T11:15:27.709Z",
   "modules": {
     "abandoned-carts": {
       "source": "local",
@@ -552,7 +552,7 @@
       "source": "local",
       "packageName": "@86d-app/social-sharing",
       "version": "0.0.4",
-      "integrity": "sha256-44ea2fe374648a2611ae44c9d28df1942c8c3e802e23449c56ac2f823b500155",
+      "integrity": "sha256-504862d75218ca0eff1a8bd7311dff806c2eb5b5ddb7b5708133a2b81d33b90b",
       "localPath": "modules/social-sharing"
     },
     "square": {
