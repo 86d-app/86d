@@ -71,6 +71,44 @@ export const completeSession = createStoreEndpoint(
 			}
 		}
 
+		// Redeem gift card BEFORE creating the order so the balance is debited
+		// before the discount is committed to the order record.
+		let actualGiftCardAmount = existing.giftCardAmount;
+		if (existing.giftCardCode && existing.giftCardAmount > 0) {
+			const giftCardController = ctx.context.controllers.giftCards as unknown as
+				| GiftCardCheckController
+				| undefined;
+
+			if (giftCardController) {
+				const redeemResult = await giftCardController.redeem(
+					existing.giftCardCode,
+					existing.giftCardAmount,
+				);
+
+				if (!redeemResult) {
+					return {
+						error:
+							"Gift card could not be redeemed. It may be expired, inactive, or have insufficient balance.",
+						status: 422,
+					};
+				}
+
+				// Use the actual debited amount (may be less if balance was partially
+				// used elsewhere between apply and complete)
+				actualGiftCardAmount = redeemResult.transaction.amount;
+			}
+		}
+
+		// Recalculate total if the actual gift card amount differs from expected
+		const adjustedTotal =
+			actualGiftCardAmount !== existing.giftCardAmount
+				? existing.subtotal +
+					existing.taxAmount +
+					existing.shippingAmount -
+					existing.discountAmount -
+					actualGiftCardAmount
+				: existing.total;
+
 		// Create a real order in the orders module if available
 		let orderId = ctx.body?.orderId;
 		const lineItems = await controller.getLineItems(ctx.params.id);
@@ -88,7 +126,8 @@ export const completeSession = createStoreEndpoint(
 				taxAmount: existing.taxAmount,
 				shippingAmount: existing.shippingAmount,
 				discountAmount: existing.discountAmount,
-				total: existing.total,
+				giftCardAmount: actualGiftCardAmount,
+				total: adjustedTotal,
 				metadata: {
 					checkoutSessionId: existing.id,
 					paymentIntentId: existing.paymentIntentId,
@@ -143,21 +182,6 @@ export const completeSession = createStoreEndpoint(
 			return { error: "Cannot complete this checkout session", status: 422 };
 		}
 
-		// Redeem gift card balance if one was applied
-		if (session.giftCardCode && session.giftCardAmount > 0) {
-			const giftCardController = ctx.context.controllers.giftCards as unknown as
-				| GiftCardCheckController
-				| undefined;
-
-			if (giftCardController) {
-				await giftCardController.redeem(
-					session.giftCardCode,
-					session.giftCardAmount,
-					orderId,
-				);
-			}
-		}
-
 		// Emit checkout.completed event for email notifications
 		if (ctx.context.events) {
 			const email = session.guestEmail ?? ctx.context.session?.user.email ?? "";
@@ -181,8 +205,8 @@ export const completeSession = createStoreEndpoint(
 				taxAmount: session.taxAmount,
 				shippingAmount: session.shippingAmount,
 				discountAmount: session.discountAmount,
-				giftCardAmount: session.giftCardAmount,
-				total: session.total,
+				giftCardAmount: actualGiftCardAmount,
+				total: adjustedTotal,
 				currency: session.currency,
 				shippingAddress: session.shippingAddress,
 			});

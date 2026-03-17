@@ -113,6 +113,19 @@ describe("createOrderController", () => {
 			expect(order.taxAmount).toBe(0);
 			expect(order.shippingAmount).toBe(0);
 			expect(order.discountAmount).toBe(0);
+			expect(order.giftCardAmount).toBe(0);
+		});
+
+		it("persists giftCardAmount when provided", async () => {
+			const order = await controller.create({
+				...sampleOrder,
+				items: sampleItems,
+				giftCardAmount: 2500,
+			});
+			expect(order.giftCardAmount).toBe(2500);
+
+			const fetched = await controller.getById(order.id);
+			expect(fetched?.giftCardAmount).toBe(2500);
 		});
 	});
 
@@ -1867,7 +1880,8 @@ describe("createOrderController", () => {
 				taxAmount: 800,
 				shippingAmount: 500,
 				discountAmount: 1500,
-				total: 9800,
+				giftCardAmount: 2000,
+				total: 7800,
 				items: [
 					{
 						productId: "p1",
@@ -1883,7 +1897,8 @@ describe("createOrderController", () => {
 			expect(invoice?.taxAmount).toBe(800);
 			expect(invoice?.shippingAmount).toBe(500);
 			expect(invoice?.discountAmount).toBe(1500);
-			expect(invoice?.total).toBe(9800);
+			expect(invoice?.giftCardAmount).toBe(2000);
+			expect(invoice?.total).toBe(7800);
 		});
 
 		it("includes order notes", async () => {

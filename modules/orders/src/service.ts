@@ -26,6 +26,7 @@ export interface Order {
 	taxAmount: number;
 	shippingAmount: number;
 	discountAmount: number;
+	giftCardAmount: number;
 	total: number;
 	currency: string;
 	notes?: string | undefined;
@@ -77,6 +78,7 @@ export interface CreateOrderParams {
 	taxAmount?: number | undefined;
 	shippingAmount?: number | undefined;
 	discountAmount?: number | undefined;
+	giftCardAmount?: number | undefined;
 	total: number;
 	notes?: string | undefined;
 	metadata?: Record<string, unknown> | undefined;
@@ -267,6 +269,7 @@ export interface InvoiceData {
 	taxAmount: number;
 	shippingAmount: number;
 	discountAmount: number;
+	giftCardAmount: number;
 	total: number;
 	currency: string;
 	storeName: string;

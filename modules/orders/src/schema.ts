@@ -56,6 +56,11 @@ export const ordersSchema = {
 				required: true,
 				defaultValue: 0,
 			},
+			giftCardAmount: {
+				type: "number",
+				required: true,
+				defaultValue: 0,
+			},
 			total: {
 				type: "number",
 				required: true,

@@ -1,6 +1,10 @@
 import { createMockDataService } from "@86d-app/core/test-utils";
 import { describe, expect, it } from "vitest";
-import type { CheckoutLineItem } from "../service";
+import type {
+	CheckoutLineItem,
+	GiftCardCheckController,
+	OrderCreateController,
+} from "../service";
 import { createCheckoutController } from "../service-impl";
 
 // ---------------------------------------------------------------------------
@@ -235,5 +239,316 @@ describe("create with giftCardAmount", () => {
 		const ctrl = createCheckoutController(createMockDataService());
 		const session = await ctrl.create(makeSession({ giftCardAmount: 500 }));
 		expect(session.giftCardAmount).toBe(500);
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Complete-session gift card redemption logic (mirrors endpoint behavior)
+// ---------------------------------------------------------------------------
+
+function createMockGiftCardController(opts?: {
+	balance?: number;
+	failRedeem?: boolean;
+}): GiftCardCheckController & {
+	_redeemCalls: Array<{
+		code: string;
+		amount: number;
+		orderId?: string;
+	}>;
+} {
+	const balance = opts?.balance ?? 5000;
+	let currentBalance = balance;
+	const redeemCalls: Array<{ code: string; amount: number; orderId?: string }> =
+		[];
+
+	return {
+		_redeemCalls: redeemCalls,
+
+		async checkBalance(_code) {
+			if (currentBalance <= 0)
+				return { balance: 0, currency: "USD", status: "depleted" };
+			return { balance: currentBalance, currency: "USD", status: "active" };
+		},
+
+		async redeem(code, amount, orderId) {
+			redeemCalls.push({ code, amount, orderId });
+
+			if (opts?.failRedeem) return null;
+			if (currentBalance <= 0) return null;
+
+			const debit = Math.min(amount, currentBalance);
+			currentBalance -= debit;
+
+			return {
+				transaction: {
+					id: `txn_${crypto.randomUUID().slice(0, 8)}`,
+					amount: debit,
+					balanceAfter: currentBalance,
+				},
+				giftCard: {
+					id: "gc_1",
+					currentBalance,
+					status: currentBalance === 0 ? "depleted" : "active",
+				},
+			};
+		},
+	};
+}
+
+function createMockOrderController(): OrderCreateController & {
+	_orders: Array<{
+		id: string;
+		giftCardAmount: number;
+		total: number;
+	}>;
+} {
+	const orders: Array<{ id: string; giftCardAmount: number; total: number }> =
+		[];
+
+	return {
+		_orders: orders,
+
+		async create(params) {
+			const id = `ORD-${crypto.randomUUID().slice(0, 8)}`;
+			orders.push({
+				id,
+				giftCardAmount: params.giftCardAmount ?? 0,
+				total: params.total,
+			});
+			return { id };
+		},
+	};
+}
+
+/**
+ * Simulates the complete-session endpoint logic (matching the real implementation):
+ * 1. Redeem gift card FIRST
+ * 2. Adjust total if actual redeemed amount differs
+ * 3. Create order with correct amounts
+ * 4. Complete the session
+ */
+async function simulateCompleteWithGiftCard(
+	checkoutCtrl: ReturnType<typeof createCheckoutController>,
+	sessionId: string,
+	opts?: {
+		giftCardCtrl?: GiftCardCheckController | undefined;
+		orderCtrl?: OrderCreateController | undefined;
+	},
+) {
+	const existing = await checkoutCtrl.getById(sessionId);
+	if (!existing) return { error: "Not found", status: 404 };
+
+	// Step 1: Redeem gift card BEFORE creating the order
+	let actualGiftCardAmount = existing.giftCardAmount;
+	if (existing.giftCardCode && existing.giftCardAmount > 0) {
+		if (opts?.giftCardCtrl) {
+			const redeemResult = await opts.giftCardCtrl.redeem(
+				existing.giftCardCode,
+				existing.giftCardAmount,
+			);
+
+			if (!redeemResult) {
+				return {
+					error:
+						"Gift card could not be redeemed. It may be expired, inactive, or have insufficient balance.",
+					status: 422,
+				};
+			}
+
+			actualGiftCardAmount = redeemResult.transaction.amount;
+		}
+	}
+
+	// Step 2: Recalculate total if needed
+	const adjustedTotal =
+		actualGiftCardAmount !== existing.giftCardAmount
+			? existing.subtotal +
+				existing.taxAmount +
+				existing.shippingAmount -
+				existing.discountAmount -
+				actualGiftCardAmount
+			: existing.total;
+
+	// Step 3: Create order with correct amounts
+	let orderId: string | undefined;
+	if (opts?.orderCtrl) {
+		const lineItems = await checkoutCtrl.getLineItems(sessionId);
+		const order = await opts.orderCtrl.create({
+			subtotal: existing.subtotal,
+			taxAmount: existing.taxAmount,
+			shippingAmount: existing.shippingAmount,
+			discountAmount: existing.discountAmount,
+			giftCardAmount: actualGiftCardAmount,
+			total: adjustedTotal,
+			items: lineItems.map((item) => ({
+				productId: item.productId,
+				name: item.name,
+				price: item.price,
+				quantity: item.quantity,
+			})),
+		});
+		orderId = order.id;
+	}
+
+	if (!orderId) {
+		orderId = `ORD-${Date.now().toString(36).toUpperCase()}`;
+	}
+
+	// Step 4: Complete the session
+	const session = await checkoutCtrl.complete(sessionId, orderId);
+	if (!session) return { error: "Cannot complete", status: 422 };
+
+	return { session, orderId, actualGiftCardAmount, adjustedTotal };
+}
+
+describe("complete-session gift card redemption", () => {
+	it("redeems gift card before creating the order", async () => {
+		const ctrl = createCheckoutController(createMockDataService());
+		const gcCtrl = createMockGiftCardController({ balance: 5000 });
+		const orderCtrl = createMockOrderController();
+
+		const session = await ctrl.create(makeSession({ customerId: "cust-1" }));
+		await ctrl.applyGiftCard(session.id, {
+			code: "GIFT-TEST-1234-5678",
+			giftCardAmount: 1500,
+		});
+
+		const result = await simulateCompleteWithGiftCard(ctrl, session.id, {
+			giftCardCtrl: gcCtrl,
+			orderCtrl,
+		});
+
+		// Gift card should be redeemed
+		expect(gcCtrl._redeemCalls).toHaveLength(1);
+		expect(gcCtrl._redeemCalls[0].code).toBe("GIFT-TEST-1234-5678");
+		expect(gcCtrl._redeemCalls[0].amount).toBe(1500);
+
+		// Order should have the correct gift card amount
+		expect(orderCtrl._orders).toHaveLength(1);
+		expect(orderCtrl._orders[0].giftCardAmount).toBe(1500);
+		// 4000 + 400 + 500 - 0 - 1500 = 3400
+		expect(orderCtrl._orders[0].total).toBe(3400);
+
+		// Session should be completed
+		expect("session" in result).toBe(true);
+		if ("session" in result) {
+			expect(result.session.status).toBe("completed");
+		}
+	});
+
+	it("rejects completion when gift card redemption fails", async () => {
+		const ctrl = createCheckoutController(createMockDataService());
+		const gcCtrl = createMockGiftCardController({ failRedeem: true });
+		const orderCtrl = createMockOrderController();
+
+		const session = await ctrl.create(makeSession());
+		await ctrl.applyGiftCard(session.id, {
+			code: "EXPIRED-CARD",
+			giftCardAmount: 1000,
+		});
+
+		const result = await simulateCompleteWithGiftCard(ctrl, session.id, {
+			giftCardCtrl: gcCtrl,
+			orderCtrl,
+		});
+
+		// Should fail
+		expect("error" in result).toBe(true);
+		if ("error" in result) {
+			expect(result.error).toContain("Gift card could not be redeemed");
+			expect(result.status).toBe(422);
+		}
+
+		// No order should be created
+		expect(orderCtrl._orders).toHaveLength(0);
+	});
+
+	it("adjusts order total when redeemed amount is less than expected", async () => {
+		const ctrl = createCheckoutController(createMockDataService());
+		// Card only has $10 balance but session expects $15 discount
+		const gcCtrl = createMockGiftCardController({ balance: 1000 });
+		const orderCtrl = createMockOrderController();
+
+		const session = await ctrl.create(makeSession());
+		await ctrl.applyGiftCard(session.id, {
+			code: "LOW-BALANCE",
+			giftCardAmount: 1500,
+		});
+
+		const result = await simulateCompleteWithGiftCard(ctrl, session.id, {
+			giftCardCtrl: gcCtrl,
+			orderCtrl,
+		});
+
+		// Redemption should succeed with capped amount
+		expect("session" in result).toBe(true);
+		if ("actualGiftCardAmount" in result) {
+			expect(result.actualGiftCardAmount).toBe(1000);
+		}
+
+		// Order should have adjusted amounts
+		expect(orderCtrl._orders).toHaveLength(1);
+		expect(orderCtrl._orders[0].giftCardAmount).toBe(1000);
+		// 4000 + 400 + 500 - 0 - 1000 = 3900 (not 3400 which would be with 1500)
+		expect(orderCtrl._orders[0].total).toBe(3900);
+	});
+
+	it("completes normally when no gift card is applied", async () => {
+		const ctrl = createCheckoutController(createMockDataService());
+		const gcCtrl = createMockGiftCardController();
+		const orderCtrl = createMockOrderController();
+
+		const session = await ctrl.create(makeSession());
+
+		const result = await simulateCompleteWithGiftCard(ctrl, session.id, {
+			giftCardCtrl: gcCtrl,
+			orderCtrl,
+		});
+
+		// No gift card redemption calls
+		expect(gcCtrl._redeemCalls).toHaveLength(0);
+
+		// Order should have original total
+		expect(orderCtrl._orders).toHaveLength(1);
+		expect(orderCtrl._orders[0].giftCardAmount).toBe(0);
+		expect(orderCtrl._orders[0].total).toBe(4900);
+
+		expect("session" in result).toBe(true);
+	});
+
+	it("completes without gift card module (no giftCardCtrl)", async () => {
+		const ctrl = createCheckoutController(createMockDataService());
+		const orderCtrl = createMockOrderController();
+
+		const session = await ctrl.create(makeSession());
+		await ctrl.applyGiftCard(session.id, {
+			code: "GIFT-NO-MODULE",
+			giftCardAmount: 1000,
+		});
+
+		const result = await simulateCompleteWithGiftCard(ctrl, session.id, {
+			giftCardCtrl: undefined,
+			orderCtrl,
+		});
+
+		// Should complete using the session's stored giftCardAmount
+		expect(orderCtrl._orders).toHaveLength(1);
+		expect(orderCtrl._orders[0].giftCardAmount).toBe(1000);
+
+		expect("session" in result).toBe(true);
+	});
+
+	it("does not redeem gift card when code is empty", async () => {
+		const ctrl = createCheckoutController(createMockDataService());
+		const gcCtrl = createMockGiftCardController();
+
+		const session = await ctrl.create(makeSession());
+		// Session has giftCardAmount=0 and no giftCardCode by default
+
+		await simulateCompleteWithGiftCard(ctrl, session.id, {
+			giftCardCtrl: gcCtrl,
+		});
+
+		expect(gcCtrl._redeemCalls).toHaveLength(0);
 	});
 });

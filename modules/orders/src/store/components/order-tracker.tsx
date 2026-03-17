@@ -220,6 +220,14 @@ export function OrderTracker() {
 							</span>
 						</div>
 					)}
+					{order.giftCardAmount > 0 && (
+						<div className="flex justify-between">
+							<span className="text-muted-foreground">Gift Card</span>
+							<span className="text-emerald-600 dark:text-emerald-400">
+								-{formatPrice(order.giftCardAmount, order.currency)}
+							</span>
+						</div>
+					)}
 					{order.shippingAmount > 0 && (
 						<div className="flex justify-between">
 							<span className="text-muted-foreground">Shipping</span>

@@ -43,6 +43,7 @@ interface OrderWithDetails {
 	taxAmount: number;
 	shippingAmount: number;
 	discountAmount: number;
+	giftCardAmount: number;
 	total: number;
 	currency: string;
 	notes?: string | undefined;
@@ -1518,6 +1519,14 @@ export function OrderDetail(props: {
 									<span className="text-muted-foreground">Discount</span>
 									<span className="text-emerald-600 tabular-nums dark:text-emerald-400">
 										-{formatPrice(order.discountAmount, order.currency)}
+									</span>
+								</div>
+							)}
+							{order.giftCardAmount > 0 && (
+								<div className="flex justify-between">
+									<span className="text-muted-foreground">Gift Card</span>
+									<span className="text-emerald-600 tabular-nums dark:text-emerald-400">
+										-{formatPrice(order.giftCardAmount, order.currency)}
 									</span>
 								</div>
 							)}

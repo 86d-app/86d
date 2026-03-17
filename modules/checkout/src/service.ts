@@ -99,6 +99,7 @@ export interface OrderCreateController {
 		taxAmount?: number | undefined;
 		shippingAmount?: number | undefined;
 		discountAmount?: number | undefined;
+		giftCardAmount?: number | undefined;
 		total: number;
 		metadata?: Record<string, unknown> | undefined;
 		items: Array<{

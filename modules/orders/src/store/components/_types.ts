@@ -8,6 +8,7 @@ export interface Order {
 	taxAmount: number;
 	shippingAmount: number;
 	discountAmount: number;
+	giftCardAmount: number;
 	total: number;
 	currency: string;
 	notes?: string | undefined;
