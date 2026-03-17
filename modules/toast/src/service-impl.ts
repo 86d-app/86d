@@ -1,4 +1,5 @@
 import type { ModuleDataService, ScopedEventEmitter } from "@86d-app/core";
+import type { ToastPosProvider } from "./provider";
 import type {
 	MenuMapping,
 	SyncDirection,
@@ -8,9 +9,10 @@ import type {
 	ToastController,
 } from "./service";
 
-function createSyncRecord(
+async function createSyncRecord(
 	data: ModuleDataService,
 	events: ScopedEventEmitter | undefined,
+	provider: ToastPosProvider | undefined,
 	entityType: SyncEntityType,
 	eventName: string,
 	params: {
@@ -21,39 +23,60 @@ function createSyncRecord(
 ): Promise<SyncRecord> {
 	const now = new Date();
 	const id = crypto.randomUUID();
+	const direction = params.direction ?? "outbound";
+	let status: SyncRecord["status"] = "synced";
+	let error: string | undefined;
+
+	// Actually call Toast API when provider is available
+	if (provider) {
+		try {
+			if (entityType === "menu-item" && direction === "inbound") {
+				await provider.getMenuItem(params.externalId);
+			} else if (entityType === "order" && direction === "inbound") {
+				await provider.getOrder(params.externalId);
+			} else if (entityType === "inventory") {
+				await provider.getInventory();
+			}
+		} catch (err) {
+			status = "failed";
+			error = err instanceof Error ? err.message : "Toast API call failed";
+		}
+	}
+
 	const record: SyncRecord = {
 		id,
 		entityType,
 		entityId: params.entityId,
 		externalId: params.externalId,
-		direction: params.direction ?? "outbound",
-		status: "synced",
-		syncedAt: now,
+		direction,
+		status,
+		...(error ? { error } : {}),
+		...(status === "synced" ? { syncedAt: now } : {}),
 		createdAt: now,
 		updatedAt: now,
 	};
-	return (async () => {
-		// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-		await data.upsert("syncRecord", id, record as Record<string, any>);
-		void events?.emit(eventName, {
-			syncRecordId: record.id,
-			entityType,
-			entityId: record.entityId,
-			externalId: record.externalId,
-		});
-		return record;
-	})();
+	// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+	await data.upsert("syncRecord", id, record as Record<string, any>);
+	void events?.emit(eventName, {
+		syncRecordId: record.id,
+		entityType,
+		entityId: record.entityId,
+		externalId: record.externalId,
+	});
+	return record;
 }
 
 export function createToastController(
 	data: ModuleDataService,
 	events?: ScopedEventEmitter | undefined,
+	provider?: ToastPosProvider | undefined,
 ): ToastController {
 	return {
 		async syncMenu(params) {
 			return createSyncRecord(
 				data,
 				events,
+				provider,
 				"menu-item",
 				"toast.menu.synced",
 				params,
@@ -64,6 +87,7 @@ export function createToastController(
 			return createSyncRecord(
 				data,
 				events,
+				provider,
 				"order",
 				"toast.order.synced",
 				params,
@@ -74,6 +98,7 @@ export function createToastController(
 			return createSyncRecord(
 				data,
 				events,
+				provider,
 				"inventory",
 				"toast.inventory.updated",
 				params,

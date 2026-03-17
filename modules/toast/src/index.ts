@@ -1,9 +1,11 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
 import { adminEndpoints } from "./admin/endpoints";
+import { ToastPosProvider } from "./provider";
 import { toastSchema } from "./schema";
 import { createToastController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints";
 
+export { ToastPosProvider } from "./provider";
 export type {
 	MenuMapping,
 	SyncDirection,
@@ -15,15 +17,22 @@ export type {
 } from "./service";
 
 export interface ToastOptions extends ModuleConfig {
-	/** Toast API key */
+	/** Toast API access token */
 	apiKey?: string;
-	/** Toast restaurant GUID */
+	/** Toast restaurant external GUID */
 	restaurantGuid?: string;
 	/** Use sandbox mode (default: "true") */
 	sandbox?: string;
 }
 
 export default function toast(options?: ToastOptions): Module {
+	let provider: ToastPosProvider | undefined;
+	if (options?.apiKey && options?.restaurantGuid) {
+		provider = new ToastPosProvider(options.apiKey, options.restaurantGuid, {
+			sandbox: options.sandbox !== "false",
+		});
+	}
+
 	return {
 		id: "toast",
 		version: "0.0.1",
@@ -40,7 +49,7 @@ export default function toast(options?: ToastOptions): Module {
 			],
 		},
 		init: async (ctx: ModuleContext) => {
-			const controller = createToastController(ctx.data, ctx.events);
+			const controller = createToastController(ctx.data, ctx.events, provider);
 			return { controllers: { toast: controller } };
 		},
 		endpoints: {

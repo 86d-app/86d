@@ -558,6 +558,23 @@ if (process.env.OPENAI_API_KEY) {
 `;
 	}
 
+	// Generate Toast POS wiring code
+	const hasToast = modules.includes("@86d-app/toast");
+	let toastWiringCode = "";
+	if (hasToast) {
+		toastWiringCode = `
+// ── Toast POS wiring (env-var based) ──
+if (process.env.TOAST_API_KEY && process.env.TOAST_RESTAURANT_GUID) {
+  moduleOptions["@86d-app/toast"] = {
+    ...moduleOptions["@86d-app/toast"],
+    apiKey: process.env.TOAST_API_KEY,
+    restaurantGuid: process.env.TOAST_RESTAURANT_GUID,
+    ...(process.env.TOAST_SANDBOX !== undefined ? { sandbox: process.env.TOAST_SANDBOX } : {}),
+  };
+}
+`;
+	}
+
 	// Generate API router content
 	const routerContent = `// Auto-generated file - do not edit manually
 // Run 'pnpm generate:modules' to regenerate
@@ -570,7 +587,7 @@ ${moduleImports}
 ${providerImports.length > 0 ? `\n${providerImports.join("\n")}\n` : ""}
 // biome-ignore lint/suspicious/noExplicitAny: module option types are heterogeneous across modules
 const moduleOptions: Record<string, Record<string, any>> = ${JSON.stringify(moduleOptions, null, 2)};
-${providerWiringCode}${searchWiringCode}
+${providerWiringCode}${searchWiringCode}${toastWiringCode}
 const modules = [
 ${moduleInstances}
 ];
