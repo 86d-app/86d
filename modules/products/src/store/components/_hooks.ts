@@ -53,6 +53,16 @@ export function useAnalyticsApi() {
 	};
 }
 
+export function useRecommendationsApi() {
+	const client = useModuleClient();
+	return {
+		getForProduct:
+			client.module("recommendations").store["/recommendations/:productId"],
+		getTrending:
+			client.module("recommendations").store["/recommendations/trending"],
+	};
+}
+
 /** Fire-and-forget analytics event via the analytics module endpoint. */
 export function useTrack() {
 	const client = useModuleClient();

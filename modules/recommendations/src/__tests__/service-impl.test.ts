@@ -1,5 +1,5 @@
 import { createMockDataService } from "@86d-app/core/test-utils";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createRecommendationController } from "../service-impl";
 
 describe("createRecommendationController", () => {
@@ -911,6 +911,8 @@ describe("createRecommendationController", () => {
 				activeRules: 0,
 				totalCoOccurrences: 0,
 				totalInteractions: 0,
+				embeddingsCount: 0,
+				aiConfigured: false,
 			});
 		});
 
@@ -941,6 +943,304 @@ describe("createRecommendationController", () => {
 			expect(stats.activeRules).toBe(1);
 			expect(stats.totalCoOccurrences).toBe(3); // 3 pairs from 3 products
 			expect(stats.totalInteractions).toBe(1);
+			expect(stats.embeddingsCount).toBe(0);
+			expect(stats.aiConfigured).toBe(false);
+		});
+	});
+
+	// ============================================================
+	// AI — no provider (graceful degradation)
+	// ============================================================
+
+	describe("generateProductEmbedding (no provider)", () => {
+		it("returns null when no embedding provider configured", async () => {
+			const result = await controller.generateProductEmbedding(
+				"prod_1",
+				"Awesome laptop",
+			);
+			expect(result).toBeNull();
+		});
+	});
+
+	describe("getAISimilar (no provider)", () => {
+		it("returns empty array when no embedding provider configured", async () => {
+			const results = await controller.getAISimilar("prod_1");
+			expect(results).toHaveLength(0);
+		});
+	});
+});
+
+// ============================================================
+// AI — with mock embedding provider
+// ============================================================
+
+describe("createRecommendationController (with AI)", () => {
+	let mockData: ReturnType<typeof createMockDataService>;
+	let aiController: ReturnType<typeof createRecommendationController>;
+
+	const mockEmbeddingProvider = {
+		generateEmbedding: vi.fn(),
+		generateEmbeddings: vi.fn(),
+	};
+
+	beforeEach(() => {
+		mockData = createMockDataService();
+		mockEmbeddingProvider.generateEmbedding.mockReset();
+		mockEmbeddingProvider.generateEmbeddings.mockReset();
+		aiController = createRecommendationController(
+			mockData,
+			undefined,
+			mockEmbeddingProvider,
+		);
+	});
+
+	describe("generateProductEmbedding", () => {
+		it("generates and stores an embedding for a product", async () => {
+			const vec = [0.1, 0.2, 0.3];
+			mockEmbeddingProvider.generateEmbedding.mockResolvedValue(vec);
+
+			const result = await aiController.generateProductEmbedding(
+				"prod_1",
+				"Premium leather wallet",
+				{ productName: "Leather Wallet", productSlug: "leather-wallet" },
+			);
+
+			expect(result).not.toBeNull();
+			expect(result?.productId).toBe("prod_1");
+			expect(result?.embedding).toEqual(vec);
+			expect(result?.text).toBe("Premium leather wallet");
+			expect(mockEmbeddingProvider.generateEmbedding).toHaveBeenCalledWith(
+				"Premium leather wallet",
+			);
+		});
+
+		it("returns null when embedding API fails", async () => {
+			mockEmbeddingProvider.generateEmbedding.mockResolvedValue(null);
+
+			const result = await aiController.generateProductEmbedding(
+				"prod_1",
+				"Some product",
+			);
+
+			expect(result).toBeNull();
+		});
+
+		it("updates existing embedding for same product", async () => {
+			mockEmbeddingProvider.generateEmbedding.mockResolvedValue([0.1, 0.2]);
+
+			const first = await aiController.generateProductEmbedding(
+				"prod_1",
+				"First description",
+			);
+
+			mockEmbeddingProvider.generateEmbedding.mockResolvedValue([0.3, 0.4]);
+			const second = await aiController.generateProductEmbedding(
+				"prod_1",
+				"Updated description",
+			);
+
+			expect(first?.id).toBe(second?.id);
+			expect(second?.text).toBe("Updated description");
+		});
+	});
+
+	describe("getAISimilar", () => {
+		it("returns products ranked by cosine similarity", async () => {
+			// Source product: [1, 0, 0]
+			mockEmbeddingProvider.generateEmbedding.mockResolvedValueOnce([1, 0, 0]);
+			await aiController.generateProductEmbedding(
+				"prod_source",
+				"Source product",
+			);
+
+			// Similar product: [0.9, 0.1, 0]  (high similarity)
+			mockEmbeddingProvider.generateEmbedding.mockResolvedValueOnce([
+				0.9, 0.1, 0,
+			]);
+			await aiController.generateProductEmbedding(
+				"prod_similar",
+				"Similar product",
+				{ productName: "Similar", productSlug: "similar" },
+			);
+
+			// Dissimilar product: [0, 0, 1]  (orthogonal, zero similarity)
+			mockEmbeddingProvider.generateEmbedding.mockResolvedValueOnce([0, 0, 1]);
+			await aiController.generateProductEmbedding(
+				"prod_different",
+				"Different product",
+				{ productName: "Different", productSlug: "different" },
+			);
+
+			const results = await aiController.getAISimilar("prod_source");
+
+			expect(results).toHaveLength(1); // Only the similar one (>0 similarity)
+			expect(results[0].productId).toBe("prod_similar");
+			expect(results[0].strategy).toBe("ai_similar");
+			expect(results[0].score).toBeGreaterThan(0.9);
+		});
+
+		it("returns empty when source product has no embedding", async () => {
+			const results = await aiController.getAISimilar("prod_no_embedding");
+			expect(results).toHaveLength(0);
+		});
+
+		it("excludes the source product from results", async () => {
+			mockEmbeddingProvider.generateEmbedding.mockResolvedValue([1, 0, 0]);
+			await aiController.generateProductEmbedding("prod_only", "Only product");
+
+			const results = await aiController.getAISimilar("prod_only");
+			expect(results).toHaveLength(0);
+		});
+
+		it("respects take limit", async () => {
+			mockEmbeddingProvider.generateEmbedding.mockResolvedValueOnce([1, 0, 0]);
+			await aiController.generateProductEmbedding("prod_src", "Source");
+
+			for (let i = 0; i < 5; i++) {
+				mockEmbeddingProvider.generateEmbedding.mockResolvedValueOnce([
+					0.9 - i * 0.1,
+					0.1 + i * 0.1,
+					0,
+				]);
+				await aiController.generateProductEmbedding(
+					`prod_${i}`,
+					`Product ${i}`,
+					{ productName: `Product ${i}`, productSlug: `product-${i}` },
+				);
+			}
+
+			const results = await aiController.getAISimilar("prod_src", { take: 2 });
+			expect(results).toHaveLength(2);
+			// First result should have highest similarity
+			expect(results[0].score).toBeGreaterThan(results[1].score);
+		});
+
+		it("looks up product info from interactions when not on embedding", async () => {
+			mockEmbeddingProvider.generateEmbedding.mockResolvedValueOnce([1, 0]);
+			await aiController.generateProductEmbedding("prod_src", "Source");
+
+			mockEmbeddingProvider.generateEmbedding.mockResolvedValueOnce([0.9, 0.1]);
+			await aiController.generateProductEmbedding(
+				"prod_target",
+				"Target product",
+			);
+
+			// Track an interaction for the target product with metadata
+			await aiController.trackInteraction({
+				productId: "prod_target",
+				customerId: "cust_1",
+				type: "view",
+				productName: "Nice Widget",
+				productSlug: "nice-widget",
+				productImage: "/img/widget.jpg",
+				productPrice: 2999,
+			});
+
+			const results = await aiController.getAISimilar("prod_src");
+			expect(results).toHaveLength(1);
+			expect(results[0].productName).toBe("Nice Widget");
+			expect(results[0].productSlug).toBe("nice-widget");
+			expect(results[0].productImage).toBe("/img/widget.jpg");
+			expect(results[0].productPrice).toBe(2999);
+		});
+	});
+
+	describe("getForProduct with ai_similar strategy", () => {
+		it("includes AI similar results when strategy is ai_similar", async () => {
+			mockEmbeddingProvider.generateEmbedding.mockResolvedValueOnce([1, 0]);
+			await aiController.generateProductEmbedding("prod_src", "Source");
+
+			mockEmbeddingProvider.generateEmbedding.mockResolvedValueOnce([0.9, 0.1]);
+			await aiController.generateProductEmbedding("prod_ai_match", "AI match", {
+				productName: "AI Match",
+				productSlug: "ai-match",
+			});
+
+			const recs = await aiController.getForProduct("prod_src", {
+				strategy: "ai_similar",
+			});
+
+			expect(recs).toHaveLength(1);
+			expect(recs[0].strategy).toBe("ai_similar");
+			expect(recs[0].productId).toBe("prod_ai_match");
+		});
+
+		it("includes AI similar alongside other strategies when no filter", async () => {
+			// Set up AI embeddings
+			mockEmbeddingProvider.generateEmbedding.mockResolvedValueOnce([1, 0]);
+			await aiController.generateProductEmbedding("prod_src", "Source");
+
+			mockEmbeddingProvider.generateEmbedding.mockResolvedValueOnce([0.9, 0.1]);
+			await aiController.generateProductEmbedding("prod_ai_match", "AI match", {
+				productName: "AI Match",
+				productSlug: "ai-match",
+			});
+
+			// Set up manual rule
+			await aiController.trackInteraction({
+				productId: "prod_manual_target",
+				customerId: "cust_1",
+				type: "view",
+				productName: "Manual Target",
+				productSlug: "manual-target",
+			});
+			await aiController.createRule({
+				name: "Manual Rec",
+				strategy: "manual",
+				sourceProductId: "prod_src",
+				targetProductIds: ["prod_manual_target"],
+				weight: 10,
+			});
+
+			const recs = await aiController.getForProduct("prod_src");
+
+			const strategies = [...new Set(recs.map((r) => r.strategy))];
+			expect(strategies).toContain("manual");
+			expect(strategies).toContain("ai_similar");
+		});
+
+		it("does not duplicate products already found by other strategies", async () => {
+			mockEmbeddingProvider.generateEmbedding.mockResolvedValueOnce([1, 0]);
+			await aiController.generateProductEmbedding("prod_src", "Source");
+
+			mockEmbeddingProvider.generateEmbedding.mockResolvedValueOnce([0.9, 0.1]);
+			await aiController.generateProductEmbedding(
+				"prod_overlap",
+				"Overlap product",
+				{ productName: "Overlap", productSlug: "overlap" },
+			);
+
+			// Also add as manual recommendation
+			await aiController.trackInteraction({
+				productId: "prod_overlap",
+				customerId: "cust_1",
+				type: "view",
+				productName: "Overlap",
+				productSlug: "overlap",
+			});
+			await aiController.createRule({
+				name: "Manual for Overlap",
+				strategy: "manual",
+				sourceProductId: "prod_src",
+				targetProductIds: ["prod_overlap"],
+				weight: 5,
+			});
+
+			const recs = await aiController.getForProduct("prod_src");
+			const overlapEntries = recs.filter((r) => r.productId === "prod_overlap");
+			expect(overlapEntries).toHaveLength(1);
+		});
+	});
+
+	describe("getStats with AI", () => {
+		it("reports aiConfigured as true and tracks embeddings count", async () => {
+			mockEmbeddingProvider.generateEmbedding.mockResolvedValue([0.1, 0.2]);
+			await aiController.generateProductEmbedding("prod_1", "Product 1");
+			await aiController.generateProductEmbedding("prod_2", "Product 2");
+
+			const stats = await aiController.getStats();
+			expect(stats.aiConfigured).toBe(true);
+			expect(stats.embeddingsCount).toBe(2);
 		});
 	});
 });

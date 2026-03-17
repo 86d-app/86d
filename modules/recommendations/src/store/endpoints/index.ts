@@ -1,3 +1,4 @@
+import { getAISimilar } from "./get-ai-similar";
 import { getForProduct } from "./get-for-product";
 import { getPersonalized } from "./get-personalized";
 import { getTrending } from "./get-trending";
@@ -7,5 +8,6 @@ export const storeEndpoints = {
 	"/recommendations/trending": getTrending,
 	"/recommendations/personalized": getPersonalized,
 	"/recommendations/track": trackInteraction,
+	"/recommendations/:productId/similar": getAISimilar,
 	"/recommendations/:productId": getForProduct,
 };

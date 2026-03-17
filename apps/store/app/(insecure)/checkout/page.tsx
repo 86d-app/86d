@@ -115,7 +115,7 @@ function StepIndicator({ current }: { current: CheckoutStep }) {
 										? "text-foreground"
 										: isComplete
 											? "text-foreground/60"
-											: "text-muted-foreground/50"
+											: "text-muted-foreground"
 								}`}
 								aria-current={isCurrent ? "step" : undefined}
 							>

@@ -16,9 +16,7 @@ export default function Error({
 
 	return (
 		<div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
-			<p className="font-bold font-mono text-7xl text-muted-foreground/50">
-				500
-			</p>
+			<p className="font-bold font-mono text-7xl text-muted-foreground">500</p>
 			<h1 className="mt-4 font-semibold text-foreground text-xl tracking-tight">
 				Something went wrong
 			</h1>

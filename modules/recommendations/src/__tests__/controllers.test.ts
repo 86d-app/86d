@@ -664,6 +664,8 @@ describe("recommendation controllers — edge cases", () => {
 				activeRules: 0,
 				totalCoOccurrences: 0,
 				totalInteractions: 0,
+				embeddingsCount: 0,
+				aiConfigured: false,
 			});
 		});
 

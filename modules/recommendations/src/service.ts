@@ -4,7 +4,8 @@ export type RecommendationStrategy =
 	| "manual"
 	| "bought_together"
 	| "trending"
-	| "personalized";
+	| "personalized"
+	| "ai_similar";
 
 export type InteractionType = "view" | "purchase" | "add_to_cart";
 
@@ -39,6 +40,14 @@ export interface ProductInteraction {
 	productImage?: string | undefined;
 	productPrice?: number | undefined;
 	productCategory?: string | undefined;
+	createdAt: Date;
+}
+
+export interface ProductEmbedding {
+	id: string;
+	productId: string;
+	embedding: number[];
+	text: string;
 	createdAt: Date;
 }
 
@@ -131,11 +140,30 @@ export interface RecommendationController extends ModuleController {
 		params?: { take?: number | undefined },
 	): Promise<RecommendedProduct[]>;
 
+	// --- AI embeddings ---
+	generateProductEmbedding(
+		productId: string,
+		text: string,
+		metadata?: {
+			productName?: string | undefined;
+			productSlug?: string | undefined;
+			productImage?: string | undefined;
+			productPrice?: number | undefined;
+		},
+	): Promise<ProductEmbedding | null>;
+
+	getAISimilar(
+		productId: string,
+		params?: { take?: number | undefined },
+	): Promise<RecommendedProduct[]>;
+
 	// --- Admin stats ---
 	getStats(): Promise<{
 		totalRules: number;
 		activeRules: number;
 		totalCoOccurrences: number;
 		totalInteractions: number;
+		embeddingsCount: number;
+		aiConfigured: boolean;
 	}>;
 }

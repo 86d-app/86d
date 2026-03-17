@@ -42,7 +42,7 @@ const pool = new pg.Pool({ connectionString: DATABASE_URL });
 /* Helpers                                                             */
 /* ------------------------------------------------------------------ */
 
-const STORE_ID = process.env.STORE_ID || "demo5b9d-c517-4c65-896e-8edef5cf5a94";
+const STORE_ID = process.env.STORE_ID || "de005b9d-c517-4c65-896e-8edef5cf5a94";
 const now = new Date().toISOString();
 
 /**
@@ -181,7 +181,7 @@ const moduleNames = [
 ];
 
 for (const name of moduleNames) {
-	moduleIds[name] = uuid(`module:${name}`);
+	moduleIds[name] = uuid(`module:${STORE_ID}:${name}`);
 }
 
 /* ------------------------------------------------------------------ */
@@ -607,7 +607,7 @@ async function insertModuleData(
 	// 1. Each (module, entityType, entityId) gets a deterministic primary key.
 	// 2. Re-running the seed conflicts on BOTH the primary key AND the
 	//    composite unique constraint — the ON CONFLICT handler matches.
-	const rowId = uuid(`module-data:${moduleName}:${entityType}:${entityId}`);
+	const rowId = uuid(`module-data:${STORE_ID}:${moduleName}:${entityType}:${entityId}`);
 	await client.query(
 		`INSERT INTO "ModuleData" (id, cuid, "entityType", "entityId", data, "moduleId", "createdAt", "updatedAt")
 		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)

@@ -1,6 +1,9 @@
 import type { ModuleDataService, ScopedEventEmitter } from "@86d-app/core";
+import type { EmbeddingProvider } from "./embedding-provider";
+import { cosineSimilarity } from "./embedding-provider";
 import type {
 	CoOccurrence,
+	ProductEmbedding,
 	ProductInteraction,
 	RecommendationController,
 	RecommendationRule,
@@ -12,6 +15,7 @@ const DEFAULT_TAKE = 10;
 export function createRecommendationController(
 	data: ModuleDataService,
 	events?: ScopedEventEmitter | undefined,
+	embeddingProvider?: EmbeddingProvider | undefined,
 ): RecommendationController {
 	return {
 		// --- Rules ---
@@ -296,6 +300,16 @@ export function createRecommendationController(
 				}
 			}
 
+			// AI similar
+			if (strategy === "ai_similar" || (!strategy && embeddingProvider)) {
+				const aiResults = await this.getAISimilar(productId, { take });
+				for (const rec of aiResults) {
+					if (!results.some((r) => r.productId === rec.productId)) {
+						results.push(rec);
+					}
+				}
+			}
+
 			// Sort by score descending, limit
 			const sorted = results.sort((a, b) => b.score - a.score).slice(0, take);
 			if (sorted.length > 0) {
@@ -482,6 +496,122 @@ export function createRecommendationController(
 				.map((p) => ({ ...p, strategy: "personalized" as const }));
 		},
 
+		// --- AI embeddings ---
+
+		async generateProductEmbedding(productId, text, metadata) {
+			if (!embeddingProvider) return null;
+
+			const embedding = await embeddingProvider.generateEmbedding(text);
+			if (!embedding) return null;
+
+			// Check for existing embedding for this product
+			const existing = (await data.findMany("productEmbedding", {
+				where: { productId },
+			})) as unknown as ProductEmbedding[];
+
+			const id = existing.length > 0 ? existing[0].id : crypto.randomUUID();
+			const entry: ProductEmbedding = {
+				id,
+				productId,
+				embedding,
+				text,
+				createdAt: new Date(),
+			};
+
+			await data.upsert(
+				"productEmbedding",
+				id,
+				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+				{ ...entry, ...(metadata ?? {}) } as Record<string, any>,
+			);
+
+			return entry;
+		},
+
+		async getAISimilar(productId, params) {
+			if (!embeddingProvider) return [];
+
+			const take = params?.take ?? DEFAULT_TAKE;
+
+			// Get source product embedding
+			const sourceEmbeddings = (await data.findMany("productEmbedding", {
+				where: { productId },
+			})) as unknown as ProductEmbedding[];
+
+			if (sourceEmbeddings.length === 0) return [];
+
+			const sourceVec = sourceEmbeddings[0].embedding;
+			if (!Array.isArray(sourceVec) || sourceVec.length === 0) return [];
+
+			// Get all embeddings
+			const allEmbeddings = (await data.findMany(
+				"productEmbedding",
+				{},
+			)) as unknown as Array<
+				ProductEmbedding & {
+					productName?: string;
+					productSlug?: string;
+					productImage?: string;
+					productPrice?: number;
+				}
+			>;
+
+			// Score each by cosine similarity, excluding the source product
+			const scored: RecommendedProduct[] = [];
+			for (const entry of allEmbeddings) {
+				if (entry.productId === productId) continue;
+				if (
+					!Array.isArray(entry.embedding) ||
+					entry.embedding.length !== sourceVec.length
+				) {
+					continue;
+				}
+
+				const similarity = cosineSimilarity(sourceVec, entry.embedding);
+				if (similarity <= 0) continue;
+
+				// Look up product info from interactions if not stored on embedding
+				let productName = entry.productName ?? entry.productId;
+				let productSlug = entry.productSlug ?? entry.productId;
+				let productImage = entry.productImage;
+				let productPrice = entry.productPrice;
+
+				if (!entry.productName) {
+					const interactions = (await data.findMany("productInteraction", {
+						where: { productId: entry.productId },
+						take: 1,
+					})) as unknown as ProductInteraction[];
+
+					if (interactions.length > 0) {
+						productName = interactions[0].productName;
+						productSlug = interactions[0].productSlug;
+						productImage = interactions[0].productImage;
+						productPrice = interactions[0].productPrice;
+					}
+				}
+
+				scored.push({
+					productId: entry.productId,
+					productName,
+					productSlug,
+					productImage,
+					productPrice,
+					score: similarity,
+					strategy: "ai_similar",
+				});
+			}
+
+			const results = scored.sort((a, b) => b.score - a.score).slice(0, take);
+			if (results.length > 0) {
+				void events?.emit("recommendation.served", {
+					productId,
+					count: results.length,
+					strategies: ["ai_similar"],
+				});
+			}
+			return results;
+		},
+
 		// --- Stats ---
 
 		async getStats() {
@@ -491,12 +621,15 @@ export function createRecommendationController(
 			);
 			const allCo = await data.findMany("coOccurrence", {});
 			const allInteractions = await data.findMany("productInteraction", {});
+			const allEmbeddings = await data.findMany("productEmbedding", {});
 
 			return {
 				totalRules: allRules.length,
 				activeRules: activeRules.length,
 				totalCoOccurrences: allCo.length,
 				totalInteractions: allInteractions.length,
+				embeddingsCount: allEmbeddings.length,
+				aiConfigured: Boolean(embeddingProvider),
 			};
 		},
 	};

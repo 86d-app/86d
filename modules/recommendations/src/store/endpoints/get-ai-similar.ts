@@ -1,20 +1,11 @@
 import { createStoreEndpoint, z } from "@86d-app/core";
 import type { RecommendationController } from "../../service";
 
-export const getForProduct = createStoreEndpoint(
-	"/recommendations/:productId",
+export const getAISimilar = createStoreEndpoint(
+	"/recommendations/:productId/similar",
 	{
 		method: "GET",
 		query: z.object({
-			strategy: z
-				.enum([
-					"manual",
-					"bought_together",
-					"trending",
-					"personalized",
-					"ai_similar",
-				])
-				.optional(),
 			take: z.coerce.number().int().min(1).max(50).optional(),
 		}),
 	},
@@ -26,10 +17,9 @@ export const getForProduct = createStoreEndpoint(
 			(ctx.context.options as Record<string, unknown>)?.defaultTake,
 		);
 
-		const recommendations = await controller.getForProduct(
+		const recommendations = await controller.getAISimilar(
 			ctx.params.productId,
 			{
-				strategy: ctx.query.strategy,
 				take:
 					ctx.query.take ??
 					(Number.isFinite(defaultTake) ? defaultTake : undefined),

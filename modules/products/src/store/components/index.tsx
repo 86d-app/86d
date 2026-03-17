@@ -12,6 +12,7 @@ import { ProductDetail } from "./product-detail";
 import { ProductListing } from "./product-listing";
 import { ProductReviewsSection } from "./product-reviews-section";
 import { RecentlyViewedProducts } from "./recently-viewed";
+import { RecommendedProducts } from "./recommended-products";
 import { RelatedProducts } from "./related-products";
 import { StarDisplay } from "./star-display";
 import { StarPicker } from "./star-picker";
@@ -36,4 +37,5 @@ export default {
 	StockBadge,
 	ProductReviewsSection,
 	RecentlyViewedProducts,
+	RecommendedProducts,
 } satisfies MDXComponents;

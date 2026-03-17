@@ -54,4 +54,17 @@ export const recommendationsSchema = {
 			},
 		},
 	},
+	productEmbedding: {
+		fields: {
+			id: { type: "string", required: true },
+			productId: { type: "string", required: true },
+			embedding: { type: "json", required: true },
+			text: { type: "string", required: true },
+			createdAt: {
+				type: "date",
+				required: true,
+				defaultValue: () => new Date(),
+			},
+		},
+	},
 } satisfies ModuleSchema;

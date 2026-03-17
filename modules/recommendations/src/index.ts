@@ -1,11 +1,15 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
 import { adminEndpoints } from "./admin/endpoints";
+import { OpenAIEmbeddingProvider } from "./embedding-provider";
 import { recommendationsSchema } from "./schema";
 import { createRecommendationController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints";
 
+export type { EmbeddingProvider } from "./embedding-provider";
+export { OpenAIEmbeddingProvider } from "./embedding-provider";
 export type {
 	CoOccurrence,
+	ProductEmbedding,
 	ProductInteraction,
 	RecommendationController,
 	RecommendationRule,
@@ -17,14 +21,32 @@ export interface RecommendationsOptions extends ModuleConfig {
 	defaultTake?: string;
 	/** Trending window in days. Default: 7. */
 	trendingWindowDays?: string;
+	/** OpenAI API key for AI-powered similarity recommendations */
+	openaiApiKey?: string;
+	/** OpenRouter API key (alternative to OpenAI) */
+	openrouterApiKey?: string;
+	/** Embedding model name (default: text-embedding-3-small) */
+	embeddingModel?: string;
 }
 
 export default function recommendations(
 	options?: RecommendationsOptions,
 ): Module {
+	let embeddingProvider: OpenAIEmbeddingProvider | undefined;
+	if (options?.openaiApiKey) {
+		embeddingProvider = new OpenAIEmbeddingProvider(options.openaiApiKey, {
+			...(options.embeddingModel ? { model: options.embeddingModel } : {}),
+		});
+	} else if (options?.openrouterApiKey) {
+		embeddingProvider = new OpenAIEmbeddingProvider(options.openrouterApiKey, {
+			model: options.embeddingModel ?? "openai/text-embedding-3-small",
+			baseUrl: "https://openrouter.ai/api/v1" as string,
+		});
+	}
+
 	return {
 		id: "recommendations",
-		version: "0.0.1",
+		version: "0.1.0",
 		schema: recommendationsSchema,
 		exports: {
 			read: [
@@ -32,13 +54,18 @@ export default function recommendations(
 				"coOccurrences",
 				"productInteractions",
 				"recommendedProducts",
+				"productEmbeddings",
 			],
 		},
 		events: {
 			emits: ["recommendation.served", "recommendation.interaction.tracked"],
 		},
 		init: async (ctx: ModuleContext) => {
-			const controller = createRecommendationController(ctx.data, ctx.events);
+			const controller = createRecommendationController(
+				ctx.data,
+				ctx.events,
+				embeddingProvider,
+			);
 			return { controllers: { recommendations: controller } };
 		},
 		endpoints: {
