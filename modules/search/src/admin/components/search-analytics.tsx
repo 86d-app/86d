@@ -25,9 +25,25 @@ interface Synonym {
 	createdAt: string;
 }
 
+interface SearchSettings {
+	meilisearch: {
+		configured: boolean;
+		host: string | null;
+		apiKey: string | null;
+		indexUid: string;
+	};
+	embeddings: {
+		configured: boolean;
+		provider: "openai" | "openrouter" | null;
+		model: string;
+	};
+	indexCount: number;
+}
+
 function useSearchAdminApi() {
 	const client = useModuleClient();
 	return {
+		settings: client.module("search").admin["/admin/search/settings"],
 		analytics: client.module("search").admin["/admin/search/analytics"],
 		popular: client.module("search").admin["/admin/search/popular"],
 		zeroResults: client.module("search").admin["/admin/search/zero-results"],
@@ -49,11 +65,40 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
 	);
 }
 
+function ConfigBadge({
+	configured,
+	label,
+}: {
+	configured: boolean;
+	label: string;
+}) {
+	return (
+		<span
+			className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 font-medium text-xs ${
+				configured
+					? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+					: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+			}`}
+		>
+			<span
+				className={`inline-block size-1.5 rounded-full ${
+					configured ? "bg-emerald-500" : "bg-amber-500"
+				}`}
+			/>
+			{label}
+		</span>
+	);
+}
+
 export function SearchAnalytics() {
 	const api = useSearchAdminApi();
 	const [newTerm, setNewTerm] = useState("");
 	const [newSynonyms, setNewSynonyms] = useState("");
 	const [error, setError] = useState("");
+
+	const { data: settingsData } = api.settings.useQuery({}) as {
+		data: SearchSettings | undefined;
+	};
 
 	const { data: analyticsData, isLoading: analyticsLoading } =
 		api.analytics.useQuery({}) as {
@@ -132,6 +177,81 @@ export function SearchAnalytics() {
 
 	return (
 		<div className="space-y-8">
+			{/* Search engine configuration */}
+			{settingsData && (
+				<div className="rounded-lg border border-border bg-background p-5">
+					<h3 className="mb-4 font-medium text-foreground text-sm">
+						Search Configuration
+					</h3>
+					<div className="grid gap-4 sm:grid-cols-2">
+						<div className="flex flex-col gap-2">
+							<div className="flex items-center justify-between">
+								<span className="text-muted-foreground text-sm">
+									MeiliSearch
+								</span>
+								<ConfigBadge
+									configured={settingsData.meilisearch.configured}
+									label={
+										settingsData.meilisearch.configured
+											? "Connected"
+											: "Not configured"
+									}
+								/>
+							</div>
+							{settingsData.meilisearch.configured ? (
+								<div className="text-muted-foreground text-xs">
+									<p>Host: {settingsData.meilisearch.host}</p>
+									<p>Index: {settingsData.meilisearch.indexUid}</p>
+									<p>Key: {settingsData.meilisearch.apiKey}</p>
+								</div>
+							) : (
+								<p className="text-muted-foreground text-xs">
+									Using local search engine. Configure{" "}
+									<code className="rounded bg-muted px-1 text-[11px]">
+										MEILISEARCH_HOST
+									</code>{" "}
+									and{" "}
+									<code className="rounded bg-muted px-1 text-[11px]">
+										MEILISEARCH_API_KEY
+									</code>{" "}
+									for dedicated search.
+								</p>
+							)}
+						</div>
+						<div className="flex flex-col gap-2">
+							<div className="flex items-center justify-between">
+								<span className="text-muted-foreground text-sm">
+									AI Embeddings
+								</span>
+								<ConfigBadge
+									configured={settingsData.embeddings.configured}
+									label={
+										settingsData.embeddings.configured
+											? settingsData.embeddings.provider === "openai"
+												? "OpenAI"
+												: "OpenRouter"
+											: "Not configured"
+									}
+								/>
+							</div>
+							{settingsData.embeddings.configured ? (
+								<p className="text-muted-foreground text-xs">
+									Model: {settingsData.embeddings.model}
+								</p>
+							) : (
+								<p className="text-muted-foreground text-xs">
+									Semantic search disabled. Configure{" "}
+									<code className="rounded bg-muted px-1 text-[11px]">
+										OPENAI_API_KEY
+									</code>{" "}
+									for AI-powered results.
+								</p>
+							)}
+						</div>
+					</div>
+				</div>
+			)}
+
 			{/* Stats overview */}
 			{analytics && (
 				<div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">

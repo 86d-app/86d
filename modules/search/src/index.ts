@@ -1,13 +1,14 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
 import { adminEndpoints } from "./admin/endpoints";
 import { OpenAIEmbeddingProvider } from "./embedding-provider";
+import { MeiliSearchProvider } from "./meilisearch-provider";
 import { searchSchema } from "./schema";
 import { createSearchController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints";
 
 export type { EmbeddingProvider } from "./embedding-provider";
-
 export { OpenAIEmbeddingProvider } from "./embedding-provider";
+export type { MeiliSearchProvider } from "./meilisearch-provider";
 export type {
 	SearchClick,
 	SearchController,
@@ -29,6 +30,12 @@ export interface SearchOptions extends ModuleConfig {
 	openrouterApiKey?: string;
 	/** Embedding model name (default: text-embedding-3-small) */
 	embeddingModel?: string;
+	/** MeiliSearch host URL (e.g. http://localhost:7700) */
+	meilisearchHost?: string;
+	/** MeiliSearch API key (master or search key) */
+	meilisearchApiKey?: string;
+	/** MeiliSearch index name (default: "search") */
+	meilisearchIndexUid?: string;
 }
 
 export default function search(options?: SearchOptions): Module {
@@ -43,6 +50,16 @@ export default function search(options?: SearchOptions): Module {
 			model: options.embeddingModel ?? "openai/text-embedding-3-small",
 			baseUrl: "https://openrouter.ai/api/v1" as string,
 		});
+	}
+
+	// Create MeiliSearch provider when host and API key are configured
+	let meiliProvider: MeiliSearchProvider | undefined;
+	if (options?.meilisearchHost && options?.meilisearchApiKey) {
+		meiliProvider = new MeiliSearchProvider(
+			options.meilisearchHost,
+			options.meilisearchApiKey,
+			options.meilisearchIndexUid,
+		);
 	}
 
 	return {
@@ -61,7 +78,14 @@ export default function search(options?: SearchOptions): Module {
 			],
 		},
 		init: async (ctx: ModuleContext) => {
-			const controller = createSearchController(ctx.data, embeddingProvider);
+			if (meiliProvider) {
+				void meiliProvider.configureIndex();
+			}
+			const controller = createSearchController(
+				ctx.data,
+				embeddingProvider,
+				meiliProvider,
+			);
 			return { controllers: { search: controller } };
 		},
 		search: { store: "/search/store-search" },

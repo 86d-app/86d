@@ -2,6 +2,10 @@ import type { ModuleDataService } from "@86d-app/core";
 import type { EmbeddingProvider } from "./embedding-provider";
 import { cosineSimilarity } from "./embedding-provider";
 import type {
+	MeiliSearchDocument,
+	MeiliSearchProvider,
+} from "./meilisearch-provider";
+import type {
 	SearchClick,
 	SearchController,
 	SearchFacets,
@@ -167,6 +171,26 @@ function scoreMatch(
 	return score;
 }
 
+/**
+ * Convert MeiliSearch facetDistribution to our SearchFacets shape.
+ */
+function meiliResultToFacets(
+	distribution?: Record<string, Record<string, number>>,
+): SearchFacets {
+	if (!distribution) return { entityTypes: [], tags: [] };
+
+	const entityTypes = Object.entries(distribution.entityType ?? {})
+		.map(([type, count]) => ({ type, count }))
+		.sort((a, b) => b.count - a.count);
+
+	const tags = Object.entries(distribution.tags ?? {})
+		.map(([tag, count]) => ({ tag, count }))
+		.sort((a, b) => b.count - a.count)
+		.slice(0, 20);
+
+	return { entityTypes, tags };
+}
+
 function computeFacets(items: SearchResult[]): SearchFacets {
 	const typeCounts = new Map<string, number>();
 	const tagCounts = new Map<string, number>();
@@ -279,6 +303,7 @@ function findDidYouMean(
 export function createSearchController(
 	data: ModuleDataService,
 	embeddingProvider?: EmbeddingProvider,
+	meiliProvider?: MeiliSearchProvider,
 ): SearchController {
 	/**
 	 * Generate and store an embedding for an indexed item.
@@ -300,6 +325,41 @@ export function createSearchController(
 			// Embedding is best-effort — lexical search still works
 		}
 		return item;
+	}
+
+	/**
+	 * Convert a SearchIndexItem to a MeiliSearch document.
+	 * Strips the __embedding metadata to avoid bloating the search index.
+	 */
+	function toMeiliDocument(item: SearchIndexItem): MeiliSearchDocument {
+		return {
+			id: item.id,
+			entityType: item.entityType,
+			entityId: item.entityId,
+			title: item.title,
+			body: item.body,
+			tags: item.tags,
+			url: item.url,
+			image: item.image,
+			indexedAt: item.indexedAt.toISOString(),
+		};
+	}
+
+	/**
+	 * Sync a document to MeiliSearch. Fire-and-forget — failures are silent
+	 * so local search still works as a fallback.
+	 */
+	function syncToMeili(items: SearchIndexItem[]): void {
+		if (!meiliProvider || items.length === 0) return;
+		void meiliProvider.addDocuments(items.map(toMeiliDocument)).catch(() => {});
+	}
+
+	/**
+	 * Remove a document from MeiliSearch by ID. Fire-and-forget.
+	 */
+	function removeFromMeili(documentId: string): void {
+		if (!meiliProvider) return;
+		void meiliProvider.deleteDocument(documentId).catch(() => {});
 	}
 
 	return {
@@ -328,8 +388,12 @@ export function createSearchController(
 				indexedAt: new Date(),
 			};
 			item = await embedItem(item);
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("searchIndex", id, item as Record<string, any>);
+			await data.upsert(
+				"searchIndex",
+				id,
+				item as unknown as Record<string, string>,
+			);
+			syncToMeili([item]);
 			return item;
 		},
 
@@ -359,6 +423,7 @@ export function createSearchController(
 				}
 			}
 
+			const indexedItems: SearchIndexItem[] = [];
 			for (const params of items) {
 				try {
 					const existing = await data.findMany("searchIndex", {
@@ -386,14 +451,19 @@ export function createSearchController(
 						metadata: params.metadata ?? {},
 						indexedAt: new Date(),
 					};
-					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-					await data.upsert("searchIndex", id, item as Record<string, any>);
+					await data.upsert(
+						"searchIndex",
+						id,
+						item as unknown as Record<string, string>,
+					);
+					indexedItems.push(item);
 					indexed++;
 				} catch {
 					errors++;
 				}
 			}
 
+			syncToMeili(indexedItems);
 			return { indexed, errors };
 		},
 
@@ -405,6 +475,7 @@ export function createSearchController(
 			if (found.length === 0) return false;
 			for (const item of found) {
 				await data.delete("searchIndex", item.id);
+				removeFromMeili(item.id);
 			}
 			return true;
 		},
@@ -413,7 +484,6 @@ export function createSearchController(
 			const limit = options?.limit ?? 20;
 			const skip = options?.skip ?? 0;
 			const sort = options?.sort ?? "relevance";
-			const fuzzy = options?.fuzzy ?? true;
 			const queryTokens = tokenize(query);
 
 			if (queryTokens.length === 0) {
@@ -423,6 +493,78 @@ export function createSearchController(
 					facets: { entityTypes: [], tags: [] },
 				};
 			}
+
+			// ── MeiliSearch path: delegate search to dedicated engine ──
+			if (meiliProvider) {
+				try {
+					const meiliSort: string[] | undefined =
+						sort === "newest"
+							? ["indexedAt:desc"]
+							: sort === "oldest"
+								? ["indexedAt:asc"]
+								: sort === "title_asc"
+									? ["title:asc"]
+									: sort === "title_desc"
+										? ["title:desc"]
+										: undefined;
+
+					const filters: string[] = [];
+					if (options?.entityType) {
+						filters.push(`entityType = "${options.entityType}"`);
+					}
+					if (options?.tags && options.tags.length > 0) {
+						const tagFilters = options.tags
+							.map((t) => `tags = "${t}"`)
+							.join(" OR ");
+						filters.push(`(${tagFilters})`);
+					}
+
+					const meiliResult = await meiliProvider.search(query, {
+						limit,
+						offset: skip,
+						filter: filters.length > 0 ? filters.join(" AND ") : undefined,
+						sort: meiliSort,
+						facets: ["entityType", "tags"],
+						attributesToHighlight: ["title", "body"],
+						highlightPreTag: "<mark>",
+						highlightPostTag: "</mark>",
+						showRankingScore: true,
+					});
+
+					const results: SearchResult[] = meiliResult.hits.map((hit) => ({
+						item: {
+							id: hit.id,
+							entityType: hit.entityType,
+							entityId: hit.entityId,
+							title: hit.title,
+							body: hit.body,
+							tags: hit.tags ?? [],
+							url: hit.url,
+							image: hit.image,
+							metadata: {},
+							indexedAt: new Date(hit.indexedAt),
+						},
+						score: (hit._rankingScore ?? 0.5) * 100,
+						highlights: {
+							title: hit._formatted?.title,
+							body: hit._formatted?.body,
+						},
+					}));
+
+					const facets = meiliResultToFacets(meiliResult.facetDistribution);
+
+					return {
+						results,
+						total: meiliResult.estimatedTotalHits ?? results.length,
+						facets,
+					};
+				} catch {
+					// MeiliSearch unavailable — fall through to local search
+				}
+			}
+
+			// ── Local search path: lexical + semantic scoring ──
+			const fuzzy = options?.fuzzy ?? true;
 
 			// Load synonyms for query expansion
 			const allSynonyms = (await data.findMany(
@@ -446,8 +588,7 @@ export function createSearchController(
 				}
 			}
 
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, string> = {};
 			if (options?.entityType) {
 				where.entityType = options.entityType;
 			}
@@ -601,8 +742,11 @@ export function createSearchController(
 				sessionId,
 				searchedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("searchQuery", id, query as Record<string, any>);
+			await data.upsert(
+				"searchQuery",
+				id,
+				query as unknown as Record<string, string>,
+			);
 			return query;
 		},
 
@@ -617,8 +761,11 @@ export function createSearchController(
 				position: params.position,
 				clickedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("searchClick", id, click as Record<string, any>);
+			await data.upsert(
+				"searchClick",
+				id,
+				click as unknown as Record<string, string>,
+			);
 			return click;
 		},
 
@@ -788,8 +935,11 @@ export function createSearchController(
 				createdAt:
 					existingItems.length > 0 ? existingItems[0].createdAt : new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("searchSynonym", id, synonym as Record<string, any>);
+			await data.upsert(
+				"searchSynonym",
+				id,
+				synonym as unknown as Record<string, string>,
+			);
 			return synonym;
 		},
 
