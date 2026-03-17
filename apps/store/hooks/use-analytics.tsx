@@ -25,10 +25,47 @@ interface TrackParams {
 	data?: Record<string, unknown> | undefined;
 }
 
+/** Map internal event types to GA4 recommended event names. */
+const GA4_EVENT_MAP: Record<string, string> = {
+	pageView: "page_view",
+	productView: "view_item",
+	addToCart: "add_to_cart",
+	removeFromCart: "remove_from_cart",
+	checkout: "begin_checkout",
+	purchase: "purchase",
+	search: "search",
+};
+
+/**
+ * Push an event to GTM's dataLayer when available.
+ * Maps internal event types to GA4 recommended names.
+ */
+function pushToDataLayer(params: TrackParams) {
+	if (typeof window === "undefined") return;
+	const w = window as unknown as { dataLayer?: Record<string, unknown>[] };
+	const dataLayer = w.dataLayer;
+	if (!dataLayer) return;
+
+	const eventName = GA4_EVENT_MAP[params.type] ?? params.type;
+	const event: Record<string, unknown> = { event: eventName };
+
+	if (params.productId) event.item_id = params.productId;
+	if (params.orderId) event.transaction_id = params.orderId;
+	if (params.value !== undefined) event.value = params.value / 100;
+	if (params.data) {
+		for (const [key, val] of Object.entries(params.data)) {
+			event[key] = val;
+		}
+	}
+
+	dataLayer.push(event);
+}
+
 /**
  * Fire-and-forget analytics tracker.
  *
- * Returns a stable `track` function that sends events to `POST /analytics/events`.
+ * Returns a stable `track` function that sends events to `POST /analytics/events`
+ * and also pushes to GTM's dataLayer when Google Tag Manager is configured.
  * Failures are silently swallowed — analytics should never break the UI.
  *
  * @example
@@ -56,6 +93,13 @@ export function useAnalytics() {
 			});
 		} catch {
 			// Swallow — analytics is best-effort
+		}
+
+		// Forward to GTM dataLayer (best-effort, no error propagation)
+		try {
+			pushToDataLayer(params);
+		} catch {
+			// Swallow — GTM forwarding is best-effort
 		}
 	}, []);
 
