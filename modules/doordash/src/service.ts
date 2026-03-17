@@ -28,6 +28,17 @@ export interface Delivery {
 	updatedAt: Date;
 }
 
+export interface DeliveryQuote {
+	id: string;
+	externalDeliveryId: string;
+	fee: number;
+	currency: string;
+	estimatedPickupTime?: string | undefined;
+	estimatedDropoffTime?: string | undefined;
+	expiresAt: Date;
+	createdAt: Date;
+}
+
 export interface DeliveryZone {
 	id: string;
 	name: string;
@@ -73,6 +84,18 @@ export interface DoordashController extends ModuleController {
 		take?: number | undefined;
 		skip?: number | undefined;
 	}): Promise<Delivery[]>;
+
+	requestQuote(params: {
+		pickupAddress: string;
+		pickupBusinessName: string;
+		pickupPhoneNumber: string;
+		dropoffAddress: string;
+		dropoffBusinessName: string;
+		dropoffPhoneNumber: string;
+		orderValue: number;
+	}): Promise<DeliveryQuote>;
+
+	acceptQuote(quoteId: string): Promise<Delivery>;
 
 	createZone(params: {
 		name: string;

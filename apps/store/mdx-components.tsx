@@ -1,5 +1,5 @@
 import type { MDXComponents } from "mdx/types";
-import appComponents from "~/components";
+import appComponents from "~/components/index";
 import uiComponents from "~/components/ui";
 import { components as moduleComponents } from "./generated/components";
 

@@ -1,30 +1,51 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
-import { adminEndpoints } from "./admin/endpoints";
+import {
+	adminEndpoints,
+	createAdminEndpointsWithSettings,
+} from "./admin/endpoints";
+import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
 import { doordashSchema } from "./schema";
 import { createDoordashController } from "./service-impl";
-import { storeEndpoints } from "./store/endpoints";
+import { createStoreEndpoints, storeEndpoints } from "./store/endpoints";
+import { createDoordashWebhook } from "./store/endpoints/webhook";
 
 export type {
 	Delivery,
 	DeliveryAvailability,
+	DeliveryQuote,
 	DeliveryStatus,
 	DeliveryZone,
 	DoordashController,
 } from "./service";
 
 export interface DoordashOptions extends ModuleConfig {
-	/** DoorDash API key */
-	apiKey?: string;
-	/** DoorDash business ID */
-	businessId?: string;
-	/** Use sandbox mode (default: "true") */
-	sandbox?: string;
+	/** DoorDash developer_id from the developer portal */
+	developerId?: string | undefined;
+	/** DoorDash key_id from the developer portal */
+	keyId?: string | undefined;
+	/** DoorDash signing_secret (base64-encoded) from the developer portal */
+	signingSecret?: string | undefined;
+	/** Use sandbox mode (default: true) */
+	sandbox?: boolean | undefined;
 }
 
 export default function doordash(options?: DoordashOptions): Module {
+	const hasCredentials = Boolean(
+		options?.developerId && options?.keyId && options?.signingSecret,
+	);
+
+	// Build endpoints — include webhook and settings when credentials are present
+	const webhookEndpoint = createDoordashWebhook();
+	const settingsEndpoint = createGetSettingsEndpoint({
+		developerId: options?.developerId,
+		keyId: options?.keyId,
+		signingSecret: options?.signingSecret,
+		sandbox: options?.sandbox,
+	});
+
 	return {
 		id: "doordash",
-		version: "0.0.1",
+		version: "0.1.0",
 		schema: doordashSchema,
 		exports: {
 			read: ["deliveryStatus", "deliveryTrackingUrl"],
@@ -39,12 +60,21 @@ export default function doordash(options?: DoordashOptions): Module {
 			],
 		},
 		init: async (ctx: ModuleContext) => {
-			const controller = createDoordashController(ctx.data, ctx.events);
+			const controller = createDoordashController(ctx.data, ctx.events, {
+				developerId: options?.developerId,
+				keyId: options?.keyId,
+				signingSecret: options?.signingSecret,
+				sandbox: options?.sandbox ?? true,
+			});
 			return { controllers: { doordash: controller } };
 		},
 		endpoints: {
-			store: storeEndpoints,
-			admin: adminEndpoints,
+			store: hasCredentials
+				? createStoreEndpoints(webhookEndpoint)
+				: storeEndpoints,
+			admin: hasCredentials
+				? createAdminEndpointsWithSettings(settingsEndpoint)
+				: adminEndpoints,
 		},
 		admin: {
 			pages: [

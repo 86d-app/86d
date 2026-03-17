@@ -1,7 +1,9 @@
 import type { ModuleDataService, ScopedEventEmitter } from "@86d-app/core";
+import { DoordashDriveProvider, mapDriveStatusToInternal } from "./provider";
 import type {
 	Delivery,
 	DeliveryAvailability,
+	DeliveryQuote,
 	DeliveryZone,
 	DoordashController,
 } from "./service";
@@ -25,28 +27,113 @@ function haversineDistance(
 	return R * c;
 }
 
+interface DoordashControllerOptions {
+	developerId?: string | undefined;
+	keyId?: string | undefined;
+	signingSecret?: string | undefined;
+	sandbox?: boolean | undefined;
+}
+
 export function createDoordashController(
 	data: ModuleDataService,
 	events?: ScopedEventEmitter | undefined,
+	options?: DoordashControllerOptions | undefined,
 ): DoordashController {
+	// Create real DoorDash Drive API provider when credentials are configured
+	const provider =
+		options?.developerId && options?.keyId && options?.signingSecret
+			? new DoordashDriveProvider(
+					{
+						developerId: options.developerId,
+						keyId: options.keyId,
+						signingSecret: options.signingSecret,
+					},
+					options.sandbox ?? true,
+				)
+			: null;
+
 	return {
 		async createDelivery(params) {
 			const now = new Date();
 			const id = crypto.randomUUID();
+			const externalDeliveryId = `86d_${id}`;
+
+			let fee = params.fee;
+			let trackingUrl: string | undefined;
+			let estimatedPickupTime: Date | undefined;
+			let estimatedDeliveryTime: Date | undefined;
+			let driverName: string | undefined;
+
+			// Call DoorDash Drive API when provider is available
+			if (provider) {
+				const pickupAddr =
+					typeof params.pickupAddress.street === "string"
+						? String(params.pickupAddress.street)
+						: JSON.stringify(params.pickupAddress);
+				const dropoffAddr =
+					typeof params.dropoffAddress.street === "string"
+						? String(params.dropoffAddress.street)
+						: JSON.stringify(params.dropoffAddress);
+
+				const driveResponse = await provider.createDelivery({
+					externalDeliveryId,
+					pickupAddress: pickupAddr,
+					pickupBusinessName:
+						typeof params.pickupAddress.businessName === "string"
+							? String(params.pickupAddress.businessName)
+							: "Store",
+					pickupPhoneNumber:
+						typeof params.pickupAddress.phone === "string"
+							? String(params.pickupAddress.phone)
+							: "+10000000000",
+					dropoffAddress: dropoffAddr,
+					dropoffBusinessName:
+						typeof params.dropoffAddress.businessName === "string"
+							? String(params.dropoffAddress.businessName)
+							: "Customer",
+					dropoffPhoneNumber:
+						typeof params.dropoffAddress.phone === "string"
+							? String(params.dropoffAddress.phone)
+							: "+10000000000",
+					orderValue: params.fee,
+					tip: params.tip,
+				});
+
+				fee = driveResponse.fee;
+				trackingUrl = driveResponse.tracking_url ?? undefined;
+				driverName = driveResponse.dasher_name ?? undefined;
+				if (driveResponse.pickup_time_estimated) {
+					estimatedPickupTime = new Date(driveResponse.pickup_time_estimated);
+				}
+				if (driveResponse.dropoff_time_estimated) {
+					estimatedDeliveryTime = new Date(
+						driveResponse.dropoff_time_estimated,
+					);
+				}
+			}
+
 			const delivery: Delivery = {
 				id,
 				orderId: params.orderId,
+				externalDeliveryId,
 				status: "pending",
 				pickupAddress: params.pickupAddress,
 				dropoffAddress: params.dropoffAddress,
-				fee: params.fee,
+				fee,
 				tip: params.tip ?? 0,
+				trackingUrl,
+				driverName,
+				estimatedPickupTime,
+				estimatedDeliveryTime,
 				metadata: params.metadata ?? {},
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("delivery", id, delivery as Record<string, any>);
+			await data.upsert(
+				"delivery",
+				id,
+				delivery as unknown as Record<string, unknown>,
+			);
 			void events?.emit("doordash.delivery.created", {
 				deliveryId: delivery.id,
 				orderId: delivery.orderId,
@@ -57,7 +144,55 @@ export function createDoordashController(
 		async getDelivery(id) {
 			const raw = await data.get("delivery", id);
 			if (!raw) return null;
-			return raw as unknown as Delivery;
+			const delivery = raw as unknown as Delivery;
+
+			// Refresh status from DoorDash if provider is available
+			if (provider && delivery.externalDeliveryId) {
+				try {
+					const driveResponse = await provider.getDelivery(
+						delivery.externalDeliveryId,
+					);
+					const newStatus = mapDriveStatusToInternal(
+						driveResponse.delivery_status,
+					);
+					if (newStatus !== delivery.status) {
+						const updated: Delivery = {
+							...delivery,
+							status: newStatus,
+							trackingUrl: driveResponse.tracking_url ?? delivery.trackingUrl,
+							driverName: driveResponse.dasher_name ?? delivery.driverName,
+							driverPhone:
+								driveResponse.dasher_dropoff_phone_number ??
+								delivery.driverPhone,
+							...(driveResponse.pickup_time_actual
+								? {
+										actualPickupTime: new Date(
+											driveResponse.pickup_time_actual,
+										),
+									}
+								: {}),
+							...(driveResponse.dropoff_time_actual
+								? {
+										actualDeliveryTime: new Date(
+											driveResponse.dropoff_time_actual,
+										),
+									}
+								: {}),
+							updatedAt: new Date(),
+						};
+						await data.upsert(
+							"delivery",
+							id,
+							updated as unknown as Record<string, unknown>,
+						);
+						return updated;
+					}
+				} catch {
+					// Fall back to local data if API call fails
+				}
+			}
+
+			return delivery;
 		},
 
 		async cancelDelivery(id) {
@@ -69,14 +204,26 @@ export function createDoordashController(
 				return null;
 			}
 
+			// Cancel via DoorDash Drive API
+			if (provider && delivery.externalDeliveryId) {
+				try {
+					await provider.cancelDelivery(delivery.externalDeliveryId);
+				} catch {
+					// Proceed with local cancellation even if API call fails
+				}
+			}
+
 			const now = new Date();
 			const updated: Delivery = {
 				...delivery,
 				status: "cancelled",
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("delivery", id, updated as Record<string, any>);
+			await data.upsert(
+				"delivery",
+				id,
+				updated as unknown as Record<string, unknown>,
+			);
 			void events?.emit("doordash.delivery.cancelled", {
 				deliveryId: updated.id,
 				orderId: updated.orderId,
@@ -101,8 +248,11 @@ export function createDoordashController(
 				...(status === "delivered" ? { actualDeliveryTime: now } : {}),
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("delivery", id, updated as Record<string, any>);
+			await data.upsert(
+				"delivery",
+				id,
+				updated as unknown as Record<string, unknown>,
+			);
 
 			if (status === "picked-up") {
 				void events?.emit("doordash.delivery.picked-up", {
@@ -119,8 +269,7 @@ export function createDoordashController(
 		},
 
 		async listDeliveries(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status) where.status = params.status;
 
 			const all = await data.findMany("delivery", {
@@ -129,6 +278,97 @@ export function createDoordashController(
 				...(params?.skip !== undefined ? { skip: params.skip } : {}),
 			});
 			return all as unknown as Delivery[];
+		},
+
+		async requestQuote(params) {
+			if (!provider) {
+				throw new Error(
+					"DoorDash API credentials are not configured. Set developerId, keyId, and signingSecret in module options.",
+				);
+			}
+
+			const externalDeliveryId = `86d_quote_${crypto.randomUUID()}`;
+			const driveQuote = await provider.createQuote({
+				externalDeliveryId,
+				pickupAddress: params.pickupAddress,
+				pickupBusinessName: params.pickupBusinessName,
+				pickupPhoneNumber: params.pickupPhoneNumber,
+				dropoffAddress: params.dropoffAddress,
+				dropoffBusinessName: params.dropoffBusinessName,
+				dropoffPhoneNumber: params.dropoffPhoneNumber,
+				orderValue: params.orderValue,
+			});
+
+			const now = new Date();
+			const quote: DeliveryQuote = {
+				id: crypto.randomUUID(),
+				externalDeliveryId,
+				fee: driveQuote.fee,
+				currency: driveQuote.currency,
+				estimatedPickupTime: driveQuote.pickup_time_estimated ?? undefined,
+				estimatedDropoffTime: driveQuote.dropoff_time_estimated ?? undefined,
+				expiresAt: new Date(now.getTime() + 5 * 60 * 1000), // 5 min expiry
+				createdAt: now,
+			};
+
+			await data.upsert(
+				"quote",
+				quote.id,
+				quote as unknown as Record<string, unknown>,
+			);
+			return quote;
+		},
+
+		async acceptQuote(quoteId) {
+			if (!provider) {
+				throw new Error(
+					"DoorDash API credentials are not configured. Set developerId, keyId, and signingSecret in module options.",
+				);
+			}
+
+			const rawQuote = await data.get("quote", quoteId);
+			if (!rawQuote) {
+				throw new Error(`Quote not found: ${quoteId}`);
+			}
+			const quote = rawQuote as unknown as DeliveryQuote;
+
+			if (new Date() > quote.expiresAt) {
+				throw new Error("Quote has expired. Please request a new quote.");
+			}
+
+			const driveResponse = await provider.acceptQuote(
+				quote.externalDeliveryId,
+			);
+
+			const now = new Date();
+			const id = crypto.randomUUID();
+			const delivery: Delivery = {
+				id,
+				orderId: quote.externalDeliveryId,
+				externalDeliveryId: quote.externalDeliveryId,
+				status: mapDriveStatusToInternal(driveResponse.delivery_status),
+				pickupAddress: { address: driveResponse.pickup_address },
+				dropoffAddress: { address: driveResponse.dropoff_address },
+				fee: driveResponse.fee,
+				tip: driveResponse.tip,
+				trackingUrl: driveResponse.tracking_url ?? undefined,
+				driverName: driveResponse.dasher_name ?? undefined,
+				driverPhone: driveResponse.dasher_dropoff_phone_number ?? undefined,
+				metadata: { quoteId },
+				createdAt: now,
+				updatedAt: now,
+			};
+
+			await data.upsert(
+				"delivery",
+				id,
+				delivery as unknown as Record<string, unknown>,
+			);
+			void events?.emit("doordash.delivery.created", {
+				deliveryId: delivery.id,
+				orderId: delivery.orderId,
+			});
+			return delivery;
 		},
 
 		async createZone(params) {
@@ -147,8 +387,11 @@ export function createDoordashController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("deliveryZone", id, zone as Record<string, any>);
+			await data.upsert(
+				"deliveryZone",
+				id,
+				zone as unknown as Record<string, unknown>,
+			);
 			return zone;
 		},
 
@@ -179,8 +422,11 @@ export function createDoordashController(
 					: {}),
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("deliveryZone", id, updated as Record<string, any>);
+			await data.upsert(
+				"deliveryZone",
+				id,
+				updated as unknown as Record<string, unknown>,
+			);
 			return updated;
 		},
 
@@ -192,8 +438,7 @@ export function createDoordashController(
 		},
 
 		async listZones(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.isActive !== undefined) where.isActive = params.isActive;
 
 			const all = await data.findMany("deliveryZone", {

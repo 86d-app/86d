@@ -618,9 +618,13 @@ function extractEndpointMappings(moduleName: string): {
 
 	if (existsSync(storePath)) {
 		const source = readFileSync(storePath, "utf-8");
+		const seen = new Map<string, string>();
 		let match: RegExpExecArray | null;
 		while ((match = entryRegex.exec(source)) !== null) {
-			result.store.push({ path: match[1], name: match[2] });
+			if (!seen.has(match[1])) {
+				seen.set(match[1], match[2]);
+				result.store.push({ path: match[1], name: match[2] });
+			}
 		}
 	}
 
@@ -628,9 +632,13 @@ function extractEndpointMappings(moduleName: string): {
 
 	if (existsSync(adminPath)) {
 		const source = readFileSync(adminPath, "utf-8");
+		const seen = new Map<string, string>();
 		let match: RegExpExecArray | null;
 		while ((match = entryRegex.exec(source)) !== null) {
-			result.admin.push({ path: match[1], name: match[2] });
+			if (!seen.has(match[1])) {
+				seen.set(match[1], match[2]);
+				result.admin.push({ path: match[1], name: match[2] });
+			}
 		}
 	}
 

@@ -32,6 +32,26 @@ export const doordashSchema = {
 			},
 		},
 	},
+	quote: {
+		fields: {
+			id: { type: "string", required: true },
+			externalDeliveryId: { type: "string", required: true },
+			fee: { type: "number", required: true },
+			currency: { type: "string", required: true, defaultValue: "USD" },
+			estimatedPickupTime: { type: "string", required: false },
+			estimatedDropoffTime: { type: "string", required: false },
+			expiresAt: {
+				type: "date",
+				required: true,
+				defaultValue: () => new Date(),
+			},
+			createdAt: {
+				type: "date",
+				required: true,
+				defaultValue: () => new Date(),
+			},
+		},
+	},
 	deliveryZone: {
 		fields: {
 			id: { type: "string", required: true },
