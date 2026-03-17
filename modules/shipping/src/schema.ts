@@ -113,6 +113,9 @@ export const shippingSchema = {
 			deliveredAt: { type: "date", required: false },
 			estimatedDelivery: { type: "date", required: false },
 			notes: { type: "string", required: false },
+			externalShipmentId: { type: "string", required: false },
+			labelUrl: { type: "string", required: false },
+			publicTrackingUrl: { type: "string", required: false },
 			createdAt: {
 				type: "date",
 				required: true,

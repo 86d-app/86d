@@ -1,11 +1,21 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
-import { adminEndpoints } from "./admin/endpoints";
+import {
+	adminEndpoints,
+	createAdminEndpointsWithSettings,
+} from "./admin/endpoints";
+import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
 import { shippingSchema } from "./schema";
 import { createShippingController } from "./service-impl";
-import { storeEndpoints } from "./store/endpoints";
+import {
+	createStoreEndpointsWithRates,
+	storeEndpoints,
+} from "./store/endpoints";
 
 export type {
 	CalculatedRate,
+	LiveRate,
+	LiveRateAddress,
+	LiveRateParcel,
 	Shipment,
 	ShipmentStatus,
 	ShippingCarrier,
@@ -18,9 +28,20 @@ export type {
 export interface ShippingOptions extends ModuleConfig {
 	/** Default currency for shipping prices */
 	currency?: string;
+	/** EasyPost API key (test or production) */
+	easypostApiKey?: string | undefined;
+	/** Use EasyPost test mode (default: true) */
+	easypostTestMode?: boolean | undefined;
 }
 
 export default function shipping(options?: ShippingOptions): Module {
+	const hasEasyPost = Boolean(options?.easypostApiKey);
+
+	const settingsEndpoint = createGetSettingsEndpoint({
+		easypostApiKey: options?.easypostApiKey,
+		easypostTestMode: options?.easypostTestMode,
+	});
+
 	return {
 		id: "shipping",
 		version: "0.1.0",
@@ -45,12 +66,17 @@ export default function shipping(options?: ShippingOptions): Module {
 			],
 		},
 		init: async (ctx: ModuleContext) => {
-			const controller = createShippingController(ctx.data);
+			const controller = createShippingController(ctx.data, ctx.events, {
+				easypostApiKey: options?.easypostApiKey,
+				easypostTestMode: options?.easypostTestMode ?? true,
+			});
 			return { controllers: { shipping: controller } };
 		},
 		endpoints: {
-			store: storeEndpoints,
-			admin: adminEndpoints,
+			store: hasEasyPost ? createStoreEndpointsWithRates() : storeEndpoints,
+			admin: hasEasyPost
+				? createAdminEndpointsWithSettings(settingsEndpoint)
+				: adminEndpoints,
 		},
 		admin: {
 			pages: [

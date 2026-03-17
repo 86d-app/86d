@@ -78,8 +78,52 @@ export interface Shipment {
 	deliveredAt?: Date | undefined;
 	estimatedDelivery?: Date | undefined;
 	notes?: string | undefined;
+	/** EasyPost shipment ID for label purchase */
+	externalShipmentId?: string | undefined;
+	/** Label URL from EasyPost after purchase */
+	labelUrl?: string | undefined;
+	/** Public tracking URL from EasyPost */
+	publicTrackingUrl?: string | undefined;
 	createdAt: Date;
 	updatedAt: Date;
+}
+
+export interface LiveRateAddress {
+	name?: string | undefined;
+	company?: string | undefined;
+	street1: string;
+	street2?: string | undefined;
+	city: string;
+	state: string;
+	zip: string;
+	country: string;
+	phone?: string | undefined;
+}
+
+export interface LiveRateParcel {
+	/** Length in inches */
+	length: number;
+	/** Width in inches */
+	width: number;
+	/** Height in inches */
+	height: number;
+	/** Weight in ounces */
+	weight: number;
+}
+
+export interface LiveRate {
+	/** EasyPost rate ID (pass to purchaseLabel) */
+	rateId: string;
+	/** EasyPost shipment ID (pass to purchaseLabel) */
+	shipmentId: string;
+	carrier: string;
+	service: string;
+	/** Rate in dollars (string, e.g. "11.01") */
+	rate: string;
+	currency: string;
+	deliveryDays: number | null;
+	deliveryDate: string | null;
+	deliveryDateGuaranteed: boolean;
 }
 
 export interface ShippingController extends ModuleController {
@@ -239,4 +283,27 @@ export interface ShippingController extends ModuleController {
 	deleteShipment(id: string): Promise<boolean>;
 
 	getTrackingUrl(shipmentId: string): Promise<string | null>;
+
+	// ── Live carrier rates (EasyPost) ────────────────────────────────────
+
+	/**
+	 * Get live carrier rates via EasyPost.
+	 * Requires EasyPost API key to be configured.
+	 */
+	getLiveRates(params: {
+		fromAddress: LiveRateAddress;
+		toAddress: LiveRateAddress;
+		parcel: LiveRateParcel;
+	}): Promise<LiveRate[]>;
+
+	/**
+	 * Purchase a shipping label via EasyPost and update the shipment.
+	 * Uses an EasyPost shipment ID and rate ID from getLiveRates.
+	 */
+	purchaseLabel(params: {
+		shipmentId: string;
+		easypostShipmentId: string;
+		easypostRateId: string;
+		insurance?: string | undefined;
+	}): Promise<Shipment>;
 }

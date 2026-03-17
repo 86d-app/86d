@@ -1,6 +1,8 @@
-import type { ModuleDataService } from "@86d-app/core";
+import type { ModuleDataService, ScopedEventEmitter } from "@86d-app/core";
+import { EasyPostProvider } from "./provider";
 import type {
 	CalculatedRate,
+	LiveRate,
 	Shipment,
 	ShipmentStatus,
 	ShippingCarrier,
@@ -19,9 +21,23 @@ const VALID_SHIPMENT_TRANSITIONS: Record<ShipmentStatus, ShipmentStatus[]> = {
 	failed: ["pending"],
 };
 
+interface ShippingControllerOptions {
+	easypostApiKey?: string | undefined;
+	easypostTestMode?: boolean | undefined;
+}
+
 export function createShippingController(
 	data: ModuleDataService,
+	events?: ScopedEventEmitter | undefined,
+	options?: ShippingControllerOptions | undefined,
 ): ShippingController {
+	const provider = options?.easypostApiKey
+		? new EasyPostProvider(
+				options.easypostApiKey,
+				options.easypostTestMode ?? true,
+			)
+		: null;
+
 	return {
 		// ── Zones ────────────────────────────────────────────────────────────
 
@@ -36,8 +52,11 @@ export function createShippingController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("shippingZone", id, zone as Record<string, any>);
+			await data.upsert(
+				"shippingZone",
+				id,
+				zone as unknown as Record<string, unknown>,
+			);
 			return zone;
 		},
 
@@ -70,8 +89,11 @@ export function createShippingController(
 				...(params.isActive !== undefined ? { isActive: params.isActive } : {}),
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("shippingZone", id, updated as Record<string, any>);
+			await data.upsert(
+				"shippingZone",
+				id,
+				updated as unknown as Record<string, unknown>,
+			);
 			return updated;
 		},
 
@@ -112,8 +134,11 @@ export function createShippingController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("shippingRate", id, rate as Record<string, any>);
+			await data.upsert(
+				"shippingRate",
+				id,
+				rate as unknown as Record<string, unknown>,
+			);
 			return rate;
 		},
 
@@ -122,8 +147,7 @@ export function createShippingController(
 		},
 
 		async listRates(params): Promise<ShippingRate[]> {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = { zoneId: params.zoneId };
+			const where: Record<string, unknown> = { zoneId: params.zoneId };
 			if (params.activeOnly) where.isActive = true;
 
 			return (await data.findMany("shippingRate", {
@@ -157,8 +181,11 @@ export function createShippingController(
 				...(params.isActive !== undefined ? { isActive: params.isActive } : {}),
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("shippingRate", id, updated as Record<string, any>);
+			await data.upsert(
+				"shippingRate",
+				id,
+				updated as unknown as Record<string, unknown>,
+			);
 			return updated;
 		},
 
@@ -251,8 +278,11 @@ export function createShippingController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("shippingMethod", id, method as Record<string, any>);
+			await data.upsert(
+				"shippingMethod",
+				id,
+				method as unknown as Record<string, unknown>,
+			);
 			return method;
 		},
 
@@ -294,8 +324,11 @@ export function createShippingController(
 					: {}),
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("shippingMethod", id, updated as Record<string, any>);
+			await data.upsert(
+				"shippingMethod",
+				id,
+				updated as unknown as Record<string, unknown>,
+			);
 			return updated;
 		},
 
@@ -323,8 +356,11 @@ export function createShippingController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("shippingCarrier", id, carrier as Record<string, any>);
+			await data.upsert(
+				"shippingCarrier",
+				id,
+				carrier as unknown as Record<string, unknown>,
+			);
 			return carrier;
 		},
 
@@ -360,8 +396,11 @@ export function createShippingController(
 				...(params.isActive !== undefined ? { isActive: params.isActive } : {}),
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("shippingCarrier", id, updated as Record<string, any>);
+			await data.upsert(
+				"shippingCarrier",
+				id,
+				updated as unknown as Record<string, unknown>,
+			);
 			return updated;
 		},
 
@@ -392,8 +431,15 @@ export function createShippingController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("shipment", id, shipment as Record<string, any>);
+			await data.upsert(
+				"shipment",
+				id,
+				shipment as unknown as Record<string, unknown>,
+			);
+			void events?.emit("shipment.created", {
+				shipmentId: id,
+				orderId: params.orderId,
+			});
 			return shipment;
 		},
 
@@ -402,8 +448,7 @@ export function createShippingController(
 		},
 
 		async listShipments(params): Promise<Shipment[]> {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.orderId) where.orderId = params.orderId;
 			if (params?.status) where.status = params.status;
 
@@ -429,8 +474,11 @@ export function createShippingController(
 				...(params.notes !== undefined ? { notes: params.notes } : {}),
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("shipment", id, updated as Record<string, any>);
+			await data.upsert(
+				"shipment",
+				id,
+				updated as unknown as Record<string, unknown>,
+			);
 			return updated;
 		},
 
@@ -449,8 +497,16 @@ export function createShippingController(
 				...(status === "delivered" ? { deliveredAt: now } : {}),
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("shipment", id, updated as Record<string, any>);
+			await data.upsert(
+				"shipment",
+				id,
+				updated as unknown as Record<string, unknown>,
+			);
+
+			void events?.emit(`shipment.${status}`, {
+				shipmentId: id,
+				orderId: existing.orderId,
+			});
 			return updated;
 		},
 
@@ -466,7 +522,14 @@ export function createShippingController(
 				"shipment",
 				shipmentId,
 			)) as Shipment | null;
-			if (!shipment?.trackingNumber || !shipment.carrierId) return null;
+			if (!shipment) return null;
+
+			// Return EasyPost public tracking URL if available
+			if (shipment.publicTrackingUrl) {
+				return shipment.publicTrackingUrl;
+			}
+
+			if (!shipment.trackingNumber || !shipment.carrierId) return null;
 
 			const carrier = (await data.get(
 				"shippingCarrier",
@@ -478,6 +541,85 @@ export function createShippingController(
 				"{tracking}",
 				shipment.trackingNumber,
 			);
+		},
+
+		// ── Live carrier rates (EasyPost) ────────────────────────────────────
+
+		async getLiveRates(params): Promise<LiveRate[]> {
+			if (!provider) {
+				throw new Error(
+					"EasyPost API key is not configured. Set easypostApiKey in module options.",
+				);
+			}
+
+			const response = await provider.getRates({
+				fromAddress: params.fromAddress,
+				toAddress: params.toAddress,
+				parcel: params.parcel,
+			});
+
+			return response.rates.map((rate) => ({
+				rateId: rate.id,
+				shipmentId: response.id,
+				carrier: rate.carrier,
+				service: rate.service,
+				rate: rate.rate,
+				currency: rate.currency,
+				deliveryDays: rate.delivery_days ?? rate.est_delivery_days ?? null,
+				deliveryDate: rate.delivery_date,
+				deliveryDateGuaranteed: rate.delivery_date_guaranteed,
+			}));
+		},
+
+		async purchaseLabel(params): Promise<Shipment> {
+			if (!provider) {
+				throw new Error(
+					"EasyPost API key is not configured. Set easypostApiKey in module options.",
+				);
+			}
+
+			// Buy the shipment via EasyPost
+			const response = await provider.buyShipment({
+				shipmentId: params.easypostShipmentId,
+				rateId: params.easypostRateId,
+				insurance: params.insurance,
+			});
+
+			// Update our local shipment with tracking info
+			const existing = (await data.get(
+				"shipment",
+				params.shipmentId,
+			)) as Shipment | null;
+			if (!existing) {
+				throw new Error(`Shipment not found: ${params.shipmentId}`);
+			}
+
+			const now = new Date();
+			const updated: Shipment = {
+				...existing,
+				trackingNumber: response.tracking_code ?? existing.trackingNumber,
+				externalShipmentId: response.id,
+				labelUrl: response.postage_label?.label_url ?? undefined,
+				publicTrackingUrl: response.tracker?.public_url ?? undefined,
+				status: "shipped",
+				shippedAt: now,
+				updatedAt: now,
+			};
+
+			await data.upsert(
+				"shipment",
+				params.shipmentId,
+				updated as unknown as Record<string, unknown>,
+			);
+
+			void events?.emit("shipment.shipped", {
+				shipmentId: params.shipmentId,
+				orderId: existing.orderId,
+				trackingNumber: updated.trackingNumber,
+				labelUrl: updated.labelUrl,
+			});
+
+			return updated;
 		},
 	};
 }

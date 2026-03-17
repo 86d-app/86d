@@ -8,6 +8,7 @@ import { deleteMethod } from "./delete-method";
 import { deleteRate } from "./delete-rate";
 import { deleteShipment } from "./delete-shipment";
 import { deleteZone } from "./delete-zone";
+import type { createGetSettingsEndpoint } from "./get-settings";
 import { getShipment } from "./get-shipment";
 import { listCarriers } from "./list-carriers";
 import { listMethods } from "./list-methods";
@@ -20,6 +21,15 @@ import { updateRate } from "./update-rate";
 import { updateShipment } from "./update-shipment";
 import { updateShipmentStatus } from "./update-shipment-status";
 import { updateZone } from "./update-zone";
+
+export function createAdminEndpointsWithSettings(
+	settingsEndpoint: ReturnType<typeof createGetSettingsEndpoint>,
+) {
+	return {
+		...adminEndpoints,
+		"/admin/shipping/settings": settingsEndpoint,
+	};
+}
 
 export const adminEndpoints = {
 	// Zones
