@@ -7,6 +7,7 @@ import { deleteNotificationEndpoint } from "./delete-notification";
 import { deleteTemplateEndpoint } from "./delete-template";
 import { getCustomerPreferencesEndpoint } from "./get-customer-preferences";
 import { getNotificationEndpoint } from "./get-notification";
+import type { createGetSettingsEndpoint } from "./get-settings";
 import { getTemplateEndpoint } from "./get-template";
 import { listNotificationsEndpoint } from "./list-notifications";
 import { listPreferencesEndpoint } from "./list-preferences";
@@ -16,6 +17,15 @@ import { statsEndpoint } from "./stats";
 import { updateCustomerPreferencesEndpoint } from "./update-customer-preferences";
 import { updateNotificationEndpoint } from "./update-notification";
 import { updateTemplateEndpoint } from "./update-template";
+
+export function createAdminEndpointsWithSettings(
+	settingsEndpoint: ReturnType<typeof createGetSettingsEndpoint>,
+) {
+	return {
+		...adminEndpoints,
+		"/admin/notifications/settings": settingsEndpoint,
+	};
+}
 
 export const adminEndpoints = {
 	"/admin/notifications": listNotificationsEndpoint,

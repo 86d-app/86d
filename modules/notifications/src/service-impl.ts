@@ -1,5 +1,10 @@
 import type { ModuleDataService, ScopedEventEmitter } from "@86d-app/core";
 import type {
+	DeliveryResult,
+	ResendProvider,
+	TwilioProvider,
+} from "./provider";
+import type {
 	BatchSendResult,
 	Notification,
 	NotificationPreference,
@@ -19,6 +24,26 @@ const DEFAULT_PREFERENCES: Omit<NotificationPreference, "id" | "customerId"> = {
 export interface NotificationsControllerOptions {
 	/** Max notifications per customer before oldest are auto-deleted */
 	maxPerCustomer?: number | undefined;
+	/** Resend email provider — when provided, email channel notifications are delivered via Resend */
+	emailProvider?: ResendProvider | undefined;
+	/** Twilio SMS provider — when provided, notifications can resolve a phone number from metadata */
+	smsProvider?: TwilioProvider | undefined;
+	/** Resolver that returns email + phone for a customer ID. Required for email/SMS delivery. */
+	customerResolver?:
+		| ((customerId: string) => Promise<{
+				email?: string | undefined;
+				phone?: string | undefined;
+		  }>)
+		| undefined;
+}
+
+/** Minimal HTML-entity escape for user-facing strings injected into email HTML. */
+function escapeHtml(str: string): string {
+	return str
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;");
 }
 
 /**
@@ -39,6 +64,104 @@ export function createNotificationsController(
 	events?: ScopedEventEmitter | undefined,
 	options?: NotificationsControllerOptions | undefined,
 ): NotificationsController {
+	const emailProvider = options?.emailProvider;
+	const smsProvider = options?.smsProvider;
+	const customerResolver = options?.customerResolver;
+
+	/**
+	 * Deliver a notification via the appropriate external channel.
+	 * Falls back gracefully if providers or customer contact info are unavailable.
+	 */
+	async function deliverExternal(
+		notification: Notification,
+	): Promise<DeliveryResult | null> {
+		const channel = notification.channel;
+		if (channel === "in_app") return null;
+
+		if (!customerResolver) return null;
+
+		const contact = await customerResolver(notification.customerId).catch(
+			() => ({ email: undefined, phone: undefined }),
+		);
+
+		if (channel === "email" || channel === "both") {
+			if (emailProvider && contact.email) {
+				const htmlBody = `<div><h2>${escapeHtml(notification.title)}</h2><p>${escapeHtml(notification.body)}</p>${
+					notification.actionUrl
+						? `<p><a href="${escapeHtml(notification.actionUrl)}">View details</a></p>`
+						: ""
+				}</div>`;
+
+				const result = await emailProvider
+					.sendEmail({
+						to: contact.email,
+						subject: notification.title,
+						html: htmlBody,
+						text: `${notification.title}\n\n${notification.body}${notification.actionUrl ? `\n\n${notification.actionUrl}` : ""}`,
+						tags: [
+							{ name: "type", value: notification.type },
+							{ name: "notification_id", value: notification.id },
+						],
+					})
+					.catch(
+						(err: Error): DeliveryResult => ({
+							success: false,
+							error: err.message,
+						}),
+					);
+
+				// Record delivery attempt in metadata
+				await data.upsert("notification", notification.id, {
+					...notification,
+					metadata: {
+						...notification.metadata,
+						emailDelivery: {
+							success: result.success,
+							messageId: result.messageId,
+							error: result.error,
+							sentAt: new Date().toISOString(),
+						},
+					},
+				} as Record<string, unknown>);
+
+				if (channel === "email") return result;
+			}
+		}
+
+		if (channel === "both" && smsProvider && contact.phone) {
+			const smsText = `${notification.title}: ${notification.body}`;
+			const result = await smsProvider
+				.sendSms({
+					to: contact.phone,
+					body:
+						smsText.length > 1600 ? `${smsText.slice(0, 1597)}...` : smsText,
+				})
+				.catch(
+					(err: Error): DeliveryResult => ({
+						success: false,
+						error: err.message,
+					}),
+				);
+
+			await data.upsert("notification", notification.id, {
+				...notification,
+				metadata: {
+					...notification.metadata,
+					smsDelivery: {
+						success: result.success,
+						messageId: result.messageId,
+						error: result.error,
+						sentAt: new Date().toISOString(),
+					},
+				},
+			} as Record<string, unknown>);
+
+			return result;
+		}
+
+		return null;
+	}
+
 	/** Remove oldest notifications when a customer exceeds maxPerCustomer */
 	async function enforceMaxPerCustomer(customerId: string): Promise<void> {
 		const max = options?.maxPerCustomer;
@@ -85,6 +208,9 @@ export function createNotificationsController(
 			);
 
 			await enforceMaxPerCustomer(params.customerId);
+
+			// Dispatch external delivery (email/SMS) — fire and forget
+			void deliverExternal(notification);
 
 			if (events) {
 				void events.emit("notifications.created", {
@@ -459,6 +585,7 @@ export function createNotificationsController(
 					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 					notification as Record<string, any>,
 				);
+				void deliverExternal(notification);
 				result.sent++;
 			}
 
@@ -490,6 +617,7 @@ export function createNotificationsController(
 					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 					notification as Record<string, any>,
 				);
+				void deliverExternal(notification);
 				result.sent++;
 			}
 
