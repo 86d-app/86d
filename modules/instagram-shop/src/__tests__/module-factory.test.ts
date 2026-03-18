@@ -40,4 +40,22 @@ describe("instagram-shop module factory", () => {
 		const mod = createModule({ accessToken: "test-123" });
 		expect(mod.id).toBe("instagram-shop");
 	});
+
+	it("wires settings endpoint when options provided", () => {
+		const mod = createModule({
+			accessToken: "test-token",
+			businessId: "12345",
+			catalogId: "67890",
+		});
+		expect(Object.keys(mod.endpoints?.admin ?? {})).toContain(
+			"/admin/instagram-shop/settings",
+		);
+	});
+
+	it("wires settings endpoint even without credentials", () => {
+		const mod = createModule();
+		expect(Object.keys(mod.endpoints?.admin ?? {})).toContain(
+			"/admin/instagram-shop/settings",
+		);
+	});
 });

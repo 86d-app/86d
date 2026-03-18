@@ -2,6 +2,7 @@ import { createListingEndpoint } from "./create-listing";
 import { deleteListingEndpoint } from "./delete-listing";
 import { getListingEndpoint } from "./get-listing";
 import { getOrderEndpoint } from "./get-order";
+import type { createGetSettingsEndpoint } from "./get-settings";
 import { listListingsEndpoint } from "./list-listings";
 import { listOrdersEndpoint } from "./list-orders";
 import { listSyncsEndpoint } from "./list-syncs";
@@ -12,6 +13,15 @@ import { syncOrdersEndpoint } from "./sync-orders";
 import { syncProductsEndpoint } from "./sync-products";
 import { updateListingEndpoint } from "./update-listing";
 import { updateOrderStatusEndpoint } from "./update-order-status";
+
+export function createAdminEndpointsWithSettings(
+	settingsEndpoint: ReturnType<typeof createGetSettingsEndpoint>,
+) {
+	return {
+		...adminEndpoints,
+		"/admin/tiktok-shop/settings": settingsEndpoint,
+	};
+}
 
 export const adminEndpoints = {
 	"/admin/tiktok-shop/listings/create": createListingEndpoint,

@@ -1,5 +1,6 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
-import { adminEndpoints } from "./admin/endpoints";
+import { createAdminEndpointsWithSettings } from "./admin/endpoints";
+import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
 import { facebookShopSchema } from "./schema";
 import { createFacebookShopController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints";
@@ -25,6 +26,13 @@ export interface FacebookShopOptions extends ModuleConfig {
 }
 
 export default function facebookShop(options?: FacebookShopOptions): Module {
+	const settingsEndpoint = createGetSettingsEndpoint({
+		accessToken: options?.accessToken,
+		pageId: options?.pageId,
+		catalogId: options?.catalogId,
+		commerceAccountId: options?.commerceAccountId,
+	});
+
 	return {
 		id: "facebook-shop",
 		version: "0.2.0",
@@ -51,7 +59,7 @@ export default function facebookShop(options?: FacebookShopOptions): Module {
 		},
 		endpoints: {
 			store: storeEndpoints,
-			admin: adminEndpoints,
+			admin: createAdminEndpointsWithSettings(settingsEndpoint),
 		},
 		admin: {
 			pages: [

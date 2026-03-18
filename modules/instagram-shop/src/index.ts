@@ -1,5 +1,6 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
-import { adminEndpoints } from "./admin/endpoints";
+import { createAdminEndpointsWithSettings } from "./admin/endpoints";
+import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
 import { instagramShopSchema } from "./schema";
 import { createInstagramShopController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints";
@@ -24,6 +25,13 @@ export interface InstagramShopOptions extends ModuleConfig {
 }
 
 export default function instagramShop(options?: InstagramShopOptions): Module {
+	const settingsEndpoint = createGetSettingsEndpoint({
+		accessToken: options?.accessToken,
+		businessId: options?.businessId,
+		catalogId: options?.catalogId,
+		commerceAccountId: options?.commerceAccountId,
+	});
+
 	return {
 		id: "instagram-shop",
 		version: "0.2.0",
@@ -51,7 +59,7 @@ export default function instagramShop(options?: InstagramShopOptions): Module {
 		},
 		endpoints: {
 			store: storeEndpoints,
-			admin: adminEndpoints,
+			admin: createAdminEndpointsWithSettings(settingsEndpoint),
 		},
 		admin: {
 			pages: [

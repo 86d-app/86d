@@ -4,6 +4,7 @@ import { deleteCollectionEndpoint } from "./delete-collection";
 import { deleteListingEndpoint } from "./delete-listing";
 import { getListingEndpoint } from "./get-listing";
 import { getOrderEndpoint } from "./get-order";
+import type { createGetSettingsEndpoint } from "./get-settings";
 import { listCollectionsEndpoint } from "./list-collections";
 import { listListingsEndpoint } from "./list-listings";
 import { listOrdersEndpoint } from "./list-orders";
@@ -15,6 +16,15 @@ import { syncOrdersEndpoint } from "./sync-orders";
 import { syncProductsEndpoint } from "./sync-products";
 import { updateListingEndpoint } from "./update-listing";
 import { updateOrderStatusEndpoint } from "./update-order-status";
+
+export function createAdminEndpointsWithSettings(
+	settingsEndpoint: ReturnType<typeof createGetSettingsEndpoint>,
+) {
+	return {
+		...adminEndpoints,
+		"/admin/facebook-shop/settings": settingsEndpoint,
+	};
+}
 
 export const adminEndpoints = {
 	"/admin/facebook-shop/listings/create": createListingEndpoint,

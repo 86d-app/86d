@@ -1,5 +1,6 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
-import { adminEndpoints } from "./admin/endpoints";
+import { createAdminEndpointsWithSettings } from "./admin/endpoints";
+import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
 import { tiktokShopSchema } from "./schema";
 import { createTikTokShopController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints";
@@ -26,6 +27,14 @@ export interface TikTokShopOptions extends ModuleConfig {
 }
 
 export default function tiktokShop(options?: TikTokShopOptions): Module {
+	const settingsEndpoint = createGetSettingsEndpoint({
+		appKey: options?.appKey,
+		appSecret: options?.appSecret,
+		accessToken: options?.accessToken,
+		shopId: options?.shopId,
+		sandbox: options?.sandbox !== "false",
+	});
+
 	return {
 		id: "tiktok-shop",
 		version: "0.2.0",
@@ -55,7 +64,7 @@ export default function tiktokShop(options?: TikTokShopOptions): Module {
 		},
 		endpoints: {
 			store: storeEndpoints,
-			admin: adminEndpoints,
+			admin: createAdminEndpointsWithSettings(settingsEndpoint),
 		},
 		admin: {
 			pages: [

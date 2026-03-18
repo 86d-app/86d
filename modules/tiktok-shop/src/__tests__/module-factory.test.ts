@@ -40,4 +40,22 @@ describe("tiktok-shop module factory", () => {
 		const mod = createModule({ appKey: "test-123" });
 		expect(mod.id).toBe("tiktok-shop");
 	});
+
+	it("wires settings endpoint when options provided", () => {
+		const mod = createModule({
+			appKey: "test-key",
+			appSecret: "test-secret",
+			accessToken: "test-token",
+		});
+		expect(Object.keys(mod.endpoints?.admin ?? {})).toContain(
+			"/admin/tiktok-shop/settings",
+		);
+	});
+
+	it("wires settings endpoint even without credentials", () => {
+		const mod = createModule();
+		expect(Object.keys(mod.endpoints?.admin ?? {})).toContain(
+			"/admin/tiktok-shop/settings",
+		);
+	});
 });
