@@ -2,12 +2,22 @@ import { createCatalogItemEndpoint } from "./create-catalog-item";
 import { createPinEndpoint } from "./create-pin";
 import { deleteCatalogItemEndpoint } from "./delete-catalog-item";
 import { getCatalogItemEndpoint } from "./get-catalog-item";
+import type { createGetSettingsEndpoint } from "./get-settings";
 import { listCatalogItemsEndpoint } from "./list-catalog-items";
 import { listPinsEndpoint } from "./list-pins";
 import { listSyncsEndpoint } from "./list-syncs";
 import { statsEndpoint } from "./stats";
 import { syncCatalogEndpoint } from "./sync-catalog";
 import { updateCatalogItemEndpoint } from "./update-catalog-item";
+
+export function createAdminEndpointsWithSettings(
+	settingsEndpoint: ReturnType<typeof createGetSettingsEndpoint>,
+) {
+	return {
+		...adminEndpoints,
+		"/admin/pinterest-shop/settings": settingsEndpoint,
+	};
+}
 
 export const adminEndpoints = {
 	"/admin/pinterest-shop/items": listCatalogItemsEndpoint,

@@ -1,4 +1,9 @@
-import type { ModuleDataService } from "@86d-app/core";
+import type { ModuleDataService, ScopedEventEmitter } from "@86d-app/core";
+import {
+	formatPinterestPrice,
+	mapAvailabilityToPinterest,
+	PinterestApiProvider,
+} from "./provider";
 import type {
 	CatalogItem,
 	CatalogSync,
@@ -10,7 +15,21 @@ import type {
 
 export function createPinterestShopController(
 	data: ModuleDataService,
+	events?: ScopedEventEmitter | undefined,
+	options?: {
+		accessToken: string;
+		adAccountId?: string | undefined;
+		catalogId?: string | undefined;
+	},
 ): PinterestShopController {
+	const provider = options?.accessToken
+		? new PinterestApiProvider({
+				accessToken: options.accessToken,
+				adAccountId: options.adAccountId,
+				catalogId: options.catalogId,
+			})
+		: null;
+
 	return {
 		async createCatalogItem(params) {
 			const now = new Date();
@@ -80,6 +99,17 @@ export function createPinterestShopController(
 		async deleteCatalogItem(id) {
 			const existing = await data.get("catalogItem", id);
 			if (!existing) return false;
+
+			const item = existing as unknown as CatalogItem;
+
+			if (provider && item.pinterestItemId) {
+				try {
+					await provider.batchDeleteItems([item.pinterestItemId]);
+				} catch {
+					// Continue with local deletion even if API call fails
+				}
+			}
+
 			await data.delete("catalogItem", id);
 			return true;
 		},
@@ -120,24 +150,90 @@ export function createPinterestShopController(
 			const allItems = await data.findMany("catalogItem", {
 				where: { status: "active" },
 			});
+			const items = allItems as unknown as CatalogItem[];
 
 			const sync: CatalogSync = {
 				id,
 				status: "syncing",
-				totalItems: allItems.length,
-				syncedItems: allItems.length,
+				totalItems: items.length,
+				syncedItems: 0,
 				failedItems: 0,
 				error: undefined,
 				startedAt: now,
-				completedAt: now,
+				completedAt: undefined,
 				createdAt: now,
 			};
 
-			// Mark as synced
-			sync.status = "synced";
+			if (!provider) {
+				sync.status = "synced";
+				sync.syncedItems = items.length;
+				sync.completedAt = new Date();
+
+				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+				await data.upsert("catalogSync", id, sync as Record<string, any>);
+				return sync;
+			}
 
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("catalogSync", id, sync as Record<string, any>);
+
+			try {
+				const batchItems = items.map((item) => ({
+					itemId: item.pinterestItemId ?? item.localProductId,
+					title: item.title,
+					description: item.description ?? "",
+					link: item.link,
+					imageLink: item.imageUrl,
+					price: formatPinterestPrice(item.price),
+					...(item.salePrice
+						? { salePrice: formatPinterestPrice(item.salePrice) }
+						: {}),
+					availability: mapAvailabilityToPinterest(item.availability),
+					...(item.googleCategory
+						? { googleProductCategory: item.googleCategory }
+						: {}),
+				}));
+
+				const result = await provider.batchUpsertItems(batchItems);
+
+				const syncedNow = new Date();
+				for (const item of items) {
+					const updatedItem: CatalogItem = {
+						...item,
+						pinterestItemId: item.pinterestItemId ?? item.localProductId,
+						lastSyncedAt: syncedNow,
+						error: undefined,
+						updatedAt: syncedNow,
+					};
+					await data.upsert(
+						"catalogItem",
+						item.id,
+						// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+						updatedItem as Record<string, any>,
+					);
+				}
+
+				sync.syncedItems = result.total_count ?? items.length;
+				sync.failedItems = result.failure_count ?? 0;
+				sync.status = sync.failedItems > 0 ? "failed" : "synced";
+				sync.completedAt = new Date();
+			} catch (err) {
+				sync.status = "failed";
+				sync.error = err instanceof Error ? err.message : "Sync failed";
+				sync.completedAt = new Date();
+			}
+
+			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+			await data.upsert("catalogSync", id, sync as Record<string, any>);
+
+			events?.emit("pinterest.catalog.synced", {
+				syncId: sync.id,
+				totalItems: sync.totalItems,
+				syncedItems: sync.syncedItems,
+				failedItems: sync.failedItems,
+				status: sync.status,
+			});
+
 			return sync;
 		},
 
@@ -166,11 +262,30 @@ export function createPinterestShopController(
 		async createPin(params) {
 			const now = new Date();
 			const id = crypto.randomUUID();
+			let externalPinId: string | undefined;
+
+			if (provider) {
+				try {
+					const result = await provider.createPin({
+						title: params.title,
+						description: params.description,
+						link: params.link,
+						board_id: params.boardId,
+						media_source: {
+							source_type: "image_url",
+							url: params.imageUrl,
+						},
+					});
+					externalPinId = result.id;
+				} catch {
+					// Store locally even if Pinterest API call fails
+				}
+			}
 
 			const pin: ShoppingPin = {
 				id,
 				catalogItemId: params.catalogItemId,
-				pinId: undefined,
+				pinId: externalPinId,
 				boardId: params.boardId,
 				title: params.title,
 				description: params.description,
@@ -185,6 +300,13 @@ export function createPinterestShopController(
 
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("shoppingPin", id, pin as Record<string, any>);
+
+			events?.emit("pinterest.pin.created", {
+				pinId: pin.id,
+				externalPinId,
+				catalogItemId: params.catalogItemId,
+			});
+
 			return pin;
 		},
 
@@ -213,6 +335,53 @@ export function createPinterestShopController(
 			if (!raw) return null;
 
 			const pin = raw as unknown as ShoppingPin;
+
+			if (provider && pin.pinId) {
+				try {
+					const now = new Date();
+					const thirtyDaysAgo = new Date(
+						now.getTime() - 30 * 24 * 60 * 60 * 1000,
+					);
+					const startDate = thirtyDaysAgo.toISOString().split("T")[0];
+					const endDate = now.toISOString().split("T")[0];
+
+					const result = await provider.getPinAnalytics(
+						pin.pinId,
+						startDate,
+						endDate,
+					);
+
+					const metrics = result.all?.lifetime_metrics ?? {};
+					const impressions = metrics.IMPRESSION ?? 0;
+					const saves = metrics.SAVE ?? 0;
+					const clicks = metrics.PIN_CLICK ?? 0;
+
+					const updatedPin: ShoppingPin = {
+						...pin,
+						impressions,
+						saves,
+						clicks,
+						updatedAt: new Date(),
+					};
+					await data.upsert(
+						"shoppingPin",
+						id,
+						// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+						updatedPin as Record<string, any>,
+					);
+
+					return {
+						impressions,
+						saves,
+						clicks,
+						clickRate: impressions > 0 ? clicks / impressions : 0,
+						saveRate: impressions > 0 ? saves / impressions : 0,
+					};
+				} catch {
+					// Fall through to local data
+				}
+			}
+
 			const analytics: PinAnalytics = {
 				impressions: pin.impressions,
 				saves: pin.saves,

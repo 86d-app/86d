@@ -1,5 +1,6 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
-import { adminEndpoints } from "./admin/endpoints";
+import { createAdminEndpointsWithSettings } from "./admin/endpoints";
+import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
 import { pinterestShopSchema } from "./schema";
 import { createPinterestShopController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints";
@@ -26,9 +27,15 @@ export interface PinterestShopOptions extends ModuleConfig {
 }
 
 export default function pinterestShop(options?: PinterestShopOptions): Module {
+	const settingsEndpoint = createGetSettingsEndpoint({
+		accessToken: options?.accessToken,
+		adAccountId: options?.adAccountId,
+		catalogId: options?.catalogId,
+	});
+
 	return {
 		id: "pinterest-shop",
-		version: "0.1.0",
+		version: "0.2.0",
 		schema: pinterestShopSchema,
 		exports: {
 			read: [
@@ -48,12 +55,22 @@ export default function pinterestShop(options?: PinterestShopOptions): Module {
 			],
 		},
 		init: async (ctx: ModuleContext) => {
-			const controller = createPinterestShopController(ctx.data);
+			const controller = createPinterestShopController(
+				ctx.data,
+				ctx.events,
+				options?.accessToken
+					? {
+							accessToken: options.accessToken,
+							adAccountId: options.adAccountId,
+							catalogId: options.catalogId,
+						}
+					: undefined,
+			);
 			return { controllers: { pinterestShop: controller } };
 		},
 		endpoints: {
 			store: storeEndpoints,
-			admin: adminEndpoints,
+			admin: createAdminEndpointsWithSettings(settingsEndpoint),
 		},
 		admin: {
 			pages: [
