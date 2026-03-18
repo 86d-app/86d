@@ -43,6 +43,9 @@ export function createInstagramShopController(
 				localProductId: params.localProductId,
 				externalProductId: params.externalProductId,
 				title: params.title,
+				description: params.description,
+				price: params.price,
+				imageUrl: params.imageUrl,
 				status: params.status ?? "draft",
 				syncStatus: params.syncStatus ?? "pending",
 				lastSyncedAt: undefined,
@@ -73,6 +76,11 @@ export function createInstagramShopController(
 					? { externalProductId: params.externalProductId }
 					: {}),
 				...(params.title !== undefined ? { title: params.title } : {}),
+				...(params.description !== undefined
+					? { description: params.description }
+					: {}),
+				...(params.price !== undefined ? { price: params.price } : {}),
+				...(params.imageUrl !== undefined ? { imageUrl: params.imageUrl } : {}),
 				...(params.status !== undefined ? { status: params.status } : {}),
 				...(params.syncStatus !== undefined
 					? { syncStatus: params.syncStatus }
@@ -222,12 +230,29 @@ export function createInstagramShopController(
 						await provider.updateProduct(listing.externalProductId, {
 							name: listing.title,
 						});
+					} else if (!listing.imageUrl) {
+						failedProducts++;
+						const updatedListing: Listing = {
+							...listing,
+							syncStatus: "failed",
+							error:
+								"No image URL provided — set imageUrl on the listing before syncing",
+							updatedAt: new Date(),
+						};
+						await data.upsert(
+							"listing",
+							listing.id,
+							// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+							updatedListing as Record<string, any>,
+						);
+						continue;
 					} else {
 						const result = await provider.createProduct({
 							retailer_id: listing.localProductId,
 							name: listing.title,
-							price: 0,
-							image_url: "https://placeholder.com/product.jpg",
+							description: listing.description ?? listing.title,
+							price: listing.price ?? 0,
+							image_url: listing.imageUrl,
 						});
 						const updatedListing: Listing = {
 							...listing,
@@ -439,12 +464,28 @@ export function createInstagramShopController(
 					await provider.updateProduct(listing.externalProductId, {
 						name: listing.title,
 					});
+				} else if (!listing.imageUrl) {
+					const updatedListing: Listing = {
+						...listing,
+						syncStatus: "failed",
+						error:
+							"No image URL provided — set imageUrl on the listing before pushing",
+						updatedAt: new Date(),
+					};
+					await data.upsert(
+						"listing",
+						id,
+						// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+						updatedListing as Record<string, any>,
+					);
+					return updatedListing;
 				} else {
 					const result = await provider.createProduct({
 						retailer_id: listing.localProductId,
 						name: listing.title,
-						price: 0,
-						image_url: "https://placeholder.com/product.jpg",
+						description: listing.description ?? listing.title,
+						price: listing.price ?? 0,
+						image_url: listing.imageUrl,
 					});
 					listing.externalProductId = result.id;
 				}

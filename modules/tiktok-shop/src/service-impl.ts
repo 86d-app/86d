@@ -49,6 +49,9 @@ export function createTikTokShopController(
 				localProductId: params.localProductId,
 				externalProductId: params.externalProductId,
 				title: params.title,
+				description: params.description,
+				price: params.price,
+				imageUrl: params.imageUrl,
 				status: params.status ?? "draft",
 				syncStatus: params.syncStatus ?? "pending",
 				lastSyncedAt: undefined,
@@ -78,6 +81,11 @@ export function createTikTokShopController(
 					? { externalProductId: params.externalProductId }
 					: {}),
 				...(params.title !== undefined ? { title: params.title } : {}),
+				...(params.description !== undefined
+					? { description: params.description }
+					: {}),
+				...(params.price !== undefined ? { price: params.price } : {}),
+				...(params.imageUrl !== undefined ? { imageUrl: params.imageUrl } : {}),
 				...(params.status !== undefined ? { status: params.status } : {}),
 				...(params.syncStatus !== undefined
 					? { syncStatus: params.syncStatus }
@@ -173,16 +181,35 @@ export function createTikTokShopController(
 						await provider.updateProduct(listing.externalProductId, {
 							title: listing.title,
 						});
+					} else if (!listing.imageUrl) {
+						failedProducts++;
+						const updatedListing: Listing = {
+							...listing,
+							syncStatus: "failed",
+							error:
+								"No image URL provided — set imageUrl on the listing before syncing",
+							updatedAt: new Date(),
+						};
+						await data.upsert(
+							"listing",
+							listing.id,
+							// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+							updatedListing as Record<string, any>,
+						);
+						continue;
 					} else {
 						const result = await provider.createProduct({
 							title: listing.title,
-							description: listing.title,
+							description: listing.description ?? listing.title,
 							category_id: "0",
-							images: [{ uri: "https://placeholder.com/product.jpg" }],
+							images: [{ uri: listing.imageUrl }],
 							skus: [
 								{
 									seller_sku: listing.localProductId,
-									price: { amount: "0", currency: "USD" },
+									price: {
+										amount: String(listing.price ?? 0),
+										currency: "USD",
+									},
 									inventory: [
 										{
 											warehouse_id: "default",
@@ -399,16 +426,34 @@ export function createTikTokShopController(
 					await provider.updateProduct(listing.externalProductId, {
 						title: listing.title,
 					});
+				} else if (!listing.imageUrl) {
+					const updatedListing: Listing = {
+						...listing,
+						syncStatus: "failed",
+						error:
+							"No image URL provided — set imageUrl on the listing before pushing",
+						updatedAt: new Date(),
+					};
+					await data.upsert(
+						"listing",
+						id,
+						// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+						updatedListing as Record<string, any>,
+					);
+					return updatedListing;
 				} else {
 					const result = await provider.createProduct({
 						title: listing.title,
-						description: listing.title,
+						description: listing.description ?? listing.title,
 						category_id: "0",
-						images: [{ uri: "https://placeholder.com/product.jpg" }],
+						images: [{ uri: listing.imageUrl }],
 						skus: [
 							{
 								seller_sku: listing.localProductId,
-								price: { amount: "0", currency: "USD" },
+								price: {
+									amount: String(listing.price ?? 0),
+									currency: "USD",
+								},
 								inventory: [{ warehouse_id: "default", quantity: 0 }],
 							},
 						],

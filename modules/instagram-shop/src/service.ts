@@ -21,6 +21,9 @@ export interface Listing {
 	localProductId: string;
 	externalProductId?: string | undefined;
 	title: string;
+	description?: string | undefined;
+	price?: number | undefined;
+	imageUrl?: string | undefined;
 	status: ListingStatus;
 	syncStatus: SyncStatus;
 	lastSyncedAt?: Date | undefined;
@@ -80,6 +83,9 @@ export interface InstagramShopController extends ModuleController {
 		localProductId: string;
 		externalProductId?: string | undefined;
 		title: string;
+		description?: string | undefined;
+		price?: number | undefined;
+		imageUrl?: string | undefined;
 		status?: ListingStatus | undefined;
 		syncStatus?: SyncStatus | undefined;
 		metadata?: Record<string, unknown> | undefined;
@@ -91,6 +97,9 @@ export interface InstagramShopController extends ModuleController {
 			localProductId?: string | undefined;
 			externalProductId?: string | undefined;
 			title?: string | undefined;
+			description?: string | undefined;
+			price?: number | undefined;
+			imageUrl?: string | undefined;
 			status?: ListingStatus | undefined;
 			syncStatus?: SyncStatus | undefined;
 			lastSyncedAt?: Date | undefined;

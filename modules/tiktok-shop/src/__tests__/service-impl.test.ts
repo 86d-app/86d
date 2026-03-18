@@ -48,6 +48,20 @@ describe("createTikTokShopController", () => {
 			expect(listing.metadata).toEqual({ sku: "ABC123" });
 		});
 
+		it("creates a listing with description, price, and imageUrl", async () => {
+			const listing = await controller.createListing({
+				localProductId: "prod-img",
+				title: "Product With Image",
+				description: "A great product",
+				price: 29.99,
+				imageUrl: "https://example.com/product.jpg",
+			});
+
+			expect(listing.description).toBe("A great product");
+			expect(listing.price).toBe(29.99);
+			expect(listing.imageUrl).toBe("https://example.com/product.jpg");
+		});
+
 		it("stores the listing in the data service", async () => {
 			await controller.createListing({
 				localProductId: "prod-3",
@@ -111,6 +125,23 @@ describe("createTikTokShopController", () => {
 
 			expect(updated?.syncStatus).toBe("failed");
 			expect(updated?.error).toBe("API rate limit exceeded");
+		});
+
+		it("updates description, price, and imageUrl", async () => {
+			const created = await controller.createListing({
+				localProductId: "prod-1",
+				title: "Product",
+			});
+
+			const updated = await controller.updateListing(created.id, {
+				description: "Updated description",
+				price: 49.99,
+				imageUrl: "https://example.com/updated.jpg",
+			});
+
+			expect(updated?.description).toBe("Updated description");
+			expect(updated?.price).toBe(49.99);
+			expect(updated?.imageUrl).toBe("https://example.com/updated.jpg");
 		});
 	});
 

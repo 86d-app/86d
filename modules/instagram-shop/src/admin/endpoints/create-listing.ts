@@ -9,6 +9,9 @@ export const createListingEndpoint = createAdminEndpoint(
 			localProductId: z.string().min(1).max(200).transform(sanitizeText),
 			externalProductId: z.string().max(200).transform(sanitizeText).optional(),
 			title: z.string().min(1).max(500).transform(sanitizeText),
+			description: z.string().max(5000).transform(sanitizeText).optional(),
+			price: z.number().min(0).optional(),
+			imageUrl: z.string().max(2000).transform(sanitizeText).optional(),
 			status: z
 				.enum(["draft", "pending", "active", "rejected", "suspended"])
 				.optional(),
@@ -25,6 +28,9 @@ export const createListingEndpoint = createAdminEndpoint(
 			localProductId: ctx.body.localProductId,
 			externalProductId: ctx.body.externalProductId,
 			title: ctx.body.title,
+			description: ctx.body.description,
+			price: ctx.body.price,
+			imageUrl: ctx.body.imageUrl,
 			status: ctx.body.status,
 			syncStatus: ctx.body.syncStatus,
 			metadata: ctx.body.metadata,
