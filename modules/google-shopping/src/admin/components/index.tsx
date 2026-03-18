@@ -1,3 +1,3 @@
 "use client";
 
-export { default as GoogleShoppingAdmin } from "./google-shopping-admin.mdx";
+export { GoogleShoppingAdmin } from "./google-shopping-admin";

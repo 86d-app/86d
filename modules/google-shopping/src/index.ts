@@ -1,5 +1,6 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
-import { adminEndpoints } from "./admin/endpoints";
+import { createAdminEndpointsWithSettings } from "./admin/endpoints";
+import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
 import { googleShoppingSchema } from "./schema";
 import { createGoogleShoppingController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints";
@@ -27,6 +28,13 @@ export interface GoogleShoppingOptions extends ModuleConfig {
 export default function googleShopping(
 	options?: GoogleShoppingOptions,
 ): Module {
+	const settingsEndpoint = createGetSettingsEndpoint({
+		merchantId: options?.merchantId,
+		apiKey: options?.apiKey,
+		targetCountry: options?.targetCountry,
+		contentLanguage: options?.contentLanguage,
+	});
+
 	return {
 		id: "google-shopping",
 		version: "0.1.0",
@@ -44,12 +52,17 @@ export default function googleShopping(
 			],
 		},
 		init: async (ctx: ModuleContext) => {
-			const controller = createGoogleShoppingController(ctx.data);
+			const controller = createGoogleShoppingController(ctx.data, ctx.events, {
+				merchantId: options?.merchantId,
+				apiKey: options?.apiKey,
+				targetCountry: options?.targetCountry,
+				contentLanguage: options?.contentLanguage,
+			});
 			return { controllers: { "google-shopping": controller } };
 		},
 		endpoints: {
 			store: storeEndpoints,
-			admin: adminEndpoints,
+			admin: createAdminEndpointsWithSettings(settingsEndpoint),
 		},
 		admin: {
 			pages: [

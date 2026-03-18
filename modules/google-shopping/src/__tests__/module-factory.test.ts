@@ -40,4 +40,21 @@ describe("google-shopping module factory", () => {
 		const mod = createModule({ merchantId: "test-123" });
 		expect(mod.id).toBe("google-shopping");
 	});
+
+	it("wires settings endpoint when options provided", () => {
+		const mod = createModule({
+			merchantId: "12345",
+			apiKey: "AIzaSy_test_key",
+		});
+		expect(Object.keys(mod.endpoints?.admin ?? {})).toContain(
+			"/admin/google-shopping/settings",
+		);
+	});
+
+	it("wires settings endpoint even without credentials", () => {
+		const mod = createModule();
+		expect(Object.keys(mod.endpoints?.admin ?? {})).toContain(
+			"/admin/google-shopping/settings",
+		);
+	});
 });
