@@ -285,6 +285,36 @@ export interface ReorderItem {
 	quantity: number;
 }
 
+// ── Cross-module controller interfaces (for cancel side effects) ─────────────
+
+/** Minimal payment controller needed for refunding on order cancellation. */
+export interface PaymentRefundController {
+	listIntents(params: {
+		orderId?: string | undefined;
+		status?: string | undefined;
+	}): Promise<
+		Array<{
+			id: string;
+			status: string;
+			amount: number;
+		}>
+	>;
+	createRefund(params: {
+		intentId: string;
+		amount?: number | undefined;
+		reason?: string | undefined;
+	}): Promise<{ id: string; amount: number; status: string }>;
+}
+
+/** Minimal inventory controller needed for releasing stock on cancellation. */
+export interface InventoryReleaseController {
+	release(params: {
+		productId: string;
+		variantId?: string | undefined;
+		quantity: number;
+	}): Promise<unknown>;
+}
+
 export interface OrderController extends ModuleController {
 	/**
 	 * Create a new order

@@ -1,7 +1,10 @@
 import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
+import { performCancellationEffects } from "../../cancel-effects";
 import type {
+	InventoryReleaseController,
 	OrderController,
 	OrderStatus,
+	PaymentRefundController,
 	PaymentStatus,
 } from "../../service";
 
@@ -66,6 +69,22 @@ export const adminUpdateOrder = createAdminEndpoint(
 					: {}),
 			});
 			if (updated) order = { ...order, ...updated };
+		}
+
+		// Perform cancellation side effects when transitioning to "cancelled"
+		if (status === "cancelled" && previousStatus !== "cancelled") {
+			const paymentRefundController = ctx.context.controllers
+				.payments as unknown as PaymentRefundController | undefined;
+			const inventoryController = ctx.context.controllers
+				.inventory as unknown as InventoryReleaseController | undefined;
+
+			await performCancellationEffects({
+				order,
+				orderController: controller,
+				paymentController: paymentRefundController,
+				inventoryController,
+				cancelledBy: "admin",
+			});
 		}
 
 		// Emit events for status transitions that trigger email notifications

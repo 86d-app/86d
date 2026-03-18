@@ -4,6 +4,7 @@ import {
 	createAdminEndpointsWithSettings,
 } from "./admin/endpoints";
 import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
+import { buildOrderConfirmationEmail } from "./emails/order-confirmation";
 import { ResendProvider, TwilioProvider } from "./provider";
 import { notificationsSchema } from "./schema";
 import { createNotificationsController } from "./service-impl";
@@ -20,6 +21,11 @@ export type {
 	NotificationTemplate,
 	NotificationType,
 } from "./service";
+
+function formatCurrency(amount: number, currency: string): string {
+	const code = currency.toUpperCase();
+	return `${(amount / 100).toFixed(2)} ${code}`;
+}
 
 export interface NotificationsOptions extends ModuleConfig {
 	/** Max notifications per customer before auto-cleanup (default: "500") */
@@ -87,6 +93,85 @@ export default function notifications(options?: NotificationsOptions): Module {
 				emailProvider,
 				smsProvider,
 			});
+
+			interface CheckoutCompletedPayload {
+				sessionId: string;
+				orderId: string;
+				orderNumber: string;
+				customerId?: string | undefined;
+				email: string;
+				customerName: string;
+				items: Array<{
+					name: string;
+					quantity: number;
+					price: number;
+				}>;
+				subtotal: number;
+				taxAmount: number;
+				shippingAmount: number;
+				discountAmount: number;
+				giftCardAmount: number;
+				total: number;
+				currency: string;
+				shippingAddress?: {
+					firstName?: string;
+					lastName?: string;
+					line1?: string;
+					line2?: string;
+					city?: string;
+					state?: string;
+					postalCode?: string;
+					country?: string;
+				};
+			}
+
+			ctx.events?.on<CheckoutCompletedPayload>(
+				"checkout.completed",
+				async (event) => {
+					const p = event.payload;
+					if (!p) return;
+
+					// Create in-app notification for logged-in customers
+					if (p.customerId) {
+						await controller.create({
+							customerId: p.customerId,
+							type: "order",
+							channel: emailProvider ? "both" : "in_app",
+							priority: "normal",
+							title: `Order ${p.orderNumber} confirmed`,
+							body: `Thank you for your order! Your order total is ${formatCurrency(p.total, p.currency)}.`,
+							actionUrl: `/orders/${p.orderId}`,
+							metadata: {
+								orderId: p.orderId,
+								orderNumber: p.orderNumber,
+								total: p.total,
+								currency: p.currency,
+							},
+						});
+					}
+
+					// Send order confirmation email directly (works for both guests and customers)
+					if (emailProvider && p.email) {
+						const { subject, html, text } = buildOrderConfirmationEmail(p);
+						await emailProvider
+							.sendEmail({
+								to: p.email,
+								subject,
+								html,
+								text,
+								tags: [
+									{ name: "type", value: "order_confirmation" },
+									{ name: "order_id", value: p.orderId },
+								],
+							})
+							.catch(() => {
+								// Email delivery failure is non-fatal — the in-app
+								// notification still exists for logged-in customers
+							});
+					}
+				},
+			);
+
 			return { controllers: { notifications: controller } };
 		},
 		endpoints: {

@@ -1,5 +1,9 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
-import { adminEndpoints } from "./admin/endpoints";
+import {
+	adminEndpoints,
+	createAdminEndpointsWithSettings,
+} from "./admin/endpoints";
+import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
 import { analyticsSchema } from "./schema";
 import { createAnalyticsController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints";
@@ -22,9 +26,20 @@ export type {
 export interface AnalyticsOptions extends ModuleConfig {
 	/** Maximum events to retain (default: unlimited). Not enforced at module level. */
 	maxEvents?: string;
+	/** Google Tag Manager container ID (e.g. "GTM-XXXXXXX") */
+	gtmContainerId?: string | undefined;
+	/** Sentry DSN for error tracking and performance monitoring */
+	sentryDsn?: string | undefined;
 }
 
 export default function analytics(options?: AnalyticsOptions): Module {
+	const hasProviders = Boolean(options?.gtmContainerId || options?.sentryDsn);
+
+	const settingsEndpoint = createGetSettingsEndpoint({
+		gtmContainerId: options?.gtmContainerId,
+		sentryDsn: options?.sentryDsn,
+	});
+
 	return {
 		id: "analytics",
 		version: "0.0.1",
@@ -47,7 +62,9 @@ export default function analytics(options?: AnalyticsOptions): Module {
 		},
 		endpoints: {
 			store: storeEndpoints,
-			admin: adminEndpoints,
+			admin: hasProviders
+				? createAdminEndpointsWithSettings(settingsEndpoint)
+				: adminEndpoints,
 		},
 		admin: {
 			pages: [
@@ -56,6 +73,13 @@ export default function analytics(options?: AnalyticsOptions): Module {
 					component: "AnalyticsAdmin",
 					label: "Analytics",
 					icon: "ChartBar",
+					group: "System",
+				},
+				{
+					path: "/admin/analytics/settings",
+					component: "AnalyticsSettings",
+					label: "Settings",
+					icon: "Gear",
 					group: "System",
 				},
 			],

@@ -3,9 +3,19 @@ import { getRevenueEndpoint } from "./get-revenue";
 import { getRevenueTimeSeriesEndpoint } from "./get-revenue-timeseries";
 import { getSalesByProductEndpoint } from "./get-sales-by-product";
 import { getSearchAnalyticsEndpoint } from "./get-search-analytics";
+import type { createGetSettingsEndpoint } from "./get-settings";
 import { getStatsEndpoint } from "./get-stats";
 import { getTopProductsEndpoint } from "./get-top-products";
 import { listEventsEndpoint } from "./list-events";
+
+export function createAdminEndpointsWithSettings(
+	settingsEndpoint: ReturnType<typeof createGetSettingsEndpoint>,
+) {
+	return {
+		...adminEndpoints,
+		"/admin/analytics/settings": settingsEndpoint,
+	};
+}
 
 export const adminEndpoints = {
 	"/admin/analytics/events": listEventsEndpoint,

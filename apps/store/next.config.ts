@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import createMDX from "@next/mdx";
+import { withSentryConfig } from "@sentry/nextjs";
 import env from "env";
 import type { NextConfig } from "next";
 import type { RemotePattern } from "next/dist/shared/lib/image-config";
@@ -30,7 +31,7 @@ const cspDirectives = [
 	"style-src 'self' 'unsafe-inline'",
 	"img-src 'self' data: https: blob:",
 	"font-src 'self'",
-	"connect-src 'self' https://vitals.vercel-insights.com https://www.google-analytics.com https:",
+	"connect-src 'self' https://vitals.vercel-insights.com https://www.google-analytics.com https://*.ingest.sentry.io https:",
 	"frame-ancestors 'none'",
 	"base-uri 'self'",
 	"form-action 'self'",
@@ -60,7 +61,7 @@ const securityHeaders = [
 
 const withMDX = createMDX({});
 
-export default withMDX({
+const nextConfig = withMDX({
 	...(process.env.DOCKER_BUILD === "true"
 		? { output: "standalone" as const }
 		: {}),
@@ -90,3 +91,8 @@ export default withMDX({
 		return [{ source: "/:path*", headers: securityHeaders }];
 	},
 } satisfies NextConfig);
+
+export default withSentryConfig(nextConfig, {
+	silent: true,
+	sourcemaps: { disable: true },
+});

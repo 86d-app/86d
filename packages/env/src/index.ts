@@ -13,6 +13,8 @@ const envSchema = z.object({
 	DATABASE_URL: z.string().optional(),
 	NEXT_PUBLIC_STORE_URL: z.url().optional(),
 	NEXT_PUBLIC_GOOGLE_TAG_MANAGER_ID: z.string().optional(),
+	SENTRY_DSN: z.string().optional(),
+	NEXT_PUBLIC_SENTRY_DSN: z.string().optional(),
 	VERCEL_BLOB_STORAGE_HOSTNAME: z.string().optional(),
 	STORAGE_PROVIDER: z
 		.enum(["local", "vercel", "s3"])

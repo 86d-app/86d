@@ -194,6 +194,7 @@ export const completeSession = createStoreEndpoint(
 				sessionId: session.id,
 				orderId,
 				orderNumber: orderId,
+				customerId: session.customerId ?? undefined,
 				email,
 				customerName,
 				items: lineItems.map((item) => ({

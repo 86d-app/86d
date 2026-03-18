@@ -1,5 +1,10 @@
 import { createStoreEndpoint, z } from "@86d-app/core";
-import type { OrderController } from "../../service";
+import { performCancellationEffects } from "../../cancel-effects";
+import type {
+	InventoryReleaseController,
+	OrderController,
+	PaymentRefundController,
+} from "../../service";
 
 export const cancelMyOrder = createStoreEndpoint(
 	"/orders/me/:id/cancel",
@@ -27,6 +32,22 @@ export const cancelMyOrder = createStoreEndpoint(
 				status: 422,
 			};
 		}
+
+		// Perform cancellation side effects: refund payment, release inventory
+		const paymentController = ctx.context.controllers.payments as unknown as
+			| PaymentRefundController
+			| undefined;
+		const inventoryController = ctx.context.controllers.inventory as unknown as
+			| InventoryReleaseController
+			| undefined;
+
+		await performCancellationEffects({
+			order,
+			orderController: controller,
+			paymentController,
+			inventoryController,
+			cancelledBy: "customer",
+		});
 
 		// Emit order.cancelled event for email notifications
 		if (ctx.context.events) {
