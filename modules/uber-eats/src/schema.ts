@@ -15,6 +15,7 @@ export const uberEatsSchema = {
 			customerPhone: { type: "string", required: false },
 			estimatedReadyTime: { type: "date", required: false },
 			specialInstructions: { type: "string", required: false },
+			orderType: { type: "string", required: false },
 			createdAt: {
 				type: "date",
 				required: true,

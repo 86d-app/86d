@@ -24,6 +24,7 @@ export interface UberOrder {
 	customerPhone?: string | undefined;
 	estimatedReadyTime?: Date | undefined;
 	specialInstructions?: string | undefined;
+	orderType?: string | undefined;
 	createdAt: Date;
 	updatedAt: Date;
 }
@@ -60,13 +61,14 @@ export interface UberEatsController extends ModuleController {
 		customerName?: string | undefined;
 		customerPhone?: string | undefined;
 		specialInstructions?: string | undefined;
+		orderType?: string | undefined;
 	}): Promise<UberOrder>;
 
 	acceptOrder(id: string): Promise<UberOrder | null>;
 
 	markReady(id: string): Promise<UberOrder | null>;
 
-	cancelOrder(id: string): Promise<UberOrder | null>;
+	cancelOrder(id: string, reason?: string): Promise<UberOrder | null>;
 
 	getOrder(id: string): Promise<UberOrder | null>;
 

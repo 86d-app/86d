@@ -1,4 +1,5 @@
 import type { ModuleDataService, ScopedEventEmitter } from "@86d-app/core";
+import type { UberEatsProvider } from "./provider";
 import type {
 	MenuSync,
 	OrderStats,
@@ -10,6 +11,7 @@ import type {
 export function createUberEatsController(
 	data: ModuleDataService,
 	events?: ScopedEventEmitter | undefined,
+	provider?: UberEatsProvider | undefined,
 ): UberEatsController {
 	return {
 		async receiveOrder(params) {
@@ -27,6 +29,7 @@ export function createUberEatsController(
 				customerName: params.customerName,
 				customerPhone: params.customerPhone,
 				specialInstructions: params.specialInstructions,
+				orderType: params.orderType,
 				createdAt: now,
 				updatedAt: now,
 			};
@@ -46,6 +49,19 @@ export function createUberEatsController(
 
 			const order = existing as unknown as UberOrder;
 			if (order.status !== "pending") return null;
+
+			// Call Uber Eats API to accept the order
+			if (provider && order.externalOrderId) {
+				try {
+					await provider.acceptOrder(order.externalOrderId);
+				} catch (err) {
+					const message =
+						err instanceof Error
+							? err.message
+							: "Failed to accept on Uber Eats";
+					throw new Error(`Uber Eats accept failed: ${message}`);
+				}
+			}
 
 			const now = new Date();
 			const updated: UberOrder = {
@@ -86,7 +102,7 @@ export function createUberEatsController(
 			return updated;
 		},
 
-		async cancelOrder(id) {
+		async cancelOrder(id, reason) {
 			const existing = await data.get("uberOrder", id);
 			if (!existing) return null;
 
@@ -97,6 +113,23 @@ export function createUberEatsController(
 				order.status === "picked-up"
 			) {
 				return null;
+			}
+
+			// Call Uber Eats API to cancel the order
+			if (provider && order.externalOrderId) {
+				try {
+					await provider.cancelOrder(
+						order.externalOrderId,
+						reason ?? "Cancelled by merchant",
+						"OTHER",
+					);
+				} catch (err) {
+					const message =
+						err instanceof Error
+							? err.message
+							: "Failed to cancel on Uber Eats";
+					throw new Error(`Uber Eats cancel failed: ${message}`);
+				}
 			}
 
 			const now = new Date();
@@ -138,19 +171,60 @@ export function createUberEatsController(
 			const id = crypto.randomUUID();
 			const sync: MenuSync = {
 				id,
-				status: "synced",
+				status: "syncing",
 				itemCount,
 				startedAt: now,
-				completedAt: now,
 				createdAt: now,
 			};
+
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("menuSync", id, sync as Record<string, any>);
+
+			if (provider) {
+				try {
+					const menu = await provider.getMenu();
+					const totalItems = menu.items?.length ?? 0;
+					const completed: MenuSync = {
+						...sync,
+						status: "synced",
+						itemCount: totalItems || itemCount,
+						completedAt: new Date(),
+					};
+					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+					await data.upsert("menuSync", id, completed as Record<string, any>);
+					void events?.emit("ubereats.menu.synced", {
+						menuSyncId: completed.id,
+						itemCount: completed.itemCount,
+					});
+					return completed;
+				} catch (err) {
+					const message =
+						err instanceof Error ? err.message : "Menu sync failed";
+					const failed: MenuSync = {
+						...sync,
+						status: "failed",
+						error: message,
+						completedAt: new Date(),
+					};
+					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+					await data.upsert("menuSync", id, failed as Record<string, any>);
+					return failed;
+				}
+			}
+
+			// No provider — mark as synced locally
+			const completed: MenuSync = {
+				...sync,
+				status: "synced",
+				completedAt: now,
+			};
+			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+			await data.upsert("menuSync", id, completed as Record<string, any>);
 			void events?.emit("ubereats.menu.synced", {
-				menuSyncId: sync.id,
+				menuSyncId: completed.id,
 				itemCount,
 			});
-			return sync;
+			return completed;
 		},
 
 		async getLastMenuSync() {

@@ -1,3 +1,4 @@
+import type { createGetSettingsEndpoint } from "./get-settings";
 import { listMenuSyncsEndpoint } from "./list-menu-syncs";
 import { listOrdersEndpoint } from "./list-orders";
 import { orderStatsEndpoint } from "./order-stats";
@@ -9,3 +10,12 @@ export const adminEndpoints = {
 	"/admin/uber-eats/menu-syncs": listMenuSyncsEndpoint,
 	"/admin/uber-eats/menu-syncs/create": syncMenuAdminEndpoint,
 };
+
+export function createAdminEndpointsWithSettings(
+	settingsEndpoint: ReturnType<typeof createGetSettingsEndpoint>,
+) {
+	return {
+		...adminEndpoints,
+		"/admin/uber-eats/settings": settingsEndpoint,
+	};
+}
