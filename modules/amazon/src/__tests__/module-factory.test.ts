@@ -40,4 +40,23 @@ describe("amazon module factory", () => {
 		const mod = createModule({ sellerId: "test-123" });
 		expect(mod.id).toBe("amazon");
 	});
+
+	it("wires settings endpoint when options provided", () => {
+		const mod = createModule({
+			sellerId: "AXYZ123",
+			clientId: "amzn1.application-oa2-client.test",
+			clientSecret: "test-secret",
+			refreshToken: "Atzr|test-token",
+		});
+		expect(Object.keys(mod.endpoints?.admin ?? {})).toContain(
+			"/admin/amazon/settings",
+		);
+	});
+
+	it("wires settings endpoint even without credentials", () => {
+		const mod = createModule();
+		expect(Object.keys(mod.endpoints?.admin ?? {})).toContain(
+			"/admin/amazon/settings",
+		);
+	});
 });

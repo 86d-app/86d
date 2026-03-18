@@ -1,5 +1,6 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
-import { adminEndpoints } from "./admin/endpoints";
+import { createAdminEndpointsWithSettings } from "./admin/endpoints";
+import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
 import { amazonSchema } from "./schema";
 import { createAmazonController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints";
@@ -29,6 +30,15 @@ export interface AmazonOptions extends ModuleConfig {
 }
 
 export default function amazon(options?: AmazonOptions): Module {
+	const settingsEndpoint = createGetSettingsEndpoint({
+		sellerId: options?.sellerId,
+		clientId: options?.clientId,
+		clientSecret: options?.clientSecret,
+		refreshToken: options?.refreshToken,
+		marketplaceId: options?.marketplaceId,
+		region: options?.region,
+	});
+
 	return {
 		id: "amazon",
 		version: "0.2.0",
@@ -59,7 +69,7 @@ export default function amazon(options?: AmazonOptions): Module {
 		},
 		endpoints: {
 			store: storeEndpoints,
-			admin: adminEndpoints,
+			admin: createAdminEndpointsWithSettings(settingsEndpoint),
 		},
 		admin: {
 			pages: [
