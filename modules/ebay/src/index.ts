@@ -1,5 +1,6 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
-import { adminEndpoints } from "./admin/endpoints";
+import { createAdminEndpointsWithSettings } from "./admin/endpoints";
+import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
 import { ebaySchema } from "./schema";
 import { createEbayController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints";
@@ -27,9 +28,16 @@ export interface EbayOptions extends ModuleConfig {
 }
 
 export default function ebay(options?: EbayOptions): Module {
+	const settingsEndpoint = createGetSettingsEndpoint({
+		clientId: options?.clientId,
+		clientSecret: options?.clientSecret,
+		refreshToken: options?.refreshToken,
+		siteId: options?.siteId,
+	});
+
 	return {
 		id: "ebay",
-		version: "0.1.0",
+		version: "0.2.0",
 		schema: ebaySchema,
 		exports: {
 			read: ["listingTitle", "listingStatus", "listingPrice", "ebayItemId"],
@@ -45,12 +53,17 @@ export default function ebay(options?: EbayOptions): Module {
 			],
 		},
 		init: async (ctx: ModuleContext) => {
-			const controller = createEbayController(ctx.data);
+			const controller = createEbayController(ctx.data, ctx.events, {
+				clientId: options?.clientId,
+				clientSecret: options?.clientSecret,
+				refreshToken: options?.refreshToken,
+				siteId: options?.siteId,
+			});
 			return { controllers: { ebay: controller } };
 		},
 		endpoints: {
 			store: storeEndpoints,
-			admin: adminEndpoints,
+			admin: createAdminEndpointsWithSettings(settingsEndpoint),
 		},
 		admin: {
 			pages: [

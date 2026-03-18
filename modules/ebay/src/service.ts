@@ -141,6 +141,8 @@ export interface EbayController extends ModuleController {
 		skip?: number | undefined;
 	}): Promise<EbayOrder[]>;
 
+	syncOrders(): Promise<EbayOrder[]>;
+
 	getChannelStats(): Promise<ChannelStats>;
 
 	getActiveAuctions(): Promise<EbayListing[]>;
