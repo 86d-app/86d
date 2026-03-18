@@ -1,8 +1,5 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
-import {
-	adminEndpoints,
-	createAdminEndpointsWithSettings,
-} from "./admin/endpoints";
+import { createAdminEndpointsWithSettings } from "./admin/endpoints";
 import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
 import { etsySchema } from "./schema";
 import { createEtsyController } from "./service-impl";
@@ -26,10 +23,6 @@ export interface EtsyOptions extends ModuleConfig {
 }
 
 export default function etsy(options?: EtsyOptions): Module {
-	const hasEtsy = Boolean(
-		options?.apiKey && options?.shopId && options?.accessToken,
-	);
-
 	const settingsEndpoint = createGetSettingsEndpoint({
 		apiKey: options?.apiKey,
 		shopId: options?.shopId,
@@ -63,9 +56,7 @@ export default function etsy(options?: EtsyOptions): Module {
 		},
 		endpoints: {
 			store: storeEndpoints,
-			admin: hasEtsy
-				? createAdminEndpointsWithSettings(settingsEndpoint)
-				: adminEndpoints,
+			admin: createAdminEndpointsWithSettings(settingsEndpoint),
 		},
 		admin: {
 			pages: [

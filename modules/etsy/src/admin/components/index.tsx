@@ -1,3 +1,3 @@
 "use client";
 
-export { default as EtsyAdmin } from "./etsy-admin.mdx";
+export { EtsyAdmin } from "./etsy-admin";

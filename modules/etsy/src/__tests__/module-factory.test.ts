@@ -38,4 +38,22 @@ describe("etsy module factory", () => {
 		const mod = createModule({ shopId: "test-123" });
 		expect(mod.id).toBe("etsy");
 	});
+
+	it("wires settings endpoint when options provided", () => {
+		const mod = createModule({
+			apiKey: "test-key",
+			shopId: "12345",
+			accessToken: "test-token",
+		});
+		expect(Object.keys(mod.endpoints?.admin ?? {})).toContain(
+			"/admin/etsy/settings",
+		);
+	});
+
+	it("wires settings endpoint even without credentials", () => {
+		const mod = createModule();
+		expect(Object.keys(mod.endpoints?.admin ?? {})).toContain(
+			"/admin/etsy/settings",
+		);
+	});
 });
