@@ -937,8 +937,16 @@ const CheckoutPage = observer(function CheckoutPage() {
 
 			// Navigate to confirmation
 			window.location.href = `/checkout/confirmation?order=${orderId}`;
-		} catch {
-			// Error handled by mutation onError
+		} catch (err) {
+			// Mutation errors are surfaced by their individual onError callbacks.
+			// If setError hasn't been called yet (e.g. non-mutation failure), show a generic message.
+			setError((prev) =>
+				prev
+					? prev
+					: err instanceof Error
+						? err.message
+						: "Something went wrong. Please try again.",
+			);
 		} finally {
 			co.setProcessing(false);
 		}

@@ -36,6 +36,31 @@ interface OrderSummary {
 	};
 }
 
+/** Shape returned by GET /api/orders/me/:id */
+interface OrderApiResponse {
+	id: string;
+	guestEmail?: string;
+	subtotal: number;
+	taxAmount: number;
+	shippingAmount: number;
+	discountAmount: number;
+	giftCardAmount: number;
+	total: number;
+	currency: string;
+	items?: Array<{ name: string; quantity: number; price: number }>;
+	addresses?: Array<{
+		type: string;
+		firstName: string;
+		lastName: string;
+		line1: string;
+		line2?: string;
+		city: string;
+		state: string;
+		postalCode: string;
+		country: string;
+	}>;
+}
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatPrice(cents: number, currency = "USD"): string {
@@ -54,18 +79,68 @@ function ConfirmationContent() {
 	const tracked = useRef(false);
 	const [summary, setSummary] = useState<OrderSummary | null>(null);
 
-	// Load order summary from sessionStorage
+	// Load order summary from sessionStorage, with API fallback
 	useEffect(() => {
+		let found = false;
 		try {
 			const raw = sessionStorage.getItem("checkout_confirmation");
 			if (raw) {
 				setSummary(JSON.parse(raw) as OrderSummary);
 				sessionStorage.removeItem("checkout_confirmation");
+				found = true;
 			}
 		} catch {
 			// sessionStorage may not be available
 		}
-	}, []);
+
+		// Fallback: fetch order from API if sessionStorage was empty
+		if (!found && orderId) {
+			fetch(`/api/orders/me/${encodeURIComponent(orderId)}`)
+				.then((res) => (res.ok ? res.json() : null))
+				.then((data: { order?: OrderApiResponse } | null) => {
+					if (!data?.order) return;
+					const o = data.order;
+					const addr = o.addresses?.find(
+						(a: { type: string }) => a.type === "shipping",
+					);
+					setSummary({
+						orderId: o.id,
+						...(o.guestEmail ? { email: o.guestEmail } : {}),
+						items: (o.items ?? []).map(
+							(item: { name: string; quantity: number; price: number }) => ({
+								name: item.name,
+								quantity: item.quantity,
+								price: item.price,
+							}),
+						),
+						subtotal: o.subtotal ?? 0,
+						taxAmount: o.taxAmount ?? 0,
+						shippingAmount: o.shippingAmount ?? 0,
+						discountAmount: o.discountAmount ?? 0,
+						giftCardAmount: o.giftCardAmount ?? 0,
+						total: o.total ?? 0,
+						currency: o.currency ?? "USD",
+						...(addr
+							? {
+									shippingAddress: {
+										firstName: addr.firstName,
+										lastName: addr.lastName,
+										line1: addr.line1,
+										...(addr.line2 ? { line2: addr.line2 } : {}),
+										city: addr.city,
+										state: addr.state,
+										postalCode: addr.postalCode,
+										country: addr.country,
+									},
+								}
+							: {}),
+					});
+				})
+				.catch(() => {
+					// Guest checkout or network error — show minimal confirmation
+				});
+		}
+	}, [orderId]);
 
 	// Fire purchase event once on confirmation page load
 	useEffect(() => {
