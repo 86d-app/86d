@@ -315,6 +315,15 @@ export interface InventoryReleaseController {
 	}): Promise<unknown>;
 }
 
+/** Minimal customer controller needed for resolving contact info on status changes. */
+export interface CustomerLookupController {
+	getById(id: string): Promise<{
+		email: string;
+		firstName: string;
+		lastName: string;
+	} | null>;
+}
+
 export interface OrderController extends ModuleController {
 	/**
 	 * Create a new order

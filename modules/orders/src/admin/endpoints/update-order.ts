@@ -1,9 +1,11 @@
 import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
 import { performCancellationEffects } from "../../cancel-effects";
 import type {
+	CustomerLookupController,
 	InventoryReleaseController,
 	OrderController,
 	OrderStatus,
+	OrderWithDetails,
 	PaymentRefundController,
 	PaymentStatus,
 } from "../../service";
@@ -89,13 +91,18 @@ export const adminUpdateOrder = createAdminEndpoint(
 
 		// Emit events for status transitions that trigger email notifications
 		if (ctx.context.events && status && status !== previousStatus) {
-			const email = order.guestEmail ?? "";
-			const customerName = "Customer";
+			const { email, customerName } = await resolveContactInfo(
+				order,
+				ctx.context.controllers.customers as unknown as
+					| CustomerLookupController
+					| undefined,
+			);
 
 			if (status === "completed") {
 				await ctx.context.events.emit("order.fulfilled", {
 					orderId: order.id,
 					orderNumber: order.orderNumber,
+					customerId: order.customerId,
 					email,
 					customerName,
 				});
@@ -103,6 +110,7 @@ export const adminUpdateOrder = createAdminEndpoint(
 				await ctx.context.events.emit("order.cancelled", {
 					orderId: order.id,
 					orderNumber: order.orderNumber,
+					customerId: order.customerId,
 					email,
 					customerName,
 					reason: order.notes,
@@ -113,3 +121,45 @@ export const adminUpdateOrder = createAdminEndpoint(
 		return { order };
 	},
 );
+
+/**
+ * Resolve the customer email and display name from the order.
+ * For registered customers: look up via the customers controller.
+ * For guests: use guestEmail and shipping address name.
+ */
+async function resolveContactInfo(
+	order: OrderWithDetails,
+	customerController: CustomerLookupController | undefined,
+): Promise<{ email: string; customerName: string }> {
+	// Try looking up the registered customer
+	if (order.customerId && customerController) {
+		try {
+			const customer = await customerController.getById(order.customerId);
+			if (customer) {
+				const name = [customer.firstName, customer.lastName]
+					.filter(Boolean)
+					.join(" ");
+				return {
+					email: customer.email,
+					customerName: name || "Customer",
+				};
+			}
+		} catch {
+			// Fall through to address / guest fallbacks
+		}
+	}
+
+	// Fall back to guest email
+	const email = order.guestEmail ?? "";
+
+	// Try to derive name from shipping address
+	const shipping = order.addresses?.find((a) => a.type === "shipping");
+	if (shipping) {
+		const name = [shipping.firstName, shipping.lastName]
+			.filter(Boolean)
+			.join(" ");
+		if (name) return { email, customerName: name };
+	}
+
+	return { email, customerName: "Customer" };
+}

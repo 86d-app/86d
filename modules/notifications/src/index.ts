@@ -4,7 +4,9 @@ import {
 	createAdminEndpointsWithSettings,
 } from "./admin/endpoints";
 import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
+import { buildOrderCancelledEmail } from "./emails/order-cancelled";
 import { buildOrderConfirmationEmail } from "./emails/order-confirmation";
+import { buildOrderFulfilledEmail } from "./emails/order-fulfilled";
 import { ResendProvider, TwilioProvider } from "./provider";
 import { notificationsSchema } from "./schema";
 import { createNotificationsController } from "./service-impl";
@@ -168,6 +170,98 @@ export default function notifications(options?: NotificationsOptions): Module {
 								// Email delivery failure is non-fatal — the in-app
 								// notification still exists for logged-in customers
 							});
+					}
+				},
+			);
+
+			interface OrderLifecyclePayload {
+				orderId: string;
+				orderNumber: string;
+				customerId?: string | undefined;
+				email: string;
+				customerName: string;
+				reason?: string | undefined;
+			}
+
+			ctx.events?.on<OrderLifecyclePayload>(
+				"order.fulfilled",
+				async (event) => {
+					const p = event.payload;
+					if (!p) return;
+
+					if (p.customerId) {
+						await controller.create({
+							customerId: p.customerId,
+							type: "order",
+							channel: emailProvider ? "both" : "in_app",
+							priority: "normal",
+							title: `Order ${p.orderNumber} fulfilled`,
+							body: "Your order has been fulfilled and is on its way!",
+							actionUrl: `/orders/${p.orderId}`,
+							metadata: {
+								orderId: p.orderId,
+								orderNumber: p.orderNumber,
+							},
+						});
+					}
+
+					if (emailProvider && p.email) {
+						const { subject, html, text } = buildOrderFulfilledEmail(p);
+						await emailProvider
+							.sendEmail({
+								to: p.email,
+								subject,
+								html,
+								text,
+								tags: [
+									{ name: "type", value: "order_fulfilled" },
+									{ name: "order_id", value: p.orderId },
+								],
+							})
+							.catch(() => {});
+					}
+				},
+			);
+
+			ctx.events?.on<OrderLifecyclePayload>(
+				"order.cancelled",
+				async (event) => {
+					const p = event.payload;
+					if (!p) return;
+
+					if (p.customerId) {
+						await controller.create({
+							customerId: p.customerId,
+							type: "order",
+							channel: emailProvider ? "both" : "in_app",
+							priority: "high",
+							title: `Order ${p.orderNumber} cancelled`,
+							body: p.reason
+								? `Your order has been cancelled. Reason: ${p.reason}`
+								: "Your order has been cancelled. If a payment was collected, a refund will be processed.",
+							actionUrl: `/orders/${p.orderId}`,
+							metadata: {
+								orderId: p.orderId,
+								orderNumber: p.orderNumber,
+								reason: p.reason,
+							},
+						});
+					}
+
+					if (emailProvider && p.email) {
+						const { subject, html, text } = buildOrderCancelledEmail(p);
+						await emailProvider
+							.sendEmail({
+								to: p.email,
+								subject,
+								html,
+								text,
+								tags: [
+									{ name: "type", value: "order_cancelled" },
+									{ name: "order_id", value: p.orderId },
+								],
+							})
+							.catch(() => {});
 					}
 				},
 			);
