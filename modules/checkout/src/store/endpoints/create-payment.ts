@@ -135,7 +135,30 @@ export const createPayment = createStoreEndpoint(
 			};
 		}
 
-		// No clientSecret — auto-confirm (provider without client-side flow)
+		// PayPal: requires customer approval via PayPal buttons before capture.
+		// Return the PayPal order ID so the frontend can render PayPal buttons.
+		const paymentType = intent.providerMetadata?.paymentType as
+			| string
+			| undefined;
+		if (paymentType === "paypal") {
+			const updated = await controller.setPaymentIntent(
+				ctx.params.id,
+				intent.id,
+				intent.status,
+			);
+			return {
+				payment: {
+					id: intent.id,
+					status: intent.status,
+					amount: intent.amount,
+					currency: intent.currency,
+					paypalOrderId: intent.providerMetadata?.paypalOrderId as string,
+				},
+				session: updated,
+			};
+		}
+
+		// No clientSecret and no provider-specific flow — auto-confirm
 		const confirmed = await paymentController.confirmIntent(intent.id);
 		const finalStatus = confirmed?.status ?? intent.status;
 

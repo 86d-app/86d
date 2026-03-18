@@ -47,10 +47,22 @@ describe("PayPalPaymentProvider", () => {
 	// ── createIntent ─────────────────────────────────────────────────────
 
 	describe("createIntent", () => {
-		it("creates an order via PayPal API", async () => {
+		it("creates an order via PayPal API with paypalOrderId and paymentType", async () => {
 			globalThis.fetch = createMockFetch({
 				id: "pp_order_123",
 				status: "CREATED",
+				links: [
+					{
+						href: "https://api.sandbox.paypal.com/v2/checkout/orders/pp_order_123",
+						rel: "self",
+						method: "GET",
+					},
+					{
+						href: "https://www.sandbox.paypal.com/checkoutnow?token=pp_order_123",
+						rel: "approve",
+						method: "GET",
+					},
+				],
 			});
 
 			const result = await provider.createIntent({
@@ -60,6 +72,33 @@ describe("PayPalPaymentProvider", () => {
 			expect(result.providerIntentId).toBe("pp_order_123");
 			expect(result.status).toBe("pending");
 			expect(result.providerMetadata?.paypalStatus).toBe("CREATED");
+			expect(result.providerMetadata?.paypalOrderId).toBe("pp_order_123");
+			expect(result.providerMetadata?.paymentType).toBe("paypal");
+			expect(result.providerMetadata?.approvalUrl).toBe(
+				"https://www.sandbox.paypal.com/checkoutnow?token=pp_order_123",
+			);
+		});
+
+		it("omits approvalUrl when no approve link is present", async () => {
+			globalThis.fetch = createMockFetch({
+				id: "pp_order_no_link",
+				status: "CREATED",
+				links: [
+					{
+						href: "https://api.sandbox.paypal.com/v2/checkout/orders/pp_order_no_link",
+						rel: "self",
+						method: "GET",
+					},
+				],
+			});
+
+			const result = await provider.createIntent({
+				amount: 1000,
+				currency: "USD",
+			});
+			expect(result.providerMetadata?.paypalOrderId).toBe("pp_order_no_link");
+			expect(result.providerMetadata?.paymentType).toBe("paypal");
+			expect(result.providerMetadata?.approvalUrl).toBeUndefined();
 		});
 
 		it("maps COMPLETED status to succeeded", async () => {
@@ -170,6 +209,23 @@ describe("PayPalPaymentProvider", () => {
 			expect(apiCall).toBeDefined();
 			const body = JSON.parse(apiCall?.[1].body);
 			expect(body.purchase_units[0].amount.value).toBe("12.50");
+		});
+
+		it("sends CAPTURE intent (not AUTHORIZE)", async () => {
+			globalThis.fetch = createMockFetch({
+				id: "pp_intent",
+				status: "CREATED",
+			});
+			await provider.createIntent({ amount: 1000, currency: "USD" });
+			const apiCall = (
+				globalThis.fetch as ReturnType<typeof vi.fn>
+			).mock.calls.find(
+				(c: string[]) =>
+					typeof c[0] === "string" && c[0].includes("/checkout/orders"),
+			);
+			expect(apiCall).toBeDefined();
+			const body = JSON.parse(apiCall?.[1].body);
+			expect(body.intent).toBe("CAPTURE");
 		});
 
 		it("uppercases currency", async () => {

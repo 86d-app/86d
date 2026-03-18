@@ -13,9 +13,16 @@ type PayPalOrderStatus =
 	| "COMPLETED"
 	| "PAYER_ACTION_REQUIRED";
 
+interface PayPalLink {
+	href: string;
+	rel: string;
+	method: string;
+}
+
 interface PayPalOrder {
 	id: string;
 	status: PayPalOrderStatus;
+	links?: PayPalLink[];
 	purchase_units?: Array<{
 		payments?: {
 			authorizations?: Array<{ id: string; status: string }>;
@@ -136,7 +143,7 @@ export class PayPalPaymentProvider implements PaymentProvider {
 			"POST",
 			"/v2/checkout/orders",
 			{
-				intent: "AUTHORIZE",
+				intent: "CAPTURE",
 				purchase_units: [
 					{
 						amount: {
@@ -147,10 +154,16 @@ export class PayPalPaymentProvider implements PaymentProvider {
 				],
 			},
 		);
+		const approvalLink = order.links?.find((l) => l.rel === "approve");
 		return {
 			providerIntentId: order.id,
 			status: this.mapOrderStatus(order.status),
-			providerMetadata: { paypalStatus: order.status },
+			providerMetadata: {
+				paypalStatus: order.status,
+				paypalOrderId: order.id,
+				paymentType: "paypal",
+				...(approvalLink ? { approvalUrl: approvalLink.href } : {}),
+			},
 		};
 	}
 

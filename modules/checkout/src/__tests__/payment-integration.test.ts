@@ -264,7 +264,24 @@ async function simulateCreatePayment(
 		};
 	}
 
-	// No clientSecret — auto-confirm (provider without client-side flow)
+	// PayPal: requires customer approval before capture.
+	const paymentType = intent.providerMetadata?.paymentType as
+		| string
+		| undefined;
+	if (paymentType === "paypal") {
+		await checkoutCtrl.setPaymentIntent(sessionId, intent.id, intent.status);
+		return {
+			payment: {
+				id: intent.id,
+				status: intent.status,
+				amount: intent.amount,
+				currency: intent.currency,
+				paypalOrderId: intent.providerMetadata?.paypalOrderId as string,
+			},
+		};
+	}
+
+	// No clientSecret and no provider-specific flow — auto-confirm
 	const confirmed = await paymentCtrl.confirmIntent(intent.id);
 	const finalStatus = confirmed?.status ?? intent.status;
 
@@ -939,6 +956,176 @@ describe("checkout → payment integration", () => {
 
 			expect(result.payment?.id).toMatch(/^demo_/);
 			expect(result.payment?.status).toBe("succeeded");
+		});
+	});
+
+	describe("PayPal approval-based payment flow", () => {
+		/**
+		 * Creates a mock payment controller that simulates a PayPal-like provider
+		 * by returning paypalOrderId and paymentType in providerMetadata.
+		 * Does NOT auto-confirm — customer must approve first.
+		 */
+		function createPayPalPaymentController(): PaymentProcessController & {
+			_intents: Map<string, MockIntent>;
+			_calls: Array<{ method: string; id?: string; amount?: number }>;
+		} {
+			const intents = new Map<string, MockIntent>();
+			// biome-ignore lint/suspicious/noExplicitAny: test spy accumulates heterogeneous call records
+			const calls: any[] = [];
+			return {
+				_intents: intents,
+				_calls: calls,
+
+				async createIntent(params) {
+					const id = `pi_${crypto.randomUUID().slice(0, 8)}`;
+					const paypalOrderId = `PP_${crypto.randomUUID().slice(0, 8)}`;
+					const intent: MockIntent = {
+						id,
+						status: "pending",
+						amount: params.amount,
+						currency: params.currency ?? "USD",
+						providerMetadata: {
+							paypalOrderId,
+							paymentType: "paypal",
+							paypalStatus: "CREATED",
+						},
+					};
+					intents.set(id, intent);
+					calls.push({ method: "createIntent", id, amount: params.amount });
+					return intent;
+				},
+
+				async confirmIntent(id) {
+					const intent = intents.get(id);
+					if (!intent) return null;
+					intent.status = "succeeded";
+					calls.push({ method: "confirmIntent", id });
+					return { id: intent.id, status: intent.status };
+				},
+
+				async getIntent(id) {
+					calls.push({ method: "getIntent", id });
+					return intents.get(id) ?? null;
+				},
+
+				async cancelIntent(id) {
+					const intent = intents.get(id);
+					if (!intent) return null;
+					intent.status = "cancelled";
+					calls.push({ method: "cancelIntent", id });
+					return { id: intent.id, status: intent.status };
+				},
+			};
+		}
+
+		it("returns paypalOrderId and pending status (does not auto-confirm)", async () => {
+			const checkoutCtrl = createCheckoutController(createMockDataService());
+			const paymentCtrl = createPayPalPaymentController();
+
+			const session = await checkoutCtrl.create(makeSession());
+			const result = await simulateCreatePayment(
+				checkoutCtrl,
+				session.id,
+				paymentCtrl,
+			);
+
+			expect(result.payment?.paypalOrderId).toBeDefined();
+			expect(result.payment?.paypalOrderId).toMatch(/^PP_/);
+			expect(result.payment?.status).toBe("pending");
+			expect(result.payment?.amount).toBe(4900);
+
+			// Session should have the intent stored with pending status
+			const updated = await checkoutCtrl.getById(session.id);
+			expect(updated?.paymentIntentId).toBe(result.payment?.id);
+			expect(updated?.paymentStatus).toBe("pending");
+		});
+
+		it("does NOT call confirmIntent during create-payment", async () => {
+			const checkoutCtrl = createCheckoutController(createMockDataService());
+			const paymentCtrl = createPayPalPaymentController();
+
+			const session = await checkoutCtrl.create(makeSession());
+			await simulateCreatePayment(checkoutCtrl, session.id, paymentCtrl);
+
+			const confirmCalls = paymentCtrl._calls.filter(
+				(c) => c.method === "confirmIntent",
+			);
+			expect(confirmCalls).toHaveLength(0);
+		});
+
+		it("allows completion after capture (manual confirmIntent)", async () => {
+			const checkoutCtrl = createCheckoutController(createMockDataService());
+			const paymentCtrl = createPayPalPaymentController();
+
+			const session = await checkoutCtrl.create(makeSession());
+			const result = await simulateCreatePayment(
+				checkoutCtrl,
+				session.id,
+				paymentCtrl,
+			);
+			const intentId = result.payment?.id;
+
+			// Simulate PayPal approval + capture
+			if (intentId) {
+				await paymentCtrl.confirmIntent(intentId);
+				await checkoutCtrl.setPaymentIntent(session.id, intentId, "succeeded");
+			}
+
+			const completeResult = await simulateCompleteWithPayment(
+				checkoutCtrl,
+				session.id,
+				"ORD-PAYPAL",
+				paymentCtrl,
+			);
+
+			expect("session" in completeResult).toBe(true);
+			if ("session" in completeResult) {
+				expect(completeResult.session.status).toBe("completed");
+			}
+		});
+
+		it("blocks completion when PayPal order is still pending", async () => {
+			const checkoutCtrl = createCheckoutController(createMockDataService());
+			const paymentCtrl = createPayPalPaymentController();
+
+			const session = await checkoutCtrl.create(makeSession());
+			await simulateCreatePayment(checkoutCtrl, session.id, paymentCtrl);
+
+			// Don't capture — try to complete directly
+			const completeResult = await simulateCompleteWithPayment(
+				checkoutCtrl,
+				session.id,
+				"ORD-NOAPPROVE",
+				paymentCtrl,
+			);
+
+			expect("error" in completeResult).toBe(true);
+			if ("error" in completeResult) {
+				expect(completeResult.error).toContain(
+					"Payment has not been completed",
+				);
+			}
+		});
+
+		it("cancels PayPal intent on session abandonment", async () => {
+			const checkoutCtrl = createCheckoutController(createMockDataService());
+			const paymentCtrl = createPayPalPaymentController();
+
+			const session = await checkoutCtrl.create(makeSession());
+			const result = await simulateCreatePayment(
+				checkoutCtrl,
+				session.id,
+				paymentCtrl,
+			);
+			const intentId = result.payment?.id;
+
+			await simulateAbandonWithPayment(checkoutCtrl, session.id, paymentCtrl);
+
+			const cancelCalls = paymentCtrl._calls.filter(
+				(c) => c.method === "cancelIntent",
+			);
+			expect(cancelCalls).toHaveLength(1);
+			expect(cancelCalls[0].id).toBe(intentId);
 		});
 	});
 });

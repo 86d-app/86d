@@ -122,6 +122,7 @@
 		"@mdx-js/react": "catalog:mdx",
 		"@next/mdx": "catalog:mdx",
 		"@next/third-parties": "catalog:next",
+		"@paypal/react-paypal-js": "^9.0.1",
 		"@radix-ui/react-slot": "1.2.4",
 		"@sentry/nextjs": "^10.44.0",
 		"@stripe/react-stripe-js": "^5.6.0",

@@ -2,6 +2,7 @@
 
 import type { CheckoutStep } from "@86d-app/checkout/state";
 import { observer } from "@86d-app/core/state";
+import { PayPalPaymentForm } from "components/paypal-payment-form";
 import { StripePaymentForm } from "components/stripe-payment-form";
 import { useApi } from "generated/hooks";
 import { useAnalytics } from "hooks/use-analytics";
@@ -559,6 +560,7 @@ const CheckoutPage = observer(function CheckoutPage() {
 	const [paymentClientSecret, setPaymentClientSecret] = useState<string | null>(
 		null,
 	);
+	const [paypalOrderId, setPaypalOrderId] = useState<string | null>(null);
 	const emailId = useId();
 	const formRef = useRef<HTMLFormElement>(null);
 
@@ -832,7 +834,14 @@ const CheckoutPage = observer(function CheckoutPage() {
 				return;
 			}
 
-			// Fallback: no clientSecret and not succeeded
+			// If a paypalOrderId is returned, PayPal Buttons will handle it
+			if (payment?.paypalOrderId) {
+				setPaypalOrderId(payment.paypalOrderId);
+				co.setProcessing(false);
+				return;
+			}
+
+			// Fallback: no clientSecret/paypalOrderId and not succeeded
 			setError("Payment could not be processed. Please try again.");
 		} catch {
 			// Error handled by mutation onError
@@ -864,12 +873,40 @@ const CheckoutPage = observer(function CheckoutPage() {
 		}
 	}, [co, api.checkout.getPayment]);
 
+	// ── PayPal approved → capture on server and advance
+	const handlePayPalCapture = useCallback(async () => {
+		if (!co.sessionId) return;
+
+		try {
+			const captureResult: ApiResponse =
+				await api.checkout.capturePayment.mutate({
+					params: { id: co.sessionId },
+				});
+
+			const sess = captureResult?.session;
+			if (sess) setSession(sess);
+
+			const paymentStatus = captureResult?.payment?.status;
+			if (paymentStatus === "succeeded" || paymentStatus === "processing") {
+				setPaypalOrderId(null);
+				co.setStep("review");
+			} else {
+				setError("Payment capture failed. Please try again.");
+				co.setProcessing(false);
+			}
+		} catch {
+			setError("Payment capture failed. Please try again.");
+			co.setProcessing(false);
+		}
+	}, [co, api.checkout.capturePayment]);
+
 	// ── Auto-create payment intent when entering payment step
 	const paymentInitRef = useRef(false);
 	useEffect(() => {
 		if (
 			co.currentStep === "payment" &&
 			!paymentClientSecret &&
+			!paypalOrderId &&
 			co.sessionId &&
 			!paymentInitRef.current
 		) {
@@ -879,7 +916,13 @@ const CheckoutPage = observer(function CheckoutPage() {
 		if (co.currentStep !== "payment") {
 			paymentInitRef.current = false;
 		}
-	}, [co.currentStep, co.sessionId, paymentClientSecret, handlePaymentSubmit]);
+	}, [
+		co.currentStep,
+		co.sessionId,
+		paymentClientSecret,
+		paypalOrderId,
+		handlePaymentSubmit,
+	]);
 
 	// ── Confirm and complete order
 	const handlePlaceOrder = useCallback(async () => {
@@ -1400,7 +1443,7 @@ const CheckoutPage = observer(function CheckoutPage() {
 								Payment
 							</h2>
 
-							{/* Payment form — Stripe Elements or demo fallback */}
+							{/* Payment form — Stripe, PayPal, or demo fallback */}
 							{paymentClientSecret ? (
 								<StripePaymentForm
 									clientSecret={paymentClientSecret}
@@ -1410,6 +1453,18 @@ const CheckoutPage = observer(function CheckoutPage() {
 									setProcessing={(v) => co.setProcessing(v)}
 									onBack={() => {
 										setPaymentClientSecret(null);
+										co.setStep("shipping");
+									}}
+								/>
+							) : paypalOrderId ? (
+								<PayPalPaymentForm
+									paypalOrderId={paypalOrderId}
+									onCapture={() => handlePayPalCapture()}
+									onError={(msg) => setError(msg)}
+									isProcessing={co.isProcessing}
+									setProcessing={(v) => co.setProcessing(v)}
+									onBack={() => {
+										setPaypalOrderId(null);
 										co.setStep("shipping");
 									}}
 								/>

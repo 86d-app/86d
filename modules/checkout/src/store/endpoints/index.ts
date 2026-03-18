@@ -1,6 +1,7 @@
 import { abandonSession } from "./abandon-session";
 import { applyDiscount } from "./apply-discount";
 import { applyGiftCard } from "./apply-gift-card";
+import { capturePayment } from "./capture-payment";
 import { completeSession } from "./complete-session";
 import { confirmSession } from "./confirm-session";
 import { createPayment } from "./create-payment";
@@ -24,6 +25,7 @@ export const storeEndpoints = {
 	"/checkout/sessions/:id/gift-card": applyGiftCard,
 	"/checkout/sessions/:id/gift-card/remove": removeGiftCard,
 	"/checkout/sessions/:id/payment": createPayment,
+	"/checkout/sessions/:id/payment/capture": capturePayment,
 	"/checkout/sessions/:id/payment/status": getPayment,
 	"/checkout/sessions/:id/items": getLineItems,
 };
