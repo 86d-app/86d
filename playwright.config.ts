@@ -84,6 +84,37 @@ export default defineConfig({
 				viewport: { width: 375, height: 667 },
 			},
 		},
+		/* ── Visual regression — dark mode ────────────────────────────── */
+		{
+			name: "visual-dark-desktop",
+			testMatch: ["visual.spec.ts"],
+			use: {
+				...devices["Desktop Chrome"],
+				baseURL: STORE_URL,
+				viewport: { width: 1280, height: 720 },
+				colorScheme: "dark",
+			},
+		},
+		{
+			name: "visual-dark-tablet",
+			testMatch: ["visual.spec.ts"],
+			use: {
+				...devices["Desktop Chrome"],
+				baseURL: STORE_URL,
+				viewport: { width: 768, height: 1024 },
+				colorScheme: "dark",
+			},
+		},
+		{
+			name: "visual-dark-mobile",
+			testMatch: ["visual.spec.ts"],
+			use: {
+				...devices["Pixel 5"],
+				baseURL: STORE_URL,
+				viewport: { width: 375, height: 667 },
+				colorScheme: "dark",
+			},
+		},
 	],
 	/* Start dev server before tests if not already running */
 	webServer: {
