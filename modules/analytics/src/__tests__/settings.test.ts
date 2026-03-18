@@ -10,17 +10,25 @@ import { describe, expect, it } from "vitest";
 interface SettingsOptions {
 	gtmContainerId?: string | undefined;
 	sentryDsn?: string | undefined;
+	ga4MeasurementId?: string | undefined;
+	ga4Configured?: boolean | undefined;
 }
 
 /** Mirrors the logic inside createGetSettingsEndpoint without the HTTP wrapper. */
 function getSettings(options: SettingsOptions) {
 	const gtmConfigured = Boolean(options.gtmContainerId);
 	const sentryConfigured = Boolean(options.sentryDsn);
+	const ga4Configured = Boolean(options.ga4Configured);
 	return {
 		gtm: {
 			configured: gtmConfigured,
 			provider: "google-tag-manager" as const,
 			containerId: options.gtmContainerId ?? null,
+		},
+		ga4: {
+			configured: ga4Configured,
+			provider: "ga4-measurement-protocol" as const,
+			measurementId: options.ga4MeasurementId ?? null,
 		},
 		sentry: {
 			configured: sentryConfigured,
@@ -90,26 +98,57 @@ describe("analytics — settings", () => {
 		});
 	});
 
+	describe("GA4 Measurement Protocol configuration status", () => {
+		it("reports GA4 as configured when ga4Configured is true", () => {
+			const result = getSettings({
+				ga4MeasurementId: "G-TEST123",
+				ga4Configured: true,
+			});
+			expect(result.ga4.configured).toBe(true);
+			expect(result.ga4.measurementId).toBe("G-TEST123");
+			expect(result.ga4.provider).toBe("ga4-measurement-protocol");
+		});
+
+		it("reports GA4 as not configured when ga4Configured is false", () => {
+			const result = getSettings({
+				ga4MeasurementId: "G-TEST123",
+				ga4Configured: false,
+			});
+			expect(result.ga4.configured).toBe(false);
+		});
+
+		it("reports GA4 as not configured when options are missing", () => {
+			const result = getSettings({});
+			expect(result.ga4.configured).toBe(false);
+			expect(result.ga4.measurementId).toBeNull();
+		});
+	});
+
 	describe("combined configuration", () => {
-		it("reports both providers as configured when both are provided", () => {
+		it("reports all providers as configured when all are provided", () => {
 			const result = getSettings({
 				gtmContainerId: "GTM-ABC123",
 				sentryDsn: "https://key@sentry.io/123",
+				ga4MeasurementId: "G-TEST123",
+				ga4Configured: true,
 			});
 			expect(result.gtm.configured).toBe(true);
 			expect(result.sentry.configured).toBe(true);
+			expect(result.ga4.configured).toBe(true);
 		});
 
-		it("reports neither provider as configured when both are missing", () => {
+		it("reports no providers as configured when all are missing", () => {
 			const result = getSettings({});
 			expect(result.gtm.configured).toBe(false);
 			expect(result.sentry.configured).toBe(false);
+			expect(result.ga4.configured).toBe(false);
 		});
 
 		it("reports only GTM when only GTM is provided", () => {
 			const result = getSettings({ gtmContainerId: "GTM-XYZ" });
 			expect(result.gtm.configured).toBe(true);
 			expect(result.sentry.configured).toBe(false);
+			expect(result.ga4.configured).toBe(false);
 		});
 
 		it("reports only Sentry when only Sentry is provided", () => {
@@ -118,6 +157,7 @@ describe("analytics — settings", () => {
 			});
 			expect(result.gtm.configured).toBe(false);
 			expect(result.sentry.configured).toBe(true);
+			expect(result.ga4.configured).toBe(false);
 		});
 	});
 });
@@ -135,7 +175,16 @@ describe("analytics — module factory settings wiring", () => {
 		expect(mod.endpoints?.admin).toHaveProperty("/admin/analytics/settings");
 	});
 
-	it("settings endpoint is not included when neither is configured", async () => {
+	it("settings endpoint is included when GA4 is configured", async () => {
+		const { default: analytics } = await import("../index");
+		const mod = analytics({
+			ga4MeasurementId: "G-TEST",
+			ga4ApiSecret: "secret",
+		});
+		expect(mod.endpoints?.admin).toHaveProperty("/admin/analytics/settings");
+	});
+
+	it("settings endpoint is not included when no providers are configured", async () => {
 		const { default: analytics } = await import("../index");
 		const mod = analytics({});
 		expect(mod.endpoints?.admin).not.toHaveProperty(
@@ -148,5 +197,11 @@ describe("analytics — module factory settings wiring", () => {
 		const mod = analytics({});
 		const paths = mod.admin?.pages?.map((p) => p.path) ?? [];
 		expect(paths).toContain("/admin/analytics/settings");
+	});
+
+	it("client-config endpoint is always included in store endpoints", async () => {
+		const { default: analytics } = await import("../index");
+		const mod = analytics({});
+		expect(mod.endpoints?.store).toHaveProperty("/analytics/client-config");
 	});
 });

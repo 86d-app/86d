@@ -353,7 +353,7 @@ describe("shipping — admin workflows", () => {
 				orderAmount: 3000,
 			});
 			expect(lowRates).toHaveLength(1);
-			expect(lowRates[0].rateName).toBe("Standard");
+			expect(lowRates[0].name).toBe("Standard");
 
 			// Order over $50 — both rates
 			const highRates = await controller.calculateRates({
@@ -393,7 +393,7 @@ describe("shipping — admin workflows", () => {
 				orderAmount: 5000,
 			});
 			expect(largeRates).toHaveLength(1);
-			expect(largeRates[0].rateName).toBe("Standard");
+			expect(largeRates[0].name).toBe("Standard");
 		});
 
 		it("filters by weight range", async () => {
@@ -421,7 +421,7 @@ describe("shipping — admin workflows", () => {
 				weight: 500,
 			});
 			expect(lightRates).toHaveLength(1);
-			expect(lightRates[0].rateName).toBe("Light");
+			expect(lightRates[0].name).toBe("Light");
 
 			const heavyRates = await controller.calculateRates({
 				country: "US",
@@ -429,7 +429,7 @@ describe("shipping — admin workflows", () => {
 				weight: 5000,
 			});
 			expect(heavyRates).toHaveLength(1);
-			expect(heavyRates[0].rateName).toBe("Heavy");
+			expect(heavyRates[0].name).toBe("Heavy");
 		});
 
 		it("excludes inactive zones from calculation", async () => {
@@ -459,7 +459,7 @@ describe("shipping — admin workflows", () => {
 				orderAmount: 5000,
 			});
 			expect(rates).toHaveLength(1);
-			expect(rates[0].rateName).toBe("Standard");
+			expect(rates[0].name).toBe("Standard");
 		});
 
 		it("excludes inactive rates from calculation", async () => {
@@ -484,7 +484,7 @@ describe("shipping — admin workflows", () => {
 				orderAmount: 5000,
 			});
 			expect(rates).toHaveLength(1);
-			expect(rates[0].rateName).toBe("Active");
+			expect(rates[0].name).toBe("Active");
 		});
 
 		it("sorts rates cheapest first", async () => {
@@ -592,7 +592,7 @@ describe("shipping — admin workflows", () => {
 				orderAmount: 5000,
 			});
 			expect(rates[0].zoneName).toBe("North America");
-			expect(rates[0].rateName).toBe("Standard");
+			expect(rates[0].name).toBe("Standard");
 		});
 	});
 

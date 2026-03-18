@@ -89,11 +89,17 @@ const EVENT_SYNC_MAP: Record<
 	"order.delivered": [{ module: "orders", entityType: "order" }],
 	"order.cancelled": [{ module: "orders", entityType: "order" }],
 	"order.completed": [{ module: "orders", entityType: "order" }],
+	"order.fulfilled": [{ module: "orders", entityType: "order" }],
 	"order.refunded": [
 		{ module: "orders", entityType: "order" },
 		{ module: "payments", entityType: "refund" },
 	],
+	"payment.completed": [{ module: "payments", entityType: "paymentIntent" }],
 	"payment.failed": [{ module: "payments", entityType: "paymentIntent" }],
+	"payment.refunded": [
+		{ module: "payments", entityType: "paymentIntent" },
+		{ module: "payments", entityType: "refund" },
+	],
 	"customer.created": [{ module: "customers", entityType: "customer" }],
 };
 

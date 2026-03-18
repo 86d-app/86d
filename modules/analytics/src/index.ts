@@ -4,9 +4,11 @@ import {
 	createAdminEndpointsWithSettings,
 } from "./admin/endpoints";
 import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
+import { GA4Provider } from "./providers/ga4";
 import { analyticsSchema } from "./schema";
 import { createAnalyticsController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints";
+import { createClientConfigEndpoint } from "./store/endpoints/get-client-config";
 
 export type {
 	AnalyticsController,
@@ -30,14 +32,31 @@ export interface AnalyticsOptions extends ModuleConfig {
 	gtmContainerId?: string | undefined;
 	/** Sentry DSN for error tracking and performance monitoring */
 	sentryDsn?: string | undefined;
+	/** GA4 Measurement ID for server-side event forwarding (e.g. "G-XXXXXXXXXX") */
+	ga4MeasurementId?: string | undefined;
+	/** GA4 Measurement Protocol API secret (from GA4 Admin → Data Streams) */
+	ga4ApiSecret?: string | undefined;
 }
 
 export default function analytics(options?: AnalyticsOptions): Module {
-	const hasProviders = Boolean(options?.gtmContainerId || options?.sentryDsn);
+	const hasProviders = Boolean(
+		options?.gtmContainerId || options?.sentryDsn || options?.ga4MeasurementId,
+	);
+
+	const ga4Provider =
+		options?.ga4MeasurementId && options?.ga4ApiSecret
+			? new GA4Provider(options.ga4MeasurementId, options.ga4ApiSecret)
+			: undefined;
 
 	const settingsEndpoint = createGetSettingsEndpoint({
 		gtmContainerId: options?.gtmContainerId,
 		sentryDsn: options?.sentryDsn,
+		ga4MeasurementId: options?.ga4MeasurementId,
+		ga4Configured: Boolean(ga4Provider),
+	});
+
+	const clientConfigEndpoint = createClientConfigEndpoint({
+		gtmContainerId: options?.gtmContainerId,
 	});
 
 	return {
@@ -57,11 +76,14 @@ export default function analytics(options?: AnalyticsOptions): Module {
 			emits: ["analytics.report.generated"],
 		},
 		init: async (ctx: ModuleContext) => {
-			const controller = createAnalyticsController(ctx.data);
+			const controller = createAnalyticsController(ctx.data, ga4Provider);
 			return { controllers: { analytics: controller } };
 		},
 		endpoints: {
-			store: storeEndpoints,
+			store: {
+				...storeEndpoints,
+				"/analytics/client-config": clientConfigEndpoint,
+			},
 			admin: hasProviders
 				? createAdminEndpointsWithSettings(settingsEndpoint)
 				: adminEndpoints,

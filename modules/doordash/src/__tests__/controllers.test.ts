@@ -297,6 +297,30 @@ describe("doordash controller", () => {
 		});
 	});
 
+	// ── Quote operations without credentials ────────────────────────
+
+	describe("quote operations without credentials", () => {
+		it("requestQuote throws when no credentials are configured", async () => {
+			await expect(
+				controller.requestQuote({
+					pickupAddress: "123 Main St",
+					pickupBusinessName: "Store",
+					pickupPhoneNumber: "+10000000000",
+					dropoffAddress: "456 Oak Ave",
+					dropoffBusinessName: "Customer",
+					dropoffPhoneNumber: "+10000000000",
+					orderValue: 2500,
+				}),
+			).rejects.toThrow("DoorDash API credentials are not configured");
+		});
+
+		it("acceptQuote throws when no credentials are configured", async () => {
+			await expect(controller.acceptQuote("some-quote-id")).rejects.toThrow(
+				"DoorDash API credentials are not configured",
+			);
+		});
+	});
+
 	// ── Delivery zone CRUD ───────────────────────────────────────────
 
 	describe("zone creation", () => {

@@ -41,9 +41,9 @@ export const ShippingEstimator = observer(() => {
 	};
 
 	const formattedRates = rates.map((r) => ({
-		rateId: r.rateId,
+		rateId: r.id,
 		zoneName: r.zoneName,
-		rateName: r.rateName,
+		rateName: r.name,
 		formattedPrice: r.price === 0 ? "Free" : formatPrice(r.price),
 	}));
 

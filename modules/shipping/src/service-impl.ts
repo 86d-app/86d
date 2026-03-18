@@ -250,9 +250,9 @@ export function createShippingController(
 					}
 
 					results.push({
-						rateId: rate.id,
+						id: rate.id,
+						name: rate.name,
 						zoneName: zone.name,
-						rateName: rate.name,
 						price: rate.price,
 					});
 				}

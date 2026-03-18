@@ -260,7 +260,7 @@ describe("shipping endpoint security", () => {
 				orderAmount: 1000,
 			});
 			expect(rates).toHaveLength(1);
-			expect(rates[0].rateName).toBe("Active Rate");
+			expect(rates[0].name).toBe("Active Rate");
 		});
 
 		it("deactivating a zone hides all its rates", async () => {
@@ -384,10 +384,7 @@ describe("shipping endpoint security", () => {
 				orderAmount: 1000,
 			});
 			expect(rates).toHaveLength(2);
-			expect(rates.map((r) => r.rateName).sort()).toEqual([
-				"Express",
-				"Ground",
-			]);
+			expect(rates.map((r) => r.name).sort()).toEqual(["Express", "Ground"]);
 		});
 
 		it("rates are sorted by price ascending (cheapest first)", async () => {

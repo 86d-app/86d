@@ -24,11 +24,17 @@ const EVENT_SYNC_MAP: Record<
 	"order.delivered": [{ module: "orders", entityType: "order" }],
 	"order.cancelled": [{ module: "orders", entityType: "order" }],
 	"order.completed": [{ module: "orders", entityType: "order" }],
+	"order.fulfilled": [{ module: "orders", entityType: "order" }],
 	"order.refunded": [
 		{ module: "orders", entityType: "order" },
 		{ module: "payments", entityType: "refund" },
 	],
+	"payment.completed": [{ module: "payments", entityType: "paymentIntent" }],
 	"payment.failed": [{ module: "payments", entityType: "paymentIntent" }],
+	"payment.refunded": [
+		{ module: "payments", entityType: "paymentIntent" },
+		{ module: "payments", entityType: "refund" },
+	],
 	"customer.created": [{ module: "customers", entityType: "customer" }],
 };
 
@@ -81,6 +87,7 @@ describe("EVENT_SYNC_MAP", () => {
 			"order.delivered",
 			"order.cancelled",
 			"order.completed",
+			"order.fulfilled",
 		]) {
 			const targets = EVENT_SYNC_MAP[event];
 			expect(targets).toHaveLength(1);
@@ -89,6 +96,15 @@ describe("EVENT_SYNC_MAP", () => {
 				entityType: "order",
 			});
 		}
+	});
+
+	it("maps order.fulfilled for admin order completion", () => {
+		const targets = EVENT_SYNC_MAP["order.fulfilled"];
+		expect(targets).toHaveLength(1);
+		expect(targets[0]).toEqual({
+			module: "orders",
+			entityType: "order",
+		});
 	});
 
 	it("maps order.refunded to both orders and payments refund", () => {
@@ -104,12 +120,34 @@ describe("EVENT_SYNC_MAP", () => {
 		});
 	});
 
+	it("maps payment.completed to payments module", () => {
+		const targets = EVENT_SYNC_MAP["payment.completed"];
+		expect(targets).toHaveLength(1);
+		expect(targets[0]).toEqual({
+			module: "payments",
+			entityType: "paymentIntent",
+		});
+	});
+
 	it("maps payment.failed to payments module", () => {
 		const targets = EVENT_SYNC_MAP["payment.failed"];
 		expect(targets).toHaveLength(1);
 		expect(targets[0]).toEqual({
 			module: "payments",
 			entityType: "paymentIntent",
+		});
+	});
+
+	it("maps payment.refunded to both payment intent and refund", () => {
+		const targets = EVENT_SYNC_MAP["payment.refunded"];
+		expect(targets).toHaveLength(2);
+		expect(targets).toContainEqual({
+			module: "payments",
+			entityType: "paymentIntent",
+		});
+		expect(targets).toContainEqual({
+			module: "payments",
+			entityType: "refund",
 		});
 	});
 
@@ -124,7 +162,7 @@ describe("EVENT_SYNC_MAP", () => {
 
 	it("covers all webhook-eligible commerce events", () => {
 		const events = Object.keys(EVENT_SYNC_MAP);
-		expect(events.length).toBe(9);
+		expect(events.length).toBe(12);
 	});
 });
 

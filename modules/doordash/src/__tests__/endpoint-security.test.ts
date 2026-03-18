@@ -1,6 +1,13 @@
 import { createMockDataService } from "@86d-app/core/test-utils";
 import { beforeEach, describe, expect, it } from "vitest";
+import {
+	adminEndpoints,
+	createAdminEndpointsWithSettings,
+} from "../admin/endpoints";
+import { createGetSettingsEndpoint } from "../admin/endpoints/get-settings";
 import { createDoordashController } from "../service-impl";
+import { createStoreEndpoints, storeEndpoints } from "../store/endpoints";
+import { createDoordashWebhook } from "../store/endpoints/webhook";
 
 describe("doordash endpoint security", () => {
 	let mockData: ReturnType<typeof createMockDataService>;
@@ -42,6 +49,57 @@ describe("doordash endpoint security", () => {
 		it("get delivery returns null for non-existent id", async () => {
 			const result = await controller.getDelivery("nonexistent");
 			expect(result).toBeNull();
+		});
+	});
+
+	describe("store endpoints (no credentials)", () => {
+		it("omits quote endpoints that require the DoorDash API", () => {
+			const routes = Object.keys(storeEndpoints);
+			expect(routes).toContain("/doordash/deliveries");
+			expect(routes).toContain("/doordash/deliveries/:id");
+			expect(routes).toContain("/doordash/availability");
+			expect(routes).not.toContain("/doordash/quotes");
+			expect(routes).not.toContain("/doordash/quotes/:id/accept");
+		});
+
+		it("does not expose webhook without credentials", () => {
+			const routes = Object.keys(storeEndpoints);
+			expect(routes).not.toContain("/doordash/webhook");
+		});
+	});
+
+	describe("store endpoints (with credentials)", () => {
+		it("includes quote endpoints and webhook", () => {
+			const webhook = createDoordashWebhook();
+			const endpoints = createStoreEndpoints(webhook);
+			const routes = Object.keys(endpoints);
+			expect(routes).toContain("/doordash/quotes");
+			expect(routes).toContain("/doordash/quotes/:id/accept");
+			expect(routes).toContain("/doordash/webhook");
+			expect(routes).toContain("/doordash/deliveries");
+		});
+	});
+
+	describe("admin endpoints (no credentials)", () => {
+		it("does not expose settings without credentials", () => {
+			const routes = Object.keys(adminEndpoints);
+			expect(routes).not.toContain("/admin/doordash/settings");
+			expect(routes).toContain("/admin/doordash/deliveries");
+			expect(routes).toContain("/admin/doordash/zones");
+		});
+	});
+
+	describe("admin endpoints (with credentials)", () => {
+		it("includes settings endpoint", () => {
+			const settings = createGetSettingsEndpoint({
+				developerId: "test",
+				keyId: "test",
+				signingSecret: "test",
+			});
+			const endpoints = createAdminEndpointsWithSettings(settings);
+			const routes = Object.keys(endpoints);
+			expect(routes).toContain("/admin/doordash/settings");
+			expect(routes).toContain("/admin/doordash/deliveries");
 		});
 	});
 

@@ -1,4 +1,5 @@
 import type { ModuleDataService } from "@86d-app/core";
+import type { GA4Provider } from "./providers/ga4";
 import type {
 	AnalyticsController,
 	AnalyticsEvent,
@@ -35,6 +36,7 @@ function toDateKey(d: Date): string {
 
 export function createAnalyticsController(
 	data: ModuleDataService,
+	ga4Provider?: GA4Provider | undefined,
 ): AnalyticsController {
 	return {
 		async track(params) {
@@ -59,6 +61,22 @@ export function createAnalyticsController(
 			};
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("event", id, event as Record<string, any>);
+
+			// Forward to GA4 Measurement Protocol (fire-and-forget)
+			if (ga4Provider) {
+				const ga4Event = ga4Provider.mapEvent(params);
+				const clientId = params.customerId ?? params.sessionId ?? id;
+				ga4Provider
+					.send({
+						clientId,
+						userId: params.customerId,
+						events: [ga4Event],
+					})
+					.catch(() => {
+						// Swallow — analytics forwarding is best-effort
+					});
+			}
+
 			return event;
 		},
 

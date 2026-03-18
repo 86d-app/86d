@@ -26,9 +26,9 @@ export interface ShippingRate {
 }
 
 export interface CalculatedRate {
-	rateId: string;
+	id: string;
+	name: string;
 	zoneName: string;
-	rateName: string;
 	price: number;
 }
 

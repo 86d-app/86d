@@ -28,7 +28,7 @@ export const ShippingOptions = observer((props: ShippingOptionsProps) => {
 	const calculateMutation = api.calculateRates.useMutation({
 		onSuccess: (data: { rates: CalculatedRate[] }) => {
 			if (data.rates.length > 0 && !selectedId) {
-				setSelectedId(data.rates[0].rateId);
+				setSelectedId(data.rates[0].id);
 				props.onSelect?.(data.rates[0]);
 			}
 		},
@@ -52,16 +52,16 @@ export const ShippingOptions = observer((props: ShippingOptionsProps) => {
 
 	const handleSelect = (rateId: string) => {
 		setSelectedId(rateId);
-		const rate = rates.find((r) => r.rateId === rateId);
+		const rate = rates.find((r) => r.id === rateId);
 		if (rate) {
 			props.onSelect?.(rate);
 		}
 	};
 
 	const formattedRates = rates.map((r) => ({
-		rateId: r.rateId,
+		rateId: r.id,
 		zoneName: r.zoneName,
-		rateName: r.rateName,
+		rateName: r.name,
 		formattedPrice: r.price === 0 ? "Free" : formatPrice(r.price),
 	}));
 

@@ -14,8 +14,8 @@ export function createStoreEndpoints(
 	};
 }
 
+// No-credentials mode: omit quote and delivery-creation endpoints that require
+// the Uber Direct API provider. Only expose read access for existing deliveries.
 export const storeEndpoints = {
-	"/uber-direct/quotes": requestQuote,
-	"/uber-direct/deliveries": createDelivery,
 	"/uber-direct/deliveries/:id": getDelivery,
 };

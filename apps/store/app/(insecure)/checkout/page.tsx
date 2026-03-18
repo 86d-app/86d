@@ -595,7 +595,10 @@ const CheckoutPage = observer(function CheckoutPage() {
 		onError: () => setError("Failed to process payment"),
 	});
 	const calcShippingMut = api.shipping.calculateRates.useMutation({
-		onError: () => setShippingRates([]),
+		onError: () => {
+			setShippingRates([]);
+			setError("Unable to calculate shipping rates. Please try again.");
+		},
 	});
 
 	// ── Close cart drawer on mount
@@ -1299,11 +1302,20 @@ const CheckoutPage = observer(function CheckoutPage() {
 										</label>
 									))}
 								</div>
+							) : calcShippingMut.isError ? (
+								<div className="mb-6 rounded-lg border border-destructive/40 bg-destructive/5 p-4">
+									<p className="font-medium text-destructive text-sm">
+										Unable to calculate shipping rates
+									</p>
+									<p className="mt-1 text-muted-foreground text-xs">
+										Please go back and verify your address, or try again.
+									</p>
+								</div>
 							) : (
 								<div className="mb-6 rounded-lg border border-border/40 p-4">
-									<p className="text-foreground text-sm">Standard shipping</p>
+									<p className="text-foreground text-sm">Free shipping</p>
 									<p className="text-muted-foreground text-xs">
-										Free shipping on all orders
+										No additional shipping charges
 									</p>
 								</div>
 							)}

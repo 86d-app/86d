@@ -360,7 +360,7 @@ describe("calculateRates", () => {
 			orderAmount: 5000,
 		});
 		expect(rates).toHaveLength(1);
-		expect(rates[0].rateName).toBe("Standard");
+		expect(rates[0].name).toBe("Standard");
 	});
 
 	it("wildcard zone (no countries) matches all destinations", async () => {
@@ -402,14 +402,14 @@ describe("calculateRates", () => {
 			country: "US",
 			orderAmount: 5000,
 		});
-		expect(small.map((r) => r.rateName)).not.toContain("Free");
-		expect(small.map((r) => r.rateName)).toContain("Standard");
+		expect(small.map((r) => r.name)).not.toContain("Free");
+		expect(small.map((r) => r.name)).toContain("Standard");
 
 		const large = await ctrl.calculateRates({
 			country: "US",
 			orderAmount: 15000,
 		});
-		expect(large.map((r) => r.rateName)).toContain("Free");
+		expect(large.map((r) => r.name)).toContain("Free");
 	});
 
 	it("filters rates by maximum order amount", async () => {
@@ -427,14 +427,14 @@ describe("calculateRates", () => {
 			country: "US",
 			orderAmount: 3000,
 		});
-		expect(small.map((r) => r.rateName)).toContain("Small only");
+		expect(small.map((r) => r.name)).toContain("Small only");
 
 		const large = await ctrl.calculateRates({
 			country: "US",
 			orderAmount: 8000,
 		});
-		expect(large.map((r) => r.rateName)).not.toContain("Small only");
-		expect(large.map((r) => r.rateName)).toContain("Standard");
+		expect(large.map((r) => r.name)).not.toContain("Small only");
+		expect(large.map((r) => r.name)).toContain("Standard");
 	});
 
 	it("filters rates by weight range", async () => {
@@ -460,16 +460,16 @@ describe("calculateRates", () => {
 			orderAmount: 3000,
 			weight: 2,
 		});
-		expect(light.map((r) => r.rateName)).toContain("Light");
-		expect(light.map((r) => r.rateName)).not.toContain("Heavy");
+		expect(light.map((r) => r.name)).toContain("Light");
+		expect(light.map((r) => r.name)).not.toContain("Heavy");
 
 		const heavy = await ctrl.calculateRates({
 			country: "US",
 			orderAmount: 3000,
 			weight: 10,
 		});
-		expect(heavy.map((r) => r.rateName)).toContain("Heavy");
-		expect(heavy.map((r) => r.rateName)).not.toContain("Light");
+		expect(heavy.map((r) => r.name)).toContain("Heavy");
+		expect(heavy.map((r) => r.name)).not.toContain("Light");
 	});
 
 	it("skips weight checks when weight is not provided", async () => {
@@ -487,7 +487,7 @@ describe("calculateRates", () => {
 			country: "US",
 			orderAmount: 5000,
 		});
-		expect(rates.map((r) => r.rateName)).toContain("WeightLimited");
+		expect(rates.map((r) => r.name)).toContain("WeightLimited");
 	});
 
 	it("matches country case-insensitively", async () => {
@@ -546,7 +546,7 @@ describe("calculateRates", () => {
 			orderAmount: 5000,
 		});
 		expect(rates).toHaveLength(1);
-		expect(rates[0].rateName).toBe("Active");
+		expect(rates[0].name).toBe("Active");
 	});
 
 	it("sorts rates cheapest first", async () => {
@@ -603,6 +603,6 @@ describe("calculateRates", () => {
 			orderAmount: 5000,
 		});
 		expect(rates[0].zoneName).toBe("North America");
-		expect(rates[0].rateId).toBeTruthy();
+		expect(rates[0].id).toBeTruthy();
 	});
 });

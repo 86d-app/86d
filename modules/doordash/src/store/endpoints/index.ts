@@ -18,11 +18,10 @@ export function createStoreEndpoints(
 	};
 }
 
-// Keep backwards-compatible static export for endpoints that don't need webhook config
+// No-credentials mode: omit quote endpoints that require the DoorDash API provider.
+// Delivery creation still works locally (without tracking/driver info).
 export const storeEndpoints = {
 	"/doordash/deliveries": createDeliveryEndpoint,
 	"/doordash/deliveries/:id": getDeliveryEndpoint,
 	"/doordash/availability": checkAvailabilityEndpoint,
-	"/doordash/quotes": requestQuoteEndpoint,
-	"/doordash/quotes/:id/accept": acceptQuoteEndpoint,
 };

@@ -173,7 +173,7 @@ describe("calculateRates — boundary conditions", () => {
 			country: "US",
 			orderAmount: 10000,
 		});
-		expect(rates.map((r) => r.rateName)).toContain("Free over 100");
+		expect(rates.map((r) => r.name)).toContain("Free over 100");
 	});
 
 	it("rate with exact max order amount match is included", async () => {
@@ -190,7 +190,7 @@ describe("calculateRates — boundary conditions", () => {
 			country: "US",
 			orderAmount: 5000,
 		});
-		expect(rates.map((r) => r.rateName)).toContain("Small orders");
+		expect(rates.map((r) => r.name)).toContain("Small orders");
 	});
 
 	it("rate with exact weight boundary is included", async () => {
@@ -209,7 +209,7 @@ describe("calculateRates — boundary conditions", () => {
 			orderAmount: 1000,
 			weight: 5,
 		});
-		expect(rates.map((r) => r.rateName)).toContain("Light");
+		expect(rates.map((r) => r.name)).toContain("Light");
 	});
 
 	it("multiple zones with overlapping countries return all matching rates", async () => {
@@ -251,14 +251,14 @@ describe("calculateRates — boundary conditions", () => {
 			orderAmount: 5000,
 		});
 		expect(caRates).toHaveLength(2);
-		expect(caRates.map((r) => r.rateName)).not.toContain("US Standard");
+		expect(caRates.map((r) => r.name)).not.toContain("US Standard");
 
 		const jpRates = await ctrl.calculateRates({
 			country: "JP",
 			orderAmount: 5000,
 		});
 		expect(jpRates).toHaveLength(1);
-		expect(jpRates[0].rateName).toBe("Global");
+		expect(jpRates[0].name).toBe("Global");
 	});
 
 	it("mixed active/inactive zones filter correctly", async () => {
@@ -290,7 +290,7 @@ describe("calculateRates — boundary conditions", () => {
 			orderAmount: 5000,
 		});
 		expect(rates).toHaveLength(1);
-		expect(rates[0].rateName).toBe("Available");
+		expect(rates[0].name).toBe("Available");
 	});
 
 	it("free shipping rate appears when order meets minimum", async () => {
@@ -312,15 +312,15 @@ describe("calculateRates — boundary conditions", () => {
 			country: "US",
 			orderAmount: 3000,
 		});
-		expect(small.map((r) => r.rateName)).toEqual(["Standard"]);
+		expect(small.map((r) => r.name)).toEqual(["Standard"]);
 
 		const large = await ctrl.calculateRates({
 			country: "US",
 			orderAmount: 5000,
 		});
-		expect(large.map((r) => r.rateName)).toContain("Free Shipping");
+		expect(large.map((r) => r.name)).toContain("Free Shipping");
 		// Free should sort first (price 0 < 599)
-		expect(large[0].rateName).toBe("Free Shipping");
+		expect(large[0].name).toBe("Free Shipping");
 	});
 
 	it("rates with both min and max order amounts form a window", async () => {
@@ -414,9 +414,9 @@ describe("calculateRates — multi-rate scenarios", () => {
 			orderAmount: 5000,
 		});
 		expect(rates).toHaveLength(3);
-		expect(rates[0].rateName).toBe("Economy");
-		expect(rates[1].rateName).toBe("Standard");
-		expect(rates[2].rateName).toBe("Express");
+		expect(rates[0].name).toBe("Economy");
+		expect(rates[1].name).toBe("Standard");
+		expect(rates[2].name).toBe("Express");
 	});
 
 	it("only active rates from active zones appear", async () => {
@@ -446,7 +446,7 @@ describe("calculateRates — multi-rate scenarios", () => {
 			orderAmount: 5000,
 		});
 		expect(rates).toHaveLength(2);
-		const names = rates.map((r) => r.rateName);
+		const names = rates.map((r) => r.name);
 		expect(names).toContain("Visible");
 		expect(names).toContain("Also Visible");
 		expect(names).not.toContain("Draft");
@@ -469,7 +469,7 @@ describe("calculateRates — multi-rate scenarios", () => {
 		expect(rates).toHaveLength(0);
 	});
 
-	it("calculated rate includes rateId and zoneName", async () => {
+	it("calculated rate includes id and zoneName", async () => {
 		const ctrl = createShippingController(createMockDataService());
 		const zone = await ctrl.createZone({
 			name: "North America",
@@ -486,9 +486,9 @@ describe("calculateRates — multi-rate scenarios", () => {
 			orderAmount: 5000,
 		});
 		expect(calculated).toHaveLength(1);
-		expect(calculated[0].rateId).toBe(rate.id);
+		expect(calculated[0].id).toBe(rate.id);
 		expect(calculated[0].zoneName).toBe("North America");
-		expect(calculated[0].rateName).toBe("Standard");
+		expect(calculated[0].name).toBe("Standard");
 		expect(calculated[0].price).toBe(599);
 	});
 });

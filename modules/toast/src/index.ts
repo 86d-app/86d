@@ -1,9 +1,14 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
-import { adminEndpoints } from "./admin/endpoints";
+import {
+	adminEndpoints,
+	createAdminEndpointsWithSettings,
+} from "./admin/endpoints";
+import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
 import { ToastPosProvider } from "./provider";
 import { toastSchema } from "./schema";
 import { createToastController } from "./service-impl";
-import { storeEndpoints } from "./store/endpoints";
+import { createStoreEndpointsWithWebhook } from "./store/endpoints";
+import { createToastWebhook } from "./store/endpoints/webhook";
 
 export { ToastPosProvider } from "./provider";
 export type {
@@ -12,7 +17,6 @@ export type {
 	SyncEntityType,
 	SyncRecord,
 	SyncStats,
-	SyncStatus,
 	ToastController,
 } from "./service";
 
@@ -23,15 +27,31 @@ export interface ToastOptions extends ModuleConfig {
 	restaurantGuid?: string;
 	/** Use sandbox mode (default: "true") */
 	sandbox?: string;
+	/** Toast webhook client secret for signature verification */
+	webhookSecret?: string;
 }
 
 export default function toast(options?: ToastOptions): Module {
 	let provider: ToastPosProvider | undefined;
+	const isSandbox = options?.sandbox !== "false";
+
 	if (options?.apiKey && options?.restaurantGuid) {
 		provider = new ToastPosProvider(options.apiKey, options.restaurantGuid, {
-			sandbox: options.sandbox !== "false",
+			sandbox: isSandbox,
 		});
 	}
+
+	const hasCredentials = Boolean(options?.apiKey && options?.restaurantGuid);
+
+	const settingsEndpoint = createGetSettingsEndpoint({
+		apiKey: options?.apiKey,
+		restaurantGuid: options?.restaurantGuid,
+		sandbox: isSandbox,
+	});
+
+	const webhookEndpoint = createToastWebhook({
+		webhookSecret: options?.webhookSecret,
+	});
 
 	return {
 		id: "toast",
@@ -53,8 +73,13 @@ export default function toast(options?: ToastOptions): Module {
 			return { controllers: { toast: controller } };
 		},
 		endpoints: {
-			store: storeEndpoints,
-			admin: adminEndpoints,
+			store: createStoreEndpointsWithWebhook(webhookEndpoint),
+			admin: hasCredentials
+				? createAdminEndpointsWithSettings(settingsEndpoint)
+				: {
+						...adminEndpoints,
+						"/admin/toast/settings": settingsEndpoint,
+					},
 		},
 		admin: {
 			pages: [

@@ -9,11 +9,11 @@ import { createUberDirectWebhook } from "../store/endpoints/webhook";
 
 describe("uber-direct endpoint security", () => {
 	describe("store endpoints (no credentials)", () => {
-		it("exposes expected store routes", () => {
+		it("only exposes read-only delivery route without credentials", () => {
 			const routes = Object.keys(storeEndpoints);
-			expect(routes).toContain("/uber-direct/quotes");
-			expect(routes).toContain("/uber-direct/deliveries");
 			expect(routes).toContain("/uber-direct/deliveries/:id");
+			expect(routes).not.toContain("/uber-direct/quotes");
+			expect(routes).not.toContain("/uber-direct/deliveries");
 		});
 
 		it("does not expose webhook without credentials", () => {
