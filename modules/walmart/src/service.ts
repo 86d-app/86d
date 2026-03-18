@@ -180,4 +180,6 @@ export interface WalmartController extends ModuleController {
 	getChannelStats(): Promise<ChannelStats>;
 
 	getItemHealth(): Promise<ItemHealth>;
+
+	syncOrders(): Promise<WalmartOrder[]>;
 }

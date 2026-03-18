@@ -1,5 +1,6 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
-import { adminEndpoints } from "./admin/endpoints";
+import { createAdminEndpointsWithSettings } from "./admin/endpoints";
+import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
 import { walmartSchema } from "./schema";
 import { createWalmartController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints";
@@ -23,14 +24,20 @@ export interface WalmartOptions extends ModuleConfig {
 	clientId?: string;
 	/** Walmart API client secret */
 	clientSecret?: string;
-	/** Walmart partner ID */
-	partnerId?: string;
+	/** Channel type designation provided during onboarding */
+	channelType?: string;
 }
 
 export default function walmart(options?: WalmartOptions): Module {
+	const settingsEndpoint = createGetSettingsEndpoint({
+		clientId: options?.clientId,
+		clientSecret: options?.clientSecret,
+		channelType: options?.channelType,
+	});
+
 	return {
 		id: "walmart",
-		version: "0.1.0",
+		version: "0.2.0",
 		schema: walmartSchema,
 		exports: {
 			read: ["itemTitle", "itemStatus", "itemPrice", "walmartItemId"],
@@ -46,12 +53,16 @@ export default function walmart(options?: WalmartOptions): Module {
 			],
 		},
 		init: async (ctx: ModuleContext) => {
-			const controller = createWalmartController(ctx.data);
+			const controller = createWalmartController(ctx.data, ctx.events, {
+				clientId: options?.clientId,
+				clientSecret: options?.clientSecret,
+				channelType: options?.channelType,
+			});
 			return { controllers: { walmart: controller } };
 		},
 		endpoints: {
 			store: storeEndpoints,
-			admin: adminEndpoints,
+			admin: createAdminEndpointsWithSettings(settingsEndpoint),
 		},
 		admin: {
 			pages: [

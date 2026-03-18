@@ -1,4 +1,10 @@
-import type { ModuleDataService } from "@86d-app/core";
+import type { ModuleDataService, ScopedEventEmitter } from "@86d-app/core";
+import {
+	extractOrderTotals,
+	mapOrderStatus,
+	WalmartProvider,
+	type WalmartProviderConfig,
+} from "./provider";
 import type {
 	ChannelStats,
 	FeedSubmission,
@@ -10,7 +16,22 @@ import type {
 
 export function createWalmartController(
 	data: ModuleDataService,
+	events?: ScopedEventEmitter | undefined,
+	options?: {
+		clientId?: string | undefined;
+		clientSecret?: string | undefined;
+		channelType?: string | undefined;
+	},
 ): WalmartController {
+	const provider =
+		options?.clientId && options?.clientSecret
+			? new WalmartProvider({
+					clientId: options.clientId,
+					clientSecret: options.clientSecret,
+					channelType: options.channelType,
+				} satisfies WalmartProviderConfig)
+			: null;
+
 	return {
 		async createItem(params) {
 			const now = new Date();
@@ -38,8 +59,33 @@ export function createWalmartController(
 				updatedAt: now,
 			};
 
+			if (provider) {
+				try {
+					const feedRes = await provider.submitFeed("item", [
+						{
+							sku: params.sku,
+							productName: params.title,
+							price: params.price,
+							...(params.upc ? { upc: params.upc } : {}),
+							...(params.gtin ? { gtin: params.gtin } : {}),
+							...(params.brand ? { brand: params.brand } : {}),
+							...(params.category ? { category: params.category } : {}),
+						},
+					]);
+					item.metadata = {
+						...item.metadata,
+						feedId: feedRes.feedId,
+					};
+					item.lastSyncedAt = now;
+				} catch (err) {
+					item.status = "system-error";
+					item.error = err instanceof Error ? err.message : "Unknown error";
+				}
+			}
+
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("item", id, item as Record<string, any>);
+			events?.emit("walmart.item.synced", { itemId: id });
 			return item;
 		},
 
@@ -73,6 +119,16 @@ export function createWalmartController(
 				updatedAt: now,
 			};
 
+			if (provider && params.quantity !== undefined) {
+				try {
+					await provider.updateInventory(item.sku, params.quantity);
+					updated.lastSyncedAt = now;
+					updated.error = undefined;
+				} catch (err) {
+					updated.error = err instanceof Error ? err.message : "Unknown error";
+				}
+			}
+
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("item", id, updated as Record<string, any>);
 			return updated;
@@ -85,6 +141,14 @@ export function createWalmartController(
 			const item = existing as unknown as WalmartItem;
 			const now = new Date();
 
+			if (provider) {
+				try {
+					await provider.retireItem(item.sku);
+				} catch {
+					// Continue with local update even if API call fails
+				}
+			}
+
 			const updated: WalmartItem = {
 				...item,
 				status: "retired",
@@ -94,6 +158,7 @@ export function createWalmartController(
 
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("item", id, updated as Record<string, any>);
+			events?.emit("walmart.item.retired", { itemId: id });
 			return updated;
 		},
 
@@ -144,6 +209,31 @@ export function createWalmartController(
 				completedAt: undefined,
 				createdAt: now,
 			};
+
+			if (provider) {
+				try {
+					const allItems = await data.findMany("item", {});
+					const items = allItems as unknown as WalmartItem[];
+					const feedItems = items.map((item) => ({
+						sku: item.sku,
+						productName: item.title,
+						price: item.price,
+						...(item.upc ? { upc: item.upc } : {}),
+						...(item.gtin ? { gtin: item.gtin } : {}),
+					}));
+
+					const feedRes = await provider.submitFeed(feedType, feedItems);
+					feed.feedId = feedRes.feedId;
+					feed.totalItems = feedItems.length;
+					events?.emit("walmart.feed.submitted", {
+						feedId: feedRes.feedId,
+						feedType,
+					});
+				} catch (err) {
+					feed.status = "error";
+					feed.error = err instanceof Error ? err.message : "Unknown error";
+				}
+			}
 
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("feedSubmission", id, feed as Record<string, any>);
@@ -199,6 +289,10 @@ export function createWalmartController(
 
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("walmartOrder", id, order as Record<string, any>);
+			events?.emit("walmart.order.received", {
+				orderId: id,
+				purchaseOrderId: params.purchaseOrderId,
+			});
 			return order;
 		},
 
@@ -208,6 +302,14 @@ export function createWalmartController(
 
 			const order = existing as unknown as WalmartOrder;
 			const now = new Date();
+
+			if (provider && order.purchaseOrderId) {
+				try {
+					await provider.acknowledgeOrder(order.purchaseOrderId);
+				} catch {
+					// Continue with local update even if API call fails
+				}
+			}
 
 			const updated: WalmartOrder = {
 				...order,
@@ -227,6 +329,22 @@ export function createWalmartController(
 			const order = existing as unknown as WalmartOrder;
 			const now = new Date();
 
+			if (provider && order.purchaseOrderId) {
+				try {
+					const apiOrder = await provider.getOrder(order.purchaseOrderId);
+					const lineNumbers = apiOrder.orderLines.orderLine.map(
+						(ol) => ol.lineNumber,
+					);
+					await provider.shipOrder(order.purchaseOrderId, {
+						lineNumbers,
+						trackingNumber,
+						carrier,
+					});
+				} catch {
+					// Continue with local update even if API call fails
+				}
+			}
+
 			const updated: WalmartOrder = {
 				...order,
 				status: "shipped",
@@ -238,6 +356,10 @@ export function createWalmartController(
 
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("walmartOrder", id, updated as Record<string, any>);
+			events?.emit("walmart.order.shipped", {
+				orderId: id,
+				trackingNumber,
+			});
 			return updated;
 		},
 
@@ -247,6 +369,18 @@ export function createWalmartController(
 
 			const order = existing as unknown as WalmartOrder;
 			const now = new Date();
+
+			if (provider && order.purchaseOrderId) {
+				try {
+					const apiOrder = await provider.getOrder(order.purchaseOrderId);
+					const lineNumbers = apiOrder.orderLines.orderLine.map(
+						(ol) => ol.lineNumber,
+					);
+					await provider.cancelOrder(order.purchaseOrderId, lineNumbers);
+				} catch {
+					// Continue with local update even if API call fails
+				}
+			}
 
 			const updated: WalmartOrder = {
 				...order,
@@ -271,6 +405,102 @@ export function createWalmartController(
 				orderBy: { createdAt: "desc" },
 			});
 			return all as unknown as WalmartOrder[];
+		},
+
+		async syncOrders() {
+			if (!provider) return [];
+
+			const now = new Date();
+			const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+			const synced: WalmartOrder[] = [];
+
+			try {
+				const response = await provider.getOrders({
+					createdStartDate: thirtyDaysAgo.toISOString(),
+					createdEndDate: now.toISOString(),
+					limit: 50,
+				});
+
+				const apiOrders = response.list?.elements?.order ?? [];
+
+				for (const apiOrder of apiOrders) {
+					const existing = await data.findMany("walmartOrder", {
+						where: {
+							purchaseOrderId: apiOrder.purchaseOrderId,
+						},
+						take: 1,
+					});
+
+					const orderLines = apiOrder.orderLines.orderLine;
+					const statuses = orderLines.flatMap((ol) =>
+						ol.orderLineStatuses.orderLineStatus.map((s) => s.status),
+					);
+					const status = mapOrderStatus(statuses);
+					const totals = extractOrderTotals(orderLines);
+
+					const items = orderLines.map((ol) => ({
+						lineNumber: ol.lineNumber,
+						productName: ol.item.productName,
+						sku: ol.item.sku,
+						quantity: Number(ol.orderLineQuantity.amount),
+					}));
+
+					const shippingAddress: Record<string, unknown> = apiOrder.shippingInfo
+						.postalAddress
+						? {
+								name: apiOrder.shippingInfo.postalAddress.name ?? "",
+								address1: apiOrder.shippingInfo.postalAddress.address1 ?? "",
+								address2: apiOrder.shippingInfo.postalAddress.address2 ?? "",
+								city: apiOrder.shippingInfo.postalAddress.city ?? "",
+								state: apiOrder.shippingInfo.postalAddress.state ?? "",
+								postalCode:
+									apiOrder.shippingInfo.postalAddress.postalCode ?? "",
+								country: apiOrder.shippingInfo.postalAddress.country ?? "",
+							}
+						: {};
+
+					const orderData: WalmartOrder = {
+						id:
+							existing.length > 0
+								? (existing[0] as unknown as WalmartOrder).id
+								: crypto.randomUUID(),
+						purchaseOrderId: apiOrder.purchaseOrderId,
+						status,
+						items,
+						orderTotal: totals.orderTotal,
+						shippingTotal: totals.shippingTotal,
+						walmartFee: 0,
+						tax: totals.tax,
+						customerName: apiOrder.shippingInfo.postalAddress?.name,
+						shippingAddress,
+						trackingNumber: undefined,
+						carrier: undefined,
+						shipDate: undefined,
+						estimatedDelivery: apiOrder.shippingInfo.estimatedDeliveryDate
+							? new Date(apiOrder.shippingInfo.estimatedDeliveryDate)
+							: undefined,
+						createdAt:
+							existing.length > 0
+								? (existing[0] as unknown as WalmartOrder).createdAt
+								: new Date(apiOrder.orderDate),
+						updatedAt: now,
+					};
+
+					const orderRecord =
+						// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+						orderData as Record<string, any>;
+					await data.upsert("walmartOrder", orderData.id, orderRecord);
+					synced.push(orderData);
+				}
+
+				events?.emit("walmart.order.received", {
+					orderCount: synced.length,
+				});
+			} catch {
+				// Sync failure is non-fatal
+			}
+
+			return synced;
 		},
 
 		async getChannelStats() {
