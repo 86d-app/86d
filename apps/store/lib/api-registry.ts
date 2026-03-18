@@ -163,6 +163,27 @@ export async function ensureBooted(): Promise<ModuleRegistry> {
 					reason: err instanceof Error ? err.message : String(err),
 				});
 			}
+
+			// Platform reporting (sync commerce data to 86d dashboard)
+			try {
+				const storeId = env.STORE_ID;
+				const apiKey = env["86D_API_KEY"];
+				const apiUrl = env["86D_API_URL"];
+				if (storeId && apiKey) {
+					const { registerPlatformReporter } = await import(
+						"./platform-reporter"
+					);
+					registerPlatformReporter(bus, db, {
+						storeId,
+						apiKey,
+						apiUrl,
+					});
+				}
+			} catch (err) {
+				logger.warn("Platform reporting disabled", {
+					reason: err instanceof Error ? err.message : String(err),
+				});
+			}
 		}
 		subscribersRegistered = true;
 	}
