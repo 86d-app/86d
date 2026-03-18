@@ -711,8 +711,8 @@ function getModuleIdFromWorkspace(moduleName: string): string {
 function moduleHasAdminComponents(moduleName: string): boolean {
 	if (getModuleType(moduleName) !== "workspace") return false;
 	const shortName = moduleName.replace("@86d-app/", "");
-	const basePath = join(WORKSPACE_ROOT, "modules", shortName, "src");
-	return existsSync(join(basePath, "admin", "components", "index.tsx"));
+	const componentsDir = join(WORKSPACE_ROOT, "modules", shortName, "src", "admin", "components");
+	return existsSync(join(componentsDir, "index.tsx")) || existsSync(join(componentsDir, "index.ts"));
 }
 
 /**
