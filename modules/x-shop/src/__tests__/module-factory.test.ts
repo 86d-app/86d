@@ -40,4 +40,27 @@ describe("x-shop module factory", () => {
 		const mod = createModule({ apiKey: "test-123" });
 		expect(mod.id).toBe("x-shop");
 	});
+
+	it("exposes admin settings endpoint", () => {
+		const mod = createModule();
+		expect(Object.keys(mod.endpoints?.admin ?? {})).toContain(
+			"/admin/x-shop/settings",
+		);
+	});
+
+	it("exposes admin drops endpoints", () => {
+		const mod = createModule();
+		const endpoints = Object.keys(mod.endpoints?.admin ?? {});
+		expect(endpoints).toContain("/admin/x-shop/drops");
+		expect(endpoints).toContain("/admin/x-shop/drops/create");
+		expect(endpoints).toContain("/admin/x-shop/drops/:id/cancel");
+		expect(endpoints).toContain("/admin/x-shop/drops/:id/stats");
+	});
+
+	it("exposes admin stats endpoint", () => {
+		const mod = createModule();
+		expect(Object.keys(mod.endpoints?.admin ?? {})).toContain(
+			"/admin/x-shop/stats",
+		);
+	});
 });

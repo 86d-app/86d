@@ -1,8 +1,5 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
-import {
-	adminEndpoints,
-	createAdminEndpointsWithSettings,
-} from "./admin/endpoints";
+import { createAdminEndpointsWithSettings } from "./admin/endpoints";
 import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
 import { uberDirectSchema } from "./schema";
 import { createUberDirectController } from "./service-impl";
@@ -69,9 +66,7 @@ export default function uberDirect(options?: UberDirectOptions): Module {
 			store: hasCredentials
 				? createStoreEndpoints(webhookEndpoint)
 				: storeEndpoints,
-			admin: hasCredentials
-				? createAdminEndpointsWithSettings(settingsEndpoint)
-				: adminEndpoints,
+			admin: createAdminEndpointsWithSettings(settingsEndpoint),
 		},
 		admin: {
 			pages: [

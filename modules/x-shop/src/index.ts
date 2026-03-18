@@ -1,5 +1,6 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
-import { adminEndpoints } from "./admin/endpoints";
+import { createAdminEndpointsWithSettings } from "./admin/endpoints";
+import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
 import { xShopSchema } from "./schema";
 import { createXShopController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints";
@@ -23,6 +24,12 @@ export interface XShopOptions extends ModuleConfig {
 }
 
 export default function xShop(options?: XShopOptions): Module {
+	const settingsEndpoint = createGetSettingsEndpoint({
+		apiKey: options?.apiKey,
+		apiSecret: options?.apiSecret,
+		merchantId: options?.merchantId,
+	});
+
 	return {
 		id: "x-shop",
 		version: "0.1.0",
@@ -45,7 +52,7 @@ export default function xShop(options?: XShopOptions): Module {
 		},
 		endpoints: {
 			store: storeEndpoints,
-			admin: adminEndpoints,
+			admin: createAdminEndpointsWithSettings(settingsEndpoint),
 		},
 		admin: {
 			pages: [

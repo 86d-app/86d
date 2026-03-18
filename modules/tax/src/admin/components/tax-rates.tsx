@@ -39,9 +39,16 @@ const COMMON_COUNTRIES = [
 	{ code: "JP", name: "Japan" },
 ];
 
+interface TaxSettings {
+	configured: boolean;
+	sandbox: boolean;
+	apiKey: string | null;
+}
+
 function useTaxAdminApi() {
 	const client = useModuleClient();
 	return {
+		getSettings: client.module("tax").admin["/admin/tax/settings"],
 		listRates: client.module("tax").admin["/admin/tax/rates"],
 		createRate: client.module("tax").admin["/admin/tax/rates/create"],
 		updateRate: client.module("tax").admin["/admin/tax/rates/:id/update"],
@@ -51,6 +58,62 @@ function useTaxAdminApi() {
 		deleteCategory:
 			client.module("tax").admin["/admin/tax/categories/:id/delete"],
 	};
+}
+
+function TaxJarStatus({ settings }: { settings: TaxSettings | undefined }) {
+	return (
+		<div className="rounded-lg border border-border bg-card p-5">
+			<h3 className="mb-3 font-semibold text-foreground text-sm">
+				TaxJar integration
+			</h3>
+			<div className="divide-y divide-border">
+				<div className="flex items-center justify-between py-2">
+					<span className="text-muted-foreground text-sm">Status</span>
+					<div className="flex items-center gap-2">
+						<span
+							className={`inline-flex items-center rounded-full px-2 py-0.5 font-medium text-xs ${
+								settings?.configured
+									? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+									: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+							}`}
+						>
+							{settings?.configured ? "active" : "inactive"}
+						</span>
+						<span className="text-foreground text-sm">
+							{settings?.configured ? "Connected" : "Not configured"}
+						</span>
+					</div>
+				</div>
+				{settings?.apiKey && (
+					<div className="flex items-center justify-between py-2">
+						<span className="text-muted-foreground text-sm">API key</span>
+						<div className="flex items-center gap-2">
+							<span
+								className={`inline-flex items-center rounded-full px-2 py-0.5 font-medium text-xs ${
+									settings.sandbox
+										? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
+										: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+								}`}
+							>
+								{settings.sandbox ? "sandbox" : "production"}
+							</span>
+							<span className="font-mono text-foreground text-xs">
+								{settings.apiKey}
+							</span>
+						</div>
+					</div>
+				)}
+			</div>
+
+			{!settings?.configured && (
+				<div className="mt-3 rounded-md bg-yellow-50 p-3 text-sm text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300">
+					Add your TaxJar API key to the module configuration to enable
+					real-time tax calculation. Without it, manual tax rates below will be
+					used instead.
+				</div>
+			)}
+		</div>
+	);
 }
 
 function formatRate(rate: TaxRateData): string {
@@ -312,6 +375,11 @@ function CreateRateForm({
 export function TaxRates() {
 	const api = useTaxAdminApi();
 
+	const { data: settingsData } = api.getSettings.useQuery({}) as {
+		data: TaxSettings | undefined;
+		isLoading: boolean;
+	};
+
 	const { data: ratesData, isLoading: ratesLoading } =
 		api.listRates.useQuery() as {
 			data: { rates: TaxRateData[] } | undefined;
@@ -358,6 +426,8 @@ export function TaxRates() {
 
 	const content = (
 		<>
+			<TaxJarStatus settings={settingsData} />
+
 			<CreateRateForm categories={categories} onCreated={handleRefresh} />
 
 			{loading ? (

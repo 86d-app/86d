@@ -1,8 +1,5 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
-import {
-	adminEndpoints,
-	createAdminEndpointsWithSettings,
-} from "./admin/endpoints";
+import { createAdminEndpointsWithSettings } from "./admin/endpoints";
 import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
 import { taxSchema } from "./schema";
 import { createTaxController } from "./service-impl";
@@ -41,8 +38,6 @@ export interface TaxOptions extends ModuleConfig {
 }
 
 export default function tax(options?: TaxOptions): Module {
-	const hasTaxJar = Boolean(options?.taxjarApiKey);
-
 	const settingsEndpoint = createGetSettingsEndpoint({
 		taxjarApiKey: options?.taxjarApiKey,
 		taxjarSandbox: options?.taxjarSandbox,
@@ -87,9 +82,7 @@ export default function tax(options?: TaxOptions): Module {
 
 		endpoints: {
 			store: storeEndpoints,
-			admin: hasTaxJar
-				? createAdminEndpointsWithSettings(settingsEndpoint)
-				: adminEndpoints,
+			admin: createAdminEndpointsWithSettings(settingsEndpoint),
 		},
 
 		admin: {

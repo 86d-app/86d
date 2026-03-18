@@ -1,9 +1,6 @@
 import { createMockDataService } from "@86d-app/core/test-utils";
 import { beforeEach, describe, expect, it } from "vitest";
-import {
-	adminEndpoints,
-	createAdminEndpointsWithSettings,
-} from "../admin/endpoints";
+import { createAdminEndpointsWithSettings } from "../admin/endpoints";
 import { createGetSettingsEndpoint } from "../admin/endpoints/get-settings";
 import { createDoordashController } from "../service-impl";
 import { createStoreEndpoints, storeEndpoints } from "../store/endpoints";
@@ -81,16 +78,18 @@ describe("doordash endpoint security", () => {
 	});
 
 	describe("admin endpoints (no credentials)", () => {
-		it("does not expose settings without credentials", () => {
-			const routes = Object.keys(adminEndpoints);
-			expect(routes).not.toContain("/admin/doordash/settings");
+		it("always exposes settings so admin UI can show not-configured state", () => {
+			const settings = createGetSettingsEndpoint({});
+			const endpoints = createAdminEndpointsWithSettings(settings);
+			const routes = Object.keys(endpoints);
+			expect(routes).toContain("/admin/doordash/settings");
 			expect(routes).toContain("/admin/doordash/deliveries");
 			expect(routes).toContain("/admin/doordash/zones");
 		});
 	});
 
 	describe("admin endpoints (with credentials)", () => {
-		it("includes settings endpoint", () => {
+		it("includes settings endpoint with credential info", () => {
 			const settings = createGetSettingsEndpoint({
 				developerId: "test",
 				keyId: "test",

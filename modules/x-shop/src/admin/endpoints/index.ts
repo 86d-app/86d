@@ -6,12 +6,22 @@ import { dropStatsEndpoint } from "./drop-stats";
 import { getDropEndpoint } from "./get-drop";
 import { getListingEndpoint } from "./get-listing";
 import { getOrderEndpoint } from "./get-order";
+import type { createGetSettingsEndpoint } from "./get-settings";
 import { listDropsEndpoint } from "./list-drops";
 import { listListingsEndpoint } from "./list-listings";
 import { listOrdersEndpoint } from "./list-orders";
 import { statsEndpoint } from "./stats";
 import { updateListingEndpoint } from "./update-listing";
 import { updateOrderStatusEndpoint } from "./update-order-status";
+
+export function createAdminEndpointsWithSettings(
+	settingsEndpoint: ReturnType<typeof createGetSettingsEndpoint>,
+) {
+	return {
+		...adminEndpoints,
+		"/admin/x-shop/settings": settingsEndpoint,
+	};
+}
 
 export const adminEndpoints = {
 	"/admin/x-shop/listings/create": createListingEndpoint,

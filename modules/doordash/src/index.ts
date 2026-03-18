@@ -1,8 +1,5 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
-import {
-	adminEndpoints,
-	createAdminEndpointsWithSettings,
-} from "./admin/endpoints";
+import { createAdminEndpointsWithSettings } from "./admin/endpoints";
 import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
 import { doordashSchema } from "./schema";
 import { createDoordashController } from "./service-impl";
@@ -72,9 +69,7 @@ export default function doordash(options?: DoordashOptions): Module {
 			store: hasCredentials
 				? createStoreEndpoints(webhookEndpoint)
 				: storeEndpoints,
-			admin: hasCredentials
-				? createAdminEndpointsWithSettings(settingsEndpoint)
-				: adminEndpoints,
+			admin: createAdminEndpointsWithSettings(settingsEndpoint),
 		},
 		admin: {
 			pages: [

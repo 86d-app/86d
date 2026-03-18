@@ -214,17 +214,23 @@ function resolveEntityId(
 async function reportEntities(
 	config: PlatformReporterConfig,
 	entities: EntityPayload[],
+	eventType?: string,
 ): Promise<void> {
 	if (entities.length === 0) return;
 
 	const url = `${config.apiUrl}/store-events`;
+	const body: { entities: EntityPayload[]; eventType?: string } = { entities };
+	if (eventType) {
+		body.eventType = eventType;
+	}
+
 	const response = await fetch(url, {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",
 			Authorization: `Bearer ${config.apiKey}`,
 		},
-		body: JSON.stringify({ entities }),
+		body: JSON.stringify(body),
 		signal: AbortSignal.timeout(10_000),
 	});
 
@@ -256,7 +262,7 @@ export function registerPlatformReporter(
 				event,
 				targets,
 			);
-			await reportEntities(config, entities);
+			await reportEntities(config, entities, event.type);
 
 			logger.info("Platform events reported", {
 				event: event.type,

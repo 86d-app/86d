@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-	adminEndpoints,
-	createAdminEndpointsWithSettings,
-} from "../admin/endpoints";
+import { createAdminEndpointsWithSettings } from "../admin/endpoints";
 import { createGetSettingsEndpoint } from "../admin/endpoints/get-settings";
 import { createStoreEndpoints, storeEndpoints } from "../store/endpoints";
 import { createUberDirectWebhook } from "../store/endpoints/webhook";
@@ -41,28 +38,28 @@ describe("uber-direct endpoint security", () => {
 	});
 
 	describe("admin endpoints (no credentials)", () => {
-		it("exposes expected admin routes", () => {
-			const routes = Object.keys(adminEndpoints);
+		it("always exposes settings so admin UI can show not-configured state", () => {
+			const settings = createGetSettingsEndpoint({});
+			const endpoints = createAdminEndpointsWithSettings(settings);
+			const routes = Object.keys(endpoints);
+			expect(routes).toContain("/admin/uber-direct/settings");
 			expect(routes).toContain("/admin/uber-direct/deliveries");
 			expect(routes).toContain("/admin/uber-direct/deliveries/:id/status");
 			expect(routes).toContain("/admin/uber-direct/quotes");
 			expect(routes).toContain("/admin/uber-direct/stats");
 		});
 
-		it("does not expose settings without credentials", () => {
-			const routes = Object.keys(adminEndpoints);
-			expect(routes).not.toContain("/admin/uber-direct/settings");
-		});
-
 		it("admin endpoints are defined as functions", () => {
-			for (const endpoint of Object.values(adminEndpoints)) {
+			const settings = createGetSettingsEndpoint({});
+			const endpoints = createAdminEndpointsWithSettings(settings);
+			for (const endpoint of Object.values(endpoints)) {
 				expect(typeof endpoint).toBe("function");
 			}
 		});
 	});
 
 	describe("admin endpoints (with credentials)", () => {
-		it("includes settings endpoint", () => {
+		it("includes settings endpoint with credential info", () => {
 			const settings = createGetSettingsEndpoint({
 				clientId: "test",
 				clientSecret: "test",

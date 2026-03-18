@@ -21,13 +21,3 @@ export function createAdminEndpointsWithSettings(
 		"/admin/doordash/settings": settingsEndpoint,
 	};
 }
-
-export const adminEndpoints = {
-	"/admin/doordash/deliveries": listDeliveriesEndpoint,
-	"/admin/doordash/deliveries/create": createDeliveryAdminEndpoint,
-	"/admin/doordash/deliveries/:id/status": updateDeliveryStatusEndpoint,
-	"/admin/doordash/zones": listZonesEndpoint,
-	"/admin/doordash/zones/create": createZoneEndpoint,
-	"/admin/doordash/zones/:id": updateZoneEndpoint,
-	"/admin/doordash/zones/:id/delete": deleteZoneEndpoint,
-};

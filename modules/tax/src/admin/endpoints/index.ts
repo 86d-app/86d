@@ -26,7 +26,7 @@ export function createAdminEndpointsWithSettings(
 	};
 }
 
-export const adminEndpoints = {
+const adminEndpoints = {
 	"/admin/tax/rates": adminListRates,
 	"/admin/tax/rates/create": adminCreateRate,
 	"/admin/tax/rates/:id": adminGetRate,

@@ -229,7 +229,7 @@ describe("resolveEntityId", () => {
 });
 
 describe("store-events endpoint contract", () => {
-	it("expects entities array in request body", () => {
+	it("expects entities array and optional eventType in request body", () => {
 		const body = {
 			entities: [
 				{
@@ -258,6 +258,7 @@ describe("store-events endpoint contract", () => {
 					},
 				},
 			],
+			eventType: "checkout.completed",
 		};
 
 		// Verify entity shape matches what the dashboard money router expects
@@ -274,6 +275,25 @@ describe("store-events endpoint contract", () => {
 		expect(order).toHaveProperty("status");
 		expect(order).toHaveProperty("total");
 		expect(order).toHaveProperty("currency");
+
+		// Verify eventType is included for webhook dispatch
+		expect(body.eventType).toBe("checkout.completed");
+	});
+
+	it("allows body without eventType for backwards compatibility", () => {
+		const body = {
+			entities: [
+				{
+					module: "orders",
+					entityType: "order",
+					entityId: "ord_123",
+					data: { id: "ord_123", status: "pending" },
+				},
+			],
+		};
+
+		expect(body).not.toHaveProperty("eventType");
+		expect(body.entities).toHaveLength(1);
 	});
 
 	it("enforces maximum 100 entities per request", () => {

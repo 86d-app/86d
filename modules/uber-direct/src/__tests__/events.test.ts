@@ -71,7 +71,7 @@ describe("uber-direct events", () => {
 		expect(adminRoutes).toContain("/admin/uber-direct/settings");
 	});
 
-	it("excludes webhook and settings without credentials", () => {
+	it("excludes webhook without credentials but always exposes settings", () => {
 		const mod = uberDirect();
 		const storeRoutes = Object.keys(
 			mod.endpoints?.store as Record<string, unknown>,
@@ -80,6 +80,6 @@ describe("uber-direct events", () => {
 			mod.endpoints?.admin as Record<string, unknown>,
 		);
 		expect(storeRoutes).not.toContain("/uber-direct/webhook");
-		expect(adminRoutes).not.toContain("/admin/uber-direct/settings");
+		expect(adminRoutes).toContain("/admin/uber-direct/settings");
 	});
 });
