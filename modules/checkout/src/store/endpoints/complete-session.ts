@@ -170,6 +170,16 @@ export const completeSession = createStoreEndpoint(
 					: undefined,
 			});
 			orderId = order.id;
+
+			// Emit order.placed so listeners (e.g. loyalty) can react
+			if (ctx.context.events) {
+				await ctx.context.events.emit("order.placed", {
+					orderId: order.id,
+					customerId: existing.customerId,
+					total: adjustedTotal,
+					currency: existing.currency,
+				});
+			}
 		}
 
 		// Fall back to generating an order number if no orders module
