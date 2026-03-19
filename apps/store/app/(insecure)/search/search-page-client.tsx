@@ -222,7 +222,7 @@ const ProductCard = memo(function ProductCard({
 						{formatPrice(product.price)}
 					</span>
 					{hasDiscount && (
-						<span className="text-muted-foreground/60 text-xs tabular-nums line-through">
+						<span className="text-muted-foreground text-xs tabular-nums line-through">
 							{formatPrice(product.compareAtPrice as number)}
 						</span>
 					)}

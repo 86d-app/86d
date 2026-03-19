@@ -14,8 +14,8 @@ test.describe("User — Authentication", () => {
 			.locator("h1")
 			.filter({ hasText: /sign in/i });
 		await expect(heading).toBeVisible();
-		/* Scope to form to avoid newsletter footer email */
-		const form = storefront.page.locator("form");
+		/* Scope to main to avoid newsletter footer form */
+		const form = storefront.page.locator("main form");
 		await expect(form.locator('input[type="email"]')).toBeVisible();
 		await expect(form.locator('input[type="password"]')).toBeVisible();
 		await expect(form.locator('button[type="submit"]')).toBeVisible();
@@ -27,9 +27,9 @@ test.describe("User — Authentication", () => {
 		await storefront.goto("/auth/signup");
 		const heading = storefront.page
 			.locator("h1")
-			.filter({ hasText: /sign up|create account/i });
+			.filter({ hasText: /sign up|create an? account/i });
 		await expect(heading).toBeVisible();
-		const form = storefront.page.locator("form");
+		const form = storefront.page.locator("main form");
 		await expect(form.locator('input[name="name"]')).toBeVisible();
 		await expect(form.locator('input[type="email"]')).toBeVisible();
 		await expect(form.locator('input[type="password"]')).toBeVisible();
@@ -39,7 +39,7 @@ test.describe("User — Authentication", () => {
 		storefront,
 	}) => {
 		await storefront.goto("/auth/signin");
-		const form = storefront.page.locator("form");
+		const form = storefront.page.locator("main form");
 		await form.locator('input[type="email"]').fill(ADMIN_EMAIL);
 		await form.locator('input[type="password"]').fill(ADMIN_PASSWORD);
 		await form.locator('button[type="submit"]').click();
@@ -56,7 +56,7 @@ test.describe("User — Authentication", () => {
 		storefront,
 	}) => {
 		await storefront.goto("/auth/signin");
-		const form = storefront.page.locator("form");
+		const form = storefront.page.locator("main form");
 		await form.locator('input[type="email"]').fill("wrong@invalid.com");
 		await form.locator('input[type="password"]').fill("wrongpassword123");
 		await form.locator('button[type="submit"]').click();
@@ -82,7 +82,7 @@ test.describe("User — Authentication", () => {
 		storefront,
 	}) => {
 		await storefront.goto("/auth/signin?redirect=/admin");
-		const form = storefront.page.locator("form");
+		const form = storefront.page.locator("main form");
 		await form.locator('input[type="email"]').fill(ADMIN_EMAIL);
 		await form.locator('input[type="password"]').fill(ADMIN_PASSWORD);
 		await form.locator('button[type="submit"]').click();
@@ -113,7 +113,7 @@ test.describe("User — Account pages", () => {
 			.locator("h1")
 			.filter({ hasText: /reset|password/i });
 		await expect(heading).toBeVisible();
-		const form = storefront.page.locator("form");
+		const form = storefront.page.locator("main form");
 		await expect(form.locator('input[type="email"]')).toBeVisible();
 	});
 });

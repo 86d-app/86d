@@ -123,7 +123,7 @@ test.describe("Storefront — Accessibility (structural)", () => {
 		await page.goto("/");
 		const header = page.locator("header").first();
 		await expect(header).toBeVisible({ timeout: 10_000 });
-		await expect(header.locator("nav")).toBeVisible();
+		await expect(header.locator("nav").first()).toBeVisible();
 	});
 
 	test("cart button has accessible label", async ({ page }) => {

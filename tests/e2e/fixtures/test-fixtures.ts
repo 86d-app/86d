@@ -40,7 +40,7 @@ export class StorefrontPage {
 	}
 
 	get cartCloseButton() {
-		return this.page.locator('button[aria-label="Close cart"]');
+		return this.cartDrawer.locator('[data-slot="sheet-close"]');
 	}
 
 	get checkoutLink() {
@@ -106,13 +106,17 @@ export class AdminPage {
 
 	async signIn(email = ADMIN_EMAIL, password = ADMIN_PASSWORD) {
 		await this.page.goto("/auth/signin?redirect=/admin");
-		/* Fill the sign-in form — scope to form to avoid newsletter footer email */
-		const form = this.page.locator("form");
+		/* Fill the sign-in form — scope to main to avoid newsletter footer form */
+		const form = this.page.locator("main form");
 		await form.locator('input[type="email"]').fill(email);
 		await form.locator('input[type="password"]').fill(password);
 		await form.locator('button[type="submit"]').click();
-		/* Wait for redirect to admin */
-		await this.page.waitForURL(/\/admin/, { timeout: 15_000 });
+		/* Wait for redirect to admin — use pathname check to avoid matching
+		   the query string in /auth/signin?redirect=/admin */
+		await this.page.waitForURL(
+			(url) => url.pathname.startsWith("/admin"),
+			{ timeout: 15_000 },
+		);
 	}
 
 	get heading() {
@@ -133,7 +137,7 @@ export class AdminPage {
 
 	async navigateTo(sectionName: string) {
 		await this.page
-			.locator("a")
+			.locator("aside a, nav a")
 			.filter({ hasText: sectionName })
 			.first()
 			.click();
@@ -161,7 +165,7 @@ export class DashboardPage {
 
 	async signUp(name: string, email: string, password: string) {
 		await this.page.goto("/auth/signup");
-		const form = this.page.locator("form");
+		const form = this.page.locator("main form");
 		await form.locator('input[name="name"]').fill(name);
 		await form.locator('input[type="email"]').fill(email);
 		await form.locator('input[type="password"]').fill(password);
@@ -170,7 +174,7 @@ export class DashboardPage {
 
 	async signIn(email = ADMIN_EMAIL, password = ADMIN_PASSWORD) {
 		await this.page.goto("/auth/signin");
-		const form = this.page.locator("form");
+		const form = this.page.locator("main form");
 		await form.locator('input[type="email"]').fill(email);
 		await form.locator('input[type="password"]').fill(password);
 		await form.locator('button[type="submit"]').click();

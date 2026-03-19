@@ -19,8 +19,8 @@ test.describe("Store Admin — Authentication", () => {
 			.locator("h1")
 			.filter({ hasText: /sign in/i });
 		await expect(heading).toBeVisible();
-		/* Should have email and password inputs — scope to form to avoid footer newsletter */
-		const form = admin.page.locator("form");
+		/* Should have email and password inputs — scope to main to avoid footer newsletter */
+		const form = admin.page.locator("main form");
 		const emailInput = form.locator('input[type="email"]');
 		const passwordInput = form.locator('input[type="password"]');
 		await expect(emailInput).toBeVisible();
@@ -43,7 +43,7 @@ test.describe("Store Admin — Authentication", () => {
 		admin,
 	}) => {
 		await admin.page.goto("/auth/signin");
-		const form = admin.page.locator("form");
+		const form = admin.page.locator("main form");
 		await form.locator('input[type="email"]').fill("wrong@example.com");
 		await form.locator('input[type="password"]').fill("wrongpassword");
 		await form.locator('button[type="submit"]').click();
@@ -72,9 +72,9 @@ test.describe("Store Admin — Dashboard", () => {
 	test("stat cards show numeric values after loading", async ({
 		admin,
 	}) => {
-		/* Wait for data to load */
-		await admin.page.waitForLoadState("networkidle");
+		/* Wait for stat values to render */
 		const statValues = admin.page.locator("[data-testid='stat-value']");
+		await expect(statValues.first()).toBeVisible({ timeout: 10_000 });
 		const count = await statValues.count();
 		expect(count).toBeGreaterThan(0);
 		/* Values should be numbers, currency, or ratios (e.g. "5 / 10") */

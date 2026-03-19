@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { toNextJsHandler } from "better-auth/next-js";
@@ -55,6 +56,11 @@ export const auth = betterAuth({
 	emailAndPassword: { enabled: true },
 	session: {
 		cookieCache: { enabled: true, maxAge: 60 * 5 },
+	},
+	advanced: {
+		database: {
+			generateId: () => randomUUID(),
+		},
 	},
 	plugins: [admin(), ...socialProviders],
 });
