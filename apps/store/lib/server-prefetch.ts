@@ -110,7 +110,7 @@ export const prefetchProducts = cache(
 		sort?: string;
 		order?: "asc" | "desc";
 	}): Promise<{ products: PrefetchedProduct[]; total: number } | null> => {
-		const moduleId = await getModuleDbId("@86d-app/products");
+		const moduleId = await getModuleDbId("products");
 		if (!moduleId) return null;
 
 		const page = options?.page ?? 1;
@@ -165,7 +165,7 @@ export const prefetchCategories = cache(
 			isVisible: boolean;
 		}>;
 	} | null> => {
-		const moduleId = await getModuleDbId("@86d-app/products");
+		const moduleId = await getModuleDbId("products");
 		if (!moduleId) return null;
 
 		const rows = await db.moduleData.findMany({
@@ -222,7 +222,7 @@ export const prefetchProductBySlug = cache(
 		};
 		id: string;
 	} | null> => {
-		const moduleId = await getModuleDbId("@86d-app/products");
+		const moduleId = await getModuleDbId("products");
 		if (!moduleId) return null;
 
 		const row = await db.moduleData.findFirst({

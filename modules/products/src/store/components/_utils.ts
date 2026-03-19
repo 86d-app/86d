@@ -1,3 +1,11 @@
+/** Extract a URL string from an image entry (handles both string and {url,alt} formats). */
+export function imageUrl(img: unknown): string {
+	if (typeof img === "string") return img;
+	if (img && typeof img === "object" && "url" in img)
+		return String((img as { url: string }).url);
+	return "";
+}
+
 export function formatPrice(cents: number): string {
 	return new Intl.NumberFormat("en-US", {
 		style: "currency",

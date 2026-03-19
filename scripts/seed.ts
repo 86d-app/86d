@@ -299,8 +299,8 @@ const products: Product[] = [
 		slug: "classic-white-t-shirt",
 		description:
 			"A timeless staple crafted from 100% organic cotton. Soft, breathable, and perfect for everyday wear.",
-		price: 29.99,
-		compareAtPrice: 39.99,
+		price: 2999,
+		compareAtPrice: 3999,
 		sku: "TSH-WHT-001",
 		status: "active",
 		categoryId: categoryIds.clothing,
@@ -324,8 +324,8 @@ const products: Product[] = [
 		slug: "leather-messenger-bag",
 		description:
 			"Handcrafted from full-grain leather with brass hardware. Fits a 15-inch laptop with room for essentials.",
-		price: 89.99,
-		compareAtPrice: 119.99,
+		price: 8999,
+		compareAtPrice: 11999,
 		sku: "BAG-LTR-001",
 		status: "active",
 		categoryId: categoryIds.accessories,
@@ -349,7 +349,7 @@ const products: Product[] = [
 		slug: "wireless-bluetooth-headphones",
 		description:
 			"Premium over-ear headphones with active noise cancellation, 30-hour battery life, and Hi-Res audio.",
-		price: 149.99,
+		price: 14999,
 		sku: "ELC-HPH-001",
 		status: "active",
 		categoryId: categoryIds.electronics,
@@ -373,7 +373,7 @@ const products: Product[] = [
 		slug: "organic-coffee-beans",
 		description:
 			"Single-origin Ethiopian Yirgacheffe. Medium roast with notes of blueberry, chocolate, and citrus.",
-		price: 18.99,
+		price: 1899,
 		sku: "FOD-COF-001",
 		status: "active",
 		categoryId: categoryIds.foodDrink,
@@ -397,7 +397,7 @@ const products: Product[] = [
 		slug: "handcrafted-ceramic-mug",
 		description:
 			"Artisan-made stoneware mug with a reactive glaze finish. Microwave and dishwasher safe. 12oz capacity.",
-		price: 24.99,
+		price: 2499,
 		sku: "HOM-MUG-001",
 		status: "active",
 		categoryId: categoryIds.homeKitchen,
@@ -421,8 +421,8 @@ const products: Product[] = [
 		slug: "running-shoes-pro",
 		description:
 			"Lightweight performance running shoes with responsive cushioning and breathable mesh upper.",
-		price: 119.99,
-		compareAtPrice: 149.99,
+		price: 11999,
+		compareAtPrice: 14999,
 		sku: "SPT-SHO-001",
 		status: "active",
 		categoryId: categoryIds.sportsOutdoors,
@@ -446,7 +446,7 @@ const products: Product[] = [
 		slug: "bamboo-water-bottle",
 		description:
 			"Sustainable double-walled stainless steel bottle with bamboo cap. Keeps drinks cold 24hrs or hot 12hrs.",
-		price: 34.99,
+		price: 3499,
 		sku: "SPT-BTL-001",
 		status: "active",
 		categoryId: categoryIds.sportsOutdoors,
@@ -470,7 +470,7 @@ const products: Product[] = [
 		slug: "wool-blend-scarf",
 		description:
 			"Luxurious merino wool and cashmere blend scarf. Ultra-soft with a classic herringbone pattern.",
-		price: 44.99,
+		price: 4499,
 		sku: "ACC-SCF-001",
 		status: "active",
 		categoryId: categoryIds.accessories,

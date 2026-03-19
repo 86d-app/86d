@@ -13,11 +13,28 @@ test.describe("Storefront — Homepage", () => {
 		await storefront.goto("/");
 		const logo = storefront.page.locator('header a[href="/"]').first();
 		await expect(logo).toBeVisible();
-		/* Nav should have at least Shop link */
-		const shopLink = storefront.page
-			.locator("header a")
-			.filter({ hasText: "Shop" });
-		await expect(shopLink.first()).toBeVisible();
+		/* On mobile, nav links are behind a hamburger menu */
+		const hamburger = storefront.page.locator(
+			'button[aria-label="Open menu"]',
+		);
+		const isMobile = await hamburger.isVisible().catch(() => false);
+		if (isMobile) {
+			await hamburger.click();
+			/* After click, aria-label changes to "Close menu" — wait for the overlay */
+			const closeBtn = storefront.page.locator(
+				'button[aria-label="Close menu"]',
+			);
+			await expect(closeBtn).toBeVisible();
+			/* Use getByRole with exact match to avoid matching "Shop now" CTA */
+			await expect(
+				storefront.page.getByRole("link", { name: "Shop", exact: true }),
+			).toBeVisible();
+		} else {
+			const shopLink = storefront.page
+				.locator("header a")
+				.filter({ hasText: "Shop" });
+			await expect(shopLink.first()).toBeVisible();
+		}
 	});
 
 	test("shows featured products section", async ({ storefront }) => {
@@ -143,10 +160,10 @@ test.describe("Storefront — Product detail", () => {
 		});
 		await storefront.allProductCards.first().click();
 		await storefront.page.waitForURL(/\/products\/.+/);
-		/* Breadcrumb should have Home and Products links */
-		const breadcrumbHome = storefront.page.locator('nav a[href="/"]');
+		/* Breadcrumb should have Home and Products links — scope to main to avoid header nav */
+		const breadcrumbHome = storefront.page.locator('main nav a[href="/"]');
 		const breadcrumbProducts = storefront.page.locator(
-			'nav a[href="/products"]',
+			'main nav a[href="/products"]',
 		);
 		await expect(breadcrumbHome).toBeVisible();
 		await expect(breadcrumbProducts).toBeVisible();
@@ -182,10 +199,12 @@ test.describe("Storefront — Product detail", () => {
 		await storefront.allProductCards.first().click();
 		await storefront.page.waitForURL(/\/products\/.+/);
 		await storefront.page.waitForLoadState("networkidle");
-		/* Find quantity display */
-		const qtyDisplay = storefront.page.locator("span.tabular-nums").first();
-		await expect(qtyDisplay).toBeVisible();
-		const initialQty = await qtyDisplay.textContent();
+		/* Find quantity display — scoped between the − and + buttons */
+		const qtyControls = storefront.page.locator(
+			'button:has-text("−") + span.tabular-nums',
+		);
+		await expect(qtyControls).toBeVisible();
+		const initialQty = await qtyControls.textContent();
 		expect(initialQty?.trim()).toBe("1");
 		/* Click the increase button (second button in the quantity control) */
 		const increaseBtn = storefront.page
@@ -193,7 +212,7 @@ test.describe("Storefront — Product detail", () => {
 			.filter({ hasText: "+" })
 			.first();
 		await increaseBtn.click();
-		await expect(qtyDisplay).toHaveText("2");
+		await expect(qtyControls).toHaveText("2");
 	});
 });
 
@@ -229,24 +248,27 @@ test.describe("Storefront — Cart", () => {
 		const addButton = storefront.page
 			.locator("button")
 			.filter({ hasText: "Add to cart" });
-		const soldOut = storefront.page
-			.locator("button")
-			.filter({ hasText: "Sold out" });
 		const isInStock = await addButton.isVisible().catch(() => false);
 		if (!isInStock) {
 			test.skip(true, "First product is out of stock");
 			return;
 		}
-		/* Add to cart */
+		/* Add to cart — capture the POST response */
+		const cartResponsePromise = storefront.page.waitForResponse(
+			(resp) =>
+				resp.url().includes("/api/cart") &&
+				resp.request().method() === "POST",
+			{ timeout: 10_000 },
+		);
 		await addButton.click();
-		/* Wait for the button text to change */
-		await expect(
-			storefront.page
-				.locator("button")
-				.filter({ hasText: /Added to cart!|Adding/ }),
-		).toBeVisible({ timeout: 5_000 });
-		/* Open cart drawer */
-		await storefront.openCart();
+		const cartResponse = await cartResponsePromise;
+		const body = await cartResponse.text();
+		expect(
+			cartResponse.status(),
+			`Cart POST returned ${cartResponse.status()}: ${body}`,
+		).toBe(200);
+		/* Cart drawer opens automatically on successful add — wait for it */
+		await expect(storefront.cartDrawer).toBeVisible({ timeout: 5_000 });
 		/* Should have at least one item */
 		const items = storefront.cartItems;
 		await expect(items.first()).toBeVisible({ timeout: 5_000 });
@@ -272,8 +294,13 @@ test.describe("Storefront — Cart", () => {
 			return;
 		}
 		await addButton.click();
-		await storefront.page.waitForLoadState("networkidle");
-		await storefront.openCart();
+		/* Wait for mutation success — cart drawer opens automatically */
+		await expect(
+			storefront.page
+				.locator("button")
+				.filter({ hasText: /Added!|Adding/ }),
+		).toBeVisible({ timeout: 5_000 });
+		await expect(storefront.cartDrawer).toBeVisible({ timeout: 5_000 });
 		/* Checkout link should be visible */
 		await expect(storefront.checkoutLink).toBeVisible();
 		await expect(storefront.checkoutLink).toHaveAttribute(
@@ -300,9 +327,9 @@ test.describe("Storefront — Mobile", () => {
 			'button[aria-label="Open menu"]',
 		);
 		await menuBtn.click();
-		/* Mobile nav links should become visible */
+		/* Mobile nav links should become visible (skip desktop nav which has .hidden) */
 		const mobileNav = storefront.page.locator(
-			"header nav a",
+			"header nav:not(.hidden) a",
 		);
 		await expect(mobileNav.first()).toBeVisible({ timeout: 3_000 });
 	});

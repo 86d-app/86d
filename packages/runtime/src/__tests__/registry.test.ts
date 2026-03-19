@@ -265,7 +265,7 @@ describe("ModuleRegistry", () => {
 			);
 		});
 
-		it("marks module as error when dependency is not initialized before it", async () => {
+		it("initializes dependencies before dependents via topological sort", async () => {
 			const modules = [
 				createMinimalModule("cart", {
 					requires: ["products"],
@@ -280,9 +280,9 @@ describe("ModuleRegistry", () => {
 				createMockConfig(),
 			);
 
-			// Boot succeeds because products initializes fine; cart fails gracefully
+			// Boot reorders modules so products initializes before cart
 			await registry.boot();
-			expect(registry.getModuleStatus("cart")).toBe("error");
+			expect(registry.getModuleStatus("cart")).toBe("ready");
 			expect(registry.getModuleStatus("products")).toBe("ready");
 		});
 

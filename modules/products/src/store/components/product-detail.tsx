@@ -13,7 +13,7 @@ import type {
 	ProductWithVariants,
 	ReviewsResponse,
 } from "./_types";
-import { formatPrice } from "./_utils";
+import { formatPrice, imageUrl } from "./_utils";
 import { BackInStockNotify } from "./back-in-stock-notify";
 import ProductDetailTemplate from "./product-detail.mdx";
 import { ProductReviewsSection } from "./product-reviews-section";
@@ -76,7 +76,7 @@ export function ProductDetail(props: ProductDetailProps) {
 					name: product.name,
 					slug: product.slug,
 					price: product.price,
-					image: product.images[0],
+					image: imageUrl(product.images[0]),
 				},
 			});
 		}
@@ -216,7 +216,7 @@ export function ProductDetail(props: ProductDetailProps) {
 			price: displayPrice,
 			productName: product.name,
 			productSlug: product.slug,
-			productImage: product.images[0],
+			productImage: imageUrl(product.images[0]),
 			variantName: selectedVariant?.name,
 			variantOptions: selectedVariant?.options,
 		});
@@ -243,7 +243,7 @@ export function ProductDetail(props: ProductDetailProps) {
 			<div className="aspect-square overflow-hidden rounded-lg bg-muted">
 				{product.images[selectedImage] ? (
 					<img
-						src={product.images[selectedImage]}
+						src={imageUrl(product.images[selectedImage])}
 						alt={product.name}
 						className="h-full w-full object-cover object-center"
 					/>
@@ -282,7 +282,7 @@ export function ProductDetail(props: ProductDetailProps) {
 							}`}
 						>
 							<img
-								src={img}
+								src={imageUrl(img)}
 								alt={`${product.name} view ${i + 1}`}
 								className="h-full w-full object-cover"
 							/>

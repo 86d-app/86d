@@ -1,5 +1,6 @@
 import { createStoreEndpoint, z } from "@86d-app/core";
 import type { Cart, CartController, CartItem } from "../../service";
+import { resolveGuestId } from "./_guest";
 
 export const removeFromCart = createStoreEndpoint(
 	"/cart/items/:id/remove",
@@ -24,7 +25,7 @@ export const removeFromCart = createStoreEndpoint(
 		if (!existingItem) {
 			const customerId = context.session?.user.id;
 			const cart = await cartController.getOrCreateCart(
-				customerId ? { customerId } : {},
+				customerId ? { customerId } : { guestId: resolveGuestId(ctx) },
 			);
 			const items = await cartController.getCartItems(cart.id);
 			existingItem =

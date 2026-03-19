@@ -1,5 +1,6 @@
 import { createStoreEndpoint } from "@86d-app/core";
 import type { CartController } from "../../service";
+import { resolveGuestId } from "./_guest";
 
 export const getCart = createStoreEndpoint(
 	"/cart/get",
@@ -12,7 +13,7 @@ export const getCart = createStoreEndpoint(
 
 		const customerId = context.session?.user.id;
 		const cart = await cartController.getOrCreateCart(
-			customerId ? { customerId } : {},
+			customerId ? { customerId } : { guestId: resolveGuestId(ctx) },
 		);
 
 		const rawItems = await cartController.getCartItems(cart.id);

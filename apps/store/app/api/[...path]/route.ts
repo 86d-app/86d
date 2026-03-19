@@ -1,3 +1,4 @@
+import type { Session } from "auth";
 import { getSession } from "auth/actions";
 import { verifyStoreAdminAccess } from "auth/store-access";
 import type { NextRequest } from "next/server";
@@ -12,8 +13,8 @@ type RouteParams = { params: Promise<{ path: string[] }> };
 // ── Rate limiters ─────────────────────────────────────────────────────────────
 // Created once at module load — shared across all requests in this process.
 
-/** General public endpoint limit: 120 requests per minute per IP. */
-const publicLimiter = createRateLimiter({ limit: 120, window: 60_000 });
+/** General public endpoint limit: 2000 requests per minute per IP. */
+const publicLimiter = createRateLimiter({ limit: 2000, window: 60_000 });
 
 /** Sensitive public endpoints (subscribe, checkout initiation): 10 per 10 minutes per IP. */
 const sensitiveLimiter = createRateLimiter({ limit: 10, window: 600_000 });
@@ -32,7 +33,7 @@ function getClientIp(req: NextRequest): string {
 	return (
 		req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
 		req.headers.get("x-real-ip") ??
-		"unknown"
+		"127.0.0.1"
 	);
 }
 
@@ -189,8 +190,7 @@ async function handleRequest(req: NextRequest, ctx: RouteParams) {
 async function handleAuthedRequest(
 	req: NextRequest,
 	fullPath: string,
-	// biome-ignore lint/suspicious/noExplicitAny: Session type from better-auth
-	session: any,
+	session: Session | null,
 ) {
 	try {
 		const reg = await ensureBooted();
@@ -220,6 +220,7 @@ async function handleAuthedRequest(
 
 		return response;
 	} catch (error) {
+		console.error("API route unhandled error", fullPath, error);
 		logger.error("API route unhandled error", {
 			path: fullPath,
 			error: error instanceof Error ? error.message : String(error),

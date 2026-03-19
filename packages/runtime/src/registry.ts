@@ -75,6 +75,40 @@ export interface ModuleRegistryConfig {
 }
 
 /**
+ * Topological sort of modules so dependencies are initialized before dependents.
+ * Falls back to original order for modules without dependency relationships.
+ */
+function topologicalSort(modules: Module[]): Module[] {
+	const moduleMap = new Map<string, Module>();
+	for (const mod of modules) {
+		moduleMap.set(mod.id, mod);
+	}
+
+	const visited = new Set<string>();
+	const result: Module[] = [];
+
+	function visit(mod: Module) {
+		if (visited.has(mod.id)) return;
+		visited.add(mod.id);
+
+		// Visit dependencies first
+		const deps = getRequiredModuleIds(mod.requires);
+		for (const depId of deps) {
+			const dep = moduleMap.get(depId);
+			if (dep) visit(dep);
+		}
+
+		result.push(mod);
+	}
+
+	for (const mod of modules) {
+		visit(mod);
+	}
+
+	return result;
+}
+
+/**
  * ModuleRegistry — boots modules once and creates cheap per-request contexts.
  *
  * Lifecycle:
@@ -149,6 +183,9 @@ export class ModuleRegistry {
 		const initializedModules: string[] = [];
 		const failedModules = new Set<string>();
 
+		// Topological sort: initialize dependencies before dependents
+		const sorted = topologicalSort(this.modules);
+
 		// Build the shared context that modules can access during init
 		const contextBase = {
 			modules: this.modules.map((m) => m.id),
@@ -157,7 +194,7 @@ export class ModuleRegistry {
 			controllers: this.controllers,
 		};
 
-		for (const mod of this.modules) {
+		for (const mod of sorted) {
 			const entry = this.entries.get(mod.id);
 			if (!entry) continue;
 
@@ -276,11 +313,17 @@ export class ModuleRegistry {
 			}
 		}
 
-		// Default data service = first module's
-		const firstModuleId = this.modules[0]?.id;
-		const defaultData = firstModuleId
-			? dataRegistry.get(firstModuleId)
-			: undefined;
+		// Default data service and emitter = first module that has a data service
+		let defaultData: ModuleDataService | undefined;
+		let defaultModuleId: string | undefined;
+		for (const mod of this.modules) {
+			const ds = dataRegistry.get(mod.id);
+			if (ds) {
+				defaultData = ds;
+				defaultModuleId = mod.id;
+				break;
+			}
+		}
 
 		if (!defaultData) {
 			throw new Error(
@@ -288,10 +331,9 @@ export class ModuleRegistry {
 			);
 		}
 
-		// Create scoped emitter for the first module (default context emitter)
 		const defaultEmitter =
-			firstModuleId && this.eventBus
-				? createScopedEmitter(this.eventBus, firstModuleId)
+			defaultModuleId && this.eventBus
+				? createScopedEmitter(this.eventBus, defaultModuleId)
 				: undefined;
 
 		return {

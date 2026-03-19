@@ -4,7 +4,7 @@ import { useStoreContext } from "@86d-app/core/client";
 import { memo } from "react";
 import { useCartMutation, useTrack } from "./_hooks";
 import type { Product } from "./_types";
-import { formatPrice } from "./_utils";
+import { formatPrice, imageUrl } from "./_utils";
 import ProductCardTemplate from "./product-card.mdx";
 
 export interface ProductCardProps {
@@ -34,7 +34,7 @@ export const ProductCard = memo(function ProductCard({
 		},
 	});
 
-	const image = product.images[0];
+	const image = imageUrl(product.images[0]);
 	const hasDiscount =
 		product.compareAtPrice != null && product.compareAtPrice > product.price;
 	const discountPct = hasDiscount
