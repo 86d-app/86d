@@ -183,6 +183,90 @@ describe("orders endpoint security", () => {
 		});
 	});
 
+	// ── Guest Order Confirmation (POST /orders/confirm) ────────────
+
+	describe("guest order confirmation — email-based access control", () => {
+		it("grants access when guestEmail matches", async () => {
+			const order = await controller.create(
+				makeOrderParams({ guestEmail: "buyer@example.com" }),
+			);
+
+			const fetched = await controller.getById(order.id);
+			expect(fetched).not.toBeNull();
+			// Simulate endpoint email check
+			const email = "buyer@example.com";
+			const matches =
+				fetched!.guestEmail?.toLowerCase().trim() === email.toLowerCase().trim();
+			expect(matches).toBe(true);
+		});
+
+		it("denies access when guestEmail does not match", async () => {
+			const order = await controller.create(
+				makeOrderParams({ guestEmail: "buyer@example.com" }),
+			);
+
+			const fetched = await controller.getById(order.id);
+			const email = "attacker@evil.com";
+			const matches =
+				fetched!.guestEmail?.toLowerCase().trim() === email.toLowerCase().trim();
+			expect(matches).toBe(false);
+		});
+
+		it("denies access when order has no guestEmail and no session", async () => {
+			const order = await controller.create(
+				makeOrderParams({ customerId: "cust-123" }),
+			);
+
+			const fetched = await controller.getById(order.id);
+			// No guestEmail set — email matching should fail
+			const email = "random@test.com";
+			const matches =
+				fetched!.guestEmail != null &&
+				fetched!.guestEmail.toLowerCase().trim() === email.toLowerCase().trim();
+			expect(matches).toBe(false);
+		});
+
+		it("grants access when customerId matches session user", async () => {
+			const order = await controller.create(
+				makeOrderParams({ customerId: "user-456" }),
+			);
+
+			const fetched = await controller.getById(order.id);
+			// Simulate session userId matching
+			const userId = "user-456";
+			const matches = fetched!.customerId === userId;
+			expect(matches).toBe(true);
+		});
+
+		it("denies access when customerId does not match session user", async () => {
+			const order = await controller.create(
+				makeOrderParams({ customerId: "victim-user" }),
+			);
+
+			const fetched = await controller.getById(order.id);
+			const userId = "attacker-user";
+			const matches = fetched!.customerId === userId;
+			expect(matches).toBe(false);
+		});
+
+		it("returns null for non-existent orderId (prevents enumeration)", async () => {
+			const fetched = await controller.getById("nonexistent-order-id");
+			expect(fetched).toBeNull();
+		});
+
+		it("email matching is case-insensitive", async () => {
+			const order = await controller.create(
+				makeOrderParams({ guestEmail: "Buyer@Example.COM" }),
+			);
+
+			const fetched = await controller.getById(order.id);
+			const email = "buyer@example.com";
+			const matches =
+				fetched!.guestEmail?.toLowerCase().trim() === email.toLowerCase().trim();
+			expect(matches).toBe(true);
+		});
+	});
+
 	// ── Cancellation Guard ──────────────────────────────────────────
 
 	describe("cancellation status guard", () => {

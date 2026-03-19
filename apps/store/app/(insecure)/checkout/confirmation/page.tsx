@@ -36,7 +36,7 @@ interface OrderSummary {
 	};
 }
 
-/** Shape returned by GET /api/orders/me/:id */
+/** Shape returned by GET /api/orders/me/:id or POST /api/orders/confirm */
 interface OrderApiResponse {
 	id: string;
 	guestEmail?: string;
@@ -72,9 +72,48 @@ function formatPrice(cents: number, currency = "USD"): string {
 
 // ── Confirmation Content ────────────────────────────────────────────────────
 
+function orderToSummary(o: OrderApiResponse): OrderSummary {
+	const addr = o.addresses?.find(
+		(a: { type: string }) => a.type === "shipping",
+	);
+	return {
+		orderId: o.id,
+		...(o.guestEmail ? { email: o.guestEmail } : {}),
+		items: (o.items ?? []).map(
+			(item: { name: string; quantity: number; price: number }) => ({
+				name: item.name,
+				quantity: item.quantity,
+				price: item.price,
+			}),
+		),
+		subtotal: o.subtotal ?? 0,
+		taxAmount: o.taxAmount ?? 0,
+		shippingAmount: o.shippingAmount ?? 0,
+		discountAmount: o.discountAmount ?? 0,
+		giftCardAmount: o.giftCardAmount ?? 0,
+		total: o.total ?? 0,
+		currency: o.currency ?? "USD",
+		...(addr
+			? {
+					shippingAddress: {
+						firstName: addr.firstName,
+						lastName: addr.lastName,
+						line1: addr.line1,
+						...(addr.line2 ? { line2: addr.line2 } : {}),
+						city: addr.city,
+						state: addr.state,
+						postalCode: addr.postalCode,
+						country: addr.country,
+					},
+				}
+			: {}),
+	};
+}
+
 function ConfirmationContent() {
 	const searchParams = useSearchParams();
 	const orderId = searchParams.get("order");
+	const guestEmail = searchParams.get("email");
 	const { track } = useAnalytics();
 	const tracked = useRef(false);
 	const [summary, setSummary] = useState<OrderSummary | null>(null);
@@ -95,52 +134,43 @@ function ConfirmationContent() {
 
 		// Fallback: fetch order from API if sessionStorage was empty
 		if (!found && orderId) {
-			fetch(`/api/orders/me/${encodeURIComponent(orderId)}`)
-				.then((res) => (res.ok ? res.json() : null))
-				.then((data: { order?: OrderApiResponse } | null) => {
-					if (!data?.order) return;
-					const o = data.order;
-					const addr = o.addresses?.find(
-						(a: { type: string }) => a.type === "shipping",
-					);
-					setSummary({
-						orderId: o.id,
-						...(o.guestEmail ? { email: o.guestEmail } : {}),
-						items: (o.items ?? []).map(
-							(item: { name: string; quantity: number; price: number }) => ({
-								name: item.name,
-								quantity: item.quantity,
-								price: item.price,
-							}),
-						),
-						subtotal: o.subtotal ?? 0,
-						taxAmount: o.taxAmount ?? 0,
-						shippingAmount: o.shippingAmount ?? 0,
-						discountAmount: o.discountAmount ?? 0,
-						giftCardAmount: o.giftCardAmount ?? 0,
-						total: o.total ?? 0,
-						currency: o.currency ?? "USD",
-						...(addr
-							? {
-									shippingAddress: {
-										firstName: addr.firstName,
-										lastName: addr.lastName,
-										line1: addr.line1,
-										...(addr.line2 ? { line2: addr.line2 } : {}),
-										city: addr.city,
-										state: addr.state,
-										postalCode: addr.postalCode,
-										country: addr.country,
-									},
-								}
-							: {}),
-					});
-				})
-				.catch(() => {
-					// Guest checkout or network error — show minimal confirmation
-				});
+			(async () => {
+				// Try authenticated endpoint first (works for logged-in users)
+				const authRes = await fetch(
+					`/api/orders/me/${encodeURIComponent(orderId)}`,
+				).catch(() => null);
+				if (authRes?.ok) {
+					const data = (await authRes.json()) as {
+						order?: OrderApiResponse;
+					};
+					if (data?.order) {
+						setSummary(orderToSummary(data.order));
+						return;
+					}
+				}
+
+				// Guest fallback: use confirm endpoint with email verification
+				if (guestEmail) {
+					const confirmRes = await fetch("/api/orders/confirm", {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({
+							orderId,
+							email: guestEmail,
+						}),
+					}).catch(() => null);
+					if (confirmRes?.ok) {
+						const data = (await confirmRes.json()) as {
+							order?: OrderApiResponse;
+						};
+						if (data?.order) {
+							setSummary(orderToSummary(data.order));
+						}
+					}
+				}
+			})();
 		}
-	}, [orderId]);
+	}, [orderId, guestEmail]);
 
 	// Fire purchase event once on confirmation page load
 	useEffect(() => {

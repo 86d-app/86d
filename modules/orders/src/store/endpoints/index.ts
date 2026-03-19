@@ -1,4 +1,5 @@
 import { cancelMyOrder } from "./cancel-order";
+import { confirmOrder } from "./confirm-order";
 import { createMyReturn } from "./create-return";
 import { getMyOrderFulfillments } from "./get-fulfillments";
 import { getMyInvoice } from "./get-invoice";
@@ -13,6 +14,7 @@ import { trackOrder } from "./track-order";
 export const storeEndpoints = {
 	"/orders/store-search": storeSearch,
 	"/orders/track": trackOrder,
+	"/orders/confirm": confirmOrder,
 	"/orders/me": listMyOrders,
 	"/orders/me/returns": listMyReturns,
 	"/orders/me/:id": getMyOrder,

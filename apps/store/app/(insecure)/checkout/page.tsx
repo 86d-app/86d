@@ -1011,8 +1011,11 @@ const CheckoutPage = observer(function CheckoutPage() {
 			void api.cart.getCart.invalidate();
 			cartStore.setItemCount(0);
 
-			// Navigate to confirmation
-			window.location.href = `/checkout/confirmation?order=${orderId}`;
+			// Navigate to confirmation (include email for guest order lookup fallback)
+			const confirmUrl = email
+				? `/checkout/confirmation?order=${encodeURIComponent(orderId)}&email=${encodeURIComponent(email)}`
+				: `/checkout/confirmation?order=${encodeURIComponent(orderId)}`;
+			window.location.href = confirmUrl;
 		} catch (err) {
 			// Mutation errors are surfaced by their individual onError callbacks.
 			// If setError hasn't been called yet (e.g. non-mutation failure), show a generic message.
