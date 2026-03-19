@@ -1,5 +1,5 @@
 import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
-import type { CheckoutController } from "../../service";
+import type { CheckoutController, TaxCalculateController } from "../../service";
 
 const addressSchema = z.object({
 	firstName: z.string().min(1).max(200).transform(sanitizeText),
@@ -60,7 +60,7 @@ export const createSession = createStoreEndpoint(
 			return { error: "Cart is empty", status: 400 };
 		}
 
-		const session = await controller.create({
+		let session = await controller.create({
 			...(ctx.body.cartId ? { cartId: ctx.body.cartId } : {}),
 			...(customerId ? { customerId } : {}),
 			...(ctx.body.guestEmail ? { guestEmail: ctx.body.guestEmail } : {}),
@@ -81,6 +81,40 @@ export const createSession = createStoreEndpoint(
 				? { billingAddress: ctx.body.billingAddress }
 				: {}),
 		});
+
+		// Auto-calculate tax when a shipping address is provided
+		if (ctx.body.shippingAddress && ctx.body.taxAmount === undefined) {
+			const taxController = ctx.context.controllers.tax as unknown as
+				| TaxCalculateController
+				| undefined;
+
+			if (taxController?.calculate) {
+				const taxResult = await taxController.calculate({
+					address: {
+						country: ctx.body.shippingAddress.country,
+						state: ctx.body.shippingAddress.state,
+						city: ctx.body.shippingAddress.city,
+						postalCode: ctx.body.shippingAddress.postalCode,
+					},
+					lineItems: ctx.body.lineItems.map((item) => ({
+						productId: item.productId,
+						amount: item.price * item.quantity,
+						quantity: item.quantity,
+					})),
+					shippingAmount: session.shippingAmount,
+					customerId,
+				});
+
+				if (taxResult && typeof taxResult.totalTax === "number") {
+					const updated = await controller.update(session.id, {
+						taxAmount: taxResult.totalTax,
+					});
+					if (updated) {
+						session = updated;
+					}
+				}
+			}
+		}
 
 		return { session };
 	},

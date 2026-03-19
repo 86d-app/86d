@@ -99,6 +99,59 @@ function makeSession(overrides: Record<string, unknown> = {}) {
 
 /**
  * Simulates the endpoint-level tax auto-calculation that happens in
+ * create-session.ts when a shipping address is provided during session creation.
+ * Mirrors the create-session endpoint logic added to auto-calculate tax.
+ */
+async function simulateCreateWithTax(
+	ctrl: ReturnType<typeof createCheckoutController>,
+	taxController: TaxCalculateController | undefined,
+	createParams: {
+		subtotal: number;
+		total: number;
+		lineItems: CheckoutLineItem[];
+		shippingAddress?: CheckoutAddress | undefined;
+		shippingAmount?: number | undefined;
+		taxAmount?: number | undefined;
+		customerId?: string | undefined;
+	},
+) {
+	let session = await ctrl.create(createParams);
+
+	// Mirror create-session endpoint: auto-calculate tax when address provided and no explicit taxAmount
+	if (createParams.shippingAddress && createParams.taxAmount === undefined) {
+		if (taxController?.calculate) {
+			const taxResult = await taxController.calculate({
+				address: {
+					country: createParams.shippingAddress.country,
+					state: createParams.shippingAddress.state,
+					city: createParams.shippingAddress.city,
+					postalCode: createParams.shippingAddress.postalCode,
+				},
+				lineItems: createParams.lineItems.map((item) => ({
+					productId: item.productId,
+					amount: item.price * item.quantity,
+					quantity: item.quantity,
+				})),
+				shippingAmount: session.shippingAmount,
+				customerId: createParams.customerId,
+			});
+
+			if (taxResult && typeof taxResult.totalTax === "number") {
+				const updated = await ctrl.update(session.id, {
+					taxAmount: taxResult.totalTax,
+				});
+				if (updated) {
+					session = updated;
+				}
+			}
+		}
+	}
+
+	return session;
+}
+
+/**
+ * Simulates the endpoint-level tax auto-calculation that happens in
  * update-session.ts when a shipping address or shipping amount changes.
  * Now uses the controller's `update({ taxAmount })` instead of direct data access.
  */
@@ -352,5 +405,115 @@ describe("update-session tax auto-calculation", () => {
 		});
 
 		expect(taxCtrl._calls[0].customerId).toBe("cust-123");
+	});
+});
+
+describe("create-session tax auto-calculation", () => {
+	it("calculates tax when shipping address is provided at creation", async () => {
+		const ctrl = createCheckoutController(createMockDataService());
+		const taxCtrl = createMockTaxController(0.1);
+
+		const session = await simulateCreateWithTax(ctrl, taxCtrl, {
+			subtotal: 4000,
+			total: 4000,
+			lineItems: sampleLineItems,
+			shippingAddress: sampleAddress,
+		});
+
+		// 10% on 4000 subtotal = 400
+		expect(session.taxAmount).toBe(400);
+		// total = 4000 + 400 + 0 (shipping) = 4400
+		expect(session.total).toBe(4400);
+	});
+
+	it("skips tax when no shipping address at creation", async () => {
+		const ctrl = createCheckoutController(createMockDataService());
+		const taxCtrl = createMockTaxController(0.1);
+
+		const session = await simulateCreateWithTax(ctrl, taxCtrl, {
+			subtotal: 4000,
+			total: 4000,
+			lineItems: sampleLineItems,
+		});
+
+		expect(taxCtrl._calls).toHaveLength(0);
+		expect(session.taxAmount).toBe(0);
+		expect(session.total).toBe(4000);
+	});
+
+	it("respects explicit taxAmount and skips auto-calculation", async () => {
+		const ctrl = createCheckoutController(createMockDataService());
+		const taxCtrl = createMockTaxController(0.1);
+
+		const session = await simulateCreateWithTax(ctrl, taxCtrl, {
+			subtotal: 4000,
+			total: 4200,
+			lineItems: sampleLineItems,
+			shippingAddress: sampleAddress,
+			taxAmount: 200,
+		});
+
+		expect(taxCtrl._calls).toHaveLength(0);
+		expect(session.taxAmount).toBe(200);
+	});
+
+	it("skips tax when no tax controller is available", async () => {
+		const ctrl = createCheckoutController(createMockDataService());
+
+		const session = await simulateCreateWithTax(ctrl, undefined, {
+			subtotal: 4000,
+			total: 4000,
+			lineItems: sampleLineItems,
+			shippingAddress: sampleAddress,
+		});
+
+		expect(session.taxAmount).toBe(0);
+		expect(session.total).toBe(4000);
+	});
+
+	it("passes correct data to tax controller on create", async () => {
+		const ctrl = createCheckoutController(createMockDataService());
+		const taxCtrl = createMockTaxController(0.08);
+
+		await simulateCreateWithTax(ctrl, taxCtrl, {
+			subtotal: 4000,
+			total: 4000,
+			lineItems: sampleLineItems,
+			shippingAddress: sampleAddress,
+			shippingAmount: 500,
+			customerId: "cust-456",
+		});
+
+		expect(taxCtrl._calls).toHaveLength(1);
+		expect(taxCtrl._calls[0].address).toEqual({
+			country: "US",
+			state: "IL",
+			city: "Springfield",
+			postalCode: "62701",
+		});
+		expect(taxCtrl._calls[0].lineItems).toEqual([
+			{ productId: "p1", amount: 2000, quantity: 2 },
+			{ productId: "p2", amount: 2000, quantity: 1 },
+		]);
+		expect(taxCtrl._calls[0].shippingAmount).toBe(500);
+		expect(taxCtrl._calls[0].customerId).toBe("cust-456");
+	});
+
+	it("includes shipping in total with tax on create", async () => {
+		const ctrl = createCheckoutController(createMockDataService());
+		const taxCtrl = createMockTaxController(0.1);
+
+		const session = await simulateCreateWithTax(ctrl, taxCtrl, {
+			subtotal: 4000,
+			total: 4500,
+			lineItems: sampleLineItems,
+			shippingAddress: sampleAddress,
+			shippingAmount: 500,
+		});
+
+		expect(session.taxAmount).toBe(400);
+		expect(session.shippingAmount).toBe(500);
+		// total = 4000 + 400 + 500 = 4900
+		expect(session.total).toBe(4900);
 	});
 });
