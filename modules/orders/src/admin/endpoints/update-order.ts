@@ -93,7 +93,7 @@ export const adminUpdateOrder = createAdminEndpoint(
 		if (ctx.context.events && status && status !== previousStatus) {
 			const { email, customerName } = await resolveContactInfo(
 				order,
-				ctx.context.controllers.customers as unknown as
+				ctx.context.controllers.customer as unknown as
 					| CustomerLookupController
 					| undefined,
 			);

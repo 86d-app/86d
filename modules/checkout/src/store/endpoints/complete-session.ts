@@ -113,7 +113,7 @@ export const completeSession = createStoreEndpoint(
 		let orderId = ctx.body?.orderId;
 		const lineItems = await controller.getLineItems(ctx.params.id);
 
-		const orderController = ctx.context.controllers.orders as unknown as
+		const orderController = ctx.context.controllers.order as unknown as
 			| OrderCreateController
 			| undefined;
 

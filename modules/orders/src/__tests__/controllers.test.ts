@@ -1,5 +1,6 @@
 import { createMockDataService } from "@86d-app/core/test-utils";
 import { beforeEach, describe, expect, it } from "vitest";
+import orders from "../index";
 import type { CreateOrderParams } from "../service";
 import { createOrderController } from "../service-impl";
 
@@ -26,6 +27,28 @@ function makeOrderParams(
 		...overrides,
 	};
 }
+
+// ── Controller registration contract ─────────────────────────────────────
+// The checkout module accesses `controllers.order` (singular) to create
+// orders after payment. If this key ever changes, checkout breaks silently.
+
+describe("orders module — controller key contract", () => {
+	it("registers its controller as 'order' (singular)", async () => {
+		const mod = orders();
+		const data = createMockDataService();
+		const result = await mod.init?.({
+			data,
+			modules: [],
+			options: {},
+			session: null,
+			controllers: {},
+			storeId: "test",
+		});
+
+		expect(result?.controllers).toHaveProperty("order");
+		expect(result?.controllers).not.toHaveProperty("orders");
+	});
+});
 
 // ── Edge-case and data integrity tests ───────────────────────────────────
 
