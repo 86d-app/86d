@@ -7,7 +7,7 @@ const envSchema = z.object({
 	STORE_ID: z
 		.string()
 		.optional()
-		.default("demo5b9d-c517-4c65-896e-8edef5cf5a94"),
+		.transform((v) => v || "de005b9d-c517-4c65-896e-8edef5cf5a94"),
 	"86D_API_URL": z.url().optional().default("https://dashboard.86d.app/api"),
 	"86D_API_KEY": z.string().optional(),
 	DATABASE_URL: z.string().optional(),

@@ -44,7 +44,7 @@ services:
       DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/86d"
       DATABASE_URL_UNPOOLED: "postgresql://postgres:postgres@postgres:5432/86d"
       BETTER_AUTH_SECRET: "${BETTER_AUTH_SECRET:-docker-dev-secret-change-in-production}"
-      STORE_ID: "${STORE_ID:-2695702a-f4c1-4213-ab74-b66d4915b6e9}"
+      STORE_ID: "${STORE_ID:-de005b9d-c517-4c65-896e-8edef5cf5a94}"
       NODE_ENV: "${NODE_ENV:-production}"
       AUTO_SEED: "true"
       # Storage — local filesystem by default in Docker
