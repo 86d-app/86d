@@ -196,7 +196,8 @@ describe("orders endpoint security", () => {
 			// Simulate endpoint email check
 			const email = "buyer@example.com";
 			const matches =
-				fetched!.guestEmail?.toLowerCase().trim() === email.toLowerCase().trim();
+				fetched?.guestEmail?.toLowerCase().trim() ===
+				email.toLowerCase().trim();
 			expect(matches).toBe(true);
 		});
 
@@ -208,7 +209,8 @@ describe("orders endpoint security", () => {
 			const fetched = await controller.getById(order.id);
 			const email = "attacker@evil.com";
 			const matches =
-				fetched!.guestEmail?.toLowerCase().trim() === email.toLowerCase().trim();
+				fetched?.guestEmail?.toLowerCase().trim() ===
+				email.toLowerCase().trim();
 			expect(matches).toBe(false);
 		});
 
@@ -221,8 +223,8 @@ describe("orders endpoint security", () => {
 			// No guestEmail set — email matching should fail
 			const email = "random@test.com";
 			const matches =
-				fetched!.guestEmail != null &&
-				fetched!.guestEmail.toLowerCase().trim() === email.toLowerCase().trim();
+				fetched?.guestEmail != null &&
+				fetched?.guestEmail.toLowerCase().trim() === email.toLowerCase().trim();
 			expect(matches).toBe(false);
 		});
 
@@ -234,7 +236,7 @@ describe("orders endpoint security", () => {
 			const fetched = await controller.getById(order.id);
 			// Simulate session userId matching
 			const userId = "user-456";
-			const matches = fetched!.customerId === userId;
+			const matches = fetched?.customerId === userId;
 			expect(matches).toBe(true);
 		});
 
@@ -245,7 +247,7 @@ describe("orders endpoint security", () => {
 
 			const fetched = await controller.getById(order.id);
 			const userId = "attacker-user";
-			const matches = fetched!.customerId === userId;
+			const matches = fetched?.customerId === userId;
 			expect(matches).toBe(false);
 		});
 
@@ -262,7 +264,8 @@ describe("orders endpoint security", () => {
 			const fetched = await controller.getById(order.id);
 			const email = "buyer@example.com";
 			const matches =
-				fetched!.guestEmail?.toLowerCase().trim() === email.toLowerCase().trim();
+				fetched?.guestEmail?.toLowerCase().trim() ===
+				email.toLowerCase().trim();
 			expect(matches).toBe(true);
 		});
 	});

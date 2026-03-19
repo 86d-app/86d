@@ -152,7 +152,9 @@ test.describe("Storefront — Accessibility (structural)", () => {
 test.describe("Storefront — Forms", () => {
 	test("contact form has associated labels", async ({ page }) => {
 		await page.goto("/contact");
-		const emailInput = page.locator('input[type="email"]');
+		/* Scope to the contact form to avoid newsletter footer email */
+		const form = page.locator("form").first();
+		const emailInput = form.locator('input[type="email"]');
 		await expect(emailInput).toBeVisible({ timeout: 10_000 });
 		/* label can be for="contact-email" or wrapping the input */
 		const label = page.locator(

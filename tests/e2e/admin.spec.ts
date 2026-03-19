@@ -19,13 +19,14 @@ test.describe("Store Admin — Authentication", () => {
 			.locator("h1")
 			.filter({ hasText: /sign in/i });
 		await expect(heading).toBeVisible();
-		/* Should have email and password inputs */
-		const emailInput = admin.page.locator('input[type="email"]');
-		const passwordInput = admin.page.locator('input[type="password"]');
+		/* Should have email and password inputs — scope to form to avoid footer newsletter */
+		const form = admin.page.locator("form");
+		const emailInput = form.locator('input[type="email"]');
+		const passwordInput = form.locator('input[type="password"]');
 		await expect(emailInput).toBeVisible();
 		await expect(passwordInput).toBeVisible();
 		/* Should have a submit button */
-		const submitBtn = admin.page.locator('button[type="submit"]');
+		const submitBtn = form.locator('button[type="submit"]');
 		await expect(submitBtn).toBeVisible();
 	});
 
@@ -42,13 +43,10 @@ test.describe("Store Admin — Authentication", () => {
 		admin,
 	}) => {
 		await admin.page.goto("/auth/signin");
-		await admin.page
-			.locator('input[type="email"]')
-			.fill("wrong@example.com");
-		await admin.page
-			.locator('input[type="password"]')
-			.fill("wrongpassword");
-		await admin.page.locator('button[type="submit"]').click();
+		const form = admin.page.locator("form");
+		await form.locator('input[type="email"]').fill("wrong@example.com");
+		await form.locator('input[type="password"]').fill("wrongpassword");
+		await form.locator('button[type="submit"]').click();
 		/* Should stay on sign-in page or show error message */
 		await admin.page.waitForLoadState("networkidle");
 		const url = admin.page.url();

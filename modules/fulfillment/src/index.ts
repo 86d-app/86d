@@ -22,7 +22,7 @@ export default function fulfillment(options?: FulfillmentOptions): Module {
 		version: "0.0.1",
 		schema: fulfillmentSchema,
 		requires: {
-			orders: { read: ["orderDetails", "orderItems"] },
+			orders: { read: ["orderStatus", "orderItems"] },
 		},
 		events: {
 			emits: [

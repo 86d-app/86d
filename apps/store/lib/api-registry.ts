@@ -27,7 +27,7 @@ function getRegistry(): ModuleRegistry {
 				await getStoreConfig({
 					storeId: id,
 					templatePath: resolveTemplatePath(),
-					fallbackToTemplateOnError: false,
+					fallbackToTemplateOnError: true,
 				});
 				return id;
 			},

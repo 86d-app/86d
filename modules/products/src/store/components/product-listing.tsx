@@ -119,6 +119,7 @@ export function ProductListing({
 
 			{categories.length > 0 && (
 				<select
+					aria-label="Filter by category"
 					value={category}
 					onChange={(e) => {
 						setCategory(e.target.value);
@@ -136,6 +137,7 @@ export function ProductListing({
 			)}
 
 			<select
+				aria-label="Sort products"
 				value={`${sort}:${order}`}
 				onChange={(e) => {
 					const [s, o] = e.target.value.split(":");

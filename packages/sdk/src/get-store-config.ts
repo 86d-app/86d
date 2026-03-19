@@ -42,7 +42,7 @@ export async function getStoreConfig(
 	const templatePath = options?.templatePath;
 	const fallbackToTemplate = options?.fallbackToTemplateOnError ?? false;
 
-	if (storeId && isValidUUID(storeId)) {
+	if (storeId && isValidUUID(storeId) && apiKey) {
 		try {
 			return await fetchFromApi(storeId, apiBaseUrl, apiKey);
 		} catch (err) {

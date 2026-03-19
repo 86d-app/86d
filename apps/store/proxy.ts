@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 const EXCLUDED_PREFIXES = ["/api", "/admin", "/auth", "/_next", "/favicon"];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
 	const { pathname } = request.nextUrl;
 
 	// Only apply to store routes that end with .md

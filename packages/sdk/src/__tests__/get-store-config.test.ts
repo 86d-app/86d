@@ -72,7 +72,7 @@ describe("getStoreConfig", () => {
 		);
 	});
 
-	it("fetches from API when valid UUID storeId provided", async () => {
+	it("fetches from API when valid UUID storeId and apiKey provided", async () => {
 		const apiResponse = {
 			theme: "remote",
 			name: "Remote Store",
@@ -86,12 +86,16 @@ describe("getStoreConfig", () => {
 			json: () => Promise.resolve(apiResponse),
 		});
 
-		const config = await getStoreConfig({ storeId: VALID_UUID });
+		const config = await getStoreConfig({
+			storeId: VALID_UUID,
+			apiKey: "test-key",
+		});
 		expect(config.name).toBe("Remote Store");
 	});
 
-	it("uses env STORE_ID when storeId option not provided", async () => {
+	it("uses env STORE_ID and 86D_API_KEY when options not provided", async () => {
 		process.env.STORE_ID = VALID_UUID;
+		process.env["86D_API_KEY"] = "env-key";
 		globalThis.fetch = vi.fn().mockResolvedValue({
 			ok: true,
 			json: () =>
@@ -107,6 +111,27 @@ describe("getStoreConfig", () => {
 
 		const config = await getStoreConfig();
 		expect(config.name).toBe("Env Store");
+	});
+
+	it("uses template when valid UUID storeId but no apiKey", async () => {
+		const configPath = join(TMP_DIR, "no-key-config.json");
+		writeFileSync(
+			configPath,
+			JSON.stringify({
+				theme: "local",
+				name: "Local Store",
+				favicon: "/local.ico",
+				icon: DEFAULT_CONFIG.icon,
+				logo: DEFAULT_CONFIG.logo,
+				variables: DEFAULT_CONFIG.variables,
+			}),
+		);
+
+		const config = await getStoreConfig({
+			storeId: VALID_UUID,
+			templatePath: configPath,
+		});
+		expect(config.name).toBe("Local Store");
 	});
 
 	it("falls back to template on API error when configured", async () => {
@@ -127,6 +152,7 @@ describe("getStoreConfig", () => {
 
 		const config = await getStoreConfig({
 			storeId: VALID_UUID,
+			apiKey: "test-key",
 			templatePath: configPath,
 			fallbackToTemplateOnError: true,
 		});
@@ -136,8 +162,8 @@ describe("getStoreConfig", () => {
 	it("throws on API error without fallback", async () => {
 		globalThis.fetch = vi.fn().mockRejectedValue(new Error("Network error"));
 
-		await expect(getStoreConfig({ storeId: VALID_UUID })).rejects.toThrow(
-			"Network error",
-		);
+		await expect(
+			getStoreConfig({ storeId: VALID_UUID, apiKey: "test-key" }),
+		).rejects.toThrow("Network error");
 	});
 });

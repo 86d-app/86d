@@ -106,12 +106,11 @@ export class AdminPage {
 
 	async signIn(email = ADMIN_EMAIL, password = ADMIN_PASSWORD) {
 		await this.page.goto("/auth/signin?redirect=/admin");
-		/* Fill the sign-in form */
-		await this.page.locator('input[type="email"]').fill(email);
-		await this.page.locator('input[type="password"]').fill(password);
-		await this.page
-			.locator('button[type="submit"]')
-			.click();
+		/* Fill the sign-in form — scope to form to avoid newsletter footer email */
+		const form = this.page.locator("form");
+		await form.locator('input[type="email"]').fill(email);
+		await form.locator('input[type="password"]').fill(password);
+		await form.locator('button[type="submit"]').click();
 		/* Wait for redirect to admin */
 		await this.page.waitForURL(/\/admin/, { timeout: 15_000 });
 	}
@@ -162,17 +161,19 @@ export class DashboardPage {
 
 	async signUp(name: string, email: string, password: string) {
 		await this.page.goto("/auth/signup");
-		await this.page.locator('input[name="name"]').fill(name);
-		await this.page.locator('input[type="email"]').fill(email);
-		await this.page.locator('input[type="password"]').fill(password);
-		await this.page.locator('button[type="submit"]').click();
+		const form = this.page.locator("form");
+		await form.locator('input[name="name"]').fill(name);
+		await form.locator('input[type="email"]').fill(email);
+		await form.locator('input[type="password"]').fill(password);
+		await form.locator('button[type="submit"]').click();
 	}
 
 	async signIn(email = ADMIN_EMAIL, password = ADMIN_PASSWORD) {
 		await this.page.goto("/auth/signin");
-		await this.page.locator('input[type="email"]').fill(email);
-		await this.page.locator('input[type="password"]').fill(password);
-		await this.page.locator('button[type="submit"]').click();
+		const form = this.page.locator("form");
+		await form.locator('input[type="email"]').fill(email);
+		await form.locator('input[type="password"]').fill(password);
+		await form.locator('button[type="submit"]').click();
 		/* Wait for redirect to dashboard home */
 		await this.page.waitForURL(/\/(stores|$)/, { timeout: 15_000 });
 	}

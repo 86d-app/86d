@@ -22,7 +22,7 @@ export default function orderNotes(options?: OrderNotesOptions): Module {
 		version: "0.0.1",
 		schema: orderNotesSchema,
 		requires: {
-			orders: { read: ["getOrder"], optional: true },
+			orders: { read: ["orderNumber"], optional: true },
 		},
 		exports: {
 			read: ["noteCount"],

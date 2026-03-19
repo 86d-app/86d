@@ -14,15 +14,11 @@ test.describe("User — Authentication", () => {
 			.locator("h1")
 			.filter({ hasText: /sign in/i });
 		await expect(heading).toBeVisible();
-		await expect(
-			storefront.page.locator('input[type="email"]'),
-		).toBeVisible();
-		await expect(
-			storefront.page.locator('input[type="password"]'),
-		).toBeVisible();
-		await expect(
-			storefront.page.locator('button[type="submit"]'),
-		).toBeVisible();
+		/* Scope to form to avoid newsletter footer email */
+		const form = storefront.page.locator("form");
+		await expect(form.locator('input[type="email"]')).toBeVisible();
+		await expect(form.locator('input[type="password"]')).toBeVisible();
+		await expect(form.locator('button[type="submit"]')).toBeVisible();
 	});
 
 	test("sign-up page renders with name, email, and password fields", async ({
@@ -33,26 +29,20 @@ test.describe("User — Authentication", () => {
 			.locator("h1")
 			.filter({ hasText: /sign up|create account/i });
 		await expect(heading).toBeVisible();
-		await expect(
-			storefront.page.locator('input[name="name"]'),
-		).toBeVisible();
-		await expect(
-			storefront.page.locator('input[type="email"]'),
-		).toBeVisible();
-		await expect(
-			storefront.page.locator('input[type="password"]'),
-		).toBeVisible();
+		const form = storefront.page.locator("form");
+		await expect(form.locator('input[name="name"]')).toBeVisible();
+		await expect(form.locator('input[type="email"]')).toBeVisible();
+		await expect(form.locator('input[type="password"]')).toBeVisible();
 	});
 
 	test("sign-in with valid credentials redirects successfully", async ({
 		storefront,
 	}) => {
 		await storefront.goto("/auth/signin");
-		await storefront.page.locator('input[type="email"]').fill(ADMIN_EMAIL);
-		await storefront.page
-			.locator('input[type="password"]')
-			.fill(ADMIN_PASSWORD);
-		await storefront.page.locator('button[type="submit"]').click();
+		const form = storefront.page.locator("form");
+		await form.locator('input[type="email"]').fill(ADMIN_EMAIL);
+		await form.locator('input[type="password"]').fill(ADMIN_PASSWORD);
+		await form.locator('button[type="submit"]').click();
 		/* Should redirect away from sign-in page */
 		await storefront.page.waitForURL(
 			(url) => !url.pathname.includes("/auth/signin"),
@@ -66,13 +56,10 @@ test.describe("User — Authentication", () => {
 		storefront,
 	}) => {
 		await storefront.goto("/auth/signin");
-		await storefront.page
-			.locator('input[type="email"]')
-			.fill("wrong@invalid.com");
-		await storefront.page
-			.locator('input[type="password"]')
-			.fill("wrongpassword123");
-		await storefront.page.locator('button[type="submit"]').click();
+		const form = storefront.page.locator("form");
+		await form.locator('input[type="email"]').fill("wrong@invalid.com");
+		await form.locator('input[type="password"]').fill("wrongpassword123");
+		await form.locator('button[type="submit"]').click();
 		await storefront.page.waitForLoadState("networkidle");
 		expect(storefront.page.url()).toContain("/auth/signin");
 	});
@@ -95,11 +82,10 @@ test.describe("User — Authentication", () => {
 		storefront,
 	}) => {
 		await storefront.goto("/auth/signin?redirect=/admin");
-		await storefront.page.locator('input[type="email"]').fill(ADMIN_EMAIL);
-		await storefront.page
-			.locator('input[type="password"]')
-			.fill(ADMIN_PASSWORD);
-		await storefront.page.locator('button[type="submit"]').click();
+		const form = storefront.page.locator("form");
+		await form.locator('input[type="email"]').fill(ADMIN_EMAIL);
+		await form.locator('input[type="password"]').fill(ADMIN_PASSWORD);
+		await form.locator('button[type="submit"]').click();
 		/* Should redirect to /admin */
 		await storefront.page.waitForURL(/\/admin/, { timeout: 15_000 });
 		expect(storefront.page.url()).toContain("/admin");
@@ -127,8 +113,8 @@ test.describe("User — Account pages", () => {
 			.locator("h1")
 			.filter({ hasText: /reset|password/i });
 		await expect(heading).toBeVisible();
-		const emailInput = storefront.page.locator('input[type="email"]');
-		await expect(emailInput).toBeVisible();
+		const form = storefront.page.locator("form");
+		await expect(form.locator('input[type="email"]')).toBeVisible();
 	});
 });
 

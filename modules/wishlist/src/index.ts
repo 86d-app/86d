@@ -25,7 +25,7 @@ export default function wishlist(options?: WishlistOptions): Module {
 			read: ["wishlistItemCount", "isInWishlist"],
 		},
 		requires: {
-			cart: { read: ["addItem"], optional: true },
+			cart: { read: ["cartItems"], optional: true },
 		},
 		events: {
 			emits: ["wishlist.itemAdded", "wishlist.itemRemoved", "wishlist.shared"],

@@ -24,7 +24,7 @@ export default function bundles(options?: BundleOptions): Module {
 		version: "0.0.1",
 		schema: bundleSchema,
 		requires: {
-			products: { read: ["productDetails"] },
+			products: { read: ["productTitle", "productPrice"] },
 		},
 		exports: {
 			read: ["bundlePrice", "bundleItems"],
