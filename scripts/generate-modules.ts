@@ -543,7 +543,14 @@ if (_resolvedProvider) {
 	let searchWiringCode = "";
 	if (hasSearch) {
 		searchWiringCode = `
-// ── Search module AI wiring (env-var based) ──
+// ── Search module wiring (MeiliSearch + AI embeddings, env-var based) ──
+if (process.env.MEILISEARCH_HOST && process.env.MEILISEARCH_API_KEY) {
+  moduleOptions["@86d-app/search"] = {
+    ...moduleOptions["@86d-app/search"],
+    meilisearchHost: process.env.MEILISEARCH_HOST,
+    meilisearchApiKey: process.env.MEILISEARCH_API_KEY,
+  };
+}
 if (process.env.OPENAI_API_KEY) {
   moduleOptions["@86d-app/search"] = {
     ...moduleOptions["@86d-app/search"],
@@ -575,6 +582,62 @@ if (process.env.TOAST_API_KEY && process.env.TOAST_RESTAURANT_GUID) {
 `;
 	}
 
+	// Generate shipping module wiring code (EasyPost)
+	const hasShipping = modules.includes("@86d-app/shipping");
+	let shippingWiringCode = "";
+	if (hasShipping) {
+		shippingWiringCode = `
+// ── Shipping module wiring (EasyPost, env-var based) ──
+if (process.env.EASYPOST_API_KEY) {
+  moduleOptions["@86d-app/shipping"] = {
+    ...moduleOptions["@86d-app/shipping"],
+    easypostApiKey: process.env.EASYPOST_API_KEY,
+    easypostTestMode: process.env.EASYPOST_TEST_MODE !== "false",
+  };
+}
+`;
+	}
+
+	// Generate tax module wiring code (TaxJar)
+	const hasTax = modules.includes("@86d-app/tax");
+	let taxWiringCode = "";
+	if (hasTax) {
+		taxWiringCode = `
+// ── Tax module wiring (TaxJar, env-var based) ──
+if (process.env.TAXJAR_API_KEY) {
+  moduleOptions["@86d-app/tax"] = {
+    ...moduleOptions["@86d-app/tax"],
+    taxjarApiKey: process.env.TAXJAR_API_KEY,
+    taxjarSandbox: process.env.TAXJAR_SANDBOX === "true",
+  };
+}
+`;
+	}
+
+	// Generate notifications module wiring code (Resend + Twilio)
+	const hasNotifications = modules.includes("@86d-app/notifications");
+	let notificationsWiringCode = "";
+	if (hasNotifications) {
+		notificationsWiringCode = `
+// ── Notifications module wiring (Resend email + Twilio SMS, env-var based) ──
+if (process.env.RESEND_API_KEY) {
+  moduleOptions["@86d-app/notifications"] = {
+    ...moduleOptions["@86d-app/notifications"],
+    resendApiKey: process.env.RESEND_API_KEY,
+    resendFromAddress: process.env.RESEND_FROM_ADDRESS ?? "Store <noreply@example.com>",
+  };
+}
+if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
+  moduleOptions["@86d-app/notifications"] = {
+    ...moduleOptions["@86d-app/notifications"],
+    twilioAccountSid: process.env.TWILIO_ACCOUNT_SID,
+    twilioAuthToken: process.env.TWILIO_AUTH_TOKEN,
+    twilioFromNumber: process.env.TWILIO_FROM_NUMBER ?? "",
+  };
+}
+`;
+	}
+
 	// Generate API router content
 	const routerContent = `// Auto-generated file - do not edit manually
 // Run 'pnpm generate:modules' to regenerate
@@ -587,7 +650,7 @@ ${moduleImports}
 ${providerImports.length > 0 ? `\n${providerImports.join("\n")}\n` : ""}
 // biome-ignore lint/suspicious/noExplicitAny: module option types are heterogeneous across modules
 const moduleOptions: Record<string, Record<string, any>> = ${JSON.stringify(moduleOptions, null, 2)};
-${providerWiringCode}${searchWiringCode}${toastWiringCode}
+${providerWiringCode}${searchWiringCode}${toastWiringCode}${shippingWiringCode}${taxWiringCode}${notificationsWiringCode}
 const modules = [
 ${moduleInstances}
 ];
