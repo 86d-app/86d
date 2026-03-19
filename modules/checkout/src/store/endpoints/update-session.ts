@@ -1,5 +1,5 @@
 import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
-import type { CheckoutController } from "../../service";
+import type { CheckoutController, TaxCalculateController } from "../../service";
 
 const addressSchema = z.object({
 	firstName: z.string().min(1).max(200).transform(sanitizeText),
@@ -50,8 +50,10 @@ export const updateSession = createStoreEndpoint(
 			(ctx.body.shippingAddress || ctx.body.shippingAmount !== undefined) &&
 			session.shippingAddress
 		) {
-			// biome-ignore lint/suspicious/noExplicitAny: optional tax controller
-			const taxController = ctx.context.controllers.tax as any;
+			const taxController = ctx.context.controllers.tax as unknown as
+				| TaxCalculateController
+				| undefined;
+
 			if (taxController?.calculate) {
 				const lineItems = await controller.getLineItems(session.id);
 				const taxResult = await taxController.calculate({
@@ -71,30 +73,11 @@ export const updateSession = createStoreEndpoint(
 				});
 
 				if (taxResult && typeof taxResult.totalTax === "number") {
-					// Update session with calculated tax — recalculate total
-					const taxAmount = taxResult.totalTax;
-					const total =
-						session.subtotal +
-						taxAmount +
-						session.shippingAmount -
-						session.discountAmount -
-						session.giftCardAmount;
-
-					// biome-ignore lint/suspicious/noExplicitAny: data service direct update
-					const data = ctx.context.data as any;
-					if (data?.upsert) {
-						const updated = {
-							...session,
-							taxAmount,
-							total: Math.max(0, total),
-							updatedAt: new Date(),
-						};
-						await data.upsert(
-							"checkoutSession",
-							session.id,
-							// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-							updated as any,
-						);
+					// Update session with calculated tax through the controller
+					const updated = await controller.update(ctx.params.id, {
+						taxAmount: taxResult.totalTax,
+					});
+					if (updated) {
 						session = updated;
 					}
 				}

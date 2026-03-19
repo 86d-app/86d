@@ -8,6 +8,14 @@ import type {
 /** Default session TTL: 30 minutes */
 const DEFAULT_TTL_MS = 30 * 60 * 1000;
 
+/**
+ * Bridge typed checkout objects to the data service's Record<string, unknown>
+ * format. The data service stores JSONB — this cast is safe for plain objects.
+ */
+function toRecord(obj: object): Record<string, unknown> {
+	return obj as Record<string, unknown>;
+}
+
 /** Centralized total calculation — never negative */
 function calculateTotal(session: {
 	subtotal: number;
@@ -56,8 +64,7 @@ export function createCheckoutController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("checkoutSession", id, session as Record<string, any>);
+			await data.upsert("checkoutSession", id, toRecord(session));
 
 			// Store line items
 			for (const item of params.lineItems) {
@@ -65,8 +72,7 @@ export function createCheckoutController(
 				await data.upsert(
 					"checkoutLineItem",
 					`${id}_${item.productId}${item.variantId ? `_${item.variantId}` : ""}`,
-					// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-					itemRecord as Record<string, any>,
+					toRecord(itemRecord),
 				);
 			}
 
@@ -90,17 +96,7 @@ export function createCheckoutController(
 				return null;
 			}
 
-			let total = existing.total;
-
-			// Recalculate total if shipping changes
-			if (params.shippingAmount !== undefined) {
-				total = calculateTotal({
-					...existing,
-					shippingAmount: params.shippingAmount,
-				});
-			}
-
-			const updated: CheckoutSession = {
+			const merged = {
 				...existing,
 				...(params.guestEmail !== undefined
 					? { guestEmail: params.guestEmail }
@@ -112,17 +108,28 @@ export function createCheckoutController(
 					? { billingAddress: params.billingAddress }
 					: {}),
 				...(params.shippingAmount !== undefined
-					? { shippingAmount: params.shippingAmount, total }
+					? { shippingAmount: params.shippingAmount }
+					: {}),
+				...(params.taxAmount !== undefined
+					? { taxAmount: params.taxAmount }
 					: {}),
 				...(params.paymentMethod !== undefined
 					? { paymentMethod: params.paymentMethod }
 					: {}),
 				...(params.metadata !== undefined ? { metadata: params.metadata } : {}),
+			};
+
+			// Recalculate total when any amount field changes
+			const amountsChanged =
+				params.shippingAmount !== undefined || params.taxAmount !== undefined;
+
+			const updated: CheckoutSession = {
+				...merged,
+				total: amountsChanged ? calculateTotal(merged) : merged.total,
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("checkoutSession", id, updated as Record<string, any>);
+			await data.upsert("checkoutSession", id, toRecord(updated));
 			return updated;
 		},
 
@@ -157,8 +164,7 @@ export function createCheckoutController(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("checkoutSession", id, updated as Record<string, any>);
+			await data.upsert("checkoutSession", id, toRecord(updated));
 			return updated;
 		},
 
@@ -186,8 +192,7 @@ export function createCheckoutController(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("checkoutSession", id, updated as Record<string, any>);
+			await data.upsert("checkoutSession", id, toRecord(updated));
 			return updated;
 		},
 
@@ -218,8 +223,7 @@ export function createCheckoutController(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("checkoutSession", id, updated as Record<string, any>);
+			await data.upsert("checkoutSession", id, toRecord(updated));
 			return updated;
 		},
 
@@ -247,8 +251,7 @@ export function createCheckoutController(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("checkoutSession", id, updated as Record<string, any>);
+			await data.upsert("checkoutSession", id, toRecord(updated));
 			return updated;
 		},
 
@@ -301,8 +304,7 @@ export function createCheckoutController(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("checkoutSession", id, updated as Record<string, any>);
+			await data.upsert("checkoutSession", id, toRecord(updated));
 			return { session: updated };
 		},
 
@@ -330,8 +332,7 @@ export function createCheckoutController(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("checkoutSession", id, updated as Record<string, any>);
+			await data.upsert("checkoutSession", id, toRecord(updated));
 			return updated;
 		},
 
@@ -357,8 +358,7 @@ export function createCheckoutController(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("checkoutSession", id, updated as Record<string, any>);
+			await data.upsert("checkoutSession", id, toRecord(updated));
 			return updated;
 		},
 
@@ -377,8 +377,7 @@ export function createCheckoutController(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("checkoutSession", id, updated as Record<string, any>);
+			await data.upsert("checkoutSession", id, toRecord(updated));
 			return updated;
 		},
 
@@ -399,16 +398,15 @@ export function createCheckoutController(
 			const take = params.take ?? 20;
 			const skip = params.skip ?? 0;
 
-			// Build where clause
-			// biome-ignore lint/suspicious/noExplicitAny: dynamic where clause
-			const where: Record<string, any> = {};
+			const where: Record<string, string> = {};
 			if (params.status) {
 				where.status = params.status;
 			}
 
-			// Fetch all matching sessions (data service doesn't support SQL-like LIKE)
-			// biome-ignore lint/suspicious/noExplicitAny: dynamic findMany options
-			const findOpts: Record<string, any> = {
+			const findOpts: {
+				orderBy: Record<string, "asc" | "desc">;
+				where?: Record<string, string>;
+			} = {
 				orderBy: { createdAt: "desc" },
 			};
 			if (Object.keys(where).length > 0) {
@@ -522,12 +520,7 @@ export function createCheckoutController(
 							status: "expired",
 							updatedAt: now,
 						};
-						await data.upsert(
-							"checkoutSession",
-							session.id,
-							// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-							updated as Record<string, any>,
-						);
+						await data.upsert("checkoutSession", session.id, toRecord(updated));
 						if (status === "processing") {
 							processingSessions.push(session);
 						}

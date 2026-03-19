@@ -1,6 +1,10 @@
 import { createMockDataService } from "@86d-app/core/test-utils";
 import { describe, expect, it } from "vitest";
-import type { CheckoutAddress, CheckoutLineItem } from "../service";
+import type {
+	CheckoutAddress,
+	CheckoutLineItem,
+	TaxCalculateController,
+} from "../service";
 import { createCheckoutController } from "../service-impl";
 
 // ---------------------------------------------------------------------------
@@ -11,8 +15,8 @@ interface TaxCalculateParams {
 	address: {
 		country: string;
 		state: string;
-		city: string;
-		postalCode: string;
+		city?: string | undefined;
+		postalCode?: string | undefined;
 	};
 	lineItems: Array<{
 		productId: string;
@@ -28,21 +32,32 @@ interface TaxCalculateParams {
  * configurable tax amount. Mirrors the TaxController.calculate contract.
  */
 function createMockTaxController(taxRate = 0.1) {
-	// biome-ignore lint/suspicious/noExplicitAny: test spy accumulates heterogeneous call records
-	const calls: any[] = [];
+	const calls: TaxCalculateParams[] = [];
 
-	return {
-		_calls: calls,
-		async calculate(params: TaxCalculateParams) {
-			calls.push(params);
-			const subtotal = params.lineItems.reduce(
-				(sum, item) => sum + item.amount,
-				0,
-			);
-			const totalTax = Math.round(subtotal * taxRate);
-			return { totalTax };
-		},
-	};
+	const controller: TaxCalculateController & { _calls: TaxCalculateParams[] } =
+		{
+			_calls: calls,
+			async calculate(params) {
+				calls.push(params);
+				const subtotal = params.lineItems.reduce(
+					(sum, item) => sum + item.amount,
+					0,
+				);
+				const totalTax = Math.round(subtotal * taxRate);
+				return {
+					totalTax,
+					shippingTax: 0,
+					lineItems: params.lineItems.map((item) => ({
+						productId: item.productId,
+						taxableAmount: item.amount,
+						taxAmount: Math.round(item.amount * taxRate),
+						rate: taxRate,
+					})),
+				};
+			},
+		};
+
+	return controller;
 }
 
 // ---------------------------------------------------------------------------
@@ -85,13 +100,12 @@ function makeSession(overrides: Record<string, unknown> = {}) {
 /**
  * Simulates the endpoint-level tax auto-calculation that happens in
  * update-session.ts when a shipping address or shipping amount changes.
- * This mirrors the logic in the endpoint handler without needing HTTP.
+ * Now uses the controller's `update({ taxAmount })` instead of direct data access.
  */
 async function simulateUpdateWithTax(
 	ctrl: ReturnType<typeof createCheckoutController>,
-	data: ReturnType<typeof createMockDataService>,
-	// biome-ignore lint/suspicious/noExplicitAny: optional tax controller for testing
-	taxController: any | undefined,
+	_data: ReturnType<typeof createMockDataService>,
+	taxController: TaxCalculateController | undefined,
 	sessionId: string,
 	updates: {
 		shippingAddress?: CheckoutAddress | undefined;
@@ -128,27 +142,13 @@ async function simulateUpdateWithTax(
 			});
 
 			if (taxResult && typeof taxResult.totalTax === "number") {
-				const taxAmount = taxResult.totalTax;
-				const total =
-					session.subtotal +
-					taxAmount +
-					session.shippingAmount -
-					session.discountAmount -
-					session.giftCardAmount;
-
-				const updated = {
-					...session,
-					taxAmount,
-					total: Math.max(0, total),
-					updatedAt: new Date(),
-				};
-				await data.upsert(
-					"checkoutSession",
-					session.id,
-					// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-					updated as any,
-				);
-				session = updated;
+				// Use the controller's update method with taxAmount support
+				const updated = await ctrl.update(session.id, {
+					taxAmount: taxResult.totalTax,
+				});
+				if (updated) {
+					session = updated;
+				}
 			}
 		}
 	}

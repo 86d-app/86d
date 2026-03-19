@@ -81,10 +81,44 @@ export interface GiftCardCheckController {
 }
 
 /**
+ * Minimal interface for calculating taxes based on address and line items.
+ * Checkout accesses the tax controller through the runtime context —
+ * no direct module import, just a structural contract.
+ */
+export interface TaxCalculateController {
+	calculate(params: {
+		address: {
+			country: string;
+			state: string;
+			city?: string | undefined;
+			postalCode?: string | undefined;
+		};
+		lineItems: Array<{
+			productId: string;
+			categoryId?: string | undefined;
+			amount: number;
+			quantity: number;
+		}>;
+		shippingAmount?: number | undefined;
+		customerId?: string | undefined;
+	}): Promise<{
+		totalTax: number;
+		shippingTax: number;
+		lineItems: Array<{
+			productId: string;
+			taxableAmount: number;
+			taxAmount: number;
+			rate: number;
+		}>;
+	}>;
+}
+
+/**
  * Minimal interface for payment intent management.
  * Checkout accesses the payments controller through the runtime context —
  * no direct module import, just a structural contract.
  */
+
 /**
  * Minimal interface for creating orders from completed checkouts.
  * Checkout accesses the orders controller through the runtime context —
@@ -268,6 +302,7 @@ export interface CheckoutController extends ModuleController {
 			shippingAddress?: CheckoutAddress | undefined;
 			billingAddress?: CheckoutAddress | undefined;
 			shippingAmount?: number | undefined;
+			taxAmount?: number | undefined;
 			paymentMethod?: string | undefined;
 			metadata?: Record<string, unknown> | undefined;
 		},

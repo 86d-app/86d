@@ -20,8 +20,7 @@ function createMockPaymentController(): PaymentProcessController & {
 	_calls: Array<{ method: string; id?: string; amount?: number }>;
 } {
 	const intents = new Map<string, MockIntent>();
-	// biome-ignore lint/suspicious/noExplicitAny: test spy accumulates heterogeneous call records
-	const calls: any[] = [];
+	const calls: Array<{ method: string; id?: string; amount?: number }> = [];
 
 	return {
 		_intents: intents,
@@ -72,8 +71,7 @@ function createStripePaymentController(): PaymentProcessController & {
 	_calls: Array<{ method: string; id?: string; amount?: number }>;
 } {
 	const intents = new Map<string, MockIntent>();
-	// biome-ignore lint/suspicious/noExplicitAny: test spy accumulates heterogeneous call records
-	const calls: any[] = [];
+	const calls: Array<{ method: string; id?: string; amount?: number }> = [];
 
 	return {
 		_intents: intents,
@@ -970,8 +968,7 @@ describe("checkout → payment integration", () => {
 			_calls: Array<{ method: string; id?: string; amount?: number }>;
 		} {
 			const intents = new Map<string, MockIntent>();
-			// biome-ignore lint/suspicious/noExplicitAny: test spy accumulates heterogeneous call records
-			const calls: any[] = [];
+			const calls: Array<{ method: string; id?: string; amount?: number }> = [];
 			return {
 				_intents: intents,
 				_calls: calls,

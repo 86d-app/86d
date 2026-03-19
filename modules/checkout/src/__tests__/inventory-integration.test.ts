@@ -17,12 +17,19 @@ function createMockInventoryController(
 ): InventoryCheckController & {
 	_stock: Map<string, { available: number; allowBackorder: boolean }>;
 	_reservations: Map<string, number>;
-	_calls: Array<{ method: string; productId: string; quantity?: number }>;
+	_calls: Array<{
+		method: string;
+		productId: string;
+		quantity?: number | undefined;
+	}>;
 } {
 	const stock = new Map(initialStock);
 	const reservations = new Map<string, number>();
-	// biome-ignore lint/suspicious/noExplicitAny: test spy accumulates heterogeneous call records
-	const calls: any[] = [];
+	const calls: Array<{
+		method: string;
+		productId: string;
+		quantity?: number | undefined;
+	}> = [];
 
 	function stockKey(productId: string, variantId?: string): string {
 		return variantId ? `${productId}:${variantId}` : productId;

@@ -139,8 +139,11 @@ describe("checkout endpoint security", () => {
 					status: "expired" as const,
 					expiresAt: new Date(Date.now() - 60_000),
 				};
-				// biome-ignore lint/suspicious/noExplicitAny: test override
-				await mockData.upsert("checkoutSession", session.id, expired as any);
+				await mockData.upsert(
+					"checkoutSession",
+					session.id,
+					expired as Record<string, unknown>,
+				);
 			}
 
 			const result = await controller.update(session.id, {
@@ -324,8 +327,11 @@ describe("checkout endpoint security", () => {
 					...stored,
 					expiresAt: new Date(Date.now() - 60_000),
 				};
-				// biome-ignore lint/suspicious/noExplicitAny: test override
-				await mockData.upsert("checkoutSession", pending.id, pastExpiry as any);
+				await mockData.upsert(
+					"checkoutSession",
+					pending.id,
+					pastExpiry as Record<string, unknown>,
+				);
 			}
 
 			const result = await controller.expireStale();
@@ -349,8 +355,11 @@ describe("checkout endpoint security", () => {
 					...stored,
 					expiresAt: new Date(Date.now() - 60_000),
 				};
-				// biome-ignore lint/suspicious/noExplicitAny: test override
-				await mockData.upsert("checkoutSession", session.id, pastExpiry as any);
+				await mockData.upsert(
+					"checkoutSession",
+					session.id,
+					pastExpiry as Record<string, unknown>,
+				);
 			}
 
 			await controller.expireStale();
@@ -366,16 +375,19 @@ describe("checkout endpoint security", () => {
 				shippingAddress: VALID_ADDRESS,
 			});
 
-			// Move to processing by confirming
-			// biome-ignore lint/suspicious/noExplicitAny: force status for test
-			const stored = (await controller.getById(session.id)) as any;
+			// Force session into processing status with expired TTL
+			const stored = await controller.getById(session.id);
 			if (stored) {
 				const processing = {
 					...stored,
-					status: "processing",
+					status: "processing" as const,
 					expiresAt: new Date(Date.now() - 60_000),
 				};
-				await mockData.upsert("checkoutSession", session.id, processing);
+				await mockData.upsert(
+					"checkoutSession",
+					session.id,
+					processing as Record<string, unknown>,
+				);
 			}
 
 			const result = await controller.expireStale();

@@ -55,8 +55,40 @@ interface ShippingRate {
 	estimatedDays?: number | null;
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: API response types from dynamic module hooks
-type ApiResponse = any;
+interface CheckoutSessionData {
+	id: string;
+	subtotal: number;
+	taxAmount: number;
+	shippingAmount: number;
+	discountAmount: number;
+	giftCardAmount: number;
+	total: number;
+	currency: string;
+	shippingAddress?: Address | null;
+	guestEmail?: string | null;
+	customerId?: string | null;
+	paymentStatus?: string | null;
+}
+
+interface SessionResult {
+	session?: CheckoutSessionData;
+	error?: string;
+	status?: number;
+}
+
+interface PaymentResult {
+	payment?: {
+		status?: string;
+		clientSecret?: string;
+		paypalOrderId?: string;
+	};
+	session?: CheckoutSessionData;
+}
+
+interface OrderCompleteResult {
+	session?: CheckoutSessionData;
+	orderId?: string;
+}
 
 // ─── Helpers ────────────────────────────────────────────────────────
 
@@ -286,8 +318,7 @@ function OrderSummary({
 	applyingGiftCard,
 }: {
 	cart: CartData | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: checkout session shape from dynamic API
-	session: any;
+	session: CheckoutSessionData | null;
 	discountCode: string;
 	onApplyDiscount: (code: string) => void;
 	onRemoveDiscount: () => void;
@@ -565,8 +596,7 @@ const CheckoutPage = observer(function CheckoutPage() {
 	const formRef = useRef<HTMLFormElement>(null);
 
 	// ── Session data
-	// biome-ignore lint/suspicious/noExplicitAny: checkout session shape from dynamic API
-	const [session, setSession] = useState<any>(null);
+	const [session, setSession] = useState<CheckoutSessionData | null>(null);
 
 	// ── Mutations
 	const createSessionMut = api.checkout.createSession.useMutation({
@@ -670,7 +700,7 @@ const CheckoutPage = observer(function CheckoutPage() {
 				...(shippingAddress.phone ? { phone: shippingAddress.phone } : {}),
 			};
 
-			let result: ApiResponse;
+			let result: SessionResult;
 			if (co.sessionId) {
 				// Update existing session
 				result = await updateSessionMut.mutateAsync({
@@ -734,7 +764,7 @@ const CheckoutPage = observer(function CheckoutPage() {
 				});
 			}
 
-			const sess = result?.session ?? result;
+			const sess = result?.session;
 			if (sess?.id) {
 				setSession(sess);
 				co.setSessionId(sess.id);
@@ -752,7 +782,7 @@ const CheckoutPage = observer(function CheckoutPage() {
 					orderAmount: cart.subtotal,
 				},
 				{
-					onSuccess: (data: ApiResponse) => {
+					onSuccess: (data: { rates?: ShippingRate[] }) => {
 						const rates = data?.rates ?? [];
 						setShippingRates(rates);
 						if (rates.length > 0) {
@@ -790,12 +820,12 @@ const CheckoutPage = observer(function CheckoutPage() {
 			const rate = shippingRates.find((r) => r.id === selectedRate);
 			const shippingAmount = rate?.price ?? 0;
 
-			const result: ApiResponse = await updateSessionMut.mutateAsync({
+			const result: SessionResult = await updateSessionMut.mutateAsync({
 				params: { id: co.sessionId },
 				shippingAmount,
 			});
 
-			const sess = result?.session ?? result;
+			const sess = result?.session;
 			if (sess) setSession(sess);
 
 			co.setStep("payment");
@@ -813,7 +843,7 @@ const CheckoutPage = observer(function CheckoutPage() {
 		co.setProcessing(true);
 
 		try {
-			const payResult: ApiResponse = await createPaymentMut.mutateAsync({
+			const payResult: PaymentResult = await createPaymentMut.mutateAsync({
 				params: { id: co.sessionId },
 			});
 
@@ -856,7 +886,7 @@ const CheckoutPage = observer(function CheckoutPage() {
 
 		try {
 			// Sync payment status from the provider
-			const statusResult: ApiResponse = await api.checkout.getPayment.fetch({
+			const statusResult: SessionResult = await api.checkout.getPayment.fetch({
 				params: { id: co.sessionId },
 			});
 
@@ -878,7 +908,7 @@ const CheckoutPage = observer(function CheckoutPage() {
 		if (!co.sessionId) return;
 
 		try {
-			const captureResult: ApiResponse =
+			const captureResult: PaymentResult =
 				await api.checkout.capturePayment.mutate({
 					params: { id: co.sessionId },
 				});
@@ -932,7 +962,7 @@ const CheckoutPage = observer(function CheckoutPage() {
 
 		try {
 			// Confirm the session (validates all fields)
-			const confirmResult: ApiResponse = await confirmSessionMut.mutateAsync({
+			const confirmResult: SessionResult = await confirmSessionMut.mutateAsync({
 				params: { id: co.sessionId },
 			});
 
@@ -943,13 +973,13 @@ const CheckoutPage = observer(function CheckoutPage() {
 			}
 
 			// Complete the session — the server creates the real order
-			const completeResult = await completeSessionMut.mutateAsync({
-				params: { id: co.sessionId },
-			});
+			const completeResult: OrderCompleteResult =
+				await completeSessionMut.mutateAsync({
+					params: { id: co.sessionId },
+				});
 
 			// Store order summary for the confirmation page
-			const orderId =
-				(completeResult as { orderId?: string })?.orderId ?? co.sessionId;
+			const orderId = completeResult?.orderId ?? co.sessionId;
 			try {
 				sessionStorage.setItem(
 					"checkout_confirmation",
@@ -1014,11 +1044,11 @@ const CheckoutPage = observer(function CheckoutPage() {
 			if (!co.sessionId) return;
 			setError(null);
 			try {
-				const result: ApiResponse = await applyDiscountMut.mutateAsync({
+				const result: SessionResult = await applyDiscountMut.mutateAsync({
 					params: { id: co.sessionId },
 					code,
 				});
-				const sess = result?.session ?? result;
+				const sess = result?.session;
 				if (sess) {
 					setSession(sess);
 					setDiscountCode(code);
@@ -1035,10 +1065,10 @@ const CheckoutPage = observer(function CheckoutPage() {
 		if (!co.sessionId) return;
 		setError(null);
 		try {
-			const result: ApiResponse = await removeDiscountMut.mutateAsync({
+			const result: SessionResult = await removeDiscountMut.mutateAsync({
 				params: { id: co.sessionId },
 			});
-			const sess = result?.session ?? result;
+			const sess = result?.session;
 			if (sess) {
 				setSession(sess);
 				setDiscountCode("");
@@ -1054,11 +1084,11 @@ const CheckoutPage = observer(function CheckoutPage() {
 			if (!co.sessionId) return;
 			setError(null);
 			try {
-				const result: ApiResponse = await applyGiftCardMut.mutateAsync({
+				const result: SessionResult = await applyGiftCardMut.mutateAsync({
 					params: { id: co.sessionId },
 					code,
 				});
-				const sess = result?.session ?? result;
+				const sess = result?.session;
 				if (sess) {
 					setSession(sess);
 					setGiftCardCode(code.toUpperCase());
@@ -1075,10 +1105,10 @@ const CheckoutPage = observer(function CheckoutPage() {
 		if (!co.sessionId) return;
 		setError(null);
 		try {
-			const result: ApiResponse = await removeGiftCardMut.mutateAsync({
+			const result: SessionResult = await removeGiftCardMut.mutateAsync({
 				params: { id: co.sessionId },
 			});
-			const sess = result?.session ?? result;
+			const sess = result?.session;
 			if (sess) {
 				setSession(sess);
 				setGiftCardCode("");
