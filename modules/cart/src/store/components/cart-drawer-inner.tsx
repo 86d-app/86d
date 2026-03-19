@@ -226,13 +226,12 @@ export const CartDrawerInner = observer(() => {
 				>
 					Checkout
 				</a>
-				<button
-					type="button"
-					onClick={() => cartState.closeDrawer()}
+				<a
+					href="/cart"
 					className="block w-full text-center text-muted-foreground text-xs transition-colors hover:text-foreground"
 				>
-					Continue shopping
-				</button>
+					View cart
+				</a>
 			</div>
 		) : null;
 
