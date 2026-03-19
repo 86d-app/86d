@@ -3,12 +3,13 @@ import { createAdminEndpoint } from "@86d-app/core";
 interface SettingsOptions {
 	apiKey?: string | undefined;
 	apiSecret?: string | undefined;
+	accessToken?: string | undefined;
 	merchantId?: string | undefined;
 }
 
 export function resolveSettings(options: SettingsOptions) {
 	const hasCredentials = Boolean(
-		options.apiKey && options.apiSecret && options.merchantId,
+		options.apiKey && options.apiSecret && options.accessToken,
 	);
 	return {
 		configured: hasCredentials,

@@ -210,8 +210,11 @@ function ConnectionStatus({ settings }: { settings: SettingsData }) {
 			<p className="text-muted-foreground text-sm">
 				Set the <code className="rounded bg-muted px-1 text-xs">X_API_KEY</code>
 				, <code className="rounded bg-muted px-1 text-xs">X_API_SECRET</code>,
-				and <code className="rounded bg-muted px-1 text-xs">X_MERCHANT_ID</code>{" "}
-				environment variables to connect your X Commerce account.
+				and{" "}
+				<code className="rounded bg-muted px-1 text-xs">X_ACCESS_TOKEN</code>{" "}
+				environment variables to connect your X account. Optionally set{" "}
+				<code className="rounded bg-muted px-1 text-xs">X_REFRESH_TOKEN</code>{" "}
+				for automatic token renewal.
 			</p>
 		</div>
 	);

@@ -16,10 +16,11 @@ describe("x-shop settings", () => {
 		expect(result.apiKey).toBe("key12345...");
 	});
 
-	it("reports configured when all credentials present", () => {
+	it("reports configured when apiKey, apiSecret, and accessToken are present", () => {
 		const result = resolveSettings({
 			apiKey: "abcdefghijklmnop",
 			apiSecret: "secret123",
+			accessToken: "at-token-abc",
 			merchantId: "merch-001",
 		});
 		expect(result.configured).toBe(true);
@@ -27,27 +28,37 @@ describe("x-shop settings", () => {
 		expect(result.apiKey).toBe("abcdefgh...");
 	});
 
+	it("reports configured even without merchantId", () => {
+		const result = resolveSettings({
+			apiKey: "abcdefghijklmnop",
+			apiSecret: "secret123",
+			accessToken: "at-token-abc",
+		});
+		expect(result.configured).toBe(true);
+		expect(result.merchantId).toBeNull();
+	});
+
 	it("masks api key to first 8 characters", () => {
 		const result = resolveSettings({
 			apiKey: "verylongapikey12345",
 			apiSecret: "secret",
-			merchantId: "m1",
+			accessToken: "at-token",
 		});
 		expect(result.apiKey).toBe("verylong...");
 	});
 
-	it("requires all three credentials for configured status", () => {
+	it("requires apiKey, apiSecret, and accessToken for configured status", () => {
 		expect(resolveSettings({ apiKey: "k", apiSecret: "s" }).configured).toBe(
 			false,
 		);
-		expect(resolveSettings({ apiKey: "k", merchantId: "m" }).configured).toBe(
+		expect(resolveSettings({ apiKey: "k", accessToken: "a" }).configured).toBe(
 			false,
 		);
 		expect(
-			resolveSettings({ apiSecret: "s", merchantId: "m" }).configured,
+			resolveSettings({ apiSecret: "s", accessToken: "a" }).configured,
 		).toBe(false);
 		expect(
-			resolveSettings({ apiKey: "k", apiSecret: "s", merchantId: "m" })
+			resolveSettings({ apiKey: "k", apiSecret: "s", accessToken: "a" })
 				.configured,
 		).toBe(true);
 	});

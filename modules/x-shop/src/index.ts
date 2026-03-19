@@ -15,11 +15,15 @@ export type {
 } from "./service";
 
 export interface XShopOptions extends ModuleConfig {
-	/** X/Twitter API key */
+	/** X/Twitter API key (client ID) */
 	apiKey?: string;
-	/** X/Twitter API secret */
+	/** X/Twitter API secret (client secret) */
 	apiSecret?: string;
-	/** X Commerce merchant ID */
+	/** OAuth 2.0 user access token */
+	accessToken?: string;
+	/** OAuth 2.0 refresh token for automatic token renewal */
+	refreshToken?: string;
+	/** X Commerce merchant ID (optional label) */
 	merchantId?: string;
 }
 
@@ -32,7 +36,7 @@ export default function xShop(options?: XShopOptions): Module {
 
 	return {
 		id: "x-shop",
-		version: "0.1.0",
+		version: "0.2.0",
 		schema: xShopSchema,
 		exports: {
 			read: ["listingTitle", "listingStatus", "listingSyncStatus"],
@@ -47,7 +51,12 @@ export default function xShop(options?: XShopOptions): Module {
 			],
 		},
 		init: async (ctx: ModuleContext) => {
-			const controller = createXShopController(ctx.data);
+			const controller = createXShopController(ctx.data, ctx.events, {
+				apiKey: options?.apiKey,
+				apiSecret: options?.apiSecret,
+				accessToken: options?.accessToken,
+				refreshToken: options?.refreshToken,
+			});
 			return { controllers: { xShop: controller } };
 		},
 		endpoints: {

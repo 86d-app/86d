@@ -1,4 +1,9 @@
-import type { ModuleDataService } from "@86d-app/core";
+import type { ModuleDataService, ScopedEventEmitter } from "@86d-app/core";
+import {
+	extractTweetMetrics,
+	XApiProvider,
+	type XApiProviderConfig,
+} from "./provider";
 import type {
 	ChannelOrder,
 	ChannelStats,
@@ -9,7 +14,24 @@ import type {
 
 export function createXShopController(
 	data: ModuleDataService,
+	events?: ScopedEventEmitter | undefined,
+	options?: {
+		apiKey?: string | undefined;
+		apiSecret?: string | undefined;
+		accessToken?: string | undefined;
+		refreshToken?: string | undefined;
+	},
 ): XShopController {
+	const provider =
+		options?.apiKey && options?.apiSecret && options?.accessToken
+			? new XApiProvider({
+					apiKey: options.apiKey,
+					apiSecret: options.apiSecret,
+					accessToken: options.accessToken,
+					refreshToken: options.refreshToken,
+				} satisfies XApiProviderConfig)
+			: null;
+
 	return {
 		async createListing(params) {
 			const now = new Date();
@@ -30,6 +52,13 @@ export function createXShopController(
 			};
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("listing", id, listing as Record<string, any>);
+
+			events?.emit("x.product.listed", {
+				listingId: id,
+				productId: params.localProductId,
+				title: params.title,
+			});
+
 			return listing;
 		},
 
@@ -69,7 +98,15 @@ export function createXShopController(
 		async deleteListing(id) {
 			const existing = await data.get("listing", id);
 			if (!existing) return false;
+
+			const listing = existing as unknown as Listing;
 			await data.delete("listing", id);
+
+			events?.emit("x.product.unlisted", {
+				listingId: id,
+				productId: listing.localProductId,
+			});
+
 			return true;
 		},
 
@@ -124,6 +161,13 @@ export function createXShopController(
 			};
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("channelOrder", id, order as Record<string, any>);
+
+			events?.emit("x.order.received", {
+				orderId: id,
+				externalOrderId: params.externalOrderId,
+				total: params.total,
+			});
+
 			return order;
 		},
 
@@ -170,6 +214,21 @@ export function createXShopController(
 			const now = new Date();
 			const id = crypto.randomUUID();
 
+			let tweetId = params.tweetId;
+
+			// Post a tweet announcing the drop if provider is configured and drop is launching now
+			if (provider && !tweetId && params.launchDate <= now) {
+				try {
+					const tweetText = params.description
+						? `${params.name}\n\n${params.description}`
+						: params.name;
+					const result = await provider.postTweet(tweetText);
+					tweetId = result.data.id;
+				} catch {
+					// Drop creation succeeds even if tweet fails
+				}
+			}
+
 			const drop: ProductDrop = {
 				id,
 				name: params.name,
@@ -177,8 +236,8 @@ export function createXShopController(
 				productIds: params.productIds,
 				launchDate: params.launchDate,
 				endDate: params.endDate,
-				status: "scheduled",
-				tweetId: params.tweetId,
+				status: params.launchDate <= now ? "live" : "scheduled",
+				tweetId,
 				impressions: 0,
 				clicks: 0,
 				conversions: 0,
@@ -187,6 +246,14 @@ export function createXShopController(
 			};
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("productDrop", id, drop as Record<string, any>);
+
+			events?.emit("x.drop.launched", {
+				dropId: id,
+				name: params.name,
+				tweetId,
+				productCount: params.productIds.length,
+			});
+
 			return drop;
 		},
 
@@ -203,6 +270,15 @@ export function createXShopController(
 			const drop = existing as unknown as ProductDrop;
 			if (drop.status === "ended" || drop.status === "cancelled") {
 				return drop;
+			}
+
+			// Delete the associated tweet if provider is configured
+			if (provider && drop.tweetId) {
+				try {
+					await provider.deleteTweet(drop.tweetId);
+				} catch {
+					// Cancellation succeeds even if tweet deletion fails
+				}
 			}
 
 			const now = new Date();
@@ -235,6 +311,37 @@ export function createXShopController(
 			if (!raw) return null;
 
 			const drop = raw as unknown as ProductDrop;
+
+			// Fetch real-time metrics from X API if provider and tweetId are available
+			if (provider && drop.tweetId) {
+				try {
+					const tweetRes = await provider.getTweet(drop.tweetId);
+					const metrics = extractTweetMetrics(tweetRes.data);
+
+					// Persist updated metrics locally
+					const updated: ProductDrop = {
+						...drop,
+						impressions: metrics.impressions,
+						clicks: metrics.clicks,
+						updatedAt: new Date(),
+					};
+					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+					await data.upsert("productDrop", id, updated as Record<string, any>);
+
+					return {
+						impressions: metrics.impressions,
+						clicks: metrics.clicks,
+						conversions: drop.conversions,
+						conversionRate:
+							metrics.clicks > 0
+								? (drop.conversions / metrics.clicks) * 100
+								: 0,
+					};
+				} catch {
+					// Fall back to locally stored metrics
+				}
+			}
+
 			return {
 				impressions: drop.impressions,
 				clicks: drop.clicks,
