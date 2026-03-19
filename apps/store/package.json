@@ -12,6 +12,7 @@
 		"dev:https": "next dev --turbo --experimental-https",
 		"preview": "next build && next start",
 		"start": "next start",
+		"test": "vitest run",
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
