@@ -31,5 +31,7 @@ export function useCheckoutApi() {
 			client.module("checkout").store["/checkout/sessions/:id/payment/status"],
 		getLineItems:
 			client.module("checkout").store["/checkout/sessions/:id/items"],
+		getShippingRates:
+			client.module("checkout").store["/checkout/sessions/:id/shipping-rates"],
 	};
 }

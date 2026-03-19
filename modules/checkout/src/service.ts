@@ -175,6 +175,26 @@ export interface OrderCreateController {
 	}): Promise<{ id: string }>;
 }
 
+/**
+ * Minimal interface for fetching shipping rates.
+ * Checkout accesses the shipping controller through the runtime context —
+ * no direct module import, just a structural contract.
+ */
+export interface ShippingRateController {
+	calculateRates(params: {
+		country: string;
+		orderAmount: number;
+		weight?: number | undefined;
+	}): Promise<
+		Array<{
+			id: string;
+			name: string;
+			zoneName: string;
+			price: number;
+		}>
+	>;
+}
+
 export interface PaymentProcessController {
 	createIntent(params: {
 		amount: number;
@@ -241,6 +261,8 @@ export interface CheckoutSession {
 	giftCardCode?: string | undefined;
 	shippingAddress?: CheckoutAddress | undefined;
 	billingAddress?: CheckoutAddress | undefined;
+	/** Display name of the selected shipping method (e.g. "Standard Shipping") */
+	shippingMethodName?: string | undefined;
 	paymentMethod?: string | undefined;
 	/** ID of the payment intent linked to this session */
 	paymentIntentId?: string | undefined;
@@ -302,6 +324,7 @@ export interface CheckoutController extends ModuleController {
 			shippingAddress?: CheckoutAddress | undefined;
 			billingAddress?: CheckoutAddress | undefined;
 			shippingAmount?: number | undefined;
+			shippingMethodName?: string | undefined;
 			taxAmount?: number | undefined;
 			paymentMethod?: string | undefined;
 			metadata?: Record<string, unknown> | undefined;

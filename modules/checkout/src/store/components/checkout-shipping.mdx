@@ -1,3 +1,4 @@
+{props.phase === "address" ? (
 <form onSubmit={props.onSubmit} className="space-y-5">
   <div>
     <h2 className="font-display text-lg font-semibold text-foreground">Shipping address</h2>
@@ -186,7 +187,92 @@
       disabled={props.loading}
       className="flex-1 rounded-md bg-foreground py-2.5 text-center font-medium text-background text-sm transition-opacity hover:opacity-85 disabled:opacity-50"
     >
-      {props.loading ? "Saving…" : "Continue to payment"}
+      {props.loading ? "Saving…" : "Continue to shipping method"}
     </button>
   </div>
 </form>
+) : (
+<form onSubmit={props.onSubmit} className="space-y-5">
+  <div className="flex items-center justify-between">
+    <h2 className="font-display text-lg font-semibold text-foreground">Shipping method</h2>
+    <button
+      type="button"
+      onClick={props.onEditAddress}
+      className="text-sm text-muted-foreground underline-offset-2 hover:underline"
+    >
+      Edit address
+    </button>
+  </div>
+
+  <div className="rounded-md border border-border bg-muted/30 px-3 py-2.5 text-sm text-foreground">
+    <p>{props.address.firstName} {props.address.lastName}</p>
+    <p className="text-muted-foreground">{props.address.line1}{props.address.line2 ? `, ${props.address.line2}` : ""}</p>
+    <p className="text-muted-foreground">{props.address.city}, {props.address.state} {props.address.postalCode}</p>
+  </div>
+
+  {props.loadingRates ? (
+    <div className="space-y-3">
+      <div className="h-16 animate-pulse rounded-md bg-muted" />
+      <div className="h-16 animate-pulse rounded-md bg-muted" />
+    </div>
+  ) : props.rates.length > 0 ? (
+    <fieldset className="space-y-2" aria-label="Shipping methods">
+      {props.rates.map((rate) => (
+        <label
+          key={rate.id}
+          data-testid={`shipping-rate-${rate.id}`}
+          className={`flex cursor-pointer items-center gap-3 rounded-md border px-4 py-3 transition-colors ${
+            props.selectedRateId === rate.id
+              ? "border-foreground bg-muted/50"
+              : "border-border hover:border-muted-foreground/50"
+          }`}
+        >
+          <input
+            type="radio"
+            name="shipping-rate"
+            value={rate.id}
+            checked={props.selectedRateId === rate.id}
+            onChange={() => props.onRateSelect(rate.id)}
+            disabled={props.selectingRate}
+            className="accent-foreground"
+          />
+          <span className="flex-1">
+            <span className="block text-sm font-medium text-foreground">{rate.name}</span>
+            <span className="block text-xs text-muted-foreground">{rate.zoneName}</span>
+          </span>
+          <span className="text-sm font-medium text-foreground">
+            {rate.price === 0 ? "Free" : props.formatPrice(rate.price)}
+          </span>
+        </label>
+      ))}
+    </fieldset>
+  ) : (
+    <div className="rounded-md border border-border px-4 py-3">
+      <p className="text-sm font-medium text-foreground">Free Shipping</p>
+      <p className="text-xs text-muted-foreground">No shipping rates configured</p>
+    </div>
+  )}
+
+  {props.ratesError && (
+    <p className="text-destructive text-sm">{props.ratesError}</p>
+  )}
+
+  <div className="flex items-center gap-3">
+    <button
+      type="button"
+      onClick={props.onBack}
+      disabled={props.selectingRate}
+      className="rounded-md border border-border px-4 py-2.5 text-foreground text-sm transition-colors hover:bg-muted disabled:opacity-50"
+    >
+      Back
+    </button>
+    <button
+      type="submit"
+      disabled={props.selectingRate || props.loadingRates}
+      className="flex-1 rounded-md bg-foreground py-2.5 text-center font-medium text-background text-sm transition-opacity hover:opacity-85 disabled:opacity-50"
+    >
+      {props.selectingRate ? "Saving…" : "Continue to payment"}
+    </button>
+  </div>
+</form>
+)}

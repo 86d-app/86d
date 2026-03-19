@@ -28,6 +28,8 @@ export const checkoutSchema = {
 			shippingAddress: { type: "json", required: false },
 			/** JSON snapshot of billing address */
 			billingAddress: { type: "json", required: false },
+			/** Display name of the selected shipping method */
+			shippingMethodName: { type: "string", required: false },
 			/** Payment method identifier or token from provider */
 			paymentMethod: { type: "string", required: false },
 			/** Payment intent ID from the payments module */

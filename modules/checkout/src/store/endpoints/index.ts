@@ -9,6 +9,7 @@ import { createSession } from "./create-session";
 import { getLineItems } from "./get-line-items";
 import { getPayment } from "./get-payment";
 import { getSession } from "./get-session";
+import { getShippingRates } from "./get-shipping-rates";
 import { removeDiscount } from "./remove-discount";
 import { removeGiftCard } from "./remove-gift-card";
 import { updateSession } from "./update-session";
@@ -28,4 +29,5 @@ export const storeEndpoints = {
 	"/checkout/sessions/:id/payment/capture": capturePayment,
 	"/checkout/sessions/:id/payment/status": getPayment,
 	"/checkout/sessions/:id/items": getLineItems,
+	"/checkout/sessions/:id/shipping-rates": getShippingRates,
 };

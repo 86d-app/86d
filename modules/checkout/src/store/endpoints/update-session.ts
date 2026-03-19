@@ -24,6 +24,11 @@ export const updateSession = createStoreEndpoint(
 			shippingAddress: addressSchema.optional(),
 			billingAddress: addressSchema.optional(),
 			shippingAmount: z.number().int().nonnegative().optional(),
+			shippingMethodName: z
+				.string()
+				.max(200)
+				.transform(sanitizeText)
+				.optional(),
 			paymentMethod: z.string().max(100).transform(sanitizeText).optional(),
 		}),
 	},

@@ -110,6 +110,9 @@ export function createCheckoutController(
 				...(params.shippingAmount !== undefined
 					? { shippingAmount: params.shippingAmount }
 					: {}),
+				...(params.shippingMethodName !== undefined
+					? { shippingMethodName: params.shippingMethodName }
+					: {}),
 				...(params.taxAmount !== undefined
 					? { taxAmount: params.taxAmount }
 					: {}),

@@ -14,6 +14,7 @@ export type {
 	GiftCardCheckController,
 	InventoryCheckController,
 	PaymentProcessController,
+	ShippingRateController,
 } from "./service";
 
 export interface CheckoutOptions extends ModuleConfig {
@@ -64,6 +65,10 @@ export default function checkout(options?: CheckoutOptions): Module {
 			},
 			payments: {
 				read: ["paymentStatus", "paymentAmount"],
+				optional: true,
+			},
+			shipping: {
+				read: ["shippingRates", "shippingZones", "shippingMethods"],
 				optional: true,
 			},
 		},
