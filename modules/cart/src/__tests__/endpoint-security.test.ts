@@ -626,6 +626,248 @@ describe("cart endpoint security", () => {
 		});
 	});
 
+	// ── Server-Side Price Validation (add-to-cart) ────────────────
+
+	describe("server-side price validation (add-to-cart)", () => {
+		/**
+		 * Simulates the price validation logic from add-to-cart.ts.
+		 * Uses a mock products data service to look up real prices.
+		 */
+		async function simulateAddToCartWithPriceValidation(
+			ctrl: ReturnType<typeof createCartControllers>,
+			cartId: string,
+			body: {
+				productId: string;
+				variantId?: string;
+				quantity: number;
+				price: number;
+				productName: string;
+				productSlug: string;
+			},
+			productsDataService: ReturnType<typeof createMockDataService> | undefined,
+		) {
+			let price = body.price;
+
+			if (productsDataService) {
+				let trustedPrice: number | undefined;
+				if (body.variantId) {
+					const variant = (await productsDataService.get(
+						"productVariant",
+						body.variantId,
+					)) as { price: number } | null;
+					if (variant) trustedPrice = variant.price;
+				}
+				if (trustedPrice === undefined) {
+					const product = (await productsDataService.get(
+						"product",
+						body.productId,
+					)) as { price: number; status: string } | null;
+					if (!product) {
+						return { error: "Product not found", status: 404 };
+					}
+					if (product.status !== "active") {
+						return { error: "Product is not available", status: 400 };
+					}
+					trustedPrice = product.price;
+				}
+				price = trustedPrice;
+			}
+
+			const item = await ctrl.addItem({
+				cartId,
+				productId: body.productId,
+				...(body.variantId ? { variantId: body.variantId } : {}),
+				quantity: body.quantity,
+				price,
+				productName: body.productName,
+				productSlug: body.productSlug,
+			});
+
+			return { item };
+		}
+
+		it("overrides manipulated price with real product price", async () => {
+			const productsData = createMockDataService();
+			await productsData.upsert("product", "prod_1", {
+				id: "prod_1",
+				price: 2500,
+				status: "active",
+			});
+
+			const cart = await controller.getOrCreateCart({
+				customerId: "cust_price",
+			});
+
+			const result = await simulateAddToCartWithPriceValidation(
+				controller,
+				cart.id,
+				{
+					productId: "prod_1",
+					quantity: 1,
+					price: 1, // manipulated to $0.01
+					productName: "Widget",
+					productSlug: "widget",
+				},
+				productsData,
+			);
+
+			expect("item" in result).toBe(true);
+			if ("item" in result) {
+				expect(result.item.price).toBe(2500);
+			}
+		});
+
+		it("uses variant price over product price", async () => {
+			const productsData = createMockDataService();
+			await productsData.upsert("product", "prod_1", {
+				id: "prod_1",
+				price: 2000,
+				status: "active",
+			});
+			await productsData.upsert("productVariant", "var_xl", {
+				id: "var_xl",
+				price: 3500,
+			});
+
+			const cart = await controller.getOrCreateCart({
+				customerId: "cust_var_price",
+			});
+
+			const result = await simulateAddToCartWithPriceValidation(
+				controller,
+				cart.id,
+				{
+					productId: "prod_1",
+					variantId: "var_xl",
+					quantity: 1,
+					price: 1,
+					productName: "Widget XL",
+					productSlug: "widget-xl",
+				},
+				productsData,
+			);
+
+			expect("item" in result).toBe(true);
+			if ("item" in result) {
+				expect(result.item.price).toBe(3500);
+			}
+		});
+
+		it("rejects non-existent product with 404", async () => {
+			const productsData = createMockDataService();
+
+			const cart = await controller.getOrCreateCart({
+				customerId: "cust_ghost",
+			});
+
+			const result = await simulateAddToCartWithPriceValidation(
+				controller,
+				cart.id,
+				{
+					productId: "prod_missing",
+					quantity: 1,
+					price: 100,
+					productName: "Ghost",
+					productSlug: "ghost",
+				},
+				productsData,
+			);
+
+			expect("error" in result).toBe(true);
+			if ("error" in result) {
+				expect(result.status).toBe(404);
+			}
+		});
+
+		it("rejects inactive product with 400", async () => {
+			const productsData = createMockDataService();
+			await productsData.upsert("product", "prod_draft", {
+				id: "prod_draft",
+				price: 1000,
+				status: "draft",
+			});
+
+			const cart = await controller.getOrCreateCart({
+				customerId: "cust_inactive",
+			});
+
+			const result = await simulateAddToCartWithPriceValidation(
+				controller,
+				cart.id,
+				{
+					productId: "prod_draft",
+					quantity: 1,
+					price: 1000,
+					productName: "Draft Item",
+					productSlug: "draft-item",
+				},
+				productsData,
+			);
+
+			expect("error" in result).toBe(true);
+			if ("error" in result) {
+				expect(result.status).toBe(400);
+				expect(result.error).toContain("not available");
+			}
+		});
+
+		it("accepts client price when no products registry exists", async () => {
+			const cart = await controller.getOrCreateCart({
+				customerId: "cust_noproducts",
+			});
+
+			const result = await simulateAddToCartWithPriceValidation(
+				controller,
+				cart.id,
+				{
+					productId: "prod_1",
+					quantity: 2,
+					price: 777,
+					productName: "Widget",
+					productSlug: "widget",
+				},
+				undefined,
+			);
+
+			expect("item" in result).toBe(true);
+			if ("item" in result) {
+				expect(result.item.price).toBe(777);
+			}
+		});
+
+		it("falls back to product price when variant not found", async () => {
+			const productsData = createMockDataService();
+			await productsData.upsert("product", "prod_1", {
+				id: "prod_1",
+				price: 1500,
+				status: "active",
+			});
+
+			const cart = await controller.getOrCreateCart({
+				customerId: "cust_fallback",
+			});
+
+			const result = await simulateAddToCartWithPriceValidation(
+				controller,
+				cart.id,
+				{
+					productId: "prod_1",
+					variantId: "var_nonexistent",
+					quantity: 1,
+					price: 1,
+					productName: "Widget",
+					productSlug: "widget",
+				},
+				productsData,
+			);
+
+			expect("item" in result).toBe(true);
+			if ("item" in result) {
+				expect(result.item.price).toBe(1500);
+			}
+		});
+	});
+
 	// ── Cart Metadata Isolation ────────────────────────────────────
 
 	describe("cart metadata isolation", () => {

@@ -1,5 +1,6 @@
 import { createMockDataService } from "@86d-app/core/test-utils";
 import { beforeEach, describe, expect, it } from "vitest";
+import type { CheckoutLineItem } from "../service";
 import { createCheckoutController } from "../service-impl";
 
 /**
@@ -309,6 +310,244 @@ describe("checkout endpoint security", () => {
 		it("getLineItems for non-existent session returns empty array", async () => {
 			const items = await controller.getLineItems("nonexistent_session");
 			expect(items).toHaveLength(0);
+		});
+	});
+
+	// -- Server-Side Price Validation --------------------------------------
+
+	describe("server-side price validation (create-session)", () => {
+		/**
+		 * Simulates the price validation logic from create-session.ts.
+		 * Uses a mock _dataRegistry to look up real product prices.
+		 */
+		function simulateCreateSessionWithPriceValidation(
+			ctrl: ReturnType<typeof createCheckoutController>,
+			lineItems: CheckoutLineItem[],
+			productsDataService: ReturnType<typeof createMockDataService> | undefined,
+			opts: { customerId?: string; taxAmount?: number; shippingAmount?: number } = {},
+		) {
+			return (async () => {
+				if (lineItems.length === 0) {
+					return { error: "Cart is empty", status: 400 };
+				}
+
+				// Mirror the endpoint's price validation logic
+				const items = lineItems.map((i) => ({ ...i })); // shallow clone
+				if (productsDataService) {
+					for (const item of items) {
+						let trustedPrice: number | undefined;
+						if (item.variantId) {
+							const variant = (await productsDataService.get(
+								"productVariant",
+								item.variantId,
+							)) as { price: number } | null;
+							if (variant) trustedPrice = variant.price;
+						}
+						if (trustedPrice === undefined) {
+							const product = (await productsDataService.get(
+								"product",
+								item.productId,
+							)) as { price: number } | null;
+							if (!product) {
+								return {
+									error: `Product not found: ${item.name}`,
+									status: 400,
+								};
+							}
+							trustedPrice = product.price;
+						}
+						item.price = trustedPrice;
+					}
+				}
+
+				const subtotal = items.reduce(
+					(sum, item) => sum + item.price * item.quantity,
+					0,
+				);
+				const taxAmount = opts.taxAmount ?? 0;
+				const shippingAmount = opts.shippingAmount ?? 0;
+				const total = subtotal + taxAmount + shippingAmount;
+
+				const session = await ctrl.create({
+					customerId: opts.customerId ?? "cust_test",
+					subtotal,
+					total,
+					lineItems: items,
+					shippingAddress: VALID_ADDRESS,
+				});
+
+				return { session };
+			})();
+		}
+
+		it("overrides client price with server-side product price", async () => {
+			const productsData = createMockDataService();
+			await productsData.upsert("product", "prod_1", {
+				id: "prod_1",
+				price: 2500,
+				status: "active",
+			});
+
+			const result = await simulateCreateSessionWithPriceValidation(
+				controller,
+				[{ productId: "prod_1", name: "Widget", price: 100, quantity: 2 }], // client sends 100 (manipulated)
+				productsData,
+			);
+
+			expect("session" in result).toBe(true);
+			if ("session" in result) {
+				// Total should be based on real price (2500 * 2 = 5000), not client price (100 * 2 = 200)
+				expect(result.session.subtotal).toBe(5000);
+				expect(result.session.total).toBe(5000);
+			}
+		});
+
+		it("uses variant price when variant exists", async () => {
+			const productsData = createMockDataService();
+			await productsData.upsert("product", "prod_1", {
+				id: "prod_1",
+				price: 2000,
+				status: "active",
+			});
+			await productsData.upsert("productVariant", "var_1", {
+				id: "var_1",
+				price: 3000,
+			});
+
+			const result = await simulateCreateSessionWithPriceValidation(
+				controller,
+				[
+					{
+						productId: "prod_1",
+						variantId: "var_1",
+						name: "Widget Large",
+						price: 100,
+						quantity: 1,
+					},
+				],
+				productsData,
+			);
+
+			expect("session" in result).toBe(true);
+			if ("session" in result) {
+				// Should use variant price (3000), not product price (2000) or client price (100)
+				expect(result.session.subtotal).toBe(3000);
+				expect(result.session.total).toBe(3000);
+			}
+		});
+
+		it("falls back to product price when variant not found", async () => {
+			const productsData = createMockDataService();
+			await productsData.upsert("product", "prod_1", {
+				id: "prod_1",
+				price: 2000,
+				status: "active",
+			});
+
+			const result = await simulateCreateSessionWithPriceValidation(
+				controller,
+				[
+					{
+						productId: "prod_1",
+						variantId: "nonexistent_variant",
+						name: "Widget",
+						price: 100,
+						quantity: 1,
+					},
+				],
+				productsData,
+			);
+
+			expect("session" in result).toBe(true);
+			if ("session" in result) {
+				expect(result.session.subtotal).toBe(2000);
+			}
+		});
+
+		it("rejects when product does not exist", async () => {
+			const productsData = createMockDataService();
+			// No products seeded
+
+			const result = await simulateCreateSessionWithPriceValidation(
+				controller,
+				[{ productId: "prod_missing", name: "Ghost Item", price: 100, quantity: 1 }],
+				productsData,
+			);
+
+			expect("error" in result).toBe(true);
+			if ("error" in result) {
+				expect(result.status).toBe(400);
+				expect(result.error).toContain("Ghost Item");
+			}
+		});
+
+		it("validates prices for multiple line items independently", async () => {
+			const productsData = createMockDataService();
+			await productsData.upsert("product", "prod_a", {
+				id: "prod_a",
+				price: 1000,
+				status: "active",
+			});
+			await productsData.upsert("product", "prod_b", {
+				id: "prod_b",
+				price: 3000,
+				status: "active",
+			});
+
+			const result = await simulateCreateSessionWithPriceValidation(
+				controller,
+				[
+					{ productId: "prod_a", name: "A", price: 1, quantity: 2 }, // manipulated to 1
+					{ productId: "prod_b", name: "B", price: 1, quantity: 1 }, // manipulated to 1
+				],
+				productsData,
+			);
+
+			expect("session" in result).toBe(true);
+			if ("session" in result) {
+				// Should be (1000*2) + (3000*1) = 5000, not (1*2) + (1*1) = 3
+				expect(result.session.subtotal).toBe(5000);
+				expect(result.session.total).toBe(5000);
+			}
+		});
+
+		it("recalculates total including tax and shipping after price correction", async () => {
+			const productsData = createMockDataService();
+			await productsData.upsert("product", "prod_1", {
+				id: "prod_1",
+				price: 2000,
+				status: "active",
+			});
+
+			const result = await simulateCreateSessionWithPriceValidation(
+				controller,
+				[{ productId: "prod_1", name: "Widget", price: 1, quantity: 1 }],
+				productsData,
+				{ taxAmount: 200, shippingAmount: 500 },
+			);
+
+			expect("session" in result).toBe(true);
+			if ("session" in result) {
+				// subtotal=2000, tax=200, shipping=500 → total=2700
+				expect(result.session.subtotal).toBe(2000);
+				expect(result.session.total).toBe(2700);
+			}
+		});
+
+		it("passes through prices unchanged when no products registry", async () => {
+			// No _dataRegistry — mirrors stores that don't have the products module
+			const result = await simulateCreateSessionWithPriceValidation(
+				controller,
+				[{ productId: "prod_1", name: "Widget", price: 999, quantity: 3 }],
+				undefined, // no products data service
+			);
+
+			expect("session" in result).toBe(true);
+			if ("session" in result) {
+				// Client price accepted as-is
+				expect(result.session.subtotal).toBe(2997);
+				expect(result.session.total).toBe(2997);
+			}
 		});
 	});
 

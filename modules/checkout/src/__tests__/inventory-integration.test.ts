@@ -223,6 +223,39 @@ async function simulateAbandonWithInventory(
 	return session;
 }
 
+/**
+ * Simulate the complete-session endpoint logic:
+ * complete session → deduct inventory for each line item.
+ *
+ * This mirrors the actual endpoint handler in complete-session.ts
+ * without needing the better-call HTTP wrapper.
+ */
+async function simulateCompleteWithInventory(
+	checkoutCtrl: ReturnType<typeof createCheckoutController>,
+	sessionId: string,
+	orderId: string,
+	inventoryCtrl?: InventoryCheckController | undefined,
+) {
+	const lineItems = await checkoutCtrl.getLineItems(sessionId);
+	const session = await checkoutCtrl.complete(sessionId, orderId);
+	if (!session) {
+		return { error: "Cannot complete this checkout session", status: 422 };
+	}
+
+	// Deduct inventory (convert reservations into actual stock deductions)
+	if (inventoryCtrl?.deduct) {
+		for (const item of lineItems) {
+			await inventoryCtrl.deduct({
+				productId: item.productId,
+				variantId: item.variantId,
+				quantity: item.quantity,
+			});
+		}
+	}
+
+	return { session, orderId };
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -762,6 +795,186 @@ describe("checkout → inventory integration", () => {
 			expect(result.paymentsCancelled).toBe(1);
 			expect(cancelledIntents).toEqual(["pi_real_456"]);
 			expect(inventoryCtrl._reservations.get("p1")).toBe(0);
+			expect(inventoryCtrl._reservations.get("p2:v1")).toBe(0);
+		});
+	});
+
+	describe("inventory deduction on complete", () => {
+		it("deducts stock for all line items when completing", async () => {
+			const checkoutCtrl = createCheckoutController(createMockDataService());
+			const inventoryCtrl = createMockInventoryController(
+				new Map([
+					["p1", { available: 10, allowBackorder: false }],
+					["p2:v1", { available: 5, allowBackorder: false }],
+				]),
+			);
+
+			// Create → confirm (reserves) → complete (deducts)
+			const session = await checkoutCtrl.create(makeSession());
+			await simulateConfirmWithInventory(
+				checkoutCtrl,
+				session.id,
+				inventoryCtrl,
+			);
+			const result = await simulateCompleteWithInventory(
+				checkoutCtrl,
+				session.id,
+				"ORD-001",
+				inventoryCtrl,
+			);
+
+			expect("session" in result).toBe(true);
+			if ("session" in result) {
+				expect(result.session.status).toBe("completed");
+			}
+
+			// Verify deduct was called for each line item
+			const deductCalls = inventoryCtrl._calls.filter(
+				(c) => c.method === "deduct",
+			);
+			expect(deductCalls).toHaveLength(2);
+			expect(deductCalls[0]).toEqual({
+				method: "deduct",
+				productId: "p1",
+				quantity: 2,
+			});
+			expect(deductCalls[1]).toEqual({
+				method: "deduct",
+				productId: "p2",
+				quantity: 1,
+			});
+		});
+
+		it("reduces actual stock levels after deduction", async () => {
+			const checkoutCtrl = createCheckoutController(createMockDataService());
+			const inventoryCtrl = createMockInventoryController(
+				new Map([
+					["p1", { available: 10, allowBackorder: false }],
+					["p2:v1", { available: 5, allowBackorder: false }],
+				]),
+			);
+
+			const session = await checkoutCtrl.create(makeSession());
+			await simulateConfirmWithInventory(
+				checkoutCtrl,
+				session.id,
+				inventoryCtrl,
+			);
+			await simulateCompleteWithInventory(
+				checkoutCtrl,
+				session.id,
+				"ORD-002",
+				inventoryCtrl,
+			);
+
+			// Stock should be reduced by the deducted quantities
+			expect(inventoryCtrl._stock.get("p1")?.available).toBe(8); // 10 - 2
+			expect(inventoryCtrl._stock.get("p2:v1")?.available).toBe(4); // 5 - 1
+		});
+
+		it("clears reservations after deduction", async () => {
+			const checkoutCtrl = createCheckoutController(createMockDataService());
+			const inventoryCtrl = createMockInventoryController(
+				new Map([
+					["p1", { available: 10, allowBackorder: false }],
+					["p2:v1", { available: 5, allowBackorder: false }],
+				]),
+			);
+
+			const session = await checkoutCtrl.create(makeSession());
+			await simulateConfirmWithInventory(
+				checkoutCtrl,
+				session.id,
+				inventoryCtrl,
+			);
+
+			// Reservations exist after confirm
+			expect(inventoryCtrl._reservations.get("p1")).toBe(2);
+			expect(inventoryCtrl._reservations.get("p2:v1")).toBe(1);
+
+			await simulateCompleteWithInventory(
+				checkoutCtrl,
+				session.id,
+				"ORD-003",
+				inventoryCtrl,
+			);
+
+			// Reservations should be cleared after deduction
+			expect(inventoryCtrl._reservations.get("p1")).toBe(0);
+			expect(inventoryCtrl._reservations.get("p2:v1")).toBe(0);
+		});
+
+		it("completes without deduction when no inventory controller", async () => {
+			const checkoutCtrl = createCheckoutController(createMockDataService());
+
+			const session = await checkoutCtrl.create(makeSession());
+			await checkoutCtrl.confirm(session.id);
+			const result = await simulateCompleteWithInventory(
+				checkoutCtrl,
+				session.id,
+				"ORD-004",
+				undefined,
+			);
+
+			expect("session" in result).toBe(true);
+			if ("session" in result) {
+				expect(result.session.status).toBe("completed");
+				expect(result.orderId).toBe("ORD-004");
+			}
+		});
+
+		it("full lifecycle: reserve → deduct leaves correct stock", async () => {
+			const checkoutCtrl = createCheckoutController(createMockDataService());
+			const inventoryCtrl = createMockInventoryController(
+				new Map([
+					["p1", { available: 10, allowBackorder: false }],
+					["p2:v1", { available: 5, allowBackorder: false }],
+				]),
+			);
+
+			// Create and confirm two separate sessions
+			const session1 = await checkoutCtrl.create(makeSession());
+			await simulateConfirmWithInventory(
+				checkoutCtrl,
+				session1.id,
+				inventoryCtrl,
+			);
+
+			const session2 = await checkoutCtrl.create(makeSession());
+			await simulateConfirmWithInventory(
+				checkoutCtrl,
+				session2.id,
+				inventoryCtrl,
+			);
+
+			// Both reserved: p1 has 4 reserved, p2:v1 has 2 reserved
+			expect(inventoryCtrl._reservations.get("p1")).toBe(4);
+			expect(inventoryCtrl._reservations.get("p2:v1")).toBe(2);
+
+			// Complete session 1
+			await simulateCompleteWithInventory(
+				checkoutCtrl,
+				session1.id,
+				"ORD-A",
+				inventoryCtrl,
+			);
+
+			// p1: stock 8, reservations 2 (session2 still reserved)
+			expect(inventoryCtrl._stock.get("p1")?.available).toBe(8);
+			expect(inventoryCtrl._reservations.get("p1")).toBe(2);
+
+			// Complete session 2
+			await simulateCompleteWithInventory(
+				checkoutCtrl,
+				session2.id,
+				"ORD-B",
+				inventoryCtrl,
+			);
+
+			// p1: stock 6, reservations 0
+			expect(inventoryCtrl._stock.get("p1")?.available).toBe(6);
+			expect(inventoryCtrl._reservations.get("p1")).toBe(0);
+			expect(inventoryCtrl._stock.get("p2:v1")?.available).toBe(3);
 			expect(inventoryCtrl._reservations.get("p2:v1")).toBe(0);
 		});
 	});
