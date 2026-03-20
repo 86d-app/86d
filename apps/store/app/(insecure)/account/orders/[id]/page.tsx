@@ -162,6 +162,8 @@ export default function OrderDetailPage() {
 					name: string;
 					price: number;
 					quantity: number;
+					slug?: string;
+					image?: string;
 				}>;
 			};
 
@@ -173,7 +175,8 @@ export default function OrderDetailPage() {
 						quantity: item.quantity,
 						price: item.price,
 						productName: item.name,
-						productSlug: item.productId,
+						productSlug: item.slug ?? item.productId,
+						productImage: item.image,
 					},
 				});
 			}
