@@ -86,67 +86,71 @@ export async function ensureBooted(): Promise<ModuleRegistry> {
 		const bus = reg.getEventBus();
 		if (bus) {
 			// Email notifications
-			try {
-				const [
-					{ registerNotificationHandlers },
-					{ default: resend },
-					{
-						parseNotificationSettings,
-						isEventEnabled,
-						NOTIFICATION_EVENT_TYPES,
-					},
-				] = await Promise.all([
-					import("./notifications"),
-					import("emails"),
-					import("lib/notification-settings"),
-				]);
+			if (!process.env.RESEND_API_KEY) {
+				logger.debug("Email notifications disabled (RESEND_API_KEY not set)");
+			} else {
+				try {
+					const [
+						{ registerNotificationHandlers },
+						{ default: resend },
+						{
+							parseNotificationSettings,
+							isEventEnabled,
+							NOTIFICATION_EVENT_TYPES,
+						},
+					] = await Promise.all([
+						import("./notifications"),
+						import("emails"),
+						import("lib/notification-settings"),
+					]);
 
-				const storeId = env.STORE_ID;
-				let storeName = "Our Store";
-				let fromAddress: string | undefined;
-				let adminEmail: string | undefined;
-				let enabledEvents: Set<string> | undefined;
+					const storeId = env.STORE_ID;
+					let storeName = "Our Store";
+					let fromAddress: string | undefined;
+					let adminEmail: string | undefined;
+					let enabledEvents: Set<string> | undefined;
 
-				if (storeId) {
-					const config = await getStoreConfig({
-						storeId,
-						templatePath: resolveTemplatePath(),
-						fallbackToTemplateOnError: true,
-					});
-					storeName = config.name ?? "Our Store";
-					const settings = config.notificationSettings
-						? parseNotificationSettings(config.notificationSettings)
-						: {};
-					if (settings.fromAddress) {
-						fromAddress = settings.fromAddress;
-					}
-					if (settings.adminEmail) {
-						adminEmail = settings.adminEmail;
-					}
-					if (settings.events && Object.keys(settings.events).length > 0) {
-						enabledEvents = new Set<string>();
-						for (const evt of NOTIFICATION_EVENT_TYPES) {
-							if (isEventEnabled(settings, evt)) {
-								enabledEvents.add(evt);
+					if (storeId) {
+						const config = await getStoreConfig({
+							storeId,
+							templatePath: resolveTemplatePath(),
+							fallbackToTemplateOnError: true,
+						});
+						storeName = config.name ?? "Our Store";
+						const settings = config.notificationSettings
+							? parseNotificationSettings(config.notificationSettings)
+							: {};
+						if (settings.fromAddress) {
+							fromAddress = settings.fromAddress;
+						}
+						if (settings.adminEmail) {
+							adminEmail = settings.adminEmail;
+						}
+						if (settings.events && Object.keys(settings.events).length > 0) {
+							enabledEvents = new Set<string>();
+							for (const evt of NOTIFICATION_EVENT_TYPES) {
+								if (isEventEnabled(settings, evt)) {
+									enabledEvents.add(evt);
+								}
 							}
 						}
 					}
-				}
 
-				registerNotificationHandlers(
-					bus,
-					resend,
-					{
-						storeName,
-						fromAddress: fromAddress ?? `${storeName} <orders@86d.app>`,
-						adminEmail,
-					},
-					enabledEvents,
-				);
-			} catch (err) {
-				logger.warn("Email notifications disabled", {
-					reason: err instanceof Error ? err.message : String(err),
-				});
+					registerNotificationHandlers(
+						bus,
+						resend,
+						{
+							storeName,
+							fromAddress: fromAddress ?? `${storeName} <orders@86d.app>`,
+							adminEmail,
+						},
+						enabledEvents,
+					);
+				} catch (err) {
+					logger.warn("Email notifications failed", {
+						reason: err instanceof Error ? err.message : String(err),
+					});
+				}
 			}
 
 			// Webhook delivery
