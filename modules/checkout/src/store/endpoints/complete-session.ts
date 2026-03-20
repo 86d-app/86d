@@ -122,6 +122,7 @@ export const completeSession = createStoreEndpoint(
 				customerId: existing.customerId,
 				guestEmail: existing.guestEmail ?? ctx.context.session?.user.email,
 				currency: existing.currency,
+				paymentStatus: "paid",
 				subtotal: existing.subtotal,
 				taxAmount: existing.taxAmount,
 				shippingAmount: existing.shippingAmount,

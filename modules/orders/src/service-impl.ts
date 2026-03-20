@@ -104,7 +104,7 @@ export function createOrderController(
 				customerId: params.customerId,
 				guestEmail: params.guestEmail,
 				status: "pending",
-				paymentStatus: "unpaid",
+				paymentStatus: params.paymentStatus ?? "unpaid",
 				subtotal: params.subtotal,
 				taxAmount: params.taxAmount ?? 0,
 				shippingAmount: params.shippingAmount ?? 0,

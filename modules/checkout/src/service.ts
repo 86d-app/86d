@@ -129,6 +129,7 @@ export interface OrderCreateController {
 		customerId?: string | undefined;
 		guestEmail?: string | undefined;
 		currency?: string | undefined;
+		paymentStatus?: string | undefined;
 		subtotal: number;
 		taxAmount?: number | undefined;
 		shippingAmount?: number | undefined;

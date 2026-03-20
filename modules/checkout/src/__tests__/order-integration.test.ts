@@ -100,6 +100,7 @@ describe("checkout → orders integration contract", () => {
 				customerId: refreshed.customerId,
 				guestEmail: refreshed.guestEmail ?? mockSession.user.email,
 				currency: refreshed.currency,
+				paymentStatus: "paid",
 				subtotal: refreshed.subtotal,
 				taxAmount: refreshed.taxAmount,
 				shippingAmount: refreshed.shippingAmount,
@@ -176,6 +177,28 @@ describe("checkout → orders integration contract", () => {
 		expect(order.items[0].name).toBe("Widget");
 		expect(order.items[0].price).toBe(2500);
 		expect(order.items[0].quantity).toBe(2);
+	});
+
+	it("complete-session passes paymentStatus 'paid' to the order", async () => {
+		const session = await createPaidSession(checkoutCtrl);
+		const lineItems = await checkoutCtrl.getLineItems(session.id);
+
+		await orderCtrl.create({
+			subtotal: 5000,
+			total: 5900,
+			paymentStatus: "paid",
+			items: lineItems.map((item) => ({
+				productId: item.productId,
+				name: item.name,
+				price: item.price,
+				quantity: item.quantity,
+			})),
+		});
+
+		const order = [...orderCtrl._orders.values()][0] as {
+			paymentStatus?: string;
+		};
+		expect(order.paymentStatus).toBe("paid");
 	});
 
 	it("complete-session passes shipping address to the order", async () => {

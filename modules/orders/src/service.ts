@@ -74,6 +74,7 @@ export interface CreateOrderParams {
 	customerId?: string | undefined;
 	guestEmail?: string | undefined;
 	currency?: string | undefined;
+	paymentStatus?: PaymentStatus | undefined;
 	subtotal: number;
 	taxAmount?: number | undefined;
 	shippingAmount?: number | undefined;

@@ -127,6 +127,18 @@ describe("createOrderController", () => {
 			const fetched = await controller.getById(order.id);
 			expect(fetched?.giftCardAmount).toBe(2500);
 		});
+
+		it("uses provided paymentStatus instead of defaulting to unpaid", async () => {
+			const order = await controller.create({
+				...sampleOrder,
+				items: sampleItems,
+				paymentStatus: "paid",
+			});
+			expect(order.paymentStatus).toBe("paid");
+
+			const fetched = await controller.getById(order.id);
+			expect(fetched?.paymentStatus).toBe("paid");
+		});
 	});
 
 	describe("getById", () => {
