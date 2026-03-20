@@ -51,11 +51,11 @@ interface InvoiceData {
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-function formatPrice(amount: number, currency = "USD"): string {
+function formatPrice(cents: number, currency = "USD"): string {
 	return new Intl.NumberFormat("en-US", {
 		style: "currency",
 		currency,
-	}).format(amount);
+	}).format(cents / 100);
 }
 
 const STATUS_COLORS: Record<string, string> = {
