@@ -1,9 +1,10 @@
-import type { ModuleDataService } from "@86d-app/core";
+import type { ModuleDataService, ScopedEventEmitter } from "@86d-app/core";
 import type { Answer, ProductQaController, Question } from "./service";
 
 export function createProductQaController(
 	data: ModuleDataService,
 	options?: { autoPublish?: boolean },
+	events?: ScopedEventEmitter | undefined,
 ): ProductQaController {
 	const defaultStatus = options?.autoPublish === true ? "published" : "pending";
 
@@ -28,6 +29,11 @@ export function createProductQaController(
 			};
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("question", id, question as Record<string, any>);
+			void events?.emit("question.submitted", {
+				questionId: id,
+				productId: params.productId,
+				authorName: params.authorName,
+			});
 			return question;
 		},
 
@@ -75,6 +81,11 @@ export function createProductQaController(
 			};
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("question", id, updated as Record<string, any>);
+			if (status === "published") {
+				void events?.emit("question.published", { questionId: id });
+			} else if (status === "rejected") {
+				void events?.emit("question.rejected", { questionId: id });
+			}
 			return updated;
 		},
 
@@ -128,6 +139,17 @@ export function createProductQaController(
 			};
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("answer", id, answer as Record<string, any>);
+			void events?.emit("answer.submitted", {
+				answerId: id,
+				questionId: params.questionId,
+				productId: params.productId,
+			});
+			if (params.isOfficial) {
+				void events?.emit("answer.official", {
+					answerId: id,
+					questionId: params.questionId,
+				});
+			}
 
 			// Increment answerCount on the question
 			const question = await data.get("question", params.questionId);
@@ -175,6 +197,12 @@ export function createProductQaController(
 			};
 			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
 			await data.upsert("answer", id, updated as Record<string, any>);
+			if (status === "published") {
+				void events?.emit("answer.published", {
+					answerId: id,
+					questionId: answer.questionId,
+				});
+			}
 			return updated;
 		},
 

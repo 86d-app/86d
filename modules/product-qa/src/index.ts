@@ -38,9 +38,11 @@ export default function productQa(options?: ProductQaOptions): Module {
 			],
 		},
 		init: async (ctx: ModuleContext) => {
-			const controller = createProductQaController(ctx.data, {
-				autoPublish: options?.autoPublish === "true",
-			});
+			const controller = createProductQaController(
+				ctx.data,
+				{ autoPublish: options?.autoPublish === "true" },
+				ctx.events,
+			);
 			return { controllers: { productQa: controller } };
 		},
 		endpoints: {
