@@ -1,5 +1,4 @@
 import { createStoreEndpoint, z } from "@86d-app/core";
-import type { WishlistController } from "../../service";
 
 export const checkWishlist = createStoreEndpoint(
 	"/wishlist/check/:productId",
@@ -10,13 +9,13 @@ export const checkWishlist = createStoreEndpoint(
 	async (ctx) => {
 		const customerId = ctx.context.session?.user.id;
 		if (!customerId) {
-			return { inWishlist: false };
+			return { inWishlist: false, itemId: null };
 		}
-		const controller = ctx.context.controllers.wishlist as WishlistController;
-		const inWishlist = await controller.isInWishlist(
-			customerId,
-			ctx.params.productId,
-		);
-		return { inWishlist };
+		const items = (await ctx.context.data.findMany("wishlistItem", {
+			where: { customerId, productId: ctx.params.productId },
+			take: 1,
+		})) as Array<{ id: string }>;
+		const match = items[0] ?? null;
+		return { inWishlist: !!match, itemId: match?.id ?? null };
 	},
 );

@@ -24,32 +24,45 @@ export function WishlistButton({
 		? (api.checkWishlist.useQuery({
 				params: { productId },
 			}) as {
-				data: { inWishlist: boolean } | undefined;
+				data: { inWishlist: boolean; itemId: string | null } | undefined;
 				isLoading: boolean;
 			})
 		: { data: undefined, isLoading: false };
 
 	const inWishlist = checkData?.inWishlist ?? false;
+	const wishlistItemId = checkData?.itemId ?? null;
+
+	const invalidateAll = () => {
+		void api.checkWishlist.invalidate();
+		void api.listWishlist.invalidate();
+	};
 
 	const addMutation = api.addToWishlist.useMutation({
-		onSettled: () => {
-			void api.checkWishlist.invalidate();
-			void api.listWishlist.invalidate();
-		},
+		onSettled: invalidateAll,
 		onError: (err: Error) => {
 			setError(extractError(err, "Failed to add to wishlist."));
+		},
+	});
+
+	const removeMutation = api.removeFromWishlist.useMutation({
+		onSettled: invalidateAll,
+		onError: (err: Error) => {
+			setError(extractError(err, "Failed to remove from wishlist."));
 		},
 	});
 
 	const handleToggle = () => {
 		if (!customerId) return;
 		setError("");
-		if (inWishlist) return;
-		addMutation.mutate({
-			productId,
-			productName,
-			productImage,
-		});
+		if (inWishlist && wishlistItemId) {
+			removeMutation.mutate({ params: { id: wishlistItemId } });
+		} else if (!inWishlist) {
+			addMutation.mutate({
+				productId,
+				productName,
+				productImage,
+			});
+		}
 	};
 
 	if (!customerId) {
@@ -69,7 +82,7 @@ export function WishlistButton({
 	return (
 		<WishlistButtonTemplate
 			onClick={handleToggle}
-			disabled={checking || addMutation.isPending}
+			disabled={checking || addMutation.isPending || removeMutation.isPending}
 			buttonClass={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 font-medium text-sm transition-colors ${
 				inWishlist
 					? "border-red-200 bg-red-50 text-red-600 dark:border-red-800 dark:bg-red-950 dark:text-red-400"
