@@ -9,7 +9,7 @@ export const addToCart = createStoreEndpoint(
 		body: z.object({
 			productId: z.string().max(200),
 			variantId: z.string().max(200).optional(),
-			quantity: z.number().positive().int(),
+			quantity: z.number().positive().int().max(999),
 			price: z.number().positive(),
 			productName: z
 				.string()
@@ -51,6 +51,35 @@ export const addToCart = createStoreEndpoint(
 		const { body } = ctx;
 		const context = ctx.context;
 		const cartController = context.controllers.cart as CartController;
+
+		// Server-side price validation: look up the real price from the products module
+		const productsData = context._dataRegistry?.get("products");
+		if (productsData) {
+			let trustedPrice: number | undefined;
+			if (body.variantId) {
+				const variant = (await productsData.get(
+					"productVariant",
+					body.variantId,
+				)) as { price: number } | null;
+				if (variant) trustedPrice = variant.price;
+			}
+			if (trustedPrice === undefined) {
+				const product = (await productsData.get("product", body.productId)) as {
+					price: number;
+					status: string;
+				} | null;
+				if (!product) {
+					return { error: "Product not found", status: 404 };
+				}
+				if (product.status !== "active") {
+					return { error: "Product is not available", status: 400 };
+				}
+				trustedPrice = product.price;
+			}
+			if (body.price !== trustedPrice) {
+				body.price = trustedPrice;
+			}
+		}
 
 		const customerId = context.session?.user.id;
 		const cart = await cartController.getOrCreateCart(

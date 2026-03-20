@@ -9,7 +9,7 @@ export const updateCartItem = createStoreEndpoint(
 			id: z.string().max(200),
 		}),
 		body: z.object({
-			quantity: z.number().positive().int(),
+			quantity: z.number().positive().int().max(999),
 		}),
 	},
 	async (ctx) => {

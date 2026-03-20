@@ -60,19 +60,57 @@ export const createSession = createStoreEndpoint(
 			return { error: "Cart is empty", status: 400 };
 		}
 
+		// Server-side price validation: override client prices with actual product prices
+		const productsData = ctx.context._dataRegistry?.get("products");
+		if (productsData) {
+			for (const item of ctx.body.lineItems) {
+				let trustedPrice: number | undefined;
+				if (item.variantId) {
+					const variant = (await productsData.get(
+						"productVariant",
+						item.variantId,
+					)) as { price: number } | null;
+					if (variant) trustedPrice = variant.price;
+				}
+				if (trustedPrice === undefined) {
+					const product = (await productsData.get(
+						"product",
+						item.productId,
+					)) as { price: number } | null;
+					if (!product) {
+						return {
+							error: `Product not found: ${item.name}`,
+							status: 400,
+						};
+					}
+					trustedPrice = product.price;
+				}
+				item.price = trustedPrice;
+			}
+		}
+
+		// Recalculate subtotal and total server-side from validated prices
+		const subtotal = ctx.body.lineItems.reduce(
+			(sum, item) => sum + item.price * item.quantity,
+			0,
+		);
+		const taxAmount = ctx.body.taxAmount ?? 0;
+		const shippingAmount = ctx.body.shippingAmount ?? 0;
+		const total = subtotal + taxAmount + shippingAmount;
+
 		let session = await controller.create({
 			...(ctx.body.cartId ? { cartId: ctx.body.cartId } : {}),
 			...(customerId ? { customerId } : {}),
 			...(ctx.body.guestEmail ? { guestEmail: ctx.body.guestEmail } : {}),
 			...(ctx.body.currency ? { currency: ctx.body.currency } : {}),
-			subtotal: ctx.body.subtotal,
+			subtotal,
 			...(ctx.body.taxAmount !== undefined
 				? { taxAmount: ctx.body.taxAmount }
 				: {}),
 			...(ctx.body.shippingAmount !== undefined
 				? { shippingAmount: ctx.body.shippingAmount }
 				: {}),
-			total: ctx.body.total,
+			total,
 			lineItems: ctx.body.lineItems,
 			...(ctx.body.shippingAddress
 				? { shippingAddress: ctx.body.shippingAddress }
