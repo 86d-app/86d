@@ -48,10 +48,17 @@ function formatDate(iso: string): string {
 
 function extractError(error: Error | null, fallback: string): string {
 	if (!error) return fallback;
-	// biome-ignore lint/suspicious/noExplicitAny: accessing HTTP error body property
-	const body = (error as any)?.body;
+	const err = error as Error & {
+		body?: { error?: string | { message?: string } };
+	};
+	const body = err.body;
 	if (typeof body?.error === "string") return body.error;
-	if (typeof body?.error?.message === "string") return body.error.message;
+	if (
+		typeof body?.error === "object" &&
+		body.error &&
+		typeof body.error.message === "string"
+	)
+		return body.error.message;
 	return fallback;
 }
 

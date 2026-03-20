@@ -21,8 +21,7 @@ export function createOrderNotesController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("orderNote", id, note as Record<string, any>);
+			await data.upsert("orderNote", id, { ...note });
 			return note;
 		},
 
@@ -37,8 +36,7 @@ export function createOrderNotesController(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("orderNote", noteId, updated as Record<string, any>);
+			await data.upsert("orderNote", noteId, { ...updated });
 			return updated;
 		},
 
@@ -61,8 +59,7 @@ export function createOrderNotesController(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("orderNote", noteId, updated as Record<string, any>);
+			await data.upsert("orderNote", noteId, { ...updated });
 			return updated;
 		},
 
