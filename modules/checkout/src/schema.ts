@@ -53,4 +53,29 @@ export const checkoutSchema = {
 			},
 		},
 	},
+	checkoutLineItem: {
+		fields: {
+			id: { type: "string", required: true },
+			sessionId: {
+				type: "string",
+				required: true,
+				references: {
+					model: "checkoutSession",
+					field: "id",
+					onDelete: "cascade",
+				},
+			},
+			productId: { type: "string", required: true },
+			variantId: { type: "string", required: false },
+			name: { type: "string", required: true },
+			sku: { type: "string", required: false },
+			price: { type: "number", required: true },
+			quantity: { type: "number", required: true, defaultValue: 1 },
+			createdAt: {
+				type: "date",
+				required: true,
+				defaultValue: () => new Date(),
+			},
+		},
+	},
 } satisfies ModuleSchema;
