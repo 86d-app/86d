@@ -53,6 +53,29 @@ export function useAnalyticsApi() {
 	};
 }
 
+export function useProductQaApi() {
+	const client = useModuleClient();
+	return {
+		listProductQuestions:
+			client.module("product-qa").store[
+				"/product-qa/products/:productId/questions"
+			],
+		productQaSummary:
+			client.module("product-qa").store[
+				"/product-qa/products/:productId/summary"
+			],
+		submitQuestion: client.module("product-qa").store["/product-qa/questions"],
+		listAnswers:
+			client.module("product-qa").store[
+				"/product-qa/questions/:questionId/answers"
+			],
+		upvoteQuestion:
+			client.module("product-qa").store["/product-qa/questions/:id/upvote"],
+		upvoteAnswer:
+			client.module("product-qa").store["/product-qa/answers/:id/upvote"],
+	};
+}
+
 export function useRecommendationsApi() {
 	const client = useModuleClient();
 	return {

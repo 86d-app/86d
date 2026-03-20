@@ -16,6 +16,7 @@ import type {
 import { formatPrice, imageUrl } from "./_utils";
 import { BackInStockNotify } from "./back-in-stock-notify";
 import ProductDetailTemplate from "./product-detail.mdx";
+import { ProductQASection } from "./product-qa-section";
 import { ProductReviewsSection } from "./product-reviews-section";
 import { RecentlyViewedProducts } from "./recently-viewed";
 import { RecommendedProducts } from "./recommended-products";
@@ -502,6 +503,7 @@ export function ProductDetail(props: ProductDetailProps) {
 			descriptionBlock={descriptionBlock}
 			tagsBlock={tagsBlock}
 			reviewsSection={<ProductReviewsSection productId={product.id} />}
+			questionsSection={<ProductQASection productId={product.id} />}
 			recommendedProducts={<RecommendedProducts productId={product.id} />}
 			relatedProducts={<RelatedProducts productId={product.id} />}
 			recentlyViewed={<RecentlyViewedProducts excludeProductId={product.id} />}
