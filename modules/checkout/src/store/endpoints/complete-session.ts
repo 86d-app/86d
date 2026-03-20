@@ -2,6 +2,7 @@ import { createStoreEndpoint, z } from "@86d-app/core";
 import type {
 	CheckoutController,
 	GiftCardCheckController,
+	InventoryCheckController,
 	OrderCreateController,
 	PaymentProcessController,
 } from "../../service";
@@ -179,6 +180,21 @@ export const completeSession = createStoreEndpoint(
 					customerId: existing.customerId,
 					total: adjustedTotal,
 					currency: existing.currency,
+				});
+			}
+		}
+
+		// Deduct inventory (convert reservations made at confirm time into actual stock deductions)
+		const inventoryController = ctx.context.controllers.inventory as unknown as
+			| InventoryCheckController
+			| undefined;
+
+		if (inventoryController?.deduct) {
+			for (const item of lineItems) {
+				await inventoryController.deduct({
+					productId: item.productId,
+					variantId: item.variantId,
+					quantity: item.quantity,
 				});
 			}
 		}

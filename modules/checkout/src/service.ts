@@ -56,6 +56,13 @@ export interface InventoryCheckController {
 		locationId?: string | undefined;
 		quantity: number;
 	}): Promise<unknown>;
+
+	deduct(params: {
+		productId: string;
+		variantId?: string | undefined;
+		locationId?: string | undefined;
+		quantity: number;
+	}): Promise<unknown>;
 }
 
 /**

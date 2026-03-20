@@ -82,6 +82,23 @@ function createMockInventoryController(
 			reservations.set(key, Math.max(0, current - params.quantity));
 			return { released: true };
 		},
+
+		async deduct(params): Promise<unknown> {
+			const key = stockKey(params.productId, params.variantId);
+			calls.push({
+				method: "deduct",
+				productId: params.productId,
+				quantity: params.quantity,
+			});
+
+			const item = stock.get(key);
+			if (item) {
+				item.available = Math.max(0, item.available - params.quantity);
+			}
+			const reserved = reservations.get(key) ?? 0;
+			reservations.set(key, Math.max(0, reserved - params.quantity));
+			return { deducted: true };
+		},
 	};
 }
 
