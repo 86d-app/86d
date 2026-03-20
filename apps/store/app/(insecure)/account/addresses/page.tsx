@@ -319,8 +319,12 @@ export default function AddressesPage() {
 	const client = useModuleClient();
 
 	const listApi = client.module("customers").store["/customers/me/addresses"];
+	const createApi =
+		client.module("customers").store["/customers/me/addresses/create"];
 	const addressByIdApi =
 		client.module("customers").store["/customers/me/addresses/:id"];
+	const deleteByIdApi =
+		client.module("customers").store["/customers/me/addresses/:id/delete"];
 
 	const { data, isLoading } = listApi.useQuery() as {
 		data: { addresses: Address[] } | undefined;
@@ -333,7 +337,7 @@ export default function AddressesPage() {
 	const [deletingId, setDeletingId] = useState<string | null>(null);
 	const [error, setError] = useState("");
 
-	const createMutation = listApi.useMutation({
+	const createMutation = createApi.useMutation({
 		onSuccess: () => {
 			void listApi.invalidate();
 			setMode("list");
@@ -353,7 +357,7 @@ export default function AddressesPage() {
 		},
 	});
 
-	const deleteMutation = addressByIdApi.useMutation({
+	const deleteMutation = deleteByIdApi.useMutation({
 		onSuccess: () => {
 			void listApi.invalidate();
 			setDeletingId(null);
