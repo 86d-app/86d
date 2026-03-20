@@ -1,5 +1,6 @@
 import { createStoreEndpoint, z } from "@86d-app/core";
-import type { Cart, CartController } from "../../service";
+import type { CartController } from "../../service";
+import { resolveGuestId } from "./_guest";
 
 export const updateCartItem = createStoreEndpoint(
 	"/cart/items/:id/update",
@@ -17,10 +18,21 @@ export const updateCartItem = createStoreEndpoint(
 		const context = ctx.context;
 		const cartController = context.controllers.cart as CartController;
 
-		const item = await cartController.updateItem(params.id, body.quantity);
+		// Resolve the current user's cart to verify ownership
+		const customerId = context.session?.user.id;
+		const cart = await cartController.getOrCreateCart(
+			customerId ? { customerId } : { guestId: resolveGuestId(ctx) },
+		);
 
-		const items = await cartController.getCartItems(item.cartId);
-		const cart = (await context.data.get("cart", item.cartId)) as Cart;
+		// Verify the item belongs to this user's cart
+		const cartItems = await cartController.getCartItems(cart.id);
+		const ownedItem = cartItems.find((i) => i.id === params.id);
+		if (!ownedItem) {
+			throw ctx.error(404, { message: "Cart item not found" });
+		}
+
+		const item = await cartController.updateItem(params.id, body.quantity);
+		const items = await cartController.getCartItems(cart.id);
 
 		return {
 			cart,

@@ -823,6 +823,7 @@ const CheckoutPage = observer(function CheckoutPage() {
 			const result: SessionResult = await updateSessionMut.mutateAsync({
 				params: { id: co.sessionId },
 				shippingAmount,
+				shippingMethodName: rate?.name,
 			});
 
 			const sess = result?.session;

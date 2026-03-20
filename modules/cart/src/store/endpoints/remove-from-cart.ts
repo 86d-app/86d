@@ -1,5 +1,5 @@
 import { createStoreEndpoint, z } from "@86d-app/core";
-import type { Cart, CartController, CartItem } from "../../service";
+import type { CartController } from "../../service";
 import { resolveGuestId } from "./_guest";
 
 export const removeFromCart = createStoreEndpoint(
@@ -15,29 +15,23 @@ export const removeFromCart = createStoreEndpoint(
 		const context = ctx.context;
 		const cartController = context.controllers.cart as CartController;
 
-		// Get the item first to find the cartId
-		let existingItem = (await context.data.get(
-			"cartItem",
-			params.id,
-		)) as CartItem | null;
+		// Resolve the current user's cart to scope the lookup
+		const customerId = context.session?.user.id;
+		const cart = await cartController.getOrCreateCart(
+			customerId ? { customerId } : { guestId: resolveGuestId(ctx) },
+		);
 
-		// Fallback: find item in current user's cart (handles guest-to-customer migration)
-		if (!existingItem) {
-			const customerId = context.session?.user.id;
-			const cart = await cartController.getOrCreateCart(
-				customerId ? { customerId } : { guestId: resolveGuestId(ctx) },
-			);
-			const items = await cartController.getCartItems(cart.id);
-			existingItem =
-				items.find((i) => i.id === params.id) ??
-				items.find(
-					(i) =>
-						`${i.cartId}_${i.productId}` === params.id ||
-						(i.variantId &&
-							`${i.cartId}_${i.productId}_${i.variantId}` === params.id),
-				) ??
-				null;
-		}
+		// Only look for the item within the user's own cart
+		const cartItems = await cartController.getCartItems(cart.id);
+		const existingItem =
+			cartItems.find((i) => i.id === params.id) ??
+			cartItems.find(
+				(i) =>
+					`${i.cartId}_${i.productId}` === params.id ||
+					(i.variantId &&
+						`${i.cartId}_${i.productId}_${i.variantId}` === params.id),
+			) ??
+			null;
 
 		if (!existingItem) {
 			throw ctx.error(404, { message: "Cart item not found" });
@@ -45,8 +39,7 @@ export const removeFromCart = createStoreEndpoint(
 
 		await cartController.removeItem(existingItem.id);
 
-		const items = await cartController.getCartItems(existingItem.cartId);
-		const cart = (await context.data.get("cart", existingItem.cartId)) as Cart;
+		const items = await cartController.getCartItems(cart.id);
 
 		return {
 			cart,
