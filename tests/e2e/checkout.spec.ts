@@ -30,16 +30,19 @@ test.describe("Checkout — Full flow", () => {
 			return;
 		}
 
-		/* 5. Add to cart */
+		/* 5. Add to cart — cart drawer auto-opens on success */
+		const cartResponsePromise = storefront.page.waitForResponse(
+			(resp) =>
+				resp.url().includes("/api/cart") &&
+				resp.request().method() === "POST",
+			{ timeout: 10_000 },
+		);
 		await addButton.click();
-		await expect(
-			storefront.page
-				.locator("button")
-				.filter({ hasText: /Added to cart!|Adding/ }),
-		).toBeVisible({ timeout: 5_000 });
+		const cartResponse = await cartResponsePromise;
+		expect(cartResponse.status()).toBe(200);
 
-		/* 6. Open cart drawer */
-		await storefront.openCart();
+		/* 6. Cart drawer is already open from add-to-cart */
+		await expect(storefront.cartDrawer).toBeVisible({ timeout: 5_000 });
 		await expect(storefront.cartItems.first()).toBeVisible({
 			timeout: 5_000,
 		});
@@ -119,17 +122,15 @@ test.describe("Checkout — Full flow", () => {
 		await storefront.page.goto("/checkout");
 		await storefront.page.waitForLoadState("networkidle");
 
-		/* Should have email and/or name input for customer info */
-		const emailInput = storefront.page.locator(
-			'input[type="email"], input[name="email"]',
-		);
-		const nameInput = storefront.page.locator(
-			'input[name="name"], input[name="firstName"]',
-		);
-		/* At least one customer info field should be present */
-		const hasEmail = await emailInput.isVisible().catch(() => false);
-		const hasName = await nameInput.isVisible().catch(() => false);
-		expect(hasEmail || hasName).toBeTruthy();
+		/* Should have email and name inputs for customer info */
+		const emailInput = storefront.page.getByRole("textbox", {
+			name: /email/i,
+		});
+		const nameInput = storefront.page.getByRole("textbox", {
+			name: /first name/i,
+		});
+		await expect(emailInput).toBeVisible({ timeout: 10_000 });
+		await expect(nameInput).toBeVisible();
 	});
 });
 
