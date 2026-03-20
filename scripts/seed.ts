@@ -546,23 +546,46 @@ const customers = [
 ];
 
 const settings = [
-	{ key: "store.name", value: "86d Demo Store", group: "general" },
+	// General
+	{ key: "general.store_name", value: "86d Demo Store", group: "general" },
 	{
-		key: "store.description",
+		key: "general.store_description",
 		value: "A demo store powered by 86d",
 		group: "general",
 	},
-	{ key: "store.currency", value: "USD", group: "commerce" },
-	{ key: "store.email", value: "hello@demo.86d.app", group: "contact" },
-	{ key: "store.phone", value: "+1-555-0100", group: "contact" },
 	{
-		key: "store.address",
-		value: "123 Commerce St, San Francisco, CA 94102",
+		key: "general.timezone",
+		value: "America/Los_Angeles",
+		group: "general",
+	},
+	// Contact
+	{
+		key: "contact.support_email",
+		value: "hello@demo.86d.app",
 		group: "contact",
 	},
-	{ key: "store.timezone", value: "America/Los_Angeles", group: "general" },
-	{ key: "store.weightUnit", value: "kg", group: "commerce" },
-	{ key: "store.taxInclusive", value: "false", group: "commerce" },
+	{
+		key: "contact.support_phone",
+		value: "+1-555-0100",
+		group: "contact",
+	},
+	{
+		key: "contact.business_address",
+		value: "123 Commerce St",
+		group: "contact",
+	},
+	{ key: "contact.business_city", value: "San Francisco", group: "contact" },
+	{ key: "contact.business_state", value: "CA", group: "contact" },
+	{
+		key: "contact.business_postal_code",
+		value: "94102",
+		group: "contact",
+	},
+	{ key: "contact.business_country", value: "US", group: "contact" },
+	// Commerce
+	{ key: "commerce.currency", value: "USD", group: "commerce" },
+	{ key: "commerce.weight_unit", value: "kg", group: "commerce" },
+	{ key: "commerce.tax_included", value: "false", group: "commerce" },
 ];
 
 /* ------------------------------------------------------------------ */
