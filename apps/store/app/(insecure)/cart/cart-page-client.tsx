@@ -4,6 +4,7 @@ import { observer } from "@86d-app/core/state";
 import { useApi } from "generated/hooks";
 import { useStore } from "hooks/use-store";
 import Link from "next/link";
+import { useEffect } from "react";
 import { Skeleton } from "~/components/ui/skeleton";
 
 // ─── Types ──────────────────────────────────────────────────────────
@@ -306,7 +307,9 @@ const CartPageClient = observer(function CartPageClient() {
 	};
 
 	// Close the drawer if it was open when navigating here
-	cartStore.closeDrawer();
+	useEffect(() => {
+		cartStore.closeDrawer();
+	}, [cartStore]);
 
 	if (isLoading) {
 		return <CartSkeleton />;
