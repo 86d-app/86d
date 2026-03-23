@@ -211,6 +211,26 @@ describe("createCartControllers", () => {
 			expect(items[0].quantity).toBe(5);
 		});
 
+		it("caps merged quantity at 999", async () => {
+			await controller.addItem(
+				addItemParams({
+					cartId: "cap_cart",
+					productId: "prod_cap",
+					quantity: 998,
+					price: 10,
+				}),
+			);
+			const second = await controller.addItem(
+				addItemParams({
+					cartId: "cap_cart",
+					productId: "prod_cap",
+					quantity: 5,
+					price: 10,
+				}),
+			);
+			expect(second.quantity).toBe(999);
+		});
+
 		it("add same product twice preserves snapshot from first add", async () => {
 			await controller.addItem(
 				addItemParams({

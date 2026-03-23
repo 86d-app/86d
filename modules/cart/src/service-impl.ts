@@ -79,10 +79,11 @@ export function createCartControllers(data: ModuleDataService): CartController {
 			const existing = (await data.get("cartItem", itemId)) as CartItem | null;
 			const now = new Date();
 
+			const MAX_ITEM_QUANTITY = 999;
 			const item: CartItem = existing
 				? {
 						...existing,
-						quantity: existing.quantity + quantity,
+						quantity: Math.min(existing.quantity + quantity, MAX_ITEM_QUANTITY),
 						updatedAt: now,
 					}
 				: {
