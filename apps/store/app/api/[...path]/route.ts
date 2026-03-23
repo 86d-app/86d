@@ -89,7 +89,7 @@ async function normalizeErrorResponse(
 		return NextResponse.json(
 			{
 				error: {
-					code: "INTERNAL_SERVER_ERROR",
+					code: httpStatusToCode(response.status),
 					message: "An unexpected error occurred.",
 				},
 			},

@@ -21,8 +21,7 @@ export default function ProfilePage() {
 	const client = useModuleClient();
 
 	const customerApi = client.module("customers").store["/customers/me"];
-	const updateApi =
-		client.module("customers").store["/customers/me/update"];
+	const updateApi = client.module("customers").store["/customers/me/update"];
 
 	const { data, isLoading } = customerApi.useQuery() as {
 		data: { customer: Customer } | undefined;

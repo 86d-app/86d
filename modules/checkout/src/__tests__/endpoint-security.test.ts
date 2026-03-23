@@ -324,7 +324,11 @@ describe("checkout endpoint security", () => {
 			ctrl: ReturnType<typeof createCheckoutController>,
 			lineItems: CheckoutLineItem[],
 			productsDataService: ReturnType<typeof createMockDataService> | undefined,
-			opts: { customerId?: string; taxAmount?: number; shippingAmount?: number } = {},
+			opts: {
+				customerId?: string;
+				taxAmount?: number;
+				shippingAmount?: number;
+			} = {},
 		) {
 			return (async () => {
 				if (lineItems.length === 0) {
@@ -470,7 +474,14 @@ describe("checkout endpoint security", () => {
 
 			const result = await simulateCreateSessionWithPriceValidation(
 				controller,
-				[{ productId: "prod_missing", name: "Ghost Item", price: 100, quantity: 1 }],
+				[
+					{
+						productId: "prod_missing",
+						name: "Ghost Item",
+						price: 100,
+						quantity: 1,
+					},
+				],
 				productsData,
 			);
 

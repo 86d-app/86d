@@ -48,9 +48,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 				url: `${url}/products/${product.slug}`,
 				type: "website",
 				...(product.images.length > 0 && {
-					images: product.images.map((img: string) => ({
-						url: img,
-						alt: product.name,
+					images: product.images.map((img) => ({
+						url: img.url,
+						alt: img.alt ?? product.name,
 					})),
 				}),
 			},

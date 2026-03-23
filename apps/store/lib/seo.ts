@@ -12,8 +12,12 @@ const getStoreConfigCached = cache(async () =>
 	}),
 );
 
-// biome-ignore lint/suspicious/noExplicitAny: ModuleData.data is JSONB
-type JsonData = Record<string, any>;
+type JsonData = Record<string, unknown>;
+
+interface ImageObject {
+	url: string;
+	alt?: string;
+}
 
 interface ProductSeo {
 	name: string;
@@ -22,10 +26,33 @@ interface ProductSeo {
 	shortDescription: string | null;
 	price: number;
 	compareAtPrice: number | null;
-	images: string[];
+	images: ImageObject[];
 	status: string;
 	sku: string | null;
 	updatedAt: string;
+}
+
+/** Normalize image entries: could be strings or {url, alt} objects. */
+function normalizeImages(raw: unknown): ImageObject[] {
+	if (!Array.isArray(raw)) return [];
+	return raw
+		.map((item) => {
+			if (typeof item === "string") return { url: item };
+			if (
+				typeof item === "object" &&
+				item !== null &&
+				"url" in item &&
+				typeof (item as Record<string, unknown>).url === "string"
+			) {
+				const obj = item as Record<string, unknown>;
+				return {
+					url: obj.url as string,
+					alt: typeof obj.alt === "string" ? obj.alt : undefined,
+				};
+			}
+			return null;
+		})
+		.filter((img): img is ImageObject => img !== null);
 }
 
 interface CollectionSeo {
@@ -53,7 +80,7 @@ const getProductsModuleId = cache(async (): Promise<string | null> => {
 		const mod = await db.module.findFirst({
 			where: {
 				storeId,
-				name: "@86d-app/products",
+				name: "products",
 			},
 			select: { id: true },
 		});
@@ -90,27 +117,45 @@ export const fetchProductForSeo = cache(
 		if (d.status !== "active") return null;
 
 		return {
-			name: d.name ?? "",
-			slug: d.slug ?? slug,
-			description: d.description ?? null,
-			shortDescription: d.shortDescription ?? null,
+			name: (d.name as string) ?? "",
+			slug: (d.slug as string) ?? slug,
+			description: (d.description as string) ?? null,
+			shortDescription: (d.shortDescription as string) ?? null,
 			price: typeof d.price === "number" ? d.price : 0,
 			compareAtPrice:
 				typeof d.compareAtPrice === "number" ? d.compareAtPrice : null,
-			images: Array.isArray(d.images) ? d.images : [],
-			status: d.status ?? "draft",
-			sku: d.sku ?? null,
+			images: normalizeImages(d.images),
+			status: (d.status as string) ?? "draft",
+			sku: (d.sku as string) ?? null,
 			updatedAt: row.updatedAt.toISOString(),
 		};
 	},
 );
 
 /**
+ * Resolve the collections module DB ID for the current store.
+ */
+const getCollectionsModuleId = cache(async (): Promise<string | null> => {
+	const storeId = env.STORE_ID;
+	if (!storeId) return null;
+
+	try {
+		const mod = await db.module.findFirst({
+			where: { storeId, name: "collections" },
+			select: { id: true },
+		});
+		return mod?.id ?? null;
+	} catch {
+		return null;
+	}
+});
+
+/**
  * Fetch a single collection by slug for metadata generation.
  */
 export const fetchCollectionForSeo = cache(
 	async (slug: string): Promise<CollectionSeo | null> => {
-		const moduleId = await getProductsModuleId();
+		const moduleId = await getCollectionsModuleId();
 		if (!moduleId) return null;
 
 		const row = await db.moduleData.findFirst({
@@ -131,10 +176,10 @@ export const fetchCollectionForSeo = cache(
 		if (d.isVisible === false) return null;
 
 		return {
-			name: d.name ?? "",
-			slug: d.slug ?? slug,
-			description: d.description ?? null,
-			image: d.image ?? null,
+			name: (d.name as string) ?? "",
+			slug: (d.slug as string) ?? slug,
+			description: (d.description as string) ?? null,
+			image: (d.image as string) ?? null,
 			updatedAt: row.updatedAt.toISOString(),
 		};
 	},
@@ -185,7 +230,10 @@ export async function fetchProductSlugsForSitemap(): Promise<SitemapEntry[]> {
 	});
 
 	return rows
-		.filter((r) => r.data && (r.data as JsonData).slug)
+		.filter((r) => {
+			const d = r.data as JsonData | null;
+			return d && typeof d.slug === "string";
+		})
 		.map((r) => ({
 			slug: (r.data as JsonData).slug as string,
 			updatedAt: r.updatedAt,
@@ -198,7 +246,7 @@ export async function fetchProductSlugsForSitemap(): Promise<SitemapEntry[]> {
 export async function fetchCollectionSlugsForSitemap(): Promise<
 	SitemapEntry[]
 > {
-	const moduleId = await getProductsModuleId();
+	const moduleId = await getCollectionsModuleId();
 	if (!moduleId) return [];
 
 	const rows = await db.moduleData.findMany({
@@ -214,7 +262,10 @@ export async function fetchCollectionSlugsForSitemap(): Promise<
 	});
 
 	return rows
-		.filter((r) => r.data && (r.data as JsonData).slug)
+		.filter((r) => {
+			const d = r.data as JsonData | null;
+			return d && typeof d.slug === "string";
+		})
 		.map((r) => ({
 			slug: (r.data as JsonData).slug as string,
 			updatedAt: r.updatedAt,
@@ -239,35 +290,24 @@ export async function getStoreName(): Promise<string> {
 export function buildProductJsonLd(product: ProductSeo): object {
 	const url = getBaseUrl();
 
-	// biome-ignore lint/suspicious/noExplicitAny: JSON-LD schema.org structure
-	const jsonLd: any = {
+	return {
 		"@context": "https://schema.org",
 		"@type": "Product",
 		name: product.name,
 		url: `${url}/products/${product.slug}`,
+		...(product.description && { description: product.description }),
+		...(product.images.length > 0 && {
+			image: product.images.map((img) => img.url),
+		}),
+		...(product.sku && { sku: product.sku }),
+		offers: {
+			"@type": "Offer",
+			url: `${url}/products/${product.slug}`,
+			priceCurrency: "USD",
+			price: product.price.toFixed(2),
+			availability: "https://schema.org/InStock",
+		},
 	};
-
-	if (product.description) {
-		jsonLd.description = product.description;
-	}
-
-	if (product.images.length > 0) {
-		jsonLd.image = product.images;
-	}
-
-	if (product.sku) {
-		jsonLd.sku = product.sku;
-	}
-
-	jsonLd.offers = {
-		"@type": "Offer",
-		url: `${url}/products/${product.slug}`,
-		priceCurrency: "USD",
-		price: product.price.toFixed(2),
-		availability: "https://schema.org/InStock",
-	};
-
-	return jsonLd;
 }
 
 /**
@@ -276,23 +316,14 @@ export function buildProductJsonLd(product: ProductSeo): object {
 export function buildCollectionJsonLd(collection: CollectionSeo): object {
 	const url = getBaseUrl();
 
-	// biome-ignore lint/suspicious/noExplicitAny: JSON-LD schema.org structure
-	const jsonLd: any = {
+	return {
 		"@context": "https://schema.org",
 		"@type": "CollectionPage",
 		name: collection.name,
 		url: `${url}/collections/${collection.slug}`,
+		...(collection.description && { description: collection.description }),
+		...(collection.image && { image: collection.image }),
 	};
-
-	if (collection.description) {
-		jsonLd.description = collection.description;
-	}
-
-	if (collection.image) {
-		jsonLd.image = collection.image;
-	}
-
-	return jsonLd;
 }
 
 interface BlogPostSeo {
@@ -310,7 +341,7 @@ interface BlogPostSeo {
  */
 export const fetchBlogPostForSeo = cache(
 	async (slug: string): Promise<BlogPostSeo | null> => {
-		const moduleId = await getModuleIdByName("@86d-app/blog");
+		const moduleId = await getModuleIdByName("blog");
 		if (!moduleId) return null;
 
 		const row = await db.moduleData.findFirst({
@@ -331,12 +362,12 @@ export const fetchBlogPostForSeo = cache(
 		if (d.status !== "published") return null;
 
 		return {
-			title: d.title ?? "",
-			slug: d.slug ?? slug,
-			excerpt: d.excerpt ?? null,
-			coverImage: d.coverImage ?? null,
-			author: d.author ?? null,
-			category: d.category ?? null,
+			title: (d.title as string) ?? "",
+			slug: (d.slug as string) ?? slug,
+			excerpt: (d.excerpt as string) ?? null,
+			coverImage: (d.coverImage as string) ?? null,
+			author: (d.author as string) ?? null,
+			category: (d.category as string) ?? null,
 			updatedAt: row.updatedAt.toISOString(),
 		};
 	},
@@ -346,7 +377,7 @@ export const fetchBlogPostForSeo = cache(
  * Fetch all published blog post slugs + updatedAt for the sitemap.
  */
 export async function fetchBlogPostSlugsForSitemap(): Promise<SitemapEntry[]> {
-	const moduleId = await getModuleIdByName("@86d-app/blog");
+	const moduleId = await getModuleIdByName("blog");
 	if (!moduleId) return [];
 
 	const rows = await db.moduleData.findMany({
@@ -362,7 +393,10 @@ export async function fetchBlogPostSlugsForSitemap(): Promise<SitemapEntry[]> {
 	});
 
 	return rows
-		.filter((r) => r.data && (r.data as JsonData).slug)
+		.filter((r) => {
+			const d = r.data as JsonData | null;
+			return d && typeof d.slug === "string";
+		})
 		.map((r) => ({
 			slug: (r.data as JsonData).slug as string,
 			updatedAt: r.updatedAt,
@@ -398,15 +432,18 @@ export async function fetchProductsForLlms(): Promise<
 	});
 
 	return rows
-		.filter((r) => r.data && (r.data as JsonData).slug)
+		.filter((r) => {
+			const d = r.data as JsonData | null;
+			return d && typeof d.slug === "string";
+		})
 		.map((r) => {
 			const d = r.data as JsonData;
 			return {
-				name: d.name ?? "",
+				name: (d.name as string) ?? "",
 				slug: d.slug as string,
-				shortDescription: d.shortDescription ?? null,
+				shortDescription: (d.shortDescription as string) ?? null,
 				price: typeof d.price === "number" ? d.price : 0,
-				images: Array.isArray(d.images) ? d.images : [],
+				images: normalizeImages(d.images).map((img) => img.url),
 			};
 		});
 }
@@ -417,7 +454,7 @@ export async function fetchProductsForLlms(): Promise<
 export async function fetchCollectionsForLlms(): Promise<
 	import("lib/llms-content").LlmsCollection[]
 > {
-	const moduleId = await getProductsModuleId();
+	const moduleId = await getCollectionsModuleId();
 	if (!moduleId) return [];
 
 	const rows = await db.moduleData.findMany({
@@ -432,13 +469,16 @@ export async function fetchCollectionsForLlms(): Promise<
 	});
 
 	return rows
-		.filter((r) => r.data && (r.data as JsonData).slug)
+		.filter((r) => {
+			const d = r.data as JsonData | null;
+			return d && typeof d.slug === "string";
+		})
 		.map((r) => {
 			const d = r.data as JsonData;
 			return {
-				name: d.name ?? "",
+				name: (d.name as string) ?? "",
 				slug: d.slug as string,
-				description: d.description ?? null,
+				description: (d.description as string) ?? null,
 			};
 		});
 }
@@ -449,7 +489,7 @@ export async function fetchCollectionsForLlms(): Promise<
 export async function fetchBlogPostsForLlms(): Promise<
 	import("lib/llms-content").LlmsBlogPost[]
 > {
-	const moduleId = await getModuleIdByName("@86d-app/blog");
+	const moduleId = await getModuleIdByName("blog");
 	if (!moduleId) return [];
 
 	const rows = await db.moduleData.findMany({
@@ -464,17 +504,21 @@ export async function fetchBlogPostsForLlms(): Promise<
 	});
 
 	return rows
-		.filter((r) => r.data && (r.data as JsonData).slug)
+		.filter((r) => {
+			const d = r.data as JsonData | null;
+			return d && typeof d.slug === "string";
+		})
 		.map((r) => {
 			const d = r.data as JsonData;
 			return {
-				title: d.title ?? "",
+				title: (d.title as string) ?? "",
 				slug: d.slug as string,
-				excerpt: d.excerpt ?? null,
-				author: d.author ?? null,
-				publishedAt: d.publishedAt
-					? new Date(d.publishedAt).toISOString()
-					: null,
+				excerpt: (d.excerpt as string) ?? null,
+				author: (d.author as string) ?? null,
+				publishedAt:
+					typeof d.publishedAt === "string"
+						? new Date(d.publishedAt).toISOString()
+						: null,
 			};
 		});
 }
