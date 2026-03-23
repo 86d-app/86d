@@ -278,7 +278,7 @@ describe("customerResolver wiring from ctx.controllers.customers", () => {
 		});
 
 		await initModule(mod, mockData, emitter, {
-			customers: mockCustomersController,
+			customer: mockCustomersController,
 		});
 
 		// The controller returned from init should have a working customerResolver.

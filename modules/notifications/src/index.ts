@@ -92,7 +92,7 @@ export default function notifications(options?: NotificationsOptions): Module {
 			// Wire customerResolver from the customers module so email/SMS
 			// delivery can look up contact info for in-app notifications,
 			// template-based batch sends, and SMS delivery.
-			const customersCtrl = ctx.controllers.customers as
+			const customersCtrl = ctx.controllers.customer as
 				| {
 						getById(id: string): Promise<{
 							email?: string;
