@@ -2,7 +2,7 @@ import { createAdminEndpoint, isSafeUrl, sanitizeText, z } from "@86d-app/core";
 import type { NavigationController } from "../../service";
 
 export const createItemEndpoint = createAdminEndpoint(
-	"/admin/navigation/items",
+	"/admin/navigation/items/create",
 	{
 		method: "POST",
 		body: z.object({

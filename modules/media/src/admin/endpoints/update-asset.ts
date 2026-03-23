@@ -2,7 +2,7 @@ import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { MediaController } from "../../service";
 
 export const updateAssetEndpoint = createAdminEndpoint(
-	"/admin/media/:id",
+	"/admin/media/:id/update",
 	{
 		method: "PUT",
 		params: z.object({ id: z.string() }),

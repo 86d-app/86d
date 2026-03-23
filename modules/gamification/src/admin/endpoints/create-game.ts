@@ -2,7 +2,7 @@ import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { GamificationController } from "../../service";
 
 export const createGameEndpoint = createAdminEndpoint(
-	"/admin/gamification/games",
+	"/admin/gamification/games/create",
 	{
 		method: "POST",
 		body: z.object({

@@ -2,7 +2,7 @@ import { createAdminEndpoint, z } from "@86d-app/core";
 import type { QrCodeController } from "../../service";
 
 export const createQrCodeEndpoint = createAdminEndpoint(
-	"/admin/qr-codes",
+	"/admin/qr-codes/create",
 	{
 		method: "POST",
 		body: z.object({

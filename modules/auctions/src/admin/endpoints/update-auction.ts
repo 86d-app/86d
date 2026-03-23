@@ -2,7 +2,7 @@ import { createAdminEndpoint, z } from "@86d-app/core";
 import type { AuctionController } from "../../service";
 
 export const updateAuction = createAdminEndpoint(
-	"/admin/auctions/:id",
+	"/admin/auctions/:id/update",
 	{
 		method: "PUT",
 		params: z.object({ id: z.string() }),

@@ -2,7 +2,7 @@ import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { WalmartController } from "../../service";
 
 export const updateItemEndpoint = createAdminEndpoint(
-	"/admin/walmart/items/:id",
+	"/admin/walmart/items/:id/update",
 	{
 		method: "PUT",
 		params: z.object({ id: z.string() }),

@@ -2,7 +2,7 @@ import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { DiscountController } from "../../service";
 
 export const adminUpdateDiscount = createAdminEndpoint(
-	"/admin/discounts/:id",
+	"/admin/discounts/:id/update",
 	{
 		method: "PUT",
 		params: z.object({ id: z.string() }),

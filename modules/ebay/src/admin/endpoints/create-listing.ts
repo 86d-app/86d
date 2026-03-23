@@ -2,7 +2,7 @@ import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { EbayController } from "../../service";
 
 export const createListingEndpoint = createAdminEndpoint(
-	"/admin/ebay/listings",
+	"/admin/ebay/listings/create",
 	{
 		method: "POST",
 		body: z.object({

@@ -2,7 +2,7 @@ import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { NavigationController } from "../../service";
 
 export const createMenuEndpoint = createAdminEndpoint(
-	"/admin/navigation/menus",
+	"/admin/navigation/menus/create",
 	{
 		method: "POST",
 		body: z.object({

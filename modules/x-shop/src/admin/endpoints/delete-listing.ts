@@ -2,7 +2,7 @@ import { createAdminEndpoint, z } from "@86d-app/core";
 import type { XShopController } from "../../service";
 
 export const deleteListingEndpoint = createAdminEndpoint(
-	"/admin/x-shop/listings/:id",
+	"/admin/x-shop/listings/:id/delete",
 	{
 		method: "DELETE",
 		params: z.object({

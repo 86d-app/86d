@@ -2,7 +2,7 @@ import { createAdminEndpoint, z } from "@86d-app/core";
 import type { TaxController } from "../../service";
 
 export const adminDeleteNexus = createAdminEndpoint(
-	"/admin/tax/nexus/:id",
+	"/admin/tax/nexus/:id/delete",
 	{
 		method: "POST",
 		params: z.object({

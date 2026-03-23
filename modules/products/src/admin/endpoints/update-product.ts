@@ -2,7 +2,7 @@ import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { Product } from "../../controllers";
 
 export const updateProduct = createAdminEndpoint(
-	"/admin/products/:id",
+	"/admin/products/:id/update",
 	{
 		method: "PUT",
 		params: z.object({

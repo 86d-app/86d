@@ -2,7 +2,7 @@ import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { TaxController, TaxExemptionType } from "../../service";
 
 export const adminCreateExemption = createAdminEndpoint(
-	"/admin/tax/exemptions",
+	"/admin/tax/exemptions/create",
 	{
 		method: "POST",
 		body: z.object({

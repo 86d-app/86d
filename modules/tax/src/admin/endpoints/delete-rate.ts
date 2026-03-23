@@ -2,7 +2,7 @@ import { createAdminEndpoint, z } from "@86d-app/core";
 import type { TaxController } from "../../service";
 
 export const adminDeleteRate = createAdminEndpoint(
-	"/admin/tax/rates/:id",
+	"/admin/tax/rates/:id/delete",
 	{
 		method: "DELETE",
 		params: z.object({ id: z.string() }),

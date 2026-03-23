@@ -2,7 +2,7 @@ import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { AmazonController } from "../../service";
 
 export const createListingEndpoint = createAdminEndpoint(
-	"/admin/amazon/listings",
+	"/admin/amazon/listings/create",
 	{
 		method: "POST",
 		body: z.object({

@@ -2,7 +2,7 @@ import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { DiscountController } from "../../service";
 
 export const adminCreateDiscount = createAdminEndpoint(
-	"/admin/discounts",
+	"/admin/discounts/create",
 	{
 		method: "POST",
 		body: z.object({

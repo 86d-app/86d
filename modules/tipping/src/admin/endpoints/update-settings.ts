@@ -2,7 +2,7 @@ import { createAdminEndpoint, z } from "@86d-app/core";
 import type { TippingController } from "../../service";
 
 export const updateSettings = createAdminEndpoint(
-	"/admin/tipping/settings",
+	"/admin/tipping/settings/update",
 	{
 		method: "PUT",
 		body: z.object({

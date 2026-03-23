@@ -2,7 +2,7 @@ import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { FulfillmentStatus, OrderController } from "../../service";
 
 export const adminUpdateFulfillment = createAdminEndpoint(
-	"/admin/fulfillments/:id",
+	"/admin/fulfillments/:id/update",
 	{
 		method: "PUT",
 		params: z.object({ id: z.string() }),

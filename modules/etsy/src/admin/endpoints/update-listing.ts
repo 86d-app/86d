@@ -2,7 +2,7 @@ import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { EtsyController } from "../../service";
 
 export const updateListingEndpoint = createAdminEndpoint(
-	"/admin/etsy/listings/:id",
+	"/admin/etsy/listings/:id/update",
 	{
 		method: "PUT",
 		params: z.object({ id: z.string() }),

@@ -2,7 +2,7 @@ import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { TikTokShopController } from "../../service";
 
 export const createListingEndpoint = createAdminEndpoint(
-	"/admin/tiktok-shop/listings",
+	"/admin/tiktok-shop/listings/create",
 	{
 		method: "POST",
 		body: z.object({

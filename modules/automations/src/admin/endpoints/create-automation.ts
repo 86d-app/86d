@@ -31,7 +31,7 @@ const actionSchema = z.object({
 });
 
 export const createAutomation = createAdminEndpoint(
-	"/admin/automations",
+	"/admin/automations/create",
 	{
 		method: "POST",
 		body: z.object({

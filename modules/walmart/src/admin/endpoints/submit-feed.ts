@@ -2,7 +2,7 @@ import { createAdminEndpoint, z } from "@86d-app/core";
 import type { WalmartController } from "../../service";
 
 export const submitFeedEndpoint = createAdminEndpoint(
-	"/admin/walmart/feeds",
+	"/admin/walmart/feeds/submit",
 	{
 		method: "POST",
 		body: z.object({

@@ -2,7 +2,7 @@ import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { WishController } from "../../service";
 
 export const updateProductEndpoint = createAdminEndpoint(
-	"/admin/wish/products/:id",
+	"/admin/wish/products/:id/update",
 	{
 		method: "PUT",
 		params: z.object({ id: z.string() }),

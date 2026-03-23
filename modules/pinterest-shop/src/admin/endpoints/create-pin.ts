@@ -2,7 +2,7 @@ import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { PinterestShopController } from "../../service";
 
 export const createPinEndpoint = createAdminEndpoint(
-	"/admin/pinterest-shop/pins",
+	"/admin/pinterest-shop/pins/create",
 	{
 		method: "POST",
 		body: z.object({

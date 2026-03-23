@@ -2,7 +2,7 @@ import { createAdminEndpoint, z } from "@86d-app/core";
 import type { FaqController } from "../../service";
 
 export const updateItem = createAdminEndpoint(
-	"/admin/faq/items/:id",
+	"/admin/faq/items/:id/update",
 	{
 		method: "PUT",
 		params: z.object({

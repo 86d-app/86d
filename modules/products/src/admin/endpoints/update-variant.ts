@@ -1,7 +1,7 @@
 import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
 
 export const updateVariant = createAdminEndpoint(
-	"/admin/variants/:id",
+	"/admin/variants/:id/update",
 	{
 		method: "PUT",
 		params: z.object({

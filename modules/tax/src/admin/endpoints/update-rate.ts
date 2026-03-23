@@ -2,7 +2,7 @@ import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { TaxController, TaxRateType } from "../../service";
 
 export const adminUpdateRate = createAdminEndpoint(
-	"/admin/tax/rates/:id",
+	"/admin/tax/rates/:id/update",
 	{
 		method: "PUT",
 		params: z.object({ id: z.string() }),

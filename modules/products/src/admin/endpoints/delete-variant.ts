@@ -1,7 +1,7 @@
 import { createAdminEndpoint, z } from "@86d-app/core";
 
 export const deleteVariant = createAdminEndpoint(
-	"/admin/variants/:id",
+	"/admin/variants/:id/delete",
 	{
 		method: "DELETE",
 		params: z.object({

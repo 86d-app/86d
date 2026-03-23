@@ -2,7 +2,7 @@ import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { MediaController } from "../../service";
 
 export const createFolderEndpoint = createAdminEndpoint(
-	"/admin/media/folders",
+	"/admin/media/folders/create",
 	{
 		method: "POST",
 		body: z.object({

@@ -2,7 +2,7 @@ import { createAdminEndpoint, z } from "@86d-app/core";
 import type { InstagramShopController } from "../../service";
 
 export const deleteListingEndpoint = createAdminEndpoint(
-	"/admin/instagram-shop/listings/:id",
+	"/admin/instagram-shop/listings/:id/delete",
 	{
 		method: "DELETE",
 		params: z.object({

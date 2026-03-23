@@ -2,7 +2,7 @@ import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { TikTokShopController } from "../../service";
 
 export const updateListingEndpoint = createAdminEndpoint(
-	"/admin/tiktok-shop/listings/:id",
+	"/admin/tiktok-shop/listings/:id/update",
 	{
 		method: "PUT",
 		params: z.object({

@@ -1,7 +1,7 @@
 import { createAdminEndpoint, z } from "@86d-app/core";
 
 export const deleteCategory = createAdminEndpoint(
-	"/admin/categories/:id",
+	"/admin/categories/:id/delete",
 	{
 		method: "DELETE",
 		params: z.object({

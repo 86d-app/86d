@@ -2,7 +2,7 @@ import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { WalmartController } from "../../service";
 
 export const createItemEndpoint = createAdminEndpoint(
-	"/admin/walmart/items",
+	"/admin/walmart/items/create",
 	{
 		method: "POST",
 		body: z.object({

@@ -2,7 +2,7 @@ import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { PreordersController } from "../../service";
 
 export const updateCampaign = createAdminEndpoint(
-	"/admin/preorders/campaigns/:id",
+	"/admin/preorders/campaigns/:id/update",
 	{
 		method: "PATCH",
 		params: z.object({

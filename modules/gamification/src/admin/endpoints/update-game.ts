@@ -2,7 +2,7 @@ import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { GamificationController } from "../../service";
 
 export const updateGameEndpoint = createAdminEndpoint(
-	"/admin/gamification/games/:id",
+	"/admin/gamification/games/:id/update",
 	{
 		method: "PUT",
 		params: z.object({ id: z.string() }),

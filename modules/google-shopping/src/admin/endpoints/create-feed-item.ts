@@ -2,7 +2,7 @@ import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { GoogleShoppingController } from "../../service";
 
 export const createFeedItemEndpoint = createAdminEndpoint(
-	"/admin/google-shopping/feed-items",
+	"/admin/google-shopping/feed-items/create",
 	{
 		method: "POST",
 		body: z.object({

@@ -2,7 +2,7 @@ import { createAdminEndpoint, z } from "@86d-app/core";
 import type { WarrantyController } from "../../service";
 
 export const createPlan = createAdminEndpoint(
-	"/admin/warranties/plans",
+	"/admin/warranties/plans/create",
 	{
 		method: "POST",
 		body: z.object({

@@ -2,7 +2,7 @@ import { createAdminEndpoint, z } from "@86d-app/core";
 import type { OrderController } from "../../service";
 
 export const adminDeleteOrder = createAdminEndpoint(
-	"/admin/orders/:id",
+	"/admin/orders/:id/delete",
 	{
 		method: "DELETE",
 		params: z.object({ id: z.string() }),

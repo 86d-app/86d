@@ -2,7 +2,7 @@ import { createAdminEndpoint, z } from "@86d-app/core";
 import type { FacebookShopController } from "../../service";
 
 export const deleteCollectionEndpoint = createAdminEndpoint(
-	"/admin/facebook-shop/collections/:id",
+	"/admin/facebook-shop/collections/:id/delete",
 	{
 		method: "DELETE",
 		params: z.object({

@@ -11,7 +11,7 @@ import type {
 } from "../../service";
 
 export const adminUpdateOrder = createAdminEndpoint(
-	"/admin/orders/:id",
+	"/admin/orders/:id/update",
 	{
 		method: "PUT",
 		params: z.object({ id: z.string() }),

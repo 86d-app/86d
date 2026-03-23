@@ -2,7 +2,7 @@ import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { Category } from "../../controllers";
 
 export const updateCategory = createAdminEndpoint(
-	"/admin/categories/:id",
+	"/admin/categories/:id/update",
 	{
 		method: "PUT",
 		params: z.object({

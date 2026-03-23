@@ -12,7 +12,7 @@ const conditionSchema = z.object({
 });
 
 export const adminCreatePriceRule = createAdminEndpoint(
-	"/admin/discounts/price-rules",
+	"/admin/discounts/price-rules/create",
 	{
 		method: "POST",
 		body: z.object({

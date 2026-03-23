@@ -2,7 +2,7 @@ import { createAdminEndpoint, z } from "@86d-app/core";
 import type { TippingController } from "../../service";
 
 export const listPayouts = createAdminEndpoint(
-	"/admin/tipping/payouts",
+	"/admin/tipping/payouts/list",
 	{
 		method: "GET",
 		query: z.object({

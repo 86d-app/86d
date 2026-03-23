@@ -2,7 +2,7 @@ import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { XShopController } from "../../service";
 
 export const createListingEndpoint = createAdminEndpoint(
-	"/admin/x-shop/listings",
+	"/admin/x-shop/listings/create",
 	{
 		method: "POST",
 		body: z.object({

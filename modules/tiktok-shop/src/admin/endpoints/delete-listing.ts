@@ -2,7 +2,7 @@ import { createAdminEndpoint, z } from "@86d-app/core";
 import type { TikTokShopController } from "../../service";
 
 export const deleteListingEndpoint = createAdminEndpoint(
-	"/admin/tiktok-shop/listings/:id",
+	"/admin/tiktok-shop/listings/:id/delete",
 	{
 		method: "DELETE",
 		params: z.object({

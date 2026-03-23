@@ -2,7 +2,7 @@ import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { BlogController } from "../../service";
 
 export const updatePostEndpoint = createAdminEndpoint(
-	"/admin/blog/:id",
+	"/admin/blog/:id/update",
 	{
 		method: "PUT",
 		params: z.object({ id: z.string() }),

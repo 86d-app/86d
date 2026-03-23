@@ -2,7 +2,7 @@ import { createAdminEndpoint, z } from "@86d-app/core";
 import type { DiscountController } from "../../service";
 
 export const adminDeleteCode = createAdminEndpoint(
-	"/admin/discounts/codes/:id",
+	"/admin/discounts/codes/:id/delete",
 	{
 		method: "DELETE",
 		params: z.object({ id: z.string() }),

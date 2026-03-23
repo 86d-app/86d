@@ -2,7 +2,7 @@ import { createAdminEndpoint, z } from "@86d-app/core";
 import type { PinterestShopController } from "../../service";
 
 export const deleteCatalogItemEndpoint = createAdminEndpoint(
-	"/admin/pinterest-shop/items/:id",
+	"/admin/pinterest-shop/items/:id/delete",
 	{
 		method: "DELETE",
 		params: z.object({ id: z.string() }),

@@ -2,7 +2,7 @@ import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { BackordersController } from "../../service";
 
 export const setPolicy = createAdminEndpoint(
-	"/admin/backorders/policies",
+	"/admin/backorders/policies/set",
 	{
 		method: "POST",
 		body: z.object({

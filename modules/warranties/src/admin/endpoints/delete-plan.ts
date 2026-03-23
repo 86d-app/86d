@@ -2,7 +2,7 @@ import { createAdminEndpoint, z } from "@86d-app/core";
 import type { WarrantyController } from "../../service";
 
 export const deletePlan = createAdminEndpoint(
-	"/admin/warranties/plans/:id",
+	"/admin/warranties/plans/:id/delete",
 	{
 		method: "DELETE",
 		params: z.object({ id: z.string() }),

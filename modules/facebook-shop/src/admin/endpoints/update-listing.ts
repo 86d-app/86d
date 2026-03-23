@@ -2,7 +2,7 @@ import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { FacebookShopController } from "../../service";
 
 export const updateListingEndpoint = createAdminEndpoint(
-	"/admin/facebook-shop/listings/:id",
+	"/admin/facebook-shop/listings/:id/update",
 	{
 		method: "PUT",
 		params: z.object({

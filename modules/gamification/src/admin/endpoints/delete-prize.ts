@@ -2,7 +2,7 @@ import { createAdminEndpoint, z } from "@86d-app/core";
 import type { GamificationController } from "../../service";
 
 export const deletePrizeEndpoint = createAdminEndpoint(
-	"/admin/gamification/prizes/:id",
+	"/admin/gamification/prizes/:id/delete",
 	{
 		method: "DELETE",
 		params: z.object({ id: z.string() }),

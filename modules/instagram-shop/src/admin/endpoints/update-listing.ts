@@ -2,7 +2,7 @@ import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { InstagramShopController } from "../../service";
 
 export const updateListingEndpoint = createAdminEndpoint(
-	"/admin/instagram-shop/listings/:id",
+	"/admin/instagram-shop/listings/:id/update",
 	{
 		method: "PUT",
 		params: z.object({
