@@ -33,8 +33,7 @@ export const db: PrismaClientInstance = new Proxy({} as PrismaClientInstance, {
 		const client = getClient();
 		const value = Reflect.get(client, prop, client);
 		if (typeof value === "function") {
-			// biome-ignore lint/complexity/noBannedTypes: binding proxied Prisma methods requires generic function cast
-			return (value as Function).bind(client);
+			return (value as (...args: Array<unknown>) => unknown).bind(client);
 		}
 		return value;
 	},

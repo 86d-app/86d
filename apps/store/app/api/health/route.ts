@@ -20,8 +20,7 @@ export async function GET() {
 
 	// Database — critical (503 if down)
 	try {
-		// biome-ignore lint/suspicious/noExplicitAny: raw query returns unknown shape
-		await (db as any).$queryRaw`SELECT 1`;
+		await db.$queryRaw`SELECT 1`;
 		checks.database = "ok";
 	} catch {
 		checks.database = "error";

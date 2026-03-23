@@ -629,8 +629,46 @@ async function seedAdminUser(client: pg.PoolClient) {
 	);
 }
 
+/**
+ * When the private/ repo's schema has been pushed to the same database,
+ * Module.storeId has a foreign key to Store.id. Ensure a Store (and its
+ * parent Business) record exists so the FK is satisfied.
+ */
+async function ensureStoreRecord(client: pg.PoolClient) {
+	const { rows } = await client.query(
+		`SELECT EXISTS (
+			SELECT 1 FROM information_schema.tables
+			WHERE table_schema = 'public' AND table_name = 'Store'
+		) AS "exists"`,
+	);
+	if (!rows[0]?.exists) return;
+
+	const storeExists = await client.query(
+		`SELECT 1 FROM "Store" WHERE id = $1`,
+		[STORE_ID],
+	);
+	if (storeExists.rows.length > 0) return;
+
+	// Need a Business to satisfy Store.businessId FK
+	const BUSINESS_ID = uuid("seed-business");
+	await client.query(
+		`INSERT INTO "Business" (id, cuid, name, "createdAt", "updatedAt")
+		 VALUES ($1, $2, $3, $4, $5)
+		 ON CONFLICT (id) DO NOTHING`,
+		[BUSINESS_ID, cuid(), "86d Demo Business", now, now],
+	);
+
+	await client.query(
+		`INSERT INTO "Store" (id, cuid, name, "businessId", "createdAt", "updatedAt")
+		 VALUES ($1, $2, $3, $4, $5, $6)
+		 ON CONFLICT (id) DO NOTHING`,
+		[STORE_ID, cuid(), "86d Demo Store", BUSINESS_ID, now, now],
+	);
+}
+
 async function seedModules(client: pg.PoolClient) {
 	console.log("  Creating module records...");
+	await ensureStoreRecord(client);
 	for (const name of moduleNames) {
 		await client.query(
 			`INSERT INTO "Module" (id, cuid, name, version, "isEnabled", "storeId", "createdAt", "updatedAt")
