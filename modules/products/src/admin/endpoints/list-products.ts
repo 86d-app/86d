@@ -1,7 +1,7 @@
 import { createAdminEndpoint, z } from "@86d-app/core";
 
 export const adminListProducts = createAdminEndpoint(
-	"/admin/products",
+	"/admin/products/list",
 	{
 		method: "GET",
 		query: z
