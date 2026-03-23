@@ -2,7 +2,7 @@ import { createStoreEndpoint, z } from "@86d-app/core";
 import type { KioskController } from "../../service";
 
 export const removeItemEndpoint = createStoreEndpoint(
-	"/kiosk/sessions/:id/items/:itemId",
+	"/kiosk/sessions/:id/items/:itemId/delete",
 	{
 		method: "DELETE",
 		params: z.object({ id: z.string(), itemId: z.string() }),

@@ -15,7 +15,7 @@ const addressSchema = z.object({
 });
 
 export const updateSession = createStoreEndpoint(
-	"/checkout/sessions/:id",
+	"/checkout/sessions/:id/update",
 	{
 		method: "PUT",
 		params: z.object({ id: z.string().max(200) }),

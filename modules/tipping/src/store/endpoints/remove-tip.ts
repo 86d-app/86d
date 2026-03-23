@@ -2,7 +2,7 @@ import { createStoreEndpoint, z } from "@86d-app/core";
 import type { TippingController } from "../../service";
 
 export const removeTip = createStoreEndpoint(
-	"/tipping/tips/:id",
+	"/tipping/tips/:id/delete",
 	{
 		method: "DELETE",
 		params: z.object({ id: z.string() }),

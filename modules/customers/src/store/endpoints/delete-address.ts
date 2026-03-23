@@ -2,7 +2,7 @@ import { createStoreEndpoint, z } from "@86d-app/core";
 import type { CustomerController } from "../../service";
 
 export const deleteAddress = createStoreEndpoint(
-	"/customers/me/addresses/:id",
+	"/customers/me/addresses/:id/delete",
 	{
 		method: "DELETE",
 		params: z.object({ id: z.string().max(200) }),

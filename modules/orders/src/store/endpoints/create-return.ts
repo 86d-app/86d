@@ -3,7 +3,7 @@ import type { OrderController, ReturnType } from "../../service";
 import { RETURN_REASONS } from "../../service";
 
 export const createMyReturn = createStoreEndpoint(
-	"/orders/me/:id/returns",
+	"/orders/me/:id/returns/create",
 	{
 		method: "POST",
 		params: z.object({ id: z.string().max(200) }),

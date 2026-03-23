@@ -2,7 +2,7 @@ import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { CustomerController } from "../../service";
 
 export const updateMe = createStoreEndpoint(
-	"/customers/me",
+	"/customers/me/update",
 	{
 		method: "PUT",
 		body: z.object({

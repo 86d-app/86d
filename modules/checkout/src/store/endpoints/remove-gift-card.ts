@@ -2,7 +2,7 @@ import { createStoreEndpoint, z } from "@86d-app/core";
 import type { CheckoutController } from "../../service";
 
 export const removeGiftCard = createStoreEndpoint(
-	"/checkout/sessions/:id/gift-card",
+	"/checkout/sessions/:id/gift-card/remove",
 	{
 		method: "DELETE",
 		params: z.object({ id: z.string() }),

@@ -2,7 +2,7 @@ import { createStoreEndpoint, z } from "@86d-app/core";
 import type { NotificationsController } from "../../service";
 
 export const updatePreferencesEndpoint = createStoreEndpoint(
-	"/notifications/preferences",
+	"/notifications/preferences/update",
 	{
 		method: "POST",
 		body: z.object({

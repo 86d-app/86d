@@ -2,7 +2,7 @@ import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { CustomerController } from "../../service";
 
 export const createAddress = createStoreEndpoint(
-	"/customers/me/addresses",
+	"/customers/me/addresses/create",
 	{
 		method: "POST",
 		body: z.object({
