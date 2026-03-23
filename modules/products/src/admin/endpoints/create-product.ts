@@ -1,7 +1,7 @@
 import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
 
 export const createProduct = createAdminEndpoint(
-	"/admin/products",
+	"/admin/products/create",
 	{
 		method: "POST",
 		body: z.object({

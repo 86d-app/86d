@@ -1,7 +1,7 @@
 import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
 
 export const createCategory = createAdminEndpoint(
-	"/admin/categories",
+	"/admin/categories/create",
 	{
 		method: "POST",
 		body: z.object({

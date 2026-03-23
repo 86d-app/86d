@@ -2,7 +2,7 @@ import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { PagesController } from "../../service";
 
 export const createPageEndpoint = createAdminEndpoint(
-	"/admin/pages",
+	"/admin/pages/create",
 	{
 		method: "POST",
 		body: z.object({

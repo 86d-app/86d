@@ -2,7 +2,7 @@ import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { SocialSharingController } from "../../service";
 
 export const updateSettingsEndpoint = createAdminEndpoint(
-	"/admin/social-sharing/settings",
+	"/admin/social-sharing/settings/update",
 	{
 		method: "PUT",
 		body: z.object({
