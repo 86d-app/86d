@@ -76,10 +76,13 @@ export const adminUpdateReturn = createAdminEndpoint(
 			} else if (ctx.body.status === "refunded") {
 				await ctx.context.events.emit("return.refunded", {
 					returnId: returnRequest.id,
+					returnRequestId: returnRequest.id,
 					orderId: existing.orderId,
 					orderNumber: order?.orderNumber ?? "",
 					email,
 					customerName: "Customer",
+					customerId: order?.customerId,
+					type: existing.type,
 					refundAmount: returnRequest.refundAmount,
 				});
 			} else if (ctx.body.status === "completed") {

@@ -30,7 +30,7 @@ export interface StoreCreditsOptions extends ModuleConfig {
  *
  * Listens for:
  * - `return.refunded` — auto-credits the customer when a return is refunded as store credit
- * - `referral.completed` — auto-credits referral rewards issued as store credit
+ * - `referrals.referral_completed` — auto-credits referral rewards issued as store credit
  *
  * Other modules can debit credits during checkout via the StoreCreditController.
  */
@@ -93,7 +93,7 @@ export default function storeCredits(options?: StoreCreditsOptions): Module {
 
 			// Auto-credit when a referral reward is issued as store_credit
 			ctx.events?.on<ReferralCompletedPayload>(
-				"referral.completed",
+				"referrals.referral_completed",
 				async (event) => {
 					if (event.payload?.rewardType !== "store_credit") return;
 
