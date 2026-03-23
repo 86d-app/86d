@@ -430,3 +430,5 @@ export function RecommendationAdmin() {
 		</div>
 	);
 }
+
+export { RecommendationSettings } from "./recommendation-settings";

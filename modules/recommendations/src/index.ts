@@ -81,6 +81,13 @@ export default function recommendations(
 					icon: "Sparkles",
 					group: "Marketing",
 				},
+				{
+					path: "/admin/recommendations/settings",
+					component: "RecommendationSettings",
+					label: "Settings",
+					icon: "Gear",
+					group: "Marketing",
+				},
 			],
 		},
 		options,
