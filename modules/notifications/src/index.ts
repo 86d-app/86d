@@ -88,12 +88,33 @@ export default function notifications(options?: NotificationsOptions): Module {
 		init: async (ctx: ModuleContext) => {
 			const maxStr = options?.maxPerCustomer;
 			const maxPerCustomer = maxStr ? Number.parseInt(maxStr, 10) : undefined;
+
+			// Wire customerResolver from the customers module so email/SMS
+			// delivery can look up contact info for in-app notifications,
+			// template-based batch sends, and SMS delivery.
+			const customersCtrl = ctx.controllers.customers as
+				| {
+						getById(id: string): Promise<{
+							email?: string;
+							phone?: string;
+						} | null>;
+				  }
+				| undefined;
+
+			const customerResolver = customersCtrl
+				? async (customerId: string) => {
+						const c = await customersCtrl.getById(customerId).catch(() => null);
+						return { email: c?.email, phone: c?.phone };
+					}
+				: undefined;
+
 			const controller = createNotificationsController(ctx.data, ctx.events, {
 				...(maxPerCustomer && !Number.isNaN(maxPerCustomer)
 					? { maxPerCustomer }
 					: {}),
 				emailProvider,
 				smsProvider,
+				customerResolver,
 			});
 
 			interface CheckoutCompletedPayload {

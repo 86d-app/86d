@@ -564,29 +564,37 @@ export function createNotificationsController(
 			const result: BatchSendResult = { sent: 0, failed: 0, errors: [] };
 
 			for (const customerId of params.customerIds) {
-				const id = crypto.randomUUID();
-				const now = new Date();
-				const notification: Notification = {
-					id,
-					customerId,
-					type: tpl.type,
-					channel: tpl.channel,
-					priority: tpl.priority,
-					title,
-					body,
-					actionUrl,
-					metadata: { templateId: tpl.id, templateSlug: tpl.slug },
-					read: false,
-					createdAt: now,
-				};
-				await data.upsert(
-					"notification",
-					id,
-					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-					notification as Record<string, any>,
-				);
-				void deliverExternal(notification);
-				result.sent++;
+				try {
+					const id = crypto.randomUUID();
+					const now = new Date();
+					const notification: Notification = {
+						id,
+						customerId,
+						type: tpl.type,
+						channel: tpl.channel,
+						priority: tpl.priority,
+						title,
+						body,
+						actionUrl,
+						metadata: { templateId: tpl.id, templateSlug: tpl.slug },
+						read: false,
+						createdAt: now,
+					};
+					await data.upsert(
+						"notification",
+						id,
+						// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+						notification as Record<string, any>,
+					);
+					void deliverExternal(notification);
+					result.sent++;
+				} catch (err) {
+					result.failed++;
+					result.errors.push({
+						customerId,
+						error: err instanceof Error ? err.message : String(err),
+					});
+				}
 			}
 
 			return result;
@@ -596,29 +604,37 @@ export function createNotificationsController(
 			const result: BatchSendResult = { sent: 0, failed: 0, errors: [] };
 
 			for (const customerId of params.customerIds) {
-				const id = crypto.randomUUID();
-				const now = new Date();
-				const notification: Notification = {
-					id,
-					customerId,
-					type: params.type ?? "info",
-					channel: params.channel ?? "in_app",
-					priority: params.priority ?? "normal",
-					title: params.title,
-					body: params.body,
-					actionUrl: params.actionUrl,
-					metadata: params.metadata ?? {},
-					read: false,
-					createdAt: now,
-				};
-				await data.upsert(
-					"notification",
-					id,
-					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-					notification as Record<string, any>,
-				);
-				void deliverExternal(notification);
-				result.sent++;
+				try {
+					const id = crypto.randomUUID();
+					const now = new Date();
+					const notification: Notification = {
+						id,
+						customerId,
+						type: params.type ?? "info",
+						channel: params.channel ?? "in_app",
+						priority: params.priority ?? "normal",
+						title: params.title,
+						body: params.body,
+						actionUrl: params.actionUrl,
+						metadata: params.metadata ?? {},
+						read: false,
+						createdAt: now,
+					};
+					await data.upsert(
+						"notification",
+						id,
+						// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
+						notification as Record<string, any>,
+					);
+					void deliverExternal(notification);
+					result.sent++;
+				} catch (err) {
+					result.failed++;
+					result.errors.push({
+						customerId,
+						error: err instanceof Error ? err.message : String(err),
+					});
+				}
 			}
 
 			return result;

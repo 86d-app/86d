@@ -280,6 +280,86 @@ describe("notification delivery integration", () => {
 		});
 	});
 
+	describe("batch send error tracking", () => {
+		it("tracks per-customer failures in batchSend result", async () => {
+			const emailProvider = createMockResendProvider();
+			const resolver = createMockCustomerResolver();
+
+			// Simulate a data service that fails on the second customer
+			const failingData = createMockDataService();
+			let callCount = 0;
+			const origUpsert = failingData.upsert.bind(failingData);
+			failingData.upsert = async (entity, id, data) => {
+				callCount++;
+				if (callCount === 2) {
+					throw new Error("Database write failed");
+				}
+				return origUpsert(entity, id, data);
+			};
+
+			const controller = createNotificationsController(failingData, undefined, {
+				emailProvider,
+				customerResolver: resolver,
+			});
+
+			const result = await controller.batchSend({
+				customerIds: ["cust-1", "cust-2", "cust-3"],
+				channel: "email",
+				title: "Promo",
+				body: "Flash sale!",
+			});
+
+			expect(result.sent).toBe(2);
+			expect(result.failed).toBe(1);
+			expect(result.errors).toHaveLength(1);
+			expect(result.errors[0].customerId).toBe("cust-2");
+			expect(result.errors[0].error).toBe("Database write failed");
+		});
+
+		it("tracks per-customer failures in sendFromTemplate result", async () => {
+			const emailProvider = createMockResendProvider();
+			const resolver = createMockCustomerResolver();
+
+			const failingData = createMockDataService();
+			let upsertCount = 0;
+			const origUpsert = failingData.upsert.bind(failingData);
+			failingData.upsert = async (entity, id, data) => {
+				// The first upsert creates the template; fail on the third (second customer notification)
+				upsertCount++;
+				if (upsertCount === 3) {
+					throw new Error("Constraint violation");
+				}
+				return origUpsert(entity, id, data);
+			};
+
+			const controller = createNotificationsController(failingData, undefined, {
+				emailProvider,
+				customerResolver: resolver,
+			});
+
+			const template = await controller.createTemplate({
+				slug: "test-promo",
+				name: "Test Promo",
+				channel: "email",
+				titleTemplate: "Hello {{name}}",
+				bodyTemplate: "Welcome, {{name}}!",
+				variables: ["name"],
+			});
+
+			const result = await controller.sendFromTemplate({
+				templateId: template.id,
+				customerIds: ["cust-1", "cust-2", "cust-3"],
+				variables: { name: "Customer" },
+			});
+
+			expect(result.sent).toBe(2);
+			expect(result.failed).toBe(1);
+			expect(result.errors).toHaveLength(1);
+			expect(result.errors[0].customerId).toBe("cust-2");
+			expect(result.errors[0].error).toBe("Constraint violation");
+		});
+	});
+
 	describe("graceful degradation", () => {
 		it("still stores notification when no resolver is configured", async () => {
 			const emailProvider = createMockResendProvider();
