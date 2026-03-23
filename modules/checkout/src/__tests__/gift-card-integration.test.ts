@@ -318,7 +318,7 @@ function createMockOrderController(): OrderCreateController & {
 				giftCardAmount: params.giftCardAmount ?? 0,
 				total: params.total,
 			});
-			return { id };
+			return { id, orderNumber: `ORD-${id.slice(0, 8).toUpperCase()}` };
 		},
 	};
 }

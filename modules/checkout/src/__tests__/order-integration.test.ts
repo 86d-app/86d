@@ -38,7 +38,7 @@ function createMockOrderController(): OrderCreateController & {
 			createCalls++;
 			const id = crypto.randomUUID();
 			orders.set(id, params);
-			return { id };
+			return { id, orderNumber: `ORD-${id.slice(0, 8).toUpperCase()}` };
 		},
 	};
 }

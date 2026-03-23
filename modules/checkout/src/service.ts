@@ -180,7 +180,7 @@ export interface OrderCreateController {
 					phone?: string | undefined;
 			  }
 			| undefined;
-	}): Promise<{ id: string }>;
+	}): Promise<{ id: string; orderNumber: string }>;
 }
 
 /**

@@ -112,6 +112,7 @@ export const completeSession = createStoreEndpoint(
 
 		// Create a real order in the orders module if available
 		let orderId = ctx.body?.orderId;
+		let orderNumber: string | undefined;
 		const lineItems = await controller.getLineItems(ctx.params.id);
 
 		const orderController = ctx.context.controllers.order as unknown as
@@ -119,7 +120,7 @@ export const completeSession = createStoreEndpoint(
 			| undefined;
 
 		if (orderController) {
-			const order = await orderController.create({
+			const createdOrder = await orderController.create({
 				customerId: existing.customerId,
 				guestEmail: existing.guestEmail ?? ctx.context.session?.user.email,
 				currency: existing.currency,
@@ -171,12 +172,13 @@ export const completeSession = createStoreEndpoint(
 						}
 					: undefined,
 			});
-			orderId = order.id;
+			orderId = createdOrder.id;
+			orderNumber = createdOrder.orderNumber;
 
 			// Emit order.placed so listeners (e.g. loyalty) can react
 			if (ctx.context.events) {
 				await ctx.context.events.emit("order.placed", {
-					orderId: order.id,
+					orderId: createdOrder.id,
 					customerId: existing.customerId,
 					total: adjustedTotal,
 					currency: existing.currency,
@@ -191,11 +193,16 @@ export const completeSession = createStoreEndpoint(
 
 		if (inventoryController?.deduct) {
 			for (const item of lineItems) {
-				await inventoryController.deduct({
-					productId: item.productId,
-					variantId: item.variantId,
-					quantity: item.quantity,
-				});
+				try {
+					await inventoryController.deduct({
+						productId: item.productId,
+						variantId: item.variantId,
+						quantity: item.quantity,
+					});
+				} catch {
+					// Inventory deduction is best-effort after order creation.
+					// The order is the source of truth; inventory can be reconciled.
+				}
 			}
 		}
 
@@ -220,7 +227,7 @@ export const completeSession = createStoreEndpoint(
 			await ctx.context.events.emit("checkout.completed", {
 				sessionId: session.id,
 				orderId,
-				orderNumber: orderId,
+				orderNumber: orderNumber ?? orderId,
 				customerId: session.customerId ?? undefined,
 				email,
 				customerName,
