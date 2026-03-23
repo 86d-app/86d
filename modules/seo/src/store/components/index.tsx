@@ -6,5 +6,6 @@ import { SitemapPage } from "./sitemap-page";
 
 export default {
 	SeoHead,
+	Sitemap: SitemapPage,
 	SitemapPage,
 } satisfies MDXComponents;
