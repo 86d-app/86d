@@ -1,6 +1,7 @@
 import { createMockDataService } from "@86d-app/core/test-utils";
 import { beforeEach, describe, expect, it } from "vitest";
 import { createWishlistController } from "../service-impl";
+import { storeSearch } from "../store/endpoints/store-search";
 
 /**
  * Security regression tests for wishlist endpoints.
@@ -17,6 +18,27 @@ describe("wishlist endpoint security", () => {
 	beforeEach(() => {
 		mockData = createMockDataService();
 		controller = createWishlistController(mockData);
+	});
+
+	describe("store endpoint input hardening", () => {
+		it("sanitizes search text and coerces numeric limits", () => {
+			const parsed = storeSearch.options.query.parse({
+				q: "  <script>alert(1)</script>wishlist  ",
+				limit: "25",
+			});
+
+			expect(parsed.q).toBe("wishlist");
+			expect(parsed.limit).toBe(25);
+		});
+
+		it("rejects oversized store-search limits", () => {
+			expect(
+				storeSearch.options.query.safeParse({
+					q: "wishlist",
+					limit: "51",
+				}).success,
+			).toBe(false);
+		});
 	});
 
 	// ── Ownership Isolation ─────────────────────────────────────────────

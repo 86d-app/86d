@@ -2,6 +2,7 @@ import { createMockDataService } from "@86d-app/core/test-utils";
 import { beforeEach, describe, expect, it } from "vitest";
 import type { SubscriptionController } from "../service";
 import { createSubscriptionController } from "../service-impl";
+import { storeSearch } from "../store/endpoints/store-search";
 
 /**
  * Security regression tests for subscriptions endpoints.
@@ -23,6 +24,27 @@ describe("subscriptions endpoint security", () => {
 	beforeEach(() => {
 		mockData = createMockDataService();
 		controller = createSubscriptionController(mockData);
+	});
+
+	describe("store endpoint input hardening", () => {
+		it("sanitizes search text and coerces numeric limits", () => {
+			const parsed = storeSearch.options.query.parse({
+				q: "  <b>subscriptions</b><script>alert(1)</script>  ",
+				limit: "10",
+			});
+
+			expect(parsed.q).toBe("subscriptions");
+			expect(parsed.limit).toBe(10);
+		});
+
+		it("rejects oversized store-search limits", () => {
+			expect(
+				storeSearch.options.query.safeParse({
+					q: "subscriptions",
+					limit: "99",
+				}).success,
+			).toBe(false);
+		});
 	});
 
 	// ── Customer Subscription Isolation ─────────────────────────────

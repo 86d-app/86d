@@ -1,6 +1,6 @@
 {
 	"name": "@86d-app/gamification",
-	"version": "0.0.15",
+	"version": "0.0.16",
 	"description": "Gamified promotions module for 86d commerce platform — spin the wheel, scratch cards, slot machine",
 	"keywords": [
 		"commerce",
