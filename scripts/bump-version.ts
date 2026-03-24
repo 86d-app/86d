@@ -12,11 +12,33 @@
  *   bun run bump-version 1.2.3    # set explicit version
  */
 
-import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import {
+	existsSync,
+	readdirSync,
+	readFileSync,
+	writeFileSync,
+} from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+
+// 24-hour guard: skip if a bump already happened in the last 24 hours
+// Override with --force
+const args = process.argv.slice(2);
+const STAMP_FILE = join(ROOT, ".version-bump-timestamp");
+const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+
+if (!args.includes("--force") && existsSync(STAMP_FILE)) {
+	const last = Number(readFileSync(STAMP_FILE, "utf8").trim());
+	if (Date.now() - last < TWENTY_FOUR_HOURS) {
+		const hoursAgo = ((Date.now() - last) / (60 * 60 * 1000)).toFixed(1);
+		console.log(
+			`Version already bumped ${hoursAgo}h ago — skipping (use --force to override).`,
+		);
+		process.exit(0);
+	}
+}
 
 function findPackageJsons(dir: string): string[] {
 	const results: string[] = [];
@@ -75,7 +97,6 @@ const canonical = publishableVersions
 	.at(-1)!;
 
 // Determine target version
-const args = process.argv.slice(2);
 let targetVersion: string;
 
 if (args[0] && /^\d+\.\d+\.\d+$/.test(args[0])) {
@@ -102,3 +123,6 @@ for (const pkgPath of packageJsonPaths) {
 }
 
 console.log(`\nUpdated ${updated} packages to ${targetVersion}`);
+
+// Record timestamp so subsequent calls within 24h are skipped
+writeFileSync(STAMP_FILE, String(Date.now()));

@@ -29,7 +29,7 @@ bun run bump-version 1.2.3    # set explicit version
 ```
 
 - Never edit individual `package.json` version fields manually.
-- After every commit, run `bun run bump-version` and commit the result as `chore: bump version to X.Y.Z`.
+- After committing, run `bun run bump-version`. The script skips automatically if a bump already ran within the last 24 hours. If it bumps, commit the result as `chore: bump version to X.Y.Z`.
 
 ## Build & test
 

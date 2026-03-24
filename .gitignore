@@ -44,4 +44,4 @@ logs/
 bak/
 tmp 
 
-claude.sh
+claude.sh.version-bump-timestamp
