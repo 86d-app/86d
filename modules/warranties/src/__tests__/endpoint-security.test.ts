@@ -1,6 +1,9 @@
 import { createMockDataService } from "@86d-app/core/test-utils";
 import { beforeEach, describe, expect, it } from "vitest";
+import type { WarrantyController } from "../service";
 import { createWarrantyController } from "../service-impl";
+import { getClaim } from "../store/endpoints/get-claim";
+import { getWarranty } from "../store/endpoints/get-warranty";
 
 /**
  * Security regression tests for warranties endpoints.
@@ -47,6 +50,30 @@ describe("warranties endpoint security", () => {
 			productName: "Test Product",
 			...(purchaseDate !== undefined ? { purchaseDate } : {}),
 		});
+	}
+
+	async function callEndpoint<
+		E extends (...args: never[]) => Promise<unknown>,
+		I extends Parameters<E>[0] & object,
+	>(
+		endpoint: E,
+		input: I,
+		context: {
+			controllers: { warranties: WarrantyController };
+			session?:
+				| {
+						user: {
+							email: string;
+							id: string;
+							name: string;
+						};
+				  }
+				| undefined;
+		},
+	): Promise<Awaited<ReturnType<E>>> {
+		return endpoint(
+			Object.assign({}, input, { context }) as Parameters<E>[0],
+		) as Promise<Awaited<ReturnType<E>>>;
 	}
 
 	describe("inactive plan protection", () => {
@@ -413,6 +440,132 @@ describe("warranties endpoint security", () => {
 		it("getClaimsByCustomer returns empty for customer with no claims", async () => {
 			const claims = await controller.getClaimsByCustomer("no_claims_cust");
 			expect(claims).toHaveLength(0);
+		});
+	});
+
+	describe("store endpoint anti-enumeration", () => {
+		async function setupEndpointScenario(customerId: string) {
+			const plan = await controller.createPlan({
+				name: `Protection ${customerId}`,
+				type: "extended",
+				durationMonths: 24,
+				price: 4999,
+			});
+			const registration = await controller.register({
+				warrantyPlanId: plan.id,
+				orderId: `order_${customerId}`,
+				customerId,
+				productId: `product_${customerId}`,
+				productName: "Espresso Machine",
+			});
+			const claim = await controller.submitClaim({
+				warrantyRegistrationId: registration.id,
+				customerId,
+				issueType: "malfunction",
+				issueDescription: "Stops heating after ten minutes",
+			});
+
+			return { claim, registration };
+		}
+
+		it("getWarranty returns 404 for another customer's registration", async () => {
+			const { registration } = await setupEndpointScenario("victim");
+
+			const response = await callEndpoint(
+				getWarranty,
+				{
+					params: { id: registration.id },
+				},
+				{
+					controllers: { warranties: controller },
+					session: {
+						user: {
+							id: "attacker",
+							email: "attacker@example.com",
+							name: "Attacker",
+						},
+					},
+				},
+			);
+
+			expect(response).toEqual({ error: "Warranty not found", status: 404 });
+		});
+
+		it("getClaim returns 404 for another customer's claim", async () => {
+			const { claim } = await setupEndpointScenario("victim");
+
+			const response = await callEndpoint(
+				getClaim,
+				{
+					params: { id: claim.id },
+				},
+				{
+					controllers: { warranties: controller },
+					session: {
+						user: {
+							id: "attacker",
+							email: "attacker@example.com",
+							name: "Attacker",
+						},
+					},
+				},
+			);
+
+			expect(response).toEqual({ error: "Claim not found", status: 404 });
+		});
+
+		it("getWarranty still returns the registration for the owning customer", async () => {
+			const { registration } = await setupEndpointScenario("owner");
+
+			const response = await callEndpoint(
+				getWarranty,
+				{
+					params: { id: registration.id },
+				},
+				{
+					controllers: { warranties: controller },
+					session: {
+						user: {
+							id: "owner",
+							email: "owner@example.com",
+							name: "Owner",
+						},
+					},
+				},
+			);
+
+			expect("registration" in response).toBe(true);
+			if ("registration" in response) {
+				expect(response.registration.id).toBe(registration.id);
+				expect(response.registration.customerId).toBe("owner");
+			}
+		});
+
+		it("getClaim still returns the claim for the owning customer", async () => {
+			const { claim } = await setupEndpointScenario("owner");
+
+			const response = await callEndpoint(
+				getClaim,
+				{
+					params: { id: claim.id },
+				},
+				{
+					controllers: { warranties: controller },
+					session: {
+						user: {
+							id: "owner",
+							email: "owner@example.com",
+							name: "Owner",
+						},
+					},
+				},
+			);
+
+			expect("claim" in response).toBe(true);
+			if ("claim" in response) {
+				expect(response.claim.id).toBe(claim.id);
+				expect(response.claim.customerId).toBe("owner");
+			}
 		});
 	});
 });

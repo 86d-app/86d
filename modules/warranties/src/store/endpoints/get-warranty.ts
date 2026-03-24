@@ -20,7 +20,7 @@ export const getWarranty = createStoreEndpoint(
 			return { error: "Warranty not found", status: 404 };
 		}
 		if (registration.customerId !== userId) {
-			return { error: "Unauthorized", status: 403 };
+			return { error: "Warranty not found", status: 404 };
 		}
 
 		return { registration };

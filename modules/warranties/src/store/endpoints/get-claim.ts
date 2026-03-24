@@ -20,7 +20,7 @@ export const getClaim = createStoreEndpoint(
 			return { error: "Claim not found", status: 404 };
 		}
 		if (claim.customerId !== userId) {
-			return { error: "Unauthorized", status: 403 };
+			return { error: "Claim not found", status: 404 };
 		}
 
 		return { claim };
