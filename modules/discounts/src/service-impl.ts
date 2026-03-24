@@ -17,7 +17,10 @@ import type {
 function calculateDiscountAmount(discount: Discount, subtotal: number): number {
 	switch (discount.type) {
 		case "percentage":
-			return Math.round((subtotal * discount.value) / 100);
+			return Math.min(
+				Math.round((subtotal * Math.min(discount.value, 100)) / 100),
+				subtotal,
+			);
 		case "fixed_amount":
 			return Math.min(discount.value, subtotal);
 		case "free_shipping":
@@ -87,7 +90,10 @@ function calculateRuleAmount(
 ): number {
 	switch (type) {
 		case "percentage":
-			return Math.round((subtotal * value) / 100);
+			return Math.min(
+				Math.round((subtotal * Math.min(value, 100)) / 100),
+				subtotal,
+			);
 		case "fixed_amount":
 			return Math.min(value, subtotal);
 		case "free_shipping":
