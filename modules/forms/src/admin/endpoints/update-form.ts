@@ -1,9 +1,15 @@
-import { createAdminEndpoint, z } from "@86d-app/core";
+import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { FormsController } from "../../service";
 
+const sanitizedString = (max: number) =>
+	z.string().min(1).max(max).transform(sanitizeText);
+
+const optionalSanitizedString = (max: number) =>
+	z.string().max(max).transform(sanitizeText).optional();
+
 const fieldSchema = z.object({
-	name: z.string().min(1),
-	label: z.string().min(1),
+	name: sanitizedString(100),
+	label: sanitizedString(200),
 	type: z.enum([
 		"text",
 		"email",
@@ -18,13 +24,16 @@ const fieldSchema = z.object({
 		"hidden",
 	]),
 	required: z.boolean(),
-	placeholder: z.string().optional(),
-	defaultValue: z.string().optional(),
-	options: z.array(z.string()).optional(),
-	pattern: z.string().optional(),
+	placeholder: optionalSanitizedString(500),
+	defaultValue: optionalSanitizedString(1000),
+	options: z
+		.array(z.string().max(200).transform(sanitizeText))
+		.max(100)
+		.optional(),
+	pattern: z.string().max(500).optional(),
 	min: z.number().optional(),
 	max: z.number().optional(),
-	position: z.number(),
+	position: z.number().int().min(0).max(1000),
 });
 
 export const updateForm = createAdminEndpoint(
@@ -32,19 +41,19 @@ export const updateForm = createAdminEndpoint(
 	{
 		method: "POST",
 		params: z.object({
-			id: z.string(),
+			id: z.string().min(1).max(200),
 		}),
 		body: z.object({
-			name: z.string().min(1).optional(),
-			slug: z.string().min(1).optional(),
-			description: z.string().optional(),
-			fields: z.array(fieldSchema).optional(),
-			submitLabel: z.string().optional(),
-			successMessage: z.string().optional(),
+			name: sanitizedString(200).optional(),
+			slug: sanitizedString(200).optional(),
+			description: optionalSanitizedString(1000),
+			fields: z.array(fieldSchema).max(100).optional(),
+			submitLabel: optionalSanitizedString(100),
+			successMessage: optionalSanitizedString(500),
 			isActive: z.boolean().optional(),
-			notifyEmail: z.string().email().optional(),
+			notifyEmail: z.string().email().max(320).optional(),
 			honeypotEnabled: z.boolean().optional(),
-			maxSubmissions: z.number().int().min(0).optional(),
+			maxSubmissions: z.number().int().min(0).max(100000).optional(),
 		}),
 	},
 	async (ctx) => {
