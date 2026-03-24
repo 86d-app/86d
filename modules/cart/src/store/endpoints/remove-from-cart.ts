@@ -34,7 +34,7 @@ export const removeFromCart = createStoreEndpoint(
 			null;
 
 		if (!existingItem) {
-			throw ctx.error(404, { message: "Cart item not found" });
+			return { error: "Cart item not found", status: 404 };
 		}
 
 		await cartController.removeItem(existingItem.id);

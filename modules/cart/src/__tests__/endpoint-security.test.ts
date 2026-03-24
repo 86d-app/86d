@@ -1,6 +1,8 @@
 import { createMockDataService } from "@86d-app/core/test-utils";
 import { beforeEach, describe, expect, it } from "vitest";
 import { createCartControllers } from "../service-impl";
+import { removeFromCart } from "../store/endpoints/remove-from-cart";
+import { updateCartItem } from "../store/endpoints/update-cart-item";
 
 /**
  * Security regression tests for cart endpoints.
@@ -40,6 +42,29 @@ describe("cart endpoint security", () => {
 			quantity: 1,
 			...overrides,
 		});
+	}
+
+	async function callEndpoint<
+		E extends (...args: never[]) => Promise<unknown>,
+		I extends Parameters<E>[0] & object,
+	>(
+		endpoint: E,
+		input: I,
+		context: {
+			controllers: { cart: ReturnType<typeof createCartControllers> };
+			session?:
+				| {
+						user: {
+							id: string;
+						};
+				  }
+				| undefined;
+			headers?: Headers;
+		},
+	): Promise<Awaited<ReturnType<E>>> {
+		return endpoint(
+			Object.assign({}, input, { context }) as Parameters<E>[0],
+		) as Promise<Awaited<ReturnType<E>>>;
 	}
 
 	// ── Cart Isolation ─────────────────────────────────────────────
@@ -604,6 +629,27 @@ describe("cart endpoint security", () => {
 			).rejects.toThrow();
 		});
 
+		it("updateCartItem returns 404 instead of throwing for another customer's item", async () => {
+			const victimCart = await controller.getOrCreateCart({
+				customerId: "cust_victim",
+			});
+			const victimItem = await addWidget(victimCart.id);
+
+			const response = await callEndpoint(
+				updateCartItem,
+				{
+					params: { id: victimItem.id },
+					body: { quantity: 2 },
+				},
+				{
+					controllers: { cart: controller },
+					session: { user: { id: "cust_attacker" } },
+				},
+			);
+
+			expect(response).toEqual({ error: "Cart item not found", status: 404 });
+		});
+
 		it("updating quantity preserves other item fields", async () => {
 			const cart = await controller.getOrCreateCart({
 				customerId: "cust_preserve",
@@ -623,6 +669,28 @@ describe("cart endpoint security", () => {
 			expect(updated.productSlug).toBe("special");
 			expect(updated.productImage).toBe("img.png");
 			expect(updated.cartId).toBe(cart.id);
+		});
+	});
+
+	describe("removeFromCart safety", () => {
+		it("removeFromCart returns 404 instead of throwing for another customer's item", async () => {
+			const victimCart = await controller.getOrCreateCart({
+				customerId: "cust_victim",
+			});
+			const victimItem = await addWidget(victimCart.id);
+
+			const response = await callEndpoint(
+				removeFromCart,
+				{
+					params: { id: victimItem.id },
+				},
+				{
+					controllers: { cart: controller },
+					session: { user: { id: "cust_attacker" } },
+				},
+			);
+
+			expect(response).toEqual({ error: "Cart item not found", status: 404 });
 		});
 	});
 

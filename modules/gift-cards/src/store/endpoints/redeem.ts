@@ -1,4 +1,4 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
+import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { GiftCardController } from "../../service";
 
 export const redeemGiftCard = createStoreEndpoint(
@@ -6,7 +6,7 @@ export const redeemGiftCard = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			code: z.string().min(1).max(50),
+			code: z.string().min(1).max(50).transform(sanitizeText),
 			amount: z.number().positive(),
 			orderId: z.string().max(200).optional(),
 		}),

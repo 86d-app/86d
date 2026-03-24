@@ -1,4 +1,4 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
+import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { TaxController } from "../../service";
 
 export const calculateTax = createStoreEndpoint(
@@ -8,9 +8,9 @@ export const calculateTax = createStoreEndpoint(
 		body: z.object({
 			address: z.object({
 				country: z.string().length(2),
-				state: z.string().min(1).max(100),
-				city: z.string().max(200).optional(),
-				postalCode: z.string().max(20).optional(),
+				state: z.string().min(1).max(100).transform(sanitizeText),
+				city: z.string().max(200).transform(sanitizeText).optional(),
+				postalCode: z.string().max(20).transform(sanitizeText).optional(),
 			}),
 			lineItems: z
 				.array(

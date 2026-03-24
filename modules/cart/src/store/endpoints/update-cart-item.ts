@@ -28,7 +28,7 @@ export const updateCartItem = createStoreEndpoint(
 		const cartItems = await cartController.getCartItems(cart.id);
 		const ownedItem = cartItems.find((i) => i.id === params.id);
 		if (!ownedItem) {
-			throw ctx.error(404, { message: "Cart item not found" });
+			return { error: "Cart item not found", status: 404 };
 		}
 
 		const item = await cartController.updateItem(params.id, body.quantity);

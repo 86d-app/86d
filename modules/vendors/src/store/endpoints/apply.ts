@@ -7,7 +7,7 @@ export const apply = createStoreEndpoint(
 		method: "POST",
 		body: z.object({
 			name: z.string().min(1).max(200).transform(sanitizeText),
-			slug: z.string().min(1).max(200),
+			slug: z.string().min(1).max(200).transform(sanitizeText),
 			email: z.string().email().max(320),
 			phone: z.string().max(50).transform(sanitizeText).optional(),
 			description: z.string().max(5000).transform(sanitizeText).optional(),
