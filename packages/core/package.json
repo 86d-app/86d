@@ -1,6 +1,6 @@
 {
 	"name": "@86d-app/core",
-	"version": "0.0.18",
+	"version": "0.0.19",
 	"description": "Core package for 86d dynamic commerce platform",
 	"type": "module",
 	"license": "MIT",
