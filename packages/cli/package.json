@@ -1,6 +1,6 @@
 {
 	"name": "86d",
-	"version": "0.0.20",
+	"version": "0.0.21",
 	"description": "CLI for 86d — modular, open-source commerce platform",
 	"type": "module",
 	"license": "MIT",
