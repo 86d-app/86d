@@ -5,6 +5,9 @@ export const productTiers = createStoreEndpoint(
 	"/bulk-pricing/product/:productId/tiers",
 	{
 		method: "GET",
+		params: z.object({
+			productId: z.string().min(1).max(200),
+		}),
 		query: z.object({
 			basePrice: z.coerce.number().min(0),
 		}),

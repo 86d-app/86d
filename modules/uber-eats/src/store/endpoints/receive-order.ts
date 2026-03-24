@@ -7,7 +7,16 @@ export const receiveOrderEndpoint = createStoreEndpoint(
 		method: "POST",
 		body: z.object({
 			externalOrderId: z.string().max(200).transform(sanitizeText),
-			items: z.array(z.record(z.string().max(100), z.unknown())).max(100),
+			items: z
+				.array(
+					z
+						.record(z.string().max(100), z.unknown())
+						.refine(
+							(r) => Object.keys(r).length <= 50,
+							"Too many keys in item record",
+						),
+				)
+				.max(100),
 			subtotal: z.number().min(0),
 			deliveryFee: z.number().min(0),
 			tax: z.number().min(0),

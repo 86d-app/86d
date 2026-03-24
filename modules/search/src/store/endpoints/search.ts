@@ -15,8 +15,8 @@ export const searchEndpoint = createStoreEndpoint(
 		method: "GET",
 		query: z.object({
 			q: z.string().min(1).max(500).transform(sanitizeText),
-			type: z.string().max(100).optional(),
-			tags: z.string().max(2000).optional(),
+			type: z.string().max(100).transform(sanitizeText).optional(),
+			tags: z.string().max(2000).transform(sanitizeText).optional(),
 			sort: z.enum(sortFields).optional(),
 			fuzzy: z.coerce.boolean().optional(),
 			limit: z.coerce.number().int().min(1).max(100).optional(),
