@@ -5,11 +5,11 @@ export const canPlayEndpoint = createStoreEndpoint(
 	"/gamification/games/:id/can-play",
 	{
 		method: "GET",
-		params: z.object({ id: z.string() }),
+		params: z.object({ id: z.string().max(128) }),
 		query: z.object({
 			// email only accepted for anonymous (unauthenticated) checks
-			email: z.string().optional(),
-			ipAddress: z.string().optional(),
+			email: z.string().email().max(320).optional(),
+			ipAddress: z.string().max(45).optional(),
 		}),
 	},
 	async (ctx) => {

@@ -5,7 +5,7 @@ export const getLineItems = createStoreEndpoint(
 	"/checkout/sessions/:id/items",
 	{
 		method: "GET",
-		params: z.object({ id: z.string() }),
+		params: z.object({ id: z.string().max(128) }),
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers.checkout as CheckoutController;

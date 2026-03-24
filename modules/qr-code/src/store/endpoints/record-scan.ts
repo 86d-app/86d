@@ -5,7 +5,7 @@ export const recordScanEndpoint = createStoreEndpoint(
 	"/qr-codes/:id/scan",
 	{
 		method: "POST",
-		params: z.object({ id: z.string() }),
+		params: z.object({ id: z.string().max(128) }),
 		body: z.object({
 			userAgent: z.string().max(500).transform(sanitizeText).optional(),
 			ipAddress: z.string().max(45).transform(sanitizeText).optional(),

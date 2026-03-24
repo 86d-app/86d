@@ -6,10 +6,10 @@ export const listAssetsEndpoint = createStoreEndpoint(
 	{
 		method: "GET",
 		query: z.object({
-			folder: z.string().optional(),
-			mimeType: z.string().optional(),
-			tag: z.string().optional(),
-			search: z.string().optional(),
+			folder: z.string().max(200).optional(),
+			mimeType: z.string().max(100).optional(),
+			tag: z.string().max(100).optional(),
+			search: z.string().max(200).optional(),
 			page: z.coerce.number().int().min(1).optional(),
 			limit: z.coerce.number().int().min(1).max(100).optional(),
 		}),

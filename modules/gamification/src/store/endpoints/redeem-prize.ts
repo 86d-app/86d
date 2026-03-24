@@ -5,7 +5,7 @@ export const redeemPrizeEndpoint = createStoreEndpoint(
 	"/gamification/plays/:id/redeem",
 	{
 		method: "POST",
-		params: z.object({ id: z.string() }),
+		params: z.object({ id: z.string().max(128) }),
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers

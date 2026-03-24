@@ -5,7 +5,7 @@ export const getMyInvoice = createStoreEndpoint(
 	"/orders/me/:id/invoice",
 	{
 		method: "GET",
-		params: z.object({ id: z.string() }),
+		params: z.object({ id: z.string().max(128) }),
 		query: z
 			.object({
 				storeName: z.string().max(200).transform(sanitizeText).optional(),

@@ -6,7 +6,7 @@ export const storeSearch = createStoreEndpoint(
 	{
 		method: "GET",
 		query: z.object({
-			q: z.string().optional(),
+			q: z.string().max(200).optional(),
 		}),
 	},
 	async (ctx) => {

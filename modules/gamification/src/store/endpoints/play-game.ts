@@ -5,7 +5,7 @@ export const playGameEndpoint = createStoreEndpoint(
 	"/gamification/games/:id/play",
 	{
 		method: "POST",
-		params: z.object({ id: z.string() }),
+		params: z.object({ id: z.string().max(128) }),
 		body: z.object({
 			// email is only accepted for anonymous (unauthenticated) players
 			email: z.string().email().max(320).transform(sanitizeText).optional(),

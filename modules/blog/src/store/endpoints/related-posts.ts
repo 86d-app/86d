@@ -5,7 +5,7 @@ export const relatedPostsEndpoint = createStoreEndpoint(
 	"/blog/:slug/related",
 	{
 		method: "GET",
-		params: z.object({ slug: z.string() }),
+		params: z.object({ slug: z.string().min(1).max(200) }),
 		query: z.object({
 			limit: z.coerce.number().int().min(1).max(10).optional(),
 		}),

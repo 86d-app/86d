@@ -5,7 +5,7 @@ export const streamPhotosEndpoint = createStoreEndpoint(
 	"/photo-booth/stream/:id",
 	{
 		method: "GET",
-		params: z.object({ id: z.string() }),
+		params: z.object({ id: z.string().max(128) }),
 		query: z.object({
 			page: z.coerce.number().int().min(1).optional(),
 			limit: z.coerce.number().int().min(1).max(100).optional(),

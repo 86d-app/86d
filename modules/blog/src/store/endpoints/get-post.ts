@@ -5,7 +5,7 @@ export const getPostEndpoint = createStoreEndpoint(
 	"/blog/:slug",
 	{
 		method: "GET",
-		params: z.object({ slug: z.string() }),
+		params: z.object({ slug: z.string().min(1).max(200) }),
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers.blog as BlogController;

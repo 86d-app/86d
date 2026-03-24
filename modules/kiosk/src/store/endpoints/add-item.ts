@@ -5,7 +5,7 @@ export const addItemEndpoint = createStoreEndpoint(
 	"/kiosk/sessions/:id/items",
 	{
 		method: "POST",
-		params: z.object({ id: z.string() }),
+		params: z.object({ id: z.string().max(128) }),
 		body: z.object({
 			name: z.string().max(200).transform(sanitizeText),
 			price: z.number().min(0),

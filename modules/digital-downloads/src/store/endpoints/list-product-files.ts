@@ -5,7 +5,7 @@ export const listProductFiles = createStoreEndpoint(
 	"/downloads/product/:productId",
 	{
 		method: "GET",
-		params: z.object({ productId: z.string() }),
+		params: z.object({ productId: z.string().max(128) }),
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers[

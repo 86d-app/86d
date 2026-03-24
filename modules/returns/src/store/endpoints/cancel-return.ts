@@ -5,7 +5,7 @@ export const cancelReturn = createStoreEndpoint(
 	"/returns/:id/cancel",
 	{
 		method: "POST",
-		params: z.object({ id: z.string() }),
+		params: z.object({ id: z.string().max(128) }),
 	},
 	async (ctx) => {
 		const userId = ctx.context.session?.user?.id;

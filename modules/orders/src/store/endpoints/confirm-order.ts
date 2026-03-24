@@ -12,7 +12,7 @@ export const confirmOrder = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			orderId: z.string().min(1, "Order ID is required"),
+			orderId: z.string().min(1, "Order ID is required").max(128),
 			email: z
 				.string()
 				.email("Valid email is required")

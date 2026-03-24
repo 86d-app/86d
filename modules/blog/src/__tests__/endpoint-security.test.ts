@@ -1,6 +1,11 @@
 import { createMockDataService } from "@86d-app/core/test-utils";
 import { beforeEach, describe, expect, it } from "vitest";
 import { createBlogController } from "../service-impl";
+import { getPostEndpoint } from "../store/endpoints/get-post";
+import { listPostsEndpoint } from "../store/endpoints/list-posts";
+import { relatedPostsEndpoint } from "../store/endpoints/related-posts";
+import { searchPostsEndpoint } from "../store/endpoints/search-posts";
+import { trackViewEndpoint } from "../store/endpoints/track-view";
 
 /**
  * Endpoint-security tests for the blog module.
@@ -27,6 +32,39 @@ describe("blog endpoint security", () => {
 	beforeEach(() => {
 		mockData = createMockDataService();
 		controller = createBlogController(mockData);
+	});
+
+	describe("store endpoint input hardening", () => {
+		it("sanitizes public search and filter text inputs", () => {
+			const searchQuery = searchPostsEndpoint.options.query.parse({
+				q: "<script>alert(1)</script>summer sale",
+			});
+			const listQuery = listPostsEndpoint.options.query.parse({
+				category: "  <b>News</b>  ",
+				tag: "<i>Featured</i>",
+			});
+
+			expect(searchQuery.q).toBe("summer sale");
+			expect(listQuery.category).toBe("News");
+			expect(listQuery.tag).toBe("Featured");
+		});
+
+		it("rejects oversized slugs on public blog routes", () => {
+			const oversizedSlug = "a".repeat(201);
+
+			expect(
+				getPostEndpoint.options.params.safeParse({ slug: oversizedSlug })
+					.success,
+			).toBe(false);
+			expect(
+				relatedPostsEndpoint.options.params.safeParse({ slug: oversizedSlug })
+					.success,
+			).toBe(false);
+			expect(
+				trackViewEndpoint.options.params.safeParse({ slug: oversizedSlug })
+					.success,
+			).toBe(false);
+		});
 	});
 
 	// -- Slug Uniqueness ------------------------------------------------------

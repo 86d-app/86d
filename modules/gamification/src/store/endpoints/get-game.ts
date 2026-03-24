@@ -5,7 +5,7 @@ export const getGameEndpoint = createStoreEndpoint(
 	"/gamification/games/:id",
 	{
 		method: "GET",
-		params: z.object({ id: z.string() }),
+		params: z.object({ id: z.string().max(128) }),
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers

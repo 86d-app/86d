@@ -5,7 +5,7 @@ export const removeTip = createStoreEndpoint(
 	"/tipping/tips/:id/delete",
 	{
 		method: "DELETE",
-		params: z.object({ id: z.string() }),
+		params: z.object({ id: z.string().max(128) }),
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers.tipping as TippingController;

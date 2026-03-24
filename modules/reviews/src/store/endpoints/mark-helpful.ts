@@ -5,7 +5,7 @@ export const markHelpful = createStoreEndpoint(
 	"/reviews/:id/helpful",
 	{
 		method: "POST",
-		params: z.object({ id: z.string() }),
+		params: z.object({ id: z.string().max(128) }),
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers.reviews as ReviewController;

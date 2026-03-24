@@ -8,7 +8,7 @@ export const applyGiftCard = createStoreEndpoint(
 	"/checkout/sessions/:id/gift-card",
 	{
 		method: "POST",
-		params: z.object({ id: z.string() }),
+		params: z.object({ id: z.string().max(128) }),
 		body: z.object({
 			code: z.string().min(1).max(50),
 		}),

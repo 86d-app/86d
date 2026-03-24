@@ -5,7 +5,7 @@ export const updateItemEndpoint = createStoreEndpoint(
 	"/kiosk/sessions/:id/items/:itemId",
 	{
 		method: "PUT",
-		params: z.object({ id: z.string(), itemId: z.string() }),
+		params: z.object({ id: z.string().max(128), itemId: z.string().max(128) }),
 		body: z.object({
 			quantity: z.number().int().min(0),
 		}),

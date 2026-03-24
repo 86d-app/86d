@@ -5,7 +5,7 @@ export const removeFromWishlist = createStoreEndpoint(
 	"/wishlist/remove/:id",
 	{
 		method: "DELETE",
-		params: z.object({ id: z.string() }),
+		params: z.object({ id: z.string().max(128) }),
 	},
 	async (ctx) => {
 		const customerId = ctx.context.session?.user.id;

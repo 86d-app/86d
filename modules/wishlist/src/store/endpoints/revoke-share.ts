@@ -5,7 +5,7 @@ export const revokeWishlistShare = createStoreEndpoint(
 	"/wishlist/share/:id/revoke",
 	{
 		method: "POST",
-		params: z.object({ id: z.string() }),
+		params: z.object({ id: z.string().max(128) }),
 	},
 	async (ctx) => {
 		const customerId = ctx.context.session?.user.id;

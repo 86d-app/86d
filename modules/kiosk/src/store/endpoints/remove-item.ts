@@ -5,7 +5,7 @@ export const removeItemEndpoint = createStoreEndpoint(
 	"/kiosk/sessions/:id/items/:itemId/delete",
 	{
 		method: "DELETE",
-		params: z.object({ id: z.string(), itemId: z.string() }),
+		params: z.object({ id: z.string().max(128), itemId: z.string().max(128) }),
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers.kiosk as KioskController;

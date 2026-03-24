@@ -5,7 +5,7 @@ export const getDelivery = createStoreEndpoint(
 	"/uber-direct/deliveries/:id",
 	{
 		method: "GET",
-		params: z.object({ id: z.string() }),
+		params: z.object({ id: z.string().max(128) }),
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers

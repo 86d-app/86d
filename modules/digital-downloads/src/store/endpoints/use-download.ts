@@ -5,7 +5,7 @@ export const useDownload = createStoreEndpoint(
 	"/downloads/:token",
 	{
 		method: "GET",
-		params: z.object({ token: z.string() }),
+		params: z.object({ token: z.string().max(512) }),
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers[

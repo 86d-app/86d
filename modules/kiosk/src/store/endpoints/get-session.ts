@@ -5,7 +5,7 @@ export const getSessionEndpoint = createStoreEndpoint(
 	"/kiosk/sessions/:id",
 	{
 		method: "GET",
-		params: z.object({ id: z.string() }),
+		params: z.object({ id: z.string().max(128) }),
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers.kiosk as KioskController;

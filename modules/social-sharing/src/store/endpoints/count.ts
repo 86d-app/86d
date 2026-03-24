@@ -13,7 +13,7 @@ export const countEndpoint = createStoreEndpoint(
 				"blog-post",
 				"custom",
 			]),
-			targetId: z.string(),
+			targetId: z.string().max(128),
 		}),
 	},
 	async (ctx) => {

@@ -5,7 +5,7 @@ export const listBids = createStoreEndpoint(
 	"/auctions/:id/bids",
 	{
 		method: "GET",
-		params: z.object({ id: z.string() }),
+		params: z.object({ id: z.string().max(128) }),
 		query: z.object({
 			take: z.coerce.number().int().min(1).max(100).optional(),
 			skip: z.coerce.number().int().min(0).optional(),

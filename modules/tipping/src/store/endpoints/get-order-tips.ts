@@ -5,7 +5,7 @@ export const getOrderTips = createStoreEndpoint(
 	"/tipping/tips/order/:orderId",
 	{
 		method: "GET",
-		params: z.object({ orderId: z.string() }),
+		params: z.object({ orderId: z.string().max(128) }),
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers.tipping as TippingController;

@@ -13,7 +13,7 @@ export const capturePayment = createStoreEndpoint(
 	"/checkout/sessions/:id/payment/capture",
 	{
 		method: "POST",
-		params: z.object({ id: z.string() }),
+		params: z.object({ id: z.string().max(128) }),
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers.checkout as CheckoutController;

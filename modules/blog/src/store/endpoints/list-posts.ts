@@ -1,4 +1,4 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
+import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { BlogController } from "../../service";
 
 export const listPostsEndpoint = createStoreEndpoint(
@@ -6,8 +6,8 @@ export const listPostsEndpoint = createStoreEndpoint(
 	{
 		method: "GET",
 		query: z.object({
-			category: z.string().max(200).optional(),
-			tag: z.string().max(200).optional(),
+			category: z.string().max(200).transform(sanitizeText).optional(),
+			tag: z.string().max(200).transform(sanitizeText).optional(),
 			page: z.coerce.number().int().min(1).optional(),
 			limit: z.coerce.number().int().min(1).max(100).optional(),
 		}),

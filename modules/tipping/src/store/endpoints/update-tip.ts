@@ -5,7 +5,7 @@ export const updateTip = createStoreEndpoint(
 	"/tipping/tips/:id",
 	{
 		method: "PUT",
-		params: z.object({ id: z.string() }),
+		params: z.object({ id: z.string().max(128) }),
 		body: z.object({
 			amount: z.number().positive().max(100000).optional(),
 			percentage: z.number().min(0).max(100).optional(),

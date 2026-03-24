@@ -5,7 +5,7 @@ export const getMenuEndpoint = createStoreEndpoint(
 	"/navigation/:slug",
 	{
 		method: "GET",
-		params: z.object({ slug: z.string() }),
+		params: z.object({ slug: z.string().max(200) }),
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers

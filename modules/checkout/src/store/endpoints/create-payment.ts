@@ -8,7 +8,7 @@ export const createPayment = createStoreEndpoint(
 	"/checkout/sessions/:id/payment",
 	{
 		method: "POST",
-		params: z.object({ id: z.string() }),
+		params: z.object({ id: z.string().max(128) }),
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers.checkout as CheckoutController;
