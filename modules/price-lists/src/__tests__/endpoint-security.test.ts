@@ -1,6 +1,11 @@
 import { createMockDataService } from "@86d-app/core/test-utils";
 import { beforeEach, describe, expect, it } from "vitest";
 import { createPriceListController } from "../service-impl";
+import {
+	resolvePriceParamsSchema,
+	resolvePriceQuerySchema,
+} from "../store/endpoints/resolve-price";
+import { resolvePricesBodySchema } from "../store/endpoints/resolve-prices";
 
 /**
  * Security regression tests for price-lists endpoints.
@@ -26,6 +31,36 @@ describe("price-lists endpoint security", () => {
 	// ── Price Resolution Visibility ─────────────────────────────────────
 
 	describe("price resolution visibility", () => {
+		it("sanitizes and bounds resolution input", () => {
+			expect(
+				resolvePriceParamsSchema.parse({
+					productId: "  <b>prod_1</b>  ",
+				}).productId,
+			).toBe("prod_1");
+
+			expect(
+				resolvePriceQuerySchema.parse({
+					customerGroupId: "  <b>group_vip</b>  ",
+					currency: " usd ",
+				}),
+			).toMatchObject({
+				customerGroupId: "group_vip",
+				currency: "usd",
+			});
+
+			expect(
+				resolvePricesBodySchema.parse({
+					productIds: ["  <b>prod_1</b>  ", "prod_2"],
+				}).productIds,
+			).toEqual(["prod_1", "prod_2"]);
+
+			expect(() =>
+				resolvePricesBodySchema.parse({
+					productIds: ["x".repeat(201)],
+				}),
+			).toThrow();
+		});
+
 		it("inactive price lists are excluded from resolution", async () => {
 			const list = await controller.createPriceList({
 				name: "Inactive",

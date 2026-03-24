@@ -1,6 +1,6 @@
 {
 	"name": "@86d-app/tickets",
-	"version": "0.0.12",
+	"version": "0.0.13",
 	"description": "Customer support tickets module for 86d commerce platform",
 	"keywords": [
 		"commerce",

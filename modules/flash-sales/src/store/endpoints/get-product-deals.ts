@@ -1,13 +1,18 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
+import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { FlashSaleController } from "../../service";
+
+export const getProductDealsBodySchema = z.object({
+	productIds: z
+		.array(z.string().transform(sanitizeText).pipe(z.string().min(1).max(200)))
+		.min(1)
+		.max(100),
+});
 
 export const getProductDeals = createStoreEndpoint(
 	"/flash-sales/products",
 	{
 		method: "POST",
-		body: z.object({
-			productIds: z.array(z.string().min(1)).min(1).max(100),
-		}),
+		body: getProductDealsBodySchema,
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers

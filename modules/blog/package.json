@@ -1,6 +1,6 @@
 {
 	"name": "@86d-app/blog",
-	"version": "0.0.12",
+	"version": "0.0.13",
 	"description": "Blog content management module for 86d commerce platform",
 	"keywords": [
 		"commerce",

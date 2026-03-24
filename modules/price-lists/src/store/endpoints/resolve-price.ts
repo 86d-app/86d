@@ -1,18 +1,33 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
+import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { PriceListController } from "../../service";
+
+export const resolvePriceParamsSchema = z.object({
+	productId: z
+		.string()
+		.transform(sanitizeText)
+		.pipe(z.string().min(1).max(200)),
+});
+
+export const resolvePriceQuerySchema = z.object({
+	customerGroupId: z
+		.string()
+		.transform(sanitizeText)
+		.pipe(z.string().max(200))
+		.optional(),
+	quantity: z.coerce.number().int().min(1).optional(),
+	currency: z
+		.string()
+		.transform(sanitizeText)
+		.pipe(z.string().max(3))
+		.optional(),
+});
 
 export const resolvePrice = createStoreEndpoint(
 	"/prices/product/:productId",
 	{
 		method: "GET",
-		params: z.object({
-			productId: z.string().min(1).max(200),
-		}),
-		query: z.object({
-			customerGroupId: z.string().max(200).optional(),
-			quantity: z.coerce.number().int().min(1).optional(),
-			currency: z.string().max(3).optional(),
-		}),
+		params: resolvePriceParamsSchema,
+		query: resolvePriceQuerySchema,
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers

@@ -1,6 +1,8 @@
 import { createMockDataService } from "@86d-app/core/test-utils";
 import { beforeEach, describe, expect, it } from "vitest";
 import { createFlashSaleController } from "../service-impl";
+import { getProductDealParamsSchema } from "../store/endpoints/get-product-deal";
+import { getProductDealsBodySchema } from "../store/endpoints/get-product-deals";
 
 /**
  * Security regression tests for flash-sales endpoints.
@@ -128,6 +130,26 @@ describe("flash-sales endpoint security", () => {
 	});
 
 	describe("product deal visibility", () => {
+		it("sanitizes and bounds product lookup input", () => {
+			expect(
+				getProductDealParamsSchema.parse({
+					productId: "  <b>prod_1</b>  ",
+				}).productId,
+			).toBe("prod_1");
+
+			expect(
+				getProductDealsBodySchema.parse({
+					productIds: ["  <b>prod_1</b>  ", "prod_2"],
+				}).productIds,
+			).toEqual(["prod_1", "prod_2"]);
+
+			expect(() =>
+				getProductDealsBodySchema.parse({
+					productIds: ["x".repeat(201)],
+				}),
+			).toThrow();
+		});
+
 		it("getActiveProductDeal returns null for products in draft sales", async () => {
 			const sale = await controller.createFlashSale({
 				name: "Draft",

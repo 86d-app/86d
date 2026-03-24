@@ -1,6 +1,6 @@
 {
 	"name": "@86d-app/settings",
-	"version": "0.0.12",
+	"version": "0.0.13",
 	"description": "Store settings and configuration module for 86d commerce platform",
 	"keywords": [
 		"commerce",
