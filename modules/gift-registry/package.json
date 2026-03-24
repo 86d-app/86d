@@ -24,5 +24,10 @@
 		"@types/react": "catalog:react",
 		"typescript": "catalog:",
 		"vitest": "catalog:vite"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/86d-app/86d.git",
+		"directory": "modules/gift-registry"
 	}
 }
