@@ -2,6 +2,10 @@ import { createMockDataService } from "@86d-app/core/test-utils";
 import { beforeEach, describe, expect, it } from "vitest";
 import type { TicketController } from "../service";
 import { createTicketControllers } from "../service-impl";
+import { customerReply } from "../store/endpoints/customer-reply";
+import { customerTickets } from "../store/endpoints/customer-tickets";
+import { getTicket } from "../store/endpoints/get-ticket";
+import { submitTicket } from "../store/endpoints/submit-ticket";
 
 /**
  * Security regression tests for tickets endpoints.
@@ -28,6 +32,30 @@ async function createTestTicket(
 	});
 }
 
+async function callEndpoint<
+	E extends (...args: never[]) => Promise<unknown>,
+	I extends Parameters<E>[0] & object,
+>(
+	endpoint: E,
+	input: I,
+	context: {
+		controllers: { tickets: TicketController };
+		session?:
+			| {
+					user: {
+						email: string;
+						id?: string | undefined;
+						name?: string | null | undefined;
+					};
+			  }
+			| undefined;
+	},
+): Promise<Awaited<ReturnType<E>>> {
+	return endpoint(
+		Object.assign({}, input, { context }) as Parameters<E>[0],
+	) as Promise<Awaited<ReturnType<E>>>;
+}
+
 describe("tickets endpoint security", () => {
 	let mockData: ReturnType<typeof createMockDataService>;
 	let controller: TicketController;
@@ -40,6 +68,39 @@ describe("tickets endpoint security", () => {
 	// ── Customer Isolation ──────────────────────────────────────────
 
 	describe("customer isolation", () => {
+		it("submitTicket ignores authenticated customerEmail impersonation", async () => {
+			const response = await callEndpoint(
+				submitTicket,
+				{
+					body: {
+						subject: "Need help",
+						description: "Checking ownership binding",
+						customerEmail: "victim@example.com",
+						customerName: "Victim",
+					},
+				},
+				{
+					controllers: { tickets: controller },
+					session: {
+						user: {
+							id: "cust_attacker",
+							email: "attacker@example.com",
+							name: "<b>Attacker</b>",
+						},
+					},
+				},
+			);
+
+			expect("ticket" in response).toBe(true);
+			if (!("ticket" in response)) {
+				throw new Error("Expected ticket response");
+			}
+
+			expect(response.ticket.customerId).toBe("cust_attacker");
+			expect(response.ticket.customerEmail).toBe("attacker@example.com");
+			expect(response.ticket.customerName).toBe("Attacker");
+		});
+
 		it("listTickets by customerId only returns that customer's tickets", async () => {
 			await createTestTicket(controller, {
 				customerId: "cust_victim",
@@ -96,6 +157,66 @@ describe("tickets endpoint security", () => {
 			expect(found?.customerId).toBe("cust_owner");
 		});
 
+		it("getTicket grants access when customerId matches even if email changed", async () => {
+			const ticket = await createTestTicket(controller, {
+				customerId: "cust_owner",
+				customerEmail: "old-email@example.com",
+			});
+
+			const response = await callEndpoint(
+				getTicket,
+				{
+					params: { id: ticket.id },
+				},
+				{
+					controllers: { tickets: controller },
+					session: {
+						user: {
+							id: "cust_owner",
+							email: "new-email@example.com",
+							name: "Owner",
+						},
+					},
+				},
+			);
+
+			expect("ticket" in response).toBe(true);
+			if (!("ticket" in response)) {
+				throw new Error("Expected ticket response");
+			}
+
+			expect(response.ticket.id).toBe(ticket.id);
+		});
+
+		it("getTicket rejects email match when ticket belongs to another customerId", async () => {
+			const ticket = await createTestTicket(controller, {
+				customerId: "cust_attacker",
+				customerEmail: "victim@example.com",
+			});
+
+			const response = await callEndpoint(
+				getTicket,
+				{
+					params: { id: ticket.id },
+				},
+				{
+					controllers: { tickets: controller },
+					session: {
+						user: {
+							id: "cust_victim",
+							email: "victim@example.com",
+							name: "Victim",
+						},
+					},
+				},
+			);
+
+			expect(response).toEqual({
+				error: "Ticket not found",
+				status: 404,
+			});
+		});
+
 		it("getTicketByNumber exposes ticket without ownership check", async () => {
 			const ticket = await createTestTicket(controller, {
 				customerId: "cust_private",
@@ -106,6 +227,49 @@ describe("tickets endpoint security", () => {
 			const found = await controller.getTicketByNumber(ticket.number);
 			expect(found).not.toBeNull();
 			expect(found?.customerId).toBe("cust_private");
+		});
+
+		it("customerTickets returns both id-owned tickets and legacy email-only tickets", async () => {
+			const owned = await createTestTicket(controller, {
+				customerId: "cust_owner",
+				customerEmail: "owner@example.com",
+			});
+			const legacy = await createTestTicket(controller, {
+				customerEmail: "owner@example.com",
+				customerName: "Owner",
+			});
+			await createTestTicket(controller, {
+				customerId: "cust_other",
+				customerEmail: "owner@example.com",
+				customerName: "Impostor",
+			});
+
+			const response = await callEndpoint(
+				customerTickets,
+				{
+					query: {},
+				},
+				{
+					controllers: { tickets: controller },
+					session: {
+						user: {
+							id: "cust_owner",
+							email: "owner@example.com",
+							name: "Owner",
+						},
+					},
+				},
+			);
+
+			expect("tickets" in response).toBe(true);
+			if (!("tickets" in response)) {
+				throw new Error("Expected tickets response");
+			}
+
+			expect(response.tickets).toHaveLength(2);
+			expect(new Set(response.tickets.map((ticket) => ticket.id))).toEqual(
+				new Set([legacy.id, owned.id]),
+			);
 		});
 	});
 
@@ -189,6 +353,36 @@ describe("tickets endpoint security", () => {
 	// ── Status Transition Enforcement ───────────────────────────────
 
 	describe("status transition enforcement", () => {
+		it("customerReply rejects email match when ticket belongs to another customerId", async () => {
+			const ticket = await createTestTicket(controller, {
+				customerId: "cust_attacker",
+				customerEmail: "victim@example.com",
+			});
+
+			const response = await callEndpoint(
+				customerReply,
+				{
+					params: { id: ticket.id },
+					body: { body: "This should be blocked" },
+				},
+				{
+					controllers: { tickets: controller },
+					session: {
+						user: {
+							id: "cust_victim",
+							email: "victim@example.com",
+							name: "Victim",
+						},
+					},
+				},
+			);
+
+			expect(response).toEqual({
+				error: "Ticket not found",
+				status: 404,
+			});
+		});
+
 		it("reopen rejects a ticket that is still open", async () => {
 			const ticket = await createTestTicket(controller);
 			expect(ticket.status).toBe("open");

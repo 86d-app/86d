@@ -6,7 +6,7 @@ export const getMetaEndpoint = createStoreEndpoint(
 	{
 		method: "GET",
 		query: z.object({
-			path: z.string().min(1),
+			path: z.string().min(1).max(2000),
 		}),
 	},
 	async (ctx) => {

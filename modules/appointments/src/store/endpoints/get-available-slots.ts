@@ -6,8 +6,8 @@ export const getAvailableSlots = createStoreEndpoint(
 	{
 		method: "GET",
 		query: z.object({
-			serviceId: z.string().min(1),
-			staffId: z.string().min(1).optional(),
+			serviceId: z.string().min(1).max(100),
+			staffId: z.string().min(1).max(100).optional(),
 			date: z.coerce.date(),
 		}),
 	},

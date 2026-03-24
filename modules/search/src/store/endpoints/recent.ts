@@ -6,7 +6,7 @@ export const recentEndpoint = createStoreEndpoint(
 	{
 		method: "GET",
 		query: z.object({
-			sessionId: z.string().min(1),
+			sessionId: z.string().min(1).max(128),
 			limit: z.coerce.number().int().min(1).max(20).optional(),
 		}),
 	},

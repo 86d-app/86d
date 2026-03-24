@@ -6,7 +6,7 @@ export const itemWrapping = createStoreEndpoint(
 	{
 		method: "GET",
 		params: z.object({
-			orderItemId: z.string().min(1),
+			orderItemId: z.string().min(1).max(100),
 		}),
 	},
 	async (ctx) => {

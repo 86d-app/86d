@@ -1,5 +1,6 @@
 import { createStoreEndpoint, z } from "@86d-app/core";
 import type { TicketController } from "../../service";
+import { isTicketOwnedByUser } from "./_ownership";
 
 export const getTicket = createStoreEndpoint(
 	"/tickets/:id",
@@ -23,7 +24,7 @@ export const getTicket = createStoreEndpoint(
 		}
 
 		// Verify ownership — return 404 to avoid leaking existence
-		if (ticket.customerEmail !== session.user.email) {
+		if (!isTicketOwnedByUser(ticket, session.user)) {
 			return { error: "Ticket not found", status: 404 };
 		}
 

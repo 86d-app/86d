@@ -5,7 +5,7 @@ export const listByOrder = createStoreEndpoint(
 	"/fulfillment/order/:orderId",
 	{
 		method: "GET",
-		params: z.object({ orderId: z.string().min(1) }),
+		params: z.object({ orderId: z.string().min(1).max(100) }),
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers

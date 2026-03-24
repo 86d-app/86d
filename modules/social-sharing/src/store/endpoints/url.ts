@@ -1,4 +1,4 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
+import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { Network, SocialSharingController } from "../../service";
 
 export const urlEndpoint = createStoreEndpoint(
@@ -16,8 +16,8 @@ export const urlEndpoint = createStoreEndpoint(
 				"copy-link",
 			]),
 			targetUrl: z.string().url().max(2000),
-			message: z.string().max(500).optional(),
-			hashtags: z.string().max(500).optional(),
+			message: z.string().max(500).transform(sanitizeText).optional(),
+			hashtags: z.string().max(500).transform(sanitizeText).optional(),
 		}),
 	},
 	async (ctx) => {

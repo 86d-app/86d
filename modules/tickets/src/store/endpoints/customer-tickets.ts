@@ -14,10 +14,22 @@ export const customerTickets = createStoreEndpoint(
 		}
 
 		const controller = ctx.context.controllers.tickets as TicketController;
-
-		const tickets = await controller.listTickets({
+		const ticketsByCustomerId = session.user.id
+			? await controller.listTickets({
+					customerId: session.user.id,
+				})
+			: [];
+		const ticketsByEmail = await controller.listTickets({
 			customerEmail: session.user.email,
 		});
+		const tickets = [
+			...ticketsByCustomerId,
+			...ticketsByEmail.filter(
+				(ticket) =>
+					!ticket.customerId &&
+					!ticketsByCustomerId.some((candidate) => candidate.id === ticket.id),
+			),
+		];
 
 		return { tickets };
 	},

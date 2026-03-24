@@ -6,10 +6,10 @@ export const purchaseLabelEndpoint = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			shipmentId: z.string().min(1),
-			easypostShipmentId: z.string().min(1),
-			easypostRateId: z.string().min(1),
-			insurance: z.string().optional(),
+			shipmentId: z.string().min(1).max(100),
+			easypostShipmentId: z.string().min(1).max(200),
+			easypostRateId: z.string().min(1).max(200),
+			insurance: z.string().max(50).optional(),
 		}),
 	},
 	async (ctx) => {

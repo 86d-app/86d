@@ -11,10 +11,10 @@ export const completeSession = createStoreEndpoint(
 	"/checkout/sessions/:id/complete",
 	{
 		method: "POST",
-		params: z.object({ id: z.string() }),
+		params: z.object({ id: z.string().max(100) }),
 		body: z
 			.object({
-				orderId: z.string().min(1).optional(),
+				orderId: z.string().min(1).max(100).optional(),
 			})
 			.optional(),
 	},

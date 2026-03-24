@@ -6,7 +6,7 @@ export const orderPickup = createStoreEndpoint(
 	{
 		method: "GET",
 		params: z.object({
-			orderId: z.string().min(1),
+			orderId: z.string().min(1).max(100),
 		}),
 	},
 	async (ctx) => {

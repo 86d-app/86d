@@ -6,7 +6,7 @@ export const getProductPrice = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			productId: z.string().min(1),
+			productId: z.string().min(1).max(100),
 			basePriceInCents: z.number().int().nonnegative(),
 			currencyCode: z.string().min(3).max(3),
 		}),

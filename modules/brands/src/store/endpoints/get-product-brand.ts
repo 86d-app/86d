@@ -6,7 +6,7 @@ export const getProductBrand = createStoreEndpoint(
 	{
 		method: "GET",
 		params: z.object({
-			productId: z.string().min(1),
+			productId: z.string().min(1).max(100),
 		}),
 	},
 	async (ctx) => {

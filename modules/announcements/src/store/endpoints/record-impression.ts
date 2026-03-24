@@ -6,7 +6,7 @@ export const recordImpression = createStoreEndpoint(
 	{
 		method: "POST",
 		params: z.object({
-			id: z.string().min(1),
+			id: z.string().min(1).max(100),
 		}),
 	},
 	async (ctx) => {

@@ -1,5 +1,6 @@
 import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { TicketController } from "../../service";
+import { getAuthenticatedTicketCustomer } from "./_ownership";
 
 export const submitTicket = createStoreEndpoint(
 	"/tickets/submit",
@@ -16,10 +17,18 @@ export const submitTicket = createStoreEndpoint(
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers.tickets as TicketController;
+		const sessionUser = ctx.context.session?.user;
+		const customer = sessionUser
+			? getAuthenticatedTicketCustomer(sessionUser)
+			: {
+					customerEmail: ctx.body.customerEmail,
+					customerId: undefined,
+					customerName: ctx.body.customerName,
+				};
 
 		const ticket = await controller.createTicket({
 			...ctx.body,
-			customerId: ctx.context.session?.user?.id,
+			...customer,
 		});
 
 		return { ticket };

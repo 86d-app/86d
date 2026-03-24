@@ -6,7 +6,7 @@ export const availableWindows = createStoreEndpoint(
 	{
 		method: "GET",
 		params: z.object({
-			locationId: z.string().min(1),
+			locationId: z.string().min(1).max(100),
 		}),
 		query: z.object({
 			date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),

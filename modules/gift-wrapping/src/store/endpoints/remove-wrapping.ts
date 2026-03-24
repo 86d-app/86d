@@ -6,7 +6,7 @@ export const removeWrapping = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			selectionId: z.string().min(1),
+			selectionId: z.string().min(1).max(100),
 		}),
 	},
 	async (ctx) => {

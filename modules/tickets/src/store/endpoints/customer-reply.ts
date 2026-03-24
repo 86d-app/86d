@@ -1,5 +1,9 @@
 import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { TicketController } from "../../service";
+import {
+	getAuthenticatedTicketCustomer,
+	isTicketOwnedByUser,
+} from "./_ownership";
 
 export const customerReply = createStoreEndpoint(
 	"/tickets/:id/reply",
@@ -26,7 +30,7 @@ export const customerReply = createStoreEndpoint(
 		}
 
 		// Verify ownership — return 404 to avoid leaking existence
-		if (ticket.customerEmail !== session.user.email) {
+		if (!isTicketOwnedByUser(ticket, session.user)) {
 			return { error: "Ticket not found", status: 404 };
 		}
 
@@ -34,12 +38,14 @@ export const customerReply = createStoreEndpoint(
 			return { error: "Ticket is closed", status: 400 };
 		}
 
+		const customer = getAuthenticatedTicketCustomer(session.user);
 		const message = await controller.addMessage({
 			ticketId: ticket.id,
 			body: ctx.body.body,
 			authorType: "customer",
-			authorName: session.user.name ?? session.user.email,
-			authorEmail: session.user.email,
+			authorId: session.user.id,
+			authorName: customer.customerName,
+			authorEmail: customer.customerEmail,
 		});
 
 		return { message };
