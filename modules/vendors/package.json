@@ -1,6 +1,6 @@
 {
 	"name": "@86d-app/vendors",
-	"version": "0.0.9",
+	"version": "0.0.10",
 	"description": "Multi-vendor marketplace — vendor profiles, product assignments, commission tracking, and payout management",
 	"keywords": [
 		"commerce",
