@@ -24,7 +24,7 @@ CLI for 86d — modular, open-source commerce platform.
 ## Installation
 
 ```sh
-npm install -g @86d-app/86d
+npm install -g 86d
 ```
 
 ## Commands

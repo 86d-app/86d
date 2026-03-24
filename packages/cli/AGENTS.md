@@ -1,6 +1,6 @@
 # CLI
 
-Command-line interface for the 86d platform, published as `@86d-app/86d`.
+Command-line interface for the 86d platform, published as `86d`.
 
 ## Structure
 
