@@ -25,7 +25,7 @@
 		"generate:docs": "tsx scripts/generate-component-docs.ts",
 		"changeset": "changeset",
 		"version-packages": "changeset version",
-		"release": "turbo run build --filter=./packages/* --filter=./modules/* && changeset publish",
+		"release": "turbo run build --filter=./packages/* --filter=./modules/* && changeset publish --provenance",
 		"86d": "tsx packages/cli/src/index.ts",
 		"db:seed": "dotenv -- tsx scripts/seed.ts"
 	},
