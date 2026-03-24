@@ -5,8 +5,11 @@ export const declineQuoteEndpoint = createStoreEndpoint(
 	"/quotes/:id/decline",
 	{
 		method: "POST",
+		params: z.object({
+			id: z.string().max(200),
+		}),
 		body: z.object({
-			quoteId: z.string().max(200),
+			quoteId: z.string().max(200).optional(),
 			reason: z.string().max(1000).transform(sanitizeText).optional(),
 		}),
 	},
@@ -17,9 +20,13 @@ export const declineQuoteEndpoint = createStoreEndpoint(
 		}
 
 		const controller = ctx.context.controllers.quotes as QuoteController;
+		const quoteId = ctx.params.id;
+		if (ctx.body.quoteId && ctx.body.quoteId !== quoteId) {
+			return { error: "Quote not found", status: 404 };
+		}
 
 		// Verify ownership BEFORE mutating
-		const existing = await controller.getQuote(ctx.body.quoteId);
+		const existing = await controller.getQuote(quoteId);
 		if (
 			!existing ||
 			(existing.customerId && existing.customerId !== session.user.id)
@@ -27,10 +34,7 @@ export const declineQuoteEndpoint = createStoreEndpoint(
 			return { error: "Quote not found", status: 404 };
 		}
 
-		const quote = await controller.declineQuote(
-			ctx.body.quoteId,
-			ctx.body.reason,
-		);
+		const quote = await controller.declineQuote(quoteId, ctx.body.reason);
 		if (!quote) return { error: "Cannot decline this quote", status: 422 };
 
 		return { quote };

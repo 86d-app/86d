@@ -5,29 +5,36 @@ export const addCommentEndpoint = createStoreEndpoint(
 	"/quotes/:id/comments/add",
 	{
 		method: "POST",
+		params: z.object({
+			id: z.string().max(200),
+		}),
 		body: z.object({
-			quoteId: z.string().max(200),
-			authorName: z.string().min(1).max(200).transform(sanitizeText),
+			quoteId: z.string().max(200).optional(),
 			message: z.string().min(1).max(2000).transform(sanitizeText),
 		}),
 	},
 	async (ctx) => {
-		const customerId = ctx.context.session?.user.id;
+		const session = ctx.context.session;
+		const customerId = session?.user.id;
 		if (!customerId) return { error: "Authentication required", status: 401 };
 
 		const controller = ctx.context.controllers.quotes as QuoteController;
+		const quoteId = ctx.params.id;
+		if (ctx.body.quoteId && ctx.body.quoteId !== quoteId) {
+			return { error: "Quote not found", status: 404 };
+		}
 
 		// Verify ownership before adding a comment
-		const quote = await controller.getQuote(ctx.body.quoteId);
+		const quote = await controller.getQuote(quoteId);
 		if (!quote || quote.customerId !== customerId) {
 			return { error: "Quote not found", status: 404 };
 		}
 
 		const comment = await controller.addComment({
-			quoteId: ctx.body.quoteId,
+			quoteId,
 			authorType: "customer",
 			authorId: customerId,
-			authorName: ctx.body.authorName,
+			authorName: sanitizeText(session.user.name || session.user.email),
 			message: ctx.body.message,
 		});
 		return { comment };

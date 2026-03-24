@@ -5,8 +5,11 @@ export const removeItemEndpoint = createStoreEndpoint(
 	"/quotes/:id/items/remove",
 	{
 		method: "POST",
+		params: z.object({
+			id: z.string().max(200),
+		}),
 		body: z.object({
-			quoteId: z.string().max(200),
+			quoteId: z.string().max(200).optional(),
 			itemId: z.string().max(200),
 		}),
 	},
@@ -15,17 +18,18 @@ export const removeItemEndpoint = createStoreEndpoint(
 		if (!customerId) return { error: "Authentication required", status: 401 };
 
 		const controller = ctx.context.controllers.quotes as QuoteController;
+		const quoteId = ctx.params.id;
+		if (ctx.body.quoteId && ctx.body.quoteId !== quoteId) {
+			return { error: "Quote not found", status: 404 };
+		}
 
 		// Verify ownership before mutating
-		const quote = await controller.getQuote(ctx.body.quoteId);
+		const quote = await controller.getQuote(quoteId);
 		if (!quote || quote.customerId !== customerId) {
 			return { error: "Quote not found", status: 404 };
 		}
 
-		const removed = await controller.removeItem(
-			ctx.body.quoteId,
-			ctx.body.itemId,
-		);
+		const removed = await controller.removeItem(quoteId, ctx.body.itemId);
 		if (!removed) return { error: "Cannot remove this item", status: 422 };
 		return { success: true };
 	},

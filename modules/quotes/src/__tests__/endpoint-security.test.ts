@@ -1,6 +1,10 @@
 import { createMockDataService } from "@86d-app/core/test-utils";
 import { beforeEach, describe, expect, it } from "vitest";
+import type { QuoteController } from "../service";
 import { createQuoteController } from "../service-impl";
+import { acceptQuoteEndpoint } from "../store/endpoints/accept-quote";
+import { addCommentEndpoint } from "../store/endpoints/add-comment";
+import { submitQuoteEndpoint } from "../store/endpoints/submit-quote";
 
 /**
  * Security tests for quotes module endpoints.
@@ -12,6 +16,30 @@ import { createQuoteController } from "../service-impl";
  * - Item manipulation: only draft quotes allow item changes
  * - Comment isolation: comments scoped to their quote
  */
+
+async function callEndpoint<
+	E extends (...args: never[]) => Promise<unknown>,
+	I extends Parameters<E>[0] & object,
+>(
+	endpoint: E,
+	input: I,
+	context: {
+		controllers: { quotes: QuoteController };
+		session?:
+			| {
+					user: {
+						email: string;
+						id: string;
+						name: string;
+					};
+			  }
+			| undefined;
+	},
+): Promise<Awaited<ReturnType<E>>> {
+	return endpoint(
+		Object.assign({}, input, { context }) as Parameters<E>[0],
+	) as Promise<Awaited<ReturnType<E>>>;
+}
 
 describe("quotes endpoint security", () => {
 	let mockData: ReturnType<typeof createMockDataService>;
@@ -82,6 +110,56 @@ describe("quotes endpoint security", () => {
 	// ── Ownership Verification Pattern ──────────────────────────────
 
 	describe("ownership verification pattern", () => {
+		it("submitQuote uses the route id as the source of truth", async () => {
+			const ownedQuote = await controller.createQuote({
+				customerId: "customer_a",
+				customerEmail: "owner@test.com",
+				customerName: "Owner",
+			});
+			await controller.addItem({
+				quoteId: ownedQuote.id,
+				productId: "prod_1",
+				productName: "Product 1",
+				quantity: 1,
+				unitPrice: 500,
+			});
+
+			const otherQuote = await controller.createQuote({
+				customerId: "customer_a",
+				customerEmail: "owner@test.com",
+				customerName: "Owner",
+			});
+			await controller.addItem({
+				quoteId: otherQuote.id,
+				productId: "prod_2",
+				productName: "Product 2",
+				quantity: 1,
+				unitPrice: 900,
+			});
+
+			const response = await callEndpoint(
+				submitQuoteEndpoint,
+				{
+					params: { id: ownedQuote.id },
+					body: { quoteId: otherQuote.id },
+				},
+				{
+					controllers: { quotes: controller },
+					session: {
+						user: {
+							id: "customer_a",
+							email: "owner@test.com",
+							name: "Owner",
+						},
+					},
+				},
+			);
+
+			expect(response).toEqual({ error: "Quote not found", status: 404 });
+			expect((await controller.getQuote(ownedQuote.id))?.status).toBe("draft");
+			expect((await controller.getQuote(otherQuote.id))?.status).toBe("draft");
+		});
+
 		it("endpoint must verify quote ownership before allowing submit", async () => {
 			const victimQuote = await controller.createQuote({
 				customerId: "victim",
@@ -123,6 +201,46 @@ describe("quotes endpoint security", () => {
 			const fetchedQuote = await controller.getQuote(quote.id);
 			expect(fetchedQuote?.customerId).toBe("victim");
 			// Endpoint MUST verify customerId === session.user.id before calling acceptQuote
+		});
+
+		it("acceptQuote accepts requests without a duplicate body quoteId", async () => {
+			const quote = await controller.createQuote({
+				customerId: "customer_1",
+				customerEmail: "c1@test.com",
+				customerName: "Customer 1",
+			});
+			await controller.addItem({
+				quoteId: quote.id,
+				productId: "prod_1",
+				productName: "Product 1",
+				quantity: 1,
+				unitPrice: 200,
+			});
+			await controller.submitQuote(quote.id);
+			await controller.reviewQuote(quote.id);
+			await controller.counterQuote(quote.id, { items: [] });
+
+			const response = await callEndpoint(
+				acceptQuoteEndpoint,
+				{
+					params: { id: quote.id },
+				},
+				{
+					controllers: { quotes: controller },
+					session: {
+						user: {
+							id: "customer_1",
+							email: "c1@test.com",
+							name: "Customer 1",
+						},
+					},
+				},
+			);
+
+			expect("quote" in response).toBe(true);
+			if ("quote" in response) {
+				expect(response.quote.status).toBe("accepted");
+			}
 		});
 	});
 
@@ -289,6 +407,41 @@ describe("quotes endpoint security", () => {
 			expect(comments1).toHaveLength(1);
 			expect(comments1[0].message).toBe("Private message");
 			expect(comments2).toHaveLength(0);
+		});
+
+		it("addComment derives author identity from the session", async () => {
+			const quote = await controller.createQuote({
+				customerId: "customer_1",
+				customerEmail: "c1@test.com",
+				customerName: "Customer 1",
+			});
+
+			const response = await callEndpoint(
+				addCommentEndpoint,
+				{
+					params: { id: quote.id },
+					body: {
+						message: "Need updated lead times",
+					},
+				},
+				{
+					controllers: { quotes: controller },
+					session: {
+						user: {
+							id: "customer_1",
+							email: "c1@test.com",
+							name: "<b>Customer 1</b>",
+						},
+					},
+				},
+			);
+
+			expect("comment" in response).toBe(true);
+			if ("comment" in response) {
+				expect(response.comment.authorId).toBe("customer_1");
+				expect(response.comment.authorName).toBe("Customer 1");
+				expect(response.comment.quoteId).toBe(quote.id);
+			}
 		});
 	});
 

@@ -5,23 +5,32 @@ export const submitQuoteEndpoint = createStoreEndpoint(
 	"/quotes/:id/submit",
 	{
 		method: "POST",
-		body: z.object({
-			quoteId: z.string().max(200),
+		params: z.object({
+			id: z.string().max(200),
 		}),
+		body: z
+			.object({
+				quoteId: z.string().max(200).optional(),
+			})
+			.optional(),
 	},
 	async (ctx) => {
 		const customerId = ctx.context.session?.user.id;
 		if (!customerId) return { error: "Authentication required", status: 401 };
 
 		const controller = ctx.context.controllers.quotes as QuoteController;
+		const quoteId = ctx.params.id;
+		if (ctx.body?.quoteId && ctx.body.quoteId !== quoteId) {
+			return { error: "Quote not found", status: 404 };
+		}
 
 		// Verify ownership before mutating
-		const existing = await controller.getQuote(ctx.body.quoteId);
+		const existing = await controller.getQuote(quoteId);
 		if (!existing || existing.customerId !== customerId) {
 			return { error: "Quote not found", status: 404 };
 		}
 
-		const quote = await controller.submitQuote(ctx.body.quoteId);
+		const quote = await controller.submitQuote(quoteId);
 		if (!quote) return { error: "Cannot submit this quote", status: 422 };
 		return { quote };
 	},
