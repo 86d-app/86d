@@ -340,6 +340,7 @@ export function createAbandonedCartController(
 			const carts = await allCarts();
 			const cutoff = new Date();
 			cutoff.setDate(cutoff.getDate() - days);
+			cutoff.setHours(0, 0, 0, 0);
 
 			let expired = 0;
 			for (const cart of carts) {
