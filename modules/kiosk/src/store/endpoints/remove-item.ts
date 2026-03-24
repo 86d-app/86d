@@ -13,6 +13,11 @@ export const removeItemEndpoint = createStoreEndpoint(
 			ctx.params.id,
 			ctx.params.itemId,
 		);
+
+		if (!session) {
+			return { error: "Session or item not found", status: 404 };
+		}
+
 		return { session };
 	},
 );

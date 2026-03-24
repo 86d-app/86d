@@ -27,8 +27,10 @@ export const createIntent = createStoreEndpoint(
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers.payments as PaymentController;
-		// Use session email when authenticated to prevent spoofing
-		const email = ctx.context.session?.user.email ?? ctx.body.email;
+		// Authenticated users must use session email — never fall back to body
+		const email = ctx.context.session
+			? ctx.context.session.user.email
+			: ctx.body.email;
 		const intent = await controller.createIntent({
 			amount: ctx.body.amount,
 			currency: ctx.body.currency,

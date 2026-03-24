@@ -17,6 +17,11 @@ export const updateItemEndpoint = createStoreEndpoint(
 			ctx.params.itemId,
 			ctx.body.quantity,
 		);
+
+		if (!session) {
+			return { error: "Session or item not found", status: 404 };
+		}
+
 		return { session };
 	},
 );

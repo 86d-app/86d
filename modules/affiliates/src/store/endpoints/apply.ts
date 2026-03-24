@@ -17,8 +17,11 @@ export const applyEndpoint = createStoreEndpoint(
 		const controller = ctx.context.controllers
 			.affiliates as AffiliateController;
 
+		// Authenticated users must use session email to prevent identity hijacking
+		const email = customerId ? ctx.context.session?.user.email : ctx.body.email;
+
 		// Check if already applied
-		const existing = await controller.getAffiliateByEmail(ctx.body.email);
+		const existing = await controller.getAffiliateByEmail(email);
 		if (existing)
 			return {
 				error: "An application with this email already exists",
@@ -27,7 +30,7 @@ export const applyEndpoint = createStoreEndpoint(
 
 		const affiliate = await controller.apply({
 			name: ctx.body.name,
-			email: ctx.body.email,
+			email,
 			website: ctx.body.website,
 			customerId,
 			notes: ctx.body.notes,

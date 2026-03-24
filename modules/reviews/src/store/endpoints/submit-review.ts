@@ -38,9 +38,9 @@ export const submitReview = createStoreEndpoint(
 			}
 		}
 
-		// Use session email when authenticated to prevent spoofing
+		// Authenticated users must use session email — never fall back to body
 		const authorEmail = customerId
-			? (ctx.context.session?.user.email ?? ctx.body.authorEmail)
+			? ctx.context.session?.user.email
 			: ctx.body.authorEmail;
 
 		const review = await controller.createReview({

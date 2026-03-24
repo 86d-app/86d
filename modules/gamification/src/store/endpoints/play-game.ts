@@ -17,10 +17,8 @@ export const playGameEndpoint = createStoreEndpoint(
 
 		// Derive identity from session — never trust client-provided customerId
 		const customerId = ctx.context.session?.user.id;
-		// For authenticated users, use session email; for anonymous, accept body email
-		const email = customerId
-			? (ctx.context.session?.user.email ?? ctx.body.email)
-			: ctx.body.email;
+		// Authenticated users must use session email — never fall back to body
+		const email = customerId ? ctx.context.session?.user.email : ctx.body.email;
 
 		try {
 			const play = await controller.play(ctx.params.id, {

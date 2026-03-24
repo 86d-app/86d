@@ -13,7 +13,19 @@ export const updateTip = createStoreEndpoint(
 		}),
 	},
 	async (ctx) => {
+		const customerId = ctx.context.session?.user.id;
+		if (!customerId) {
+			return { error: "Authentication required", status: 401 };
+		}
+
 		const controller = ctx.context.controllers.tipping as TippingController;
+
+		// Verify ownership before mutation
+		const existing = await controller.getTip(ctx.params.id);
+		if (!existing || existing.customerId !== customerId) {
+			return { error: "Tip not found", status: 404 };
+		}
+
 		const tip = await controller.updateTip(ctx.params.id, {
 			...(ctx.body.amount !== undefined ? { amount: ctx.body.amount } : {}),
 			...(ctx.body.percentage !== undefined
