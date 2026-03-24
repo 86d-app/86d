@@ -1,4 +1,4 @@
-import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
+import { createStoreEndpoint, z } from "@86d-app/core";
 import type { SocialSharingController } from "../../service";
 
 export const shareEndpoint = createStoreEndpoint(
@@ -13,7 +13,7 @@ export const shareEndpoint = createStoreEndpoint(
 				"blog-post",
 				"custom",
 			]),
-			targetId: z.string().max(200).transform(sanitizeText),
+			targetId: z.string().max(200),
 			network: z.enum([
 				"twitter",
 				"facebook",
@@ -24,8 +24,8 @@ export const shareEndpoint = createStoreEndpoint(
 				"copy-link",
 			]),
 			url: z.string().url().max(2000),
-			referrer: z.string().max(2000).transform(sanitizeText).optional(),
-			sessionId: z.string().max(200).transform(sanitizeText).optional(),
+			referrer: z.string().url().max(2000).optional(),
+			sessionId: z.string().max(200).optional(),
 		}),
 	},
 	async (ctx) => {

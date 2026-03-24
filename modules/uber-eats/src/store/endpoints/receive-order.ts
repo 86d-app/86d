@@ -6,7 +6,7 @@ export const receiveOrderEndpoint = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			externalOrderId: z.string().max(200).transform(sanitizeText),
+			externalOrderId: z.string().max(200),
 			items: z
 				.array(
 					z

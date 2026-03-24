@@ -1,4 +1,4 @@
-import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
+import { createStoreEndpoint, z } from "@86d-app/core";
 import type { KioskController } from "../../service";
 
 export const startSessionEndpoint = createStoreEndpoint(
@@ -6,7 +6,7 @@ export const startSessionEndpoint = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			stationId: z.string().max(200).transform(sanitizeText),
+			stationId: z.string().max(200),
 		}),
 	},
 	async (ctx) => {

@@ -1,4 +1,4 @@
-import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
+import { createStoreEndpoint, z } from "@86d-app/core";
 import type { DoordashController } from "../../service";
 
 export const createDeliveryEndpoint = createStoreEndpoint(
@@ -6,7 +6,7 @@ export const createDeliveryEndpoint = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			orderId: z.string().max(200).transform(sanitizeText),
+			orderId: z.string().max(200),
 			pickupAddress: z
 				.record(z.string().max(100), z.unknown())
 				.refine((r) => Object.keys(r).length <= 20, {

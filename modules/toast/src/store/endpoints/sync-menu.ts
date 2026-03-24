@@ -1,4 +1,4 @@
-import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
+import { createStoreEndpoint, z } from "@86d-app/core";
 import type { ToastController } from "../../service";
 
 export const syncMenuEndpoint = createStoreEndpoint(
@@ -6,8 +6,8 @@ export const syncMenuEndpoint = createStoreEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			entityId: z.string().max(200).transform(sanitizeText),
-			externalId: z.string().max(200).transform(sanitizeText),
+			entityId: z.string().max(200),
+			externalId: z.string().max(200),
 			direction: z.enum(["inbound", "outbound"]).optional(),
 		}),
 	},

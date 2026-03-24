@@ -1,4 +1,4 @@
-import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
+import { createStoreEndpoint, z } from "@86d-app/core";
 import type { QrCodeController } from "../../service";
 
 export const recordScanEndpoint = createStoreEndpoint(
@@ -7,9 +7,9 @@ export const recordScanEndpoint = createStoreEndpoint(
 		method: "POST",
 		params: z.object({ id: z.string().max(128) }),
 		body: z.object({
-			userAgent: z.string().max(500).transform(sanitizeText).optional(),
-			ipAddress: z.string().max(45).transform(sanitizeText).optional(),
-			referrer: z.string().max(2000).transform(sanitizeText).optional(),
+			userAgent: z.string().max(500).optional(),
+			ipAddress: z.string().max(45).optional(),
+			referrer: z.string().url().max(2000).optional(),
 		}),
 	},
 	async (ctx) => {

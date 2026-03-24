@@ -1,4 +1,4 @@
-import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
+import { createStoreEndpoint, z } from "@86d-app/core";
 import type { GamificationController } from "../../service";
 
 export const playGameEndpoint = createStoreEndpoint(
@@ -8,7 +8,7 @@ export const playGameEndpoint = createStoreEndpoint(
 		params: z.object({ id: z.string().max(128) }),
 		body: z.object({
 			// email is only accepted for anonymous (unauthenticated) players
-			email: z.string().email().max(320).transform(sanitizeText).optional(),
+			email: z.string().email().max(320).optional(),
 		}),
 	},
 	async (ctx) => {
