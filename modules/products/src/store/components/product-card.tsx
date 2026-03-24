@@ -2,7 +2,7 @@
 
 import { useStoreContext } from "@86d-app/core/client";
 import { memo } from "react";
-import { useCartMutation, useTrack } from "./_hooks";
+import { normalizeCartQueryData, useCartMutation, useTrack } from "./_hooks";
 import type { Product } from "./_types";
 import { formatPrice, imageUrl } from "./_utils";
 import ProductCardTemplate from "./product-card.mdx";
@@ -22,9 +22,29 @@ export const ProductCard = memo(function ProductCard({
 	const store = useStoreContext<{ cart: any }>();
 
 	const addToCartMutation = cartApi.addToCart.useMutation({
-		onSuccess: () => {
-			void cartApi.getCart.invalidate();
+		onSuccess: (data: {
+			cart: { id: string };
+			items: {
+				id: string;
+				productId: string;
+				variantId?: string | null;
+				quantity: number;
+				price: number;
+				productName: string;
+				productSlug: string;
+				productImage?: string | null;
+				variantName?: string | null;
+				variantOptions?: Record<string, string> | null;
+			}[];
+			itemCount: number;
+			subtotal: number;
+		}) => {
+			store.cart.setItemCount(data.itemCount);
 			store.cart.openDrawer();
+			cartApi.queryClient.setQueryData(
+				cartApi.getCart.getQueryKey(),
+				normalizeCartQueryData(data),
+			);
 			track({
 				type: "addToCart",
 				productId: product.id,

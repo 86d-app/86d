@@ -44,6 +44,51 @@ interface ListResult {
 	limit: number;
 }
 
+interface RawCartItem {
+	id: string;
+	productId: string;
+	variantId?: string | null;
+	quantity: number;
+	price: number;
+	productName: string;
+	productSlug: string;
+	productImage?: string | null;
+	variantName?: string | null;
+	variantOptions?: Record<string, string> | null;
+}
+
+function normalizeCartQueryData(data: {
+	cart: { id: string };
+	items: RawCartItem[];
+	itemCount: number;
+	subtotal: number;
+}) {
+	return {
+		id: data.cart.id,
+		items: data.items.map((item) => ({
+			id: item.id,
+			productId: item.productId,
+			variantId: item.variantId ?? null,
+			quantity: item.quantity,
+			price: item.price,
+			product: {
+				name: item.productName,
+				price: item.price,
+				images: item.productImage ? [item.productImage] : [],
+				slug: item.productSlug,
+			},
+			variant: item.variantName
+				? {
+						name: item.variantName,
+						options: item.variantOptions ?? {},
+					}
+				: null,
+		})),
+		itemCount: data.itemCount,
+		subtotal: data.subtotal,
+	};
+}
+
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 function formatPrice(cents: number): string {
@@ -66,6 +111,7 @@ function useCartMutation() {
 	return {
 		addToCart: client.module("cart").store["/cart"],
 		getCart: client.module("cart").store["/cart/get"],
+		queryClient: client.queryClient,
 	};
 }
 
@@ -128,9 +174,18 @@ const ProductCard = memo(function ProductCard({
 	const store = useStoreContext<{ cart: any }>();
 
 	const addToCartMutation = cartApi.addToCart.useMutation({
-		onSuccess: () => {
-			void cartApi.getCart.invalidate();
+		onSuccess: (data: {
+			cart: { id: string };
+			items: RawCartItem[];
+			itemCount: number;
+			subtotal: number;
+		}) => {
+			store.cart.setItemCount(data.itemCount);
 			store.cart.openDrawer();
+			cartApi.queryClient.setQueryData(
+				cartApi.getCart.getQueryKey(),
+				normalizeCartQueryData(data),
+			);
 			track({
 				type: "addToCart",
 				productId: product.id,

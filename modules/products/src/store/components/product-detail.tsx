@@ -3,6 +3,7 @@
 import { useStoreContext } from "@86d-app/core/client";
 import { useEffect, useRef, useState } from "react";
 import {
+	normalizeCartQueryData,
 	useCartMutation,
 	useProductsApi,
 	useReviewsApi,
@@ -66,6 +67,24 @@ export function ProductDetail(props: ProductDetailProps) {
 	const [qty, setQty] = useState(1);
 	const [added, setAdded] = useState(false);
 
+	type AddToCartResponse = {
+		cart: { id: string };
+		items: {
+			id: string;
+			productId: string;
+			variantId?: string | null;
+			quantity: number;
+			price: number;
+			productName: string;
+			productSlug: string;
+			productImage?: string | null;
+			variantName?: string | null;
+			variantOptions?: Record<string, string> | null;
+		}[];
+		itemCount: number;
+		subtotal: number;
+	};
+
 	const trackedRef = useRef<string | null>(null);
 	useEffect(() => {
 		if (product && trackedRef.current !== product.id) {
@@ -91,9 +110,13 @@ export function ProductDetail(props: ProductDetailProps) {
 	}, [product?.id]);
 
 	const addToCartMutation = cartApi.addToCart.useMutation({
-		onSuccess: () => {
-			void cartApi.getCart.invalidate();
+		onSuccess: (data: AddToCartResponse) => {
+			store.cart.setItemCount(data.itemCount);
 			store.cart.openDrawer();
+			cartApi.queryClient.setQueryData(
+				cartApi.getCart.getQueryKey(),
+				normalizeCartQueryData(data),
+			);
 			setAdded(true);
 			setTimeout(() => setAdded(false), 2000);
 			if (product) {

@@ -1,7 +1,4 @@
-import {
-	createEventBus,
-	createScopedEmitter,
-} from "@86d-app/core";
+import { createEventBus, createScopedEmitter } from "@86d-app/core";
 import {
 	createMockDataService,
 	createMockModuleContext,
@@ -50,16 +47,12 @@ describe("store-credits — return.refunded listener", () => {
 		await new Promise((r) => setTimeout(r, 50));
 
 		const accounts = mockData.all("creditAccount");
-		const account = accounts.find(
-			(a) => a.customerId === "cust-001",
-		);
+		const account = accounts.find((a) => a.customerId === "cust-001");
 		expect(account).toBeDefined();
 		expect(account?.balance).toBe(2500);
 
 		const transactions = mockData.all("creditTransaction");
-		const tx = transactions.find(
-			(t) => t.reason === "return_refund",
-		);
+		const tx = transactions.find((t) => t.reason === "return_refund");
 		expect(tx).toBeDefined();
 		expect(tx?.amount).toBe(2500);
 		expect(tx?.referenceType).toBe("return");
@@ -132,16 +125,12 @@ describe("store-credits — referrals.referral_completed listener", () => {
 		await new Promise((r) => setTimeout(r, 50));
 
 		const accounts = mockData.all("creditAccount");
-		const account = accounts.find(
-			(a) => a.customerId === "cust-010",
-		);
+		const account = accounts.find((a) => a.customerId === "cust-010");
 		expect(account).toBeDefined();
 		expect(account?.balance).toBe(1000);
 
 		const transactions = mockData.all("creditTransaction");
-		const tx = transactions.find(
-			(t) => t.reason === "referral_reward",
-		);
+		const tx = transactions.find((t) => t.reason === "referral_reward");
 		expect(tx).toBeDefined();
 		expect(tx?.amount).toBe(1000);
 		expect(tx?.referenceType).toBe("referral");

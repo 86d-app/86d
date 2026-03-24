@@ -3,6 +3,53 @@
 import { useModuleClient } from "@86d-app/core/client";
 import { useCallback, useRef } from "react";
 
+type RawCartItem = {
+	id: string;
+	productId: string;
+	variantId?: string | null;
+	quantity: number;
+	price: number;
+	productName: string;
+	productSlug: string;
+	productImage?: string | null;
+	variantName?: string | null;
+	variantOptions?: Record<string, string> | null;
+};
+
+type AddToCartResponse = {
+	cart: { id: string };
+	items: RawCartItem[];
+	itemCount: number;
+	subtotal: number;
+};
+
+export function normalizeCartQueryData(data: AddToCartResponse) {
+	return {
+		id: data.cart.id,
+		items: data.items.map((item) => ({
+			id: item.id,
+			productId: item.productId,
+			variantId: item.variantId ?? null,
+			quantity: item.quantity,
+			price: item.price,
+			product: {
+				name: item.productName,
+				price: item.price,
+				images: item.productImage ? [item.productImage] : [],
+				slug: item.productSlug,
+			},
+			variant: item.variantName
+				? {
+						name: item.variantName,
+						options: item.variantOptions ?? {},
+					}
+				: null,
+		})),
+		itemCount: data.itemCount,
+		subtotal: data.subtotal,
+	};
+}
+
 export function useProductsApi() {
 	const client = useModuleClient();
 	return {
@@ -20,6 +67,7 @@ export function useCartMutation() {
 	return {
 		addToCart: client.module("cart").store["/cart"],
 		getCart: client.module("cart").store["/cart/get"],
+		queryClient: client.queryClient,
 	};
 }
 
