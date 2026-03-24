@@ -42,7 +42,7 @@ Modules must be listed in `templates/brisa/config.json` to be available.
 - [`@86d-app/faq`](#86d-appfaq) — 2 store components
 - [`@86d-app/flash-sales`](#86d-appflash-sales) — 5 store components
 - [`@86d-app/fulfillment`](#86d-appfulfillment) — 3 store components
-- [`@86d-app/gift-cards`](#86d-appgift-cards) — 2 store components
+- [`@86d-app/giftcards`](#86d-appgiftcards) — 2 store components
 - [`@86d-app/gift-registry`](#86d-appgift-registry) — 2 store components
 - [`@86d-app/gift-wrapping`](#86d-appgift-wrapping) — 1 store component
 - [`@86d-app/inventory`](#86d-appinventory) — 3 store components
@@ -629,7 +629,7 @@ Use in MDX template files:
 
 ---
 
-## `@86d-app/gift-cards`
+## `@86d-app/giftcards`
 
 Digital gift cards with purchasing, gifting, redemption, balance management, top-ups, and analytics.
 

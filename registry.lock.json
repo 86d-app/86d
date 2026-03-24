@@ -240,12 +240,12 @@
       "integrity": "sha256-6901f045bd24781fdc37312aa5bc5bf51ab4773f7a76f7a72b5f1fc149ca585a",
       "localPath": "modules/gamification"
     },
-    "gift-cards": {
+    "giftcards": {
       "source": "local",
-      "packageName": "@86d-app/gift-cards",
+      "packageName": "@86d-app/giftcards",
       "version": "0.0.4",
       "integrity": "sha256-09831c368c5f2bc01985a118a0db78586a25960c5839b3085355695f0822af0c",
-      "localPath": "modules/gift-cards"
+      "localPath": "modules/giftcards"
     },
     "gift-registry": {
       "source": "local",

@@ -51,7 +51,7 @@
 		"@86d-app/forms": "workspace:*",
 		"@86d-app/fulfillment": "workspace:*",
 		"@86d-app/gamification": "workspace:*",
-		"@86d-app/gift-cards": "workspace:*",
+		"@86d-app/giftcards": "workspace:*",
 		"@86d-app/gift-registry": "workspace:*",
 		"@86d-app/gift-wrapping": "workspace:*",
 		"@86d-app/google-shopping": "workspace:*",

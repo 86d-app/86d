@@ -66,7 +66,7 @@
         "@86d-app/forms": "workspace:*",
         "@86d-app/fulfillment": "workspace:*",
         "@86d-app/gamification": "workspace:*",
-        "@86d-app/gift-cards": "workspace:*",
+        "@86d-app/giftcards": "workspace:*",
         "@86d-app/gift-registry": "workspace:*",
         "@86d-app/gift-wrapping": "workspace:*",
         "@86d-app/google-shopping": "workspace:*",
@@ -667,8 +667,8 @@
         "vitest": "catalog:vite",
       },
     },
-    "modules/gift-cards": {
-      "name": "@86d-app/gift-cards",
+    "modules/giftcards": {
+      "name": "@86d-app/giftcards",
       "version": "0.0.4",
       "dependencies": {
         "@86d-app/core": "workspace:*",
@@ -1887,7 +1887,7 @@
 
     "@86d-app/gamification": ["@86d-app/gamification@workspace:modules/gamification"],
 
-    "@86d-app/gift-cards": ["@86d-app/gift-cards@workspace:modules/gift-cards"],
+    "@86d-app/giftcards": ["@86d-app/giftcards@workspace:modules/giftcards"],
 
     "@86d-app/gift-registry": ["@86d-app/gift-registry@workspace:modules/gift-registry"],
 

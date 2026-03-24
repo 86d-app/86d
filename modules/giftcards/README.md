@@ -24,13 +24,13 @@ Full-featured gift card system for 86d commerce: purchasing, gifting, redemption
 ## Installation
 
 ```sh
-npm install @86d-app/gift-cards
+npm install @86d-app/giftcards
 ```
 
 ## Usage
 
 ```ts
-import giftCards from "@86d-app/gift-cards";
+import giftCards from "@86d-app/giftcards";
 
 const module = giftCards({
   defaultCurrency: "USD",

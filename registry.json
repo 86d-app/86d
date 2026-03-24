@@ -421,12 +421,12 @@
 			"hasStorePages": false,
 			"integrity": "sha256-6901f045bd24781fdc37312aa5bc5bf51ab4773f7a76f7a72b5f1fc149ca585a"
 		},
-		"gift-cards": {
-			"name": "@86d-app/gift-cards",
+		"giftcards": {
+			"name": "@86d-app/giftcards",
 			"description": "Gift card issuance, redemption, and balance management for 86d commerce platform",
 			"version": "0.0.4",
 			"category": "sales",
-			"path": "modules/gift-cards",
+			"path": "modules/giftcards",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
