@@ -1,8 +1,12 @@
 {
 	"name": "@86d-app/facebook-shop",
-	"version": "0.0.4",
+	"version": "0.0.6",
 	"description": "Facebook/Meta Commerce sales channel module for 86d commerce platform",
-	"keywords": ["commerce", "sales-channel", "86d"],
+	"keywords": [
+		"commerce",
+		"sales-channel",
+		"86d"
+	],
 	"license": "MIT",
 	"author": "86d <chat@86d.app>",
 	"repository": {

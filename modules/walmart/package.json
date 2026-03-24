@@ -1,8 +1,13 @@
 {
 	"name": "@86d-app/walmart",
-	"version": "0.0.4",
+	"version": "0.0.6",
 	"description": "Walmart marketplace integration for 86d commerce platform",
-	"keywords": ["commerce", "marketplace", "walmart", "86d"],
+	"keywords": [
+		"commerce",
+		"marketplace",
+		"walmart",
+		"86d"
+	],
 	"license": "MIT",
 	"author": "86d <chat@86d.app>",
 	"repository": {

@@ -1,8 +1,13 @@
 {
 	"name": "@86d-app/amazon",
-	"version": "0.0.4",
+	"version": "0.0.6",
 	"description": "Amazon Marketplace integration for 86d commerce platform",
-	"keywords": ["commerce", "marketplace", "amazon", "86d"],
+	"keywords": [
+		"commerce",
+		"marketplace",
+		"amazon",
+		"86d"
+	],
 	"license": "MIT",
 	"author": "86d <chat@86d.app>",
 	"repository": {

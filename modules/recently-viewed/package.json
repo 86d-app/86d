@@ -1,6 +1,6 @@
 {
 	"name": "@86d-app/recently-viewed",
-	"version": "0.0.1",
+	"version": "0.0.6",
 	"description": "Recently viewed products tracking module for 86d commerce platform",
 	"keywords": [
 		"commerce",

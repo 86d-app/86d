@@ -1,8 +1,12 @@
 {
 	"name": "@86d-app/qr-code",
-	"version": "0.0.4",
+	"version": "0.0.6",
 	"description": "QR code generation and management module for 86d commerce platform",
-	"keywords": ["commerce", "qr-code", "86d"],
+	"keywords": [
+		"commerce",
+		"qr-code",
+		"86d"
+	],
 	"license": "MIT",
 	"author": "86d <chat@86d.app>",
 	"repository": {

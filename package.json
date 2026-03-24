@@ -27,7 +27,8 @@
 		"version-packages": "changeset version",
 		"release": "turbo run build --filter=./packages/* --filter=./modules/* && changeset publish --provenance",
 		"86d": "tsx packages/cli/src/index.ts",
-		"db:seed": "dotenv -- tsx scripts/seed.ts"
+		"db:seed": "dotenv -- tsx scripts/seed.ts",
+		"bump-version": "tsx scripts/bump-version.ts"
 	},
 	"dependencies": {
 		"tsx": "catalog:"

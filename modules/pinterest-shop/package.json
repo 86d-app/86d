@@ -1,8 +1,13 @@
 {
 	"name": "@86d-app/pinterest-shop",
-	"version": "0.0.4",
+	"version": "0.0.6",
 	"description": "Pinterest shopping integration for 86d commerce platform",
-	"keywords": ["commerce", "marketplace", "pinterest", "86d"],
+	"keywords": [
+		"commerce",
+		"marketplace",
+		"pinterest",
+		"86d"
+	],
 	"license": "MIT",
 	"author": "86d <chat@86d.app>",
 	"repository": {

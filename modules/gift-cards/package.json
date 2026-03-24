@@ -1,6 +1,6 @@
 {
 	"name": "@86d-app/gift-cards",
-	"version": "0.0.4",
+	"version": "0.0.6",
 	"description": "Gift card issuance, redemption, and balance management for 86d commerce platform",
 	"keywords": [
 		"commerce",

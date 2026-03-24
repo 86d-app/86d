@@ -18,6 +18,19 @@ bun run dev                        # start store dev server (port 3000)
 
 Default admin credentials: `admin@example.com` / `password123`
 
+## Version policy
+
+All modules and published packages in this repo must always share the exact same version. Use:
+
+```bash
+bun run bump-version          # patch bump (0.0.4 → 0.0.5) — run after every commit
+bun run bump-version --minor  # minor bump (0.0.4 → 0.1.0)
+bun run bump-version 1.2.3    # set explicit version
+```
+
+- Never edit individual `package.json` version fields manually.
+- After every commit, run `bun run bump-version` and commit the result as `chore: bump version to X.Y.Z`.
+
 ## Build & test
 
 ```bash

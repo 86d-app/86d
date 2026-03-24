@@ -1,8 +1,12 @@
 {
 	"name": "@86d-app/kiosk",
-	"version": "0.0.4",
+	"version": "0.0.6",
 	"description": "Self-service ordering kiosk module for 86d commerce platform",
-	"keywords": ["commerce", "restaurant", "86d"],
+	"keywords": [
+		"commerce",
+		"restaurant",
+		"86d"
+	],
 	"license": "MIT",
 	"author": "86d <chat@86d.app>",
 	"repository": {
