@@ -1,4 +1,4 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
+import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { StoreLocatorController } from "../../service";
 
 export const listLocations = createStoreEndpoint(
@@ -7,9 +7,9 @@ export const listLocations = createStoreEndpoint(
 		method: "GET",
 		query: z
 			.object({
-				country: z.string().max(10).optional(),
-				region: z.string().max(200).optional(),
-				city: z.string().max(200).optional(),
+				country: z.string().max(10).transform(sanitizeText).optional(),
+				region: z.string().max(200).transform(sanitizeText).optional(),
+				city: z.string().max(200).transform(sanitizeText).optional(),
 				pickup: z.string().max(5).optional(),
 				featured: z.string().max(5).optional(),
 				limit: z.string().max(5).optional(),

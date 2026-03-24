@@ -17,7 +17,10 @@ export const addProduct = createStoreEndpoint(
 			productPrice: z.number().min(0).optional(),
 			productCategory: z.string().max(200).transform(sanitizeText).optional(),
 			attributes: z
-				.record(z.string().max(100), z.string().max(500))
+				.record(
+					z.string().max(100).transform(sanitizeText),
+					z.string().max(500).transform(sanitizeText),
+				)
 				.refine((r) => Object.keys(r).length <= 50, "Too many attributes")
 				.optional(),
 			sessionId: z.string().max(200).optional(),

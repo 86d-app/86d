@@ -16,7 +16,7 @@ export const updateAddress = createStoreEndpoint(
 			city: z.string().max(200).transform(sanitizeText).optional(),
 			state: z.string().max(200).transform(sanitizeText).optional(),
 			postalCode: z.string().max(20).transform(sanitizeText).optional(),
-			country: z.string().max(2).optional(),
+			country: z.string().max(2).transform(sanitizeText).optional(),
 			phone: z.string().max(30).transform(sanitizeText).optional(),
 			isDefault: z.boolean().optional(),
 			isDefaultBilling: z.boolean().optional(),
