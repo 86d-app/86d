@@ -18,17 +18,16 @@ export const cancelSubscription = createStoreEndpoint(
 
 		const controller = ctx.context.controllers
 			.subscriptions as SubscriptionController;
+
+		const existing = await controller.getSubscription(ctx.body.id);
+		if (!existing || existing.customerId !== session.user.id) {
+			return { error: "Subscription not found", status: 404 };
+		}
+
 		const subscription = await controller.cancelSubscription({
 			id: ctx.body.id,
 			cancelAtPeriodEnd: ctx.body.cancelAtPeriodEnd,
 		});
-
-		if (
-			subscription?.customerId &&
-			subscription.customerId !== session.user.id
-		) {
-			return { error: "Subscription not found", status: 404 };
-		}
 
 		return { subscription };
 	},
