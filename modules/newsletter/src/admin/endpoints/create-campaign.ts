@@ -1,4 +1,9 @@
-import { createAdminEndpoint, z } from "@86d-app/core";
+import {
+	createAdminEndpoint,
+	sanitizeHtml,
+	sanitizeText,
+	z,
+} from "@86d-app/core";
 import type { NewsletterController } from "../../service";
 
 export const createCampaignEndpoint = createAdminEndpoint(
@@ -6,9 +11,12 @@ export const createCampaignEndpoint = createAdminEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			subject: z.string().min(1).max(200),
-			body: z.string().min(1),
-			tags: z.array(z.string()).optional(),
+			subject: z.string().min(1).max(200).transform(sanitizeText),
+			body: z.string().min(1).max(200000).transform(sanitizeHtml),
+			tags: z
+				.array(z.string().max(100).transform(sanitizeText))
+				.max(50)
+				.optional(),
 			scheduledAt: z.coerce.date().optional(),
 		}),
 	},

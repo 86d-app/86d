@@ -6,7 +6,7 @@ export const bulkDeleteSubmissions = createAdminEndpoint(
 	{
 		method: "POST",
 		body: z.object({
-			ids: z.array(z.string()).min(1),
+			ids: z.array(z.string().max(200)).min(1).max(500),
 		}),
 	},
 	async (ctx) => {

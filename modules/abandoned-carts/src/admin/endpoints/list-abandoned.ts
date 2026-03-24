@@ -6,8 +6,8 @@ export const listAbandoned = createAdminEndpoint(
 	{
 		method: "GET",
 		query: z.object({
-			status: z.string().optional(),
-			email: z.string().optional(),
+			status: z.string().max(50).optional(),
+			email: z.string().max(255).optional(),
 			take: z.coerce.number().int().min(1).max(100).optional(),
 			skip: z.coerce.number().int().min(0).optional(),
 		}),

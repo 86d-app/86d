@@ -26,7 +26,7 @@ export const adminCreateDiscount = createAdminEndpoint(
 			appliesTo: z
 				.enum(["all", "specific_products", "specific_categories"])
 				.optional(),
-			appliesToIds: z.array(z.string()).optional(),
+			appliesToIds: z.array(z.string().max(200)).max(1000).optional(),
 			stackable: z.boolean().optional(),
 		}),
 	},

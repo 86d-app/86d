@@ -1,4 +1,10 @@
-import { createAdminEndpoint, isSafeUrl, sanitizeText, z } from "@86d-app/core";
+import {
+	createAdminEndpoint,
+	isSafeUrl,
+	sanitizeHtml,
+	sanitizeText,
+	z,
+} from "@86d-app/core";
 import type { AnnouncementsController } from "../../service";
 
 export const createAnnouncement = createAdminEndpoint(
@@ -11,7 +17,7 @@ export const createAnnouncement = createAdminEndpoint(
 				.min(1)
 				.transform(sanitizeText)
 				.refine((s) => s.length >= 1, "Title is required"),
-			content: z.string().min(1),
+			content: z.string().min(1).max(10000).transform(sanitizeHtml),
 			type: z.enum(["bar", "banner", "popup"]).optional(),
 			position: z.enum(["top", "bottom"]).optional(),
 			linkUrl: z.string().max(2000).refine(isSafeUrl, "Invalid URL").optional(),

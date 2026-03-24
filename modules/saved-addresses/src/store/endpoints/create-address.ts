@@ -48,7 +48,7 @@ export const createAddress = createStoreEndpoint(
 			) {
 				return { error: err.message, status: 422 };
 			}
-			throw err;
+			return { error: "Internal server error", status: 500 };
 		}
 	},
 );
