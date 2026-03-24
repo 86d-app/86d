@@ -1,10 +1,10 @@
 {
 	"name": "@86d-app/gift-cards",
 	"version": "0.0.18",
-	"description": "Store credit voucher issuance, redemption, and balance management for 86d commerce platform",
+	"description": "Gift card issuance, balance management, and payment integration for 86d commerce platform",
 	"keywords": [
 		"commerce",
-		"vouchers",
+		"gift-cards",
 		"store-credit",
 		"86d"
 	],
