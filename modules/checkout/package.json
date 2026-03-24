@@ -1,6 +1,6 @@
 {
 	"name": "@86d-app/checkout",
-	"version": "0.0.11",
+	"version": "0.0.12",
 	"description": "Checkout flow module for 86d commerce platform",
 	"keywords": [
 		"commerce",
