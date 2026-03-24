@@ -1,5 +1,6 @@
 import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { OrderNotesController } from "../../service";
+import { customerOwnsOrder } from "./_order-access";
 
 export const addNote = createStoreEndpoint(
 	"/orders/:orderId/notes/add",
@@ -14,6 +15,14 @@ export const addNote = createStoreEndpoint(
 		const customerId = ctx.context.session?.user.id;
 		if (!customerId) {
 			return { error: "Unauthorized", status: 401 };
+		}
+
+		const ordersData = ctx.context._dataRegistry?.get("orders");
+		if (
+			ordersData &&
+			!(await customerOwnsOrder(ordersData, ctx.params.orderId, customerId))
+		) {
+			return { error: "Order not found", status: 404 };
 		}
 
 		const customerName =

@@ -8,7 +8,11 @@ export function createWebhookEndpoint(webhookSecret?: string) {
 			method: "POST",
 			body: z.object({
 				type: z.string().min(1).max(200),
-				payload: z.record(z.string().max(100), z.unknown()),
+				payload: z
+					.record(z.string().max(100), z.unknown())
+					.refine((r) => Object.keys(r).length <= 100, {
+						message: "Too many fields in payload",
+					}),
 			}),
 		},
 		async (ctx) => {
