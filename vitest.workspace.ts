@@ -6,6 +6,7 @@
  * This workspace enables root-level coverage reporting.
  */
 export default [
+	"apps/*",
 	"packages/*",
 	"modules/*",
 ];

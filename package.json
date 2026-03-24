@@ -43,7 +43,7 @@
 		"@tsconfig/strictest": "catalog:",
 		"@types/node": "catalog:node",
 		"@types/pg": "^8.18.0",
-		"@vitest/coverage-v8": "^4.0.0",
+		"@vitest/coverage-v8": "4.0.16",
 		"dotenv-cli": "catalog:",
 		"pg": "^8.20.0",
 		"turbo": "^2.8.20",
