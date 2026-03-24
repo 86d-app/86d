@@ -99,7 +99,7 @@ jobs:
 
       - name: Push database schema
         working-directory: packages/db
-        run: bunx prisma db push --schema prisma --skip-generate --accept-data-loss
+        run: bunx prisma db push --schema prisma --accept-data-loss
 
       - name: Seed database
         run: bun run db:seed
