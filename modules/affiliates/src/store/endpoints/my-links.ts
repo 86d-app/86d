@@ -12,14 +12,14 @@ export const myLinksEndpoint = createStoreEndpoint(
 	},
 	async (ctx) => {
 		const customerId = ctx.context.session?.user.id;
-		if (!customerId) return { error: "Not authenticated" };
+		if (!customerId) return { error: "Not authenticated", status: 401 };
 
 		const controller = ctx.context.controllers
 			.affiliates as AffiliateController;
 
 		const affiliates = await controller.listAffiliates();
 		const affiliate = affiliates.find((a) => a.customerId === customerId);
-		if (!affiliate) return { error: "Not an affiliate" };
+		if (!affiliate) return { error: "Not an affiliate", status: 404 };
 
 		const limit = ctx.query.limit ?? 50;
 		const page = ctx.query.page ?? 1;

@@ -13,7 +13,7 @@ export const upvoteQuestion = createStoreEndpoint(
 		const controller = ctx.context.controllers.productQa as ProductQaController;
 		const question = await controller.upvoteQuestion(ctx.params.id);
 		if (!question) {
-			return { error: "Question not found" };
+			return { error: "Question not found", status: 404 };
 		}
 		return { question };
 	},

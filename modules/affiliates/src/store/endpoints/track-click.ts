@@ -14,8 +14,8 @@ export const trackClickEndpoint = createStoreEndpoint(
 			.affiliates as AffiliateController;
 
 		const link = await controller.getLinkBySlug(ctx.body.slug);
-		if (!link) return { error: "Link not found" };
-		if (!link.active) return { error: "Link is no longer active" };
+		if (!link) return { error: "Link not found", status: 404 };
+		if (!link.active) return { error: "Link is no longer active", status: 404 };
 
 		await controller.recordClick(link.id);
 		return { targetUrl: link.targetUrl };

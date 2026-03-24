@@ -9,7 +9,7 @@ export const markReadEndpoint = createStoreEndpoint(
 	},
 	async (ctx) => {
 		const customerId = ctx.context.session?.user.id;
-		if (!customerId) return { error: "Not authenticated" };
+		if (!customerId) return { error: "Not authenticated", status: 401 };
 
 		const controller = ctx.context.controllers
 			.notifications as NotificationsController;
@@ -17,7 +17,7 @@ export const markReadEndpoint = createStoreEndpoint(
 		// Verify ownership before marking read
 		const existing = await controller.get(ctx.params.id);
 		if (!existing || existing.customerId !== customerId) {
-			return { error: "Notification not found" };
+			return { error: "Notification not found", status: 404 };
 		}
 
 		const notification = await controller.markRead(ctx.params.id);

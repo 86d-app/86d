@@ -20,7 +20,7 @@ export const submitAnswer = createStoreEndpoint(
 		// Verify question exists
 		const question = await controller.getQuestion(ctx.params.questionId);
 		if (!question) {
-			return { error: "Question not found" };
+			return { error: "Question not found", status: 404 };
 		}
 
 		const customerId = ctx.context.session?.user.id;

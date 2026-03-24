@@ -17,7 +17,7 @@ export const deleteNotificationEndpoint = createStoreEndpoint(
 		// Verify ownership before deleting
 		const existing = await controller.get(ctx.params.id);
 		if (!existing || existing.customerId !== customerId) {
-			return { error: "Notification not found" };
+			return { error: "Notification not found", status: 404 };
 		}
 
 		await controller.delete(ctx.params.id);

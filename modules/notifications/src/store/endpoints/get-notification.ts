@@ -9,13 +9,13 @@ export const getNotificationEndpoint = createStoreEndpoint(
 	},
 	async (ctx) => {
 		const customerId = ctx.context.session?.user.id;
-		if (!customerId) return { error: "Not authenticated" };
+		if (!customerId) return { error: "Not authenticated", status: 401 };
 
 		const controller = ctx.context.controllers
 			.notifications as NotificationsController;
 		const notification = await controller.get(ctx.params.id);
 		if (!notification || notification.customerId !== customerId) {
-			return { error: "Notification not found" };
+			return { error: "Notification not found", status: 404 };
 		}
 		return { notification };
 	},

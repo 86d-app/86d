@@ -9,7 +9,7 @@ export const myDashboardEndpoint = createStoreEndpoint(
 	},
 	async (ctx) => {
 		const customerId = ctx.context.session?.user.id;
-		if (!customerId) return { error: "Not authenticated" };
+		if (!customerId) return { error: "Not authenticated", status: 401 };
 
 		const controller = ctx.context.controllers
 			.affiliates as AffiliateController;
@@ -17,7 +17,7 @@ export const myDashboardEndpoint = createStoreEndpoint(
 		// Find affiliate by looking up all and filtering by customerId
 		const affiliates = await controller.listAffiliates();
 		const affiliate = affiliates.find((a) => a.customerId === customerId);
-		if (!affiliate) return { error: "Not an affiliate" };
+		if (!affiliate) return { error: "Not an affiliate", status: 404 };
 
 		const balance = await controller.getAffiliateBalance(affiliate.id);
 		const links = await controller.listLinks({

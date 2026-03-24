@@ -20,7 +20,10 @@ export const applyEndpoint = createStoreEndpoint(
 		// Check if already applied
 		const existing = await controller.getAffiliateByEmail(ctx.body.email);
 		if (existing)
-			return { error: "An application with this email already exists" };
+			return {
+				error: "An application with this email already exists",
+				status: 409,
+			};
 
 		const affiliate = await controller.apply({
 			name: ctx.body.name,
