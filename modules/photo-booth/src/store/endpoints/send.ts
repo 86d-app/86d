@@ -1,4 +1,4 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
+import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { PhotoBoothController } from "../../service";
 
 export const sendEndpoint = createStoreEndpoint(
@@ -9,7 +9,7 @@ export const sendEndpoint = createStoreEndpoint(
 			.object({
 				photoId: z.string().min(1).max(200),
 				email: z.string().email().max(320).optional(),
-				phoneNumber: z.string().max(20).optional(),
+				phoneNumber: z.string().max(20).transform(sanitizeText).optional(),
 			})
 			.refine((d) => d.email || d.phoneNumber, {
 				message: "Either email or phoneNumber is required",
