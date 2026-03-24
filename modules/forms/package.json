@@ -1,6 +1,6 @@
 {
 	"name": "@86d-app/forms",
-	"version": "0.0.6",
+	"version": "0.0.7",
 	"description": "Custom forms module for 86d commerce platform — contact forms, surveys, inquiries",
 	"keywords": [
 		"commerce",
