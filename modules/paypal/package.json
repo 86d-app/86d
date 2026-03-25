@@ -1,6 +1,6 @@
 {
 	"name": "@86d-app/paypal",
-	"version": "0.0.21",
+	"version": "0.0.22",
 	"description": "PayPal payment provider for 86d commerce platform",
 	"keywords": [
 		"commerce",
