@@ -1,4 +1,4 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
+import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { MediaController } from "../../service";
 
 export const listAssetsEndpoint = createStoreEndpoint(
@@ -6,10 +6,10 @@ export const listAssetsEndpoint = createStoreEndpoint(
 	{
 		method: "GET",
 		query: z.object({
-			folder: z.string().max(200).optional(),
+			folder: z.string().max(200).transform(sanitizeText).optional(),
 			mimeType: z.string().max(100).optional(),
-			tag: z.string().max(100).optional(),
-			search: z.string().max(200).optional(),
+			tag: z.string().max(100).transform(sanitizeText).optional(),
+			search: z.string().max(200).transform(sanitizeText).optional(),
 			page: z.coerce.number().int().min(1).optional(),
 			limit: z.coerce.number().int().min(1).max(100).optional(),
 		}),

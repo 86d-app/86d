@@ -22,7 +22,7 @@ export const removeWrapping = createStoreEndpoint(
 		if (!existing) {
 			return { error: "Selection not found", status: 404 };
 		}
-		if (existing.customerId && existing.customerId !== userId) {
+		if (existing.customerId !== userId) {
 			return { error: "Selection not found", status: 404 };
 		}
 
