@@ -159,8 +159,13 @@ test.describe("Store Admin — Product Management", () => {
 	test("product list loads and shows products from seed data", async ({
 		admin,
 	}) => {
-		/* Wait for the product list to load */
-		await admin.page.waitForLoadState("networkidle");
+		/* Wait for the product list module to dynamically load and render.
+		   networkidle is not sufficient here because the admin module chunk
+		   is fetched inside a useEffect — networkidle can fire before the
+		   chunk fetch starts. Wait for the table (or an error banner) instead. */
+		await admin.page.waitForSelector("table, .text-destructive", {
+			timeout: 20_000,
+		});
 		/* Should show at least one product from seed data or empty state */
 		const rows = admin.page.locator("table tbody tr, div[class*='card']");
 		const emptyState = admin.page
