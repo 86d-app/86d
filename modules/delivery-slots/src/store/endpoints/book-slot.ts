@@ -7,7 +7,10 @@ export const bookSlot = createStoreEndpoint(
 		method: "POST",
 		body: z.object({
 			scheduleId: z.string().min(1).max(200),
-			deliveryDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+			deliveryDate: z
+				.string()
+				.max(10)
+				.regex(/^\d{4}-\d{2}-\d{2}$/),
 			orderId: z.string().min(1).max(200),
 			instructions: z.string().max(1000).transform(sanitizeText).optional(),
 		}),

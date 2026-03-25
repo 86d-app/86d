@@ -9,7 +9,10 @@ export const availableWindows = createStoreEndpoint(
 			locationId: z.string().min(1).max(100),
 		}),
 		query: z.object({
-			date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+			date: z
+				.string()
+				.max(10)
+				.regex(/^\d{4}-\d{2}-\d{2}$/),
 		}),
 	},
 	async (ctx) => {

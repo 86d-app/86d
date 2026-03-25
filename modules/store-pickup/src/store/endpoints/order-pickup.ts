@@ -10,12 +10,22 @@ export const orderPickup = createStoreEndpoint(
 		}),
 	},
 	async (ctx) => {
+		const userId = ctx.context.session?.user?.id;
+		if (!userId) {
+			return { error: "Unauthorized", status: 401 };
+		}
+
 		const controller = ctx.context.controllers
 			.storePickup as StorePickupController;
 		const pickup = await controller.getOrderPickup(ctx.params.orderId);
 		if (!pickup) {
 			return { error: "No active pickup found for this order", status: 404 };
 		}
+
+		if (pickup.customerId && pickup.customerId !== userId) {
+			return { error: "No active pickup found for this order", status: 404 };
+		}
+
 		return { pickup };
 	},
 );

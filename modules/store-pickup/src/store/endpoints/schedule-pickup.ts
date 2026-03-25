@@ -12,7 +12,10 @@ export const schedulePickup = createStoreEndpoint(
 			locationId: z.string().min(1).max(200),
 			windowId: z.string().min(1).max(200),
 			orderId: z.string().min(1).max(200),
-			scheduledDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+			scheduledDate: z
+				.string()
+				.max(10)
+				.regex(/^\d{4}-\d{2}-\d{2}$/),
 			notes: z.string().max(1000).transform(sanitizeText).optional(),
 		}),
 	},

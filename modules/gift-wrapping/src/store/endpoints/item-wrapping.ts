@@ -10,9 +10,19 @@ export const itemWrapping = createStoreEndpoint(
 		}),
 	},
 	async (ctx) => {
+		const userId = ctx.context.session?.user?.id;
+		if (!userId) {
+			return { error: "Unauthorized", status: 401 };
+		}
+
 		const controller = ctx.context.controllers
 			.giftWrapping as GiftWrappingController;
 		const selection = await controller.getItemSelection(ctx.params.orderItemId);
+
+		if (selection && selection.customerId && selection.customerId !== userId) {
+			return { selection: null };
+		}
+
 		return { selection };
 	},
 );

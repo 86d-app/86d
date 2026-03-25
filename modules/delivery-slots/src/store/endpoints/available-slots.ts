@@ -6,7 +6,10 @@ export const availableSlots = createStoreEndpoint(
 	{
 		method: "GET",
 		query: z.object({
-			date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+			date: z
+				.string()
+				.max(10)
+				.regex(/^\d{4}-\d{2}-\d{2}$/),
 		}),
 	},
 	async (ctx) => {
