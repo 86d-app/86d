@@ -27,6 +27,12 @@ export const createDelivery = createStoreEndpoint(
 		}),
 	},
 	async (ctx) => {
+		const userId = ctx.context.session?.user?.id;
+		const role = ctx.context.session?.user?.role;
+		if (!userId || role !== "admin") {
+			return { error: "Unauthorized", status: 401 };
+		}
+
 		const controller = ctx.context.controllers.favor as FavorController;
 		const delivery = await controller.createDelivery({
 			orderId: ctx.body.orderId,

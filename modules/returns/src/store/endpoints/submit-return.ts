@@ -36,7 +36,8 @@ export const submitReturn = createStoreEndpoint(
 						notes: z.string().max(500).transform(sanitizeText).optional(),
 					}),
 				)
-				.min(1),
+				.min(1)
+				.max(100),
 		}),
 	},
 	async (ctx) => {
