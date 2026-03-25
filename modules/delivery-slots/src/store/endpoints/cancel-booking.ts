@@ -12,12 +12,15 @@ export const cancelBookingStore = createStoreEndpoint(
 
 		const controller = ctx.context.controllers
 			.deliverySlots as DeliverySlotsController;
-		const booking = await controller.cancelBooking(ctx.params.id);
-		if (!booking) return { error: "Booking not found", status: 404 };
+		const existing = await controller.getBooking(ctx.params.id);
+		if (!existing) return { error: "Booking not found", status: 404 };
 
-		if (booking.customerId && booking.customerId !== session.user.id) {
+		if (existing.customerId && existing.customerId !== session.user.id) {
 			return { error: "Booking not found", status: 404 };
 		}
+
+		const booking = await controller.cancelBooking(ctx.params.id);
+		if (!booking) return { error: "Booking not found", status: 404 };
 
 		return { booking };
 	},

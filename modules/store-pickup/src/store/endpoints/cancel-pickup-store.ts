@@ -17,19 +17,20 @@ export const cancelPickupStore = createStoreEndpoint(
 
 		const controller = ctx.context.controllers
 			.storePickup as StorePickupController;
-		try {
-			const pickup = await controller.cancelPickup(ctx.params.id);
-			if (!pickup) {
-				return { error: "Pickup not found", status: 404 };
-			}
-
-			if (pickup.customerId && pickup.customerId !== session.user.id) {
-				return { error: "Pickup not found", status: 404 };
-			}
-
-			return { pickup };
-		} catch {
-			return { error: "Failed to cancel pickup", status: 400 };
+		const existing = await controller.getPickup(ctx.params.id);
+		if (!existing) {
+			return { error: "Pickup not found", status: 404 };
 		}
+
+		if (existing.customerId && existing.customerId !== session.user.id) {
+			return { error: "Pickup not found", status: 404 };
+		}
+
+		const pickup = await controller.cancelPickup(ctx.params.id);
+		if (!pickup) {
+			return { error: "Pickup not found", status: 404 };
+		}
+
+		return { pickup };
 	},
 );

@@ -19,15 +19,20 @@ export const cancelPreorder = createStoreEndpoint(
 		}
 
 		const controller = ctx.context.controllers.preorders as PreordersController;
+		const existing = await controller.getPreorderItem(ctx.params.id);
+		if (!existing) {
+			return { error: "Preorder not found", item: null };
+		}
+
+		if (existing.customerId !== session.user.id) {
+			return { error: "Preorder not found", item: null };
+		}
+
 		const item = await controller.cancelPreorderItem(
 			ctx.params.id,
 			ctx.body.reason,
 		);
 		if (!item) {
-			return { error: "Preorder not found", item: null };
-		}
-
-		if (item.customerId !== session.user.id) {
 			return { error: "Preorder not found", item: null };
 		}
 

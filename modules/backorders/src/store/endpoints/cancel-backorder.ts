@@ -17,15 +17,20 @@ export const cancelBackorder = createStoreEndpoint(
 
 		const controller = ctx.context.controllers
 			.backorders as BackordersController;
+		const existing = await controller.getBackorder(ctx.params.id);
+		if (!existing) {
+			return { error: "Backorder not found", cancelled: false };
+		}
+
+		if (existing.customerId !== session.user.id) {
+			return { error: "Backorder not found", cancelled: false };
+		}
+
 		const backorder = await controller.cancelBackorder(
 			ctx.params.id,
 			ctx.body.reason,
 		);
 		if (!backorder) {
-			return { error: "Backorder not found", cancelled: false };
-		}
-
-		if (backorder.customerId !== session.user.id) {
 			return { error: "Backorder not found", cancelled: false };
 		}
 

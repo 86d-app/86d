@@ -14,19 +14,16 @@ export const cancelIntent = createStoreEndpoint(
 		}
 
 		const controller = ctx.context.controllers.payments as PaymentController;
-		try {
-			const intent = await controller.cancelIntent(ctx.params.id);
-			if (!intent) return { error: "Payment intent not found", status: 404 };
+		const existing = await controller.getIntent(ctx.params.id);
+		if (!existing) return { error: "Payment intent not found", status: 404 };
 
-			if (intent.customerId && intent.customerId !== session.user.id) {
-				return { error: "Payment intent not found", status: 404 };
-			}
-
-			return { intent };
-		} catch (err) {
-			const message =
-				err instanceof Error ? err.message : "Cannot cancel payment";
-			return { error: message, status: 400 };
+		if (existing.customerId && existing.customerId !== session.user.id) {
+			return { error: "Payment intent not found", status: 404 };
 		}
+
+		const intent = await controller.cancelIntent(ctx.params.id);
+		if (!intent) return { error: "Payment intent not found", status: 404 };
+
+		return { intent };
 	},
 );
