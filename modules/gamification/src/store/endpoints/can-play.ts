@@ -18,9 +18,9 @@ export const canPlayEndpoint = createStoreEndpoint(
 
 		// Derive identity from session — never trust client-provided customerId
 		const customerId = ctx.context.session?.user.id;
-		// For authenticated users, use session email; for anonymous, accept query email
+		// For authenticated users, use session email only; for anonymous, accept query email
 		const email = customerId
-			? (ctx.context.session?.user.email ?? ctx.query.email)
+			? ctx.context.session?.user.email
 			: ctx.query.email;
 
 		const result = await controller.canPlay(ctx.params.id, {
