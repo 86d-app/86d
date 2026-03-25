@@ -1,9 +1,9 @@
-import { createStoreEndpoint } from "@86d-app/core";
+import { createStoreEndpoint, z } from "@86d-app/core";
 import type { DeliverySlotsController } from "../../service";
 
 export const cancelBookingStore = createStoreEndpoint(
 	"/delivery-slots/bookings/:id/cancel",
-	{ method: "POST" },
+	{ method: "POST", params: z.object({ id: z.string().max(200) }) },
 	async (ctx) => {
 		const session = ctx.context.session;
 		if (!session) {

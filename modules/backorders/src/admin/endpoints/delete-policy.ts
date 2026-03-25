@@ -5,6 +5,7 @@ export const deletePolicy = createAdminEndpoint(
 	"/admin/backorders/policies/:productId/delete",
 	{
 		method: "POST",
+		params: z.object({ productId: z.string().max(200) }),
 		body: z.object({}),
 	},
 	async (ctx) => {

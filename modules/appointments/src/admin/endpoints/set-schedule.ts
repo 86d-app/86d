@@ -5,6 +5,7 @@ export const setSchedule = createAdminEndpoint(
 	"/admin/appointments/staff/:id/schedule",
 	{
 		method: "POST",
+		params: z.object({ id: z.string().max(200) }),
 		body: z.object({
 			dayOfWeek: z.number().int().min(0).max(6),
 			startTime: z.string().regex(/^\d{2}:\d{2}$/),

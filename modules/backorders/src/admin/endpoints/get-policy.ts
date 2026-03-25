@@ -1,9 +1,9 @@
-import { createAdminEndpoint } from "@86d-app/core";
+import { createAdminEndpoint, z } from "@86d-app/core";
 import type { BackordersController } from "../../service";
 
 export const getPolicy = createAdminEndpoint(
 	"/admin/backorders/policies/:productId",
-	{ method: "GET" },
+	{ method: "GET", params: z.object({ productId: z.string().max(200) }) },
 	async (ctx) => {
 		const controller = ctx.context.controllers
 			.backorders as BackordersController;

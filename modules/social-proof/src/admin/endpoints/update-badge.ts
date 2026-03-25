@@ -5,6 +5,7 @@ export const updateBadge = createAdminEndpoint(
 	"/admin/social-proof/badges/:id/update",
 	{
 		method: "POST",
+		params: z.object({ id: z.string().max(200) }),
 		body: z.object({
 			name: z.string().min(1).max(200).transform(sanitizeText).optional(),
 			description: z

@@ -5,6 +5,7 @@ export const checkEligibility = createStoreEndpoint(
 	"/backorders/check/:productId",
 	{
 		method: "GET",
+		params: z.object({ productId: z.string().max(200) }),
 		query: z.object({
 			quantity: z.coerce.number().int().min(1).max(9999).optional(),
 		}),

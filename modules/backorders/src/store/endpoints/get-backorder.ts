@@ -1,9 +1,9 @@
-import { createStoreEndpoint } from "@86d-app/core";
+import { createStoreEndpoint, z } from "@86d-app/core";
 import type { BackordersController } from "../../service";
 
 export const getBackorder = createStoreEndpoint(
 	"/backorders/:id",
-	{ method: "GET" },
+	{ method: "GET", params: z.object({ id: z.string().max(200) }) },
 	async (ctx) => {
 		const controller = ctx.context.controllers
 			.backorders as BackordersController;

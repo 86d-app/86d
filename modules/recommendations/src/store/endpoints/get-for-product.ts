@@ -5,6 +5,7 @@ export const getForProduct = createStoreEndpoint(
 	"/recommendations/:productId",
 	{
 		method: "GET",
+		params: z.object({ productId: z.string().max(200) }),
 		query: z.object({
 			strategy: z
 				.enum([

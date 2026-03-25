@@ -5,6 +5,7 @@ export const deleteEntry = createAdminEndpoint(
 	"/admin/waitlist/:id/delete",
 	{
 		method: "POST",
+		params: z.object({ id: z.string().max(200) }),
 		body: z.object({}),
 	},
 	async (ctx) => {

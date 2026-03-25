@@ -1,10 +1,14 @@
-import { createAdminEndpoint } from "@86d-app/core";
+import { createAdminEndpoint, z } from "@86d-app/core";
 import type { ProductFeedsController } from "../../service";
 
 export const deleteCategoryMapping = createAdminEndpoint(
 	"/admin/product-feeds/:id/mappings/:mappingId/delete",
 	{
 		method: "POST",
+		params: z.object({
+			id: z.string().max(200),
+			mappingId: z.string().max(200),
+		}),
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers

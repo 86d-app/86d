@@ -18,7 +18,7 @@ async function getAccessToken(
 	clientId: string,
 	clientSecret: string,
 	baseUrl: string,
-): Promise<string> {
+): Promise<string | null> {
 	const credentials = btoa(`${clientId}:${clientSecret}`);
 	const res = await fetch(`${baseUrl}/v1/oauth2/token`, {
 		method: "POST",
@@ -28,7 +28,7 @@ async function getAccessToken(
 		},
 		body: "grant_type=client_credentials",
 	});
-	if (!res.ok) throw new Error("Failed to obtain PayPal access token");
+	if (!res.ok) return null;
 	const data = (await res.json()) as { access_token: string };
 	return data.access_token;
 }
@@ -66,6 +66,7 @@ async function verifyPayPalSignature(
 
 	try {
 		const token = await getAccessToken(clientId, clientSecret, baseUrl);
+		if (!token) return false;
 		const res = await fetch(
 			`${baseUrl}/v1/notifications/verify-webhook-signature`,
 			{

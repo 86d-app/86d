@@ -5,6 +5,7 @@ export const getAISimilar = createStoreEndpoint(
 	"/recommendations/:productId/similar",
 	{
 		method: "GET",
+		params: z.object({ productId: z.string().max(200) }),
 		query: z.object({
 			take: z.coerce.number().int().min(1).max(50).optional(),
 		}),

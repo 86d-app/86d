@@ -5,6 +5,7 @@ export const previewTiers = createAdminEndpoint(
 	"/admin/bulk-pricing/rules/:id/preview",
 	{
 		method: "GET",
+		params: z.object({ id: z.string().max(200) }),
 		query: z.object({
 			basePrice: z.coerce.number().min(0),
 		}),

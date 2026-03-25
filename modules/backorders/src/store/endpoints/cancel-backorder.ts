@@ -5,6 +5,7 @@ export const cancelBackorder = createStoreEndpoint(
 	"/backorders/:id/cancel",
 	{
 		method: "POST",
+		params: z.object({ id: z.string().max(200) }),
 		body: z.object({
 			reason: z.string().max(1000).transform(sanitizeText).optional(),
 		}),

@@ -5,6 +5,7 @@ export const addCategoryMapping = createAdminEndpoint(
 	"/admin/product-feeds/:id/mappings/create",
 	{
 		method: "POST",
+		params: z.object({ id: z.string().max(200) }),
 		body: z.object({
 			storeCategory: z.string().min(1),
 			channelCategory: z.string().min(1),

@@ -5,6 +5,7 @@ export const updateStatus = createAdminEndpoint(
 	"/admin/backorders/:id/status",
 	{
 		method: "POST",
+		params: z.object({ id: z.string().max(200) }),
 		body: z.object({
 			status: z.enum([
 				"pending",

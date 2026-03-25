@@ -5,6 +5,7 @@ export const getFeedItems = createAdminEndpoint(
 	"/admin/product-feeds/:id/items",
 	{
 		method: "GET",
+		params: z.object({ id: z.string().max(200) }),
 		query: z.object({
 			status: z.string().optional(),
 			take: z.coerce.number().int().min(1).max(100).optional(),

@@ -5,6 +5,7 @@ export const cancelAppointment = createStoreEndpoint(
 	"/appointments/:id/cancel",
 	{
 		method: "POST",
+		params: z.object({ id: z.string().max(200) }),
 		body: z.object({}),
 	},
 	async (ctx) => {

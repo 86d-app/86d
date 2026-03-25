@@ -1,9 +1,9 @@
-import { createStoreEndpoint } from "@86d-app/core";
+import { createStoreEndpoint, z } from "@86d-app/core";
 import type { DeliverySlotsController } from "../../service";
 
 export const orderBooking = createStoreEndpoint(
 	"/delivery-slots/order/:orderId",
-	{ method: "GET" },
+	{ method: "GET", params: z.object({ orderId: z.string().max(200) }) },
 	async (ctx) => {
 		const controller = ctx.context.controllers
 			.deliverySlots as DeliverySlotsController;

@@ -5,6 +5,7 @@ export const assignServiceToStaff = createAdminEndpoint(
 	"/admin/appointments/staff/:id/services/assign",
 	{
 		method: "POST",
+		params: z.object({ id: z.string().max(200) }),
 		body: z.object({
 			serviceId: z.string().min(1),
 		}),

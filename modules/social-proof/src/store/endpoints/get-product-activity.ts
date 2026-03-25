@@ -5,6 +5,7 @@ export const getProductActivity = createStoreEndpoint(
 	"/social-proof/activity/:productId",
 	{
 		method: "GET",
+		params: z.object({ productId: z.string().max(200) }),
 		query: z.object({
 			period: z.enum(["1h", "24h", "7d", "30d"]).optional(),
 		}),

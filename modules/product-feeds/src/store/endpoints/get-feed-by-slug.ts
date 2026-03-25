@@ -1,10 +1,11 @@
-import { createStoreEndpoint } from "@86d-app/core";
+import { createStoreEndpoint, z } from "@86d-app/core";
 import type { ProductFeedsController } from "../../service";
 
 export const getFeedBySlug = createStoreEndpoint(
 	"/feeds/:slug",
 	{
 		method: "GET",
+		params: z.object({ slug: z.string().max(200) }),
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers

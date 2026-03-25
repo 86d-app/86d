@@ -5,6 +5,7 @@ export const notifyWaitlist = createAdminEndpoint(
 	"/admin/waitlist/:productId/notify",
 	{
 		method: "POST",
+		params: z.object({ productId: z.string().max(200) }),
 		body: z.object({
 			productId: z.string(),
 		}),

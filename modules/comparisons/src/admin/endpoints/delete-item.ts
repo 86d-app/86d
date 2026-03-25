@@ -1,10 +1,11 @@
-import { createAdminEndpoint } from "@86d-app/core";
+import { createAdminEndpoint, z } from "@86d-app/core";
 import type { ComparisonController } from "../../service";
 
 export const deleteItem = createAdminEndpoint(
 	"/admin/comparisons/:id/delete",
 	{
 		method: "DELETE",
+		params: z.object({ id: z.string().max(200) }),
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers
