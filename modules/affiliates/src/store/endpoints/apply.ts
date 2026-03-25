@@ -18,7 +18,9 @@ export const applyEndpoint = createStoreEndpoint(
 			.affiliates as AffiliateController;
 
 		// Authenticated users must use session email to prevent identity hijacking
-		const email = customerId ? ctx.context.session?.user.email : ctx.body.email;
+		const email = ctx.context.session
+			? ctx.context.session.user.email
+			: ctx.body.email;
 
 		// Check if already applied
 		const existing = await controller.getAffiliateByEmail(email);

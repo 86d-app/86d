@@ -16,12 +16,17 @@ export const cancelAppointment = createStoreEndpoint(
 		const controller = ctx.context.controllers
 			.appointments as AppointmentController;
 
-		const appointment = await controller.cancelAppointment(ctx.params.id);
-		if (!appointment) {
+		const existing = await controller.getAppointment(ctx.params.id);
+		if (!existing) {
 			return { error: "Appointment not found", status: 404 };
 		}
 
-		if (appointment.customerId && appointment.customerId !== session.user.id) {
+		if (existing.customerId && existing.customerId !== session.user.id) {
+			return { error: "Appointment not found", status: 404 };
+		}
+
+		const appointment = await controller.cancelAppointment(ctx.params.id);
+		if (!appointment) {
 			return { error: "Appointment not found", status: 404 };
 		}
 

@@ -26,6 +26,9 @@ export const bookAppointment = createStoreEndpoint(
 			customerEmail: ctx.body.customerEmail,
 			startsAt: ctx.body.startsAt,
 		};
+		if (ctx.context.session?.user.id) {
+			params.customerId = ctx.context.session.user.id;
+		}
 		if (ctx.body.customerPhone != null)
 			params.customerPhone = ctx.body.customerPhone;
 		if (ctx.body.notes != null) params.notes = ctx.body.notes;
