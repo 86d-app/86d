@@ -5,14 +5,12 @@ export const rejectConversionEndpoint = createAdminEndpoint(
 	"/admin/affiliates/conversions/:id/reject",
 	{
 		method: "POST",
-		body: z.object({
-			id: z.string(),
-		}),
+		params: z.object({ id: z.string().max(128) }),
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers
 			.affiliates as AffiliateController;
-		const conversion = await controller.rejectConversion(ctx.body.id);
+		const conversion = await controller.rejectConversion(ctx.params.id);
 		if (!conversion) return { error: "Unable to reject conversion" };
 		return { conversion };
 	},

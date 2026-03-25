@@ -5,8 +5,8 @@ export const approveAffiliateEndpoint = createAdminEndpoint(
 	"/admin/affiliates/:id/approve",
 	{
 		method: "POST",
+		params: z.object({ id: z.string().max(128) }),
 		body: z.object({
-			id: z.string(),
 			commissionRate: z.number().min(0).max(100).optional(),
 		}),
 	},
@@ -14,7 +14,7 @@ export const approveAffiliateEndpoint = createAdminEndpoint(
 		const controller = ctx.context.controllers
 			.affiliates as AffiliateController;
 		const affiliate = await controller.approveAffiliate(
-			ctx.body.id,
+			ctx.params.id,
 			ctx.body.commissionRate,
 		);
 		if (!affiliate) return { error: "Unable to approve affiliate" };

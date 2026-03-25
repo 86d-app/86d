@@ -5,8 +5,8 @@ export const addCommentAdminEndpoint = createAdminEndpoint(
 	"/admin/quotes/:id/comments/add",
 	{
 		method: "POST",
+		params: z.object({ id: z.string().max(128) }),
 		body: z.object({
-			quoteId: z.string(),
 			authorName: z.string().min(1).max(200).transform(sanitizeText),
 			message: z.string().min(1).max(2000).transform(sanitizeText),
 		}),
@@ -14,7 +14,7 @@ export const addCommentAdminEndpoint = createAdminEndpoint(
 	async (ctx) => {
 		const controller = ctx.context.controllers.quotes as QuoteController;
 		const comment = await controller.addComment({
-			quoteId: ctx.body.quoteId,
+			quoteId: ctx.params.id,
 			authorType: "admin",
 			authorId: "admin",
 			authorName: ctx.body.authorName,

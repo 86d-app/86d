@@ -32,8 +32,9 @@ export const generateFeed = createAdminEndpoint(
 	"/admin/product-feeds/:id/generate",
 	{
 		method: "POST",
+		params: z.object({ id: z.string().max(128) }),
 		body: z.object({
-			products: z.array(productDataSchema),
+			products: z.array(productDataSchema).max(10000),
 		}),
 	},
 	async (ctx) => {

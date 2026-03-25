@@ -5,14 +5,12 @@ export const approveConversionEndpoint = createAdminEndpoint(
 	"/admin/affiliates/conversions/:id/approve",
 	{
 		method: "POST",
-		body: z.object({
-			id: z.string(),
-		}),
+		params: z.object({ id: z.string().max(128) }),
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers
 			.affiliates as AffiliateController;
-		const conversion = await controller.approveConversion(ctx.body.id);
+		const conversion = await controller.approveConversion(ctx.params.id);
 		if (!conversion) return { error: "Unable to approve conversion" };
 		return { conversion };
 	},

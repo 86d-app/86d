@@ -5,8 +5,8 @@ export const updateAffiliateEndpoint = createAdminEndpoint(
 	"/admin/affiliates/:id/update",
 	{
 		method: "POST",
+		params: z.object({ id: z.string().max(128) }),
 		body: z.object({
-			id: z.string(),
 			name: z.string().min(1).max(200).transform(sanitizeText).optional(),
 			email: z.string().email().max(320).optional(),
 			website: z.string().url().max(500).optional(),
@@ -17,7 +17,7 @@ export const updateAffiliateEndpoint = createAdminEndpoint(
 	async (ctx) => {
 		const controller = ctx.context.controllers
 			.affiliates as AffiliateController;
-		const affiliate = await controller.updateAffiliate(ctx.body.id, {
+		const affiliate = await controller.updateAffiliate(ctx.params.id, {
 			name: ctx.body.name,
 			email: ctx.body.email,
 			website: ctx.body.website,

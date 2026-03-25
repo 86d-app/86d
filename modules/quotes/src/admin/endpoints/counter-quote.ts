@@ -5,21 +5,23 @@ export const counterQuoteEndpoint = createAdminEndpoint(
 	"/admin/quotes/:id/counter",
 	{
 		method: "POST",
+		params: z.object({ id: z.string().max(128) }),
 		body: z.object({
-			id: z.string(),
-			items: z.array(
-				z.object({
-					itemId: z.string(),
-					offeredPrice: z.number().min(0),
-				}),
-			),
+			items: z
+				.array(
+					z.object({
+						itemId: z.string().max(128),
+						offeredPrice: z.number().min(0),
+					}),
+				)
+				.max(200),
 			expiresAt: z.coerce.date().optional(),
 			adminNotes: z.string().max(2000).transform(sanitizeText).optional(),
 		}),
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers.quotes as QuoteController;
-		const quote = await controller.counterQuote(ctx.body.id, {
+		const quote = await controller.counterQuote(ctx.params.id, {
 			items: ctx.body.items,
 			expiresAt: ctx.body.expiresAt,
 			adminNotes: ctx.body.adminNotes,

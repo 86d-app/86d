@@ -5,14 +5,12 @@ export const failPayoutEndpoint = createAdminEndpoint(
 	"/admin/affiliates/payouts/:id/fail",
 	{
 		method: "POST",
-		body: z.object({
-			id: z.string(),
-		}),
+		params: z.object({ id: z.string().max(128) }),
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers
 			.affiliates as AffiliateController;
-		const payout = await controller.failPayout(ctx.body.id);
+		const payout = await controller.failPayout(ctx.params.id);
 		if (!payout) return { error: "Unable to fail payout" };
 		return { payout };
 	},

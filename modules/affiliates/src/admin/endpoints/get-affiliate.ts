@@ -5,14 +5,12 @@ export const getAffiliateEndpoint = createAdminEndpoint(
 	"/admin/affiliates/:id",
 	{
 		method: "GET",
-		query: z.object({
-			id: z.string(),
-		}),
+		params: z.object({ id: z.string().max(128) }),
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers
 			.affiliates as AffiliateController;
-		const affiliate = await controller.getAffiliate(ctx.query.id);
+		const affiliate = await controller.getAffiliate(ctx.params.id);
 		if (!affiliate) return { error: "Affiliate not found" };
 
 		const balance = await controller.getAffiliateBalance(affiliate.id);

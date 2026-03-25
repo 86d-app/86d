@@ -5,14 +5,12 @@ export const rejectAffiliateEndpoint = createAdminEndpoint(
 	"/admin/affiliates/:id/reject",
 	{
 		method: "POST",
-		body: z.object({
-			id: z.string(),
-		}),
+		params: z.object({ id: z.string().max(128) }),
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers
 			.affiliates as AffiliateController;
-		const affiliate = await controller.rejectAffiliate(ctx.body.id);
+		const affiliate = await controller.rejectAffiliate(ctx.params.id);
 		if (!affiliate) return { error: "Unable to reject affiliate" };
 		return { affiliate };
 	},

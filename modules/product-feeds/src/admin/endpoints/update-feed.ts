@@ -23,6 +23,7 @@ export const updateFeed = createAdminEndpoint(
 	"/admin/product-feeds/:id/update",
 	{
 		method: "POST",
+		params: z.object({ id: z.string().max(128) }),
 		body: z.object({
 			name: z.string().min(1).max(200).optional(),
 			slug: z
