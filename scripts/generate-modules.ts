@@ -638,6 +638,24 @@ if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
 `;
 	}
 
+	// Generate analytics module wiring code (GTM, GA4, Sentry)
+	const hasAnalytics = modules.includes("@86d-app/analytics");
+	let analyticsWiringCode = "";
+	if (hasAnalytics) {
+		analyticsWiringCode = `
+// ── Analytics module wiring (GTM, GA4 Measurement Protocol, Sentry — env-var based) ──
+if (process.env.NEXT_PUBLIC_GOOGLE_TAG_MANAGER_ID || process.env.GA4_MEASUREMENT_ID || process.env.SENTRY_DSN) {
+  moduleOptions["@86d-app/analytics"] = {
+    ...moduleOptions["@86d-app/analytics"],
+    ...(process.env.NEXT_PUBLIC_GOOGLE_TAG_MANAGER_ID ? { gtmContainerId: process.env.NEXT_PUBLIC_GOOGLE_TAG_MANAGER_ID } : {}),
+    ...(process.env.GA4_MEASUREMENT_ID ? { ga4MeasurementId: process.env.GA4_MEASUREMENT_ID } : {}),
+    ...(process.env.GA4_API_SECRET ? { ga4ApiSecret: process.env.GA4_API_SECRET } : {}),
+    ...(process.env.SENTRY_DSN ? { sentryDsn: process.env.SENTRY_DSN } : {}),
+  };
+}
+`;
+	}
+
 	// Generate API router content
 	const routerContent = `// Auto-generated file - do not edit manually
 // Run 'pnpm generate:modules' to regenerate
@@ -650,7 +668,7 @@ ${moduleImports}
 ${providerImports.length > 0 ? `\n${providerImports.join("\n")}\n` : ""}
 // biome-ignore lint/suspicious/noExplicitAny: module option types are heterogeneous across modules
 const moduleOptions: Record<string, Record<string, any>> = ${JSON.stringify(moduleOptions, null, 2)};
-${providerWiringCode}${searchWiringCode}${toastWiringCode}${shippingWiringCode}${taxWiringCode}${notificationsWiringCode}
+${providerWiringCode}${searchWiringCode}${toastWiringCode}${shippingWiringCode}${taxWiringCode}${notificationsWiringCode}${analyticsWiringCode}
 const modules = [
 ${moduleInstances}
 ];

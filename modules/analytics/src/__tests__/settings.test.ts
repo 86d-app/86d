@@ -204,4 +204,30 @@ describe("analytics — module factory settings wiring", () => {
 		const mod = analytics({});
 		expect(mod.endpoints?.store).toHaveProperty("/analytics/client-config");
 	});
+
+	it("passes gtmContainerId option through to the module", async () => {
+		const { default: analytics } = await import("../index");
+		const mod = analytics({ gtmContainerId: "GTM-WIRED" });
+		expect(mod.options).toMatchObject({ gtmContainerId: "GTM-WIRED" });
+	});
+
+	it("passes ga4 options through to the module", async () => {
+		const { default: analytics } = await import("../index");
+		const mod = analytics({
+			ga4MeasurementId: "G-WIRED",
+			ga4ApiSecret: "secret123",
+		});
+		expect(mod.options).toMatchObject({
+			ga4MeasurementId: "G-WIRED",
+			ga4ApiSecret: "secret123",
+		});
+	});
+
+	it("passes sentryDsn option through to the module", async () => {
+		const { default: analytics } = await import("../index");
+		const mod = analytics({ sentryDsn: "https://key@sentry.io/1" });
+		expect(mod.options).toMatchObject({
+			sentryDsn: "https://key@sentry.io/1",
+		});
+	});
 });
