@@ -152,7 +152,7 @@ jobs:
         run: |
           cd apps/store && bun run start &
           echo $! > /tmp/store.pid
-          bunx wait-on http://localhost:3000/api/health --timeout 120000
+          bunx wait-on tcp:localhost:3000 --timeout 120000
 
       - name: E2E tests
         run: bun test:e2e
