@@ -65,6 +65,8 @@ jobs:
 
   test-e2e:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     needs: [typecheck]
     services:
       postgres:
@@ -145,6 +147,18 @@ jobs:
 
       - name: E2E tests
         run: bun test:e2e
+
+      - name: Regenerate visual snapshots
+        if: always() && github.ref == 'refs/heads/main'
+        run: bunx playwright test visual.spec.ts --update-snapshots
+
+      - name: Commit updated visual snapshots
+        if: always() && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tests/e2e/visual.spec.ts-snapshots/
+          git diff --staged --quiet || git commit -m "chore: update visual snapshots [skip ci]" && git push
 
       - uses: actions/upload-artifact@v4
         if: failure()

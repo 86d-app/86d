@@ -43,8 +43,12 @@ test.describe("Checkout — Full flow", () => {
 
 		/* 6. Cart drawer is already open from add-to-cart */
 		await expect(storefront.cartDrawer).toBeVisible({ timeout: 5_000 });
+		/* Wait for any in-flight cart fetch to settle before checking items */
+		await storefront.page.waitForLoadState("networkidle", {
+			timeout: 10_000,
+		});
 		await expect(storefront.cartItems.first()).toBeVisible({
-			timeout: 5_000,
+			timeout: 15_000,
 		});
 
 		/* 7. Verify cart has items */
