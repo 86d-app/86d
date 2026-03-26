@@ -101,8 +101,7 @@ export function MyTickets({
 	}
 
 	if (isError) {
-		// biome-ignore lint/suspicious/noExplicitAny: accessing HTTP status from module client error
-		const is401 = (error as any)?.status === 401;
+		const is401 = (error as Error & { status?: number }).status === 401;
 		return (
 			<section className="py-8">
 				<h2 className="mb-4 font-semibold text-foreground text-xl">

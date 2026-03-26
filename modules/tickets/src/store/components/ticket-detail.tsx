@@ -144,8 +144,7 @@ export function TicketDetail({
 	}
 
 	if (isError || !data?.ticket) {
-		// biome-ignore lint/suspicious/noExplicitAny: accessing HTTP status from module client error
-		const status = (error as any)?.status;
+		const status = (error as Error & { status?: number }).status;
 		const message =
 			status === 401
 				? "Please sign in to view this ticket."
