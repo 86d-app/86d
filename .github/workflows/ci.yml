@@ -86,6 +86,8 @@ jobs:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/86d
       DATABASE_URL_UNPOOLED: postgresql://postgres:postgres@localhost:5432/86d
       BETTER_AUTH_SECRET: ci-test-secret-not-for-production
+      # Force IPv4 in CI (some runners resolve `localhost` to ::1 first).
+      E2E_STORE_URL: http://127.0.0.1:3000
     steps:
       - uses: actions/checkout@v4
 
@@ -152,7 +154,7 @@ jobs:
         run: |
           cd apps/store && bun run start &
           echo $! > /tmp/store.pid
-          bunx wait-on tcp:localhost:3000 --timeout 120000
+          bunx wait-on tcp:127.0.0.1:3000 --timeout 120000
 
       - name: E2E tests
         run: bun test:e2e
