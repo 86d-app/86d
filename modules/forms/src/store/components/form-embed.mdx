@@ -14,6 +14,154 @@ export default function FormEmbedTemplate({
   onHoneypotChange,
   onSubmit,
 }) {
+  function FormFieldRenderer({ field, value, onChange }) {
+    const id = `form-field-${field.name}`;
+    const commonClass =
+      "w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm transition-colors focus:border-gray-500 focus:outline-none dark:border-gray-700 dark:focus:border-gray-500";
+
+    if (field.type === "hidden") {
+      return (
+        <input
+          type="hidden"
+          name={field.name}
+          value={value ?? field.defaultValue ?? ""}
+        />
+      );
+    }
+
+    if (field.type === "checkbox") {
+      return (
+        <div className="flex items-start gap-3">
+          <input
+            id={id}
+            type="checkbox"
+            checked={value === true || value === "true"}
+            onChange={(e) => onChange(field.name, e.target.checked)}
+            required={field.required}
+            className="mt-1 size-4 rounded border-gray-300 dark:border-gray-700"
+          />
+          <label htmlFor={id} className="text-sm">
+            {field.label}
+            {field.required && <span className="ml-1 text-red-500">*</span>}
+          </label>
+        </div>
+      );
+    }
+
+    if (field.type === "select") {
+      return (
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor={id} className="text-sm font-medium">
+            {field.label}
+            {field.required && <span className="ml-1 text-red-500">*</span>}
+          </label>
+          <select
+            id={id}
+            value={value ?? ""}
+            onChange={(e) => onChange(field.name, e.target.value)}
+            required={field.required}
+            className={commonClass}
+          >
+            <option value="">{field.placeholder || "Select..."}</option>
+            {(field.options ?? []).map((opt) => (
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
+            ))}
+          </select>
+        </div>
+      );
+    }
+
+    if (field.type === "radio") {
+      return (
+        <fieldset className="flex flex-col gap-1.5">
+          <legend className="text-sm font-medium">
+            {field.label}
+            {field.required && <span className="ml-1 text-red-500">*</span>}
+          </legend>
+          <div className="flex flex-col gap-2">
+            {(field.options ?? []).map((opt) => (
+              <label
+                key={opt}
+                className="flex items-center gap-2 text-sm"
+              >
+                <input
+                  type="radio"
+                  name={field.name}
+                  value={opt}
+                  checked={value === opt}
+                  onChange={() => onChange(field.name, opt)}
+                  required={field.required}
+                  className="size-4 border-gray-300 dark:border-gray-700"
+                />
+                {opt}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      );
+    }
+
+    if (field.type === "textarea") {
+      return (
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor={id} className="text-sm font-medium">
+            {field.label}
+            {field.required && <span className="ml-1 text-red-500">*</span>}
+          </label>
+          <textarea
+            id={id}
+            value={value ?? ""}
+            onChange={(e) => onChange(field.name, e.target.value)}
+            placeholder={field.placeholder}
+            required={field.required}
+            minLength={field.min}
+            maxLength={field.max}
+            rows={4}
+            className={commonClass + " resize-y"}
+          />
+        </div>
+      );
+    }
+
+    const inputType =
+      field.type === "email"
+        ? "email"
+        : field.type === "number"
+          ? "number"
+          : field.type === "phone"
+            ? "tel"
+            : field.type === "date"
+              ? "date"
+              : field.type === "url"
+                ? "url"
+                : "text";
+
+    return (
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor={id} className="text-sm font-medium">
+          {field.label}
+          {field.required && <span className="ml-1 text-red-500">*</span>}
+        </label>
+        <input
+          id={id}
+          type={inputType}
+          value={value ?? ""}
+          onChange={(e) => onChange(field.name, e.target.value)}
+          placeholder={field.placeholder}
+          required={field.required}
+          pattern={field.pattern}
+          min={field.type === "number" ? field.min : undefined}
+          max={field.type === "number" ? field.max : undefined}
+          minLength={field.type !== "number" ? field.min : undefined}
+          maxLength={field.type !== "number" ? field.max : undefined}
+          className={commonClass}
+        />
+      </div>
+    );
+  }
+
   if (submitted) {
     return (
       <div className="rounded-lg border border-green-200 bg-green-50 p-6 text-center dark:border-green-800 dark:bg-green-950">
@@ -71,142 +219,5 @@ export default function FormEmbedTemplate({
         </button>
       </form>
     </section>
-  );
-}
-
-function FormFieldRenderer({ field, value, onChange }) {
-  const id = `form-field-${field.name}`;
-  const commonClass = "w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm transition-colors focus:border-gray-500 focus:outline-none dark:border-gray-700 dark:focus:border-gray-500";
-
-  if (field.type === "hidden") {
-    return (
-      <input
-        type="hidden"
-        name={field.name}
-        value={value ?? field.defaultValue ?? ""}
-      />
-    );
-  }
-
-  if (field.type === "checkbox") {
-    return (
-      <div className="flex items-start gap-3">
-        <input
-          id={id}
-          type="checkbox"
-          checked={value === true || value === "true"}
-          onChange={(e) => onChange(field.name, e.target.checked)}
-          required={field.required}
-          className="mt-1 size-4 rounded border-gray-300 dark:border-gray-700"
-        />
-        <label htmlFor={id} className="text-sm">
-          {field.label}
-          {field.required && <span className="ml-1 text-red-500">*</span>}
-        </label>
-      </div>
-    );
-  }
-
-  if (field.type === "select") {
-    return (
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor={id} className="text-sm font-medium">
-          {field.label}
-          {field.required && <span className="ml-1 text-red-500">*</span>}
-        </label>
-        <select
-          id={id}
-          value={value ?? ""}
-          onChange={(e) => onChange(field.name, e.target.value)}
-          required={field.required}
-          className={commonClass}
-        >
-          <option value="">{field.placeholder || "Select..."}</option>
-          {(field.options ?? []).map((opt) => (
-            <option key={opt} value={opt}>{opt}</option>
-          ))}
-        </select>
-      </div>
-    );
-  }
-
-  if (field.type === "radio") {
-    return (
-      <fieldset className="flex flex-col gap-1.5">
-        <legend className="text-sm font-medium">
-          {field.label}
-          {field.required && <span className="ml-1 text-red-500">*</span>}
-        </legend>
-        <div className="flex flex-col gap-2">
-          {(field.options ?? []).map((opt) => (
-            <label key={opt} className="flex items-center gap-2 text-sm">
-              <input
-                type="radio"
-                name={field.name}
-                value={opt}
-                checked={value === opt}
-                onChange={() => onChange(field.name, opt)}
-                required={field.required}
-                className="size-4 border-gray-300 dark:border-gray-700"
-              />
-              {opt}
-            </label>
-          ))}
-        </div>
-      </fieldset>
-    );
-  }
-
-  if (field.type === "textarea") {
-    return (
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor={id} className="text-sm font-medium">
-          {field.label}
-          {field.required && <span className="ml-1 text-red-500">*</span>}
-        </label>
-        <textarea
-          id={id}
-          value={value ?? ""}
-          onChange={(e) => onChange(field.name, e.target.value)}
-          placeholder={field.placeholder}
-          required={field.required}
-          minLength={field.min}
-          maxLength={field.max}
-          rows={4}
-          className={commonClass + " resize-y"}
-        />
-      </div>
-    );
-  }
-
-  const inputType =
-    field.type === "email" ? "email" :
-    field.type === "number" ? "number" :
-    field.type === "phone" ? "tel" :
-    field.type === "date" ? "date" :
-    field.type === "url" ? "url" :
-    "text";
-
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-sm font-medium">
-        {field.label}
-        {field.required && <span className="ml-1 text-red-500">*</span>}
-      </label>
-      <input
-        id={id}
-        type={inputType}
-        value={value ?? ""}
-        onChange={(e) => onChange(field.name, e.target.value)}
-        placeholder={field.placeholder}
-        required={field.required}
-        pattern={field.pattern}
-        min={field.type === "number" ? field.min : undefined}
-        max={field.type === "number" ? field.max : undefined}
-        minLength={field.type !== "number" ? field.min : undefined}
-        maxLength={field.type !== "number" ? field.max : undefined}
-        className={commonClass}
-      />
-    </div>
   );
 }
