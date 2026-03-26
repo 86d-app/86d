@@ -1586,6 +1586,7 @@
         "@types/node": "catalog:node",
         "next": "catalog:next",
         "typescript": "catalog:",
+        "vitest": "catalog:vite",
       },
       "peerDependencies": {
         "next": ">=15",
