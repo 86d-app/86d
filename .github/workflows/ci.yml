@@ -145,6 +145,15 @@ jobs:
       - name: Install Playwright
         run: bunx playwright install --with-deps chromium
 
+      - name: Build store
+        run: bun run build:store
+
+      - name: Start store server
+        run: |
+          cd apps/store && bun run start &
+          echo $! > /tmp/store.pid
+          bunx wait-on http://localhost:3000/api/health --timeout 120000
+
       - name: E2E tests
         run: bun test:e2e
 

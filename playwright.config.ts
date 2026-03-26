@@ -4,13 +4,19 @@ import { defineConfig, devices } from "@playwright/test";
  * Playwright E2E configuration for 86d commerce platform.
  *
  * Run against locally running apps:
- *   bun run dev:store       # start the store dev server (port 3000)
- *   bun run test:e2e        # run all E2E tests
+ *   bun run dev:store                    # start the store dev server (port 3000)
+ *   PLAYWRIGHT_START_SERVER=1 bun run test:e2e   # auto-start dev server + run tests
+ *   bun run test:e2e                     # run tests against already-running server
+ *
+ * In headless / CI environments do NOT set PLAYWRIGHT_START_SERVER — there is no
+ * display and the dev server will hang indefinitely.  Start the server separately
+ * (e.g. `bun run build && bun run start`) or point E2E_STORE_URL at a deployed URL.
  *
  * Environment variables:
- *   E2E_STORE_URL       — store URL (default: http://localhost:3000)
- *   E2E_ADMIN_EMAIL     — admin account email for auth tests
- *   E2E_ADMIN_PASSWORD  — admin account password for auth tests
+ *   E2E_STORE_URL            — store URL (default: http://localhost:3000)
+ *   E2E_ADMIN_EMAIL          — admin account email for auth tests
+ *   E2E_ADMIN_PASSWORD       — admin account password for auth tests
+ *   PLAYWRIGHT_START_SERVER  — set to "1" to auto-start the dev server before tests
  */
 
 const STORE_URL = process.env.E2E_STORE_URL || "http://localhost:3000";
@@ -118,11 +124,17 @@ export default defineConfig({
 			},
 		},
 	],
-	/* Start dev server before tests if not already running */
-	webServer: {
-		command: "bun run dev:store",
-		url: STORE_URL,
-		reuseExistingServer: !process.env.CI,
-		timeout: 120_000,
-	},
+	/* Only auto-start the dev server when explicitly requested.
+	 * Never set PLAYWRIGHT_START_SERVER in headless/CI — the dev server
+	 * will hang indefinitely with no display and block the entire process. */
+	...(process.env.PLAYWRIGHT_START_SERVER === "1"
+		? {
+				webServer: {
+					command: "bun run dev:store",
+					url: STORE_URL,
+					reuseExistingServer: true,
+					timeout: 120_000,
+				},
+			}
+		: {}),
 });
