@@ -8,11 +8,21 @@ import type {
 	Collection,
 	CollectionProduct,
 	CollectionWithProducts,
+	ImportProductRow,
 	ImportResult,
 	Product,
 	ProductVariant,
 } from "../controllers";
 import { controllers } from "../controllers";
+
+/** Test helper: typed controller result that allows nested property access */
+type R = {
+	products: Product[];
+	variants: ProductVariant[];
+	categories: Category[];
+	collections: (Collection & { products: Product[] })[];
+	[key: string]: unknown;
+};
 
 // ── Sample data ────────────────────────────────────────────────────────────
 
@@ -121,8 +131,7 @@ describe("product controllers", () => {
 
 			const result = (await controllers.product.getWithVariants(
 				makeControllerCtx(data, { params: { id: "prod_1" } }),
-				// biome-ignore lint/suspicious/noExplicitAny: controller result cast in test
-			)) as any;
+			)) as R;
 			expect(result).toMatchObject({ id: "prod_1" });
 			expect(result.variants).toEqual([]);
 			expect(result.category).toBeUndefined();
@@ -136,8 +145,7 @@ describe("product controllers", () => {
 
 			const result = (await controllers.product.getWithVariants(
 				makeControllerCtx(data, { params: { id: "prod_1" } }),
-				// biome-ignore lint/suspicious/noExplicitAny: controller result cast in test
-			)) as any;
+			)) as R;
 			expect(result.variants).toHaveLength(1);
 			expect(result.variants[0]).toMatchObject({ id: "var_1" });
 		});
@@ -150,8 +158,7 @@ describe("product controllers", () => {
 
 			const result = (await controllers.product.getWithVariants(
 				makeControllerCtx(data, { params: { id: "prod_1" } }),
-				// biome-ignore lint/suspicious/noExplicitAny: controller result cast in test
-			)) as any;
+			)) as R;
 			expect(result.category).toMatchObject({
 				id: "cat_1",
 				name: "Electronics",
@@ -173,8 +180,7 @@ describe("product controllers", () => {
 
 			const result = (await controllers.product.list(
 				makeControllerCtx(data),
-				// biome-ignore lint/suspicious/noExplicitAny: controller result cast in test
-			)) as any;
+			)) as R;
 			expect(result.products).toHaveLength(1);
 			expect(result.page).toBe(1);
 			expect(result.limit).toBe(20);
@@ -194,8 +200,7 @@ describe("product controllers", () => {
 
 			const result = (await controllers.product.list(
 				makeControllerCtx(data, { query: { status: "draft" } }),
-				// biome-ignore lint/suspicious/noExplicitAny: controller result cast in test
-			)) as any;
+			)) as R;
 			expect(result.products).toHaveLength(1);
 			expect(result.products[0].status).toBe("draft");
 		});
@@ -214,8 +219,7 @@ describe("product controllers", () => {
 
 			const result = (await controllers.product.list(
 				makeControllerCtx(data, { query: { featured: "true" } }),
-				// biome-ignore lint/suspicious/noExplicitAny: controller result cast in test
-			)) as any;
+			)) as R;
 			expect(result.products).toHaveLength(1);
 			expect(result.products[0].isFeatured).toBe(true);
 		});
@@ -235,8 +239,7 @@ describe("product controllers", () => {
 
 			const result = (await controllers.product.list(
 				makeControllerCtx(data, { query: { limit: "2" } }),
-				// biome-ignore lint/suspicious/noExplicitAny: controller result cast in test
-			)) as any;
+			)) as R;
 			expect(result.products).toHaveLength(2);
 			expect(result.total).toBe(5);
 		});
@@ -255,8 +258,7 @@ describe("product controllers", () => {
 
 			const result = (await controllers.product.list(
 				makeControllerCtx(data, { query: { minPrice: "3000" } }),
-				// biome-ignore lint/suspicious/noExplicitAny: controller result cast in test
-			)) as any;
+			)) as R;
 			expect(result.products).toHaveLength(1);
 			expect(result.products[0].price).toBe(5000);
 			expect(result.total).toBe(1);
@@ -276,8 +278,7 @@ describe("product controllers", () => {
 
 			const result = (await controllers.product.list(
 				makeControllerCtx(data, { query: { maxPrice: "2000" } }),
-				// biome-ignore lint/suspicious/noExplicitAny: controller result cast in test
-			)) as any;
+			)) as R;
 			expect(result.products).toHaveLength(1);
 			expect(result.products[0].price).toBe(1000);
 			expect(result.total).toBe(1);
@@ -304,8 +305,7 @@ describe("product controllers", () => {
 				makeControllerCtx(data, {
 					query: { minPrice: "1000", maxPrice: "5000" },
 				}),
-				// biome-ignore lint/suspicious/noExplicitAny: controller result cast in test
-			)) as any;
+			)) as R;
 			expect(result.products).toHaveLength(1);
 			expect(result.products[0].id).toBe("p2");
 			expect(result.total).toBe(1);
@@ -325,8 +325,7 @@ describe("product controllers", () => {
 
 			const result = (await controllers.product.list(
 				makeControllerCtx(data, { query: { inStock: "true" } }),
-				// biome-ignore lint/suspicious/noExplicitAny: controller result cast in test
-			)) as any;
+			)) as R;
 			expect(result.products).toHaveLength(1);
 			expect(result.products[0].inventory).toBeGreaterThan(0);
 			expect(result.total).toBe(1);
@@ -350,8 +349,7 @@ describe("product controllers", () => {
 
 			const result = (await controllers.product.list(
 				makeControllerCtx(data, { query: { tag: "sale" } }),
-				// biome-ignore lint/suspicious/noExplicitAny: controller result cast in test
-			)) as any;
+			)) as R;
 			expect(result.products).toHaveLength(1);
 			expect(result.products[0].id).toBe("p1");
 			expect(result.total).toBe(1);
@@ -366,8 +364,7 @@ describe("product controllers", () => {
 
 			const result = (await controllers.product.list(
 				makeControllerCtx(data, { query: { tag: "sale" } }),
-				// biome-ignore lint/suspicious/noExplicitAny: controller result cast in test
-			)) as any;
+			)) as R;
 			expect(result.products).toHaveLength(1);
 		});
 
@@ -406,8 +403,7 @@ describe("product controllers", () => {
 
 			const result = (await controllers.product.list(
 				makeControllerCtx(data, { query: { search: "blue" } }),
-				// biome-ignore lint/suspicious/noExplicitAny: controller result cast in test
-			)) as any;
+			)) as R;
 			expect(result.products).toHaveLength(2);
 			expect(result.total).toBe(2);
 		});
@@ -451,8 +447,7 @@ describe("product controllers", () => {
 				makeControllerCtx(data, {
 					query: { maxPrice: "5000", inStock: "true", tag: "sale" },
 				}),
-				// biome-ignore lint/suspicious/noExplicitAny: controller result cast in test
-			)) as any;
+			)) as R;
 			expect(result.products).toHaveLength(1);
 			expect(result.products[0].id).toBe("p1");
 			expect(result.total).toBe(1);
@@ -597,8 +592,7 @@ describe("product controllers", () => {
 
 			const result = (await controllers.product.getRelated(
 				makeControllerCtx(data, { params: { id: "target" } }),
-				// biome-ignore lint/suspicious/noExplicitAny: controller result cast in test
-			)) as any;
+			)) as R;
 			expect(result.products).toHaveLength(2);
 			expect(result.products[0].id).toBe("same-cat");
 		});
@@ -647,8 +641,7 @@ describe("product controllers", () => {
 
 			const result = (await controllers.product.getRelated(
 				makeControllerCtx(data, { params: { id: "target" } }),
-				// biome-ignore lint/suspicious/noExplicitAny: controller result cast in test
-			)) as any;
+			)) as R;
 			expect(result.products).toHaveLength(3);
 			// shared-2 has 2 shared tags, shared-1 has 1
 			expect(result.products[0].id).toBe("shared-2");
@@ -669,8 +662,7 @@ describe("product controllers", () => {
 
 			const result = (await controllers.product.getRelated(
 				makeControllerCtx(data, { params: { id: "target" } }),
-				// biome-ignore lint/suspicious/noExplicitAny: controller result cast in test
-			)) as any;
+			)) as R;
 			expect(result.products).toHaveLength(0);
 		});
 
@@ -703,16 +695,14 @@ describe("product controllers", () => {
 					params: { id: "target" },
 					query: { limit: "2" },
 				}),
-				// biome-ignore lint/suspicious/noExplicitAny: controller result cast in test
-			)) as any;
+			)) as R;
 			expect(result.products).toHaveLength(2);
 		});
 
 		it("returns empty products when product not found", async () => {
 			const result = (await controllers.product.getRelated(
 				makeControllerCtx(data, { params: { id: "missing" } }),
-				// biome-ignore lint/suspicious/noExplicitAny: controller result cast in test
-			)) as any;
+			)) as R;
 			expect(result.products).toEqual([]);
 		});
 
@@ -750,8 +740,7 @@ describe("product controllers", () => {
 
 			const result = (await controllers.product.getRelated(
 				makeControllerCtx(data, { params: { id: "target" } }),
-				// biome-ignore lint/suspicious/noExplicitAny: controller result cast in test
-			)) as any;
+			)) as R;
 			expect(result.products).toHaveLength(1);
 			expect(result.products[0].id).toBe("active");
 		});
@@ -824,8 +813,7 @@ describe("product controllers", () => {
 
 			const result = (await controllers.product.delete(
 				makeControllerCtx(data, { params: { id: "prod_1" } }),
-				// biome-ignore lint/suspicious/noExplicitAny: controller result cast in test
-			)) as any;
+			)) as R;
 			expect(result.success).toBe(true);
 			expect(await data.get("product", "prod_1")).toBeNull();
 			expect(await data.get("productVariant", "var_1")).toBeNull();
@@ -844,8 +832,7 @@ describe("product controllers", () => {
 				makeControllerCtx(data, {
 					query: { productId: "p1", quantity: "3" },
 				}),
-				// biome-ignore lint/suspicious/noExplicitAny: controller result cast in test
-			)) as any;
+			)) as R;
 			expect(result.available).toBe(true);
 			expect(result.inventory).toBe(10);
 		});
@@ -861,8 +848,7 @@ describe("product controllers", () => {
 				makeControllerCtx(data, {
 					query: { productId: "p1", quantity: "5" },
 				}),
-				// biome-ignore lint/suspicious/noExplicitAny: controller result cast in test
-			)) as any;
+			)) as R;
 			expect(result.available).toBe(false);
 		});
 
@@ -877,8 +863,7 @@ describe("product controllers", () => {
 				makeControllerCtx(data, {
 					query: { productId: "p1", quantity: "100" },
 				}),
-				// biome-ignore lint/suspicious/noExplicitAny: controller result cast in test
-			)) as any;
+			)) as R;
 			expect(result.available).toBe(true);
 		});
 
@@ -898,8 +883,7 @@ describe("product controllers", () => {
 				makeControllerCtx(data, {
 					query: { productId: "p1", quantity: "5" },
 				}),
-				// biome-ignore lint/suspicious/noExplicitAny: controller result cast in test
-			)) as any;
+			)) as R;
 			expect(result.available).toBe(true);
 		});
 
@@ -915,8 +899,7 @@ describe("product controllers", () => {
 				makeControllerCtx(data, {
 					query: { productId: "p1", variantId: "var_1", quantity: "2" },
 				}),
-				// biome-ignore lint/suspicious/noExplicitAny: controller result cast in test
-			)) as any;
+			)) as R;
 			expect(result.available).toBe(true);
 			expect(result.inventory).toBe(3);
 		});
@@ -1096,8 +1079,7 @@ describe("variant controllers", () => {
 
 			const result = (await controllers.variant.delete(
 				makeControllerCtx(data, { params: { id: "var_1" } }),
-				// biome-ignore lint/suspicious/noExplicitAny: controller result cast in test
-			)) as any;
+			)) as R;
 			expect(result.success).toBe(true);
 			expect(await data.get("productVariant", "var_1")).toBeNull();
 		});
@@ -1164,8 +1146,7 @@ describe("category controllers", () => {
 
 			const result = (await controllers.category.list(
 				makeControllerCtx(data),
-				// biome-ignore lint/suspicious/noExplicitAny: controller result cast in test
-			)) as any;
+			)) as R;
 			expect(result.categories.map((c: Category) => c.position)).toEqual([
 				0, 1, 2,
 			]);
@@ -1192,7 +1173,6 @@ describe("category controllers", () => {
 
 			const tree = (await controllers.category.getTree(
 				makeControllerCtx(data),
-				// biome-ignore lint/suspicious/noExplicitAny: controller result cast in test
 			)) as any[];
 			expect(tree).toHaveLength(1);
 			expect(tree[0].id).toBe("root");
@@ -1214,7 +1194,6 @@ describe("category controllers", () => {
 
 			const tree = (await controllers.category.getTree(
 				makeControllerCtx(data),
-				// biome-ignore lint/suspicious/noExplicitAny: controller result cast in test
 			)) as any[];
 			expect(tree).toHaveLength(1);
 		});
@@ -1272,8 +1251,7 @@ describe("category controllers", () => {
 
 			const result = (await controllers.category.delete(
 				makeControllerCtx(data, { params: { id: "cat_1" } }),
-				// biome-ignore lint/suspicious/noExplicitAny: controller result cast in test
-			)) as any;
+			)) as R;
 			expect(result.success).toBe(true);
 
 			const updatedProduct = (await data.get("product", "prod_1")) as Product;
@@ -1383,8 +1361,7 @@ describe("collection controllers", () => {
 
 			const result = (await controllers.collection.list(
 				makeControllerCtx(data),
-				// biome-ignore lint/suspicious/noExplicitAny: controller result cast in test
-			)) as any;
+			)) as R;
 			expect(result.collections).toHaveLength(3);
 			expect(result.collections.map((c: Collection) => c.position)).toEqual([
 				0, 1, 2,
@@ -1405,8 +1382,7 @@ describe("collection controllers", () => {
 
 			const result = (await controllers.collection.list(
 				makeControllerCtx(data, { query: { featured: "true" } }),
-				// biome-ignore lint/suspicious/noExplicitAny: controller result cast in test
-			)) as any;
+			)) as R;
 			expect(result.collections).toHaveLength(1);
 			expect(result.collections[0].isFeatured).toBe(true);
 		});
@@ -1425,8 +1401,7 @@ describe("collection controllers", () => {
 
 			const result = (await controllers.collection.list(
 				makeControllerCtx(data, { query: { visible: "true" } }),
-				// biome-ignore lint/suspicious/noExplicitAny: controller result cast in test
-			)) as any;
+			)) as R;
 			expect(result.collections).toHaveLength(1);
 			expect(result.collections[0].isVisible).toBe(true);
 		});
@@ -1584,8 +1559,7 @@ describe("collection controllers", () => {
 
 			const result = (await controllers.collection.delete(
 				makeControllerCtx(data, { params: { id: "col_1" } }),
-				// biome-ignore lint/suspicious/noExplicitAny: controller result cast in test
-			)) as any;
+			)) as R;
 			expect(result.success).toBe(true);
 			expect(await data.get("collection", "col_1")).toBeNull();
 			expect(await data.get("collectionProduct", "cp_1")).toBeNull();
@@ -1660,8 +1634,7 @@ describe("collection controllers", () => {
 				makeControllerCtx(data, {
 					params: { id: "col_1", productId: "p1" },
 				}),
-				// biome-ignore lint/suspicious/noExplicitAny: controller result cast in test
-			)) as any;
+			)) as R;
 			expect(result.success).toBe(true);
 			expect(await data.get("collectionProduct", "cp_1")).toBeNull();
 		});
@@ -1694,8 +1667,7 @@ describe("collection controllers", () => {
 
 			const result = (await controllers.collection.listProducts(
 				makeControllerCtx(data, { params: { id: "col_1" } }),
-				// biome-ignore lint/suspicious/noExplicitAny: controller result cast in test
-			)) as any;
+			)) as R;
 			expect(result.products).toHaveLength(2);
 			expect(result.products[0].id).toBe("p2");
 			expect(result.products[1].id).toBe("p1");
@@ -1704,8 +1676,7 @@ describe("collection controllers", () => {
 		it("returns empty products when collection not found", async () => {
 			const result = (await controllers.collection.listProducts(
 				makeControllerCtx(data, { params: { id: "missing" } }),
-				// biome-ignore lint/suspicious/noExplicitAny: controller result cast in test
-			)) as any;
+			)) as R;
 			expect(result.products).toEqual([]);
 		});
 	});
@@ -2008,10 +1979,7 @@ describe("import controllers", () => {
 			const result = (await controllers.import.importProducts(
 				makeControllerCtx(data, {
 					body: {
-						products: [
-							// biome-ignore lint/suspicious/noExplicitAny: testing missing field
-							{ name: "No Price" } as any,
-						],
+						products: [{ name: "No Price" } as unknown as ImportProductRow],
 					},
 				}),
 			)) as ImportResult;
