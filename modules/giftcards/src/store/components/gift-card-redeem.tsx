@@ -30,14 +30,16 @@ export function GiftCardRedeem({
 		onError: (err: Error) => {
 			setError(extractError(err, "Failed to apply gift card."));
 		},
-		// biome-ignore lint/suspicious/noExplicitAny: response shape from module endpoint
-		onSuccess: (data: any) => {
+		onSuccess: (data: Record<string, unknown>) => {
 			setApplied({
-				amount: data.amountApplied,
-				remaining: data.remainingBalance,
-				currency: data.currency,
+				amount: data.amountApplied as number,
+				remaining: data.remainingBalance as number,
+				currency: data.currency as string,
 			});
-			onApplied?.(data.amountApplied, data.remainingBalance);
+			onApplied?.(
+				data.amountApplied as number,
+				data.remainingBalance as number,
+			);
 		},
 	});
 

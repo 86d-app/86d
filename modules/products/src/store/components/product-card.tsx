@@ -7,10 +7,10 @@ import type { Product } from "./_types";
 import { formatPrice, imageUrl } from "./_utils";
 import ProductCardTemplate from "./product-card.mdx";
 
-export interface ProductCardProps {
+export type ProductCardProps = {
 	product: Product;
 	showAddToCart?: boolean;
-}
+};
 
 export const ProductCard = memo(function ProductCard({
 	product,
@@ -18,8 +18,9 @@ export const ProductCard = memo(function ProductCard({
 }: ProductCardProps) {
 	const cartApi = useCartMutation();
 	const track = useTrack();
-	// biome-ignore lint/suspicious/noExplicitAny: store context shape varies per app
-	const store = useStoreContext<{ cart: any }>();
+	const store = useStoreContext<{
+		cart: { setItemCount(count: number): void; openDrawer(): void };
+	}>();
 
 	const addToCartMutation = cartApi.addToCart.useMutation({
 		onSuccess: (data: {

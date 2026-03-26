@@ -29,15 +29,14 @@ export function GiftCardBalance() {
 
 		try {
 			const res = await api.check.fetch({ code: code.trim().toUpperCase() });
-			// biome-ignore lint/suspicious/noExplicitAny: response shape from module endpoint
-			const data = res as any;
+			const data = res as Record<string, unknown>;
 			if (data?.error) {
-				setError(data.error);
+				setError(String(data.error));
 			} else {
 				setResult({
-					balance: data.balance,
-					currency: data.currency,
-					status: data.status,
+					balance: data.balance as number,
+					currency: data.currency as string,
+					status: data.status as string,
 				});
 			}
 		} catch (err) {

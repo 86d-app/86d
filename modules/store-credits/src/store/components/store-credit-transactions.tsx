@@ -4,7 +4,7 @@ import { useStoreCreditApi } from "./_hooks";
 import { formatCurrency, formatDate, formatReason } from "./_utils";
 import StoreCreditTransactionsTemplate from "./store-credit-transactions.mdx";
 
-interface Transaction {
+type Transaction = {
 	id: string;
 	type: "credit" | "debit";
 	amount: number;
@@ -12,7 +12,7 @@ interface Transaction {
 	reason: string;
 	description: string;
 	createdAt: string;
-}
+};
 
 /**
  * Displays a list of store credit transactions for a customer.
@@ -32,9 +32,9 @@ export function StoreCreditTransactions({
 		...(limit ? { take: limit } : {}),
 	});
 
-	// biome-ignore lint/suspicious/noExplicitAny: response shape from module endpoint
-	const result = data as any;
-	const transactions: Transaction[] = result?.transactions ?? [];
+	const result = data as Record<string, unknown> | undefined;
+	const transactions: Transaction[] =
+		(result?.transactions as Transaction[]) ?? [];
 
 	return (
 		<StoreCreditTransactionsTemplate

@@ -5,7 +5,7 @@ import { memo } from "react";
 import { useCartMutation } from "./_hooks";
 import { formatPrice } from "./_utils";
 
-export interface FlashSaleProductData {
+export type FlashSaleProductData = {
 	id: string;
 	productId: string;
 	salePrice: number;
@@ -13,7 +13,7 @@ export interface FlashSaleProductData {
 	stockLimit: number | null;
 	stockSold: number;
 	sortOrder: number;
-}
+};
 
 export const FlashSaleProductCard = memo(function FlashSaleProductCard({
 	product,
@@ -21,8 +21,7 @@ export const FlashSaleProductCard = memo(function FlashSaleProductCard({
 	product: FlashSaleProductData;
 }) {
 	const cartApi = useCartMutation();
-	// biome-ignore lint/suspicious/noExplicitAny: store context shape varies per app
-	const store = useStoreContext<{ cart: any }>();
+	const store = useStoreContext<{ cart: { openDrawer(): void } }>();
 
 	const discountPct = Math.round(
 		((product.originalPrice - product.salePrice) / product.originalPrice) * 100,

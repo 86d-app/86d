@@ -15,14 +15,13 @@ export function StoreCreditBalance({ customerId }: { customerId: string }) {
 		customerId,
 	});
 
-	// biome-ignore lint/suspicious/noExplicitAny: response shape from module endpoint
-	const result = data as any;
+	const result = data as Record<string, unknown> | undefined;
 
 	return (
 		<StoreCreditBalanceTemplate
-			balance={result?.balance ?? 0}
-			currency={result?.currency ?? "USD"}
-			status={result?.status ?? "active"}
+			balance={(result?.balance as number) ?? 0}
+			currency={(result?.currency as string) ?? "USD"}
+			status={(result?.status as string) ?? "active"}
 			isLoading={isLoading}
 			error={error ? "Unable to load store credit balance." : ""}
 			formatCurrency={formatCurrency}

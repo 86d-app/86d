@@ -25,10 +25,10 @@ import { RelatedProducts } from "./related-products";
 import { StarDisplay } from "./star-display";
 import { StockBadge } from "./stock-badge";
 
-export interface ProductDetailProps {
+export type ProductDetailProps = {
 	slug?: string;
 	params?: Record<string, string>;
-}
+};
 
 export function ProductDetail(props: ProductDetailProps) {
 	const slug = props.slug ?? props.params?.slug;
@@ -36,8 +36,9 @@ export function ProductDetail(props: ProductDetailProps) {
 	const cartApi = useCartMutation();
 	const reviewsApi = useReviewsApi();
 	const track = useTrack();
-	// biome-ignore lint/suspicious/noExplicitAny: store context shape varies per app
-	const store = useStoreContext<{ cart: any }>();
+	const store = useStoreContext<{
+		cart: { setItemCount(count: number): void; openDrawer(): void };
+	}>();
 
 	const { data, isLoading, isError } = api.getProduct.useQuery(
 		{ params: { id: slug ?? "" } },

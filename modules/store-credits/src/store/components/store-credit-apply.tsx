@@ -29,20 +29,21 @@ export function StoreCreditApply({
 		{ customerId },
 	);
 
-	// biome-ignore lint/suspicious/noExplicitAny: response shape from module endpoint
-	const balanceResult = balanceData as any;
-	const balance: number = balanceResult?.balance ?? 0;
-	const currency: string = balanceResult?.currency ?? "USD";
-	const status: string = balanceResult?.status ?? "active";
+	const balanceResult = balanceData as Record<string, unknown> | undefined;
+	const balance: number = (balanceResult?.balance as number) ?? 0;
+	const currency: string = (balanceResult?.currency as string) ?? "USD";
+	const status: string = (balanceResult?.status as string) ?? "active";
 
 	const applyMutation = api.apply.useMutation({
 		onError: (err: Error) => {
 			setError(extractError(err, "Failed to apply store credit."));
 		},
-		// biome-ignore lint/suspicious/noExplicitAny: response shape from module endpoint
-		onSuccess: (data: any) => {
-			const amountApplied = data.transaction?.amount ?? 0;
-			const remainingBalance = data.remainingBalance ?? 0;
+		onSuccess: (data: Record<string, unknown>) => {
+			const transaction = data.transaction as
+				| Record<string, unknown>
+				| undefined;
+			const amountApplied = (transaction?.amount as number) ?? 0;
+			const remainingBalance = (data.remainingBalance as number) ?? 0;
 			setApplied({ amount: amountApplied, remaining: remainingBalance });
 			onApplied?.(amountApplied, remainingBalance);
 		},
