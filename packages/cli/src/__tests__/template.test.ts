@@ -66,7 +66,19 @@ describe("template", () => {
 		vi.restoreAllMocks();
 	});
 
-	async function runTemplate(subcommand: string, args: string[] = []) {
+	let mockFetchTemplate: ReturnType<typeof vi.fn>;
+
+	async function runTemplate(
+		subcommand: string,
+		args: string[] = [],
+		options?: {
+			fetchResult?: {
+				success: boolean;
+				localPath?: string;
+				error?: string;
+			};
+		},
+	) {
 		vi.resetModules();
 		vi.doMock("../utils.js", async () => {
 			const actual =
@@ -77,8 +89,30 @@ describe("template", () => {
 			};
 		});
 
+		mockFetchTemplate = vi.fn();
+		if (options?.fetchResult) {
+			mockFetchTemplate.mockImplementation(() => {
+				// Simulate what the real fetchTemplate does: create the directory
+				if (options.fetchResult?.success && options.fetchResult.localPath) {
+					mkdirSync(options.fetchResult.localPath, { recursive: true });
+				}
+				return Promise.resolve(options.fetchResult);
+			});
+		}
+
+		vi.doMock("@86d-app/registry", async () => {
+			const actual =
+				await vi.importActual<typeof import("@86d-app/registry")>(
+					"@86d-app/registry",
+				);
+			return {
+				...actual,
+				fetchTemplate: mockFetchTemplate,
+			};
+		});
+
 		const { templateCommand } = await import("../commands/template.js");
-		templateCommand(subcommand, args);
+		return templateCommand(subcommand, args);
 	}
 
 	it("creates a new template by copying brisa", async () => {
@@ -210,6 +244,186 @@ describe("template", () => {
 				"utf-8",
 			);
 			expect(tsconfig).toContain("templates/alt/");
+		});
+	});
+
+	describe("template add", () => {
+		it("adds a template from a GitHub specifier", async () => {
+			const targetDir = join(tempDir, "templates/my-theme");
+
+			// Mock fetchTemplate to simulate downloading the template
+			await runTemplate("add", ["github:owner/repo/templates/my-theme"], {
+				fetchResult: {
+					success: true,
+					localPath: targetDir,
+					// The real fetchTemplate creates the dir; simulate that in beforeResolve
+				},
+			});
+
+			// fetchTemplate is called, and since the dir doesn't exist yet,
+			// addTemplate proceeds. But the mock doesn't create the dir,
+			// so config.json won't exist — addTemplate creates a minimal one.
+			const output = logs.join("\n");
+			expect(output).toContain("Added template");
+			expect(output).toContain("my-theme");
+			expect(existsSync(join(targetDir, "config.json"))).toBe(true);
+		});
+
+		it("creates minimal config.json when template lacks one", async () => {
+			const targetDir = join(tempDir, "templates/repo");
+
+			await runTemplate("add", ["github:owner/repo"], {
+				fetchResult: { success: true, localPath: targetDir },
+			});
+
+			expect(existsSync(join(targetDir, "config.json"))).toBe(true);
+			const config = JSON.parse(
+				readFileSync(join(targetDir, "config.json"), "utf-8"),
+			);
+			expect(config.theme).toBe("repo");
+			expect(config.modules).toBe("*");
+
+			const output = logs.join("\n");
+			expect(output).toContain("created minimal config");
+		});
+
+		it("skips when template already exists locally", async () => {
+			mkdirSync(join(tempDir, "templates/existing"), { recursive: true });
+			writeFileSync(
+				join(tempDir, "templates/existing/config.json"),
+				JSON.stringify({ theme: "existing" }),
+			);
+
+			await runTemplate("add", ["github:owner/existing"], {
+				fetchResult: { success: true, localPath: "" },
+			});
+
+			const output = logs.join("\n");
+			expect(output).toContain("already exists locally");
+			expect(mockFetchTemplate).not.toHaveBeenCalled();
+		});
+
+		it("reports error when fetch fails", async () => {
+			const exit = vi.spyOn(process, "exit").mockImplementation(() => {
+				throw new Error("exit");
+			});
+
+			await expect(
+				runTemplate("add", ["github:owner/bad-repo"], {
+					fetchResult: { success: false, error: "404 Not Found" },
+				}),
+			).rejects.toThrow("exit");
+			expect(exit).toHaveBeenCalledWith(1);
+		});
+
+		it("exits with error when no specifier provided", async () => {
+			const exit = vi.spyOn(process, "exit").mockImplementation(() => {
+				throw new Error("exit");
+			});
+
+			await expect(runTemplate("add", [])).rejects.toThrow("exit");
+			expect(exit).toHaveBeenCalledWith(1);
+		});
+
+		it("works with 'install' alias", async () => {
+			const targetDir = join(tempDir, "templates/alias-theme");
+
+			await runTemplate(
+				"install",
+				["github:owner/repo/templates/alias-theme"],
+				{
+					fetchResult: { success: true, localPath: targetDir },
+				},
+			);
+
+			const output = logs.join("\n");
+			expect(output).toContain("Added template");
+		});
+	});
+
+	describe("template remove", () => {
+		it("removes an installed template", async () => {
+			mkdirSync(join(tempDir, "templates/custom"), { recursive: true });
+			writeFileSync(
+				join(tempDir, "templates/custom/config.json"),
+				JSON.stringify({ theme: "custom" }),
+			);
+
+			await runTemplate("remove", ["custom"]);
+
+			expect(existsSync(join(tempDir, "templates/custom"))).toBe(false);
+			const output = logs.join("\n");
+			expect(output).toContain("Removed template");
+		});
+
+		it("prevents removing the base template", async () => {
+			const exit = vi.spyOn(process, "exit").mockImplementation(() => {
+				throw new Error("exit");
+			});
+
+			await expect(runTemplate("remove", ["brisa"])).rejects.toThrow("exit");
+			expect(exit).toHaveBeenCalledWith(1);
+			expect(existsSync(join(tempDir, "templates/brisa"))).toBe(true);
+		});
+
+		it("prevents removing the active template", async () => {
+			// brisa is active (from tsconfig). Create and try to remove
+			// a template that we first activate.
+			mkdirSync(join(tempDir, "templates/active-one"), { recursive: true });
+			writeFileSync(
+				join(tempDir, "templates/active-one/config.json"),
+				JSON.stringify({ theme: "active-one" }),
+			);
+
+			// Activate it by updating tsconfig
+			const tsconfigPath = join(tempDir, "apps/store/tsconfig.json");
+			const tsconfig = readFileSync(tsconfigPath, "utf-8");
+			writeFileSync(
+				tsconfigPath,
+				tsconfig.replace("templates/brisa/", "templates/active-one/"),
+			);
+
+			const exit = vi.spyOn(process, "exit").mockImplementation(() => {
+				throw new Error("exit");
+			});
+
+			await expect(runTemplate("remove", ["active-one"])).rejects.toThrow(
+				"exit",
+			);
+			expect(exit).toHaveBeenCalledWith(1);
+			expect(existsSync(join(tempDir, "templates/active-one"))).toBe(true);
+		});
+
+		it("reports error when template does not exist", async () => {
+			const exit = vi.spyOn(process, "exit").mockImplementation(() => {
+				throw new Error("exit");
+			});
+
+			await expect(runTemplate("remove", ["nonexistent"])).rejects.toThrow(
+				"exit",
+			);
+			expect(exit).toHaveBeenCalledWith(1);
+		});
+
+		it("exits with error when no name provided", async () => {
+			const exit = vi.spyOn(process, "exit").mockImplementation(() => {
+				throw new Error("exit");
+			});
+
+			await expect(runTemplate("remove", [])).rejects.toThrow("exit");
+			expect(exit).toHaveBeenCalledWith(1);
+		});
+
+		it("works with 'rm' alias", async () => {
+			mkdirSync(join(tempDir, "templates/removable"), { recursive: true });
+			writeFileSync(
+				join(tempDir, "templates/removable/config.json"),
+				JSON.stringify({ theme: "removable" }),
+			);
+
+			await runTemplate("rm", ["removable"]);
+
+			expect(existsSync(join(tempDir, "templates/removable"))).toBe(false);
 		});
 	});
 });

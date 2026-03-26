@@ -3,15 +3,23 @@ import {
 	existsSync,
 	readdirSync,
 	readFileSync,
+	rmSync,
 	writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
+import type { RegistryManifest } from "@86d-app/registry";
+import {
+	fetchTemplate,
+	parseSpecifier,
+	readLocalManifest,
+} from "@86d-app/registry";
 import {
 	c,
 	detectActiveTemplate,
 	error,
 	findProjectRoot,
 	heading,
+	info,
 	readJson,
 	success,
 	warn,
@@ -26,6 +34,12 @@ export function templateCommand(
 	switch (subcommand) {
 		case "create":
 			return createTemplate(args[0]);
+		case "add":
+		case "install":
+			return addTemplate(args[0]);
+		case "remove":
+		case "rm":
+			return removeTemplate(args[0]);
 		case "activate":
 		case "use":
 			return activateTemplate(args[0]);
@@ -49,10 +63,24 @@ function printHelp() {
 ${c.bold("86d template")} — Manage templates
 
 ${c.dim("Usage:")}
-  86d template create <name>     Scaffold a new template from ${BASE_TEMPLATE}
-  86d template activate <name>   Switch the store to use a template
-  86d template list               List all templates
+  86d template create <name>       Scaffold a new template from ${BASE_TEMPLATE}
+  86d template add <specifier>     Add a template from GitHub or npm
+  86d template remove <name>       Remove an installed template
+  86d template activate <name>     Switch the store to use a template
+  86d template list                List all templates
+
+${c.dim("Template specifiers (for 'add'):")}
+  github:owner/repo                Entire repository as a template
+  github:owner/repo/templates/x    Specific template from a repository
+  github:owner/repo#branch         Specific branch or tag
+  npm:@scope/store-template        npm package
 `);
+}
+
+// ── Manifest Helper ──────────────────────────────────────────────────
+
+function loadManifest(root: string): RegistryManifest | undefined {
+	return readLocalManifest(join(root, "registry.json"));
 }
 
 function listTemplates() {
@@ -84,6 +112,117 @@ function listTemplates() {
 	}
 	console.log();
 }
+
+// ── Add Template ─────────────────────────────────────────────────────
+
+async function addTemplate(specifier: string | undefined) {
+	if (!specifier) {
+		error("Template specifier is required.");
+		console.log(`\n  Usage: 86d template add <specifier>`);
+		console.log("  Examples:");
+		console.log(`    ${c.dim("86d template add github:owner/repo")}`);
+		console.log(
+			`    ${c.dim("86d template add github:owner/repo/templates/custom")}`,
+		);
+		console.log(`    ${c.dim("86d template add npm:@acme/store-template")}`);
+		process.exit(1);
+	}
+
+	const root = findProjectRoot();
+	const manifest = loadManifest(root);
+	const spec = parseSpecifier(specifier);
+
+	heading(`Adding template: ${spec.name}`);
+	console.log();
+
+	// Check if already installed locally
+	const templateDir = join(root, "templates", spec.name);
+	if (existsSync(join(templateDir, "config.json"))) {
+		info(`Template "${spec.name}" already exists locally`);
+		console.log(
+			`\n  Run ${c.bold(`86d template activate ${spec.name}`)} to use it.\n`,
+		);
+		return;
+	}
+
+	// Fetch the template
+	info(`Fetching ${spec.name} (source: ${spec.source})...`);
+	const result = await fetchTemplate(spec, root, manifest);
+
+	if (!result.success) {
+		error(`Failed to add template: ${result.error}`);
+		process.exit(1);
+	}
+
+	// Validate the downloaded template has config.json
+	const localPath = result.localPath as string;
+	const configPath = join(localPath, "config.json");
+	if (!existsSync(configPath)) {
+		// Create a minimal config so the template is usable
+		const minimalConfig = {
+			theme: spec.name,
+			name: `86d ${spec.name.charAt(0).toUpperCase() + spec.name.slice(1)} Theme`,
+			modules: "*" as const,
+		};
+		writeFileSync(configPath, `${JSON.stringify(minimalConfig, null, "\t")}\n`);
+		warn("Template missing config.json — created minimal config");
+	}
+
+	success(`Added template ${c.bold(spec.name)}`);
+
+	console.log(`\n  Next steps:`);
+	console.log(
+		`  ${c.dim("1.")} Run: ${c.bold(`86d template activate ${spec.name}`)}`,
+	);
+	console.log(
+		`  ${c.dim("2.")} Edit ${c.cyan(`templates/${spec.name}/config.json`)} to customize`,
+	);
+	console.log(
+		`  ${c.dim("3.")} Run: ${c.bold("86d generate")} to update generated code`,
+	);
+	console.log();
+}
+
+// ── Remove Template ──────────────────────────────────────────────────
+
+function removeTemplate(name: string | undefined) {
+	if (!name) {
+		error("Template name is required.");
+		console.log(`\n  Usage: 86d template remove <name>`);
+		console.log(`  Example: ${c.dim("86d template remove my-custom-theme")}`);
+		process.exit(1);
+	}
+
+	const root = findProjectRoot();
+	const templateDir = join(root, "templates", name);
+
+	if (!existsSync(templateDir)) {
+		error(`Template "${name}" not found at ${templateDir}`);
+		process.exit(1);
+	}
+
+	// Prevent removing the base template
+	if (name === BASE_TEMPLATE) {
+		error(`Cannot remove the base template "${BASE_TEMPLATE}"`);
+		process.exit(1);
+	}
+
+	// Prevent removing the active template
+	const activeTemplate = detectActiveTemplate(root);
+	if (activeTemplate === name) {
+		error(
+			`Cannot remove "${name}" — it is the active template. Switch to another template first.`,
+		);
+		console.log(`\n  Run ${c.bold("86d template activate <other>")} first.\n`);
+		process.exit(1);
+	}
+
+	rmSync(templateDir, { recursive: true });
+	success(`Removed template ${c.bold(name)}`);
+	console.log();
+}
+
+// ── Create Template ──────────────────────────────────────────────────
 
 function createTemplate(name: string | undefined) {
 	if (!name) {
