@@ -204,8 +204,7 @@ export function createAutomationsController(
 			await data.upsert(
 				"automation",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				automation as Record<string, any>,
+				automation as Record<string, unknown>,
 			);
 			return automation;
 		},
@@ -217,8 +216,7 @@ export function createAutomationsController(
 		},
 
 		async list(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status) where.status = params.status;
 			if (params?.triggerEvent) where.triggerEvent = params.triggerEvent;
 
@@ -255,12 +253,7 @@ export function createAutomationsController(
 				updatedAt: new Date(),
 			};
 
-			await data.upsert(
-				"automation",
-				id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updated as Record<string, any>,
-			);
+			await data.upsert("automation", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -285,12 +278,7 @@ export function createAutomationsController(
 				status: "active",
 				updatedAt: new Date(),
 			};
-			await data.upsert(
-				"automation",
-				id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updated as Record<string, any>,
-			);
+			await data.upsert("automation", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -304,12 +292,7 @@ export function createAutomationsController(
 				status: "paused",
 				updatedAt: new Date(),
 			};
-			await data.upsert(
-				"automation",
-				id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updated as Record<string, any>,
-			);
+			await data.upsert("automation", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -330,12 +313,7 @@ export function createAutomationsController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			await data.upsert(
-				"automation",
-				newId,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				copy as Record<string, any>,
-			);
+			await data.upsert("automation", newId, copy as Record<string, unknown>);
 			return copy;
 		},
 
@@ -367,8 +345,7 @@ export function createAutomationsController(
 				await data.upsert(
 					"automationExecution",
 					execId,
-					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-					skipped as Record<string, any>,
+					skipped as Record<string, unknown>,
 				);
 				return skipped;
 			}
@@ -407,8 +384,7 @@ export function createAutomationsController(
 			await data.upsert(
 				"automationExecution",
 				execId,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				execution as Record<string, any>,
+				execution as Record<string, unknown>,
 			);
 
 			// Update automation run stats
@@ -421,8 +397,7 @@ export function createAutomationsController(
 			await data.upsert(
 				"automation",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updatedAutomation as Record<string, any>,
+				updatedAutomation as Record<string, unknown>,
 			);
 
 			return execution;
@@ -450,8 +425,7 @@ export function createAutomationsController(
 		},
 
 		async listExecutions(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.automationId) where.automationId = params.automationId;
 			if (params?.status) where.status = params.status;
 

@@ -24,8 +24,7 @@ export function createSavedAddressesController(
 				...addr,
 				[field]: false,
 				updatedAt: new Date(),
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			} as Record<string, any>);
+			} as Record<string, unknown>);
 		}
 	}
 
@@ -70,8 +69,7 @@ export function createSavedAddressesController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("address", id, address as Record<string, any>);
+			await data.upsert("address", id, address as Record<string, unknown>);
 			return address;
 		},
 
@@ -112,8 +110,11 @@ export function createSavedAddressesController(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("address", addressId, updated as Record<string, any>);
+			await data.upsert(
+				"address",
+				addressId,
+				updated as Record<string, unknown>,
+			);
 			return updated;
 		},
 
@@ -172,8 +173,11 @@ export function createSavedAddressesController(
 				isDefault: true,
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("address", addressId, updated as Record<string, any>);
+			await data.upsert(
+				"address",
+				addressId,
+				updated as Record<string, unknown>,
+			);
 			return true;
 		},
 
@@ -186,8 +190,11 @@ export function createSavedAddressesController(
 				isDefaultBilling: true,
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("address", addressId, updated as Record<string, any>);
+			await data.upsert(
+				"address",
+				addressId,
+				updated as Record<string, unknown>,
+			);
 			return true;
 		},
 

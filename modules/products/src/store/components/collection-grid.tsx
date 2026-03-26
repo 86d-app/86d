@@ -17,8 +17,7 @@ export function CollectionGrid({
 	const client = useModuleClient();
 	const listCollections = client.module("products").store["/collections"];
 
-	// biome-ignore lint/suspicious/noExplicitAny: query input requires string values
-	const queryInput: Record<string, any> = {};
+	const queryInput: Record<string, unknown> = {};
 	if (featured) queryInput.featured = "true";
 
 	const { data, isLoading, isError } = listCollections.useQuery(queryInput) as {

@@ -13,7 +13,7 @@ export type CreditReason =
 
 export type AccountStatus = "active" | "frozen" | "closed";
 
-export interface CreditAccount {
+export type CreditAccount = {
 	id: string;
 	customerId: string;
 	balance: number;
@@ -23,9 +23,9 @@ export interface CreditAccount {
 	status: AccountStatus;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface CreditTransaction {
+export type CreditTransaction = {
 	id: string;
 	accountId: string;
 	type: CreditTransactionType;
@@ -37,9 +37,9 @@ export interface CreditTransaction {
 	referenceId?: string | undefined;
 	metadata?: Record<string, unknown> | undefined;
 	createdAt: Date;
-}
+};
 
-export interface CreditParams {
+export type CreditParams = {
 	customerId: string;
 	amount: number;
 	reason: CreditReason;
@@ -47,9 +47,9 @@ export interface CreditParams {
 	referenceType?: string | undefined;
 	referenceId?: string | undefined;
 	metadata?: Record<string, unknown> | undefined;
-}
+};
 
-export interface DebitParams {
+export type DebitParams = {
 	customerId: string;
 	amount: number;
 	reason: CreditReason;
@@ -57,16 +57,16 @@ export interface DebitParams {
 	referenceType?: string | undefined;
 	referenceId?: string | undefined;
 	metadata?: Record<string, unknown> | undefined;
-}
+};
 
-export interface CreditSummary {
+export type CreditSummary = {
 	totalAccounts: number;
 	totalOutstandingBalance: number;
 	totalLifetimeCredited: number;
 	totalLifetimeDebited: number;
-}
+};
 
-export interface StoreCreditController extends ModuleController {
+export type StoreCreditController = ModuleController & {
 	// ── Account operations ────────────────────────────────────────────
 	getOrCreateAccount(customerId: string): Promise<CreditAccount>;
 	getAccount(customerId: string): Promise<CreditAccount | null>;
@@ -97,4 +97,4 @@ export interface StoreCreditController extends ModuleController {
 		skip?: number | undefined;
 	}): Promise<CreditAccount[]>;
 	getSummary(): Promise<CreditSummary>;
-}
+};

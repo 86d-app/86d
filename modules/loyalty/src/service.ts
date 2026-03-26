@@ -4,7 +4,7 @@ export type LoyaltyTierSlug = "bronze" | "silver" | "gold" | "platinum";
 export type TransactionType = "earn" | "redeem" | "adjust" | "expire";
 export type AccountStatus = "active" | "suspended" | "closed";
 
-export interface LoyaltyAccount {
+export type LoyaltyAccount = {
 	id: string;
 	customerId: string;
 	balance: number;
@@ -14,9 +14,9 @@ export interface LoyaltyAccount {
 	status: AccountStatus;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface LoyaltyTransaction {
+export type LoyaltyTransaction = {
 	id: string;
 	accountId: string;
 	type: TransactionType;
@@ -25,9 +25,9 @@ export interface LoyaltyTransaction {
 	orderId?: string | undefined;
 	metadata?: Record<string, unknown> | undefined;
 	createdAt: Date;
-}
+};
 
-export interface LoyaltyRule {
+export type LoyaltyRule = {
 	id: string;
 	name: string;
 	type: "per_dollar" | "fixed_bonus" | "multiplier" | "signup";
@@ -35,9 +35,9 @@ export interface LoyaltyRule {
 	minOrderAmount?: number | undefined;
 	active: boolean;
 	createdAt: Date;
-}
+};
 
-export interface LoyaltyTier {
+export type LoyaltyTier = {
 	id: string;
 	name: string;
 	slug: string;
@@ -45,16 +45,16 @@ export interface LoyaltyTier {
 	multiplier: number;
 	perks?: Record<string, unknown> | undefined;
 	sortOrder: number;
-}
+};
 
-export interface LoyaltySummary {
+export type LoyaltySummary = {
 	totalAccounts: number;
 	totalPointsOutstanding: number;
 	totalLifetimeEarned: number;
 	tierBreakdown: Array<{ tier: LoyaltyTierSlug; count: number }>;
-}
+};
 
-export interface LoyaltyController extends ModuleController {
+export type LoyaltyController = ModuleController & {
 	// ── Account operations ────────────────────────────────────────────
 	getOrCreateAccount(customerId: string): Promise<LoyaltyAccount>;
 	getAccount(customerId: string): Promise<LoyaltyAccount | null>;
@@ -146,4 +146,4 @@ export interface LoyaltyController extends ModuleController {
 	}): Promise<LoyaltyAccount[]>;
 
 	getSummary(): Promise<LoyaltySummary>;
-}
+};

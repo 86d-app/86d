@@ -292,8 +292,7 @@ describe("abandoned-carts controllers — edge cases", () => {
 			await mockData.upsert("abandonedCart", cart.id, {
 				...dismissed,
 				abandonedAt: old,
-				// biome-ignore lint/suspicious/noExplicitAny: test override
-			} as Record<string, any>);
+			} as Record<string, unknown>);
 
 			const expired = await controller.bulkExpire(30);
 			expect(expired).toBe(0);
@@ -312,8 +311,7 @@ describe("abandoned-carts controllers — edge cases", () => {
 				await mockData.upsert("abandonedCart", cart.id, {
 					...cart,
 					abandonedAt: old,
-					// biome-ignore lint/suspicious/noExplicitAny: test override
-				} as Record<string, any>);
+				} as Record<string, unknown>);
 			}
 
 			const expired = await controller.bulkExpire(30);

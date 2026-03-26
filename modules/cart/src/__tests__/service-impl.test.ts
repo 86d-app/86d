@@ -487,8 +487,11 @@ describe("createCartControllers", () => {
 				...cart,
 				updatedAt: new Date(Date.now() - 3 * 60 * 60 * 1000), // 3 hours ago
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: test mock requires any
-			await mockData.upsert("cart", cart.id, staleCart as Record<string, any>);
+			await mockData.upsert(
+				"cart",
+				cart.id,
+				staleCart as Record<string, unknown>,
+			);
 
 			const result = await controller.getAbandonedCarts({
 				thresholdHours: 1,

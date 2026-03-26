@@ -54,8 +54,7 @@ export function createPinterestShopController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("catalogItem", id, item as Record<string, any>);
+			await data.upsert("catalogItem", id, item as Record<string, unknown>);
 			return item;
 		},
 
@@ -91,8 +90,7 @@ export function createPinterestShopController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("catalogItem", id, updated as Record<string, any>);
+			await data.upsert("catalogItem", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -129,8 +127,7 @@ export function createPinterestShopController(
 		},
 
 		async listCatalogItems(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status) where.status = params.status;
 			if (params?.availability) where.availability = params.availability;
 
@@ -169,13 +166,11 @@ export function createPinterestShopController(
 				sync.syncedItems = items.length;
 				sync.completedAt = new Date();
 
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				await data.upsert("catalogSync", id, sync as Record<string, any>);
+				await data.upsert("catalogSync", id, sync as Record<string, unknown>);
 				return sync;
 			}
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("catalogSync", id, sync as Record<string, any>);
+			await data.upsert("catalogSync", id, sync as Record<string, unknown>);
 
 			try {
 				const batchItems = items.map((item) => ({
@@ -208,8 +203,7 @@ export function createPinterestShopController(
 					await data.upsert(
 						"catalogItem",
 						item.id,
-						// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-						updatedItem as Record<string, any>,
+						updatedItem as Record<string, unknown>,
 					);
 				}
 
@@ -223,8 +217,7 @@ export function createPinterestShopController(
 				sync.completedAt = new Date();
 			}
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("catalogSync", id, sync as Record<string, any>);
+			await data.upsert("catalogSync", id, sync as Record<string, unknown>);
 
 			events?.emit("pinterest.catalog.synced", {
 				syncId: sync.id,
@@ -246,8 +239,7 @@ export function createPinterestShopController(
 		},
 
 		async listSyncs(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status) where.status = params.status;
 
 			const all = await data.findMany("catalogSync", {
@@ -298,8 +290,7 @@ export function createPinterestShopController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("shoppingPin", id, pin as Record<string, any>);
+			await data.upsert("shoppingPin", id, pin as Record<string, unknown>);
 
 			events?.emit("pinterest.pin.created", {
 				pinId: pin.id,
@@ -317,8 +308,7 @@ export function createPinterestShopController(
 		},
 
 		async listPins(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.catalogItemId) where.catalogItemId = params.catalogItemId;
 
 			const all = await data.findMany("shoppingPin", {
@@ -366,8 +356,7 @@ export function createPinterestShopController(
 					await data.upsert(
 						"shoppingPin",
 						id,
-						// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-						updatedPin as Record<string, any>,
+						updatedPin as Record<string, unknown>,
 					);
 
 					return {

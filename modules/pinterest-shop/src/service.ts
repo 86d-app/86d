@@ -4,7 +4,7 @@ export type CatalogItemStatus = "active" | "inactive" | "disapproved";
 export type Availability = "in-stock" | "out-of-stock" | "preorder";
 export type SyncStatus = "pending" | "syncing" | "synced" | "failed";
 
-export interface CatalogItem {
+export type CatalogItem = {
 	id: string;
 	localProductId: string;
 	pinterestItemId?: string | undefined;
@@ -21,9 +21,9 @@ export interface CatalogItem {
 	error?: string | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface ShoppingPin {
+export type ShoppingPin = {
 	id: string;
 	catalogItemId: string;
 	pinId?: string | undefined;
@@ -37,9 +37,9 @@ export interface ShoppingPin {
 	clicks: number;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface CatalogSync {
+export type CatalogSync = {
 	id: string;
 	status: SyncStatus;
 	totalItems: number;
@@ -49,26 +49,26 @@ export interface CatalogSync {
 	startedAt: Date;
 	completedAt?: Date | undefined;
 	createdAt: Date;
-}
+};
 
-export interface PinAnalytics {
+export type PinAnalytics = {
 	impressions: number;
 	saves: number;
 	clicks: number;
 	clickRate: number;
 	saveRate: number;
-}
+};
 
-export interface ChannelStats {
+export type ChannelStats = {
 	totalCatalogItems: number;
 	activeCatalogItems: number;
 	totalPins: number;
 	totalImpressions: number;
 	totalClicks: number;
 	totalSaves: number;
-}
+};
 
-export interface PinterestShopController extends ModuleController {
+export type PinterestShopController = ModuleController & {
 	createCatalogItem(params: {
 		localProductId: string;
 		title: string;
@@ -140,4 +140,4 @@ export interface PinterestShopController extends ModuleController {
 	getPinAnalytics(id: string): Promise<PinAnalytics | null>;
 
 	getChannelStats(): Promise<ChannelStats>;
-}
+};

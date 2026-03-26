@@ -20,7 +20,7 @@ export type SubmissionStatus =
 	| "completed"
 	| "failed";
 
-export interface ProductFeedItem {
+export type ProductFeedItem = {
 	id: string;
 	localProductId: string;
 	googleProductId?: string | undefined;
@@ -42,9 +42,9 @@ export interface ProductFeedItem {
 	expiresAt?: Date | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface ChannelOrder {
+export type ChannelOrder = {
 	id: string;
 	googleOrderId: string;
 	status: OrderStatus;
@@ -58,9 +58,9 @@ export interface ChannelOrder {
 	carrier?: string | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface FeedSubmission {
+export type FeedSubmission = {
 	id: string;
 	status: SubmissionStatus;
 	totalProducts: number;
@@ -70,9 +70,9 @@ export interface FeedSubmission {
 	submittedAt: Date;
 	completedAt?: Date | undefined;
 	createdAt: Date;
-}
+};
 
-export interface ChannelStats {
+export type ChannelStats = {
 	totalFeedItems: number;
 	active: number;
 	pending: number;
@@ -80,14 +80,14 @@ export interface ChannelStats {
 	expiring: number;
 	totalOrders: number;
 	totalRevenue: number;
-}
+};
 
-export interface FeedDiagnostics {
+export type FeedDiagnostics = {
 	statusBreakdown: Array<{ status: string; count: number }>;
 	disapprovalReasons: Array<{ reason: string; count: number }>;
-}
+};
 
-export interface GoogleShoppingController extends ModuleController {
+export type GoogleShoppingController = ModuleController & {
 	createFeedItem(params: {
 		localProductId: string;
 		googleProductId?: string | undefined;
@@ -186,4 +186,4 @@ export interface GoogleShoppingController extends ModuleController {
 
 	/** Pull products and statuses from Google Merchant Center. Requires API credentials. */
 	syncProducts(): Promise<{ synced: number }>;
-}
+};

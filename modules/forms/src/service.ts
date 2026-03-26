@@ -15,7 +15,7 @@ export type FormFieldType =
 	| "hidden";
 
 /** A single field definition within a form */
-export interface FormField {
+export type FormField = {
 	name: string;
 	label: string;
 	type: FormFieldType;
@@ -32,9 +32,9 @@ export interface FormField {
 	max?: number | undefined;
 	/** Display position */
 	position: number;
-}
+};
 
-export interface Form {
+export type Form = {
 	id: string;
 	name: string;
 	slug: string;
@@ -49,11 +49,11 @@ export interface Form {
 	metadata?: Record<string, unknown> | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
 export type SubmissionStatus = "unread" | "read" | "spam" | "archived";
 
-export interface FormSubmission {
+export type FormSubmission = {
 	id: string;
 	formId: string;
 	values: Record<string, unknown>;
@@ -61,9 +61,9 @@ export interface FormSubmission {
 	status: SubmissionStatus;
 	metadata?: Record<string, unknown> | undefined;
 	createdAt: Date;
-}
+};
 
-export interface FormsController extends ModuleController {
+export type FormsController = ModuleController & {
 	// --- Form CRUD ---
 
 	/** Create a new form definition */
@@ -147,4 +147,4 @@ export interface FormsController extends ModuleController {
 		unreadCount: number;
 		spamCount: number;
 	}>;
-}
+};

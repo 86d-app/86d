@@ -7,7 +7,7 @@ export type DeliveryStatus =
 	| "delivered"
 	| "cancelled";
 
-export interface Delivery {
+export type Delivery = {
 	id: string;
 	orderId: string;
 	externalDeliveryId?: string | undefined;
@@ -26,9 +26,9 @@ export interface Delivery {
 	metadata: Record<string, unknown>;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface DeliveryQuote {
+export type DeliveryQuote = {
 	id: string;
 	externalDeliveryId: string;
 	fee: number;
@@ -37,9 +37,9 @@ export interface DeliveryQuote {
 	estimatedDropoffTime?: string | undefined;
 	expiresAt: Date;
 	createdAt: Date;
-}
+};
 
-export interface DeliveryZone {
+export type DeliveryZone = {
 	id: string;
 	name: string;
 	isActive: boolean;
@@ -51,16 +51,16 @@ export interface DeliveryZone {
 	estimatedMinutes: number;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface DeliveryAvailability {
+export type DeliveryAvailability = {
 	available: boolean;
 	zone?: DeliveryZone | undefined;
 	estimatedMinutes?: number | undefined;
 	deliveryFee?: number | undefined;
-}
+};
 
-export interface DoordashController extends ModuleController {
+export type DoordashController = ModuleController & {
 	createDelivery(params: {
 		orderId: string;
 		pickupAddress: Record<string, unknown>;
@@ -133,4 +133,4 @@ export interface DoordashController extends ModuleController {
 		lat: number;
 		lng: number;
 	}): Promise<DeliveryAvailability>;
-}
+};

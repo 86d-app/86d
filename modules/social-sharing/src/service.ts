@@ -16,7 +16,7 @@ export type Network =
 	| "email"
 	| "copy-link";
 
-export interface ShareEvent {
+export type ShareEvent = {
 	id: string;
 	targetType: TargetType;
 	targetId: string;
@@ -25,18 +25,18 @@ export interface ShareEvent {
 	referrer?: string | undefined;
 	sessionId?: string | undefined;
 	createdAt: Date;
-}
+};
 
-export interface ShareSettings {
+export type ShareSettings = {
 	id: string;
 	enabledNetworks: Network[];
 	defaultMessage?: string | undefined;
 	hashtags: string[];
 	customTemplates: Record<string, string>;
 	updatedAt: Date;
-}
+};
 
-export interface SocialSharingController extends ModuleController {
+export type SocialSharingController = ModuleController & {
 	recordShare(params: {
 		targetType: TargetType;
 		targetId: string;
@@ -81,4 +81,4 @@ export interface SocialSharingController extends ModuleController {
 		message?: string | undefined,
 		hashtags?: string[] | undefined,
 	): string;
-}
+};

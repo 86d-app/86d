@@ -8,7 +8,7 @@ export type SubscriptionStatus =
 	| "expired"
 	| "past_due";
 
-export interface SubscriptionPlan {
+export type SubscriptionPlan = {
 	id: string;
 	name: string;
 	description?: string | undefined;
@@ -20,9 +20,9 @@ export interface SubscriptionPlan {
 	isActive: boolean;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface Subscription {
+export type Subscription = {
 	id: string;
 	planId: string;
 	customerId?: string | undefined;
@@ -36,9 +36,9 @@ export interface Subscription {
 	cancelAtPeriodEnd: boolean;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface SubscriptionController extends ModuleController {
+export type SubscriptionController = ModuleController & {
 	// ── Plans ─────────────────────────────────────────────────────────────
 	createPlan(params: {
 		name: string;
@@ -102,4 +102,4 @@ export interface SubscriptionController extends ModuleController {
 		take?: number | undefined;
 		skip?: number | undefined;
 	}): Promise<Subscription[]>;
-}
+};

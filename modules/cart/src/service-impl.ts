@@ -26,8 +26,7 @@ export function createCartControllers(data: ModuleDataService): CartController {
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("cart", cartId, cart as Record<string, any>);
+			await data.upsert("cart", cartId, cart as Record<string, unknown>);
 
 			return cart;
 		},
@@ -103,8 +102,7 @@ export function createCartControllers(data: ModuleDataService): CartController {
 						updatedAt: now,
 					};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("cartItem", itemId, item as Record<string, any>);
+			await data.upsert("cartItem", itemId, item as Record<string, unknown>);
 
 			return item;
 		},
@@ -126,8 +124,11 @@ export function createCartControllers(data: ModuleDataService): CartController {
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("cartItem", itemId, updatedItem as Record<string, any>);
+			await data.upsert(
+				"cartItem",
+				itemId,
+				updatedItem as Record<string, unknown>,
+			);
 
 			return updatedItem;
 		},
@@ -178,8 +179,7 @@ export function createCartControllers(data: ModuleDataService): CartController {
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("cart", cartId, updated as Record<string, any>);
+			await data.upsert("cart", cartId, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -205,8 +205,7 @@ export function createCartControllers(data: ModuleDataService): CartController {
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("cart", cartId, updated as Record<string, any>);
+			await data.upsert("cart", cartId, updated as Record<string, unknown>);
 			return updated;
 		},
 

@@ -1,6 +1,6 @@
 import type { ModuleController } from "@86d-app/core";
 
-export interface Delivery {
+export type Delivery = {
 	id: string;
 	orderId: string;
 	externalId?: string | undefined;
@@ -29,9 +29,9 @@ export interface Delivery {
 	metadata: Record<string, unknown>;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface Quote {
+export type Quote = {
 	id: string;
 	pickupAddress: Record<string, unknown>;
 	dropoffAddress: Record<string, unknown>;
@@ -40,23 +40,23 @@ export interface Quote {
 	expiresAt: Date;
 	status: "active" | "expired" | "used";
 	createdAt: Date;
-}
+};
 
-export interface RequestQuoteParams {
+export type RequestQuoteParams = {
 	pickupAddress: Record<string, unknown>;
 	dropoffAddress: Record<string, unknown>;
-}
+};
 
-export interface CreateDeliveryParams {
+export type CreateDeliveryParams = {
 	orderId: string;
 	quoteId: string;
 	pickupNotes?: string | undefined;
 	dropoffNotes?: string | undefined;
 	tip?: number | undefined;
 	metadata?: Record<string, unknown> | undefined;
-}
+};
 
-export interface DeliveryStats {
+export type DeliveryStats = {
 	totalDeliveries: number;
 	totalPending: number;
 	totalAccepted: number;
@@ -66,9 +66,9 @@ export interface DeliveryStats {
 	totalFailed: number;
 	totalFees: number;
 	totalTips: number;
-}
+};
 
-export interface UberDirectController extends ModuleController {
+export type UberDirectController = ModuleController & {
 	requestQuote(params: RequestQuoteParams): Promise<Quote>;
 
 	createDelivery(params: CreateDeliveryParams): Promise<Delivery | null>;
@@ -110,4 +110,4 @@ export interface UberDirectController extends ModuleController {
 	}): Promise<Quote[]>;
 
 	getDeliveryStats(): Promise<DeliveryStats>;
-}
+};

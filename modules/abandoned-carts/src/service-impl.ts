@@ -70,8 +70,7 @@ export function createAbandonedCartController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any for JSONB
-			await data.upsert("abandonedCart", id, cart as Record<string, any>);
+			await data.upsert("abandonedCart", id, cart as Record<string, unknown>);
 			return cart;
 		},
 
@@ -100,8 +99,7 @@ export function createAbandonedCartController(
 		},
 
 		async list(params): Promise<AbandonedCart[]> {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status) where.status = params.status;
 			if (params?.email) where.email = params.email;
 
@@ -129,8 +127,11 @@ export function createAbandonedCartController(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("abandonedCart", id, updated as Record<string, any>);
+			await data.upsert(
+				"abandonedCart",
+				id,
+				updated as Record<string, unknown>,
+			);
 
 			await events.emit("cart.recovered", {
 				cartId: id,
@@ -154,8 +155,11 @@ export function createAbandonedCartController(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("abandonedCart", id, updated as Record<string, any>);
+			await data.upsert(
+				"abandonedCart",
+				id,
+				updated as Record<string, unknown>,
+			);
 
 			await events.emit("cart.expired", {
 				cartId: id,
@@ -177,8 +181,11 @@ export function createAbandonedCartController(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("abandonedCart", id, updated as Record<string, any>);
+			await data.upsert(
+				"abandonedCart",
+				id,
+				updated as Record<string, unknown>,
+			);
 
 			await events.emit("cart.dismissed", {
 				cartId: id,
@@ -231,8 +238,11 @@ export function createAbandonedCartController(
 				createdAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any for JSONB
-			await data.upsert("recoveryAttempt", id, attempt as Record<string, any>);
+			await data.upsert(
+				"recoveryAttempt",
+				id,
+				attempt as Record<string, unknown>,
+			);
 
 			// Increment attempt count on the cart
 			if (existingCart) {
@@ -241,8 +251,7 @@ export function createAbandonedCartController(
 					...c,
 					attemptCount: c.attemptCount + 1,
 					updatedAt: new Date(),
-					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				} as Record<string, any>);
+				} as Record<string, unknown>);
 			}
 
 			return attempt;
@@ -268,8 +277,7 @@ export function createAbandonedCartController(
 			await data.upsert(
 				"recoveryAttempt",
 				attemptId,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updated as Record<string, any>,
+				updated as Record<string, unknown>,
 			);
 			return updated;
 		},
@@ -349,8 +357,7 @@ export function createAbandonedCartController(
 						...cart,
 						status: "expired",
 						updatedAt: new Date(),
-						// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-					} as Record<string, any>);
+					} as Record<string, unknown>);
 
 					await events.emit("cart.expired", {
 						cartId: cart.id,

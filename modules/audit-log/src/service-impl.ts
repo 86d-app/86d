@@ -22,12 +22,7 @@ export function createAuditLogController(
 				userAgent: params.userAgent,
 				createdAt: new Date(),
 			};
-			await data.upsert(
-				"auditEntry",
-				id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				entry as Record<string, any>,
-			);
+			await data.upsert("auditEntry", id, entry as Record<string, unknown>);
 			return entry;
 		},
 
@@ -38,8 +33,7 @@ export function createAuditLogController(
 		},
 
 		async list(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.action) where.action = params.action;
 			if (params?.resource) where.resource = params.resource;
 			if (params?.actorId) where.actorId = params.actorId;

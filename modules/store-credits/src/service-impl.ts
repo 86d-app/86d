@@ -34,8 +34,7 @@ export function createStoreCreditController(
 			await data.upsert(
 				"creditAccount",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				account as Record<string, any>,
+				account as Record<string, unknown>,
 			);
 			return account;
 		},
@@ -68,8 +67,7 @@ export function createStoreCreditController(
 			await data.upsert(
 				"creditAccount",
 				account.id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updated as Record<string, any>,
+				updated as Record<string, unknown>,
 			);
 			return updated;
 		},
@@ -87,8 +85,7 @@ export function createStoreCreditController(
 			await data.upsert(
 				"creditAccount",
 				account.id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updated as Record<string, any>,
+				updated as Record<string, unknown>,
 			);
 			return updated;
 		},
@@ -115,8 +112,7 @@ export function createStoreCreditController(
 			await data.upsert(
 				"creditAccount",
 				account.id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updated as Record<string, any>,
+				updated as Record<string, unknown>,
 			);
 
 			const txnId = crypto.randomUUID();
@@ -136,8 +132,7 @@ export function createStoreCreditController(
 			await data.upsert(
 				"creditTransaction",
 				txnId,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				txn as Record<string, any>,
+				txn as Record<string, unknown>,
 			);
 
 			return txn;
@@ -166,8 +161,7 @@ export function createStoreCreditController(
 			await data.upsert(
 				"creditAccount",
 				account.id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updated as Record<string, any>,
+				updated as Record<string, unknown>,
 			);
 
 			const txnId = crypto.randomUUID();
@@ -187,8 +181,7 @@ export function createStoreCreditController(
 			await data.upsert(
 				"creditTransaction",
 				txnId,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				txn as Record<string, any>,
+				txn as Record<string, unknown>,
 			);
 
 			return txn;
@@ -202,8 +195,7 @@ export function createStoreCreditController(
 		},
 
 		async listTransactions(accountId, params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = { accountId };
+			const where: Record<string, unknown> = { accountId };
 			if (params?.type) where.type = params.type;
 			if (params?.reason) where.reason = params.reason;
 
@@ -219,8 +211,7 @@ export function createStoreCreditController(
 		// ── Admin operations ─────────────────────────────────────────
 
 		async listAccounts(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status) where.status = params.status;
 
 			const all = await data.findMany("creditAccount", {

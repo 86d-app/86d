@@ -9,7 +9,7 @@ export type ChangeFreq =
 	| "yearly"
 	| "never";
 
-export interface SitemapConfig {
+export type SitemapConfig = {
 	id: string;
 	baseUrl: string;
 	includeProducts: boolean;
@@ -31,9 +31,9 @@ export interface SitemapConfig {
 	lastGenerated?: Date;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface SitemapEntry {
+export type SitemapEntry = {
 	id: string;
 	/** Full URL */
 	loc: string;
@@ -45,18 +45,18 @@ export interface SitemapEntry {
 	/** ID of source record (if applicable) */
 	sourceId?: string;
 	createdAt: Date;
-}
+};
 
-export interface SitemapStats {
+export type SitemapStats = {
 	totalEntries: number;
 	entriesBySource: Record<string, number>;
 	lastGenerated?: Date;
-}
+};
 
 /** Maximum URLs per sitemap file (per sitemaps.org spec: 50,000) */
 export const MAX_ENTRIES_PER_SITEMAP = 50_000;
 
-export interface SitemapController extends ModuleController {
+export type SitemapController = ModuleController & {
 	getConfig(): Promise<SitemapConfig>;
 
 	updateConfig(params: {
@@ -175,4 +175,4 @@ export interface SitemapController extends ModuleController {
 	}): Promise<number>;
 
 	getStats(): Promise<SitemapStats>;
-}
+};

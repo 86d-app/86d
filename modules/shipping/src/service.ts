@@ -1,6 +1,6 @@
 import type { ModuleController } from "@86d-app/core";
 
-export interface ShippingZone {
+export type ShippingZone = {
 	id: string;
 	name: string;
 	/** ISO 3166-1 alpha-2 country codes; empty = all countries */
@@ -8,9 +8,9 @@ export interface ShippingZone {
 	isActive: boolean;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface ShippingRate {
+export type ShippingRate = {
 	id: string;
 	zoneId: string;
 	name: string;
@@ -23,16 +23,16 @@ export interface ShippingRate {
 	isActive: boolean;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface CalculatedRate {
+export type CalculatedRate = {
 	id: string;
 	name: string;
 	zoneName: string;
 	price: number;
-}
+};
 
-export interface ShippingMethod {
+export type ShippingMethod = {
 	id: string;
 	name: string;
 	description?: string | undefined;
@@ -45,9 +45,9 @@ export interface ShippingMethod {
 	sortOrder: number;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface ShippingCarrier {
+export type ShippingCarrier = {
 	id: string;
 	name: string;
 	/** Unique code identifier, e.g. "fedex", "ups" */
@@ -57,7 +57,7 @@ export interface ShippingCarrier {
 	isActive: boolean;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
 export type ShipmentStatus =
 	| "pending"
@@ -67,7 +67,7 @@ export type ShipmentStatus =
 	| "returned"
 	| "failed";
 
-export interface Shipment {
+export type Shipment = {
 	id: string;
 	orderId: string;
 	carrierId?: string | undefined;
@@ -86,9 +86,9 @@ export interface Shipment {
 	publicTrackingUrl?: string | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface LiveRateAddress {
+export type LiveRateAddress = {
 	name?: string | undefined;
 	company?: string | undefined;
 	street1: string;
@@ -98,9 +98,9 @@ export interface LiveRateAddress {
 	zip: string;
 	country: string;
 	phone?: string | undefined;
-}
+};
 
-export interface LiveRateParcel {
+export type LiveRateParcel = {
 	/** Length in inches */
 	length: number;
 	/** Width in inches */
@@ -109,9 +109,9 @@ export interface LiveRateParcel {
 	height: number;
 	/** Weight in ounces */
 	weight: number;
-}
+};
 
-export interface LiveRate {
+export type LiveRate = {
 	/** EasyPost rate ID (pass to purchaseLabel) */
 	rateId: string;
 	/** EasyPost shipment ID (pass to purchaseLabel) */
@@ -124,9 +124,9 @@ export interface LiveRate {
 	deliveryDays: number | null;
 	deliveryDate: string | null;
 	deliveryDateGuaranteed: boolean;
-}
+};
 
-export interface ShippingController extends ModuleController {
+export type ShippingController = ModuleController & {
 	// ── Zones ────────────────────────────────────────────────────────────
 	createZone(params: {
 		name: string;
@@ -306,4 +306,4 @@ export interface ShippingController extends ModuleController {
 		easypostRateId: string;
 		insurance?: string | undefined;
 	}): Promise<Shipment>;
-}
+};

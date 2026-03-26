@@ -27,8 +27,7 @@ export function createWaitlistController(
 				status: "waiting",
 				createdAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("waitlistEntry", id, entry as Record<string, any>);
+			await data.upsert("waitlistEntry", id, entry as Record<string, unknown>);
 			return entry;
 		},
 
@@ -46,8 +45,10 @@ export function createWaitlistController(
 			const found = items as unknown as WaitlistEntry[];
 			if (found.length === 0) return false;
 			for (const item of found) {
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				const record: Record<string, any> = { ...item, status: "cancelled" };
+				const record: Record<string, unknown> = {
+					...item,
+					status: "cancelled",
+				};
 				await data.upsert("waitlistEntry", item.id, record);
 			}
 			return true;
@@ -68,8 +69,7 @@ export function createWaitlistController(
 		},
 
 		async listByProduct(productId, params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = { productId };
+			const where: Record<string, unknown> = { productId };
 			if (params?.status) where.status = params.status;
 
 			const all = await data.findMany("waitlistEntry", {
@@ -90,8 +90,7 @@ export function createWaitlistController(
 		},
 
 		async listAll(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.productId) where.productId = params.productId;
 			if (params?.email) where.email = params.email;
 			if (params?.status) where.status = params.status;
@@ -118,8 +117,7 @@ export function createWaitlistController(
 			const entries = waiting as unknown as WaitlistEntry[];
 			const now = new Date();
 			for (const entry of entries) {
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				const record: Record<string, any> = {
+				const record: Record<string, unknown> = {
 					...entry,
 					status: "notified",
 					notifiedAt: now,
@@ -139,8 +137,10 @@ export function createWaitlistController(
 			);
 			if (active.length === 0) return false;
 			for (const entry of active) {
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				const record: Record<string, any> = { ...entry, status: "purchased" };
+				const record: Record<string, unknown> = {
+					...entry,
+					status: "purchased",
+				};
 				await data.upsert("waitlistEntry", entry.id, record);
 			}
 			return true;

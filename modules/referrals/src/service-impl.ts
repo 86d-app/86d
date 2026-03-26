@@ -35,8 +35,7 @@ export function createReferralController(
 				expiresAt: params.expiresAt,
 				createdAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("referralCode", id, code as Record<string, any>);
+			await data.upsert("referralCode", id, code as Record<string, unknown>);
 			return code;
 		},
 
@@ -65,8 +64,7 @@ export function createReferralController(
 		},
 
 		async listCodes(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.active !== undefined) where.active = params.active;
 
 			const results = await data.findMany("referralCode", {
@@ -82,8 +80,7 @@ export function createReferralController(
 			if (!existing) return null;
 			const code = existing as unknown as ReferralCode;
 			const updated: ReferralCode = { ...code, active: false };
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("referralCode", id, updated as Record<string, any>);
+			await data.upsert("referralCode", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -114,8 +111,7 @@ export function createReferralController(
 				refereeRewarded: false,
 				createdAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("referral", id, referral as Record<string, any>);
+			await data.upsert("referral", id, referral as Record<string, unknown>);
 
 			// Increment usage count
 			const updatedCode: ReferralCode = {
@@ -125,8 +121,7 @@ export function createReferralController(
 			await data.upsert(
 				"referralCode",
 				code.id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updatedCode as Record<string, any>,
+				updatedCode as Record<string, unknown>,
 			);
 
 			return referral;
@@ -139,8 +134,7 @@ export function createReferralController(
 		},
 
 		async listReferrals(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.referrerCustomerId)
 				where.referrerCustomerId = params.referrerCustomerId;
 			if (params?.refereeCustomerId)
@@ -166,8 +160,7 @@ export function createReferralController(
 				status: "completed",
 				completedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("referral", id, updated as Record<string, any>);
+			await data.upsert("referral", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -178,8 +171,7 @@ export function createReferralController(
 			if (referral.status !== "pending") return null;
 
 			const updated: Referral = { ...referral, status: "revoked" };
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("referral", id, updated as Record<string, any>);
+			await data.upsert("referral", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -189,8 +181,7 @@ export function createReferralController(
 			const referral = existing as unknown as Referral;
 
 			const updated: Referral = { ...referral, referrerRewarded: true };
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("referral", id, updated as Record<string, any>);
+			await data.upsert("referral", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -200,8 +191,7 @@ export function createReferralController(
 			const referral = existing as unknown as Referral;
 
 			const updated: Referral = { ...referral, refereeRewarded: true };
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("referral", id, updated as Record<string, any>);
+			await data.upsert("referral", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -222,8 +212,7 @@ export function createReferralController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("rewardRule", id, rule as Record<string, any>);
+			await data.upsert("rewardRule", id, rule as Record<string, unknown>);
 			return rule;
 		},
 
@@ -234,8 +223,7 @@ export function createReferralController(
 		},
 
 		async listRewardRules(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.active !== undefined) where.active = params.active;
 
 			const results = await data.findMany("rewardRule", {
@@ -270,8 +258,7 @@ export function createReferralController(
 				...(params.active !== undefined ? { active: params.active } : {}),
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("rewardRule", id, updated as Record<string, any>);
+			await data.upsert("rewardRule", id, updated as Record<string, unknown>);
 			return updated;
 		},
 

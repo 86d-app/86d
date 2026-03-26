@@ -33,8 +33,7 @@ export function createFavorController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any for JSONB
-			await data.upsert("delivery", id, delivery as Record<string, any>);
+			await data.upsert("delivery", id, delivery as Record<string, unknown>);
 			return delivery;
 		},
 
@@ -60,8 +59,7 @@ export function createFavorController(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("delivery", id, updated as Record<string, any>);
+			await data.upsert("delivery", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -100,14 +98,12 @@ export function createFavorController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("delivery", id, updated as Record<string, any>);
+			await data.upsert("delivery", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
 		async listDeliveries(params): Promise<FavorDelivery[]> {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status) where.status = params.status;
 			if (params?.orderId) where.orderId = params.orderId;
 
@@ -137,8 +133,7 @@ export function createFavorController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("serviceArea", id, area as Record<string, any>);
+			await data.upsert("serviceArea", id, area as Record<string, unknown>);
 			return area;
 		},
 
@@ -167,8 +162,7 @@ export function createFavorController(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("serviceArea", id, updated as Record<string, any>);
+			await data.upsert("serviceArea", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -180,8 +174,7 @@ export function createFavorController(
 		},
 
 		async listServiceAreas(params): Promise<ServiceArea[]> {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.isActive !== undefined) where.isActive = params.isActive;
 
 			const results = await data.findMany("serviceArea", {

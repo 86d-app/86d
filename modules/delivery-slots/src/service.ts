@@ -2,7 +2,7 @@ import type { ModuleController } from "@86d-app/core";
 
 // ── Entities ───────────────────────────────────────────────────────
 
-export interface DeliverySchedule {
+export type DeliverySchedule = {
 	id: string;
 	name: string;
 	dayOfWeek: number;
@@ -14,11 +14,11 @@ export interface DeliverySchedule {
 	sortOrder: number;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
 export type BookingStatus = "confirmed" | "cancelled";
 
-export interface DeliveryBooking {
+export type DeliveryBooking = {
 	id: string;
 	scheduleId: string;
 	deliveryDate: string;
@@ -32,18 +32,18 @@ export interface DeliveryBooking {
 	instructions?: string;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface DeliveryBlackout {
+export type DeliveryBlackout = {
 	id: string;
 	date: string;
 	reason?: string;
 	createdAt: Date;
-}
+};
 
 // ── Input params ───────────────────────────────────────────────────
 
-export interface CreateScheduleParams {
+export type CreateScheduleParams = {
 	name: string;
 	dayOfWeek: number;
 	startTime: string;
@@ -52,9 +52,9 @@ export interface CreateScheduleParams {
 	surchargeInCents?: number;
 	active?: boolean;
 	sortOrder?: number;
-}
+};
 
-export interface UpdateScheduleParams {
+export type UpdateScheduleParams = {
 	name?: string;
 	dayOfWeek?: number;
 	startTime?: string;
@@ -63,52 +63,52 @@ export interface UpdateScheduleParams {
 	surchargeInCents?: number;
 	active?: boolean;
 	sortOrder?: number;
-}
+};
 
-export interface BookSlotParams {
+export type BookSlotParams = {
 	scheduleId: string;
 	deliveryDate: string;
 	orderId: string;
 	customerId?: string;
 	instructions?: string;
-}
+};
 
-export interface ListSchedulesParams {
+export type ListSchedulesParams = {
 	dayOfWeek?: number;
 	active?: boolean;
 	take?: number;
 	skip?: number;
-}
+};
 
-export interface ListBookingsParams {
+export type ListBookingsParams = {
 	deliveryDate?: string;
 	orderId?: string;
 	customerId?: string;
 	status?: BookingStatus;
 	take?: number;
 	skip?: number;
-}
+};
 
-export interface CreateBlackoutParams {
+export type CreateBlackoutParams = {
 	date: string;
 	reason?: string;
-}
+};
 
-export interface AvailableSlotsParams {
+export type AvailableSlotsParams = {
 	date: string;
-}
+};
 
 // ── Results ────────────────────────────────────────────────────────
 
-export interface SlotAvailability {
+export type SlotAvailability = {
 	schedule: DeliverySchedule;
 	date: string;
 	booked: number;
 	remaining: number;
 	available: boolean;
-}
+};
 
-export interface DeliverySlotsSummary {
+export type DeliverySlotsSummary = {
 	totalSchedules: number;
 	activeSchedules: number;
 	totalBookings: number;
@@ -116,11 +116,11 @@ export interface DeliverySlotsSummary {
 	cancelledBookings: number;
 	totalSurchargeRevenue: number;
 	blackoutDates: number;
-}
+};
 
 // ── Controller ─────────────────────────────────────────────────────
 
-export interface DeliverySlotsController extends ModuleController {
+export type DeliverySlotsController = ModuleController & {
 	// Schedule CRUD
 	createSchedule(params: CreateScheduleParams): Promise<DeliverySchedule>;
 	updateSchedule(
@@ -150,4 +150,4 @@ export interface DeliverySlotsController extends ModuleController {
 
 	// Analytics
 	getSummary(): Promise<DeliverySlotsSummary>;
-}
+};

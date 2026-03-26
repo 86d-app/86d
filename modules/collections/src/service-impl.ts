@@ -55,8 +55,11 @@ export function createCollectionController(
 					publishedAt: params.publishedAt,
 				}),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("collection", id, collection as Record<string, any>);
+			await data.upsert(
+				"collection",
+				id,
+				collection as Record<string, unknown>,
+			);
 			return collection;
 		},
 
@@ -130,8 +133,7 @@ export function createCollectionController(
 
 			const updated: Collection = { ...base, ...optionalFields };
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("collection", id, updated as Record<string, any>);
+			await data.upsert("collection", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -216,8 +218,7 @@ export function createCollectionController(
 			await data.upsert(
 				"collectionProduct",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				collectionProduct as Record<string, any>,
+				collectionProduct as Record<string, unknown>,
 			);
 			return collectionProduct;
 		},
@@ -270,12 +271,10 @@ export function createCollectionController(
 
 				if (existing.length > 0) {
 					const item = existing[0];
-					await data.upsert(
-						"collectionProduct",
-						item.id,
-						// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-						{ ...item, position: i + 1 } as Record<string, any>,
-					);
+					await data.upsert("collectionProduct", item.id, {
+						...item,
+						position: i + 1,
+					} as Record<string, unknown>);
 				}
 			}
 		},
@@ -303,8 +302,7 @@ export function createCollectionController(
 				await data.upsert(
 					"collectionProduct",
 					id,
-					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-					item as Record<string, any>,
+					item as Record<string, unknown>,
 				);
 				nextPosition++;
 				added++;

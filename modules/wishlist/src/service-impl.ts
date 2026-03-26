@@ -45,8 +45,7 @@ export function createWishlistController(
 				note: params.note,
 				addedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("wishlistItem", id, item as Record<string, any>);
+			await data.upsert("wishlistItem", id, item as Record<string, unknown>);
 			return item;
 		},
 
@@ -106,8 +105,7 @@ export function createWishlistController(
 		},
 
 		async listAll(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.customerId) where.customerId = params.customerId;
 			if (params?.productId) where.productId = params.productId;
 
@@ -180,8 +178,7 @@ export function createWishlistController(
 				createdAt: new Date(),
 				expiresAt,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("wishlistShare", id, share as Record<string, any>);
+			await data.upsert("wishlistShare", id, share as Record<string, unknown>);
 			return share;
 		},
 
@@ -193,8 +190,7 @@ export function createWishlistController(
 			await data.upsert("wishlistShare", tokenId, {
 				...share,
 				active: false,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			} as Record<string, any>);
+			} as Record<string, unknown>);
 			return true;
 		},
 

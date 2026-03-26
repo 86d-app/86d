@@ -16,7 +16,7 @@ export type FeedItemStatus = "valid" | "warning" | "error" | "excluded";
 
 // ── Field mapping ────────────────────────────────────────────────────
 
-export interface FieldMapping {
+export type FieldMapping = {
 	/** Source field from product data (e.g. "title", "price", "sku") */
 	sourceField: string;
 	/** Target field in the feed (e.g. "g:title", "g:price") */
@@ -27,11 +27,11 @@ export interface FieldMapping {
 	transformValue?: string | undefined;
 	/** Static default if source field is missing */
 	defaultValue?: string | undefined;
-}
+};
 
 // ── Feed filters ─────────────────────────────────────────────────────
 
-export interface FeedFilters {
+export type FeedFilters = {
 	/** Only include products with these statuses */
 	includeStatuses?: string[] | undefined;
 	/** Exclude products in these categories */
@@ -46,19 +46,19 @@ export interface FeedFilters {
 	requireImages?: boolean | undefined;
 	/** Require non-zero inventory */
 	requireInStock?: boolean | undefined;
-}
+};
 
 // ── Validation issues ────────────────────────────────────────────────
 
-export interface FeedItemIssue {
+export type FeedItemIssue = {
 	field: string;
 	severity: "error" | "warning";
 	message: string;
-}
+};
 
 // ── Entities ─────────────────────────────────────────────────────────
 
-export interface Feed {
+export type Feed = {
 	id: string;
 	name: string;
 	slug: string;
@@ -77,9 +77,9 @@ export interface Feed {
 	lastGeneratedAt?: Date | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface FeedItem {
+export type FeedItem = {
 	id: string;
 	feedId: string;
 	productId: string;
@@ -87,19 +87,19 @@ export interface FeedItem {
 	status: FeedItemStatus;
 	issues: FeedItemIssue[];
 	lastSyncedAt: Date;
-}
+};
 
-export interface CategoryMapping {
+export type CategoryMapping = {
 	id: string;
 	feedId: string;
 	storeCategory: string;
 	channelCategory: string;
 	channelCategoryId?: string | undefined;
-}
+};
 
 // ── Params ───────────────────────────────────────────────────────────
 
-export interface CreateFeedParams {
+export type CreateFeedParams = {
 	name: string;
 	slug: string;
 	channel: FeedChannel;
@@ -109,9 +109,9 @@ export interface CreateFeedParams {
 	language?: string | undefined;
 	fieldMappings?: FieldMapping[] | undefined;
 	filters?: FeedFilters | undefined;
-}
+};
 
-export interface UpdateFeedParams {
+export type UpdateFeedParams = {
 	name?: string | undefined;
 	slug?: string | undefined;
 	channel?: FeedChannel | undefined;
@@ -122,9 +122,9 @@ export interface UpdateFeedParams {
 	language?: string | undefined;
 	fieldMappings?: FieldMapping[] | undefined;
 	filters?: FeedFilters | undefined;
-}
+};
 
-export interface ProductData {
+export type ProductData = {
 	id: string;
 	title: string;
 	description?: string | undefined;
@@ -146,26 +146,26 @@ export interface ProductData {
 	size?: string | undefined;
 	material?: string | undefined;
 	customFields?: Record<string, string> | undefined;
-}
+};
 
-export interface GenerateFeedResult {
+export type GenerateFeedResult = {
 	itemCount: number;
 	errorCount: number;
 	warningCount: number;
 	output: string;
-}
+};
 
-export interface FeedStats {
+export type FeedStats = {
 	totalFeeds: number;
 	activeFeeds: number;
 	totalItems: number;
 	errorItems: number;
 	warningItems: number;
-}
+};
 
 // ── Controller ───────────────────────────────────────────────────────
 
-export interface ProductFeedsController extends ModuleController {
+export type ProductFeedsController = ModuleController & {
 	// Feed CRUD
 	createFeed(params: CreateFeedParams): Promise<Feed>;
 	getFeed(id: string): Promise<Feed | null>;
@@ -223,4 +223,4 @@ export interface ProductFeedsController extends ModuleController {
 
 	// Stats
 	getStats(): Promise<FeedStats>;
-}
+};

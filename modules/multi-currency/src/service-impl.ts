@@ -76,8 +76,11 @@ export function createMultiCurrencyController(
 				})) as Currency[];
 				for (const c of existing) {
 					const record = { ...c, isBase: false, updatedAt: now };
-					// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-					await data.upsert("currency", c.id, record as Record<string, any>);
+					await data.upsert(
+						"currency",
+						c.id,
+						record as Record<string, unknown>,
+					);
 				}
 			}
 
@@ -99,8 +102,7 @@ export function createMultiCurrencyController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("currency", id, currency as Record<string, any>);
+			await data.upsert("currency", id, currency as Record<string, unknown>);
 
 			if (events) {
 				void events.emit("currency.created", {
@@ -153,8 +155,7 @@ export function createMultiCurrencyController(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("currency", id, updated as Record<string, any>);
+			await data.upsert("currency", id, updated as Record<string, unknown>);
 
 			if (events) {
 				void events.emit("currency.updated", {
@@ -236,8 +237,11 @@ export function createMultiCurrencyController(
 			for (const c of existing) {
 				if (c.id !== id) {
 					const record = { ...c, isBase: false, updatedAt: now };
-					// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-					await data.upsert("currency", c.id, record as Record<string, any>);
+					await data.upsert(
+						"currency",
+						c.id,
+						record as Record<string, unknown>,
+					);
 				}
 			}
 
@@ -248,8 +252,7 @@ export function createMultiCurrencyController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("currency", id, updated as Record<string, any>);
+			await data.upsert("currency", id, updated as Record<string, unknown>);
 
 			if (events) {
 				void events.emit("currency.baseChanged", {
@@ -281,8 +284,7 @@ export function createMultiCurrencyController(
 			await data.upsert(
 				"exchangeRateHistory",
 				historyId,
-				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				historyEntry as Record<string, any>,
+				historyEntry as Record<string, unknown>,
 			);
 
 			// Update the currency
@@ -291,8 +293,7 @@ export function createMultiCurrencyController(
 				exchangeRate: params.rate,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			const updatedRecord = updated as Record<string, any>;
+			const updatedRecord = updated as Record<string, unknown>;
 			await data.upsert("currency", currency.id, updatedRecord);
 
 			if (events) {
@@ -407,8 +408,11 @@ export function createMultiCurrencyController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("priceOverride", id, override as Record<string, any>);
+			await data.upsert(
+				"priceOverride",
+				id,
+				override as Record<string, unknown>,
+			);
 			return override;
 		},
 

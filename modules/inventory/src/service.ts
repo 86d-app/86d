@@ -1,6 +1,6 @@
 import type { ModuleController } from "@86d-app/core";
 
-export interface InventoryItem {
+export type InventoryItem = {
 	id: string;
 	productId: string;
 	variantId?: string | undefined;
@@ -15,9 +15,9 @@ export interface InventoryItem {
 	allowBackorder: boolean;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface BackInStockSubscription {
+export type BackInStockSubscription = {
 	id: string;
 	productId: string;
 	variantId?: string | undefined;
@@ -27,15 +27,15 @@ export interface BackInStockSubscription {
 	status: "active" | "notified";
 	subscribedAt: Date;
 	notifiedAt?: Date | undefined;
-}
+};
 
-export interface BackInStockStats {
+export type BackInStockStats = {
 	totalActive: number;
 	totalNotified: number;
 	uniqueProducts: number;
-}
+};
 
-export interface InventoryController extends ModuleController {
+export type InventoryController = ModuleController & {
 	/**
 	 * Get inventory item for a product/variant/location.
 	 * Returns null if no tracking record exists.
@@ -172,4 +172,4 @@ export interface InventoryController extends ModuleController {
 		productId: string;
 		variantId?: string | undefined;
 	}): Promise<number>;
-}
+};

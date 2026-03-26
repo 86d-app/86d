@@ -12,8 +12,7 @@ import type {
 	InvoiceWithDetails,
 } from "./service";
 
-// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires Record<string, any>
-type DataRecord = Record<string, any>;
+type DataRecord = Record<string, unknown>;
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
@@ -229,8 +228,7 @@ export function createInvoiceController(
 				customerId,
 				orderId,
 			} = params ?? {};
-			// biome-ignore lint/suspicious/noExplicitAny: dynamic filter construction
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (status) where.status = status;
 			if (customerId) where.customerId = customerId;
 			if (orderId) where.orderId = orderId;

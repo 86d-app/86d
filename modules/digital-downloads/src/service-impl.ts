@@ -23,8 +23,7 @@ export function createDigitalDownloadsController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			const fileRecord = file as Record<string, any>;
+			const fileRecord = file as Record<string, unknown>;
 			await data.upsert("downloadableFile", id, fileRecord);
 			return file;
 		},
@@ -36,8 +35,7 @@ export function createDigitalDownloadsController(
 		},
 
 		async listFiles(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.productId) where.productId = params.productId;
 
 			const all = await data.findMany("downloadableFile", {
@@ -62,8 +60,7 @@ export function createDigitalDownloadsController(
 				...(params.isActive !== undefined ? { isActive: params.isActive } : {}),
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			const updatedRecord = updated as Record<string, any>;
+			const updatedRecord = updated as Record<string, unknown>;
 			await data.upsert("downloadableFile", id, updatedRecord);
 			return updated;
 		},
@@ -93,8 +90,7 @@ export function createDigitalDownloadsController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			const tokenRecord = downloadToken as Record<string, any>;
+			const tokenRecord = downloadToken as Record<string, unknown>;
 			await data.upsert("downloadToken", id, tokenRecord);
 			return downloadToken;
 		},
@@ -136,8 +132,7 @@ export function createDigitalDownloadsController(
 				downloadCount: tokenRecord.downloadCount + 1,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			const updatedRecord = updated as Record<string, any>;
+			const updatedRecord = updated as Record<string, unknown>;
 			await data.upsert("downloadToken", tokenRecord.id, updatedRecord);
 
 			const fileRaw = await data.get("downloadableFile", tokenRecord.fileId);
@@ -159,8 +154,7 @@ export function createDigitalDownloadsController(
 				revokedAt: new Date(),
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			const updatedRecord = updated as Record<string, any>;
+			const updatedRecord = updated as Record<string, unknown>;
 			await data.upsert("downloadToken", tokenRecord.id, updatedRecord);
 			return true;
 		},
@@ -174,8 +168,7 @@ export function createDigitalDownloadsController(
 				revokedAt: new Date(),
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			const updatedRecord = updated as Record<string, any>;
+			const updatedRecord = updated as Record<string, unknown>;
 			await data.upsert("downloadToken", id, updatedRecord);
 			return true;
 		},
@@ -190,8 +183,7 @@ export function createDigitalDownloadsController(
 		},
 
 		async listTokens(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.fileId) where.fileId = params.fileId;
 			if (params?.orderId) where.orderId = params.orderId;
 			if (params?.email) where.email = params.email;
@@ -226,8 +218,7 @@ export function createDigitalDownloadsController(
 					createdAt: now,
 					updatedAt: now,
 				};
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				const tokenRecord = downloadToken as Record<string, any>;
+				const tokenRecord = downloadToken as Record<string, unknown>;
 				await data.upsert("downloadToken", id, tokenRecord);
 				tokens.push(downloadToken);
 			}

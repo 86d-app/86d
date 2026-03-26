@@ -133,8 +133,7 @@ export interface ModuleDataService {
 	get(
 		entityType: string,
 		entityId: string,
-		// biome-ignore lint/suspicious/noExplicitAny: JSON data service returns arbitrary Prisma JSONB data
-	): Promise<Record<string, any> | null>;
+	): Promise<Record<string, unknown> | null>;
 
 	/**
 	 * Create or update an entity.
@@ -145,8 +144,7 @@ export interface ModuleDataService {
 	upsert(
 		entityType: string,
 		entityId: string,
-		// biome-ignore lint/suspicious/noExplicitAny: JSON data service accepts arbitrary JSONB data
-		data: Record<string, any>,
+		data: Record<string, unknown>,
 	): Promise<void>;
 
 	/**
@@ -171,14 +169,12 @@ export interface ModuleDataService {
 	findMany(
 		entityType: string,
 		options?: {
-			// biome-ignore lint/suspicious/noExplicitAny: JSON data service accepts arbitrary JSONB filter
-			where?: Record<string, any>;
+			where?: Record<string, unknown>;
 			orderBy?: Record<string, "asc" | "desc">;
 			take?: number;
 			skip?: number;
 		},
-		// biome-ignore lint/suspicious/noExplicitAny: JSON data service returns arbitrary Prisma JSONB data
-	): Promise<Record<string, any>[]>;
+	): Promise<Record<string, unknown>[]>;
 }
 
 /**
@@ -517,8 +513,7 @@ export type Module = {
 						/**
 						 * Additional context to add
 						 */
-						// biome-ignore lint/suspicious/noExplicitAny: context values are intentionally flexible
-						context?: Record<string, any>;
+						context?: Record<string, unknown>;
 						/**
 						 * Module options override (merged into global config)
 						 */

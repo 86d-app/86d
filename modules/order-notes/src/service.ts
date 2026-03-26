@@ -2,7 +2,7 @@ import type { ModuleController } from "@86d-app/core";
 
 export type AuthorType = "customer" | "admin" | "system";
 
-export interface OrderNote {
+export type OrderNote = {
 	id: string;
 	orderId: string;
 	authorId: string;
@@ -15,17 +15,17 @@ export interface OrderNote {
 	isPinned: boolean;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface OrderNoteSummary {
+export type OrderNoteSummary = {
 	totalNotes: number;
 	notesPerOrder: number;
 	internalCount: number;
 	customerCount: number;
 	adminCount: number;
-}
+};
 
-export interface OrderNotesController extends ModuleController {
+export type OrderNotesController = ModuleController & {
 	/** Add a note to an order. */
 	addNote(params: {
 		orderId: string;
@@ -84,4 +84,4 @@ export interface OrderNotesController extends ModuleController {
 
 	/** Admin: summary stats. */
 	getSummary(): Promise<OrderNoteSummary>;
-}
+};

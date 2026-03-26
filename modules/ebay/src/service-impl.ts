@@ -97,8 +97,7 @@ export function createEbayController(
 				}
 			}
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("listing", id, listing as Record<string, any>);
+			await data.upsert("listing", id, listing as Record<string, unknown>);
 			events?.emit("ebay.listing.created", { listingId: id });
 			return listing;
 		},
@@ -145,8 +144,7 @@ export function createEbayController(
 				}
 			}
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("listing", id, updated as Record<string, any>);
+			await data.upsert("listing", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -173,8 +171,7 @@ export function createEbayController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("listing", id, updated as Record<string, any>);
+			await data.upsert("listing", id, updated as Record<string, unknown>);
 			events?.emit("ebay.listing.ended", { listingId: id });
 			return updated;
 		},
@@ -194,8 +191,7 @@ export function createEbayController(
 		},
 
 		async listListings(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status) where.status = params.status;
 			if (params?.listingType) where.listingType = params.listingType;
 
@@ -232,8 +228,7 @@ export function createEbayController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("ebayOrder", id, order as Record<string, any>);
+			await data.upsert("ebayOrder", id, order as Record<string, unknown>);
 			events?.emit("ebay.order.received", {
 				orderId: id,
 				ebayOrderId: params.ebayOrderId,
@@ -277,8 +272,7 @@ export function createEbayController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("ebayOrder", id, updated as Record<string, any>);
+			await data.upsert("ebayOrder", id, updated as Record<string, unknown>);
 			events?.emit("ebay.order.shipped", {
 				orderId: id,
 				trackingNumber,
@@ -287,8 +281,7 @@ export function createEbayController(
 		},
 
 		async listOrders(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status) where.status = params.status;
 
 			const all = await data.findMany("ebayOrder", {
@@ -383,9 +376,7 @@ export function createEbayController(
 						updatedAt: now,
 					};
 
-					const orderRecord =
-						// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-						orderData as Record<string, any>;
+					const orderRecord = orderData as Record<string, unknown>;
 					await data.upsert("ebayOrder", orderData.id, orderRecord);
 					synced.push(orderData);
 				}

@@ -30,8 +30,7 @@ export function BlogList({
 }) {
 	const api = useBlogApi();
 
-	// biome-ignore lint/suspicious/noExplicitAny: query input typing
-	const queryInput: Record<string, any> = { limit: String(limit) };
+	const queryInput: Record<string, unknown> = { limit: String(limit) };
 	if (category) queryInput.category = category;
 	if (tag) queryInput.tag = tag;
 

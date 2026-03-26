@@ -4,7 +4,7 @@ export type SubscriberStatus = "active" | "unsubscribed" | "bounced";
 
 export type CampaignStatus = "draft" | "scheduled" | "sending" | "sent";
 
-export interface Subscriber {
+export type Subscriber = {
 	id: string;
 	email: string;
 	firstName?: string | undefined;
@@ -17,9 +17,9 @@ export interface Subscriber {
 	unsubscribedAt?: Date | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface Campaign {
+export type Campaign = {
 	id: string;
 	subject: string;
 	body: string;
@@ -32,9 +32,9 @@ export interface Campaign {
 	sentAt?: Date | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface CampaignStats {
+export type CampaignStats = {
 	total: number;
 	draft: number;
 	scheduled: number;
@@ -43,9 +43,9 @@ export interface CampaignStats {
 	totalRecipients: number;
 	totalSent: number;
 	totalFailed: number;
-}
+};
 
-export interface NewsletterController extends ModuleController {
+export type NewsletterController = ModuleController & {
 	subscribe(params: {
 		email: string;
 		firstName?: string | undefined;
@@ -113,4 +113,4 @@ export interface NewsletterController extends ModuleController {
 	sendCampaign(id: string): Promise<Campaign | null>;
 
 	getCampaignStats(): Promise<CampaignStats>;
-}
+};

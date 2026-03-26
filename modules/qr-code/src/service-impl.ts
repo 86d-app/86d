@@ -24,8 +24,7 @@ export function createQrCodeController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("qrCode", id, qrCode as Record<string, any>);
+			await data.upsert("qrCode", id, qrCode as Record<string, unknown>);
 			void events?.emit("qr.created", {
 				qrCodeId: qrCode.id,
 				label: qrCode.label,
@@ -73,8 +72,7 @@ export function createQrCodeController(
 				...(params.metadata !== undefined ? { metadata: params.metadata } : {}),
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("qrCode", id, updated as Record<string, any>);
+			await data.upsert("qrCode", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -87,8 +85,7 @@ export function createQrCodeController(
 		},
 
 		async list(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.targetType) where.targetType = params.targetType;
 			if (params?.isActive !== undefined) where.isActive = params.isActive;
 
@@ -112,8 +109,7 @@ export function createQrCodeController(
 				scanCount: qrCode.scanCount + 1,
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("qrCode", id, updatedQr as Record<string, any>);
+			await data.upsert("qrCode", id, updatedQr as Record<string, unknown>);
 
 			// Create scan record
 			const scanId = crypto.randomUUID();
@@ -125,8 +121,7 @@ export function createQrCodeController(
 				ipAddress: params?.ipAddress,
 				referrer: params?.referrer,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("qrScan", scanId, scan as Record<string, any>);
+			await data.upsert("qrScan", scanId, scan as Record<string, unknown>);
 
 			void events?.emit("qr.scanned", {
 				qrCodeId: id,
@@ -172,8 +167,7 @@ export function createQrCodeController(
 					createdAt: now,
 					updatedAt: now,
 				};
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				await data.upsert("qrCode", id, qrCode as Record<string, any>);
+				await data.upsert("qrCode", id, qrCode as Record<string, unknown>);
 				void events?.emit("qr.created", {
 					qrCodeId: qrCode.id,
 					label: qrCode.label,

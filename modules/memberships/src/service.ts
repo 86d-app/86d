@@ -14,7 +14,7 @@ export type BenefitType =
 	| "exclusive_products"
 	| "priority_support";
 
-export interface MembershipPlan {
+export type MembershipPlan = {
 	id: string;
 	name: string;
 	slug: string;
@@ -28,9 +28,9 @@ export interface MembershipPlan {
 	sortOrder: number;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface Membership {
+export type Membership = {
 	id: string;
 	customerId: string;
 	planId: string;
@@ -42,9 +42,9 @@ export interface Membership {
 	pausedAt?: Date;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface MembershipBenefit {
+export type MembershipBenefit = {
 	id: string;
 	planId: string;
 	type: BenefitType;
@@ -52,20 +52,20 @@ export interface MembershipBenefit {
 	description?: string;
 	isActive: boolean;
 	createdAt: Date;
-}
+};
 
-export interface MembershipProduct {
+export type MembershipProduct = {
 	id: string;
 	planId: string;
 	productId: string;
 	assignedAt: Date;
-}
+};
 
-export interface MembershipWithPlan extends Membership {
+export type MembershipWithPlan = Membership & {
 	plan: MembershipPlan;
-}
+};
 
-export interface MembershipStats {
+export type MembershipStats = {
 	totalPlans: number;
 	activePlans: number;
 	totalMembers: number;
@@ -73,9 +73,9 @@ export interface MembershipStats {
 	trialMembers: number;
 	cancelledMembers: number;
 	gatedProducts: number;
-}
+};
 
-export interface MembershipController extends ModuleController {
+export type MembershipController = ModuleController & {
 	// --- Plans ---
 	createPlan(params: {
 		name: string;
@@ -189,4 +189,4 @@ export interface MembershipController extends ModuleController {
 
 	// --- Admin ---
 	getStats(): Promise<MembershipStats>;
-}
+};

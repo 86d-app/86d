@@ -3,7 +3,7 @@ import type { ModuleControllers } from "@86d-app/core";
 /**
  * Product data types
  */
-export interface Product {
+export type Product = {
 	id: string;
 	name: string;
 	slug: string;
@@ -27,9 +27,9 @@ export interface Product {
 	isFeatured: boolean;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface ProductVariant {
+export type ProductVariant = {
 	id: string;
 	productId: string;
 	name: string;
@@ -46,9 +46,9 @@ export interface ProductVariant {
 	position: number;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface Category {
+export type Category = {
 	id: string;
 	name: string;
 	slug: string;
@@ -60,17 +60,17 @@ export interface Category {
 	metadata?: Record<string, unknown> | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface ProductWithVariants extends Product {
+export type ProductWithVariants = Product & {
 	variants: ProductVariant[];
 	category?: Category | undefined;
-}
+};
 
 /**
  * Collection data types
  */
-export interface Collection {
+export type Collection = {
 	id: string;
 	name: string;
 	slug: string;
@@ -82,24 +82,24 @@ export interface Collection {
 	metadata?: Record<string, unknown> | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface CollectionProduct {
+export type CollectionProduct = {
 	id: string;
 	collectionId: string;
 	productId: string;
 	position: number;
 	createdAt: Date;
-}
+};
 
-export interface CollectionWithProducts extends Collection {
+export type CollectionWithProducts = Collection & {
 	products: Product[];
-}
+};
 
 /**
  * CSV Import types
  */
-export interface ImportProductRow {
+export type ImportProductRow = {
 	name: string;
 	slug?: string | undefined;
 	price: number | string;
@@ -118,19 +118,19 @@ export interface ImportProductRow {
 	featured?: boolean | undefined;
 	trackInventory?: boolean | undefined;
 	allowBackorder?: boolean | undefined;
-}
+};
 
-export interface ImportError {
+export type ImportError = {
 	row: number;
 	field: string;
 	message: string;
-}
+};
 
-export interface ImportResult {
+export type ImportResult = {
 	created: number;
 	updated: number;
 	errors: ImportError[];
-}
+};
 
 function generateSlug(name: string): string {
 	return name
@@ -202,8 +202,7 @@ export const controllers: ModuleControllers = {
 			const page = query.page ? parseInt(query.page, 10) : 1;
 			const limit = query.limit ? parseInt(query.limit, 10) : 20;
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (query.category) where.categoryId = query.category;
 			if (query.status) where.status = query.status;
 			if (query.featured === "true") where.isFeatured = true;
@@ -399,8 +398,7 @@ export const controllers: ModuleControllers = {
 			await data.upsert(
 				"product",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				product as unknown as Record<string, any>,
+				product as unknown as Record<string, unknown>,
 			);
 			return product;
 		},
@@ -417,8 +415,7 @@ export const controllers: ModuleControllers = {
 			await data.upsert(
 				"product",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				updated as unknown as Record<string, any>,
+				updated as unknown as Record<string, unknown>,
 			);
 			return updated;
 		},
@@ -510,8 +507,7 @@ export const controllers: ModuleControllers = {
 						...variant,
 						inventory: variant.inventory - quantity,
 						updatedAt: new Date(),
-						// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-					} as Record<string, any>);
+					} as Record<string, unknown>);
 				}
 			} else {
 				const product = (await data.get(
@@ -523,8 +519,7 @@ export const controllers: ModuleControllers = {
 						...product,
 						inventory: product.inventory - quantity,
 						updatedAt: new Date(),
-						// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-					} as Record<string, any>);
+					} as Record<string, unknown>);
 				}
 			}
 			return { success: true };
@@ -548,8 +543,7 @@ export const controllers: ModuleControllers = {
 						...variant,
 						inventory: variant.inventory + quantity,
 						updatedAt: new Date(),
-						// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-					} as Record<string, any>);
+					} as Record<string, unknown>);
 				}
 			} else {
 				const product = (await data.get(
@@ -561,8 +555,7 @@ export const controllers: ModuleControllers = {
 						...product,
 						inventory: product.inventory + quantity,
 						updatedAt: new Date(),
-						// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-					} as Record<string, any>);
+					} as Record<string, unknown>);
 				}
 			}
 			return { success: true };
@@ -621,8 +614,7 @@ export const controllers: ModuleControllers = {
 			await data.upsert(
 				"productVariant",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				variant as unknown as Record<string, any>,
+				variant as unknown as Record<string, unknown>,
 			);
 
 			// Update product timestamp
@@ -631,8 +623,7 @@ export const controllers: ModuleControllers = {
 				await data.upsert("product", productId, {
 					...product,
 					updatedAt: now,
-					// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				} as unknown as Record<string, any>);
+				} as unknown as Record<string, unknown>);
 			}
 
 			return variant;
@@ -654,8 +645,7 @@ export const controllers: ModuleControllers = {
 			await data.upsert(
 				"productVariant",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				updated as unknown as Record<string, any>,
+				updated as unknown as Record<string, unknown>,
 			);
 
 			// Update product timestamp
@@ -667,8 +657,7 @@ export const controllers: ModuleControllers = {
 				await data.upsert("product", existing.productId, {
 					...product,
 					updatedAt: now,
-					// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				} as unknown as Record<string, any>);
+				} as unknown as Record<string, unknown>);
 			}
 
 			return updated;
@@ -693,8 +682,7 @@ export const controllers: ModuleControllers = {
 					await data.upsert("product", variant.productId, {
 						...product,
 						updatedAt: new Date(),
-						// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-					} as unknown as Record<string, any>);
+					} as unknown as Record<string, unknown>);
 				}
 			}
 
@@ -732,8 +720,7 @@ export const controllers: ModuleControllers = {
 			const page = query.page ? parseInt(query.page, 10) : 1;
 			const limit = query.limit ? parseInt(query.limit, 10) : 50;
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (query.parentId) where.parentId = query.parentId;
 			if (query.visible === "true") where.isVisible = true;
 
@@ -817,8 +804,7 @@ export const controllers: ModuleControllers = {
 			await data.upsert(
 				"category",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				category as unknown as Record<string, any>,
+				category as unknown as Record<string, unknown>,
 			);
 			return category;
 		},
@@ -835,8 +821,7 @@ export const controllers: ModuleControllers = {
 			await data.upsert(
 				"category",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				updated as unknown as Record<string, any>,
+				updated as unknown as Record<string, unknown>,
 			);
 			return updated;
 		},
@@ -855,8 +840,7 @@ export const controllers: ModuleControllers = {
 					...product,
 					categoryId: undefined,
 					updatedAt: new Date(),
-					// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				} as unknown as Record<string, any>);
+				} as unknown as Record<string, unknown>);
 			}
 
 			// Remove from subcategories
@@ -869,8 +853,7 @@ export const controllers: ModuleControllers = {
 					...subcat,
 					parentId: undefined,
 					updatedAt: new Date(),
-					// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				} as unknown as Record<string, any>);
+				} as unknown as Record<string, unknown>);
 			}
 
 			await data.delete("category", id);
@@ -898,8 +881,7 @@ export const controllers: ModuleControllers = {
 						...product,
 						status,
 						updatedAt: now,
-						// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-					} as unknown as Record<string, any>);
+					} as unknown as Record<string, unknown>);
 					updated++;
 				}
 			}
@@ -1050,8 +1032,7 @@ export const controllers: ModuleControllers = {
 						await data.upsert(
 							"product",
 							existingBySku.id,
-							// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-							updatedProduct as unknown as Record<string, any>,
+							updatedProduct as unknown as Record<string, unknown>,
 						);
 						updated.push(existingBySku.id);
 						continue;
@@ -1110,8 +1091,7 @@ export const controllers: ModuleControllers = {
 					await data.upsert(
 						"product",
 						id,
-						// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-						product as unknown as Record<string, any>,
+						product as unknown as Record<string, unknown>,
 					);
 					created.push(id);
 				} catch (err) {
@@ -1155,8 +1135,7 @@ export const controllers: ModuleControllers = {
 			const page = query.page ? parseInt(query.page, 10) : 1;
 			const limit = query.limit ? parseInt(query.limit, 10) : 50;
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (query.featured === "true") where.isFeatured = true;
 			if (query.visible === "true") where.isVisible = true;
 
@@ -1250,8 +1229,7 @@ export const controllers: ModuleControllers = {
 			await data.upsert(
 				"collection",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				collection as unknown as Record<string, any>,
+				collection as unknown as Record<string, unknown>,
 			);
 			return collection;
 		},
@@ -1272,8 +1250,7 @@ export const controllers: ModuleControllers = {
 			await data.upsert(
 				"collection",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				updated as unknown as Record<string, any>,
+				updated as unknown as Record<string, unknown>,
 			);
 			return updated;
 		},
@@ -1330,16 +1307,14 @@ export const controllers: ModuleControllers = {
 			await data.upsert(
 				"collectionProduct",
 				linkId,
-				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				link as unknown as Record<string, any>,
+				link as unknown as Record<string, unknown>,
 			);
 
 			// Update collection timestamp
 			await data.upsert("collection", collectionId, {
 				...collection,
 				updatedAt: new Date(),
-				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			} as unknown as Record<string, any>);
+			} as unknown as Record<string, unknown>);
 
 			return link;
 		},
@@ -1368,8 +1343,7 @@ export const controllers: ModuleControllers = {
 				await data.upsert("collection", collectionId, {
 					...collection,
 					updatedAt: new Date(),
-					// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				} as unknown as Record<string, any>);
+				} as unknown as Record<string, unknown>);
 			}
 
 			return { success: true };

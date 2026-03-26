@@ -16,7 +16,7 @@ export type AdjustmentType = "percentage" | "fixed";
 
 export type AdjustmentScope = "all" | "category" | "product";
 
-export interface CustomerGroup {
+export type CustomerGroup = {
 	id: string;
 	name: string;
 	slug: string;
@@ -27,27 +27,27 @@ export interface CustomerGroup {
 	metadata?: Record<string, unknown> | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface GroupMembership {
+export type GroupMembership = {
 	id: string;
 	groupId: string;
 	customerId: string;
 	joinedAt: Date;
 	expiresAt?: Date | undefined;
 	metadata?: Record<string, unknown> | undefined;
-}
+};
 
-export interface GroupRule {
+export type GroupRule = {
 	id: string;
 	groupId: string;
 	field: string;
 	operator: RuleOperator;
 	value: string;
 	createdAt: Date;
-}
+};
 
-export interface GroupPriceAdjustment {
+export type GroupPriceAdjustment = {
 	id: string;
 	groupId: string;
 	adjustmentType: AdjustmentType;
@@ -56,9 +56,9 @@ export interface GroupPriceAdjustment {
 	scopeId?: string | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface CustomerGroupController extends ModuleController {
+export type CustomerGroupController = ModuleController & {
 	/** Create a new customer group */
 	createGroup(params: {
 		name: string;
@@ -187,4 +187,4 @@ export interface CustomerGroupController extends ModuleController {
 		totalRules: number;
 		totalPriceAdjustments: number;
 	}>;
-}
+};

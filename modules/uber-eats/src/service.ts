@@ -11,7 +11,7 @@ export type UberOrderStatus =
 
 export type MenuSyncStatus = "pending" | "syncing" | "synced" | "failed";
 
-export interface UberOrder {
+export type UberOrder = {
 	id: string;
 	externalOrderId: string;
 	status: UberOrderStatus;
@@ -27,9 +27,9 @@ export interface UberOrder {
 	orderType?: string | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface MenuSync {
+export type MenuSync = {
 	id: string;
 	status: MenuSyncStatus;
 	itemCount: number;
@@ -37,9 +37,9 @@ export interface MenuSync {
 	startedAt: Date;
 	completedAt?: Date | undefined;
 	createdAt: Date;
-}
+};
 
-export interface OrderStats {
+export type OrderStats = {
 	total: number;
 	pending: number;
 	accepted: number;
@@ -48,9 +48,9 @@ export interface OrderStats {
 	delivered: number;
 	cancelled: number;
 	totalRevenue: number;
-}
+};
 
-export interface UberEatsController extends ModuleController {
+export type UberEatsController = ModuleController & {
 	receiveOrder(params: {
 		externalOrderId: string;
 		items: Array<Record<string, unknown>>;
@@ -88,4 +88,4 @@ export interface UberEatsController extends ModuleController {
 	}): Promise<MenuSync[]>;
 
 	getOrderStats(): Promise<OrderStats>;
-}
+};

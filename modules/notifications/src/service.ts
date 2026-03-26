@@ -13,7 +13,7 @@ export type NotificationChannel = "in_app" | "email" | "both";
 
 export type NotificationPriority = "low" | "normal" | "high" | "urgent";
 
-export interface Notification {
+export type Notification = {
 	id: string;
 	customerId: string;
 	type: NotificationType;
@@ -26,9 +26,9 @@ export interface Notification {
 	read: boolean;
 	readAt?: Date | undefined;
 	createdAt: Date;
-}
+};
 
-export interface NotificationTemplate {
+export type NotificationTemplate = {
 	id: string;
 	slug: string;
 	name: string;
@@ -43,9 +43,9 @@ export interface NotificationTemplate {
 	active: boolean;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface NotificationPreference {
+export type NotificationPreference = {
 	id: string;
 	customerId: string;
 	orderUpdates: boolean;
@@ -53,22 +53,22 @@ export interface NotificationPreference {
 	shippingAlerts: boolean;
 	accountAlerts: boolean;
 	updatedAt: Date;
-}
+};
 
-export interface NotificationStats {
+export type NotificationStats = {
 	total: number;
 	unread: number;
 	byType: Record<string, number>;
 	byPriority: Record<string, number>;
-}
+};
 
-export interface BatchSendResult {
+export type BatchSendResult = {
 	sent: number;
 	failed: number;
 	errors: Array<{ customerId: string; error: string }>;
-}
+};
 
-export interface NotificationsController extends ModuleController {
+export type NotificationsController = ModuleController & {
 	create(params: {
 		customerId: string;
 		type?: NotificationType | undefined;
@@ -191,4 +191,4 @@ export interface NotificationsController extends ModuleController {
 		actionUrl?: string | undefined;
 		metadata?: Record<string, unknown> | undefined;
 	}): Promise<BatchSendResult>;
-}
+};

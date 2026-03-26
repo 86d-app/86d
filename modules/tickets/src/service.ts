@@ -11,7 +11,7 @@ export type TicketPriority = "low" | "normal" | "high" | "urgent";
 
 export type MessageAuthorType = "customer" | "admin" | "system";
 
-export interface TicketCategory {
+export type TicketCategory = {
 	id: string;
 	name: string;
 	slug: string;
@@ -21,9 +21,9 @@ export interface TicketCategory {
 	metadata?: Record<string, unknown> | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface Ticket {
+export type Ticket = {
 	id: string;
 	number: number;
 	categoryId?: string | undefined;
@@ -42,9 +42,9 @@ export interface Ticket {
 	closedAt?: Date | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface TicketMessage {
+export type TicketMessage = {
 	id: string;
 	ticketId: string;
 	body: string;
@@ -55,9 +55,9 @@ export interface TicketMessage {
 	isInternal: boolean;
 	metadata?: Record<string, unknown> | undefined;
 	createdAt: Date;
-}
+};
 
-export interface TicketController extends ModuleController {
+export type TicketController = ModuleController & {
 	/** Create a ticket category */
 	createCategory(params: {
 		name: string;
@@ -167,4 +167,4 @@ export interface TicketController extends ModuleController {
 		closed: number;
 		byPriority: Record<TicketPriority, number>;
 	}>;
-}
+};

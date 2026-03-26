@@ -12,7 +12,7 @@ export type QuoteStatus =
 
 export type AuthorType = "customer" | "admin";
 
-export interface Quote {
+export type Quote = {
 	id: string;
 	customerId: string;
 	customerEmail: string;
@@ -29,9 +29,9 @@ export interface Quote {
 	metadata: Record<string, unknown>;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface QuoteItem {
+export type QuoteItem = {
 	id: string;
 	quoteId: string;
 	productId: string;
@@ -43,9 +43,9 @@ export interface QuoteItem {
 	notes?: string | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface QuoteComment {
+export type QuoteComment = {
 	id: string;
 	quoteId: string;
 	authorType: AuthorType;
@@ -53,9 +53,9 @@ export interface QuoteComment {
 	authorName: string;
 	message: string;
 	createdAt: Date;
-}
+};
 
-export interface QuoteHistory {
+export type QuoteHistory = {
 	id: string;
 	quoteId: string;
 	fromStatus: string;
@@ -63,9 +63,9 @@ export interface QuoteHistory {
 	changedBy: string;
 	reason?: string | undefined;
 	createdAt: Date;
-}
+};
 
-export interface QuoteStats {
+export type QuoteStats = {
 	totalQuotes: number;
 	draftQuotes: number;
 	submittedQuotes: number;
@@ -78,9 +78,9 @@ export interface QuoteStats {
 	totalValue: number;
 	averageValue: number;
 	conversionRate: number;
-}
+};
 
-export interface QuoteController extends ModuleController {
+export type QuoteController = ModuleController & {
 	// Quote lifecycle
 	createQuote(params: {
 		customerId: string;
@@ -179,4 +179,4 @@ export interface QuoteController extends ModuleController {
 
 	// Stats
 	getStats(): Promise<QuoteStats>;
-}
+};

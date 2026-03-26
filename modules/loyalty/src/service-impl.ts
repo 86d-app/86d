@@ -49,8 +49,7 @@ export function createLoyaltyController(
 			await data.upsert(
 				"loyaltyAccount",
 				account.id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updated as Record<string, any>,
+				updated as Record<string, unknown>,
 			);
 			return updated;
 		}
@@ -80,8 +79,11 @@ export function createLoyaltyController(
 				createdAt: new Date(),
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("loyaltyAccount", id, account as Record<string, any>);
+			await data.upsert(
+				"loyaltyAccount",
+				id,
+				account as Record<string, unknown>,
+			);
 			return account;
 		},
 
@@ -110,8 +112,7 @@ export function createLoyaltyController(
 			await data.upsert(
 				"loyaltyAccount",
 				account.id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updated as Record<string, any>,
+				updated as Record<string, unknown>,
 			);
 			return updated;
 		},
@@ -126,8 +127,7 @@ export function createLoyaltyController(
 			await data.upsert(
 				"loyaltyAccount",
 				account.id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updated as Record<string, any>,
+				updated as Record<string, unknown>,
 			);
 			return updated;
 		},
@@ -149,8 +149,7 @@ export function createLoyaltyController(
 			await data.upsert(
 				"loyaltyAccount",
 				account.id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updated as Record<string, any>,
+				updated as Record<string, unknown>,
 			);
 
 			const txnId = crypto.randomUUID();
@@ -166,8 +165,7 @@ export function createLoyaltyController(
 			await data.upsert(
 				"loyaltyTransaction",
 				txnId,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				txn as Record<string, any>,
+				txn as Record<string, unknown>,
 			);
 
 			await recalcTier(updated);
@@ -192,8 +190,7 @@ export function createLoyaltyController(
 			await data.upsert(
 				"loyaltyAccount",
 				account.id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updated as Record<string, any>,
+				updated as Record<string, unknown>,
 			);
 
 			const txnId = crypto.randomUUID();
@@ -209,8 +206,7 @@ export function createLoyaltyController(
 			await data.upsert(
 				"loyaltyTransaction",
 				txnId,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				txn as Record<string, any>,
+				txn as Record<string, unknown>,
 			);
 
 			return txn;
@@ -231,8 +227,7 @@ export function createLoyaltyController(
 			await data.upsert(
 				"loyaltyAccount",
 				account.id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updated as Record<string, any>,
+				updated as Record<string, unknown>,
 			);
 
 			const txnId = crypto.randomUUID();
@@ -247,8 +242,7 @@ export function createLoyaltyController(
 			await data.upsert(
 				"loyaltyTransaction",
 				txnId,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				txn as Record<string, any>,
+				txn as Record<string, unknown>,
 			);
 
 			if (params.points > 0) {
@@ -260,8 +254,7 @@ export function createLoyaltyController(
 		// ── Transaction history ───────────────────────────────────────
 
 		async listTransactions(accountId, params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = { accountId };
+			const where: Record<string, unknown> = { accountId };
 			if (params?.type) where.type = params.type;
 
 			const all = await data.findMany("loyaltyTransaction", {
@@ -286,12 +279,7 @@ export function createLoyaltyController(
 				active: true,
 				createdAt: new Date(),
 			};
-			await data.upsert(
-				"loyaltyRule",
-				id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				rule as Record<string, any>,
-			);
+			await data.upsert("loyaltyRule", id, rule as Record<string, unknown>);
 			return rule;
 		},
 
@@ -308,12 +296,7 @@ export function createLoyaltyController(
 					: {}),
 				...(params.active !== undefined ? { active: params.active } : {}),
 			};
-			await data.upsert(
-				"loyaltyRule",
-				id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updated as Record<string, any>,
-			);
+			await data.upsert("loyaltyRule", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -388,12 +371,7 @@ export function createLoyaltyController(
 				perks: params.perks,
 				sortOrder: existing.length,
 			};
-			await data.upsert(
-				"loyaltyTier",
-				id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				tier as Record<string, any>,
-			);
+			await data.upsert("loyaltyTier", id, tier as Record<string, unknown>);
 			return tier;
 		},
 
@@ -412,12 +390,7 @@ export function createLoyaltyController(
 					: {}),
 				...(params.perks !== undefined ? { perks: params.perks } : {}),
 			};
-			await data.upsert(
-				"loyaltyTier",
-				id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updated as Record<string, any>,
-			);
+			await data.upsert("loyaltyTier", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -431,8 +404,7 @@ export function createLoyaltyController(
 		// ── Admin ─────────────────────────────────────────────────────
 
 		async listAccounts(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.tier) where.tier = params.tier;
 			if (params?.status) where.status = params.status;
 

@@ -50,8 +50,7 @@ export function createMembershipController(
 					maxMembers: params.maxMembers,
 				}),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("membershipPlan", id, plan as Record<string, any>);
+			await data.upsert("membershipPlan", id, plan as Record<string, unknown>);
 			return plan;
 		},
 
@@ -106,8 +105,11 @@ export function createMembershipController(
 
 			const updated: MembershipPlan = { ...base, ...optionalFields };
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("membershipPlan", id, updated as Record<string, any>);
+			await data.upsert(
+				"membershipPlan",
+				id,
+				updated as Record<string, unknown>,
+			);
 			return updated;
 		},
 
@@ -205,8 +207,7 @@ export function createMembershipController(
 					await data.upsert(
 						"membership",
 						m.id,
-						// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-						cancelled as Record<string, any>,
+						cancelled as Record<string, unknown>,
 					);
 				}
 			}
@@ -241,8 +242,11 @@ export function createMembershipController(
 				membership.endDate = endDate;
 			}
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("membership", id, membership as Record<string, any>);
+			await data.upsert(
+				"membership",
+				id,
+				membership as Record<string, unknown>,
+			);
 			return membership;
 		},
 
@@ -262,8 +266,7 @@ export function createMembershipController(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("membership", id, updated as Record<string, any>);
+			await data.upsert("membership", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -283,8 +286,7 @@ export function createMembershipController(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("membership", id, updated as Record<string, any>);
+			await data.upsert("membership", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -301,8 +303,7 @@ export function createMembershipController(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("membership", id, updated as Record<string, any>);
+			await data.upsert("membership", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -379,8 +380,7 @@ export function createMembershipController(
 			await data.upsert(
 				"membershipBenefit",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				benefit as Record<string, any>,
+				benefit as Record<string, unknown>,
 			);
 			return benefit;
 		},
@@ -432,8 +432,11 @@ export function createMembershipController(
 				productId: params.productId,
 				assignedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("membershipProduct", id, gated as Record<string, any>);
+			await data.upsert(
+				"membershipProduct",
+				id,
+				gated as Record<string, unknown>,
+			);
 			return gated;
 		},
 

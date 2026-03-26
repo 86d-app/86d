@@ -9,7 +9,7 @@ export type AppointmentStatus =
 	| "completed"
 	| "no-show";
 
-export interface Service {
+export type Service = {
 	id: string;
 	name: string;
 	slug: string;
@@ -22,9 +22,9 @@ export interface Service {
 	sortOrder: number;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface Staff {
+export type Staff = {
 	id: string;
 	name: string;
 	email: string;
@@ -32,25 +32,25 @@ export interface Staff {
 	status: StaffStatus;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface StaffService {
+export type StaffService = {
 	id: string;
 	staffId: string;
 	serviceId: string;
 	createdAt: Date;
-}
+};
 
-export interface Schedule {
+export type Schedule = {
 	id: string;
 	staffId: string;
 	dayOfWeek: number;
 	startTime: string;
 	endTime: string;
 	createdAt: Date;
-}
+};
 
-export interface Appointment {
+export type Appointment = {
 	id: string;
 	serviceId: string;
 	staffId: string;
@@ -66,23 +66,23 @@ export interface Appointment {
 	currency: string;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface StaffWithServices extends Staff {
+export type StaffWithServices = Staff & {
 	services: Service[];
-}
+};
 
-export interface ServiceWithStaff extends Service {
+export type ServiceWithStaff = Service & {
 	staff: Staff[];
-}
+};
 
-export interface TimeSlot {
+export type TimeSlot = {
 	startsAt: Date;
 	endsAt: Date;
 	staffId: string;
-}
+};
 
-export interface AppointmentStats {
+export type AppointmentStats = {
 	totalAppointments: number;
 	pendingAppointments: number;
 	confirmedAppointments: number;
@@ -92,9 +92,9 @@ export interface AppointmentStats {
 	totalServices: number;
 	totalStaff: number;
 	totalRevenue: number;
-}
+};
 
-export interface AppointmentController extends ModuleController {
+export type AppointmentController = ModuleController & {
 	// ── Services ──
 
 	createService(params: {
@@ -256,4 +256,4 @@ export interface AppointmentController extends ModuleController {
 	// ── Stats ──
 
 	getStats(): Promise<AppointmentStats>;
-}
+};

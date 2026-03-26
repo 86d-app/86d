@@ -49,8 +49,7 @@ export function createBundleController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any for JSONB
-			await data.upsert("bundle", id, bundle as Record<string, any>);
+			await data.upsert("bundle", id, bundle as Record<string, unknown>);
 			return bundle;
 		},
 
@@ -70,8 +69,7 @@ export function createBundleController(
 		},
 
 		async list(params): Promise<Bundle[]> {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status) where.status = params.status;
 
 			const results = await data.findMany("bundle", {
@@ -108,8 +106,7 @@ export function createBundleController(
 			if (updates.sortOrder !== undefined)
 				updated.sortOrder = updates.sortOrder;
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("bundle", id, updated as Record<string, any>);
+			await data.upsert("bundle", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -141,8 +138,7 @@ export function createBundleController(
 				createdAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any for JSONB
-			await data.upsert("bundleItem", id, item as Record<string, any>);
+			await data.upsert("bundleItem", id, item as Record<string, unknown>);
 			return item;
 		},
 
@@ -168,8 +164,11 @@ export function createBundleController(
 			if (updates.sortOrder !== undefined)
 				updated.sortOrder = updates.sortOrder;
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("bundleItem", itemId, updated as Record<string, any>);
+			await data.upsert(
+				"bundleItem",
+				itemId,
+				updated as Record<string, unknown>,
+			);
 			return updated;
 		},
 

@@ -1,6 +1,6 @@
 import type { ModuleController } from "@86d-app/core";
 
-export interface Customer {
+export type Customer = {
 	id: string;
 	email: string;
 	firstName: string;
@@ -11,9 +11,9 @@ export interface Customer {
 	metadata?: Record<string, unknown> | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface CustomerAddress {
+export type CustomerAddress = {
 	id: string;
 	customerId: string;
 	type: "billing" | "shipping";
@@ -30,9 +30,9 @@ export interface CustomerAddress {
 	isDefault: boolean;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface CustomerController extends ModuleController {
+export type CustomerController = ModuleController & {
 	/**
 	 * Get a customer by ID
 	 */
@@ -247,27 +247,27 @@ export interface CustomerController extends ModuleController {
 	 * Get overall loyalty program stats
 	 */
 	getLoyaltyStats(): Promise<LoyaltyStats>;
-}
+};
 
-export interface ImportCustomerRow {
+export type ImportCustomerRow = {
 	email: string;
 	firstName?: string | undefined;
 	lastName?: string | undefined;
 	phone?: string | undefined;
 	tags?: string[] | undefined;
-}
+};
 
-export interface ImportCustomerResult {
+export type ImportCustomerResult = {
 	created: number;
 	updated: number;
 	errors: { row: number; field: string; message: string }[];
-}
+};
 
 // --- Loyalty Points ---
 
 export type LoyaltyTransactionType = "earn" | "redeem" | "adjust";
 
-export interface LoyaltyTransaction {
+export type LoyaltyTransaction = {
 	id: string;
 	customerId: string;
 	type: LoyaltyTransactionType;
@@ -276,17 +276,17 @@ export interface LoyaltyTransaction {
 	reason: string;
 	orderId?: string | undefined;
 	createdAt: Date;
-}
+};
 
-export interface LoyaltyBalance {
+export type LoyaltyBalance = {
 	customerId: string;
 	totalEarned: number;
 	totalRedeemed: number;
 	balance: number;
 	transactionCount: number;
-}
+};
 
-export interface LoyaltyStats {
+export type LoyaltyStats = {
 	totalCustomersWithPoints: number;
 	totalPointsIssued: number;
 	totalPointsRedeemed: number;
@@ -298,14 +298,14 @@ export interface LoyaltyStats {
 		name: string;
 		balance: number;
 	}[];
-}
+};
 
-export interface LoyaltyRules {
+export type LoyaltyRules = {
 	pointsPerDollar: number;
 	redemptionRate: number;
 	minimumRedemption: number;
 	enabled: boolean;
-}
+};
 
 export const DEFAULT_LOYALTY_RULES: LoyaltyRules = {
 	pointsPerDollar: 1,

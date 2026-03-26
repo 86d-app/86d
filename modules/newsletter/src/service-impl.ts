@@ -37,8 +37,7 @@ export function createNewsletterController(
 				await data.upsert(
 					"subscriber",
 					existing.id,
-					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-					updated as Record<string, any>,
+					updated as Record<string, unknown>,
 				);
 				return updated;
 			}
@@ -57,8 +56,11 @@ export function createNewsletterController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("subscriber", id, subscriber as Record<string, any>);
+			await data.upsert(
+				"subscriber",
+				id,
+				subscriber as Record<string, unknown>,
+			);
 			void events?.emit("newsletter.subscribed", {
 				subscriberId: subscriber.id,
 				email: subscriber.email,
@@ -85,8 +87,7 @@ export function createNewsletterController(
 			await data.upsert(
 				"subscriber",
 				existing.id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updated as Record<string, any>,
+				updated as Record<string, unknown>,
 			);
 			void events?.emit("newsletter.unsubscribed", {
 				subscriberId: updated.id,
@@ -113,8 +114,7 @@ export function createNewsletterController(
 			await data.upsert(
 				"subscriber",
 				existing.id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updated as Record<string, any>,
+				updated as Record<string, unknown>,
 			);
 			return updated;
 		},
@@ -149,8 +149,7 @@ export function createNewsletterController(
 				...(params.status !== undefined ? { status: params.status } : {}),
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("subscriber", id, updated as Record<string, any>);
+			await data.upsert("subscriber", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -163,8 +162,7 @@ export function createNewsletterController(
 
 		async listSubscribers(params) {
 			// Build where filter for status when provided
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status) where.status = params.status;
 
 			const all = await data.findMany("subscriber", {
@@ -204,8 +202,7 @@ export function createNewsletterController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("campaign", id, campaign as Record<string, any>);
+			await data.upsert("campaign", id, campaign as Record<string, unknown>);
 			return campaign;
 		},
 
@@ -236,8 +233,7 @@ export function createNewsletterController(
 				status: params.scheduledAt ? "scheduled" : campaign.status,
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("campaign", id, updated as Record<string, any>);
+			await data.upsert("campaign", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -252,8 +248,7 @@ export function createNewsletterController(
 		},
 
 		async listCampaigns(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status) where.status = params.status;
 
 			const all = await data.findMany("campaign", {
@@ -290,8 +285,7 @@ export function createNewsletterController(
 				sentAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("campaign", id, updated as Record<string, any>);
+			await data.upsert("campaign", id, updated as Record<string, unknown>);
 			void events?.emit("newsletter.campaign.sent", {
 				campaignId: updated.id,
 				subject: updated.subject,

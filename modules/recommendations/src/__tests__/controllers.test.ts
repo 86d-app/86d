@@ -455,8 +455,7 @@ describe("recommendation controllers — edge cases", () => {
 			await mockData.upsert("productInteraction", old.id, {
 				...old,
 				createdAt: new Date(Date.now() - 30 * 86_400_000),
-				// biome-ignore lint/suspicious/noExplicitAny: test data
-			} as Record<string, any>);
+			} as Record<string, unknown>);
 
 			await controller.trackInteraction({
 				productId: "new_prod",

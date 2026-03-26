@@ -61,8 +61,7 @@ export function createGiftCardController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any for JSONB
-			await data.upsert("giftCard", id, card as Record<string, any>);
+			await data.upsert("giftCard", id, card as Record<string, unknown>);
 			return card;
 		},
 
@@ -82,8 +81,7 @@ export function createGiftCardController(
 		},
 
 		async list(params): Promise<GiftCard[]> {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status) where.status = params.status;
 			if (params?.customerId) where.customerId = params.customerId;
 
@@ -122,8 +120,7 @@ export function createGiftCardController(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("giftCard", id, updated as Record<string, any>);
+			await data.upsert("giftCard", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -208,8 +205,7 @@ export function createGiftCardController(
 			await data.upsert(
 				"giftCard",
 				card.id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updatedCard as Record<string, any>,
+				updatedCard as Record<string, unknown>,
 			);
 
 			// Record transaction
@@ -228,8 +224,7 @@ export function createGiftCardController(
 			await data.upsert(
 				"giftCardTransaction",
 				txnId,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				txn as Record<string, any>,
+				txn as Record<string, unknown>,
 			);
 
 			return { transaction: txn, giftCard: updatedCard };
@@ -255,8 +250,7 @@ export function createGiftCardController(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("giftCard", id, updatedCard as Record<string, any>);
+			await data.upsert("giftCard", id, updatedCard as Record<string, unknown>);
 
 			const txnId = crypto.randomUUID();
 			const txn: GiftCardTransaction = {
@@ -273,8 +267,7 @@ export function createGiftCardController(
 			await data.upsert(
 				"giftCardTransaction",
 				txnId,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				txn as Record<string, any>,
+				txn as Record<string, unknown>,
 			);
 
 			return { transaction: txn, giftCard: updatedCard };
@@ -328,8 +321,7 @@ export function createGiftCardController(
 			await data.upsert(
 				"giftCardTransaction",
 				txnId,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				txn as Record<string, any>,
+				txn as Record<string, unknown>,
 			);
 
 			return card;
@@ -358,8 +350,7 @@ export function createGiftCardController(
 			await data.upsert(
 				"giftCard",
 				params.giftCardId,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updatedCard as Record<string, any>,
+				updatedCard as Record<string, unknown>,
 			);
 
 			const txnId = crypto.randomUUID();
@@ -377,8 +368,7 @@ export function createGiftCardController(
 			await data.upsert(
 				"giftCardTransaction",
 				txnId,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				txn as Record<string, any>,
+				txn as Record<string, unknown>,
 			);
 
 			return { transaction: txn, giftCard: updatedCard };
@@ -417,8 +407,11 @@ export function createGiftCardController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("giftCard", card.id, updated as Record<string, any>);
+			await data.upsert(
+				"giftCard",
+				card.id,
+				updated as Record<string, unknown>,
+			);
 			return updated;
 		},
 

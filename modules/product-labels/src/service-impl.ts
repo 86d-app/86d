@@ -33,8 +33,7 @@ export function createProductLabelController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("label", id, label as Record<string, any>);
+			await data.upsert("label", id, label as Record<string, unknown>);
 			return label;
 		},
 
@@ -79,8 +78,7 @@ export function createProductLabelController(
 						: (params.conditions ?? current.conditions),
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("label", id, updated as Record<string, any>);
+			await data.upsert("label", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -102,8 +100,7 @@ export function createProductLabelController(
 		},
 
 		async listLabels(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.type) where.type = params.type;
 			if (params?.isActive !== undefined) where.isActive = params.isActive;
 
@@ -121,8 +118,7 @@ export function createProductLabelController(
 		},
 
 		async countLabels(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.type) where.type = params.type;
 			if (params?.isActive !== undefined) where.isActive = params.isActive;
 
@@ -159,8 +155,7 @@ export function createProductLabelController(
 				await data.upsert(
 					"productLabel",
 					existing[0].id,
-					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-					updated as Record<string, any>,
+					updated as Record<string, unknown>,
 				);
 				return updated;
 			}
@@ -173,8 +168,11 @@ export function createProductLabelController(
 				position: params.position,
 				assignedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("productLabel", id, assignment as Record<string, any>);
+			await data.upsert(
+				"productLabel",
+				id,
+				assignment as Record<string, unknown>,
+			);
 			return assignment;
 		},
 
@@ -268,8 +266,7 @@ export function createProductLabelController(
 					await data.upsert(
 						"productLabel",
 						id,
-						// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-						assignment as Record<string, any>,
+						assignment as Record<string, unknown>,
 					);
 					assigned += 1;
 				}

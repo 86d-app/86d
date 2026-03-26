@@ -53,8 +53,7 @@ export function createFacebookShopController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("listing", id, listing as Record<string, any>);
+			await data.upsert("listing", id, listing as Record<string, unknown>);
 			return listing;
 		},
 
@@ -91,8 +90,7 @@ export function createFacebookShopController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("listing", id, updated as Record<string, any>);
+			await data.upsert("listing", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -130,8 +128,7 @@ export function createFacebookShopController(
 		},
 
 		async listListings(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status) where.status = params.status;
 			if (params?.syncStatus) where.syncStatus = params.syncStatus;
 
@@ -161,8 +158,7 @@ export function createFacebookShopController(
 				completedAt: undefined,
 				createdAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("catalogSync", id, sync as Record<string, any>);
+			await data.upsert("catalogSync", id, sync as Record<string, unknown>);
 
 			if (!provider) return sync;
 
@@ -187,8 +183,7 @@ export function createFacebookShopController(
 						await data.upsert(
 							"listing",
 							listing.id,
-							// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-							updatedListing as Record<string, any>,
+							updatedListing as Record<string, unknown>,
 						);
 						continue;
 					} else {
@@ -210,8 +205,7 @@ export function createFacebookShopController(
 						await data.upsert(
 							"listing",
 							listing.id,
-							// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-							updatedListing as Record<string, any>,
+							updatedListing as Record<string, unknown>,
 						);
 					}
 					syncedProducts++;
@@ -227,8 +221,7 @@ export function createFacebookShopController(
 					await data.upsert(
 						"listing",
 						listing.id,
-						// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-						updatedListing as Record<string, any>,
+						updatedListing as Record<string, unknown>,
 					);
 				}
 			}
@@ -243,8 +236,7 @@ export function createFacebookShopController(
 			await data.upsert(
 				"catalogSync",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				completedSync as Record<string, any>,
+				completedSync as Record<string, unknown>,
 			);
 
 			events?.emit("facebook.catalog.synced", {
@@ -293,8 +285,7 @@ export function createFacebookShopController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("channelOrder", id, order as Record<string, any>);
+			await data.upsert("channelOrder", id, order as Record<string, unknown>);
 
 			events?.emit("facebook.order.received", {
 				orderId: order.id,
@@ -347,14 +338,12 @@ export function createFacebookShopController(
 				...(trackingUrl !== undefined ? { trackingUrl } : {}),
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("channelOrder", id, updated as Record<string, any>);
+			await data.upsert("channelOrder", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
 		async listOrders(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status) where.status = params.status;
 
 			const all = await data.findMany("channelOrder", {
@@ -379,8 +368,11 @@ export function createFacebookShopController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("collection", id, collection as Record<string, any>);
+			await data.upsert(
+				"collection",
+				id,
+				collection as Record<string, unknown>,
+			);
 			return collection;
 		},
 
@@ -449,8 +441,7 @@ export function createFacebookShopController(
 					await data.upsert(
 						"listing",
 						id,
-						// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-						updatedListing as Record<string, any>,
+						updatedListing as Record<string, unknown>,
 					);
 					return updatedListing;
 				} else {
@@ -476,8 +467,7 @@ export function createFacebookShopController(
 				await data.upsert(
 					"listing",
 					id,
-					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-					updatedListing as Record<string, any>,
+					updatedListing as Record<string, unknown>,
 				);
 
 				events?.emit("facebook.product.synced", {
@@ -497,8 +487,7 @@ export function createFacebookShopController(
 				await data.upsert(
 					"listing",
 					id,
-					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-					updatedListing as Record<string, any>,
+					updatedListing as Record<string, unknown>,
 				);
 				return updatedListing;
 			}
@@ -541,8 +530,7 @@ export function createFacebookShopController(
 					await data.upsert(
 						"listing",
 						listingData.id,
-						// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-						listingData as Record<string, any>,
+						listingData as Record<string, unknown>,
 					);
 					synced++;
 				}
@@ -621,8 +609,7 @@ export function createFacebookShopController(
 				await data.upsert(
 					"channelOrder",
 					orderData.id,
-					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-					orderData as Record<string, any>,
+					orderData as Record<string, unknown>,
 				);
 				synced++;
 			}

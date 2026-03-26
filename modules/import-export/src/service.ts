@@ -13,19 +13,19 @@ export type ExportType = "products" | "customers" | "orders" | "inventory";
 export type ExportStatus = "pending" | "processing" | "completed" | "failed";
 export type ExportFormat = "csv" | "json";
 
-export interface ImportError {
+export type ImportError = {
 	row: number;
 	field?: string | undefined;
 	message: string;
-}
+};
 
-export interface ImportOptions {
+export type ImportOptions = {
 	updateExisting?: boolean | undefined;
 	skipDuplicates?: boolean | undefined;
 	dryRun?: boolean | undefined;
-}
+};
 
-export interface ImportJob {
+export type ImportJob = {
 	id: string;
 	type: ImportType;
 	status: ImportStatus;
@@ -40,15 +40,15 @@ export interface ImportJob {
 	createdAt: Date;
 	updatedAt: Date;
 	completedAt?: Date | undefined;
-}
+};
 
-export interface ExportFilters {
+export type ExportFilters = {
 	dateFrom?: string | undefined;
 	dateTo?: string | undefined;
 	status?: string | undefined;
-}
+};
 
-export interface ExportJob {
+export type ExportJob = {
 	id: string;
 	type: ExportType;
 	status: ExportStatus;
@@ -60,29 +60,29 @@ export interface ExportJob {
 	createdAt: Date;
 	updatedAt: Date;
 	completedAt?: Date | undefined;
-}
+};
 
-export interface CreateImportParams {
+export type CreateImportParams = {
 	type: ImportType;
 	filename: string;
 	totalRows: number;
 	options?: ImportOptions | undefined;
 	createdBy?: string | undefined;
-}
+};
 
-export interface CreateExportParams {
+export type CreateExportParams = {
 	type: ExportType;
 	format?: ExportFormat | undefined;
 	filters?: ExportFilters | undefined;
 	createdBy?: string | undefined;
-}
+};
 
-export interface ProcessRowResult {
+export type ProcessRowResult = {
 	success: boolean;
 	error?: ImportError | undefined;
-}
+};
 
-export interface ImportExportController extends ModuleController {
+export type ImportExportController = ModuleController & {
 	createImport(params: CreateImportParams): Promise<ImportJob>;
 	getImport(id: string): Promise<ImportJob | null>;
 	listImports(params?: {
@@ -127,4 +127,4 @@ export interface ImportExportController extends ModuleController {
 
 	countImports(): Promise<number>;
 	countExports(): Promise<number>;
-}
+};

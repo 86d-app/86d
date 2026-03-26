@@ -16,7 +16,7 @@ export type OrderStatus =
 	| "refunded";
 export type CatalogSyncStatus = "pending" | "syncing" | "synced" | "failed";
 
-export interface Listing {
+export type Listing = {
 	id: string;
 	localProductId: string;
 	externalProductId?: string | undefined;
@@ -32,9 +32,9 @@ export interface Listing {
 	metadata: Record<string, unknown>;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface ChannelOrder {
+export type ChannelOrder = {
 	id: string;
 	externalOrderId: string;
 	instagramOrderId: string;
@@ -51,9 +51,9 @@ export interface ChannelOrder {
 	trackingUrl?: string | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface CatalogSync {
+export type CatalogSync = {
 	id: string;
 	status: CatalogSyncStatus;
 	totalProducts: number;
@@ -63,9 +63,9 @@ export interface CatalogSync {
 	startedAt: Date;
 	completedAt?: Date | undefined;
 	createdAt: Date;
-}
+};
 
-export interface ChannelStats {
+export type ChannelStats = {
 	totalListings: number;
 	activeListings: number;
 	pendingListings: number;
@@ -76,9 +76,9 @@ export interface ChannelStats {
 	deliveredOrders: number;
 	cancelledOrders: number;
 	totalRevenue: number;
-}
+};
 
-export interface InstagramShopController extends ModuleController {
+export type InstagramShopController = ModuleController & {
 	createListing(params: {
 		localProductId: string;
 		externalProductId?: string | undefined;
@@ -175,4 +175,4 @@ export interface InstagramShopController extends ModuleController {
 
 	/** Pull orders from Meta Commerce and sync locally. */
 	syncOrders(): Promise<{ synced: number }>;
-}
+};

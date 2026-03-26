@@ -69,8 +69,7 @@ export function createRedirectController(
 				updatedAt: now,
 				...(params.note != null && { note: params.note }),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("redirect", id, redirect as Record<string, any>);
+			await data.upsert("redirect", id, redirect as Record<string, unknown>);
 			return redirect;
 		},
 
@@ -111,8 +110,7 @@ export function createRedirectController(
 				base.lastHitAt = current.lastHitAt;
 			}
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("redirect", id, base as Record<string, any>);
+			await data.upsert("redirect", id, base as Record<string, unknown>);
 			return base;
 		},
 
@@ -204,8 +202,7 @@ export function createRedirectController(
 				hitCount: current.hitCount + 1,
 				lastHitAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("redirect", id, updated as Record<string, any>);
+			await data.upsert("redirect", id, updated as Record<string, unknown>);
 		},
 
 		async bulkDelete(ids) {

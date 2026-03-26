@@ -1,6 +1,6 @@
 import type { ModuleController } from "@86d-app/core";
 
-export interface DownloadableFile {
+export type DownloadableFile = {
 	id: string;
 	productId: string;
 	name: string;
@@ -10,9 +10,9 @@ export interface DownloadableFile {
 	isActive: boolean;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface DownloadToken {
+export type DownloadToken = {
 	id: string;
 	token: string;
 	fileId: string;
@@ -24,9 +24,9 @@ export interface DownloadToken {
 	revokedAt?: Date | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface DigitalDownloadsController extends ModuleController {
+export type DigitalDownloadsController = ModuleController & {
 	// ── Files ──────────────────────────────────────────────────────────────
 	createFile(params: {
 		productId: string;
@@ -104,4 +104,4 @@ export interface DigitalDownloadsController extends ModuleController {
 		maxDownloads?: number | undefined;
 		expiresAt?: Date | undefined;
 	}): Promise<DownloadToken[]>;
-}
+};

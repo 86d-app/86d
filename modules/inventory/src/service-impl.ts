@@ -97,8 +97,7 @@ async function emitBackInStock(
 		void dataService.upsert(
 			"backInStockSubscription",
 			sub.id,
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService uses any for JSONB
-			updated as Record<string, any>,
+			updated as Record<string, unknown>,
 		);
 	}
 }
@@ -153,8 +152,7 @@ export function createInventoryController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService uses any for JSONB
-			await data.upsert("inventoryItem", id, item as Record<string, any>);
+			await data.upsert("inventoryItem", id, item as Record<string, unknown>);
 			const result = withAvailable(item);
 			emitUpdated(result, events);
 			checkLowStock(result, events);
@@ -179,8 +177,11 @@ export function createInventoryController(
 				quantity: Math.max(0, existing.quantity + params.delta),
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService uses any for JSONB
-			await data.upsert("inventoryItem", id, updated as Record<string, any>);
+			await data.upsert(
+				"inventoryItem",
+				id,
+				updated as Record<string, unknown>,
+			);
 			const result = withAvailable(updated);
 			emitUpdated(result, events);
 			checkLowStock(result, events);
@@ -206,8 +207,11 @@ export function createInventoryController(
 				reserved: existing.reserved + params.quantity,
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService uses any for JSONB
-			await data.upsert("inventoryItem", id, updated as Record<string, any>);
+			await data.upsert(
+				"inventoryItem",
+				id,
+				updated as Record<string, unknown>,
+			);
 			const result = withAvailable(updated);
 			emitUpdated(result, events);
 			checkLowStock(result, events);
@@ -227,8 +231,11 @@ export function createInventoryController(
 				reserved: Math.max(0, existing.reserved - params.quantity),
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService uses any for JSONB
-			await data.upsert("inventoryItem", id, updated as Record<string, any>);
+			await data.upsert(
+				"inventoryItem",
+				id,
+				updated as Record<string, unknown>,
+			);
 			const result = withAvailable(updated);
 			emitUpdated(result, events);
 			return result;
@@ -248,8 +255,11 @@ export function createInventoryController(
 				reserved: Math.max(0, existing.reserved - params.quantity),
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService uses any for JSONB
-			await data.upsert("inventoryItem", id, updated as Record<string, any>);
+			await data.upsert(
+				"inventoryItem",
+				id,
+				updated as Record<string, unknown>,
+			);
 			const result = withAvailable(updated);
 			emitUpdated(result, events);
 			checkLowStock(result, events);
@@ -338,8 +348,7 @@ export function createInventoryController(
 			await data.upsert(
 				"backInStockSubscription",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService uses any for JSONB
-				sub as Record<string, any>,
+				sub as Record<string, unknown>,
 			);
 			return sub;
 		},
@@ -443,8 +452,7 @@ export function createInventoryController(
 				await data.upsert(
 					"backInStockSubscription",
 					sub.id,
-					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService uses any for JSONB
-					updated as Record<string, any>,
+					updated as Record<string, unknown>,
 				);
 				count++;
 			}

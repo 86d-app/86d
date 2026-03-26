@@ -58,8 +58,7 @@ export function createAppointmentController(
 					description: params.description,
 				}),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("service", id, svc as Record<string, any>);
+			await data.upsert("service", id, svc as Record<string, unknown>);
 			return svc;
 		},
 
@@ -101,8 +100,7 @@ export function createAppointmentController(
 					: (params.description ?? current.description);
 			if (descVal != null) base.description = descVal;
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("service", id, base as Record<string, any>);
+			await data.upsert("service", id, base as Record<string, unknown>);
 			return base;
 		},
 
@@ -161,8 +159,7 @@ export function createAppointmentController(
 				updatedAt: now,
 				...(params.bio != null && { bio: params.bio }),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("staff", id, member as Record<string, any>);
+			await data.upsert("staff", id, member as Record<string, unknown>);
 			return member;
 		},
 
@@ -189,8 +186,7 @@ export function createAppointmentController(
 			const bioVal = params.bio === null ? null : (params.bio ?? current.bio);
 			if (bioVal != null) base.bio = bioVal;
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("staff", id, base as Record<string, any>);
+			await data.upsert("staff", id, base as Record<string, unknown>);
 			return base;
 		},
 
@@ -260,8 +256,11 @@ export function createAppointmentController(
 				serviceId,
 				createdAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("staffService", id, assignment as Record<string, any>);
+			await data.upsert(
+				"staffService",
+				id,
+				assignment as Record<string, unknown>,
+			);
 			return assignment;
 		},
 
@@ -322,8 +321,7 @@ export function createAppointmentController(
 				createdAt: existing[0]?.createdAt ?? new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("schedule", id, schedule as Record<string, any>);
+			await data.upsert("schedule", id, schedule as Record<string, unknown>);
 			return schedule;
 		},
 
@@ -471,8 +469,7 @@ export function createAppointmentController(
 				...(params.notes != null && { notes: params.notes }),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("appointment", id, appt as Record<string, any>);
+			await data.upsert("appointment", id, appt as Record<string, unknown>);
 			return appt;
 		},
 
@@ -519,8 +516,7 @@ export function createAppointmentController(
 				params.notes === null ? null : (params.notes ?? current.notes);
 			if (notesVal != null) base.notes = notesVal;
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("appointment", id, base as Record<string, any>);
+			await data.upsert("appointment", id, base as Record<string, unknown>);
 			return base;
 		},
 

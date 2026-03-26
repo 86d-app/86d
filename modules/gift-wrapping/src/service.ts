@@ -2,7 +2,7 @@ import type { ModuleController } from "@86d-app/core";
 
 // ── Entities ───────────────────────────────────────────────────────
 
-export interface WrapOption {
+export type WrapOption = {
 	id: string;
 	name: string;
 	description?: string;
@@ -12,9 +12,9 @@ export interface WrapOption {
 	sortOrder: number;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface WrapSelection {
+export type WrapSelection = {
 	id: string;
 	orderId: string;
 	orderItemId: string;
@@ -25,60 +25,60 @@ export interface WrapSelection {
 	giftMessage?: string;
 	customerId?: string;
 	createdAt: Date;
-}
+};
 
 // ── Input params ───────────────────────────────────────────────────
 
-export interface CreateWrapOptionParams {
+export type CreateWrapOptionParams = {
 	name: string;
 	description?: string;
 	priceInCents: number;
 	imageUrl?: string;
 	active?: boolean;
 	sortOrder?: number;
-}
+};
 
-export interface UpdateWrapOptionParams {
+export type UpdateWrapOptionParams = {
 	name?: string;
 	description?: string;
 	priceInCents?: number;
 	imageUrl?: string;
 	active?: boolean;
 	sortOrder?: number;
-}
+};
 
-export interface SelectWrappingParams {
+export type SelectWrappingParams = {
 	orderId: string;
 	orderItemId: string;
 	wrapOptionId: string;
 	recipientName?: string;
 	giftMessage?: string;
 	customerId?: string;
-}
+};
 
-export interface ListOptionsParams {
+export type ListOptionsParams = {
 	active?: boolean;
 	take?: number;
 	skip?: number;
-}
+};
 
 // ── Results ────────────────────────────────────────────────────────
 
-export interface WrapSummary {
+export type WrapSummary = {
 	totalOptions: number;
 	activeOptions: number;
 	totalSelections: number;
 	totalRevenue: number;
-}
+};
 
-export interface OrderWrappingTotal {
+export type OrderWrappingTotal = {
 	selections: WrapSelection[];
 	totalInCents: number;
-}
+};
 
 // ── Controller ─────────────────────────────────────────────────────
 
-export interface GiftWrappingController extends ModuleController {
+export type GiftWrappingController = ModuleController & {
 	// Wrap option CRUD
 	createOption(params: CreateWrapOptionParams): Promise<WrapOption>;
 	updateOption(
@@ -99,4 +99,4 @@ export interface GiftWrappingController extends ModuleController {
 
 	// Analytics
 	getWrapSummary(): Promise<WrapSummary>;
-}
+};

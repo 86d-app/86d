@@ -36,8 +36,7 @@ export function createRecommendationController(
 			await data.upsert(
 				"recommendationRule",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				rule as Record<string, any>,
+				rule as Record<string, unknown>,
 			);
 			return rule;
 		},
@@ -66,8 +65,7 @@ export function createRecommendationController(
 			await data.upsert(
 				"recommendationRule",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updated as Record<string, any>,
+				updated as Record<string, unknown>,
 			);
 			return updated;
 		},
@@ -87,8 +85,7 @@ export function createRecommendationController(
 		},
 
 		async listRules(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.strategy) where.strategy = params.strategy;
 			if (params?.isActive !== undefined) where.isActive = params.isActive;
 
@@ -105,8 +102,7 @@ export function createRecommendationController(
 		},
 
 		async countRules(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.strategy) where.strategy = params.strategy;
 			if (params?.isActive !== undefined) where.isActive = params.isActive;
 
@@ -146,8 +142,7 @@ export function createRecommendationController(
 						await data.upsert(
 							"coOccurrence",
 							entry.id,
-							// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-							updated as Record<string, any>,
+							updated as Record<string, unknown>,
 						);
 					} else {
 						const id = crypto.randomUUID();
@@ -161,8 +156,7 @@ export function createRecommendationController(
 						await data.upsert(
 							"coOccurrence",
 							id,
-							// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-							entry as Record<string, any>,
+							entry as Record<string, unknown>,
 						);
 					}
 					pairsRecorded += 1;
@@ -212,8 +206,7 @@ export function createRecommendationController(
 			await data.upsert(
 				"productInteraction",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				interaction as Record<string, any>,
+				interaction as Record<string, unknown>,
 			);
 			void events?.emit("recommendation.interaction.tracked", {
 				productId: interaction.productId,
@@ -518,12 +511,10 @@ export function createRecommendationController(
 				createdAt: new Date(),
 			};
 
-			await data.upsert(
-				"productEmbedding",
-				id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				{ ...entry, ...(metadata ?? {}) } as Record<string, any>,
-			);
+			await data.upsert("productEmbedding", id, {
+				...entry,
+				...(metadata ?? {}),
+			} as Record<string, unknown>);
 
 			return entry;
 		},

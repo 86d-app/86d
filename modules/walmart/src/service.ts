@@ -17,7 +17,7 @@ export type WalmartOrderStatus =
 export type FeedType = "item" | "inventory" | "price" | "order";
 export type FeedStatus = "pending" | "processing" | "completed" | "error";
 
-export interface WalmartItem {
+export type WalmartItem = {
 	id: string;
 	localProductId: string;
 	walmartItemId?: string | undefined;
@@ -38,9 +38,9 @@ export interface WalmartItem {
 	metadata: Record<string, unknown>;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface WalmartOrder {
+export type WalmartOrder = {
 	id: string;
 	purchaseOrderId: string;
 	status: WalmartOrderStatus;
@@ -57,9 +57,9 @@ export interface WalmartOrder {
 	estimatedDelivery?: Date | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface FeedSubmission {
+export type FeedSubmission = {
 	id: string;
 	feedId?: string | undefined;
 	feedType: FeedType;
@@ -71,18 +71,18 @@ export interface FeedSubmission {
 	submittedAt: Date;
 	completedAt?: Date | undefined;
 	createdAt: Date;
-}
+};
 
-export interface ChannelStats {
+export type ChannelStats = {
 	totalItems: number;
 	publishedItems: number;
 	totalOrders: number;
 	totalRevenue: number;
 	pendingFeeds: number;
 	errorItems: number;
-}
+};
 
-export interface ItemHealth {
+export type ItemHealth = {
 	total: number;
 	published: number;
 	unpublished: number;
@@ -90,9 +90,9 @@ export interface ItemHealth {
 	systemError: number;
 	sellerFulfilled: number;
 	wfsFulfilled: number;
-}
+};
 
-export interface WalmartController extends ModuleController {
+export type WalmartController = ModuleController & {
 	createItem(params: {
 		localProductId: string;
 		sku: string;
@@ -182,4 +182,4 @@ export interface WalmartController extends ModuleController {
 	getItemHealth(): Promise<ItemHealth>;
 
 	syncOrders(): Promise<WalmartOrder[]>;
-}
+};

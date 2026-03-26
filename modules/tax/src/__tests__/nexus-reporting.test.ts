@@ -190,8 +190,7 @@ describe("TaxController – Nexus Management", () => {
 			await data.upsert("taxNexus", nexus.id, {
 				...nexus,
 				enabled: false,
-				// biome-ignore lint/suspicious/noExplicitAny: test data manipulation
-			} as Record<string, any>);
+			} as Record<string, unknown>);
 
 			const result = await controller.hasNexus({
 				country: "US",

@@ -33,8 +33,7 @@ export function createUberEatsController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("uberOrder", id, order as Record<string, any>);
+			await data.upsert("uberOrder", id, order as Record<string, unknown>);
 			void events?.emit("ubereats.order.received", {
 				orderId: order.id,
 				externalOrderId: order.externalOrderId,
@@ -69,8 +68,7 @@ export function createUberEatsController(
 				status: "accepted",
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("uberOrder", id, updated as Record<string, any>);
+			await data.upsert("uberOrder", id, updated as Record<string, unknown>);
 			void events?.emit("ubereats.order.accepted", {
 				orderId: updated.id,
 				externalOrderId: updated.externalOrderId,
@@ -93,8 +91,7 @@ export function createUberEatsController(
 				status: "ready",
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("uberOrder", id, updated as Record<string, any>);
+			await data.upsert("uberOrder", id, updated as Record<string, unknown>);
 			void events?.emit("ubereats.order.ready", {
 				orderId: updated.id,
 				externalOrderId: updated.externalOrderId,
@@ -138,8 +135,7 @@ export function createUberEatsController(
 				status: "cancelled",
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("uberOrder", id, updated as Record<string, any>);
+			await data.upsert("uberOrder", id, updated as Record<string, unknown>);
 			void events?.emit("ubereats.order.cancelled", {
 				orderId: updated.id,
 				externalOrderId: updated.externalOrderId,
@@ -154,8 +150,7 @@ export function createUberEatsController(
 		},
 
 		async listOrders(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status) where.status = params.status;
 
 			const all = await data.findMany("uberOrder", {
@@ -177,8 +172,7 @@ export function createUberEatsController(
 				createdAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("menuSync", id, sync as Record<string, any>);
+			await data.upsert("menuSync", id, sync as Record<string, unknown>);
 
 			if (provider) {
 				try {
@@ -190,8 +184,11 @@ export function createUberEatsController(
 						itemCount: totalItems || itemCount,
 						completedAt: new Date(),
 					};
-					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-					await data.upsert("menuSync", id, completed as Record<string, any>);
+					await data.upsert(
+						"menuSync",
+						id,
+						completed as Record<string, unknown>,
+					);
 					void events?.emit("ubereats.menu.synced", {
 						menuSyncId: completed.id,
 						itemCount: completed.itemCount,
@@ -206,8 +203,7 @@ export function createUberEatsController(
 						error: message,
 						completedAt: new Date(),
 					};
-					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-					await data.upsert("menuSync", id, failed as Record<string, any>);
+					await data.upsert("menuSync", id, failed as Record<string, unknown>);
 					return failed;
 				}
 			}
@@ -218,8 +214,7 @@ export function createUberEatsController(
 				status: "synced",
 				completedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("menuSync", id, completed as Record<string, any>);
+			await data.upsert("menuSync", id, completed as Record<string, unknown>);
 			void events?.emit("ubereats.menu.synced", {
 				menuSyncId: completed.id,
 				itemCount,

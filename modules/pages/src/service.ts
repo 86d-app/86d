@@ -2,7 +2,7 @@ import type { ModuleController } from "@86d-app/core";
 
 export type PageStatus = "draft" | "published" | "archived";
 
-export interface Page {
+export type Page = {
 	id: string;
 	title: string;
 	slug: string;
@@ -19,9 +19,9 @@ export interface Page {
 	publishedAt?: Date | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface CreatePageParams {
+export type CreatePageParams = {
 	title: string;
 	slug?: string | undefined;
 	content: string;
@@ -34,9 +34,9 @@ export interface CreatePageParams {
 	position?: number | undefined;
 	showInNavigation?: boolean | undefined;
 	parentId?: string | undefined;
-}
+};
 
-export interface UpdatePageParams {
+export type UpdatePageParams = {
 	title?: string | undefined;
 	slug?: string | undefined;
 	content?: string | undefined;
@@ -49,9 +49,9 @@ export interface UpdatePageParams {
 	position?: number | undefined;
 	showInNavigation?: boolean | undefined;
 	parentId?: string | undefined;
-}
+};
 
-export interface PagesController extends ModuleController {
+export type PagesController = ModuleController & {
 	createPage(params: CreatePageParams): Promise<Page>;
 
 	updatePage(id: string, params: UpdatePageParams): Promise<Page | null>;
@@ -77,4 +77,4 @@ export interface PagesController extends ModuleController {
 	}): Promise<Page[]>;
 
 	getNavigationPages(): Promise<Page[]>;
-}
+};

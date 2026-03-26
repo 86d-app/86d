@@ -30,7 +30,7 @@ export type ClaimResolution = "repair" | "replace" | "refund" | "credit";
 
 // --- Entities ---
 
-export interface WarrantyPlan {
+export type WarrantyPlan = {
 	id: string;
 	name: string;
 	description?: string | undefined;
@@ -43,9 +43,9 @@ export interface WarrantyPlan {
 	productId?: string | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface WarrantyRegistration {
+export type WarrantyRegistration = {
 	id: string;
 	warrantyPlanId: string;
 	orderId: string;
@@ -59,9 +59,9 @@ export interface WarrantyRegistration {
 	voidReason?: string | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface WarrantyClaim {
+export type WarrantyClaim = {
 	id: string;
 	warrantyRegistrationId: string;
 	customerId: string;
@@ -75,11 +75,11 @@ export interface WarrantyClaim {
 	resolvedAt?: Date | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
 // --- Params ---
 
-export interface CreateWarrantyPlanParams {
+export type CreateWarrantyPlanParams = {
 	name: string;
 	description?: string | undefined;
 	type: WarrantyPlanType;
@@ -88,9 +88,9 @@ export interface CreateWarrantyPlanParams {
 	coverageDetails?: string | undefined;
 	exclusions?: string | undefined;
 	productId?: string | undefined;
-}
+};
 
-export interface UpdateWarrantyPlanParams {
+export type UpdateWarrantyPlanParams = {
 	name?: string | undefined;
 	description?: string | undefined;
 	durationMonths?: number | undefined;
@@ -98,9 +98,9 @@ export interface UpdateWarrantyPlanParams {
 	coverageDetails?: string | undefined;
 	exclusions?: string | undefined;
 	isActive?: boolean | undefined;
-}
+};
 
-export interface RegisterWarrantyParams {
+export type RegisterWarrantyParams = {
 	warrantyPlanId: string;
 	orderId: string;
 	customerId: string;
@@ -108,18 +108,18 @@ export interface RegisterWarrantyParams {
 	productName: string;
 	serialNumber?: string | undefined;
 	purchaseDate?: Date | undefined;
-}
+};
 
-export interface SubmitClaimParams {
+export type SubmitClaimParams = {
 	warrantyRegistrationId: string;
 	customerId: string;
 	issueType: ClaimIssueType;
 	issueDescription: string;
-}
+};
 
 // --- Summary ---
 
-export interface ClaimSummary {
+export type ClaimSummary = {
 	totalClaims: number;
 	submitted: number;
 	underReview: number;
@@ -128,11 +128,11 @@ export interface ClaimSummary {
 	inRepair: number;
 	resolved: number;
 	closed: number;
-}
+};
 
 // --- Controller ---
 
-export interface WarrantyController extends ModuleController {
+export type WarrantyController = ModuleController & {
 	// Plans
 	createPlan(params: CreateWarrantyPlanParams): Promise<WarrantyPlan>;
 	updatePlan(
@@ -212,4 +212,4 @@ export interface WarrantyController extends ModuleController {
 	): Promise<WarrantyClaim | null>;
 	closeClaim(id: string): Promise<WarrantyClaim | null>;
 	getClaimSummary(): Promise<ClaimSummary>;
-}
+};

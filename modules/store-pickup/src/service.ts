@@ -2,7 +2,7 @@ import type { ModuleController } from "@86d-app/core";
 
 // ── Entities ───────────────────────────────────────────────────────
 
-export interface PickupLocation {
+export type PickupLocation = {
 	id: string;
 	name: string;
 	address: string;
@@ -19,9 +19,9 @@ export interface PickupLocation {
 	sortOrder: number;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface PickupWindow {
+export type PickupWindow = {
 	id: string;
 	locationId: string;
 	dayOfWeek: number;
@@ -32,7 +32,7 @@ export interface PickupWindow {
 	sortOrder: number;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
 export type PickupOrderStatus =
 	| "scheduled"
@@ -41,7 +41,7 @@ export type PickupOrderStatus =
 	| "picked_up"
 	| "cancelled";
 
-export interface PickupOrder {
+export type PickupOrder = {
 	id: string;
 	locationId: string;
 	windowId: string;
@@ -60,19 +60,19 @@ export interface PickupOrder {
 	cancelledAt?: Date;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface PickupBlackout {
+export type PickupBlackout = {
 	id: string;
 	locationId: string;
 	date: string;
 	reason?: string;
 	createdAt: Date;
-}
+};
 
 // ── Input params ───────────────────────────────────────────────────
 
-export interface CreateLocationParams {
+export type CreateLocationParams = {
 	name: string;
 	address: string;
 	city: string;
@@ -86,9 +86,9 @@ export interface CreateLocationParams {
 	preparationMinutes?: number;
 	active?: boolean;
 	sortOrder?: number;
-}
+};
 
-export interface UpdateLocationParams {
+export type UpdateLocationParams = {
 	name?: string;
 	address?: string;
 	city?: string;
@@ -102,15 +102,15 @@ export interface UpdateLocationParams {
 	preparationMinutes?: number;
 	active?: boolean;
 	sortOrder?: number;
-}
+};
 
-export interface ListLocationsParams {
+export type ListLocationsParams = {
 	active?: boolean;
 	take?: number;
 	skip?: number;
-}
+};
 
-export interface CreateWindowParams {
+export type CreateWindowParams = {
 	locationId: string;
 	dayOfWeek: number;
 	startTime: string;
@@ -118,35 +118,35 @@ export interface CreateWindowParams {
 	capacity: number;
 	active?: boolean;
 	sortOrder?: number;
-}
+};
 
-export interface UpdateWindowParams {
+export type UpdateWindowParams = {
 	dayOfWeek?: number;
 	startTime?: string;
 	endTime?: string;
 	capacity?: number;
 	active?: boolean;
 	sortOrder?: number;
-}
+};
 
-export interface ListWindowsParams {
+export type ListWindowsParams = {
 	locationId: string;
 	dayOfWeek?: number;
 	active?: boolean;
 	take?: number;
 	skip?: number;
-}
+};
 
-export interface SchedulePickupParams {
+export type SchedulePickupParams = {
 	locationId: string;
 	windowId: string;
 	orderId: string;
 	scheduledDate: string;
 	customerId?: string;
 	notes?: string;
-}
+};
 
-export interface ListPickupsParams {
+export type ListPickupsParams = {
 	locationId?: string;
 	orderId?: string;
 	customerId?: string;
@@ -154,30 +154,30 @@ export interface ListPickupsParams {
 	status?: PickupOrderStatus;
 	take?: number;
 	skip?: number;
-}
+};
 
-export interface CreateBlackoutParams {
+export type CreateBlackoutParams = {
 	locationId: string;
 	date: string;
 	reason?: string;
-}
+};
 
-export interface AvailableWindowsParams {
+export type AvailableWindowsParams = {
 	locationId: string;
 	date: string;
-}
+};
 
 // ── Results ────────────────────────────────────────────────────────
 
-export interface WindowAvailability {
+export type WindowAvailability = {
 	window: PickupWindow;
 	date: string;
 	booked: number;
 	remaining: number;
 	available: boolean;
-}
+};
 
-export interface StorePickupSummary {
+export type StorePickupSummary = {
 	totalLocations: number;
 	activeLocations: number;
 	totalWindows: number;
@@ -189,11 +189,11 @@ export interface StorePickupSummary {
 	completedPickups: number;
 	cancelledPickups: number;
 	blackoutDates: number;
-}
+};
 
 // ── Controller ─────────────────────────────────────────────────────
 
-export interface StorePickupController extends ModuleController {
+export type StorePickupController = ModuleController & {
 	// Location CRUD
 	createLocation(params: CreateLocationParams): Promise<PickupLocation>;
 	updateLocation(
@@ -239,4 +239,4 @@ export interface StorePickupController extends ModuleController {
 
 	// Analytics
 	getSummary(): Promise<StorePickupSummary>;
-}
+};

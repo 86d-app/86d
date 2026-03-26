@@ -9,12 +9,12 @@ export type ReviewSortBy =
 	| "lowest"
 	| "helpful";
 
-export interface ReviewImage {
+export type ReviewImage = {
 	url: string;
 	caption?: string | undefined;
-}
+};
 
-export interface Review {
+export type Review = {
 	id: string;
 	productId: string;
 	customerId?: string | undefined;
@@ -32,22 +32,22 @@ export interface Review {
 	moderationNote?: string | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface RatingSummary {
+export type RatingSummary = {
 	average: number;
 	count: number;
 	distribution: Record<string, number>;
-}
+};
 
-export interface ReviewVote {
+export type ReviewVote = {
 	id: string;
 	reviewId: string;
 	voterId: string;
 	createdAt: Date;
-}
+};
 
-export interface ReviewReport {
+export type ReviewReport = {
 	id: string;
 	reviewId: string;
 	reporterId?: string | undefined;
@@ -55,9 +55,9 @@ export interface ReviewReport {
 	details?: string | undefined;
 	status: ReportStatus;
 	createdAt: Date;
-}
+};
 
-export interface ReviewController extends ModuleController {
+export type ReviewController = ModuleController & {
 	createReview(params: {
 		productId: string;
 		authorName: string;
@@ -158,9 +158,9 @@ export interface ReviewController extends ModuleController {
 	): Promise<ReviewReport | null>;
 
 	getReportCount(reviewId: string): Promise<number>;
-}
+};
 
-export interface ReviewAnalytics {
+export type ReviewAnalytics = {
 	totalReviews: number;
 	pendingCount: number;
 	approvedCount: number;
@@ -169,9 +169,9 @@ export interface ReviewAnalytics {
 	ratingsDistribution: Record<string, number>;
 	withMerchantResponse: number;
 	reportedCount: number;
-}
+};
 
-export interface ReviewRequest {
+export type ReviewRequest = {
 	id: string;
 	orderId: string;
 	orderNumber: string;
@@ -179,9 +179,9 @@ export interface ReviewRequest {
 	customerName: string;
 	items: Array<{ productId: string; name: string }>;
 	sentAt: Date;
-}
+};
 
-export interface ReviewRequestStats {
+export type ReviewRequestStats = {
 	totalSent: number;
 	uniqueOrders: number;
-}
+};

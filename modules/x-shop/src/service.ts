@@ -16,7 +16,7 @@ export type OrderStatus =
 	| "refunded";
 export type DropStatus = "scheduled" | "live" | "ended" | "cancelled";
 
-export interface Listing {
+export type Listing = {
 	id: string;
 	localProductId: string;
 	externalProductId?: string | undefined;
@@ -28,9 +28,9 @@ export interface Listing {
 	metadata: Record<string, unknown>;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface ChannelOrder {
+export type ChannelOrder = {
 	id: string;
 	externalOrderId: string;
 	status: OrderStatus;
@@ -45,9 +45,9 @@ export interface ChannelOrder {
 	trackingUrl?: string | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface ProductDrop {
+export type ProductDrop = {
 	id: string;
 	name: string;
 	description?: string | undefined;
@@ -61,16 +61,16 @@ export interface ProductDrop {
 	conversions: number;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface DropStats {
+export type DropStats = {
 	impressions: number;
 	clicks: number;
 	conversions: number;
 	conversionRate: number;
-}
+};
 
-export interface ChannelStats {
+export type ChannelStats = {
 	totalListings: number;
 	activeListings: number;
 	pendingListings: number;
@@ -81,9 +81,9 @@ export interface ChannelStats {
 	deliveredOrders: number;
 	cancelledOrders: number;
 	totalRevenue: number;
-}
+};
 
-export interface XShopController extends ModuleController {
+export type XShopController = ModuleController & {
 	createListing(params: {
 		localProductId: string;
 		externalProductId?: string | undefined;
@@ -169,4 +169,4 @@ export interface XShopController extends ModuleController {
 	getDropStats(id: string): Promise<DropStats | null>;
 
 	getChannelStats(): Promise<ChannelStats>;
-}
+};

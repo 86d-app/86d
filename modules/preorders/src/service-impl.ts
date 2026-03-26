@@ -25,8 +25,7 @@ export function createPreordersController(
 		await data.upsert(
 			"preorderCampaign",
 			campaign.id,
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			campaign as Record<string, any>,
+			campaign as Record<string, unknown>,
 		);
 	}
 
@@ -37,8 +36,7 @@ export function createPreordersController(
 	}
 
 	async function saveItem(item: PreorderItem): Promise<void> {
-		// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-		await data.upsert("preorderItem", item.id, item as Record<string, any>);
+		await data.upsert("preorderItem", item.id, item as Record<string, unknown>);
 	}
 
 	function isCampaignAcceptingOrders(campaign: PreorderCampaign): boolean {
@@ -103,8 +101,7 @@ export function createPreordersController(
 		},
 
 		async listCampaigns(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status) where.status = params.status;
 			if (params?.productId) where.productId = params.productId;
 
@@ -284,8 +281,7 @@ export function createPreordersController(
 		},
 
 		async listPreorderItems(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.campaignId) where.campaignId = params.campaignId;
 			if (params?.customerId) where.customerId = params.customerId;
 			if (params?.status) where.status = params.status;
@@ -454,8 +450,7 @@ export function createPreordersController(
 		},
 
 		async getActiveCampaignForProduct(productId, variantId) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {
+			const where: Record<string, unknown> = {
 				productId,
 				status: "active",
 			};

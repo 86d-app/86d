@@ -66,8 +66,7 @@ export function createCustomerGroupControllers(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("customerGroup", id, group as Record<string, any>);
+			await data.upsert("customerGroup", id, group as Record<string, unknown>);
 
 			return group;
 		},
@@ -124,8 +123,11 @@ export function createCustomerGroupControllers(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("customerGroup", id, updated as Record<string, any>);
+			await data.upsert(
+				"customerGroup",
+				id,
+				updated as Record<string, unknown>,
+			);
 
 			return updated;
 		},
@@ -185,8 +187,7 @@ export function createCustomerGroupControllers(
 			await data.upsert(
 				"groupMembership",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				membership as Record<string, any>,
+				membership as Record<string, unknown>,
 			);
 
 			return membership;
@@ -281,8 +282,7 @@ export function createCustomerGroupControllers(
 				await data.upsert(
 					"groupMembership",
 					id,
-					// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-					membership as Record<string, any>,
+					membership as Record<string, unknown>,
 				);
 				added++;
 			}
@@ -316,8 +316,7 @@ export function createCustomerGroupControllers(
 				createdAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("groupRule", id, rule as Record<string, any>);
+			await data.upsert("groupRule", id, rule as Record<string, unknown>);
 
 			return rule;
 		},
@@ -385,8 +384,7 @@ export function createCustomerGroupControllers(
 			await data.upsert(
 				"groupPriceAdjustment",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				adjustment as Record<string, any>,
+				adjustment as Record<string, unknown>,
 			);
 
 			return adjustment;

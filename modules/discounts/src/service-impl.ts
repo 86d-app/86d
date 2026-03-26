@@ -154,8 +154,7 @@ export function createDiscountController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("discount", id, discount as Record<string, any>);
+			await data.upsert("discount", id, discount as Record<string, unknown>);
 			return discount;
 		},
 
@@ -200,8 +199,7 @@ export function createDiscountController(
 				...(params.metadata !== undefined ? { metadata: params.metadata } : {}),
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("discount", id, updated as Record<string, any>);
+			await data.upsert("discount", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -247,8 +245,7 @@ export function createDiscountController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("discountCode", id, code as Record<string, any>);
+			await data.upsert("discountCode", id, code as Record<string, unknown>);
 			return code;
 		},
 
@@ -381,8 +378,7 @@ export function createDiscountController(
 			await data.upsert(
 				"discountCode",
 				result.code.id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService uses any for JSONB
-				updatedCode as Record<string, any>,
+				updatedCode as Record<string, unknown>,
 			);
 
 			// Increment discount usage
@@ -394,8 +390,7 @@ export function createDiscountController(
 			await data.upsert(
 				"discount",
 				result.discount.id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires Record<string, any> for JSONB storage
-				updatedDiscount as Record<string, any>,
+				updatedDiscount as Record<string, unknown>,
 			);
 
 			return {
@@ -420,8 +415,7 @@ export function createDiscountController(
 					: {}),
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("discountCode", id, updated as Record<string, any>);
+			await data.upsert("discountCode", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -468,8 +462,7 @@ export function createDiscountController(
 				await data.upsert(
 					"discountCode",
 					id,
-					// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-					discountCode as Record<string, any>,
+					discountCode as Record<string, unknown>,
 				);
 				generated.push(discountCode);
 			}
@@ -626,8 +619,7 @@ export function createDiscountController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("cartPriceRule", id, rule as Record<string, any>);
+			await data.upsert("cartPriceRule", id, rule as Record<string, unknown>);
 			return rule;
 		},
 
@@ -676,8 +668,11 @@ export function createDiscountController(
 				...(params.metadata !== undefined ? { metadata: params.metadata } : {}),
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("cartPriceRule", id, updated as Record<string, any>);
+			await data.upsert(
+				"cartPriceRule",
+				id,
+				updated as Record<string, unknown>,
+			);
 			return updated;
 		},
 
@@ -777,8 +772,7 @@ export function createDiscountController(
 				await data.upsert(
 					"cartPriceRule",
 					ruleId,
-					// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-					updated as Record<string, any>,
+					updated as Record<string, unknown>,
 				);
 			}
 		},

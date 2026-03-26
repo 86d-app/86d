@@ -3,7 +3,7 @@ import type { ModuleController } from "@86d-app/core";
 export type SymbolPosition = "before" | "after";
 export type RoundingMode = "round" | "ceil" | "floor";
 
-export interface Currency {
+export type Currency = {
 	id: string;
 	code: string;
 	name: string;
@@ -19,17 +19,17 @@ export interface Currency {
 	sortOrder: number;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface ExchangeRateHistory {
+export type ExchangeRateHistory = {
 	id: string;
 	currencyCode: string;
 	rate: number;
 	source: string;
 	recordedAt: Date;
-}
+};
 
-export interface PriceOverride {
+export type PriceOverride = {
 	id: string;
 	productId: string;
 	currencyCode: string;
@@ -37,15 +37,15 @@ export interface PriceOverride {
 	compareAtPrice?: number | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface ConvertedPrice {
+export type ConvertedPrice = {
 	amount: number;
 	currency: Currency;
 	formatted: string;
-}
+};
 
-export interface MultiCurrencyController extends ModuleController {
+export type MultiCurrencyController = ModuleController & {
 	/** Create a new currency */
 	create(params: {
 		code: string;
@@ -158,4 +158,4 @@ export interface MultiCurrencyController extends ModuleController {
 		basePriceInCents: number;
 		currencyCode: string;
 	}): Promise<ConvertedPrice | null>;
-}
+};

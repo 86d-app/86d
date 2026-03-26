@@ -8,7 +8,7 @@ export type BackorderStatus =
 	| "delivered"
 	| "cancelled";
 
-export interface Backorder {
+export type Backorder = {
 	id: string;
 	productId: string;
 	productName: string;
@@ -27,9 +27,9 @@ export interface Backorder {
 	notes?: string | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface BackorderPolicy {
+export type BackorderPolicy = {
 	id: string;
 	productId: string;
 	enabled: boolean;
@@ -40,9 +40,9 @@ export interface BackorderPolicy {
 	message?: string | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface BackorderSummary {
+export type BackorderSummary = {
 	totalPending: number;
 	totalConfirmed: number;
 	totalAllocated: number;
@@ -54,9 +54,9 @@ export interface BackorderSummary {
 		productName: string;
 		count: number;
 	}>;
-}
+};
 
-export interface BackordersController extends ModuleController {
+export type BackordersController = ModuleController & {
 	createBackorder(params: {
 		productId: string;
 		productName: string;
@@ -142,4 +142,4 @@ export interface BackordersController extends ModuleController {
 	}>;
 
 	getSummary(): Promise<BackorderSummary>;
-}
+};

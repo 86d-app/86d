@@ -4,7 +4,7 @@ export type TaxRateType = "percentage" | "fixed";
 export type TaxExemptionType = "full" | "category";
 export type TaxNexusType = "physical" | "economic" | "voluntary";
 
-export interface TaxRate {
+export type TaxRate = {
 	id: string;
 	name: string;
 	country: string;
@@ -20,16 +20,16 @@ export interface TaxRate {
 	inclusive: boolean;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface TaxCategory {
+export type TaxCategory = {
 	id: string;
 	name: string;
 	description?: string | undefined;
 	createdAt: Date;
-}
+};
 
-export interface TaxExemption {
+export type TaxExemption = {
 	id: string;
 	customerId: string;
 	type: TaxExemptionType;
@@ -39,37 +39,37 @@ export interface TaxExemption {
 	expiresAt?: Date | undefined;
 	enabled: boolean;
 	createdAt: Date;
-}
+};
 
 /** Input for a single line item when calculating tax */
-export interface TaxLineItem {
+export type TaxLineItem = {
 	productId: string;
 	/** Tax category for this product (defaults to "default") */
 	categoryId?: string | undefined;
 	/** Line total before tax (price * quantity) */
 	amount: number;
 	quantity: number;
-}
+};
 
 /** Shipping address used to determine tax jurisdiction */
-export interface TaxAddress {
+export type TaxAddress = {
 	country: string;
 	state: string;
 	city?: string | undefined;
 	postalCode?: string | undefined;
-}
+};
 
 /** Result of a tax calculation for a single line item */
-export interface TaxLineResult {
+export type TaxLineResult = {
 	productId: string;
 	taxableAmount: number;
 	taxAmount: number;
 	rate: number;
 	rateNames: string[];
-}
+};
 
 /** Result of a full tax calculation */
-export interface TaxCalculation {
+export type TaxCalculation = {
 	/** Total tax amount (sum of all line item taxes + shipping tax) */
 	totalTax: number;
 	/** Tax on the shipping amount */
@@ -86,9 +86,9 @@ export interface TaxCalculation {
 		state: string;
 		city: string;
 	};
-}
+};
 
-export interface CreateTaxRateParams {
+export type CreateTaxRateParams = {
 	name: string;
 	country: string;
 	state?: string | undefined;
@@ -101,9 +101,9 @@ export interface CreateTaxRateParams {
 	priority?: number | undefined;
 	compound?: boolean | undefined;
 	inclusive?: boolean | undefined;
-}
+};
 
-export interface UpdateTaxRateParams {
+export type UpdateTaxRateParams = {
 	name?: string | undefined;
 	rate?: number | undefined;
 	type?: TaxRateType | undefined;
@@ -111,23 +111,23 @@ export interface UpdateTaxRateParams {
 	priority?: number | undefined;
 	compound?: boolean | undefined;
 	inclusive?: boolean | undefined;
-}
+};
 
-export interface CreateTaxCategoryParams {
+export type CreateTaxCategoryParams = {
 	name: string;
 	description?: string | undefined;
-}
+};
 
-export interface CreateTaxExemptionParams {
+export type CreateTaxExemptionParams = {
 	customerId: string;
 	type?: TaxExemptionType | undefined;
 	categoryId?: string | undefined;
 	taxIdNumber?: string | undefined;
 	reason?: string | undefined;
 	expiresAt?: Date | undefined;
-}
+};
 
-export interface TaxNexus {
+export type TaxNexus = {
 	id: string;
 	country: string;
 	state: string;
@@ -135,16 +135,16 @@ export interface TaxNexus {
 	enabled: boolean;
 	notes?: string | undefined;
 	createdAt: Date;
-}
+};
 
-export interface CreateTaxNexusParams {
+export type CreateTaxNexusParams = {
 	country: string;
 	state?: string | undefined;
 	type?: TaxNexusType | undefined;
 	notes?: string | undefined;
-}
+};
 
-export interface TaxTransaction {
+export type TaxTransaction = {
 	id: string;
 	orderId?: string | undefined;
 	customerId?: string | undefined;
@@ -162,27 +162,27 @@ export interface TaxTransaction {
 	lineDetails: TaxLineResult[];
 	rateNames: string[];
 	createdAt: Date;
-}
+};
 
-export interface TaxReportSummary {
+export type TaxReportSummary = {
 	jurisdiction: { country: string; state: string };
 	totalTax: number;
 	totalShippingTax: number;
 	totalSubtotal: number;
 	transactionCount: number;
 	effectiveRate: number;
-}
+};
 
-export interface TaxReportParams {
+export type TaxReportParams = {
 	startDate?: Date | undefined;
 	endDate?: Date | undefined;
 	country?: string | undefined;
 	state?: string | undefined;
 	limit?: number | undefined;
 	offset?: number | undefined;
-}
+};
 
-export interface TaxController extends ModuleController {
+export type TaxController = ModuleController & {
 	// --- Tax Rates ---
 	createRate(params: CreateTaxRateParams): Promise<TaxRate>;
 	getRate(id: string): Promise<TaxRate | null>;
@@ -277,4 +277,4 @@ export interface TaxController extends ModuleController {
 	 * Groups transactions by country + state and sums totals.
 	 */
 	getReport(params?: TaxReportParams): Promise<TaxReportSummary[]>;
-}
+};

@@ -4,7 +4,7 @@ export type SyncEntityType = "menu-item" | "order" | "inventory";
 export type SyncDirection = "inbound" | "outbound";
 export type SyncStatus = "pending" | "synced" | "failed";
 
-export interface SyncRecord {
+export type SyncRecord = {
 	id: string;
 	entityType: SyncEntityType;
 	entityId: string;
@@ -15,9 +15,9 @@ export interface SyncRecord {
 	syncedAt?: Date | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface MenuMapping {
+export type MenuMapping = {
 	id: string;
 	localProductId: string;
 	externalMenuItemId: string;
@@ -25,17 +25,17 @@ export interface MenuMapping {
 	lastSyncedAt?: Date | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface SyncStats {
+export type SyncStats = {
 	total: number;
 	pending: number;
 	synced: number;
 	failed: number;
 	byEntityType: Record<string, number>;
-}
+};
 
-export interface ToastController extends ModuleController {
+export type ToastController = ModuleController & {
 	syncMenu(params: {
 		entityId: string;
 		externalId: string;
@@ -83,4 +83,4 @@ export interface ToastController extends ModuleController {
 	): Promise<Date | null>;
 
 	getSyncStats(): Promise<SyncStats>;
-}
+};

@@ -409,8 +409,7 @@ describe("gamification controller", () => {
 			await mockData.upsert(
 				"play",
 				play.id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				backdated as Record<string, any>,
+				backdated as Record<string, unknown>,
 			);
 
 			// Now play should succeed

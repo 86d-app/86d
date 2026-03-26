@@ -139,21 +139,20 @@ const HEADER_MAP: Record<string, string> = {
 	tag: "tags",
 };
 
-interface ImportCustomerRow {
+type ImportCustomerRow = {
 	email: string;
 	firstName?: string;
 	lastName?: string;
 	phone?: string;
 	tags?: string[];
-}
+};
 
 function rowToCustomer(
 	headers: string[],
 	row: string[],
 ): ImportCustomerRow | null {
 	const normalizedHeaders = headers.map((h) => h.toLowerCase().trim());
-	// biome-ignore lint/suspicious/noExplicitAny: building dynamic object from CSV
-	const obj: Record<string, any> = {};
+	const obj: Record<string, unknown> = {};
 
 	for (let i = 0; i < normalizedHeaders.length; i++) {
 		const field = HEADER_MAP[normalizedHeaders[i]];

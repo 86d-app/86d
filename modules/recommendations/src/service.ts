@@ -9,7 +9,7 @@ export type RecommendationStrategy =
 
 export type InteractionType = "view" | "purchase" | "add_to_cart";
 
-export interface RecommendationRule {
+export type RecommendationRule = {
 	id: string;
 	name: string;
 	strategy: RecommendationStrategy;
@@ -19,17 +19,17 @@ export interface RecommendationRule {
 	isActive: boolean;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface CoOccurrence {
+export type CoOccurrence = {
 	id: string;
 	productId1: string;
 	productId2: string;
 	count: number;
 	lastOccurredAt: Date;
-}
+};
 
-export interface ProductInteraction {
+export type ProductInteraction = {
 	id: string;
 	productId: string;
 	customerId?: string | undefined;
@@ -41,17 +41,17 @@ export interface ProductInteraction {
 	productPrice?: number | undefined;
 	productCategory?: string | undefined;
 	createdAt: Date;
-}
+};
 
-export interface ProductEmbedding {
+export type ProductEmbedding = {
 	id: string;
 	productId: string;
 	embedding: number[];
 	text: string;
 	createdAt: Date;
-}
+};
 
-export interface RecommendedProduct {
+export type RecommendedProduct = {
 	productId: string;
 	productName: string;
 	productSlug: string;
@@ -59,9 +59,9 @@ export interface RecommendedProduct {
 	productPrice?: number | undefined;
 	score: number;
 	strategy: RecommendationStrategy;
-}
+};
 
-export interface RecommendationController extends ModuleController {
+export type RecommendationController = ModuleController & {
 	// --- Rules ---
 	createRule(params: {
 		name: string;
@@ -166,4 +166,4 @@ export interface RecommendationController extends ModuleController {
 		embeddingsCount: number;
 		aiConfigured: boolean;
 	}>;
-}
+};

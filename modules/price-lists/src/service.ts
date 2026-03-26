@@ -2,7 +2,7 @@ import type { ModuleController } from "@86d-app/core";
 
 export type PriceListStatus = "active" | "inactive" | "scheduled";
 
-export interface PriceList {
+export type PriceList = {
 	id: string;
 	name: string;
 	slug: string;
@@ -15,9 +15,9 @@ export interface PriceList {
 	customerGroupId?: string;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface PriceEntry {
+export type PriceEntry = {
 	id: string;
 	priceListId: string;
 	productId: string;
@@ -26,25 +26,25 @@ export interface PriceEntry {
 	minQuantity?: number;
 	maxQuantity?: number;
 	createdAt: Date;
-}
+};
 
-export interface ResolvedPrice {
+export type ResolvedPrice = {
 	price: number;
 	compareAtPrice: number | null;
 	priceListId: string;
 	priceListName: string;
-}
+};
 
-export interface PriceListStats {
+export type PriceListStats = {
 	totalPriceLists: number;
 	activePriceLists: number;
 	scheduledPriceLists: number;
 	inactivePriceLists: number;
 	totalEntries: number;
 	priceListsWithEntries: number;
-}
+};
 
-export interface PriceListController extends ModuleController {
+export type PriceListController = ModuleController & {
 	// ── Price Lists ──
 
 	createPriceList(params: {
@@ -148,4 +148,4 @@ export interface PriceListController extends ModuleController {
 	// ── Stats ──
 
 	getStats(): Promise<PriceListStats>;
-}
+};

@@ -10,7 +10,7 @@ export type PaymentIntentStatus =
 
 export type RefundStatus = "pending" | "succeeded" | "failed";
 
-export interface PaymentIntent {
+export type PaymentIntent = {
 	id: string;
 	providerIntentId?: string | undefined;
 	customerId?: string | undefined;
@@ -25,9 +25,9 @@ export interface PaymentIntent {
 	providerMetadata: Record<string, unknown>;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface PaymentMethod {
+export type PaymentMethod = {
 	id: string;
 	customerId: string;
 	providerMethodId: string;
@@ -39,9 +39,9 @@ export interface PaymentMethod {
 	isDefault: boolean;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface Refund {
+export type Refund = {
 	id: string;
 	paymentIntentId: string;
 	providerRefundId: string;
@@ -50,24 +50,24 @@ export interface Refund {
 	status: RefundStatus;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
 // ── Provider interface ────────────────────────────────────────────────────────
 
-export interface ProviderIntentResult {
+export type ProviderIntentResult = {
 	providerIntentId: string;
 	status: "pending" | "processing" | "succeeded" | "failed" | "cancelled";
 	providerMetadata?: Record<string, unknown> | undefined;
-}
+};
 
-export interface ProviderRefundResult {
+export type ProviderRefundResult = {
 	providerRefundId: string;
 	status: "pending" | "succeeded" | "failed";
 	providerMetadata?: Record<string, unknown> | undefined;
-}
+};
 
 /** Implement this interface to connect a payment processor (e.g. Stripe). */
-export interface PaymentProvider {
+export type PaymentProvider = {
 	createIntent(params: {
 		amount: number;
 		currency: string;
@@ -83,11 +83,11 @@ export interface PaymentProvider {
 		amount?: number | undefined;
 		reason?: string | undefined;
 	}): Promise<ProviderRefundResult>;
-}
+};
 
 // ── Controller interface ──────────────────────────────────────────────────────
 
-export interface PaymentController extends ModuleController {
+export type PaymentController = ModuleController & {
 	// ── Intents ───────────────────────────────────────────────────────────
 	createIntent(params: {
 		amount: number;
@@ -157,4 +157,4 @@ export interface PaymentController extends ModuleController {
 		amount?: number | undefined;
 		reason?: string | undefined;
 	}): Promise<{ intent: PaymentIntent; refund: Refund } | null>;
-}
+};

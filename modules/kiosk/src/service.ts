@@ -3,7 +3,7 @@ import type { ModuleController } from "@86d-app/core";
 export type SessionStatus = "active" | "completed" | "abandoned" | "timed-out";
 export type PaymentStatus = "pending" | "paid" | "failed";
 
-export interface KioskStation {
+export type KioskStation = {
 	id: string;
 	name: string;
 	location?: string | undefined;
@@ -14,17 +14,17 @@ export interface KioskStation {
 	settings: Record<string, unknown>;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface KioskItem {
+export type KioskItem = {
 	id: string;
 	name: string;
 	price: number;
 	quantity: number;
 	modifiers?: Array<Record<string, unknown>> | undefined;
-}
+};
 
-export interface KioskSession {
+export type KioskSession = {
 	id: string;
 	stationId: string;
 	status: SessionStatus;
@@ -38,25 +38,25 @@ export interface KioskSession {
 	startedAt: Date;
 	completedAt?: Date | undefined;
 	createdAt: Date;
-}
+};
 
-export interface StationStats {
+export type StationStats = {
 	totalSessions: number;
 	completedSessions: number;
 	abandonedSessions: number;
 	totalRevenue: number;
-}
+};
 
-export interface OverallStats {
+export type OverallStats = {
 	totalStations: number;
 	onlineStations: number;
 	totalSessions: number;
 	completedSessions: number;
 	abandonedSessions: number;
 	totalRevenue: number;
-}
+};
 
-export interface KioskController extends ModuleController {
+export type KioskController = ModuleController & {
 	registerStation(params: {
 		name: string;
 		location?: string | undefined;
@@ -119,4 +119,4 @@ export interface KioskController extends ModuleController {
 	getStationStats(stationId: string): Promise<StationStats>;
 
 	getOverallStats(): Promise<OverallStats>;
-}
+};

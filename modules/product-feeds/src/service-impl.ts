@@ -354,8 +354,7 @@ export function createProductFeedsController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any for JSONB
-			await data.upsert("feed", id, feed as Record<string, any>);
+			await data.upsert("feed", id, feed as Record<string, unknown>);
 			return feed;
 		},
 
@@ -399,8 +398,7 @@ export function createProductFeedsController(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("feed", id, updated as Record<string, any>);
+			await data.upsert("feed", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -431,8 +429,7 @@ export function createProductFeedsController(
 		},
 
 		async listFeeds(params): Promise<Feed[]> {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status) where.status = params.status;
 			if (params?.channel) where.channel = params.channel;
 
@@ -499,8 +496,7 @@ export function createProductFeedsController(
 					await data.upsert(
 						"feedItem",
 						itemId,
-						// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-						feedItem as Record<string, any>,
+						feedItem as Record<string, unknown>,
 					);
 					continue;
 				}
@@ -545,8 +541,11 @@ export function createProductFeedsController(
 					lastSyncedAt: now,
 				};
 
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				await data.upsert("feedItem", itemId, feedItem as Record<string, any>);
+				await data.upsert(
+					"feedItem",
+					itemId,
+					feedItem as Record<string, unknown>,
+				);
 
 				// Only include valid/warning items in output
 				if (!hasErrors) {
@@ -574,8 +573,7 @@ export function createProductFeedsController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("feed", id, updatedFeed as Record<string, any>);
+			await data.upsert("feed", id, updatedFeed as Record<string, unknown>);
 
 			return {
 				itemCount: mappedItems.length,
@@ -595,8 +593,7 @@ export function createProductFeedsController(
 		// ── Feed items ─────────────────────────────────────────────────
 
 		async getFeedItems(feedId, params): Promise<FeedItem[]> {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = { feedId };
+			const where: Record<string, unknown> = { feedId };
 			if (params?.status) where.status = params.status;
 
 			const results = await data.findMany("feedItem", {
@@ -636,8 +633,11 @@ export function createProductFeedsController(
 				channelCategoryId: params.channelCategoryId,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("categoryMapping", id, mapping as Record<string, any>);
+			await data.upsert(
+				"categoryMapping",
+				id,
+				mapping as Record<string, unknown>,
+			);
 			return mapping;
 		},
 
@@ -656,8 +656,11 @@ export function createProductFeedsController(
 					: {}),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("categoryMapping", id, updated as Record<string, any>);
+			await data.upsert(
+				"categoryMapping",
+				id,
+				updated as Record<string, unknown>,
+			);
 			return updated;
 		},
 

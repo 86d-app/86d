@@ -265,8 +265,7 @@ describe("createComparisonController", () => {
 			await mockData.upsert(
 				"comparisonItem",
 				first.id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				backdated as Record<string, any>,
+				backdated as Record<string, unknown>,
 			);
 
 			await controller.addProduct(

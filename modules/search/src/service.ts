@@ -1,6 +1,6 @@
 import type { ModuleController } from "@86d-app/core";
 
-export interface SearchIndexItem {
+export type SearchIndexItem = {
 	id: string;
 	entityType: string;
 	entityId: string;
@@ -11,25 +11,25 @@ export interface SearchIndexItem {
 	image?: string | undefined;
 	metadata: Record<string, unknown>;
 	indexedAt: Date;
-}
+};
 
-export interface SearchQuery {
+export type SearchQuery = {
 	id: string;
 	term: string;
 	normalizedTerm: string;
 	resultCount: number;
 	sessionId?: string | undefined;
 	searchedAt: Date;
-}
+};
 
-export interface SearchSynonym {
+export type SearchSynonym = {
 	id: string;
 	term: string;
 	synonyms: string[];
 	createdAt: Date;
-}
+};
 
-export interface SearchClick {
+export type SearchClick = {
 	id: string;
 	queryId: string;
 	term: string;
@@ -37,7 +37,7 @@ export interface SearchClick {
 	entityId: string;
 	position: number;
 	clickedAt: Date;
-}
+};
 
 export type SearchSortField =
 	| "relevance"
@@ -46,23 +46,23 @@ export type SearchSortField =
 	| "title_asc"
 	| "title_desc";
 
-export interface SearchFacets {
+export type SearchFacets = {
 	entityTypes: Array<{ type: string; count: number }>;
 	tags: Array<{ tag: string; count: number }>;
-}
+};
 
-export interface SearchResult {
+export type SearchResult = {
 	item: SearchIndexItem;
 	score: number;
 	highlights?: SearchHighlight | undefined;
-}
+};
 
-export interface SearchHighlight {
+export type SearchHighlight = {
 	title?: string | undefined;
 	body?: string | undefined;
-}
+};
 
-export interface SearchAnalyticsSummary {
+export type SearchAnalyticsSummary = {
 	totalQueries: number;
 	uniqueTerms: number;
 	avgResultCount: number;
@@ -70,15 +70,15 @@ export interface SearchAnalyticsSummary {
 	zeroResultRate: number;
 	clickThroughRate: number;
 	avgClickPosition: number;
-}
+};
 
-export interface PopularTerm {
+export type PopularTerm = {
 	term: string;
 	count: number;
 	avgResultCount: number;
-}
+};
 
-export interface SearchController extends ModuleController {
+export type SearchController = ModuleController & {
 	indexItem(params: {
 		entityType: string;
 		entityId: string;
@@ -153,4 +153,4 @@ export interface SearchController extends ModuleController {
 	listSynonyms(): Promise<SearchSynonym[]>;
 
 	getIndexCount(): Promise<number>;
-}
+};

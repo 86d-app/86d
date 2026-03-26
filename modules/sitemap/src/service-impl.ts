@@ -73,8 +73,7 @@ export function createSitemapController(
 			await data.upsert(
 				"sitemapConfig",
 				CONFIG_ID,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				config as Record<string, any>,
+				config as Record<string, unknown>,
 			);
 			return config;
 		},
@@ -95,8 +94,7 @@ export function createSitemapController(
 			await data.upsert(
 				"sitemapConfig",
 				CONFIG_ID,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updated as Record<string, any>,
+				updated as Record<string, unknown>,
 			);
 			return updated;
 		},
@@ -113,8 +111,7 @@ export function createSitemapController(
 				createdAt: new Date(),
 				...(params.lastmod != null && { lastmod: params.lastmod }),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("sitemapEntry", id, entry as Record<string, any>);
+			await data.upsert("sitemapEntry", id, entry as Record<string, unknown>);
 			return entry;
 		},
 
@@ -147,8 +144,7 @@ export function createSitemapController(
 				...(params.lastmod != null && { lastmod: params.lastmod }),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("sitemapEntry", id, updated as Record<string, any>);
+			await data.upsert("sitemapEntry", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -298,8 +294,7 @@ export function createSitemapController(
 					source: "static",
 					createdAt: new Date(),
 				};
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				await data.upsert("sitemapEntry", id, entry as Record<string, any>);
+				await data.upsert("sitemapEntry", id, entry as Record<string, unknown>);
 				count++;
 			}
 
@@ -321,8 +316,11 @@ export function createSitemapController(
 							lastmod: product.updatedAt,
 						}),
 					};
-					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-					await data.upsert("sitemapEntry", id, entry as Record<string, any>);
+					await data.upsert(
+						"sitemapEntry",
+						id,
+						entry as Record<string, unknown>,
+					);
 					count++;
 				}
 			}
@@ -345,8 +343,11 @@ export function createSitemapController(
 							lastmod: collection.updatedAt,
 						}),
 					};
-					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-					await data.upsert("sitemapEntry", id, entry as Record<string, any>);
+					await data.upsert(
+						"sitemapEntry",
+						id,
+						entry as Record<string, unknown>,
+					);
 					count++;
 				}
 			}
@@ -367,8 +368,11 @@ export function createSitemapController(
 						createdAt: new Date(),
 						...(page.updatedAt != null && { lastmod: page.updatedAt }),
 					};
-					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-					await data.upsert("sitemapEntry", id, entry as Record<string, any>);
+					await data.upsert(
+						"sitemapEntry",
+						id,
+						entry as Record<string, unknown>,
+					);
 					count++;
 				}
 			}
@@ -389,8 +393,11 @@ export function createSitemapController(
 						createdAt: new Date(),
 						...(post.updatedAt != null && { lastmod: post.updatedAt }),
 					};
-					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-					await data.upsert("sitemapEntry", id, entry as Record<string, any>);
+					await data.upsert(
+						"sitemapEntry",
+						id,
+						entry as Record<string, unknown>,
+					);
 					count++;
 				}
 			}
@@ -411,8 +418,11 @@ export function createSitemapController(
 						createdAt: new Date(),
 						...(brand.updatedAt != null && { lastmod: brand.updatedAt }),
 					};
-					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-					await data.upsert("sitemapEntry", id, entry as Record<string, any>);
+					await data.upsert(
+						"sitemapEntry",
+						id,
+						entry as Record<string, unknown>,
+					);
 					count++;
 				}
 			}
@@ -423,8 +433,7 @@ export function createSitemapController(
 			await data.upsert("sitemapConfig", CONFIG_ID, {
 				...cfg,
 				lastGenerated: new Date(),
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			} as Record<string, any>);
+			} as Record<string, unknown>);
 
 			return count;
 		},

@@ -17,7 +17,7 @@ export type AuditAction =
 
 export type ActorType = "admin" | "system" | "api_key";
 
-export interface AuditEntry {
+export type AuditEntry = {
 	id: string;
 	action: AuditAction;
 	resource: string;
@@ -31,9 +31,9 @@ export interface AuditEntry {
 	ipAddress?: string | undefined;
 	userAgent?: string | undefined;
 	createdAt: Date;
-}
+};
 
-export interface CreateAuditEntryParams {
+export type CreateAuditEntryParams = {
 	action: AuditAction;
 	resource: string;
 	resourceId?: string | undefined;
@@ -45,9 +45,9 @@ export interface CreateAuditEntryParams {
 	metadata?: Record<string, unknown> | undefined;
 	ipAddress?: string | undefined;
 	userAgent?: string | undefined;
-}
+};
 
-export interface AuditListParams {
+export type AuditListParams = {
 	action?: AuditAction | undefined;
 	resource?: string | undefined;
 	actorId?: string | undefined;
@@ -56,9 +56,9 @@ export interface AuditListParams {
 	dateTo?: Date | undefined;
 	take?: number | undefined;
 	skip?: number | undefined;
-}
+};
 
-export interface AuditSummary {
+export type AuditSummary = {
 	totalEntries: number;
 	entriesByAction: Record<string, number>;
 	entriesByResource: Record<string, number>;
@@ -67,9 +67,9 @@ export interface AuditSummary {
 		actorEmail?: string | undefined;
 		count: number;
 	}>;
-}
+};
 
-export interface AuditLogController extends ModuleController {
+export type AuditLogController = ModuleController & {
 	/**
 	 * Record an audit entry.
 	 */
@@ -117,4 +117,4 @@ export interface AuditLogController extends ModuleController {
 	 * Returns the number of entries deleted.
 	 */
 	purge(olderThan: Date): Promise<number>;
-}
+};

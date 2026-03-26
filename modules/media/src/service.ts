@@ -1,6 +1,6 @@
 import type { ModuleController } from "@86d-app/core";
 
-export interface Asset {
+export type Asset = {
 	id: string;
 	name: string;
 	altText?: string | undefined;
@@ -14,23 +14,23 @@ export interface Asset {
 	metadata: Record<string, unknown>;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface Folder {
+export type Folder = {
 	id: string;
 	name: string;
 	parentId?: string | undefined;
 	createdAt: Date;
-}
+};
 
-export interface MediaStats {
+export type MediaStats = {
 	totalAssets: number;
 	totalSize: number;
 	byMimeType: Record<string, number>;
 	byFolder: Record<string, number>;
-}
+};
 
-export interface MediaController extends ModuleController {
+export type MediaController = ModuleController & {
 	createAsset(params: {
 		name: string;
 		url: string;
@@ -87,4 +87,4 @@ export interface MediaController extends ModuleController {
 	renameFolder(id: string, name: string): Promise<Folder | null>;
 
 	deleteFolder(id: string): Promise<boolean>;
-}
+};

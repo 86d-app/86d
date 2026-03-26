@@ -18,7 +18,7 @@ export type ItemPriority = "must_have" | "nice_to_have" | "dream";
 
 // ── Entities ───────────────────────────────────────────────────────
 
-export interface Registry {
+export type Registry = {
 	id: string;
 	customerId: string;
 	customerName: string;
@@ -36,9 +36,9 @@ export interface Registry {
 	purchasedCount: number;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface RegistryItem {
+export type RegistryItem = {
 	id: string;
 	registryId: string;
 	productId: string;
@@ -53,9 +53,9 @@ export interface RegistryItem {
 	note?: string;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface RegistryPurchase {
+export type RegistryPurchase = {
 	id: string;
 	registryId: string;
 	registryItemId: string;
@@ -67,11 +67,11 @@ export interface RegistryPurchase {
 	giftMessage?: string;
 	isAnonymous: boolean;
 	createdAt: Date;
-}
+};
 
 // ── Input params ───────────────────────────────────────────────────
 
-export interface CreateRegistryParams {
+export type CreateRegistryParams = {
 	customerId: string;
 	customerName: string;
 	title: string;
@@ -83,9 +83,9 @@ export interface CreateRegistryParams {
 	coverImageUrl?: string;
 	shippingAddressId?: string;
 	thankYouMessage?: string;
-}
+};
 
-export interface UpdateRegistryParams {
+export type UpdateRegistryParams = {
 	title?: string;
 	description?: string;
 	type?: RegistryType;
@@ -94,9 +94,9 @@ export interface UpdateRegistryParams {
 	coverImageUrl?: string;
 	shippingAddressId?: string;
 	thankYouMessage?: string;
-}
+};
 
-export interface AddItemParams {
+export type AddItemParams = {
 	registryId: string;
 	productId: string;
 	productName: string;
@@ -107,15 +107,15 @@ export interface AddItemParams {
 	quantityDesired?: number;
 	priority?: ItemPriority;
 	note?: string;
-}
+};
 
-export interface UpdateItemParams {
+export type UpdateItemParams = {
 	quantityDesired?: number;
 	priority?: ItemPriority;
 	note?: string;
-}
+};
 
-export interface PurchaseItemParams {
+export type PurchaseItemParams = {
 	registryId: string;
 	registryItemId: string;
 	purchaserId?: string;
@@ -125,20 +125,20 @@ export interface PurchaseItemParams {
 	orderId?: string;
 	giftMessage?: string;
 	isAnonymous?: boolean;
-}
+};
 
-export interface ListRegistriesParams {
+export type ListRegistriesParams = {
 	customerId?: string;
 	type?: RegistryType;
 	status?: RegistryStatus;
 	visibility?: RegistryVisibility;
 	take?: number;
 	skip?: number;
-}
+};
 
 // ── Results ────────────────────────────────────────────────────────
 
-export interface RegistrySummary {
+export type RegistrySummary = {
 	totalRegistries: number;
 	active: number;
 	completed: number;
@@ -146,11 +146,11 @@ export interface RegistrySummary {
 	totalItems: number;
 	totalPurchased: number;
 	totalRevenue: number;
-}
+};
 
 // ── Controller ─────────────────────────────────────────────────────
 
-export interface GiftRegistryController extends ModuleController {
+export type GiftRegistryController = ModuleController & {
 	// Registry CRUD
 	createRegistry(params: CreateRegistryParams): Promise<Registry>;
 	updateRegistry(
@@ -189,4 +189,4 @@ export interface GiftRegistryController extends ModuleController {
 
 	// Analytics
 	getRegistrySummary(): Promise<RegistrySummary>;
-}
+};

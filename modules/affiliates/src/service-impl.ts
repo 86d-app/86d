@@ -53,8 +53,7 @@ export function createAffiliateController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("affiliate", id, affiliate as Record<string, any>);
+			await data.upsert("affiliate", id, affiliate as Record<string, unknown>);
 			return affiliate;
 		},
 
@@ -83,8 +82,7 @@ export function createAffiliateController(
 		},
 
 		async listAffiliates(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status !== undefined) where.status = params.status;
 
 			const results = await data.findMany("affiliate", {
@@ -107,8 +105,7 @@ export function createAffiliateController(
 				commissionRate: commissionRate ?? 10,
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("affiliate", id, updated as Record<string, any>);
+			await data.upsert("affiliate", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -123,8 +120,7 @@ export function createAffiliateController(
 				status: "suspended",
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("affiliate", id, updated as Record<string, any>);
+			await data.upsert("affiliate", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -139,8 +135,7 @@ export function createAffiliateController(
 				status: "rejected",
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("affiliate", id, updated as Record<string, any>);
+			await data.upsert("affiliate", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -160,8 +155,7 @@ export function createAffiliateController(
 				...(params.notes !== undefined ? { notes: params.notes } : {}),
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("affiliate", id, updated as Record<string, any>);
+			await data.upsert("affiliate", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -185,8 +179,7 @@ export function createAffiliateController(
 				active: true,
 				createdAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("affiliateLink", id, link as Record<string, any>);
+			await data.upsert("affiliateLink", id, link as Record<string, unknown>);
 			return link;
 		},
 
@@ -206,8 +199,7 @@ export function createAffiliateController(
 		},
 
 		async listLinks(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.affiliateId !== undefined)
 				where.affiliateId = params.affiliateId;
 			if (params?.active !== undefined) where.active = params.active;
@@ -233,8 +225,7 @@ export function createAffiliateController(
 			await data.upsert(
 				"affiliateLink",
 				linkId,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updated as Record<string, any>,
+				updated as Record<string, unknown>,
 			);
 
 			// Update affiliate total clicks
@@ -249,8 +240,7 @@ export function createAffiliateController(
 				await data.upsert(
 					"affiliate",
 					affiliate.id,
-					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-					updatedAffiliate as Record<string, any>,
+					updatedAffiliate as Record<string, unknown>,
 				);
 			}
 
@@ -263,8 +253,11 @@ export function createAffiliateController(
 			const link = existing as unknown as AffiliateLink;
 
 			const updated: AffiliateLink = { ...link, active: false };
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("affiliateLink", id, updated as Record<string, any>);
+			await data.upsert(
+				"affiliateLink",
+				id,
+				updated as Record<string, unknown>,
+			);
 			return updated;
 		},
 
@@ -294,8 +287,7 @@ export function createAffiliateController(
 			await data.upsert(
 				"affiliateConversion",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				conversion as Record<string, any>,
+				conversion as Record<string, unknown>,
 			);
 
 			// Update link stats if linkId provided
@@ -311,8 +303,7 @@ export function createAffiliateController(
 					await data.upsert(
 						"affiliateLink",
 						params.linkId,
-						// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-						updatedLink as Record<string, any>,
+						updatedLink as Record<string, unknown>,
 					);
 				}
 			}
@@ -327,8 +318,7 @@ export function createAffiliateController(
 		},
 
 		async listConversions(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.affiliateId !== undefined)
 				where.affiliateId = params.affiliateId;
 			if (params?.status !== undefined) where.status = params.status;
@@ -354,8 +344,7 @@ export function createAffiliateController(
 			await data.upsert(
 				"affiliateConversion",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updated as Record<string, any>,
+				updated as Record<string, unknown>,
 			);
 
 			// Update affiliate totals
@@ -373,8 +362,7 @@ export function createAffiliateController(
 				await data.upsert(
 					"affiliate",
 					affiliate.id,
-					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-					updatedAffiliate as Record<string, any>,
+					updatedAffiliate as Record<string, unknown>,
 				);
 			}
 
@@ -394,8 +382,7 @@ export function createAffiliateController(
 			await data.upsert(
 				"affiliateConversion",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updated as Record<string, any>,
+				updated as Record<string, unknown>,
 			);
 			return updated;
 		},
@@ -425,8 +412,7 @@ export function createAffiliateController(
 			await data.upsert(
 				"affiliatePayout",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				payout as Record<string, any>,
+				payout as Record<string, unknown>,
 			);
 			return payout;
 		},
@@ -438,8 +424,7 @@ export function createAffiliateController(
 		},
 
 		async listPayouts(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.affiliateId !== undefined)
 				where.affiliateId = params.affiliateId;
 			if (params?.status !== undefined) where.status = params.status;
@@ -467,8 +452,7 @@ export function createAffiliateController(
 			await data.upsert(
 				"affiliatePayout",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updated as Record<string, any>,
+				updated as Record<string, unknown>,
 			);
 
 			// Update affiliate totalPaid
@@ -483,8 +467,7 @@ export function createAffiliateController(
 				await data.upsert(
 					"affiliate",
 					affiliate.id,
-					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-					updatedAffiliate as Record<string, any>,
+					updatedAffiliate as Record<string, unknown>,
 				);
 			}
 
@@ -502,8 +485,7 @@ export function createAffiliateController(
 			await data.upsert(
 				"affiliatePayout",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updated as Record<string, any>,
+				updated as Record<string, unknown>,
 			);
 			return updated;
 		},

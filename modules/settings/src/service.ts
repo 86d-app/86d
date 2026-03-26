@@ -8,13 +8,13 @@ export type SettingGroup =
 	| "commerce"
 	| "appearance";
 
-export interface StoreSetting {
+export type StoreSetting = {
 	id: string;
 	key: string;
 	value: string;
 	group: SettingGroup;
 	updatedAt: Date;
-}
+};
 
 export const SETTING_KEYS = {
 	// General
@@ -64,7 +64,7 @@ export const SETTING_KEYS = {
 
 export type SettingKey = (typeof SETTING_KEYS)[keyof typeof SETTING_KEYS];
 
-export interface SettingsController extends ModuleController {
+export type SettingsController = ModuleController & {
 	get(key: string): Promise<StoreSetting | null>;
 
 	getValue(key: string): Promise<string | null>;
@@ -90,4 +90,4 @@ export interface SettingsController extends ModuleController {
 	getPublic(): Promise<Record<string, string>>;
 
 	delete(key: string): Promise<boolean>;
-}
+};

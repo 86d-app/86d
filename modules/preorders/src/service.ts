@@ -17,7 +17,7 @@ export type PreorderItemStatus =
 
 export type PaymentType = "full" | "deposit";
 
-export interface PreorderCampaign {
+export type PreorderCampaign = {
 	id: string;
 	productId: string;
 	productName: string;
@@ -36,9 +36,9 @@ export interface PreorderCampaign {
 	message?: string | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface PreorderItem {
+export type PreorderItem = {
 	id: string;
 	campaignId: string;
 	customerId: string;
@@ -54,9 +54,9 @@ export interface PreorderItem {
 	fulfilledAt?: Date | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface PreorderSummary {
+export type PreorderSummary = {
 	totalCampaigns: number;
 	activeCampaigns: number;
 	totalItems: number;
@@ -66,9 +66,9 @@ export interface PreorderSummary {
 	cancelledItems: number;
 	totalRevenue: number;
 	totalDeposits: number;
-}
+};
 
-export interface PreordersController extends ModuleController {
+export type PreordersController = ModuleController & {
 	createCampaign(params: {
 		productId: string;
 		productName: string;
@@ -167,4 +167,4 @@ export interface PreordersController extends ModuleController {
 		productId: string,
 		variantId?: string | undefined,
 	): Promise<PreorderCampaign | null>;
-}
+};

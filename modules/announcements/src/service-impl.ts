@@ -49,8 +49,7 @@ export function createAnnouncementsControllers(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service accepts Record<string, any>
-			const record = announcement as Record<string, any>;
+			const record = announcement as Record<string, unknown>;
 			await data.upsert("announcement", id, record);
 
 			return announcement;
@@ -147,8 +146,7 @@ export function createAnnouncementsControllers(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("announcement", id, updated as Record<string, any>);
+			await data.upsert("announcement", id, updated as Record<string, unknown>);
 
 			return updated;
 		},
@@ -171,8 +169,7 @@ export function createAnnouncementsControllers(
 						updatedAt: new Date(),
 					};
 
-					// biome-ignore lint/suspicious/noExplicitAny: data service accepts Record<string, any>
-					const rec = updated as Record<string, any>;
+					const rec = updated as Record<string, unknown>;
 					await data.upsert("announcement", ids[i], rec);
 				}
 			}
@@ -192,8 +189,7 @@ export function createAnnouncementsControllers(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("announcement", id, updated as Record<string, any>);
+			await data.upsert("announcement", id, updated as Record<string, unknown>);
 		},
 
 		async recordClick(id) {
@@ -210,8 +206,7 @@ export function createAnnouncementsControllers(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("announcement", id, updated as Record<string, any>);
+			await data.upsert("announcement", id, updated as Record<string, unknown>);
 		},
 
 		async recordDismissal(id) {
@@ -228,8 +223,7 @@ export function createAnnouncementsControllers(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("announcement", id, updated as Record<string, any>);
+			await data.upsert("announcement", id, updated as Record<string, unknown>);
 		},
 
 		async getStats() {

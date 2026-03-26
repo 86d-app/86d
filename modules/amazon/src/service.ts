@@ -21,7 +21,7 @@ export type AmazonOrderStatus =
 
 export type InventorySyncStatus = "pending" | "syncing" | "synced" | "failed";
 
-export interface Listing {
+export type Listing = {
 	id: string;
 	localProductId: string;
 	asin?: string | undefined;
@@ -38,9 +38,9 @@ export interface Listing {
 	metadata: Record<string, unknown>;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface AmazonOrder {
+export type AmazonOrder = {
 	id: string;
 	amazonOrderId: string;
 	status: AmazonOrderStatus;
@@ -57,9 +57,9 @@ export interface AmazonOrder {
 	carrier?: string | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface InventorySync {
+export type InventorySync = {
 	id: string;
 	status: InventorySyncStatus;
 	totalSkus: number;
@@ -69,9 +69,9 @@ export interface InventorySync {
 	startedAt: Date;
 	completedAt?: Date | undefined;
 	createdAt: Date;
-}
+};
 
-export interface ChannelStats {
+export type ChannelStats = {
 	totalListings: number;
 	active: number;
 	inactive: number;
@@ -81,17 +81,17 @@ export interface ChannelStats {
 	fbm: number;
 	totalOrders: number;
 	totalRevenue: number;
-}
+};
 
-export interface InventoryHealth {
+export type InventoryHealth = {
 	totalSkus: number;
 	lowStock: number;
 	outOfStock: number;
 	fbaCount: number;
 	fbmCount: number;
-}
+};
 
-export interface AmazonController extends ModuleController {
+export type AmazonController = ModuleController & {
 	createListing(params: {
 		localProductId: string;
 		asin?: string | undefined;
@@ -187,4 +187,4 @@ export interface AmazonController extends ModuleController {
 	syncOrders(params?: {
 		createdAfter?: string | undefined;
 	}): Promise<{ synced: number }>;
-}
+};

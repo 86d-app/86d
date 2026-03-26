@@ -62,8 +62,7 @@ export function createVendorController(
 				...(params.country != null && { country: params.country }),
 				...(params.metadata != null && { metadata: params.metadata }),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("vendor", id, vendor as Record<string, any>);
+			await data.upsert("vendor", id, vendor as Record<string, unknown>);
 			return vendor;
 		},
 
@@ -157,8 +156,7 @@ export function createVendorController(
 
 			const updated: Vendor = { ...base, ...optionalFields };
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("vendor", id, updated as Record<string, any>);
+			await data.upsert("vendor", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -222,8 +220,7 @@ export function createVendorController(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("vendor", id, updated as Record<string, any>);
+			await data.upsert("vendor", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -251,8 +248,11 @@ export function createVendorController(
 					commissionOverride: params.commissionOverride,
 				}),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("vendorProduct", id, assignment as Record<string, any>);
+			await data.upsert(
+				"vendorProduct",
+				id,
+				assignment as Record<string, unknown>,
+			);
 			return assignment;
 		},
 
@@ -335,8 +335,7 @@ export function createVendorController(
 				}),
 				...(params.notes != null && { notes: params.notes }),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("vendorPayout", id, payout as Record<string, any>);
+			await data.upsert("vendorPayout", id, payout as Record<string, unknown>);
 			return payout;
 		},
 
@@ -356,8 +355,7 @@ export function createVendorController(
 				...(status === "completed" && { completedAt: new Date() }),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("vendorPayout", id, updated as Record<string, any>);
+			await data.upsert("vendorPayout", id, updated as Record<string, unknown>);
 			return updated;
 		},
 

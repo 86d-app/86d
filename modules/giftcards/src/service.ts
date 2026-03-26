@@ -1,6 +1,6 @@
 import type { ModuleController } from "@86d-app/core";
 
-export interface GiftCard {
+export type GiftCard = {
 	id: string;
 	code: string;
 	initialBalance: number;
@@ -23,9 +23,9 @@ export interface GiftCard {
 	note?: string | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface GiftCardTransaction {
+export type GiftCardTransaction = {
 	id: string;
 	giftCardId: string;
 	type: "debit" | "credit" | "purchase" | "topup";
@@ -35,9 +35,9 @@ export interface GiftCardTransaction {
 	customerId?: string | undefined;
 	note?: string | undefined;
 	createdAt: Date;
-}
+};
 
-export interface CreateGiftCardParams {
+export type CreateGiftCardParams = {
 	initialBalance: number;
 	currency?: string | undefined;
 	expiresAt?: string | undefined;
@@ -52,9 +52,9 @@ export interface CreateGiftCardParams {
 	scheduledDeliveryAt?: string | undefined;
 	purchaseOrderId?: string | undefined;
 	note?: string | undefined;
-}
+};
 
-export interface PurchaseGiftCardParams {
+export type PurchaseGiftCardParams = {
 	amount: number;
 	currency?: string | undefined;
 	/** Purchasing customer ID (derived from session) */
@@ -68,17 +68,17 @@ export interface PurchaseGiftCardParams {
 	message?: string | undefined;
 	deliveryMethod?: "email" | "digital" | undefined;
 	scheduledDeliveryAt?: string | undefined;
-}
+};
 
-export interface TopUpParams {
+export type TopUpParams = {
 	/** Gift card ID */
 	giftCardId: string;
 	/** Customer performing the top-up (derived from session) */
 	customerId: string;
 	amount: number;
-}
+};
 
-export interface SendGiftCardParams {
+export type SendGiftCardParams = {
 	/** Gift card ID */
 	giftCardId: string;
 	/** Customer who owns the card (derived from session) */
@@ -87,17 +87,17 @@ export interface SendGiftCardParams {
 	recipientName?: string | undefined;
 	senderName?: string | undefined;
 	message?: string | undefined;
-}
+};
 
-export interface BulkCreateParams {
+export type BulkCreateParams = {
 	count: number;
 	initialBalance: number;
 	currency?: string | undefined;
 	expiresAt?: string | undefined;
 	note?: string | undefined;
-}
+};
 
-export interface GiftCardStats {
+export type GiftCardStats = {
 	totalIssued: number;
 	totalActive: number;
 	totalDepleted: number;
@@ -106,14 +106,14 @@ export interface GiftCardStats {
 	totalIssuedValue: number;
 	totalRedeemedValue: number;
 	totalOutstandingBalance: number;
-}
+};
 
-export interface RedeemResult {
+export type RedeemResult = {
 	transaction: GiftCardTransaction;
 	giftCard: GiftCard;
-}
+};
 
-export interface GiftCardController extends ModuleController {
+export type GiftCardController = ModuleController & {
 	create(params: CreateGiftCardParams): Promise<GiftCard>;
 
 	get(id: string): Promise<GiftCard | null>;
@@ -200,4 +200,4 @@ export interface GiftCardController extends ModuleController {
 
 	/** Disable all expired gift cards */
 	disableExpired(): Promise<number>;
-}
+};

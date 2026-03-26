@@ -50,8 +50,7 @@ export function createXShopController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("listing", id, listing as Record<string, any>);
+			await data.upsert("listing", id, listing as Record<string, unknown>);
 
 			events?.emit("x.product.listed", {
 				listingId: id,
@@ -90,8 +89,7 @@ export function createXShopController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("listing", id, updated as Record<string, any>);
+			await data.upsert("listing", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -125,8 +123,7 @@ export function createXShopController(
 		},
 
 		async listListings(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status) where.status = params.status;
 			if (params?.syncStatus) where.syncStatus = params.syncStatus;
 
@@ -159,8 +156,7 @@ export function createXShopController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("channelOrder", id, order as Record<string, any>);
+			await data.upsert("channelOrder", id, order as Record<string, unknown>);
 
 			events?.emit("x.order.received", {
 				orderId: id,
@@ -191,14 +187,12 @@ export function createXShopController(
 				...(trackingUrl !== undefined ? { trackingUrl } : {}),
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("channelOrder", id, updated as Record<string, any>);
+			await data.upsert("channelOrder", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
 		async listOrders(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status) where.status = params.status;
 
 			const all = await data.findMany("channelOrder", {
@@ -244,8 +238,7 @@ export function createXShopController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("productDrop", id, drop as Record<string, any>);
+			await data.upsert("productDrop", id, drop as Record<string, unknown>);
 
 			events?.emit("x.drop.launched", {
 				dropId: id,
@@ -287,14 +280,12 @@ export function createXShopController(
 				status: "cancelled",
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("productDrop", id, updated as Record<string, any>);
+			await data.upsert("productDrop", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
 		async listDrops(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status) where.status = params.status;
 
 			const all = await data.findMany("productDrop", {
@@ -325,8 +316,11 @@ export function createXShopController(
 						clicks: metrics.clicks,
 						updatedAt: new Date(),
 					};
-					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-					await data.upsert("productDrop", id, updated as Record<string, any>);
+					await data.upsert(
+						"productDrop",
+						id,
+						updated as Record<string, unknown>,
+					);
 
 					return {
 						impressions: metrics.impressions,

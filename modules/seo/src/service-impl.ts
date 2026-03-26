@@ -80,8 +80,7 @@ export function createSeoController(data: ModuleDataService): SeoController {
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("metaTag", id, record as Record<string, any>);
+			await data.upsert("metaTag", id, record as Record<string, unknown>);
 			return record;
 		},
 
@@ -133,8 +132,7 @@ export function createSeoController(data: ModuleDataService): SeoController {
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("redirect", id, record as Record<string, any>);
+			await data.upsert("redirect", id, record as Record<string, unknown>);
 			return record;
 		},
 
@@ -160,8 +158,7 @@ export function createSeoController(data: ModuleDataService): SeoController {
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("redirect", id, updated as Record<string, any>);
+			await data.upsert("redirect", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -189,8 +186,7 @@ export function createSeoController(data: ModuleDataService): SeoController {
 		},
 
 		async listRedirects(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.active !== undefined) where.active = params.active;
 
 			const all = await data.findMany("redirect", {

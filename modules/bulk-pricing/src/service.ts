@@ -5,7 +5,7 @@ import type { ModuleController } from "@86d-app/core";
 export type PricingScope = "product" | "variant" | "collection" | "global";
 export type DiscountType = "percentage" | "fixed_amount" | "fixed_price";
 
-export interface PricingRule {
+export type PricingRule = {
 	id: string;
 	name: string;
 	description?: string;
@@ -17,9 +17,9 @@ export interface PricingRule {
 	endsAt?: Date;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface PricingTier {
+export type PricingTier = {
 	id: string;
 	ruleId: string;
 	minQuantity: number;
@@ -29,11 +29,11 @@ export interface PricingTier {
 	label?: string;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
 // ── Input params ───────────────────────────────────────────────────
 
-export interface CreateRuleParams {
+export type CreateRuleParams = {
 	name: string;
 	description?: string;
 	scope: PricingScope;
@@ -42,9 +42,9 @@ export interface CreateRuleParams {
 	active?: boolean;
 	startsAt?: Date;
 	endsAt?: Date;
-}
+};
 
-export interface UpdateRuleParams {
+export type UpdateRuleParams = {
 	name?: string;
 	description?: string | null;
 	scope?: PricingScope;
@@ -53,50 +53,50 @@ export interface UpdateRuleParams {
 	active?: boolean;
 	startsAt?: Date | null;
 	endsAt?: Date | null;
-}
+};
 
-export interface ListRulesParams {
+export type ListRulesParams = {
 	scope?: PricingScope;
 	targetId?: string;
 	active?: boolean;
 	take?: number;
 	skip?: number;
-}
+};
 
-export interface CreateTierParams {
+export type CreateTierParams = {
 	ruleId: string;
 	minQuantity: number;
 	maxQuantity?: number;
 	discountType: DiscountType;
 	discountValue: number;
 	label?: string;
-}
+};
 
-export interface UpdateTierParams {
+export type UpdateTierParams = {
 	minQuantity?: number;
 	maxQuantity?: number | null;
 	discountType?: DiscountType;
 	discountValue?: number;
 	label?: string | null;
-}
+};
 
-export interface ListTiersParams {
+export type ListTiersParams = {
 	ruleId: string;
 	take?: number;
 	skip?: number;
-}
+};
 
-export interface ResolvePriceParams {
+export type ResolvePriceParams = {
 	productId: string;
 	variantId?: string;
 	collectionIds?: string[];
 	quantity: number;
 	basePrice: number;
-}
+};
 
 // ── Results ────────────────────────────────────────────────────────
 
-export interface ResolvedBulkPrice {
+export type ResolvedBulkPrice = {
 	/** Original price per unit */
 	basePrice: number;
 	/** Price per unit after bulk discount */
@@ -111,26 +111,26 @@ export interface ResolvedBulkPrice {
 	matchedRule: PricingRule | null;
 	/** Whether a bulk discount was applied */
 	hasDiscount: boolean;
-}
+};
 
-export interface TierPreview {
+export type TierPreview = {
 	tier: PricingTier;
 	/** Example unit price at minQuantity given a base price */
 	unitPrice: number;
 	/** Savings percentage compared to base price */
 	savingsPercent: number;
-}
+};
 
-export interface BulkPricingSummary {
+export type BulkPricingSummary = {
 	totalRules: number;
 	activeRules: number;
 	totalTiers: number;
 	rulesByScope: Record<PricingScope, number>;
-}
+};
 
 // ── Controller ─────────────────────────────────────────────────────
 
-export interface BulkPricingController extends ModuleController {
+export type BulkPricingController = ModuleController & {
 	// Rule CRUD
 	createRule(params: CreateRuleParams): Promise<PricingRule>;
 	updateRule(id: string, params: UpdateRuleParams): Promise<PricingRule | null>;
@@ -151,4 +151,4 @@ export interface BulkPricingController extends ModuleController {
 
 	// Analytics
 	getSummary(): Promise<BulkPricingSummary>;
-}
+};

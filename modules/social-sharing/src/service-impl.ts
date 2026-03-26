@@ -25,8 +25,11 @@ export function createSocialSharingController(
 				sessionId: params.sessionId,
 				createdAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("shareEvent", id, shareEvent as Record<string, any>);
+			await data.upsert(
+				"shareEvent",
+				id,
+				shareEvent as Record<string, unknown>,
+			);
 			void events?.emit("share.created", {
 				shareEventId: shareEvent.id,
 				targetType: shareEvent.targetType,
@@ -56,8 +59,7 @@ export function createSocialSharingController(
 		},
 
 		async listShares(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.targetType) where.targetType = params.targetType;
 			if (params?.targetId) where.targetId = params.targetId;
 			if (params?.network) where.network = params.network;
@@ -71,8 +73,7 @@ export function createSocialSharingController(
 		},
 
 		async getTopShared(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.targetType) where.targetType = params.targetType;
 
 			const all = await data.findMany("shareEvent", {
@@ -128,8 +129,7 @@ export function createSocialSharingController(
 			await data.upsert(
 				"shareSettings",
 				SETTINGS_ID,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updated as Record<string, any>,
+				updated as Record<string, unknown>,
 			);
 			void events?.emit("share.settings.updated", {
 				enabledNetworks: updated.enabledNetworks,

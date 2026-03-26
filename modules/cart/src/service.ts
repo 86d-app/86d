@@ -1,6 +1,6 @@
 import type { ModuleController } from "@86d-app/core";
 
-export interface Cart {
+export type Cart = {
 	id: string;
 	customerId?: string | undefined;
 	guestId?: string | undefined;
@@ -9,9 +9,9 @@ export interface Cart {
 	metadata?: Record<string, unknown> | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface CartItem {
+export type CartItem = {
 	id: string;
 	cartId: string;
 	productId: string;
@@ -31,12 +31,12 @@ export interface CartItem {
 	metadata?: Record<string, unknown> | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
 /**
  * Public API that other modules can use
  */
-export interface CartController extends ModuleController {
+export type CartController = ModuleController & {
 	/**
 	 * Get or create a cart for a customer/guest
 	 */
@@ -120,4 +120,4 @@ export interface CartController extends ModuleController {
 		recoverySent: number;
 		recovered: number;
 	}>;
-}
+};

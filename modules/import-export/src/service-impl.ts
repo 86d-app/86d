@@ -62,8 +62,7 @@ export function createImportExportController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any for JSONB
-			await data.upsert("importJob", id, job as Record<string, any>);
+			await data.upsert("importJob", id, job as Record<string, unknown>);
 
 			if (events) {
 				void events.emit("import.created", {
@@ -84,8 +83,7 @@ export function createImportExportController(
 		},
 
 		async listImports(params): Promise<ImportJob[]> {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.type) where.type = params.type;
 			if (params?.status) where.status = params.status;
 
@@ -114,8 +112,7 @@ export function createImportExportController(
 					: {}),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("importJob", id, updated as Record<string, any>);
+			await data.upsert("importJob", id, updated as Record<string, unknown>);
 
 			if (events) {
 				if (status === "validating" || status === "processing") {
@@ -161,8 +158,7 @@ export function createImportExportController(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("importJob", id, updated as Record<string, any>);
+			await data.upsert("importJob", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -183,8 +179,7 @@ export function createImportExportController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("importJob", id, updated as Record<string, any>);
+			await data.upsert("importJob", id, updated as Record<string, unknown>);
 
 			if (events) {
 				const eventName =
@@ -217,8 +212,7 @@ export function createImportExportController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("importJob", id, updated as Record<string, any>);
+			await data.upsert("importJob", id, updated as Record<string, unknown>);
 
 			if (events) {
 				void events.emit("import.cancelled", {
@@ -256,8 +250,7 @@ export function createImportExportController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any for JSONB
-			await data.upsert("exportJob", id, job as Record<string, any>);
+			await data.upsert("exportJob", id, job as Record<string, unknown>);
 
 			if (events) {
 				void events.emit("export.created", {
@@ -277,8 +270,7 @@ export function createImportExportController(
 		},
 
 		async listExports(params): Promise<ExportJob[]> {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.type) where.type = params.type;
 			if (params?.status) where.status = params.status;
 
@@ -307,8 +299,7 @@ export function createImportExportController(
 					: {}),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("exportJob", id, updated as Record<string, any>);
+			await data.upsert("exportJob", id, updated as Record<string, unknown>);
 
 			if (events && status === "processing") {
 				void events.emit("export.started", {
@@ -336,8 +327,7 @@ export function createImportExportController(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("exportJob", id, updated as Record<string, any>);
+			await data.upsert("exportJob", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -354,8 +344,7 @@ export function createImportExportController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("exportJob", id, updated as Record<string, any>);
+			await data.upsert("exportJob", id, updated as Record<string, unknown>);
 
 			if (events) {
 				void events.emit("export.completed", {

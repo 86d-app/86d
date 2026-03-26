@@ -186,8 +186,7 @@ describe("createRecommendationController", () => {
 			await mockData.upsert("recommendationRule", r1.id, {
 				...r1,
 				createdAt: new Date(Date.now() - 60_000),
-				// biome-ignore lint/suspicious/noExplicitAny: test data
-			} as Record<string, any>);
+			} as Record<string, unknown>);
 
 			await controller.createRule({
 				name: "Second",
@@ -681,8 +680,7 @@ describe("createRecommendationController", () => {
 			await mockData.upsert("productInteraction", old.id, {
 				...old,
 				createdAt: new Date(Date.now() - 30 * 86_400_000), // 30 days ago
-				// biome-ignore lint/suspicious/noExplicitAny: test data
-			} as Record<string, any>);
+			} as Record<string, unknown>);
 
 			// Recent interaction
 			await controller.trackInteraction({

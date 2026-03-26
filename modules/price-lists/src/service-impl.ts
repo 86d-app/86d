@@ -66,8 +66,7 @@ export function createPriceListController(
 					customerGroupId: params.customerGroupId,
 				}),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("priceList", id, priceList as Record<string, any>);
+			await data.upsert("priceList", id, priceList as Record<string, unknown>);
 			return priceList;
 		},
 
@@ -127,8 +126,7 @@ export function createPriceListController(
 
 			const updated: PriceList = { ...base, ...optionalFields };
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("priceList", id, updated as Record<string, any>);
+			await data.upsert("priceList", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -218,8 +216,7 @@ export function createPriceListController(
 				}),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("priceEntry", id, entry as Record<string, any>);
+			await data.upsert("priceEntry", id, entry as Record<string, unknown>);
 			return entry;
 		},
 

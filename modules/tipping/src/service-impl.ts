@@ -39,8 +39,7 @@ export function createTippingController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any for JSONB
-			await data.upsert("tip", id, tip as Record<string, any>);
+			await data.upsert("tip", id, tip as Record<string, unknown>);
 			return tip;
 		},
 
@@ -66,8 +65,7 @@ export function createTippingController(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("tip", id, updated as Record<string, any>);
+			await data.upsert("tip", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -85,8 +83,7 @@ export function createTippingController(
 		},
 
 		async listTips(params): Promise<Tip[]> {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.orderId) where.orderId = params.orderId;
 			if (params?.recipientId) where.recipientId = params.recipientId;
 			if (params?.status) where.status = params.status;
@@ -130,8 +127,7 @@ export function createTippingController(
 					updatedAt: now,
 				};
 
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				await data.upsert("tip", splitId, tip as Record<string, any>);
+				await data.upsert("tip", splitId, tip as Record<string, unknown>);
 				newTips.push(tip);
 			}
 
@@ -167,8 +163,7 @@ export function createTippingController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("tipPayout", id, payout as Record<string, any>);
+			await data.upsert("tipPayout", id, payout as Record<string, unknown>);
 			return payout;
 		},
 
@@ -179,8 +174,7 @@ export function createTippingController(
 		},
 
 		async listPayouts(params): Promise<TipPayout[]> {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.recipientId) where.recipientId = params.recipientId;
 			if (params?.status) where.status = params.status;
 
@@ -213,8 +207,7 @@ export function createTippingController(
 			await data.upsert(
 				"tipSettings",
 				DEFAULT_SETTINGS_ID,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				defaults as Record<string, any>,
+				defaults as Record<string, unknown>,
 			);
 			return defaults;
 		},
@@ -247,8 +240,7 @@ export function createTippingController(
 			await data.upsert(
 				"tipSettings",
 				DEFAULT_SETTINGS_ID,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updated as Record<string, any>,
+				updated as Record<string, unknown>,
 			);
 			return updated;
 		},

@@ -4,7 +4,7 @@ export type VendorStatus = "pending" | "active" | "suspended" | "closed";
 export type VendorProductStatus = "active" | "paused";
 export type PayoutStatus = "pending" | "processing" | "completed" | "failed";
 
-export interface Vendor {
+export type Vendor = {
 	id: string;
 	name: string;
 	slug: string;
@@ -26,18 +26,18 @@ export interface Vendor {
 	joinedAt: Date;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface VendorProduct {
+export type VendorProduct = {
 	id: string;
 	vendorId: string;
 	productId: string;
 	commissionOverride?: number;
 	status: VendorProductStatus;
 	createdAt: Date;
-}
+};
 
-export interface VendorPayout {
+export type VendorPayout = {
 	id: string;
 	vendorId: string;
 	amount: number;
@@ -50,9 +50,9 @@ export interface VendorPayout {
 	notes?: string;
 	createdAt: Date;
 	completedAt?: Date;
-}
+};
 
-export interface VendorStats {
+export type VendorStats = {
 	totalVendors: number;
 	activeVendors: number;
 	pendingVendors: number;
@@ -61,17 +61,17 @@ export interface VendorStats {
 	totalPayouts: number;
 	pendingPayoutAmount: number;
 	completedPayoutAmount: number;
-}
+};
 
-export interface PayoutStats {
+export type PayoutStats = {
 	totalPayouts: number;
 	pendingAmount: number;
 	processingAmount: number;
 	completedAmount: number;
 	failedAmount: number;
-}
+};
 
-export interface VendorController extends ModuleController {
+export type VendorController = ModuleController & {
 	// --- Vendors ---
 	createVendor(params: {
 		name: string;
@@ -192,4 +192,4 @@ export interface VendorController extends ModuleController {
 
 	// --- Admin ---
 	getStats(): Promise<VendorStats>;
-}
+};

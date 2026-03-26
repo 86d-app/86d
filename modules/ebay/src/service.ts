@@ -17,7 +17,7 @@ export type EbayOrderStatus =
 	| "cancelled"
 	| "returned";
 
-export interface EbayListing {
+export type EbayListing = {
 	id: string;
 	localProductId: string;
 	ebayItemId?: string | undefined;
@@ -41,9 +41,9 @@ export interface EbayListing {
 	metadata: Record<string, unknown>;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface EbayOrder {
+export type EbayOrder = {
 	id: string;
 	ebayOrderId: string;
 	status: EbayOrderStatus;
@@ -61,18 +61,18 @@ export interface EbayOrder {
 	shipDate?: Date | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface ChannelStats {
+export type ChannelStats = {
 	totalListings: number;
 	activeListings: number;
 	totalOrders: number;
 	totalRevenue: number;
 	activeAuctions: number;
 	averagePrice: number;
-}
+};
 
-export interface EbayController extends ModuleController {
+export type EbayController = ModuleController & {
 	createListing(params: {
 		localProductId: string;
 		title: string;
@@ -146,4 +146,4 @@ export interface EbayController extends ModuleController {
 	getChannelStats(): Promise<ChannelStats>;
 
 	getActiveAuctions(): Promise<EbayListing[]>;
-}
+};

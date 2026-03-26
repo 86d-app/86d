@@ -68,8 +68,7 @@ describe("preorders controllers — edge cases", () => {
 		await mockData.upsert(
 			"preorderItem",
 			itemId,
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			confirmed as Record<string, any>,
+			confirmed as Record<string, unknown>,
 		);
 	}
 
@@ -80,8 +79,7 @@ describe("preorders controllers — edge cases", () => {
 		await mockData.upsert(
 			"preorderItem",
 			itemId,
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			updated as Record<string, any>,
+			updated as Record<string, unknown>,
 		);
 	}
 
@@ -346,12 +344,10 @@ describe("preorders controllers — edge cases", () => {
 
 			// Manually set currentQuantity to 0 to simulate edge case
 			const raw = unwrap(await controller.getCampaign(campaign.id));
-			await mockData.upsert(
-				"preorderCampaign",
-				campaign.id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				{ ...raw, currentQuantity: 0 } as Record<string, any>,
-			);
+			await mockData.upsert("preorderCampaign", campaign.id, {
+				...raw,
+				currentQuantity: 0,
+			} as Record<string, unknown>);
 
 			await controller.cancelPreorderItem(item.id);
 
@@ -876,12 +872,10 @@ describe("preorders controllers — edge cases", () => {
 			// while keeping active status
 			const campaign = await mustCreateActiveCampaign();
 			const raw = unwrap(await controller.getCampaign(campaign.id));
-			await mockData.upsert(
-				"preorderCampaign",
-				campaign.id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				{ ...raw, startDate: new Date("2030-01-01") } as Record<string, any>,
-			);
+			await mockData.upsert("preorderCampaign", campaign.id, {
+				...raw,
+				startDate: new Date("2030-01-01"),
+			} as Record<string, unknown>);
 
 			const found = await controller.getActiveCampaignForProduct("prod_1");
 			expect(found).toBeNull();

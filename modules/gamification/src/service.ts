@@ -9,7 +9,7 @@ export type PrizeType =
 	| "free-product"
 	| "custom";
 
-export interface Game {
+export type Game = {
 	id: string;
 	name: string;
 	description?: string | undefined;
@@ -26,9 +26,9 @@ export interface Game {
 	settings: Record<string, unknown>;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface Prize {
+export type Prize = {
 	id: string;
 	gameId: string;
 	name: string;
@@ -42,9 +42,9 @@ export interface Prize {
 	productId?: string | undefined;
 	isActive: boolean;
 	createdAt: Date;
-}
+};
 
-export interface Play {
+export type Play = {
 	id: string;
 	gameId: string;
 	email?: string | undefined;
@@ -58,9 +58,9 @@ export interface Play {
 	ipAddress?: string | undefined;
 	userAgent?: string | undefined;
 	createdAt: Date;
-}
+};
 
-export interface GameStats {
+export type GameStats = {
 	totalPlays: number;
 	totalWins: number;
 	winRate: number;
@@ -69,15 +69,15 @@ export interface GameStats {
 		prizeName: string;
 		wins: number;
 	}>;
-}
+};
 
-export interface CanPlayResult {
+export type CanPlayResult = {
 	allowed: boolean;
 	reason?: string | undefined;
 	nextPlayAt?: Date | undefined;
-}
+};
 
-export interface GamificationController extends ModuleController {
+export type GamificationController = ModuleController & {
 	createGame(params: {
 		name: string;
 		description?: string | undefined;
@@ -184,4 +184,4 @@ export interface GamificationController extends ModuleController {
 			ipAddress?: string | undefined;
 		},
 	): Promise<CanPlayResult>;
-}
+};

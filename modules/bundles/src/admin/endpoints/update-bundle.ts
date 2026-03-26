@@ -51,8 +51,7 @@ export const updateBundle = createAdminEndpoint(
 		}
 
 		// Build update payload excluding undefined values (exactOptionalPropertyTypes)
-		// biome-ignore lint/suspicious/noExplicitAny: filtering undefined from body
-		const updates: Record<string, any> = {};
+		const updates: Record<string, unknown> = {};
 		for (const [key, value] of Object.entries(ctx.body)) {
 			if (value !== undefined) updates[key] = value;
 		}

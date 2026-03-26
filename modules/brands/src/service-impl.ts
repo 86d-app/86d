@@ -50,8 +50,7 @@ export function createBrandController(
 					seoDescription: params.seoDescription,
 				}),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("brand", id, brand as Record<string, any>);
+			await data.upsert("brand", id, brand as Record<string, unknown>);
 			void events?.emit("brand.created", {
 				brandId: brand.id,
 				name: brand.name,
@@ -123,8 +122,7 @@ export function createBrandController(
 
 			const updated: Brand = { ...base, ...optionalFields };
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("brand", id, updated as Record<string, any>);
+			await data.upsert("brand", id, updated as Record<string, unknown>);
 			void events?.emit("brand.updated", {
 				brandId: updated.id,
 				name: updated.name,
@@ -205,8 +203,7 @@ export function createBrandController(
 			await data.upsert(
 				"brandProduct",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				brandProduct as Record<string, any>,
+				brandProduct as Record<string, unknown>,
 			);
 			void events?.emit("brand.product.assigned", {
 				brandId: params.brandId,
@@ -294,12 +291,7 @@ export function createBrandController(
 					productId,
 					assignedAt: new Date(),
 				};
-				await data.upsert(
-					"brandProduct",
-					id,
-					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-					item as Record<string, any>,
-				);
+				await data.upsert("brandProduct", id, item as Record<string, unknown>);
 				assigned++;
 			}
 			return assigned;

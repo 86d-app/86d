@@ -23,8 +23,7 @@ export function createFaqControllers(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("faqCategory", id, category as Record<string, any>);
+			await data.upsert("faqCategory", id, category as Record<string, unknown>);
 			void events?.emit("faq.category.created", {
 				categoryId: category.id,
 				name: category.name,
@@ -85,8 +84,7 @@ export function createFaqControllers(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("faqCategory", id, updated as Record<string, any>);
+			await data.upsert("faqCategory", id, updated as Record<string, unknown>);
 			void events?.emit("faq.category.updated", {
 				categoryId: updated.id,
 				name: updated.name,
@@ -130,8 +128,7 @@ export function createFaqControllers(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("faqItem", id, item as Record<string, any>);
+			await data.upsert("faqItem", id, item as Record<string, unknown>);
 			void events?.emit("faq.item.created", {
 				itemId: item.id,
 				categoryId: item.categoryId,
@@ -196,8 +193,7 @@ export function createFaqControllers(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("faqItem", id, updated as Record<string, any>);
+			await data.upsert("faqItem", id, updated as Record<string, unknown>);
 			void events?.emit("faq.item.updated", {
 				itemId: updated.id,
 				categoryId: updated.categoryId,
@@ -273,8 +269,7 @@ export function createFaqControllers(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("faqItem", itemId, updated as Record<string, any>);
+			await data.upsert("faqItem", itemId, updated as Record<string, unknown>);
 
 			return updated;
 		},

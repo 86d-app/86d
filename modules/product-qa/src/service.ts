@@ -3,7 +3,7 @@ import type { ModuleController } from "@86d-app/core";
 export type QuestionStatus = "pending" | "published" | "rejected";
 export type AnswerStatus = "pending" | "published" | "rejected";
 
-export interface Question {
+export type Question = {
 	id: string;
 	productId: string;
 	customerId?: string | undefined;
@@ -15,9 +15,9 @@ export interface Question {
 	answerCount: number;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface Answer {
+export type Answer = {
 	id: string;
 	questionId: string;
 	productId: string;
@@ -30,9 +30,9 @@ export interface Answer {
 	status: AnswerStatus;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface QaAnalytics {
+export type QaAnalytics = {
 	totalQuestions: number;
 	pendingQuestions: number;
 	publishedQuestions: number;
@@ -43,15 +43,15 @@ export interface QaAnalytics {
 	officialAnswers: number;
 	averageAnswersPerQuestion: number;
 	unansweredCount: number;
-}
+};
 
-export interface ProductQaSummary {
+export type ProductQaSummary = {
 	questionCount: number;
 	answeredCount: number;
 	unansweredCount: number;
-}
+};
 
-export interface ProductQaController extends ModuleController {
+export type ProductQaController = ModuleController & {
 	// ── Questions ────────────────────────────────────────────────────────
 
 	createQuestion(params: {
@@ -123,4 +123,4 @@ export interface ProductQaController extends ModuleController {
 	getProductQaSummary(productId: string): Promise<ProductQaSummary>;
 
 	getQaAnalytics(): Promise<QaAnalytics>;
-}
+};

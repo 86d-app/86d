@@ -1,6 +1,6 @@
 import type { ModuleController } from "@86d-app/core";
 
-export interface WishlistItem {
+export type WishlistItem = {
 	id: string;
 	customerId: string;
 	productId: string;
@@ -8,23 +8,23 @@ export interface WishlistItem {
 	productImage?: string | undefined;
 	note?: string | undefined;
 	addedAt: Date;
-}
+};
 
-export interface WishlistShare {
+export type WishlistShare = {
 	id: string;
 	customerId: string;
 	token: string;
 	active: boolean;
 	createdAt: Date;
 	expiresAt?: Date | undefined;
-}
+};
 
-export interface WishlistSummary {
+export type WishlistSummary = {
 	totalItems: number;
 	topProducts: Array<{ productId: string; productName: string; count: number }>;
-}
+};
 
-export interface WishlistController extends ModuleController {
+export type WishlistController = ModuleController & {
 	addItem(params: {
 		customerId: string;
 		productId: string;
@@ -77,4 +77,4 @@ export interface WishlistController extends ModuleController {
 
 	/** Get items for a shared wishlist by token. Returns null if token is invalid/expired. */
 	getSharedWishlist(token: string): Promise<WishlistItem[] | null>;
-}
+};

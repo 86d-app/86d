@@ -27,8 +27,7 @@ export function createProductQaController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("question", id, question as Record<string, any>);
+			await data.upsert("question", id, question as Record<string, unknown>);
 			void events?.emit("question.submitted", {
 				questionId: id,
 				productId: params.productId,
@@ -44,8 +43,7 @@ export function createProductQaController(
 		},
 
 		async listQuestionsByProduct(productId, params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = { productId };
+			const where: Record<string, unknown> = { productId };
 			if (params?.publishedOnly) where.status = "published";
 
 			const all = await data.findMany("question", {
@@ -57,8 +55,7 @@ export function createProductQaController(
 		},
 
 		async listQuestions(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.productId) where.productId = params.productId;
 			if (params?.status) where.status = params.status;
 
@@ -79,8 +76,7 @@ export function createProductQaController(
 				status,
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("question", id, updated as Record<string, any>);
+			await data.upsert("question", id, updated as Record<string, unknown>);
 			if (status === "published") {
 				void events?.emit("question.published", { questionId: id });
 			} else if (status === "rejected") {
@@ -113,8 +109,7 @@ export function createProductQaController(
 				upvoteCount: question.upvoteCount + 1,
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("question", id, updated as Record<string, any>);
+			await data.upsert("question", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -137,8 +132,7 @@ export function createProductQaController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("answer", id, answer as Record<string, any>);
+			await data.upsert("answer", id, answer as Record<string, unknown>);
 			void events?.emit("answer.submitted", {
 				answerId: id,
 				questionId: params.questionId,
@@ -160,8 +154,11 @@ export function createProductQaController(
 					answerCount: q.answerCount + 1,
 					updatedAt: new Date(),
 				};
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				await data.upsert("question", q.id, updatedQ as Record<string, any>);
+				await data.upsert(
+					"question",
+					q.id,
+					updatedQ as Record<string, unknown>,
+				);
 			}
 
 			return answer;
@@ -174,8 +171,7 @@ export function createProductQaController(
 		},
 
 		async listAnswersByQuestion(questionId, params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = { questionId };
+			const where: Record<string, unknown> = { questionId };
 			if (params?.publishedOnly) where.status = "published";
 
 			const all = await data.findMany("answer", {
@@ -195,8 +191,7 @@ export function createProductQaController(
 				status,
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("answer", id, updated as Record<string, any>);
+			await data.upsert("answer", id, updated as Record<string, unknown>);
 			if (status === "published") {
 				void events?.emit("answer.published", {
 					answerId: id,
@@ -222,8 +217,11 @@ export function createProductQaController(
 					answerCount: Math.max(0, q.answerCount - 1),
 					updatedAt: new Date(),
 				};
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				await data.upsert("question", q.id, updatedQ as Record<string, any>);
+				await data.upsert(
+					"question",
+					q.id,
+					updatedQ as Record<string, unknown>,
+				);
 			}
 
 			return true;
@@ -238,8 +236,7 @@ export function createProductQaController(
 				upvoteCount: answer.upvoteCount + 1,
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("answer", id, updated as Record<string, any>);
+			await data.upsert("answer", id, updated as Record<string, unknown>);
 			return updated;
 		},
 

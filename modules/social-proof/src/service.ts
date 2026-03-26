@@ -18,7 +18,7 @@ export type BadgePosition =
 /** Time periods for aggregating activity data */
 export type ActivityPeriod = "1h" | "24h" | "7d" | "30d";
 
-export interface ActivityEvent {
+export type ActivityEvent = {
 	id: string;
 	productId: string;
 	productName: string;
@@ -30,9 +30,9 @@ export interface ActivityEvent {
 	city?: string | undefined;
 	quantity?: number | undefined;
 	createdAt: Date;
-}
+};
 
-export interface TrustBadge {
+export type TrustBadge = {
 	id: string;
 	name: string;
 	description?: string | undefined;
@@ -43,10 +43,10 @@ export interface TrustBadge {
 	isActive: boolean;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
 /** Aggregated activity stats for a product */
-export interface ProductActivity {
+export type ProductActivity = {
 	productId: string;
 	viewCount: number;
 	purchaseCount: number;
@@ -60,29 +60,29 @@ export interface ProductActivity {
 		quantity?: number | undefined;
 		createdAt: Date;
 	}>;
-}
+};
 
 /** A product ranked by activity volume */
-export interface TrendingProduct {
+export type TrendingProduct = {
 	productId: string;
 	productName: string;
 	productSlug: string;
 	productImage?: string | undefined;
 	eventCount: number;
 	purchaseCount: number;
-}
+};
 
 /** Summary stats for admin dashboard */
-export interface ActivitySummary {
+export type ActivitySummary = {
 	totalEvents: number;
 	totalPurchases: number;
 	totalViews: number;
 	totalCartAdds: number;
 	uniqueProducts: number;
 	topProducts: TrendingProduct[];
-}
+};
 
-export interface SocialProofController extends ModuleController {
+export type SocialProofController = ModuleController & {
 	// --- Activity Events ---
 
 	recordEvent(params: {
@@ -176,4 +176,4 @@ export interface SocialProofController extends ModuleController {
 	getActivitySummary(params?: {
 		period?: ActivityPeriod | undefined;
 	}): Promise<ActivitySummary>;
-}
+};

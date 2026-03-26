@@ -36,8 +36,7 @@ export function createKioskController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("kioskStation", id, station as Record<string, any>);
+			await data.upsert("kioskStation", id, station as Record<string, unknown>);
 			void events?.emit("kiosk.registered", {
 				stationId: station.id,
 				name: station.name,
@@ -58,8 +57,7 @@ export function createKioskController(
 				...(params.settings !== undefined ? { settings: params.settings } : {}),
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("kioskStation", id, updated as Record<string, any>);
+			await data.upsert("kioskStation", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -71,8 +69,7 @@ export function createKioskController(
 		},
 
 		async listStations(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.isActive !== undefined) where.isActive = params.isActive;
 
 			const all = await data.findMany("kioskStation", {
@@ -104,8 +101,7 @@ export function createKioskController(
 			await data.upsert(
 				"kioskStation",
 				stationId,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updated as Record<string, any>,
+				updated as Record<string, unknown>,
 			);
 			void events?.emit("kiosk.heartbeat", { stationId });
 			return updated;
@@ -133,8 +129,7 @@ export function createKioskController(
 				startedAt: now,
 				createdAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("kioskSession", id, session as Record<string, any>);
+			await data.upsert("kioskSession", id, session as Record<string, unknown>);
 
 			// Link session to station
 			const updatedStation: KioskStation = {
@@ -145,8 +140,7 @@ export function createKioskController(
 			await data.upsert(
 				"kioskStation",
 				stationId,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updatedStation as Record<string, any>,
+				updatedStation as Record<string, unknown>,
 			);
 
 			void events?.emit("kiosk.session.started", {
@@ -181,8 +175,7 @@ export function createKioskController(
 			await data.upsert(
 				"kioskSession",
 				sessionId,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updated as Record<string, any>,
+				updated as Record<string, unknown>,
 			);
 			return updated;
 		},
@@ -207,8 +200,7 @@ export function createKioskController(
 			await data.upsert(
 				"kioskSession",
 				sessionId,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updated as Record<string, any>,
+				updated as Record<string, unknown>,
 			);
 			return updated;
 		},
@@ -240,8 +232,7 @@ export function createKioskController(
 			await data.upsert(
 				"kioskSession",
 				sessionId,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updated as Record<string, any>,
+				updated as Record<string, unknown>,
 			);
 			return updated;
 		},
@@ -267,8 +258,7 @@ export function createKioskController(
 				paymentStatus: "paid",
 				completedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("kioskSession", id, updated as Record<string, any>);
+			await data.upsert("kioskSession", id, updated as Record<string, unknown>);
 
 			// Clear station current session
 			const stationRaw = await data.get("kioskStation", session.stationId);
@@ -282,8 +272,7 @@ export function createKioskController(
 				await data.upsert(
 					"kioskStation",
 					session.stationId,
-					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-					updatedStation as Record<string, any>,
+					updatedStation as Record<string, unknown>,
 				);
 			}
 
@@ -314,8 +303,7 @@ export function createKioskController(
 				status: "abandoned",
 				completedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("kioskSession", id, updated as Record<string, any>);
+			await data.upsert("kioskSession", id, updated as Record<string, unknown>);
 
 			// Clear station current session
 			const stationRaw = await data.get("kioskStation", session.stationId);
@@ -329,8 +317,7 @@ export function createKioskController(
 				await data.upsert(
 					"kioskStation",
 					session.stationId,
-					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-					updatedStation as Record<string, any>,
+					updatedStation as Record<string, unknown>,
 				);
 			}
 
@@ -343,8 +330,7 @@ export function createKioskController(
 		},
 
 		async listSessions(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.stationId) where.stationId = params.stationId;
 			if (params?.status) where.status = params.status;
 

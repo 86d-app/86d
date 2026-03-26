@@ -19,11 +19,11 @@ export type ConditionOperator =
 	| "exists"
 	| "not_exists";
 
-export interface AutomationCondition {
+export type AutomationCondition = {
 	field: string;
 	operator: ConditionOperator;
 	value?: string | number | boolean | undefined;
-}
+};
 
 export type ActionType =
 	| "send_notification"
@@ -33,12 +33,12 @@ export type ActionType =
 	| "webhook"
 	| "log";
 
-export interface AutomationAction {
+export type AutomationAction = {
 	type: ActionType;
 	config: Record<string, unknown>;
-}
+};
 
-export interface Automation {
+export type Automation = {
 	id: string;
 	name: string;
 	description?: string | undefined;
@@ -51,9 +51,9 @@ export interface Automation {
 	lastRunAt?: Date | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface AutomationExecution {
+export type AutomationExecution = {
 	id: string;
 	automationId: string;
 	triggerEvent: string;
@@ -63,17 +63,17 @@ export interface AutomationExecution {
 	error?: string | undefined;
 	startedAt: Date;
 	completedAt?: Date | undefined;
-}
+};
 
-export interface AutomationActionResult {
+export type AutomationActionResult = {
 	actionIndex: number;
 	type: ActionType;
 	status: "success" | "failed" | "skipped";
 	output?: Record<string, unknown> | undefined;
 	error?: string | undefined;
-}
+};
 
-export interface CreateAutomationParams {
+export type CreateAutomationParams = {
 	name: string;
 	description?: string | undefined;
 	triggerEvent: string;
@@ -81,9 +81,9 @@ export interface CreateAutomationParams {
 	actions: AutomationAction[];
 	priority?: number | undefined;
 	status?: AutomationStatus | undefined;
-}
+};
 
-export interface UpdateAutomationParams {
+export type UpdateAutomationParams = {
 	name?: string | undefined;
 	description?: string | undefined;
 	triggerEvent?: string | undefined;
@@ -91,23 +91,23 @@ export interface UpdateAutomationParams {
 	actions?: AutomationAction[] | undefined;
 	priority?: number | undefined;
 	status?: AutomationStatus | undefined;
-}
+};
 
-export interface AutomationListParams {
+export type AutomationListParams = {
 	status?: AutomationStatus | undefined;
 	triggerEvent?: string | undefined;
 	take?: number | undefined;
 	skip?: number | undefined;
-}
+};
 
-export interface ExecutionListParams {
+export type ExecutionListParams = {
 	automationId?: string | undefined;
 	status?: ExecutionStatus | undefined;
 	take?: number | undefined;
 	skip?: number | undefined;
-}
+};
 
-export interface AutomationStats {
+export type AutomationStats = {
 	totalAutomations: number;
 	activeAutomations: number;
 	totalExecutions: number;
@@ -117,9 +117,9 @@ export interface AutomationStats {
 		name: string;
 		runCount: number;
 	}>;
-}
+};
 
-export interface AutomationsController extends ModuleController {
+export type AutomationsController = ModuleController & {
 	create(params: CreateAutomationParams): Promise<Automation>;
 	getById(id: string): Promise<Automation | null>;
 	list(
@@ -144,4 +144,4 @@ export interface AutomationsController extends ModuleController {
 	): Promise<{ executions: AutomationExecution[]; total: number }>;
 	getStats(): Promise<AutomationStats>;
 	purgeExecutions(olderThan: Date): Promise<number>;
-}
+};

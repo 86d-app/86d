@@ -2,7 +2,7 @@ import type { ModuleController } from "@86d-app/core";
 
 export type WaitlistStatus = "waiting" | "notified" | "purchased" | "cancelled";
 
-export interface WaitlistEntry {
+export type WaitlistEntry = {
 	id: string;
 	productId: string;
 	productName: string;
@@ -13,9 +13,9 @@ export interface WaitlistEntry {
 	status: WaitlistStatus;
 	notifiedAt?: Date | undefined;
 	createdAt: Date;
-}
+};
 
-export interface WaitlistSummary {
+export type WaitlistSummary = {
 	totalWaiting: number;
 	totalNotified: number;
 	topProducts: Array<{
@@ -23,9 +23,9 @@ export interface WaitlistSummary {
 		productName: string;
 		count: number;
 	}>;
-}
+};
 
-export interface WaitlistController extends ModuleController {
+export type WaitlistController = ModuleController & {
 	subscribe(params: {
 		productId: string;
 		productName: string;
@@ -75,4 +75,4 @@ export interface WaitlistController extends ModuleController {
 	markPurchased(email: string, productId: string): Promise<boolean>;
 
 	getSummary(): Promise<WaitlistSummary>;
-}
+};

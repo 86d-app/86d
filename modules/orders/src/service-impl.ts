@@ -118,8 +118,7 @@ export function createOrderController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("order", id, order as Record<string, any>);
+			await data.upsert("order", id, order as Record<string, unknown>);
 
 			// Create order items
 			for (const item of params.items) {
@@ -138,8 +137,7 @@ export function createOrderController(
 				await data.upsert(
 					"orderItem",
 					orderItem.id,
-					// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-					orderItem as unknown as Record<string, any>,
+					orderItem as unknown as Record<string, unknown>,
 				);
 			}
 
@@ -151,8 +149,11 @@ export function createOrderController(
 					type: "billing",
 					...params.billingAddress,
 				};
-				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				await data.upsert("orderAddress", addr.id, addr as Record<string, any>);
+				await data.upsert(
+					"orderAddress",
+					addr.id,
+					addr as Record<string, unknown>,
+				);
 			}
 
 			// Create shipping address
@@ -163,8 +164,11 @@ export function createOrderController(
 					type: "shipping",
 					...params.shippingAddress,
 				};
-				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				await data.upsert("orderAddress", addr.id, addr as Record<string, any>);
+				await data.upsert(
+					"orderAddress",
+					addr.id,
+					addr as Record<string, unknown>,
+				);
 			}
 
 			return order;
@@ -225,8 +229,7 @@ export function createOrderController(
 			const { limit = 20, offset = 0, search, status, paymentStatus } = params;
 
 			// Push status/paymentStatus filters to DB; text search stays client-side
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (status) where.status = status;
 			if (paymentStatus) where.paymentStatus = paymentStatus;
 
@@ -270,8 +273,7 @@ export function createOrderController(
 				dateTo,
 			} = params;
 
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (status) where.status = status;
 			if (paymentStatus) where.paymentStatus = paymentStatus;
 
@@ -329,8 +331,7 @@ export function createOrderController(
 			if (!existing) return null;
 
 			const updated: Order = { ...existing, status, updatedAt: new Date() };
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("order", id, updated as Record<string, any>);
+			await data.upsert("order", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -346,8 +347,7 @@ export function createOrderController(
 				paymentStatus,
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("order", id, updated as Record<string, any>);
+			await data.upsert("order", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -364,8 +364,7 @@ export function createOrderController(
 				...(params.metadata !== undefined ? { metadata: params.metadata } : {}),
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("order", id, updated as Record<string, any>);
+			await data.upsert("order", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -382,8 +381,7 @@ export function createOrderController(
 				status: "cancelled",
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("order", id, updated as Record<string, any>);
+			await data.upsert("order", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -427,8 +425,11 @@ export function createOrderController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("fulfillment", id, fulfillment as Record<string, any>);
+			await data.upsert(
+				"fulfillment",
+				id,
+				fulfillment as Record<string, unknown>,
+			);
 
 			for (const item of params.items) {
 				const fulfillmentItem: FulfillmentItem = {
@@ -440,8 +441,7 @@ export function createOrderController(
 				await data.upsert(
 					"fulfillmentItem",
 					fulfillmentItem.id,
-					// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-					fulfillmentItem as unknown as Record<string, any>,
+					fulfillmentItem as unknown as Record<string, unknown>,
 				);
 			}
 
@@ -519,8 +519,7 @@ export function createOrderController(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("fulfillment", id, updated as Record<string, any>);
+			await data.upsert("fulfillment", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -600,8 +599,7 @@ export function createOrderController(
 			await data.upsert(
 				"returnRequest",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				returnRequest as Record<string, any>,
+				returnRequest as Record<string, unknown>,
 			);
 
 			for (const item of params.items) {
@@ -615,8 +613,7 @@ export function createOrderController(
 				await data.upsert(
 					"returnItem",
 					returnItem.id,
-					// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-					returnItem as unknown as Record<string, any>,
+					returnItem as unknown as Record<string, unknown>,
 				);
 			}
 
@@ -663,8 +660,7 @@ export function createOrderController(
 		}> {
 			const { limit = 20, offset = 0, status } = params;
 
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (status) where.status = status;
 
 			const all = (await data.findMany("returnRequest", {
@@ -724,8 +720,11 @@ export function createOrderController(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("returnRequest", id, updated as Record<string, any>);
+			await data.upsert(
+				"returnRequest",
+				id,
+				updated as Record<string, unknown>,
+			);
 			return updated;
 		},
 
@@ -754,8 +753,11 @@ export function createOrderController(
 				const order = (await data.get("order", id)) as Order | null;
 				if (order) {
 					const updated_order = { ...order, status, updatedAt: now };
-					// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-					await data.upsert("order", id, updated_order as Record<string, any>);
+					await data.upsert(
+						"order",
+						id,
+						updated_order as Record<string, unknown>,
+					);
 					updated++;
 				}
 			}
@@ -776,8 +778,11 @@ export function createOrderController(
 				const order = (await data.get("order", id)) as Order | null;
 				if (order) {
 					const updated_order = { ...order, paymentStatus, updatedAt: now };
-					// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-					await data.upsert("order", id, updated_order as Record<string, any>);
+					await data.upsert(
+						"order",
+						id,
+						updated_order as Record<string, unknown>,
+					);
 					updated++;
 				}
 			}
@@ -866,8 +871,7 @@ export function createOrderController(
 				createdAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("orderNote", id, note as Record<string, any>);
+			await data.upsert("orderNote", id, note as Record<string, unknown>);
 			return note;
 		},
 
@@ -920,8 +924,7 @@ export function createOrderController(
 			const orderIds = new Set(customerOrders.map((o) => o.id));
 
 			// Get all return requests, then filter to customer's orders
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status) where.status = params.status;
 
 			const allReturns = (await data.findMany("returnRequest", {

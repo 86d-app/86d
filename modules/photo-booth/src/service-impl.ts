@@ -30,8 +30,7 @@ export function createPhotoBoothController(
 				createdAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("photo", id, photo as Record<string, any>);
+			await data.upsert("photo", id, photo as Record<string, unknown>);
 
 			// Increment session photo count
 			const sessionRaw = await data.get("photoSession", params.sessionId);
@@ -45,8 +44,7 @@ export function createPhotoBoothController(
 				await data.upsert(
 					"photoSession",
 					params.sessionId,
-					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-					updated as Record<string, any>,
+					updated as Record<string, unknown>,
 				);
 			}
 
@@ -80,8 +78,7 @@ export function createPhotoBoothController(
 		},
 
 		async listPhotos(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.sessionId) where.sessionId = params.sessionId;
 			if (params?.isPublic !== undefined) where.isPublic = params.isPublic;
 
@@ -110,8 +107,7 @@ export function createPhotoBoothController(
 				sendStatus: "sent",
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("photo", id, updated as Record<string, any>);
+			await data.upsert("photo", id, updated as Record<string, unknown>);
 
 			void events?.emit("photo.sent", {
 				photoId: id,
@@ -138,8 +134,7 @@ export function createPhotoBoothController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("photoSession", id, session as Record<string, any>);
+			await data.upsert("photoSession", id, session as Record<string, unknown>);
 			return session;
 		},
 
@@ -164,8 +159,7 @@ export function createPhotoBoothController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("photoSession", id, updated as Record<string, any>);
+			await data.upsert("photoSession", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -191,8 +185,7 @@ export function createPhotoBoothController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("photoStream", id, stream as Record<string, any>);
+			await data.upsert("photoStream", id, stream as Record<string, unknown>);
 
 			void events?.emit("stream.created", {
 				streamId: stream.id,
@@ -223,8 +216,11 @@ export function createPhotoBoothController(
 				...p,
 				metadata: { ...p.metadata, streamId },
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("photo", photoId, updatedPhoto as Record<string, any>);
+			await data.upsert(
+				"photo",
+				photoId,
+				updatedPhoto as Record<string, unknown>,
+			);
 
 			// Increment stream photo count
 			const updatedStream: PhotoStream = {
@@ -235,8 +231,7 @@ export function createPhotoBoothController(
 			await data.upsert(
 				"photoStream",
 				streamId,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updatedStream as Record<string, any>,
+				updatedStream as Record<string, unknown>,
 			);
 
 			return true;
@@ -270,8 +265,7 @@ export function createPhotoBoothController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("photoStream", id, updated as Record<string, any>);
+			await data.upsert("photoStream", id, updated as Record<string, unknown>);
 
 			void events?.emit("stream.ended", {
 				streamId: id,

@@ -1,6 +1,6 @@
 import type { ModuleController } from "@86d-app/core";
 
-export interface FavorDelivery {
+export type FavorDelivery = {
 	id: string;
 	orderId: string;
 	externalId?: string | undefined;
@@ -24,9 +24,9 @@ export interface FavorDelivery {
 	metadata: Record<string, unknown>;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface ServiceArea {
+export type ServiceArea = {
 	id: string;
 	name: string;
 	isActive: boolean;
@@ -36,9 +36,9 @@ export interface ServiceArea {
 	estimatedMinutes: number;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface CreateFavorDeliveryParams {
+export type CreateFavorDeliveryParams = {
 	orderId: string;
 	pickupAddress: Record<string, unknown>;
 	dropoffAddress: Record<string, unknown>;
@@ -46,26 +46,26 @@ export interface CreateFavorDeliveryParams {
 	tip?: number | undefined;
 	specialInstructions?: string | undefined;
 	metadata?: Record<string, unknown> | undefined;
-}
+};
 
-export interface CreateServiceAreaParams {
+export type CreateServiceAreaParams = {
 	name: string;
 	zipCodes: string[];
 	minOrderAmount?: number | undefined;
 	deliveryFee: number;
 	estimatedMinutes: number;
-}
+};
 
-export interface UpdateServiceAreaParams {
+export type UpdateServiceAreaParams = {
 	name?: string | undefined;
 	isActive?: boolean | undefined;
 	zipCodes?: string[] | undefined;
 	minOrderAmount?: number | undefined;
 	deliveryFee?: number | undefined;
 	estimatedMinutes?: number | undefined;
-}
+};
 
-export interface FavorDeliveryStats {
+export type FavorDeliveryStats = {
 	totalDeliveries: number;
 	totalPending: number;
 	totalAssigned: number;
@@ -74,9 +74,9 @@ export interface FavorDeliveryStats {
 	totalCancelled: number;
 	totalFees: number;
 	totalTips: number;
-}
+};
 
-export interface FavorController extends ModuleController {
+export type FavorController = ModuleController & {
 	createDelivery(params: CreateFavorDeliveryParams): Promise<FavorDelivery>;
 
 	getDelivery(id: string): Promise<FavorDelivery | null>;
@@ -126,4 +126,4 @@ export interface FavorController extends ModuleController {
 	): Promise<{ available: boolean; area: ServiceArea | null }>;
 
 	getDeliveryStats(): Promise<FavorDeliveryStats>;
-}
+};

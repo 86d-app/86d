@@ -18,7 +18,7 @@ export type EtsyOrderStatus =
 	| "completed"
 	| "cancelled";
 
-export interface EtsyListing {
+export type EtsyListing = {
 	id: string;
 	localProductId: string;
 	etsyListingId?: string | undefined;
@@ -42,9 +42,9 @@ export interface EtsyListing {
 	error?: string | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface EtsyOrder {
+export type EtsyOrder = {
 	id: string;
 	etsyReceiptId: string;
 	status: EtsyOrderStatus;
@@ -64,9 +64,9 @@ export interface EtsyOrder {
 	shipDate?: Date | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface EtsyReview {
+export type EtsyReview = {
 	id: string;
 	etsyTransactionId: string;
 	rating: number;
@@ -74,9 +74,9 @@ export interface EtsyReview {
 	buyerName?: string | undefined;
 	listingId?: string | undefined;
 	createdAt: Date;
-}
+};
 
-export interface ChannelStats {
+export type ChannelStats = {
 	totalListings: number;
 	active: number;
 	draft: number;
@@ -89,9 +89,9 @@ export interface ChannelStats {
 	totalFavorites: number;
 	averageRating: number;
 	totalReviews: number;
-}
+};
 
-export interface EtsyController extends ModuleController {
+export type EtsyController = ModuleController & {
 	createListing(params: {
 		localProductId: string;
 		etsyListingId?: string | undefined;
@@ -207,4 +207,4 @@ export interface EtsyController extends ModuleController {
 
 	/** Pull reviews from Etsy and store locally. Requires API credentials. */
 	syncReviews(): Promise<{ synced: number }>;
-}
+};

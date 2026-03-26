@@ -59,8 +59,7 @@ export function createAnalyticsController(
 				data: params.data ?? {},
 				createdAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("event", id, event as Record<string, any>);
+			await data.upsert("event", id, event as Record<string, unknown>);
 
 			// Forward to GA4 Measurement Protocol (fire-and-forget)
 			if (ga4Provider) {
@@ -82,8 +81,7 @@ export function createAnalyticsController(
 
 		async listEvents(params) {
 			// Push equality filters to DB where clause; date range stays client-side
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.type !== undefined) where.type = params.type;
 			if (params?.productId !== undefined) where.productId = params.productId;
 			if (params?.customerId !== undefined)
@@ -323,8 +321,7 @@ export function createAnalyticsController(
 		},
 
 		async getRecentlyViewed(params): Promise<RecentlyViewedItem[]> {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = { type: "productView" };
+			const where: Record<string, unknown> = { type: "productView" };
 			if (params.sessionId !== undefined) where.sessionId = params.sessionId;
 			if (params.customerId !== undefined) where.customerId = params.customerId;
 

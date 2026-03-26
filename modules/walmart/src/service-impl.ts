@@ -83,8 +83,7 @@ export function createWalmartController(
 				}
 			}
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("item", id, item as Record<string, any>);
+			await data.upsert("item", id, item as Record<string, unknown>);
 			events?.emit("walmart.item.synced", { itemId: id });
 			return item;
 		},
@@ -129,8 +128,7 @@ export function createWalmartController(
 				}
 			}
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("item", id, updated as Record<string, any>);
+			await data.upsert("item", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -156,8 +154,7 @@ export function createWalmartController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("item", id, updated as Record<string, any>);
+			await data.upsert("item", id, updated as Record<string, unknown>);
 			events?.emit("walmart.item.retired", { itemId: id });
 			return updated;
 		},
@@ -177,8 +174,7 @@ export function createWalmartController(
 		},
 
 		async listItems(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status) where.status = params.status;
 			if (params?.fulfillmentType)
 				where.fulfillmentType = params.fulfillmentType;
@@ -235,8 +231,7 @@ export function createWalmartController(
 				}
 			}
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("feedSubmission", id, feed as Record<string, any>);
+			await data.upsert("feedSubmission", id, feed as Record<string, unknown>);
 			return feed;
 		},
 
@@ -250,8 +245,7 @@ export function createWalmartController(
 		},
 
 		async listFeeds(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.feedType) where.feedType = params.feedType;
 			if (params?.status) where.status = params.status;
 
@@ -287,8 +281,7 @@ export function createWalmartController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("walmartOrder", id, order as Record<string, any>);
+			await data.upsert("walmartOrder", id, order as Record<string, unknown>);
 			events?.emit("walmart.order.received", {
 				orderId: id,
 				purchaseOrderId: params.purchaseOrderId,
@@ -317,8 +310,7 @@ export function createWalmartController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("walmartOrder", id, updated as Record<string, any>);
+			await data.upsert("walmartOrder", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -354,8 +346,7 @@ export function createWalmartController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("walmartOrder", id, updated as Record<string, any>);
+			await data.upsert("walmartOrder", id, updated as Record<string, unknown>);
 			events?.emit("walmart.order.shipped", {
 				orderId: id,
 				trackingNumber,
@@ -388,14 +379,12 @@ export function createWalmartController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("walmartOrder", id, updated as Record<string, any>);
+			await data.upsert("walmartOrder", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
 		async listOrders(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status) where.status = params.status;
 
 			const all = await data.findMany("walmartOrder", {
@@ -486,9 +475,7 @@ export function createWalmartController(
 						updatedAt: now,
 					};
 
-					const orderRecord =
-						// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-						orderData as Record<string, any>;
+					const orderRecord = orderData as Record<string, unknown>;
 					await data.upsert("walmartOrder", orderData.id, orderRecord);
 					synced.push(orderData);
 				}

@@ -55,8 +55,7 @@ async function createSyncRecord(
 		createdAt: now,
 		updatedAt: now,
 	};
-	// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-	await data.upsert("syncRecord", id, record as Record<string, any>);
+	await data.upsert("syncRecord", id, record as Record<string, unknown>);
 	void events?.emit(eventName, {
 		syncRecordId: record.id,
 		entityType,
@@ -112,8 +111,7 @@ export function createToastController(
 		},
 
 		async listSyncRecords(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.entityType) where.entityType = params.entityType;
 			if (params?.status) where.status = params.status;
 
@@ -136,8 +134,7 @@ export function createToastController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("menuMapping", id, mapping as Record<string, any>);
+			await data.upsert("menuMapping", id, mapping as Record<string, unknown>);
 			return mapping;
 		},
 
@@ -148,8 +145,7 @@ export function createToastController(
 		},
 
 		async listMenuMappings(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.isActive !== undefined) where.isActive = params.isActive;
 
 			const all = await data.findMany("menuMapping", {
@@ -168,8 +164,7 @@ export function createToastController(
 		},
 
 		async getLastSyncTime(entityType) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = { status: "synced" };
+			const where: Record<string, unknown> = { status: "synced" };
 			if (entityType) where.entityType = entityType;
 
 			const records = await data.findMany("syncRecord", { where });

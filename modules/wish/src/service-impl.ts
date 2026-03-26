@@ -30,8 +30,7 @@ export function createWishController(data: ModuleDataService): WishController {
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("wishProduct", id, product as Record<string, any>);
+			await data.upsert("wishProduct", id, product as Record<string, unknown>);
 			return product;
 		},
 
@@ -64,8 +63,7 @@ export function createWishController(data: ModuleDataService): WishController {
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("wishProduct", id, updated as Record<string, any>);
+			await data.upsert("wishProduct", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -82,8 +80,7 @@ export function createWishController(data: ModuleDataService): WishController {
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("wishProduct", id, updated as Record<string, any>);
+			await data.upsert("wishProduct", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -102,8 +99,7 @@ export function createWishController(data: ModuleDataService): WishController {
 		},
 
 		async listProducts(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status) where.status = params.status;
 
 			const all = await data.findMany("wishProduct", {
@@ -137,8 +133,7 @@ export function createWishController(data: ModuleDataService): WishController {
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("wishOrder", id, order as Record<string, any>);
+			await data.upsert("wishOrder", id, order as Record<string, unknown>);
 			return order;
 		},
 
@@ -163,14 +158,12 @@ export function createWishController(data: ModuleDataService): WishController {
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("wishOrder", id, updated as Record<string, any>);
+			await data.upsert("wishOrder", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
 		async listOrders(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status) where.status = params.status;
 
 			const all = await data.findMany("wishOrder", {

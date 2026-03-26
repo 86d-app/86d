@@ -35,8 +35,7 @@ export function createPagesController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("page", id, page as Record<string, any>);
+			await data.upsert("page", id, page as Record<string, unknown>);
 			return page;
 		},
 
@@ -80,8 +79,7 @@ export function createPagesController(
 				updated.publishedAt = now;
 			}
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("page", id, updated as Record<string, any>);
+			await data.upsert("page", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -118,8 +116,7 @@ export function createPagesController(
 				publishedAt: page.publishedAt ?? now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("page", id, updated as Record<string, any>);
+			await data.upsert("page", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -134,8 +131,7 @@ export function createPagesController(
 				status: "draft",
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("page", id, updated as Record<string, any>);
+			await data.upsert("page", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -150,14 +146,12 @@ export function createPagesController(
 				status: "archived",
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("page", id, updated as Record<string, any>);
+			await data.upsert("page", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
 		async listPages(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status) where.status = params.status;
 			if (params?.showInNavigation !== undefined)
 				where.showInNavigation = params.showInNavigation;

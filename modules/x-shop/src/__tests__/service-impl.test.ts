@@ -449,8 +449,7 @@ describe("createXShopController", () => {
 			await mockData.upsert(
 				"productDrop",
 				created.id,
-				// biome-ignore lint/suspicious/noExplicitAny: test setup
-				endedDrop as Record<string, any>,
+				endedDrop as Record<string, unknown>,
 			);
 
 			const result = await controller.cancelDrop(created.id);

@@ -14,7 +14,7 @@ export type AuctionStatus =
 
 // --- Entities ---
 
-export interface Auction {
+export type Auction = {
 	id: string;
 	title: string;
 	description?: string | undefined;
@@ -51,9 +51,9 @@ export interface Auction {
 	antiSnipingMinutes: number;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface Bid {
+export type Bid = {
 	id: string;
 	auctionId: string;
 	customerId: string;
@@ -65,18 +65,18 @@ export interface Bid {
 	isWinning: boolean;
 	isAutoBid: boolean;
 	createdAt: Date;
-}
+};
 
-export interface AuctionWatch {
+export type AuctionWatch = {
 	id: string;
 	auctionId: string;
 	customerId: string;
 	createdAt: Date;
-}
+};
 
 // --- Params ---
 
-export interface CreateAuctionParams {
+export type CreateAuctionParams = {
 	title: string;
 	description?: string | undefined;
 	productId: string;
@@ -93,9 +93,9 @@ export interface CreateAuctionParams {
 	endsAt: Date;
 	antiSnipingEnabled?: boolean | undefined;
 	antiSnipingMinutes?: number | undefined;
-}
+};
 
-export interface UpdateAuctionParams {
+export type UpdateAuctionParams = {
 	title?: string | undefined;
 	description?: string | undefined;
 	imageUrl?: string | undefined;
@@ -109,30 +109,30 @@ export interface UpdateAuctionParams {
 	endsAt?: Date | undefined;
 	antiSnipingEnabled?: boolean | undefined;
 	antiSnipingMinutes?: number | undefined;
-}
+};
 
-export interface PlaceBidParams {
+export type PlaceBidParams = {
 	auctionId: string;
 	customerId: string;
 	customerName?: string | undefined;
 	amount: number;
 	maxAutoBid?: number | undefined;
-}
+};
 
-export interface BuyNowParams {
+export type BuyNowParams = {
 	auctionId: string;
 	customerId: string;
-}
+};
 
 // --- Result types ---
 
-export interface BidResult {
+export type BidResult = {
 	bid: Bid;
 	auction: Auction;
 	outbidPreviousHighest: boolean;
-}
+};
 
-export interface AuctionSummary {
+export type AuctionSummary = {
 	totalAuctions: number;
 	draft: number;
 	scheduled: number;
@@ -142,11 +142,11 @@ export interface AuctionSummary {
 	cancelled: number;
 	totalBids: number;
 	totalRevenue: number;
-}
+};
 
 // --- Controller ---
 
-export interface AuctionController extends ModuleController {
+export type AuctionController = ModuleController & {
 	// Auction CRUD
 	createAuction(params: CreateAuctionParams): Promise<Auction>;
 	updateAuction(
@@ -202,4 +202,4 @@ export interface AuctionController extends ModuleController {
 
 	// Analytics
 	getAuctionSummary(): Promise<AuctionSummary>;
-}
+};

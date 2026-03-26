@@ -65,8 +65,7 @@ describe("createPreordersController", () => {
 		await mockData.upsert(
 			"preorderItem",
 			itemId,
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			confirmed as Record<string, any>,
+			confirmed as Record<string, unknown>,
 		);
 	}
 

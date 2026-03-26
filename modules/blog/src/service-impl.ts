@@ -50,8 +50,7 @@ export function createBlogController(data: ModuleDataService): BlogController {
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("post", id, post as Record<string, any>);
+			await data.upsert("post", id, post as Record<string, unknown>);
 			return post;
 		},
 
@@ -107,8 +106,7 @@ export function createBlogController(data: ModuleDataService): BlogController {
 				updated.status = post.status;
 			}
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("post", id, updated as Record<string, any>);
+			await data.upsert("post", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -146,8 +144,7 @@ export function createBlogController(data: ModuleDataService): BlogController {
 				scheduledAt: undefined,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("post", id, updated as Record<string, any>);
+			await data.upsert("post", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -162,8 +159,7 @@ export function createBlogController(data: ModuleDataService): BlogController {
 				status: "draft",
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("post", id, updated as Record<string, any>);
+			await data.upsert("post", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -178,8 +174,7 @@ export function createBlogController(data: ModuleDataService): BlogController {
 				status: "archived",
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("post", id, updated as Record<string, any>);
+			await data.upsert("post", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -203,8 +198,7 @@ export function createBlogController(data: ModuleDataService): BlogController {
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("post", newId, duplicate as Record<string, any>);
+			await data.upsert("post", newId, duplicate as Record<string, unknown>);
 			return duplicate;
 		},
 
@@ -217,14 +211,12 @@ export function createBlogController(data: ModuleDataService): BlogController {
 				...post,
 				views: (post.views ?? 0) + 1,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("post", id, updated as Record<string, any>);
+			await data.upsert("post", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
 		async listPosts(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status) where.status = params.status;
 			if (params?.category) where.category = params.category;
 			if (params?.featured !== undefined) where.featured = params.featured;
@@ -361,8 +353,11 @@ export function createBlogController(data: ModuleDataService): BlogController {
 						scheduledAt: undefined,
 						updatedAt: now,
 					};
-					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-					await data.upsert("post", post.id, updated as Record<string, any>);
+					await data.upsert(
+						"post",
+						post.id,
+						updated as Record<string, unknown>,
+					);
 					published.push(updated);
 				}
 			}
@@ -397,8 +392,7 @@ export function createBlogController(data: ModuleDataService): BlogController {
 					patched.publishedAt = now;
 				}
 
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				await data.upsert("post", id, patched as Record<string, any>);
+				await data.upsert("post", id, patched as Record<string, unknown>);
 				updated++;
 			}
 

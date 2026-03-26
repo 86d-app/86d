@@ -1,6 +1,6 @@
 import type { ModuleController } from "@86d-app/core";
 
-export interface ComparisonItem {
+export type ComparisonItem = {
 	id: string;
 	customerId?: string | undefined;
 	sessionId?: string | undefined;
@@ -12,17 +12,17 @@ export interface ComparisonItem {
 	productCategory?: string | undefined;
 	attributes?: Record<string, string> | undefined;
 	addedAt: Date;
-}
+};
 
-export interface FrequentlyCompared {
+export type FrequentlyCompared = {
 	productId: string;
 	productName: string;
 	productSlug: string;
 	productImage?: string | undefined;
 	compareCount: number;
-}
+};
 
-export interface ComparisonController extends ModuleController {
+export type ComparisonController = ModuleController & {
 	addProduct(params: {
 		customerId?: string | undefined;
 		sessionId?: string | undefined;
@@ -75,4 +75,4 @@ export interface ComparisonController extends ModuleController {
 	getFrequentlyCompared(params?: {
 		take?: number | undefined;
 	}): Promise<FrequentlyCompared[]>;
-}
+};

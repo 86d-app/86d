@@ -40,8 +40,11 @@ export function createFulfillmentController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("fulfillment", id, fulfillment as Record<string, any>);
+			await data.upsert(
+				"fulfillment",
+				id,
+				fulfillment as Record<string, unknown>,
+			);
 
 			if (events) {
 				void events.emit("fulfillment.created", {
@@ -65,8 +68,7 @@ export function createFulfillmentController(
 		},
 
 		async listFulfillments(params): Promise<Fulfillment[]> {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status) where.status = params.status;
 
 			const results = (await data.findMany("fulfillment", {
@@ -100,8 +102,7 @@ export function createFulfillmentController(
 				...(status === "shipped" ? { shippedAt: now } : {}),
 				...(status === "delivered" ? { deliveredAt: now } : {}),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("fulfillment", id, updated as Record<string, any>);
+			await data.upsert("fulfillment", id, updated as Record<string, unknown>);
 
 			if (events) {
 				if (status === "shipped") {
@@ -155,8 +156,7 @@ export function createFulfillmentController(
 					? { status: "shipped" as const, shippedAt: now }
 					: {}),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("fulfillment", id, updated as Record<string, any>);
+			await data.upsert("fulfillment", id, updated as Record<string, unknown>);
 
 			if (events && shouldAutoShip) {
 				void events.emit("fulfillment.shipped", {
@@ -189,8 +189,7 @@ export function createFulfillmentController(
 				status: "cancelled",
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("fulfillment", id, updated as Record<string, any>);
+			await data.upsert("fulfillment", id, updated as Record<string, unknown>);
 
 			if (events) {
 				void events.emit("fulfillment.cancelled", {

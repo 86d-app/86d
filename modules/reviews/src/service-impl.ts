@@ -59,8 +59,7 @@ export function createReviewController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("review", id, review as Record<string, any>);
+			await data.upsert("review", id, review as Record<string, unknown>);
 			return review;
 		},
 
@@ -71,8 +70,7 @@ export function createReviewController(
 		},
 
 		async listReviewsByProduct(productId, params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = { productId };
+			const where: Record<string, unknown> = { productId };
 			if (params?.approvedOnly) where.status = "approved";
 
 			const all = await data.findMany("review", {
@@ -97,8 +95,7 @@ export function createReviewController(
 		},
 
 		async listReviews(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.productId) where.productId = params.productId;
 			if (params?.status) where.status = params.status;
 
@@ -120,8 +117,7 @@ export function createReviewController(
 				updatedAt: new Date(),
 				...(moderationNote !== undefined ? { moderationNote } : {}),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("review", id, updated as Record<string, any>);
+			await data.upsert("review", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -142,8 +138,7 @@ export function createReviewController(
 				merchantResponseAt: new Date(),
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("review", id, updated as Record<string, any>);
+			await data.upsert("review", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -156,8 +151,7 @@ export function createReviewController(
 				helpfulCount: review.helpfulCount + 1,
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("review", id, updated as Record<string, any>);
+			await data.upsert("review", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -185,8 +179,7 @@ export function createReviewController(
 				voterId,
 				createdAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("reviewVote", voteId, vote as Record<string, any>);
+			await data.upsert("reviewVote", voteId, vote as Record<string, unknown>);
 
 			// Increment helpful count
 			const updated: Review = {
@@ -194,8 +187,7 @@ export function createReviewController(
 				helpfulCount: review.helpfulCount + 1,
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("review", reviewId, updated as Record<string, any>);
+			await data.upsert("review", reviewId, updated as Record<string, unknown>);
 
 			return { review: updated, alreadyVoted: false };
 		},
@@ -294,8 +286,11 @@ export function createReviewController(
 				items: params.items,
 				sentAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("reviewRequest", id, request as Record<string, any>);
+			await data.upsert(
+				"reviewRequest",
+				id,
+				request as Record<string, unknown>,
+			);
 			return request;
 		},
 
@@ -317,8 +312,7 @@ export function createReviewController(
 		},
 
 		async listReviewsByCustomer(customerId, params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = { customerId };
+			const where: Record<string, unknown> = { customerId };
 			if (params?.status) where.status = params.status;
 
 			const all = await data.findMany("review", {
@@ -358,14 +352,12 @@ export function createReviewController(
 				status: "pending",
 				createdAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("reviewReport", id, report as Record<string, any>);
+			await data.upsert("reviewReport", id, report as Record<string, unknown>);
 			return report;
 		},
 
 		async listReports(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status) where.status = params.status;
 			if (params?.reviewId) where.reviewId = params.reviewId;
 
@@ -385,8 +377,7 @@ export function createReviewController(
 				...report,
 				status,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("reviewReport", id, updated as Record<string, any>);
+			await data.upsert("reviewReport", id, updated as Record<string, unknown>);
 			return updated;
 		},
 

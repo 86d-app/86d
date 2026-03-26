@@ -13,7 +13,7 @@ export type WishOrderStatus =
 	| "refunded"
 	| "cancelled";
 
-export interface WishProduct {
+export type WishProduct = {
 	id: string;
 	localProductId: string;
 	wishProductId?: string | undefined;
@@ -29,9 +29,9 @@ export interface WishProduct {
 	error?: string | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface WishOrder {
+export type WishOrder = {
 	id: string;
 	wishOrderId: string;
 	status: WishOrderStatus;
@@ -47,18 +47,18 @@ export interface WishOrder {
 	deliverByDate?: Date | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface ChannelStats {
+export type ChannelStats = {
 	totalProducts: number;
 	activeProducts: number;
 	totalOrders: number;
 	totalRevenue: number;
 	pendingShipments: number;
 	disabledProducts: number;
-}
+};
 
-export interface WishController extends ModuleController {
+export type WishController = ModuleController & {
 	createProduct(params: {
 		localProductId: string;
 		title: string;
@@ -125,4 +125,4 @@ export interface WishController extends ModuleController {
 	getChannelStats(): Promise<ChannelStats>;
 
 	getPendingShipments(): Promise<WishOrder[]>;
-}
+};

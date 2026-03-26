@@ -42,8 +42,7 @@ export function createCustomerController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("customer", id, customer as Record<string, any>);
+			await data.upsert("customer", id, customer as Record<string, unknown>);
 
 			if (events) {
 				void events.emit("customer.created", {
@@ -77,8 +76,7 @@ export function createCustomerController(
 				...(params.metadata !== undefined ? { metadata: params.metadata } : {}),
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("customer", id, updated as Record<string, any>);
+			await data.upsert("customer", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -135,8 +133,11 @@ export function createCustomerController(
 				tags: merged,
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("customer", customerId, updated as Record<string, any>);
+			await data.upsert(
+				"customer",
+				customerId,
+				updated as Record<string, unknown>,
+			);
 			return updated;
 		},
 
@@ -159,8 +160,11 @@ export function createCustomerController(
 				tags: remaining,
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("customer", customerId, updated as Record<string, any>);
+			await data.upsert(
+				"customer",
+				customerId,
+				updated as Record<string, unknown>,
+			);
 			return updated;
 		},
 
@@ -192,8 +196,7 @@ export function createCustomerController(
 					tags: merged,
 					updatedAt: new Date(),
 				};
-				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				await data.upsert("customer", id, record as Record<string, any>);
+				await data.upsert("customer", id, record as Record<string, unknown>);
 				updated++;
 			}
 			return { updated };
@@ -216,8 +219,7 @@ export function createCustomerController(
 					tags: remaining,
 					updatedAt: new Date(),
 				};
-				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				await data.upsert("customer", id, record as Record<string, any>);
+				await data.upsert("customer", id, record as Record<string, unknown>);
 				updated++;
 			}
 			return { updated };
@@ -271,8 +273,11 @@ export function createCustomerController(
 				}
 			}
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("customerAddress", id, address as Record<string, any>);
+			await data.upsert(
+				"customerAddress",
+				id,
+				address as Record<string, unknown>,
+			);
 			return address;
 		},
 
@@ -328,8 +333,11 @@ export function createCustomerController(
 				}
 			}
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("customerAddress", id, updated as Record<string, any>);
+			await data.upsert(
+				"customerAddress",
+				id,
+				updated as Record<string, unknown>,
+			);
 			return updated;
 		},
 
@@ -369,8 +377,7 @@ export function createCustomerController(
 			await data.upsert(
 				"customerAddress",
 				addressId,
-				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				updated as unknown as Record<string, any>,
+				updated as unknown as Record<string, unknown>,
 			);
 			return updated;
 		},
@@ -475,8 +482,7 @@ export function createCustomerController(
 					await data.upsert(
 						"customer",
 						existing.id,
-						// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-						updatedCustomer as Record<string, any>,
+						updatedCustomer as Record<string, unknown>,
 					);
 					customerByEmail.set(email, updatedCustomer as Customer);
 					updated++;
@@ -498,8 +504,7 @@ export function createCustomerController(
 					await data.upsert(
 						"customer",
 						id,
-						// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-						customer as Record<string, any>,
+						customer as Record<string, unknown>,
 					);
 					customerByEmail.set(email, customer);
 					created++;
@@ -586,8 +591,7 @@ export function createCustomerController(
 			await data.upsert(
 				"loyaltyTransaction",
 				transaction.id,
-				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				transaction as Record<string, any>,
+				transaction as Record<string, unknown>,
 			);
 			return transaction;
 		},
@@ -616,8 +620,7 @@ export function createCustomerController(
 			await data.upsert(
 				"loyaltyTransaction",
 				transaction.id,
-				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				transaction as Record<string, any>,
+				transaction as Record<string, unknown>,
 			);
 			return transaction;
 		},
@@ -647,8 +650,7 @@ export function createCustomerController(
 			await data.upsert(
 				"loyaltyTransaction",
 				transaction.id,
-				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				transaction as Record<string, any>,
+				transaction as Record<string, unknown>,
 			);
 			return transaction;
 		},

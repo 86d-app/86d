@@ -1,6 +1,6 @@
 import type { ModuleController } from "@86d-app/core";
 
-export interface Product {
+export type Product = {
 	id: string;
 	name: string;
 	slug: string;
@@ -24,9 +24,9 @@ export interface Product {
 	isFeatured: boolean;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface ProductVariant {
+export type ProductVariant = {
 	id: string;
 	productId: string;
 	name: string;
@@ -43,9 +43,9 @@ export interface ProductVariant {
 	position: number;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface Category {
+export type Category = {
 	id: string;
 	name: string;
 	slug: string;
@@ -57,18 +57,18 @@ export interface Category {
 	metadata?: Record<string, unknown> | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface CategoryWithChildren extends Category {
+export type CategoryWithChildren = Category & {
 	children: CategoryWithChildren[];
-}
+};
 
-export interface ProductWithVariants extends Product {
+export type ProductWithVariants = Product & {
 	variants: ProductVariant[];
 	category?: Category | undefined;
-}
+};
 
-export interface Collection {
+export type Collection = {
 	id: string;
 	name: string;
 	slug: string;
@@ -80,21 +80,21 @@ export interface Collection {
 	metadata?: Record<string, unknown> | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface CollectionProduct {
+export type CollectionProduct = {
 	id: string;
 	collectionId: string;
 	productId: string;
 	position: number;
 	createdAt: Date;
-}
+};
 
-export interface CollectionWithProducts extends Collection {
+export type CollectionWithProducts = Collection & {
 	products: Product[];
-}
+};
 
-export interface ImportProductRow {
+export type ImportProductRow = {
 	name: string;
 	slug?: string | undefined;
 	price: number | string;
@@ -113,21 +113,21 @@ export interface ImportProductRow {
 	featured?: boolean | undefined;
 	trackInventory?: boolean | undefined;
 	allowBackorder?: boolean | undefined;
-}
+};
 
-export interface ImportError {
+export type ImportError = {
 	row: number;
 	field: string;
 	message: string;
-}
+};
 
-export interface ImportResult {
+export type ImportResult = {
 	created: number;
 	updated: number;
 	errors: ImportError[];
-}
+};
 
-export interface CreateProductParams {
+export type CreateProductParams = {
 	name: string;
 	slug: string;
 	price: number;
@@ -148,9 +148,9 @@ export interface CreateProductParams {
 	weight?: number | undefined;
 	weightUnit?: "kg" | "lb" | "oz" | "g" | undefined;
 	isFeatured?: boolean | undefined;
-}
+};
 
-export interface CreateVariantParams {
+export type CreateVariantParams = {
 	productId: string;
 	name: string;
 	price: number;
@@ -164,9 +164,9 @@ export interface CreateVariantParams {
 	weight?: number | undefined;
 	weightUnit?: "kg" | "lb" | "oz" | "g" | undefined;
 	position?: number | undefined;
-}
+};
 
-export interface CreateCategoryParams {
+export type CreateCategoryParams = {
 	name: string;
 	slug: string;
 	description?: string | undefined;
@@ -175,9 +175,9 @@ export interface CreateCategoryParams {
 	position?: number | undefined;
 	isVisible?: boolean | undefined;
 	metadata?: Record<string, unknown> | undefined;
-}
+};
 
-export interface CreateCollectionParams {
+export type CreateCollectionParams = {
 	name: string;
 	slug: string;
 	description?: string | undefined;
@@ -186,9 +186,9 @@ export interface CreateCollectionParams {
 	isVisible?: boolean | undefined;
 	position?: number | undefined;
 	metadata?: Record<string, unknown> | undefined;
-}
+};
 
-export interface ListProductsParams {
+export type ListProductsParams = {
 	page?: number | undefined;
 	limit?: number | undefined;
 	category?: string | undefined;
@@ -201,9 +201,9 @@ export interface ListProductsParams {
 	maxPrice?: number | undefined;
 	inStock?: boolean | undefined;
 	tag?: string | undefined;
-}
+};
 
-export interface ProductController extends ModuleController {
+export type ProductController = ModuleController & {
 	// ── Products ──
 	createProduct(params: CreateProductParams): Promise<Product>;
 	getProduct(id: string): Promise<Product | null>;
@@ -309,4 +309,4 @@ export interface ProductController extends ModuleController {
 	listCollectionProducts(
 		collectionId: string,
 	): Promise<{ products: Product[] }>;
-}
+};

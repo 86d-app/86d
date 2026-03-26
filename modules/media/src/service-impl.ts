@@ -24,8 +24,7 @@ export function createMediaController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires Record<string, any>
-			await data.upsert("asset", id, asset as Record<string, any>);
+			await data.upsert("asset", id, asset as Record<string, unknown>);
 			return asset;
 		},
 
@@ -52,8 +51,7 @@ export function createMediaController(
 				...(params.metadata !== undefined ? { metadata: params.metadata } : {}),
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires Record<string, any>
-			await data.upsert("asset", id, updated as Record<string, any>);
+			await data.upsert("asset", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -65,8 +63,7 @@ export function createMediaController(
 		},
 
 		async listAssets(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.folder !== undefined) where.folder = params.folder;
 			if (params?.mimeType) where.mimeType = params.mimeType;
 
@@ -118,8 +115,7 @@ export function createMediaController(
 						folder: folder ?? undefined,
 						updatedAt: new Date(),
 					};
-					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires Record<string, any>
-					await data.upsert("asset", id, updated as Record<string, any>);
+					await data.upsert("asset", id, updated as Record<string, unknown>);
 					count++;
 				}
 			}
@@ -157,8 +153,7 @@ export function createMediaController(
 				parentId: params.parentId,
 				createdAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires Record<string, any>
-			await data.upsert("folder", id, folder as Record<string, any>);
+			await data.upsert("folder", id, folder as Record<string, unknown>);
 			return folder;
 		},
 
@@ -169,8 +164,7 @@ export function createMediaController(
 		},
 
 		async listFolders(parentId) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (parentId !== undefined) {
 				where.parentId = parentId;
 			}
@@ -188,8 +182,7 @@ export function createMediaController(
 
 			const folder = existing as unknown as Folder;
 			const updated: Folder = { ...folder, name };
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires Record<string, any>
-			await data.upsert("folder", id, updated as Record<string, any>);
+			await data.upsert("folder", id, updated as Record<string, unknown>);
 			return updated;
 		},
 

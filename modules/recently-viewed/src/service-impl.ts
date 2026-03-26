@@ -10,8 +10,7 @@ export function createRecentlyViewedController(
 	return {
 		async trackView(params) {
 			// Build a where filter for dedup check
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {
+			const where: Record<string, unknown> = {
 				productId: params.productId,
 			};
 			if (params.customerId) where.customerId = params.customerId;
@@ -41,8 +40,7 @@ export function createRecentlyViewedController(
 				await data.upsert(
 					"productView",
 					existing.id,
-					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-					updated as Record<string, any>,
+					updated as Record<string, unknown>,
 				);
 				return updated;
 			}
@@ -59,14 +57,12 @@ export function createRecentlyViewedController(
 				productPrice: params.productPrice,
 				viewedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("productView", id, view as Record<string, any>);
+			await data.upsert("productView", id, view as Record<string, unknown>);
 			return view;
 		},
 
 		async getRecentViews(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params.customerId) where.customerId = params.customerId;
 			else if (params.sessionId) where.sessionId = params.sessionId;
 
@@ -124,8 +120,7 @@ export function createRecentlyViewedController(
 		},
 
 		async clearHistory(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params.customerId) where.customerId = params.customerId;
 			else if (params.sessionId) where.sessionId = params.sessionId;
 
@@ -149,8 +144,7 @@ export function createRecentlyViewedController(
 		},
 
 		async listAll(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.customerId) where.customerId = params.customerId;
 			if (params?.productId) where.productId = params.productId;
 
@@ -167,8 +161,7 @@ export function createRecentlyViewedController(
 		},
 
 		async countViews(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.customerId) where.customerId = params.customerId;
 			if (params?.productId) where.productId = params.productId;
 
@@ -207,8 +200,7 @@ export function createRecentlyViewedController(
 					await data.upsert(
 						"productView",
 						view.id,
-						// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-						updated as Record<string, any>,
+						updated as Record<string, unknown>,
 					);
 					merged += 1;
 				}

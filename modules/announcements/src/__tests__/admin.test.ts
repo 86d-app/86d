@@ -263,8 +263,7 @@ describe("announcements admin workflows", () => {
 				await data.upsert(
 					"announcement",
 					a1.id,
-					// biome-ignore lint/suspicious/noExplicitAny: test helper
-					a1Record as Record<string, any>,
+					a1Record as Record<string, unknown>,
 				);
 			}
 

@@ -7,12 +7,12 @@ export type FulfillmentStatus =
 	| "delivered"
 	| "cancelled";
 
-export interface FulfillmentItem {
+export type FulfillmentItem = {
 	lineItemId: string;
 	quantity: number;
-}
+};
 
-export interface Fulfillment {
+export type Fulfillment = {
 	id: string;
 	orderId: string;
 	status: FulfillmentStatus;
@@ -25,9 +25,9 @@ export interface Fulfillment {
 	deliveredAt?: Date | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface FulfillmentController extends ModuleController {
+export type FulfillmentController = ModuleController & {
 	createFulfillment(params: {
 		orderId: string;
 		items: FulfillmentItem[];
@@ -59,4 +59,4 @@ export interface FulfillmentController extends ModuleController {
 	): Promise<Fulfillment | null>;
 
 	cancelFulfillment(id: string): Promise<Fulfillment | null>;
-}
+};

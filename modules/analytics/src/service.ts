@@ -11,7 +11,7 @@ export type EventType =
 	| "search"
 	| (string & {});
 
-export interface AnalyticsEvent {
+export type AnalyticsEvent = {
 	id: string;
 	type: EventType;
 	sessionId?: string | undefined;
@@ -23,20 +23,20 @@ export interface AnalyticsEvent {
 	/** Arbitrary event payload. */
 	data: Record<string, unknown>;
 	createdAt: Date;
-}
+};
 
-export interface EventStats {
+export type EventStats = {
 	type: string;
 	count: number;
-}
+};
 
-export interface ProductStats {
+export type ProductStats = {
 	productId: string;
 	views: number;
 	purchases: number;
-}
+};
 
-export interface RevenueSummary {
+export type RevenueSummary = {
 	/** Total revenue in cents for the period. */
 	totalRevenue: number;
 	/** Number of purchase events. */
@@ -47,27 +47,27 @@ export interface RevenueSummary {
 	previousRevenue: number;
 	/** Number of purchase events in the previous period. */
 	previousOrders: number;
-}
+};
 
-export interface RevenueTimeSeriesPoint {
+export type RevenueTimeSeriesPoint = {
 	/** ISO date string (YYYY-MM-DD). */
 	date: string;
 	/** Revenue in cents for this day. */
 	revenue: number;
 	/** Number of purchase events this day. */
 	orders: number;
-}
+};
 
-export interface FunnelStep {
+export type FunnelStep = {
 	/** Step name (e.g. "pageView", "productView"). */
 	step: string;
 	/** Absolute count of events at this step. */
 	count: number;
 	/** Percentage relative to the first step (0-100). */
 	rate: number;
-}
+};
 
-export interface ProductSalesStats {
+export type ProductSalesStats = {
 	productId: string;
 	/** Total revenue from purchase events in cents. */
 	revenue: number;
@@ -75,9 +75,9 @@ export interface ProductSalesStats {
 	orders: number;
 	/** Average value per purchase in cents. */
 	averageValue: number;
-}
+};
 
-export interface SearchQueryStats {
+export type SearchQueryStats = {
 	/** The search query string. */
 	query: string;
 	/** Number of times this query was searched. */
@@ -86,9 +86,9 @@ export interface SearchQueryStats {
 	avgResultCount: number;
 	/** Most recent time this query was searched. */
 	lastSearchedAt: Date;
-}
+};
 
-export interface RecentlyViewedItem {
+export type RecentlyViewedItem = {
 	/** Product ID. */
 	productId: string;
 	/** Product name from the view event. */
@@ -101,9 +101,9 @@ export interface RecentlyViewedItem {
 	image?: string | undefined;
 	/** When the product was last viewed. */
 	viewedAt: Date;
-}
+};
 
-export interface SearchAnalytics {
+export type SearchAnalytics = {
 	/** Total number of search events in the period. */
 	totalSearches: number;
 	/** Number of unique query strings. */
@@ -114,9 +114,9 @@ export interface SearchAnalytics {
 	topQueries: SearchQueryStats[];
 	/** Queries that returned zero results, ranked by count. */
 	zeroResultQueries: SearchQueryStats[];
-}
+};
 
-export interface AnalyticsController extends ModuleController {
+export type AnalyticsController = ModuleController & {
 	/** Record an analytics event. */
 	track(params: {
 		type: EventType;
@@ -194,4 +194,4 @@ export interface AnalyticsController extends ModuleController {
 		/** Max items to return (default: 8). */
 		limit?: number | undefined;
 	}): Promise<RecentlyViewedItem[]>;
-}
+};

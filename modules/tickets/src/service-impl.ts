@@ -35,8 +35,11 @@ export function createTicketControllers(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("ticketCategory", id, category as Record<string, any>);
+			await data.upsert(
+				"ticketCategory",
+				id,
+				category as Record<string, unknown>,
+			);
 
 			return category;
 		},
@@ -83,8 +86,11 @@ export function createTicketControllers(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("ticketCategory", id, updated as Record<string, any>);
+			await data.upsert(
+				"ticketCategory",
+				id,
+				updated as Record<string, unknown>,
+			);
 
 			return updated;
 		},
@@ -116,8 +122,7 @@ export function createTicketControllers(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("ticket", id, ticket as Record<string, any>);
+			await data.upsert("ticket", id, ticket as Record<string, unknown>);
 
 			return ticket;
 		},
@@ -196,8 +201,7 @@ export function createTicketControllers(
 				updated.closedAt = new Date();
 			}
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("ticket", id, updated as Record<string, any>);
+			await data.upsert("ticket", id, updated as Record<string, unknown>);
 
 			return updated;
 		},
@@ -216,8 +220,7 @@ export function createTicketControllers(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("ticket", id, updated as Record<string, any>);
+			await data.upsert("ticket", id, updated as Record<string, unknown>);
 
 			return updated;
 		},
@@ -239,8 +242,7 @@ export function createTicketControllers(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("ticket", id, updated as Record<string, any>);
+			await data.upsert("ticket", id, updated as Record<string, unknown>);
 
 			return updated;
 		},
@@ -262,8 +264,11 @@ export function createTicketControllers(
 				createdAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("ticketMessage", id, message as Record<string, any>);
+			await data.upsert(
+				"ticketMessage",
+				id,
+				message as Record<string, unknown>,
+			);
 
 			// Update ticket's updatedAt and set to pending if customer replied
 			const ticket = (await data.get(
@@ -287,8 +292,7 @@ export function createTicketControllers(
 				await data.upsert(
 					"ticket",
 					ticket.id,
-					// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-					updatedTicket as Record<string, any>,
+					updatedTicket as Record<string, unknown>,
 				);
 			}
 

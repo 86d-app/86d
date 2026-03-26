@@ -203,8 +203,7 @@ export function createNotificationsController(
 			await data.upsert(
 				"notification",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires Record<string, any>
-				notification as Record<string, any>,
+				notification as Record<string, unknown>,
 			);
 
 			await enforceMaxPerCustomer(params.customerId);
@@ -244,8 +243,7 @@ export function createNotificationsController(
 					: {}),
 				...(params.metadata !== undefined ? { metadata: params.metadata } : {}),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("notification", id, updated as Record<string, any>);
+			await data.upsert("notification", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -257,8 +255,7 @@ export function createNotificationsController(
 		},
 
 		async list(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.customerId) where.customerId = params.customerId;
 			if (params?.type) where.type = params.type;
 			if (params?.read !== undefined) where.read = params.read;
@@ -285,8 +282,7 @@ export function createNotificationsController(
 				read: true,
 				readAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("notification", id, updated as Record<string, any>);
+			await data.upsert("notification", id, updated as Record<string, unknown>);
 
 			if (events) {
 				void events.emit("notifications.read", {
@@ -311,8 +307,7 @@ export function createNotificationsController(
 				await data.upsert(
 					"notification",
 					n.id,
-					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-					updated as Record<string, any>,
+					updated as Record<string, unknown>,
 				);
 				count++;
 			}
@@ -409,8 +404,7 @@ export function createNotificationsController(
 				accountAlerts: params.accountAlerts ?? existing?.accountAlerts ?? true,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("preference", id, updated as Record<string, any>);
+			await data.upsert("preference", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -455,8 +449,7 @@ export function createNotificationsController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("template", id, template as Record<string, any>);
+			await data.upsert("template", id, template as Record<string, unknown>);
 			return template;
 		},
 
@@ -502,8 +495,7 @@ export function createNotificationsController(
 				...(params.active !== undefined ? { active: params.active } : {}),
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("template", id, updated as Record<string, any>);
+			await data.upsert("template", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -515,8 +507,7 @@ export function createNotificationsController(
 		},
 
 		async listTemplates(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.active !== undefined) where.active = params.active;
 
 			const all = await data.findMany("template", {
@@ -583,8 +574,7 @@ export function createNotificationsController(
 					await data.upsert(
 						"notification",
 						id,
-						// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-						notification as Record<string, any>,
+						notification as Record<string, unknown>,
 					);
 					void deliverExternal(notification);
 					result.sent++;
@@ -623,8 +613,7 @@ export function createNotificationsController(
 					await data.upsert(
 						"notification",
 						id,
-						// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-						notification as Record<string, any>,
+						notification as Record<string, unknown>,
 					);
 					void deliverExternal(notification);
 					result.sent++;

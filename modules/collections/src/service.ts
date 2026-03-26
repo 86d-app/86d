@@ -12,7 +12,7 @@ export type CollectionSortOrder =
 	| "created-desc"
 	| "best-selling";
 
-export interface CollectionCondition {
+export type CollectionCondition = {
 	field: string;
 	operator:
 		| "equals"
@@ -25,14 +25,14 @@ export interface CollectionCondition {
 		| "in"
 		| "not_in";
 	value: string | number | string[];
-}
+};
 
-export interface CollectionConditions {
+export type CollectionConditions = {
 	match: "all" | "any";
 	rules: CollectionCondition[];
-}
+};
 
-export interface Collection {
+export type Collection = {
 	id: string;
 	title: string;
 	slug: string;
@@ -49,30 +49,30 @@ export interface Collection {
 	publishedAt?: Date;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface CollectionProduct {
+export type CollectionProduct = {
 	id: string;
 	collectionId: string;
 	productId: string;
 	position: number;
 	addedAt: Date;
-}
+};
 
-export interface CollectionWithProductCount extends Collection {
+export type CollectionWithProductCount = Collection & {
 	productCount: number;
-}
+};
 
-export interface CollectionStats {
+export type CollectionStats = {
 	totalCollections: number;
 	activeCollections: number;
 	featuredCollections: number;
 	manualCollections: number;
 	automaticCollections: number;
 	totalProducts: number;
-}
+};
 
-export interface CollectionController extends ModuleController {
+export type CollectionController = ModuleController & {
 	createCollection(params: {
 		title: string;
 		slug: string;
@@ -167,4 +167,4 @@ export interface CollectionController extends ModuleController {
 	getCollectionsForProduct(productId: string): Promise<Collection[]>;
 
 	getStats(): Promise<CollectionStats>;
-}
+};

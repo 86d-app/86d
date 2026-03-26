@@ -22,8 +22,7 @@ export function createBackordersController(
 	}
 
 	async function saveBackorder(bo: Backorder): Promise<void> {
-		// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-		await data.upsert("backorder", bo.id, bo as Record<string, any>);
+		await data.upsert("backorder", bo.id, bo as Record<string, unknown>);
 	}
 
 	async function findPolicy(
@@ -101,8 +100,7 @@ export function createBackordersController(
 		},
 
 		async listBackorders(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.productId) where.productId = params.productId;
 			if (params?.customerId) where.customerId = params.customerId;
 			if (params?.status) where.status = params.status;
@@ -234,8 +232,11 @@ export function createBackordersController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("backorderPolicy", id, policy as Record<string, any>);
+			await data.upsert(
+				"backorderPolicy",
+				id,
+				policy as Record<string, unknown>,
+			);
 			return policy;
 		},
 
@@ -244,8 +245,7 @@ export function createBackordersController(
 		},
 
 		async listPolicies(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.enabled !== undefined) where.enabled = params.enabled;
 
 			const all = await data.findMany("backorderPolicy", {

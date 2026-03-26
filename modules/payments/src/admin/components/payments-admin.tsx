@@ -93,8 +93,7 @@ function RefundModal({
 		e.preventDefault();
 		setError("");
 
-		// biome-ignore lint/suspicious/noExplicitAny: building dynamic body for refund endpoint
-		const body: Record<string, any> = { params: { id: intent.id } };
+		const body: Record<string, unknown> = { params: { id: intent.id } };
 		if (reason) body.reason = reason;
 		if (amount) {
 			const parsed = Math.round(Number.parseFloat(amount) * 100);

@@ -127,8 +127,7 @@ describe("createRecentlyViewedController", () => {
 			await mockData.upsert(
 				"productView",
 				first.id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				backdated as Record<string, any>,
+				backdated as Record<string, unknown>,
 			);
 
 			await controller.trackView(

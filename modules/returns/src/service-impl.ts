@@ -15,8 +15,7 @@ export function createReturnController(
 
 	async function updateRequest(
 		id: string,
-		// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-		updates: Record<string, any>,
+		updates: Record<string, unknown>,
 	): Promise<ReturnRequest | null> {
 		const existing = await data.get("returnRequest", id);
 		if (!existing) return null;
@@ -26,12 +25,7 @@ export function createReturnController(
 			...updates,
 			updatedAt: new Date(),
 		};
-		await data.upsert(
-			"returnRequest",
-			id,
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			updated as Record<string, any>,
-		);
+		await data.upsert("returnRequest", id, updated as Record<string, unknown>);
 		return updated;
 	}
 
@@ -69,8 +63,7 @@ export function createReturnController(
 			await data.upsert(
 				"returnRequest",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				request as Record<string, any>,
+				request as Record<string, unknown>,
 			);
 
 			const items: ReturnItem[] = [];
@@ -92,8 +85,7 @@ export function createReturnController(
 				await data.upsert(
 					"returnItem",
 					itemId,
-					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-					item as Record<string, any>,
+					item as Record<string, unknown>,
 				);
 				items.push(item);
 			}
@@ -118,8 +110,7 @@ export function createReturnController(
 		},
 
 		async getByCustomerId(customerId, params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = { customerId };
+			const where: Record<string, unknown> = { customerId };
 			if (params?.status) where.status = params.status;
 
 			const raw = await data.findMany("returnRequest", {
@@ -235,8 +226,7 @@ export function createReturnController(
 		// ── Admin operations ─────────────────────────────────────────
 
 		async list(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status) where.status = params.status;
 
 			const raw = await data.findMany("returnRequest", {

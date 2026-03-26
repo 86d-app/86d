@@ -57,8 +57,7 @@ export function createSettingsController(
 				group: group ?? groupFromKey(key),
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires Record<string, any>
-			await data.upsert("storeSetting", id, setting as Record<string, any>);
+			await data.upsert("storeSetting", id, { ...setting });
 			return setting;
 		},
 

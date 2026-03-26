@@ -1,6 +1,6 @@
 import type { ModuleController } from "@86d-app/core";
 
-export interface Redirect {
+export type Redirect = {
 	id: string;
 	sourcePath: string;
 	targetPath: string;
@@ -13,9 +13,9 @@ export interface Redirect {
 	lastHitAt?: Date;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface RedirectStats {
+export type RedirectStats = {
 	totalRedirects: number;
 	activeRedirects: number;
 	totalHits: number;
@@ -25,9 +25,9 @@ export interface RedirectStats {
 		targetPath: string;
 		hitCount: number;
 	}>;
-}
+};
 
-export interface RedirectController extends ModuleController {
+export type RedirectController = ModuleController & {
 	createRedirect(params: {
 		sourcePath: string;
 		targetPath: string;
@@ -99,4 +99,4 @@ export interface RedirectController extends ModuleController {
 	}>;
 
 	getStats(): Promise<RedirectStats>;
-}
+};

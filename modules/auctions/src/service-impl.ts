@@ -17,8 +17,7 @@ export function createAuctionController(
 
 	async function updateAuctionRecord(
 		id: string,
-		// biome-ignore lint/suspicious/noExplicitAny: dynamic field updates
-		updates: Record<string, any>,
+		updates: Record<string, unknown>,
 	): Promise<Auction | null> {
 		const existing = await data.get("auction", id);
 		if (!existing) return null;
@@ -28,12 +27,7 @@ export function createAuctionController(
 			...updates,
 			updatedAt: new Date(),
 		};
-		await data.upsert(
-			"auction",
-			id,
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			updated as Record<string, any>,
-		);
+		await data.upsert("auction", id, updated as Record<string, unknown>);
 		return updated;
 	}
 
@@ -43,12 +37,10 @@ export function createAuctionController(
 		});
 		for (const bid of allBids) {
 			const b = bid as unknown as Bid;
-			await data.upsert(
-				"bid",
-				b.id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				{ ...b, isWinning: false } as Record<string, any>,
-			);
+			await data.upsert("bid", b.id, { ...b, isWinning: false } as Record<
+				string,
+				unknown
+			>);
 		}
 	}
 
@@ -122,12 +114,7 @@ export function createAuctionController(
 				updatedAt: now,
 			};
 
-			await data.upsert(
-				"auction",
-				id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				auction as Record<string, any>,
-			);
+			await data.upsert("auction", id, auction as Record<string, unknown>);
 			return auction;
 		},
 
@@ -160,12 +147,7 @@ export function createAuctionController(
 				updatedAt: new Date(),
 			};
 
-			await data.upsert(
-				"auction",
-				id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updated as Record<string, any>,
-			);
+			await data.upsert("auction", id, updated as Record<string, unknown>);
 			return updated as Auction;
 		},
 
@@ -176,8 +158,7 @@ export function createAuctionController(
 		},
 
 		async listAuctions(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: dynamic where clause
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status) where.status = params.status;
 			if (params?.type) where.type = params.type;
 
@@ -331,12 +312,7 @@ export function createAuctionController(
 				createdAt: now,
 			};
 
-			await data.upsert(
-				"bid",
-				bidId,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				bid as Record<string, any>,
-			);
+			await data.upsert("bid", bidId, bid as Record<string, unknown>);
 
 			// Anti-sniping: extend auction if bid comes in near the end
 			let newEndsAt = auction.endsAt;
@@ -388,8 +364,7 @@ export function createAuctionController(
 		},
 
 		async getBidsByCustomer(customerId, params) {
-			// biome-ignore lint/suspicious/noExplicitAny: dynamic where clause
-			const where: Record<string, any> = { customerId };
+			const where: Record<string, unknown> = { customerId };
 			if (params?.auctionId) where.auctionId = params.auctionId;
 
 			const raw = await data.findMany("bid", {
@@ -450,12 +425,7 @@ export function createAuctionController(
 				createdAt: new Date(),
 			};
 
-			await data.upsert(
-				"auctionWatch",
-				id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				watch as Record<string, any>,
-			);
+			await data.upsert("auctionWatch", id, watch as Record<string, unknown>);
 			return watch;
 		},
 

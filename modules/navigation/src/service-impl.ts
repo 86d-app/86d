@@ -60,8 +60,7 @@ export function createNavigationController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("menu", id, menu as Record<string, any>);
+			await data.upsert("menu", id, menu as Record<string, unknown>);
 			void events?.emit("menu.created", {
 				menuId: menu.id,
 				name: menu.name,
@@ -85,8 +84,7 @@ export function createNavigationController(
 				...(params.isActive !== undefined ? { isActive: params.isActive } : {}),
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("menu", id, updated as Record<string, any>);
+			await data.upsert("menu", id, updated as Record<string, unknown>);
 			void events?.emit("menu.updated", {
 				menuId: updated.id,
 				name: updated.name,
@@ -129,8 +127,7 @@ export function createNavigationController(
 		},
 
 		async listMenus(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.location) where.location = params.location;
 			if (params?.isActive !== undefined) where.isActive = params.isActive;
 
@@ -162,8 +159,7 @@ export function createNavigationController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("menuItem", id, item as Record<string, any>);
+			await data.upsert("menuItem", id, item as Record<string, unknown>);
 			return item;
 		},
 
@@ -192,8 +188,7 @@ export function createNavigationController(
 					: {}),
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("menuItem", id, updated as Record<string, any>);
+			await data.upsert("menuItem", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -221,8 +216,7 @@ export function createNavigationController(
 		},
 
 		async listItems(menuId, params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = { menuId };
+			const where: Record<string, unknown> = { menuId };
 			if (params?.parentId !== undefined) where.parentId = params.parentId;
 
 			const all = await data.findMany("menuItem", {
@@ -280,8 +274,11 @@ export function createNavigationController(
 					...(parentId !== undefined ? { parentId } : {}),
 					updatedAt: new Date(),
 				};
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				await data.upsert("menuItem", item.id, updated as Record<string, any>);
+				await data.upsert(
+					"menuItem",
+					item.id,
+					updated as Record<string, unknown>,
+				);
 			}
 		},
 	};

@@ -11,8 +11,7 @@ export function createComparisonController(
 			const max = params.maxProducts ?? DEFAULT_MAX_PRODUCTS;
 
 			// Build owner filter
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const ownerWhere: Record<string, any> = {};
+			const ownerWhere: Record<string, unknown> = {};
 			if (params.customerId) ownerWhere.customerId = params.customerId;
 			else if (params.sessionId) ownerWhere.sessionId = params.sessionId;
 
@@ -40,8 +39,7 @@ export function createComparisonController(
 				await data.upsert(
 					"comparisonItem",
 					existing[0].id,
-					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-					updated as Record<string, any>,
+					updated as Record<string, unknown>,
 				);
 				return updated;
 			}
@@ -71,14 +69,12 @@ export function createComparisonController(
 				attributes: params.attributes,
 				addedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("comparisonItem", id, item as Record<string, any>);
+			await data.upsert("comparisonItem", id, item as Record<string, unknown>);
 			return item;
 		},
 
 		async removeProduct(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {
+			const where: Record<string, unknown> = {
 				productId: params.productId,
 			};
 			if (params.customerId) where.customerId = params.customerId;
@@ -99,8 +95,7 @@ export function createComparisonController(
 		},
 
 		async getComparison(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params.customerId) where.customerId = params.customerId;
 			else if (params.sessionId) where.sessionId = params.sessionId;
 
@@ -117,8 +112,7 @@ export function createComparisonController(
 		},
 
 		async clearComparison(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params.customerId) where.customerId = params.customerId;
 			else if (params.sessionId) where.sessionId = params.sessionId;
 
@@ -166,8 +160,7 @@ export function createComparisonController(
 					await data.upsert(
 						"comparisonItem",
 						item.id,
-						// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-						updated as Record<string, any>,
+						updated as Record<string, unknown>,
 					);
 					merged += 1;
 				} else {
@@ -186,8 +179,7 @@ export function createComparisonController(
 		},
 
 		async listAll(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.customerId) where.customerId = params.customerId;
 			if (params?.productId) where.productId = params.productId;
 
@@ -203,8 +195,7 @@ export function createComparisonController(
 		},
 
 		async countItems(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.customerId) where.customerId = params.customerId;
 			if (params?.productId) where.productId = params.productId;
 

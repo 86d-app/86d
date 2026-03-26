@@ -12,7 +12,7 @@ export type PayoutMethod =
 	| "store_credit"
 	| "check";
 
-export interface Affiliate {
+export type Affiliate = {
 	id: string;
 	name: string;
 	email: string;
@@ -29,9 +29,9 @@ export interface Affiliate {
 	notes?: string | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface AffiliateLink {
+export type AffiliateLink = {
 	id: string;
 	affiliateId: string;
 	targetUrl: string;
@@ -41,9 +41,9 @@ export interface AffiliateLink {
 	revenue: number;
 	active: boolean;
 	createdAt: Date;
-}
+};
 
-export interface AffiliateConversion {
+export type AffiliateConversion = {
 	id: string;
 	affiliateId: string;
 	linkId?: string | undefined;
@@ -53,9 +53,9 @@ export interface AffiliateConversion {
 	commissionAmount: number;
 	status: ConversionStatus;
 	createdAt: Date;
-}
+};
 
-export interface AffiliatePayout {
+export type AffiliatePayout = {
 	id: string;
 	affiliateId: string;
 	amount: number;
@@ -65,9 +65,9 @@ export interface AffiliatePayout {
 	status: PayoutStatus;
 	paidAt?: Date | undefined;
 	createdAt: Date;
-}
+};
 
-export interface AffiliateStats {
+export type AffiliateStats = {
 	totalAffiliates: number;
 	activeAffiliates: number;
 	pendingApplications: number;
@@ -77,9 +77,9 @@ export interface AffiliateStats {
 	totalCommission: number;
 	totalPaid: number;
 	conversionRate: number;
-}
+};
 
-export interface AffiliateController extends ModuleController {
+export type AffiliateController = ModuleController & {
 	// ── Affiliates ─────────────────────────────────────────
 	apply(params: {
 		name: string;
@@ -193,4 +193,4 @@ export interface AffiliateController extends ModuleController {
 		totalPaid: number;
 		balance: number;
 	}>;
-}
+};

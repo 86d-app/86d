@@ -16,8 +16,7 @@ export const updateBundleItem = createAdminEndpoint(
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers.bundles as BundleController;
-		// biome-ignore lint/suspicious/noExplicitAny: filtering undefined from body
-		const updates: Record<string, any> = {};
+		const updates: Record<string, unknown> = {};
 		for (const [key, value] of Object.entries(ctx.body)) {
 			if (value !== undefined) updates[key] = value;
 		}

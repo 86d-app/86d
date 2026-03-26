@@ -22,7 +22,7 @@ export type ItemReturnReason =
 
 export type ItemCondition = "unopened" | "opened" | "used" | "damaged";
 
-export interface ReturnRequest {
+export type ReturnRequest = {
 	id: string;
 	orderId: string;
 	customerId: string;
@@ -39,9 +39,9 @@ export interface ReturnRequest {
 	resolvedAt?: Date | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface ReturnItem {
+export type ReturnItem = {
 	id: string;
 	returnRequestId: string;
 	orderItemId: string;
@@ -53,9 +53,9 @@ export interface ReturnItem {
 	condition: ItemCondition;
 	notes?: string | undefined;
 	createdAt: Date;
-}
+};
 
-export interface CreateReturnParams {
+export type CreateReturnParams = {
 	orderId: string;
 	customerId: string;
 	reason: string;
@@ -63,9 +63,9 @@ export interface CreateReturnParams {
 	customerNotes?: string | undefined;
 	currency?: string | undefined;
 	items: CreateReturnItemParams[];
-}
+};
 
-export interface CreateReturnItemParams {
+export type CreateReturnItemParams = {
 	orderItemId: string;
 	productName: string;
 	sku?: string | undefined;
@@ -74,22 +74,22 @@ export interface CreateReturnItemParams {
 	reason: ItemReturnReason;
 	condition?: ItemCondition | undefined;
 	notes?: string | undefined;
-}
+};
 
-export interface ReturnRequestWithItems extends ReturnRequest {
+export type ReturnRequestWithItems = ReturnRequest & {
 	items: ReturnItem[];
-}
+};
 
-export interface ReturnSummary {
+export type ReturnSummary = {
 	totalRequests: number;
 	requested: number;
 	approved: number;
 	completed: number;
 	rejected: number;
 	totalRefundAmount: number;
-}
+};
 
-export interface ReturnController extends ModuleController {
+export type ReturnController = ModuleController & {
 	// ── Return request operations ────────────────────────────────────
 	create(params: CreateReturnParams): Promise<ReturnRequestWithItems>;
 	getById(id: string): Promise<ReturnRequestWithItems | null>;
@@ -130,4 +130,4 @@ export interface ReturnController extends ModuleController {
 		skip?: number | undefined;
 	}): Promise<ReturnRequest[]>;
 	getSummary(): Promise<ReturnSummary>;
-}
+};

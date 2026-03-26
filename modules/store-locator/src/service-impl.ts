@@ -87,8 +87,7 @@ export function createStoreLocatorControllers(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("location", id, location as Record<string, any>);
+			await data.upsert("location", id, location as Record<string, unknown>);
 
 			return location;
 		},
@@ -125,8 +124,7 @@ export function createStoreLocatorControllers(
 			if (pickupOnly) where.pickupEnabled = true;
 			if (featuredOnly) where.isFeatured = true;
 
-			// biome-ignore lint/suspicious/noExplicitAny: exactOptionalPropertyTypes requires explicit omission
-			const findOpts: Record<string, any> = { where };
+			const findOpts: Record<string, unknown> = { where };
 			if (limit !== undefined) findOpts.take = limit;
 			if (offset !== undefined) findOpts.skip = offset;
 
@@ -195,8 +193,7 @@ export function createStoreLocatorControllers(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("location", id, updated as Record<string, any>);
+			await data.upsert("location", id, updated as Record<string, unknown>);
 
 			return updated;
 		},

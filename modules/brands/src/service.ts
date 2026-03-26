@@ -1,6 +1,6 @@
 import type { ModuleController } from "@86d-app/core";
 
-export interface Brand {
+export type Brand = {
 	id: string;
 	name: string;
 	slug: string;
@@ -15,27 +15,27 @@ export interface Brand {
 	seoDescription?: string;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface BrandProduct {
+export type BrandProduct = {
 	id: string;
 	brandId: string;
 	productId: string;
 	assignedAt: Date;
-}
+};
 
-export interface BrandWithProductCount extends Brand {
+export type BrandWithProductCount = Brand & {
 	productCount: number;
-}
+};
 
-export interface BrandStats {
+export type BrandStats = {
 	totalBrands: number;
 	activeBrands: number;
 	featuredBrands: number;
 	totalProducts: number;
-}
+};
 
-export interface BrandController extends ModuleController {
+export type BrandController = ModuleController & {
 	createBrand(params: {
 		name: string;
 		slug: string;
@@ -118,4 +118,4 @@ export interface BrandController extends ModuleController {
 	getFeaturedBrands(limit?: number): Promise<Brand[]>;
 
 	getStats(): Promise<BrandStats>;
-}
+};

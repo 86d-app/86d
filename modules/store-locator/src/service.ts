@@ -1,14 +1,14 @@
 import type { ModuleController } from "@86d-app/core";
 
 /** Operating hours for a single day */
-export interface DayHours {
+export type DayHours = {
 	open: string;
 	close: string;
 	closed?: boolean | undefined;
-}
+};
 
 /** Weekly hours schedule keyed by day name */
-export interface WeeklyHours {
+export type WeeklyHours = {
 	monday?: DayHours | undefined;
 	tuesday?: DayHours | undefined;
 	wednesday?: DayHours | undefined;
@@ -16,10 +16,10 @@ export interface WeeklyHours {
 	friday?: DayHours | undefined;
 	saturday?: DayHours | undefined;
 	sunday?: DayHours | undefined;
-}
+};
 
 /** A physical store location */
-export interface Location {
+export type Location = {
 	id: string;
 	name: string;
 	slug: string;
@@ -44,15 +44,15 @@ export interface Location {
 	metadata?: Record<string, unknown> | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
 /** Location with distance from a reference point */
-export interface LocationWithDistance extends Location {
+export type LocationWithDistance = Location & {
 	distance: number;
 	unit: "km" | "mi";
-}
+};
 
-export interface StoreLocatorController extends ModuleController {
+export type StoreLocatorController = ModuleController & {
 	/** Create a new location */
 	createLocation(params: {
 		name: string;
@@ -160,4 +160,4 @@ export interface StoreLocatorController extends ModuleController {
 		countries: number;
 		regions: number;
 	}>;
-}
+};

@@ -62,8 +62,7 @@ export function createPaymentController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("paymentIntent", id, intent as Record<string, any>);
+			await data.upsert("paymentIntent", id, intent as Record<string, unknown>);
 			return intent;
 		},
 
@@ -103,8 +102,11 @@ export function createPaymentController(
 				providerMetadata: newProviderMetadata,
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("paymentIntent", id, updated as Record<string, any>);
+			await data.upsert(
+				"paymentIntent",
+				id,
+				updated as Record<string, unknown>,
+			);
 			return updated;
 		},
 
@@ -136,15 +138,17 @@ export function createPaymentController(
 				providerMetadata: newProviderMetadata,
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("paymentIntent", id, updated as Record<string, any>);
+			await data.upsert(
+				"paymentIntent",
+				id,
+				updated as Record<string, unknown>,
+			);
 			return updated;
 		},
 
 		async listIntents(params) {
 			// Push available filters to where clause
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.customerId) where.customerId = params.customerId;
 			if (params?.status) where.status = params.status;
 			if (params?.orderId) where.orderId = params.orderId;
@@ -176,8 +180,7 @@ export function createPaymentController(
 					await data.upsert(
 						"paymentMethod",
 						m.id,
-						// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-						cleared as unknown as Record<string, any>,
+						cleared as unknown as Record<string, unknown>,
 					);
 				}
 			}
@@ -195,8 +198,7 @@ export function createPaymentController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("paymentMethod", id, method as Record<string, any>);
+			await data.upsert("paymentMethod", id, method as Record<string, unknown>);
 			return method;
 		},
 
@@ -274,8 +276,7 @@ export function createPaymentController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("refund", id, refund as Record<string, any>);
+			await data.upsert("refund", id, refund as Record<string, unknown>);
 
 			// Mark intent as refunded
 			const updatedIntent: PaymentIntent = {
@@ -286,8 +287,7 @@ export function createPaymentController(
 			await data.upsert(
 				"paymentIntent",
 				params.intentId,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updatedIntent as unknown as Record<string, any>,
+				updatedIntent as unknown as Record<string, unknown>,
 			);
 
 			return refund;
@@ -329,8 +329,7 @@ export function createPaymentController(
 			await data.upsert(
 				"paymentIntent",
 				intent.id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updated as Record<string, any>,
+				updated as Record<string, unknown>,
 			);
 			return updated;
 		},
@@ -370,8 +369,7 @@ export function createPaymentController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("refund", refundId, refund as Record<string, any>);
+			await data.upsert("refund", refundId, refund as Record<string, unknown>);
 
 			const updatedIntent: PaymentIntent = {
 				...intent,
@@ -381,8 +379,7 @@ export function createPaymentController(
 			await data.upsert(
 				"paymentIntent",
 				intent.id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updatedIntent as unknown as Record<string, any>,
+				updatedIntent as unknown as Record<string, unknown>,
 			);
 
 			return { intent: updatedIntent, refund };

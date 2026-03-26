@@ -1,6 +1,6 @@
 import type { ModuleController } from "@86d-app/core";
 
-export interface Tip {
+export type Tip = {
 	id: string;
 	orderId: string;
 	amount: number;
@@ -14,9 +14,9 @@ export interface Tip {
 	metadata: Record<string, unknown>;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface TipPayout {
+export type TipPayout = {
 	id: string;
 	recipientId: string;
 	recipientType: string;
@@ -29,9 +29,9 @@ export interface TipPayout {
 	reference?: string | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface TipSettings {
+export type TipSettings = {
 	id: string;
 	presetPercents: number[];
 	allowCustom: boolean;
@@ -40,9 +40,9 @@ export interface TipSettings {
 	enableSplitting: boolean;
 	defaultRecipientType: string;
 	updatedAt: Date;
-}
+};
 
-export interface AddTipParams {
+export type AddTipParams = {
 	orderId: string;
 	amount: number;
 	percentage?: number | undefined;
@@ -51,23 +51,23 @@ export interface AddTipParams {
 	recipientId?: string | undefined;
 	customerId?: string | undefined;
 	metadata?: Record<string, unknown> | undefined;
-}
+};
 
-export interface UpdateTipParams {
+export type UpdateTipParams = {
 	amount?: number | undefined;
 	percentage?: number | undefined;
 	recipientType?: "driver" | "server" | "staff" | "store" | undefined;
 	recipientId?: string | undefined;
 	status?: "pending" | "paid" | "refunded" | undefined;
-}
+};
 
-export interface SplitEntry {
+export type SplitEntry = {
 	recipientType: "driver" | "server" | "staff" | "store";
 	recipientId?: string | undefined;
 	amount: number;
-}
+};
 
-export interface CreatePayoutParams {
+export type CreatePayoutParams = {
 	recipientId: string;
 	recipientType: string;
 	amount: number;
@@ -75,9 +75,9 @@ export interface CreatePayoutParams {
 	periodStart: Date;
 	periodEnd: Date;
 	reference?: string | undefined;
-}
+};
 
-export interface TipStats {
+export type TipStats = {
 	totalTips: number;
 	totalAmount: number;
 	totalPending: number;
@@ -86,9 +86,9 @@ export interface TipStats {
 	averageTip: number;
 	totalPayouts: number;
 	totalPayoutAmount: number;
-}
+};
 
-export interface TippingController extends ModuleController {
+export type TippingController = ModuleController & {
 	addTip(params: AddTipParams): Promise<Tip>;
 
 	updateTip(id: string, params: UpdateTipParams): Promise<Tip | null>;
@@ -140,4 +140,4 @@ export interface TippingController extends ModuleController {
 		startDate?: Date | undefined;
 		endDate?: Date | undefined;
 	}): Promise<TipStats>;
-}
+};

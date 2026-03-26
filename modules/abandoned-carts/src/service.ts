@@ -1,6 +1,6 @@
 import type { ModuleController } from "@86d-app/core";
 
-export interface CartItemSnapshot {
+export type CartItemSnapshot = {
 	productId: string;
 	variantId?: string | undefined;
 	name: string;
@@ -8,9 +8,9 @@ export interface CartItemSnapshot {
 	price: number;
 	quantity: number;
 	imageUrl?: string | undefined;
-}
+};
 
-export interface AbandonedCart {
+export type AbandonedCart = {
 	id: string;
 	cartId: string;
 	customerId?: string | undefined;
@@ -28,9 +28,9 @@ export interface AbandonedCart {
 	metadata?: Record<string, unknown> | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface RecoveryAttempt {
+export type RecoveryAttempt = {
 	id: string;
 	abandonedCartId: string;
 	channel: "email" | "sms" | "push";
@@ -41,47 +41,47 @@ export interface RecoveryAttempt {
 	clickedAt?: Date | undefined;
 	sentAt: Date;
 	createdAt: Date;
-}
+};
 
-export interface CreateAbandonedCartParams {
+export type CreateAbandonedCartParams = {
 	cartId: string;
 	customerId?: string | undefined;
 	email?: string | undefined;
 	items: CartItemSnapshot[];
 	cartTotal: number;
 	currency?: string | undefined;
-}
+};
 
-export interface RecordAttemptParams {
+export type RecordAttemptParams = {
 	abandonedCartId: string;
 	channel: "email" | "sms" | "push";
 	recipient: string;
 	subject?: string | undefined;
-}
+};
 
-export interface AbandonedCartStats {
+export type AbandonedCartStats = {
 	totalAbandoned: number;
 	totalRecovered: number;
 	totalExpired: number;
 	totalDismissed: number;
 	recoveryRate: number;
 	totalRecoveredValue: number;
-}
+};
 
-export interface AbandonedCartWithAttempts extends AbandonedCart {
+export type AbandonedCartWithAttempts = AbandonedCart & {
 	attempts: RecoveryAttempt[];
-}
+};
 
-export interface AbandonedCartControllerOptions {
+export type AbandonedCartControllerOptions = {
 	/** Maximum recovery attempts per cart (default: 3) */
 	maxRecoveryAttempts: number;
 	/** Days before auto-expiration (default: 30) */
 	expirationDays: number;
 	/** Minutes of inactivity before cart considered abandoned (default: 60) */
 	abandonmentThresholdMinutes: number;
-}
+};
 
-export interface AbandonedCartController extends ModuleController {
+export type AbandonedCartController = ModuleController & {
 	create(params: CreateAbandonedCartParams): Promise<AbandonedCart>;
 
 	get(id: string): Promise<AbandonedCart | null>;
@@ -124,4 +124,4 @@ export interface AbandonedCartController extends ModuleController {
 
 	/** Returns the resolved controller options */
 	getOptions(): AbandonedCartControllerOptions;
-}
+};

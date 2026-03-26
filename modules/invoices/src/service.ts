@@ -36,7 +36,7 @@ export type CreditNoteStatus = "draft" | "issued" | "applied" | "void";
 /*  Model interfaces                                                   */
 /* ------------------------------------------------------------------ */
 
-export interface BillingAddress {
+export type BillingAddress = {
 	firstName: string;
 	lastName: string;
 	company?: string | undefined;
@@ -47,9 +47,9 @@ export interface BillingAddress {
 	postalCode: string;
 	country: string;
 	phone?: string | undefined;
-}
+};
 
-export interface Invoice {
+export type Invoice = {
 	id: string;
 	invoiceNumber: string;
 	orderId?: string;
@@ -74,9 +74,9 @@ export interface Invoice {
 	metadata?: Record<string, unknown>;
 	createdAt: string;
 	updatedAt: string;
-}
+};
 
-export interface InvoiceLineItem {
+export type InvoiceLineItem = {
 	id: string;
 	invoiceId: string;
 	description: string;
@@ -87,9 +87,9 @@ export interface InvoiceLineItem {
 	productId?: string;
 	sortOrder: number;
 	createdAt: string;
-}
+};
 
-export interface InvoicePayment {
+export type InvoicePayment = {
 	id: string;
 	invoiceId: string;
 	amount: number;
@@ -98,9 +98,9 @@ export interface InvoicePayment {
 	notes?: string;
 	paidAt: string;
 	createdAt: string;
-}
+};
 
-export interface CreditNote {
+export type CreditNote = {
 	id: string;
 	invoiceId: string;
 	creditNoteNumber: string;
@@ -111,9 +111,9 @@ export interface CreditNote {
 	issuedAt?: string;
 	createdAt: string;
 	updatedAt: string;
-}
+};
 
-export interface CreditNoteLineItem {
+export type CreditNoteLineItem = {
 	id: string;
 	creditNoteId: string;
 	description: string;
@@ -122,27 +122,27 @@ export interface CreditNoteLineItem {
 	amount: number;
 	sortOrder: number;
 	createdAt: string;
-}
+};
 
 /* ------------------------------------------------------------------ */
 /*  Composite types                                                    */
 /* ------------------------------------------------------------------ */
 
-export interface InvoiceWithDetails extends Invoice {
+export type InvoiceWithDetails = Invoice & {
 	lineItems: InvoiceLineItem[];
 	payments: InvoicePayment[];
 	creditNotes: CreditNote[];
-}
+};
 
-export interface CreditNoteWithItems extends CreditNote {
+export type CreditNoteWithItems = CreditNote & {
 	lineItems: CreditNoteLineItem[];
-}
+};
 
 /* ------------------------------------------------------------------ */
 /*  Param types                                                        */
 /* ------------------------------------------------------------------ */
 
-export interface CreateInvoiceParams {
+export type CreateInvoiceParams = {
 	orderId?: string | undefined;
 	customerId?: string | undefined;
 	guestEmail?: string | undefined;
@@ -158,17 +158,17 @@ export interface CreateInvoiceParams {
 	internalNotes?: string | undefined;
 	metadata?: Record<string, unknown> | undefined;
 	lineItems: CreateLineItemParams[];
-}
+};
 
-export interface CreateLineItemParams {
+export type CreateLineItemParams = {
 	description: string;
 	quantity: number;
 	unitPrice: number;
 	sku?: string | undefined;
 	productId?: string | undefined;
-}
+};
 
-export interface UpdateInvoiceParams {
+export type UpdateInvoiceParams = {
 	customerName?: string | undefined;
 	guestEmail?: string | undefined;
 	paymentTerms?: PaymentTerms | undefined;
@@ -176,44 +176,44 @@ export interface UpdateInvoiceParams {
 	notes?: string | undefined;
 	internalNotes?: string | undefined;
 	metadata?: Record<string, unknown> | undefined;
-}
+};
 
-export interface RecordPaymentParams {
+export type RecordPaymentParams = {
 	invoiceId: string;
 	amount: number;
 	method: PaymentMethod;
 	reference?: string | undefined;
 	notes?: string | undefined;
 	paidAt?: Date | undefined;
-}
+};
 
-export interface CreateCreditNoteParams {
+export type CreateCreditNoteParams = {
 	invoiceId: string;
 	reason?: string | undefined;
 	notes?: string | undefined;
 	lineItems: CreateCreditNoteLineItemParams[];
-}
+};
 
-export interface CreateCreditNoteLineItemParams {
+export type CreateCreditNoteLineItemParams = {
 	description: string;
 	quantity: number;
 	unitPrice: number;
-}
+};
 
-export interface ListInvoiceParams {
+export type ListInvoiceParams = {
 	limit?: number | undefined;
 	offset?: number | undefined;
 	status?: InvoiceStatus | undefined;
 	search?: string | undefined;
 	customerId?: string | undefined;
 	orderId?: string | undefined;
-}
+};
 
 /* ------------------------------------------------------------------ */
 /*  Controller interface                                               */
 /* ------------------------------------------------------------------ */
 
-export interface InvoiceController extends ModuleController {
+export type InvoiceController = ModuleController & {
 	/* Invoice CRUD */
 	create(params: CreateInvoiceParams): Promise<Invoice>;
 	getById(id: string): Promise<InvoiceWithDetails | null>;
@@ -272,4 +272,4 @@ export interface InvoiceController extends ModuleController {
 
 	/* Overdue detection */
 	findOverdue(): Promise<Invoice[]>;
-}
+};

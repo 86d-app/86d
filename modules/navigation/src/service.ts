@@ -14,7 +14,7 @@ export type MenuItemType =
 	| "page"
 	| "product";
 
-export interface Menu {
+export type Menu = {
 	id: string;
 	name: string;
 	slug: string;
@@ -23,9 +23,9 @@ export interface Menu {
 	metadata: Record<string, unknown>;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface MenuItem {
+export type MenuItem = {
 	id: string;
 	menuId: string;
 	parentId?: string | undefined;
@@ -40,33 +40,33 @@ export interface MenuItem {
 	metadata: Record<string, unknown>;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
 /** A menu item with its nested children resolved. */
-export interface MenuItemTree extends MenuItem {
+export type MenuItemTree = MenuItem & {
 	children: MenuItemTree[];
-}
+};
 
 /** A menu with its items pre-resolved as a tree. */
-export interface MenuWithItems extends Menu {
+export type MenuWithItems = Menu & {
 	items: MenuItemTree[];
-}
+};
 
-export interface CreateMenuParams {
+export type CreateMenuParams = {
 	name: string;
 	slug?: string | undefined;
 	location: MenuLocation;
 	isActive?: boolean | undefined;
-}
+};
 
-export interface UpdateMenuParams {
+export type UpdateMenuParams = {
 	name?: string | undefined;
 	slug?: string | undefined;
 	location?: MenuLocation | undefined;
 	isActive?: boolean | undefined;
-}
+};
 
-export interface CreateMenuItemParams {
+export type CreateMenuItemParams = {
 	menuId: string;
 	parentId?: string | undefined;
 	label: string;
@@ -77,9 +77,9 @@ export interface CreateMenuItemParams {
 	cssClass?: string | undefined;
 	position?: number | undefined;
 	isVisible?: boolean | undefined;
-}
+};
 
-export interface UpdateMenuItemParams {
+export type UpdateMenuItemParams = {
 	label?: string | undefined;
 	parentId?: string | undefined;
 	type?: MenuItemType | undefined;
@@ -89,9 +89,9 @@ export interface UpdateMenuItemParams {
 	cssClass?: string | undefined;
 	position?: number | undefined;
 	isVisible?: boolean | undefined;
-}
+};
 
-export interface NavigationController extends ModuleController {
+export type NavigationController = ModuleController & {
 	// ── Menu CRUD ────────────────────────────────────────────────
 	createMenu(params: CreateMenuParams): Promise<Menu>;
 	updateMenu(id: string, params: UpdateMenuParams): Promise<Menu | null>;
@@ -127,4 +127,4 @@ export interface NavigationController extends ModuleController {
 		itemIds: string[],
 		parentId?: string | undefined,
 	): Promise<void>;
-}
+};

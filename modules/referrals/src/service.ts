@@ -7,7 +7,7 @@ export type RewardType =
 	| "fixed_discount"
 	| "store_credit";
 
-export interface ReferralCode {
+export type ReferralCode = {
 	id: string;
 	customerId: string;
 	code: string;
@@ -16,9 +16,9 @@ export interface ReferralCode {
 	maxUses: number;
 	expiresAt?: Date | undefined;
 	createdAt: Date;
-}
+};
 
-export interface Referral {
+export type Referral = {
 	id: string;
 	referrerCodeId: string;
 	referrerCustomerId: string;
@@ -29,9 +29,9 @@ export interface Referral {
 	refereeRewarded: boolean;
 	completedAt?: Date | undefined;
 	createdAt: Date;
-}
+};
 
-export interface ReferralRewardRule {
+export type ReferralRewardRule = {
 	id: string;
 	name: string;
 	referrerRewardType: RewardType;
@@ -42,17 +42,17 @@ export interface ReferralRewardRule {
 	active: boolean;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface ReferralStats {
+export type ReferralStats = {
 	totalCodes: number;
 	totalReferrals: number;
 	completedReferrals: number;
 	pendingReferrals: number;
 	conversionRate: number;
-}
+};
 
-export interface ReferralController extends ModuleController {
+export type ReferralController = ModuleController & {
 	// ── Codes ──────────────────────────────────────────────
 	createCode(params: {
 		customerId: string;
@@ -139,4 +139,4 @@ export interface ReferralController extends ModuleController {
 		completedReferrals: number;
 		pendingReferrals: number;
 	}>;
-}
+};

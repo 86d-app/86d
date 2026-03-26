@@ -5,7 +5,7 @@ import type { ModuleController } from "@86d-app/core";
  * Checkout accesses the discount controller through the runtime context —
  * no direct module import, just a structural contract.
  */
-export interface DiscountController {
+export type DiscountController = {
 	validateCode(params: {
 		code: string;
 		subtotal: number;
@@ -28,14 +28,14 @@ export interface DiscountController {
 		freeShipping: boolean;
 		error?: string | undefined;
 	}>;
-}
+};
 
 /**
  * Minimal interface for inventory stock checks and reservations.
  * Checkout accesses the inventory controller through the runtime context —
  * no direct module import, just a structural contract.
  */
-export interface InventoryCheckController {
+export type InventoryCheckController = {
 	isInStock(params: {
 		productId: string;
 		variantId?: string | undefined;
@@ -63,14 +63,14 @@ export interface InventoryCheckController {
 		locationId?: string | undefined;
 		quantity: number;
 	}): Promise<unknown>;
-}
+};
 
 /**
  * Minimal interface for gift card balance checks.
  * Checkout accesses the gift card controller through the runtime context —
  * no direct module import, just a structural contract.
  */
-export interface GiftCardCheckController {
+export type GiftCardCheckController = {
 	checkBalance(code: string): Promise<{
 		balance: number;
 		currency: string;
@@ -85,14 +85,14 @@ export interface GiftCardCheckController {
 		transaction: { id: string; amount: number; balanceAfter: number };
 		giftCard: { id: string; currentBalance: number; status: string };
 	} | null>;
-}
+};
 
 /**
  * Minimal interface for calculating taxes based on address and line items.
  * Checkout accesses the tax controller through the runtime context —
  * no direct module import, just a structural contract.
  */
-export interface TaxCalculateController {
+export type TaxCalculateController = {
 	calculate(params: {
 		address: {
 			country: string;
@@ -118,7 +118,7 @@ export interface TaxCalculateController {
 			rate: number;
 		}>;
 	}>;
-}
+};
 
 /**
  * Minimal interface for payment intent management.
@@ -131,7 +131,7 @@ export interface TaxCalculateController {
  * Checkout accesses the orders controller through the runtime context —
  * no direct module import, just a structural contract.
  */
-export interface OrderCreateController {
+export type OrderCreateController = {
 	create(params: {
 		customerId?: string | undefined;
 		guestEmail?: string | undefined;
@@ -181,14 +181,14 @@ export interface OrderCreateController {
 			  }
 			| undefined;
 	}): Promise<{ id: string; orderNumber: string }>;
-}
+};
 
 /**
  * Minimal interface for fetching shipping rates.
  * Checkout accesses the shipping controller through the runtime context —
  * no direct module import, just a structural contract.
  */
-export interface ShippingRateController {
+export type ShippingRateController = {
 	calculateRates(params: {
 		country: string;
 		orderAmount: number;
@@ -201,9 +201,9 @@ export interface ShippingRateController {
 			price: number;
 		}>
 	>;
-}
+};
 
-export interface PaymentProcessController {
+export type PaymentProcessController = {
 	createIntent(params: {
 		amount: number;
 		currency?: string | undefined;
@@ -230,7 +230,7 @@ export interface PaymentProcessController {
 	} | null>;
 
 	cancelIntent(id: string): Promise<{ id: string; status: string } | null>;
-}
+};
 
 export type CheckoutStatus =
 	| "pending"
@@ -239,7 +239,7 @@ export type CheckoutStatus =
 	| "expired"
 	| "abandoned";
 
-export interface CheckoutAddress {
+export type CheckoutAddress = {
 	firstName: string;
 	lastName: string;
 	company?: string | undefined;
@@ -250,9 +250,9 @@ export interface CheckoutAddress {
 	postalCode: string;
 	country: string;
 	phone?: string | undefined;
-}
+};
 
-export interface CheckoutSession {
+export type CheckoutSession = {
 	id: string;
 	cartId?: string | undefined;
 	customerId?: string | undefined;
@@ -281,18 +281,18 @@ export interface CheckoutSession {
 	expiresAt: Date;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface CheckoutLineItem {
+export type CheckoutLineItem = {
 	productId: string;
 	variantId?: string | undefined;
 	name: string;
 	sku?: string | undefined;
 	price: number;
 	quantity: number;
-}
+};
 
-export interface CheckoutController extends ModuleController {
+export type CheckoutController = ModuleController & {
 	/**
 	 * Create a new checkout session.
 	 * Caller is responsible for providing line items and totals
@@ -415,4 +415,4 @@ export interface CheckoutController extends ModuleController {
 		totalRevenue: number;
 		averageOrderValue: number;
 	}>;
-}
+};

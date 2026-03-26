@@ -17,7 +17,7 @@ export type OrderStatus =
 export type CatalogSyncStatus = "pending" | "syncing" | "synced" | "failed";
 export type CollectionStatus = "active" | "inactive";
 
-export interface Listing {
+export type Listing = {
 	id: string;
 	localProductId: string;
 	externalProductId?: string | undefined;
@@ -32,9 +32,9 @@ export interface Listing {
 	metadata: Record<string, unknown>;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface ChannelOrder {
+export type ChannelOrder = {
 	id: string;
 	externalOrderId: string;
 	status: OrderStatus;
@@ -49,9 +49,9 @@ export interface ChannelOrder {
 	trackingUrl?: string | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface CatalogSync {
+export type CatalogSync = {
 	id: string;
 	status: CatalogSyncStatus;
 	totalProducts: number;
@@ -61,9 +61,9 @@ export interface CatalogSync {
 	startedAt: Date;
 	completedAt?: Date | undefined;
 	createdAt: Date;
-}
+};
 
-export interface Collection {
+export type Collection = {
 	id: string;
 	name: string;
 	externalId?: string | undefined;
@@ -71,9 +71,9 @@ export interface Collection {
 	status: CollectionStatus;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface ChannelStats {
+export type ChannelStats = {
 	totalListings: number;
 	activeListings: number;
 	pendingListings: number;
@@ -84,9 +84,9 @@ export interface ChannelStats {
 	deliveredOrders: number;
 	cancelledOrders: number;
 	totalRevenue: number;
-}
+};
 
-export interface FacebookShopController extends ModuleController {
+export type FacebookShopController = ModuleController & {
 	createListing(params: {
 		localProductId: string;
 		externalProductId?: string | undefined;
@@ -181,4 +181,4 @@ export interface FacebookShopController extends ModuleController {
 
 	/** Pull orders from Meta Commerce and sync locally. */
 	syncOrders(): Promise<{ synced: number }>;
-}
+};

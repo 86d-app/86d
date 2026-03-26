@@ -65,8 +65,7 @@ export function createProductController(
 			await data.upsert(
 				"product",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				product as unknown as Record<string, any>,
+				product as unknown as Record<string, unknown>,
 			);
 			return product;
 		},
@@ -106,8 +105,7 @@ export function createProductController(
 			const page = params?.page ?? 1;
 			const limit = params?.limit ?? 20;
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.category) where.categoryId = params.category;
 			if (params?.status) where.status = params.status;
 			if (params?.featured) where.isFeatured = true;
@@ -241,8 +239,7 @@ export function createProductController(
 			await data.upsert(
 				"product",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				updated as unknown as Record<string, any>,
+				updated as unknown as Record<string, unknown>,
 			);
 			return updated;
 		},
@@ -324,8 +321,7 @@ export function createProductController(
 						...variant,
 						inventory: variant.inventory - quantity,
 						updatedAt: new Date(),
-						// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-					} as Record<string, any>);
+					} as Record<string, unknown>);
 				}
 			} else {
 				const product = (await data.get(
@@ -337,8 +333,7 @@ export function createProductController(
 						...product,
 						inventory: product.inventory - quantity,
 						updatedAt: new Date(),
-						// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-					} as Record<string, any>);
+					} as Record<string, unknown>);
 				}
 			}
 			return { success: true };
@@ -359,8 +354,7 @@ export function createProductController(
 						...variant,
 						inventory: variant.inventory + quantity,
 						updatedAt: new Date(),
-						// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-					} as Record<string, any>);
+					} as Record<string, unknown>);
 				}
 			} else {
 				const product = (await data.get(
@@ -372,8 +366,7 @@ export function createProductController(
 						...product,
 						inventory: product.inventory + quantity,
 						updatedAt: new Date(),
-						// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-					} as Record<string, any>);
+					} as Record<string, unknown>);
 				}
 			}
 			return { success: true };
@@ -418,8 +411,7 @@ export function createProductController(
 			await data.upsert(
 				"productVariant",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				variant as unknown as Record<string, any>,
+				variant as unknown as Record<string, unknown>,
 			);
 
 			// Update product timestamp
@@ -431,8 +423,7 @@ export function createProductController(
 				await data.upsert("product", params.productId, {
 					...product,
 					updatedAt: now,
-					// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				} as unknown as Record<string, any>);
+				} as unknown as Record<string, unknown>);
 			}
 
 			return variant;
@@ -457,8 +448,7 @@ export function createProductController(
 			await data.upsert(
 				"productVariant",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				updated as unknown as Record<string, any>,
+				updated as unknown as Record<string, unknown>,
 			);
 
 			// Update product timestamp
@@ -470,8 +460,7 @@ export function createProductController(
 				await data.upsert("product", existing.productId, {
 					...product,
 					updatedAt: now,
-					// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				} as unknown as Record<string, any>);
+				} as unknown as Record<string, unknown>);
 			}
 
 			return updated;
@@ -493,8 +482,7 @@ export function createProductController(
 					await data.upsert("product", variant.productId, {
 						...product,
 						updatedAt: new Date(),
-						// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-					} as unknown as Record<string, any>);
+					} as unknown as Record<string, unknown>);
 				}
 			}
 
@@ -523,8 +511,7 @@ export function createProductController(
 			const page = params?.page ?? 1;
 			const limit = params?.limit ?? 50;
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.parentId) where.parentId = params.parentId;
 			if (params?.visible) where.isVisible = true;
 
@@ -597,8 +584,7 @@ export function createProductController(
 			await data.upsert(
 				"category",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				category as unknown as Record<string, any>,
+				category as unknown as Record<string, unknown>,
 			);
 			return category;
 		},
@@ -618,8 +604,7 @@ export function createProductController(
 			await data.upsert(
 				"category",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				updated as unknown as Record<string, any>,
+				updated as unknown as Record<string, unknown>,
 			);
 			return updated;
 		},
@@ -635,8 +620,7 @@ export function createProductController(
 					...product,
 					categoryId: undefined,
 					updatedAt: new Date(),
-					// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				} as unknown as Record<string, any>);
+				} as unknown as Record<string, unknown>);
 			}
 
 			// Orphan subcategories
@@ -649,8 +633,7 @@ export function createProductController(
 					...subcat,
 					parentId: undefined,
 					updatedAt: new Date(),
-					// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				} as unknown as Record<string, any>);
+				} as unknown as Record<string, unknown>);
 			}
 
 			await data.delete("category", id);
@@ -675,8 +658,7 @@ export function createProductController(
 						...product,
 						status,
 						updatedAt: now,
-						// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-					} as unknown as Record<string, any>);
+					} as unknown as Record<string, unknown>);
 					updated++;
 				}
 			}
@@ -812,8 +794,7 @@ export function createProductController(
 						await data.upsert(
 							"product",
 							existingBySku.id,
-							// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-							updatedProduct as unknown as Record<string, any>,
+							updatedProduct as unknown as Record<string, unknown>,
 						);
 						updated.push(existingBySku.id);
 						continue;
@@ -869,8 +850,7 @@ export function createProductController(
 					await data.upsert(
 						"product",
 						id,
-						// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-						product as unknown as Record<string, any>,
+						product as unknown as Record<string, unknown>,
 					);
 					created.push(id);
 				} catch (err) {
@@ -907,8 +887,7 @@ export function createProductController(
 			const page = params?.page ?? 1;
 			const limit = params?.limit ?? 50;
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.featured) where.isFeatured = true;
 			if (params?.visible) where.isVisible = true;
 
@@ -995,8 +974,7 @@ export function createProductController(
 			await data.upsert(
 				"collection",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				collection as unknown as Record<string, any>,
+				collection as unknown as Record<string, unknown>,
 			);
 			return collection;
 		},
@@ -1016,8 +994,7 @@ export function createProductController(
 			await data.upsert(
 				"collection",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				updated as unknown as Record<string, any>,
+				updated as unknown as Record<string, unknown>,
 			);
 			return updated;
 		},
@@ -1066,16 +1043,14 @@ export function createProductController(
 			await data.upsert(
 				"collectionProduct",
 				linkId,
-				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				link as unknown as Record<string, any>,
+				link as unknown as Record<string, unknown>,
 			);
 
 			// Update collection timestamp
 			await data.upsert("collection", collectionId, {
 				...collection,
 				updatedAt: new Date(),
-				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			} as unknown as Record<string, any>);
+			} as unknown as Record<string, unknown>);
 
 			return link;
 		},
@@ -1100,8 +1075,7 @@ export function createProductController(
 				await data.upsert("collection", collectionId, {
 					...collection,
 					updatedAt: new Date(),
-					// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				} as unknown as Record<string, any>);
+				} as unknown as Record<string, unknown>);
 			}
 
 			return { success: true };

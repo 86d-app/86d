@@ -15,7 +15,7 @@ export type PaymentStatus =
 	| "refunded"
 	| "voided";
 
-export interface Order {
+export type Order = {
 	id: string;
 	orderNumber: string;
 	customerId?: string | undefined;
@@ -33,9 +33,9 @@ export interface Order {
 	metadata?: Record<string, unknown> | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface OrderItem {
+export type OrderItem = {
 	id: string;
 	orderId: string;
 	productId: string;
@@ -46,9 +46,9 @@ export interface OrderItem {
 	quantity: number;
 	subtotal: number;
 	metadata?: Record<string, unknown> | undefined;
-}
+};
 
-export interface OrderAddress {
+export type OrderAddress = {
 	id: string;
 	orderId: string;
 	type: "billing" | "shipping";
@@ -62,14 +62,14 @@ export interface OrderAddress {
 	postalCode: string;
 	country: string;
 	phone?: string | undefined;
-}
+};
 
-export interface OrderWithDetails extends Order {
+export type OrderWithDetails = Order & {
 	items: OrderItem[];
 	addresses: OrderAddress[];
-}
+};
 
-export interface CreateOrderParams {
+export type CreateOrderParams = {
 	id?: string | undefined;
 	customerId?: string | undefined;
 	guestEmail?: string | undefined;
@@ -93,7 +93,7 @@ export interface CreateOrderParams {
 	}>;
 	billingAddress?: Omit<OrderAddress, "id" | "orderId" | "type"> | undefined;
 	shippingAddress?: Omit<OrderAddress, "id" | "orderId" | "type"> | undefined;
-}
+};
 
 export type FulfillmentStatus =
 	| "pending"
@@ -102,7 +102,7 @@ export type FulfillmentStatus =
 	| "delivered"
 	| "failed";
 
-export interface Fulfillment {
+export type Fulfillment = {
 	id: string;
 	orderId: string;
 	status: FulfillmentStatus;
@@ -114,25 +114,25 @@ export interface Fulfillment {
 	deliveredAt?: Date | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface FulfillmentItem {
+export type FulfillmentItem = {
 	id: string;
 	fulfillmentId: string;
 	orderItemId: string;
 	quantity: number;
-}
+};
 
-export interface FulfillmentWithItems extends Fulfillment {
+export type FulfillmentWithItems = Fulfillment & {
 	items: FulfillmentItem[];
-}
+};
 
 export type OrderFulfillmentStatus =
 	| "unfulfilled"
 	| "partially_fulfilled"
 	| "fulfilled";
 
-export interface CreateFulfillmentParams {
+export type CreateFulfillmentParams = {
 	orderId: string;
 	carrier?: string | undefined;
 	trackingNumber?: string | undefined;
@@ -142,15 +142,15 @@ export interface CreateFulfillmentParams {
 		orderItemId: string;
 		quantity: number;
 	}>;
-}
+};
 
-export interface UpdateFulfillmentParams {
+export type UpdateFulfillmentParams = {
 	status?: FulfillmentStatus | undefined;
 	trackingNumber?: string | undefined;
 	trackingUrl?: string | undefined;
 	carrier?: string | undefined;
 	notes?: string | undefined;
-}
+};
 
 export type ReturnStatus =
 	| "requested"
@@ -177,7 +177,7 @@ export const RETURN_REASONS = [
 
 export type ReturnReason = (typeof RETURN_REASONS)[number];
 
-export interface ReturnRequest {
+export type ReturnRequest = {
 	id: string;
 	orderId: string;
 	status: ReturnStatus;
@@ -191,21 +191,21 @@ export interface ReturnRequest {
 	carrier?: string | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface ReturnItem {
+export type ReturnItem = {
 	id: string;
 	returnRequestId: string;
 	orderItemId: string;
 	quantity: number;
 	reason?: string | undefined;
-}
+};
 
-export interface ReturnRequestWithItems extends ReturnRequest {
+export type ReturnRequestWithItems = ReturnRequest & {
 	items: ReturnItem[];
-}
+};
 
-export interface CreateReturnParams {
+export type CreateReturnParams = {
 	orderId: string;
 	type?: ReturnType | undefined;
 	reason: string;
@@ -215,20 +215,20 @@ export interface CreateReturnParams {
 		quantity: number;
 		reason?: string | undefined;
 	}>;
-}
+};
 
-export interface UpdateReturnParams {
+export type UpdateReturnParams = {
 	status?: ReturnStatus | undefined;
 	adminNotes?: string | undefined;
 	refundAmount?: number | undefined;
 	trackingNumber?: string | undefined;
 	trackingUrl?: string | undefined;
 	carrier?: string | undefined;
-}
+};
 
 export type OrderNoteType = "note" | "system";
 
-export interface OrderNote {
+export type OrderNote = {
 	id: string;
 	orderId: string;
 	type: OrderNoteType;
@@ -237,18 +237,18 @@ export interface OrderNote {
 	authorName?: string | undefined;
 	metadata?: Record<string, unknown> | undefined;
 	createdAt: Date;
-}
+};
 
-export interface AddNoteParams {
+export type AddNoteParams = {
 	orderId: string;
 	content: string;
 	type?: OrderNoteType | undefined;
 	authorId?: string | undefined;
 	authorName?: string | undefined;
 	metadata?: Record<string, unknown> | undefined;
-}
+};
 
-export interface InvoiceData {
+export type InvoiceData = {
 	invoiceNumber: string;
 	orderNumber: string;
 	orderId: string;
@@ -275,21 +275,21 @@ export interface InvoiceData {
 	currency: string;
 	storeName: string;
 	notes?: string | undefined;
-}
+};
 
-export interface ReorderItem {
+export type ReorderItem = {
 	productId: string;
 	variantId?: string | undefined;
 	name: string;
 	sku?: string | undefined;
 	price: number;
 	quantity: number;
-}
+};
 
 // ── Cross-module controller interfaces (for cancel side effects) ─────────────
 
 /** Minimal payment controller needed for refunding on order cancellation. */
-export interface PaymentRefundController {
+export type PaymentRefundController = {
 	listIntents(params: {
 		orderId?: string | undefined;
 		status?: string | undefined;
@@ -305,27 +305,27 @@ export interface PaymentRefundController {
 		amount?: number | undefined;
 		reason?: string | undefined;
 	}): Promise<{ id: string; amount: number; status: string }>;
-}
+};
 
 /** Minimal inventory controller needed for releasing stock on cancellation. */
-export interface InventoryReleaseController {
+export type InventoryReleaseController = {
 	release(params: {
 		productId: string;
 		variantId?: string | undefined;
 		quantity: number;
 	}): Promise<unknown>;
-}
+};
 
 /** Minimal customer controller needed for resolving contact info on status changes. */
-export interface CustomerLookupController {
+export type CustomerLookupController = {
 	getById(id: string): Promise<{
 		email: string;
 		firstName: string;
 		lastName: string;
 	} | null>;
-}
+};
 
-export interface OrderController extends ModuleController {
+export type OrderController = ModuleController & {
 	/**
 	 * Create a new order
 	 */
@@ -573,4 +573,4 @@ export interface OrderController extends ModuleController {
 	 * Returns the line items with productId, variantId, name, sku, price, and quantity.
 	 */
 	getReorderItems(orderId: string): Promise<ReorderItem[] | null>;
-}
+};

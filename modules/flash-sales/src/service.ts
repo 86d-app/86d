@@ -2,7 +2,7 @@ import type { ModuleController } from "@86d-app/core";
 
 export type FlashSaleStatus = "draft" | "scheduled" | "active" | "ended";
 
-export interface FlashSale {
+export type FlashSale = {
 	id: string;
 	name: string;
 	slug: string;
@@ -12,9 +12,9 @@ export interface FlashSale {
 	endsAt: Date;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface FlashSaleProduct {
+export type FlashSaleProduct = {
 	id: string;
 	flashSaleId: string;
 	productId: string;
@@ -24,13 +24,13 @@ export interface FlashSaleProduct {
 	stockSold: number;
 	sortOrder: number;
 	createdAt: Date;
-}
+};
 
-export interface FlashSaleWithProducts extends FlashSale {
+export type FlashSaleWithProducts = FlashSale & {
 	products: FlashSaleProduct[];
-}
+};
 
-export interface FlashSaleStats {
+export type FlashSaleStats = {
 	totalSales: number;
 	draftSales: number;
 	scheduledSales: number;
@@ -38,9 +38,9 @@ export interface FlashSaleStats {
 	endedSales: number;
 	totalProducts: number;
 	totalUnitsSold: number;
-}
+};
 
-export interface ActiveFlashSaleProduct {
+export type ActiveFlashSaleProduct = {
 	productId: string;
 	salePrice: number;
 	originalPrice: number;
@@ -51,9 +51,9 @@ export interface ActiveFlashSaleProduct {
 	flashSaleId: string;
 	flashSaleName: string;
 	endsAt: Date;
-}
+};
 
-export interface FlashSaleController extends ModuleController {
+export type FlashSaleController = ModuleController & {
 	// ── Flash Sales ──
 
 	createFlashSale(params: {
@@ -156,4 +156,4 @@ export interface FlashSaleController extends ModuleController {
 	// ── Stats ──
 
 	getStats(): Promise<FlashSaleStats>;
-}
+};

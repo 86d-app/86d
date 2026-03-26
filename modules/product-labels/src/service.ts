@@ -18,7 +18,7 @@ export type LabelPosition =
 	| "center";
 
 /** Conditions for automatic label assignment */
-export interface LabelConditions {
+export type LabelConditions = {
 	/** Assign to products created within N days */
 	newWithinDays?: number | undefined;
 	/** Assign to products with discount >= N percent */
@@ -31,9 +31,9 @@ export interface LabelConditions {
 	priceMin?: number | undefined;
 	/** Assign to products with price <= N (cents) */
 	priceMax?: number | undefined;
-}
+};
 
-export interface Label {
+export type Label = {
 	id: string;
 	name: string;
 	slug: string;
@@ -49,31 +49,31 @@ export interface Label {
 	conditions?: LabelConditions | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface ProductLabel {
+export type ProductLabel = {
 	id: string;
 	productId: string;
 	labelId: string;
 	position?: LabelPosition | undefined;
 	assignedAt: Date;
-}
+};
 
-export interface ProductWithLabels {
+export type ProductWithLabels = {
 	productId: string;
 	labels: Array<Label & { position?: LabelPosition | undefined }>;
-}
+};
 
-export interface LabelStats {
+export type LabelStats = {
 	labelId: string;
 	name: string;
 	displayText: string;
 	type: LabelType;
 	isActive: boolean;
 	productCount: number;
-}
+};
 
-export interface ProductLabelController extends ModuleController {
+export type ProductLabelController = ModuleController & {
 	// --- Label CRUD ---
 
 	createLabel(params: {
@@ -165,4 +165,4 @@ export interface ProductLabelController extends ModuleController {
 	getActiveLabelsForProduct(productId: string): Promise<Label[]>;
 
 	getLabelStats(params?: { take?: number | undefined }): Promise<LabelStats[]>;
-}
+};

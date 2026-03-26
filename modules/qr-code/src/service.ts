@@ -11,7 +11,7 @@ export type QrCodeFormat = "svg" | "png";
 
 export type QrCodeErrorCorrection = "L" | "M" | "Q" | "H";
 
-export interface QrCode {
+export type QrCode = {
 	id: string;
 	label: string;
 	targetUrl: string;
@@ -25,18 +25,18 @@ export interface QrCode {
 	metadata: Record<string, unknown>;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface QrScan {
+export type QrScan = {
 	id: string;
 	qrCodeId: string;
 	scannedAt: Date;
 	userAgent?: string | undefined;
 	ipAddress?: string | undefined;
 	referrer?: string | undefined;
-}
+};
 
-export interface QrCodeController extends ModuleController {
+export type QrCodeController = ModuleController & {
 	create(params: {
 		label: string;
 		targetUrl: string;
@@ -110,4 +110,4 @@ export interface QrCodeController extends ModuleController {
 			metadata?: Record<string, unknown> | undefined;
 		}>,
 	): Promise<QrCode[]>;
-}
+};

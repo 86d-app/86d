@@ -113,8 +113,7 @@ export function createFormsControllers(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("form", id, form as Record<string, any>);
+			await data.upsert("form", id, form as Record<string, unknown>);
 
 			return form;
 		},
@@ -179,8 +178,7 @@ export function createFormsControllers(
 				updatedAt: new Date(),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("form", id, updated as Record<string, any>);
+			await data.upsert("form", id, updated as Record<string, unknown>);
 
 			return updated;
 		},
@@ -242,8 +240,7 @@ export function createFormsControllers(
 			await data.upsert(
 				"formSubmission",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-				submission as Record<string, any>,
+				submission as Record<string, unknown>,
 			);
 
 			return submission;
@@ -283,8 +280,11 @@ export function createFormsControllers(
 				status,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: data service requires Record<string, any>
-			await data.upsert("formSubmission", id, updated as Record<string, any>);
+			await data.upsert(
+				"formSubmission",
+				id,
+				updated as Record<string, unknown>,
+			);
 
 			return updated;
 		},

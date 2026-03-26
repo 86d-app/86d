@@ -1,6 +1,6 @@
 import type { ModuleController } from "@86d-app/core";
 
-export interface FaqCategory {
+export type FaqCategory = {
 	id: string;
 	name: string;
 	slug: string;
@@ -11,9 +11,9 @@ export interface FaqCategory {
 	metadata?: Record<string, unknown> | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface FaqItem {
+export type FaqItem = {
 	id: string;
 	categoryId: string;
 	question: string;
@@ -27,9 +27,9 @@ export interface FaqItem {
 	metadata?: Record<string, unknown> | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface FaqController extends ModuleController {
+export type FaqController = ModuleController & {
 	/** Create a new FAQ category */
 	createCategory(params: {
 		name: string;
@@ -124,4 +124,4 @@ export interface FaqController extends ModuleController {
 		totalHelpful: number;
 		totalNotHelpful: number;
 	}>;
-}
+};

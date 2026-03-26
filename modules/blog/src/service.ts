@@ -2,7 +2,7 @@ import type { ModuleController } from "@86d-app/core";
 
 export type PostStatus = "draft" | "published" | "scheduled" | "archived";
 
-export interface BlogPost {
+export type BlogPost = {
 	id: string;
 	title: string;
 	slug: string;
@@ -22,9 +22,9 @@ export interface BlogPost {
 	views: number;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface PostStats {
+export type PostStats = {
 	total: number;
 	draft: number;
 	published: number;
@@ -33,9 +33,9 @@ export interface PostStats {
 	totalViews: number;
 	categories: Array<{ category: string; count: number }>;
 	tags: Array<{ tag: string; count: number }>;
-}
+};
 
-export interface BlogController extends ModuleController {
+export type BlogController = ModuleController & {
 	createPost(params: {
 		title: string;
 		slug: string;
@@ -109,4 +109,4 @@ export interface BlogController extends ModuleController {
 	): Promise<{ updated: number; failed: string[] }>;
 
 	bulkDelete(ids: string[]): Promise<{ deleted: number; failed: string[] }>;
-}
+};

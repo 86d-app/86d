@@ -68,8 +68,7 @@ export function createAmazonController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("listing", id, listing as Record<string, any>);
+			await data.upsert("listing", id, listing as Record<string, unknown>);
 			return listing;
 		},
 
@@ -102,8 +101,7 @@ export function createAmazonController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("listing", id, updated as Record<string, any>);
+			await data.upsert("listing", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -149,8 +147,7 @@ export function createAmazonController(
 		},
 
 		async listListings(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status) where.status = params.status;
 			if (params?.fulfillmentChannel)
 				where.fulfillmentChannel = params.fulfillmentChannel;
@@ -181,12 +178,7 @@ export function createAmazonController(
 				createdAt: now,
 			};
 
-			await data.upsert(
-				"inventorySync",
-				id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				sync as Record<string, any>,
-			);
+			await data.upsert("inventorySync", id, sync as Record<string, unknown>);
 
 			if (!provider) return sync;
 
@@ -212,8 +204,7 @@ export function createAmazonController(
 						await data.upsert(
 							"listing",
 							listing.id,
-							// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-							updatedListing as Record<string, any>,
+							updatedListing as Record<string, unknown>,
 						);
 						updatedSkus++;
 					}
@@ -228,8 +219,7 @@ export function createAmazonController(
 					await data.upsert(
 						"listing",
 						listing.id,
-						// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-						updatedListing as Record<string, any>,
+						updatedListing as Record<string, unknown>,
 					);
 				}
 			}
@@ -245,8 +235,7 @@ export function createAmazonController(
 			await data.upsert(
 				"inventorySync",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				completedSync as Record<string, any>,
+				completedSync as Record<string, unknown>,
 			);
 
 			events?.emit("amazon.inventory.updated", {
@@ -286,8 +275,7 @@ export function createAmazonController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("amazonOrder", id, order as Record<string, any>);
+			await data.upsert("amazonOrder", id, order as Record<string, unknown>);
 
 			events?.emit("amazon.order.received", {
 				orderId: order.id,
@@ -327,8 +315,7 @@ export function createAmazonController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("amazonOrder", id, updated as Record<string, any>);
+			await data.upsert("amazonOrder", id, updated as Record<string, unknown>);
 
 			events?.emit("amazon.order.shipped", {
 				orderId: id,
@@ -353,14 +340,12 @@ export function createAmazonController(
 				updatedAt: now,
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("amazonOrder", id, updated as Record<string, any>);
+			await data.upsert("amazonOrder", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
 		async listOrders(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status) where.status = params.status;
 			if (params?.fulfillmentChannel)
 				where.fulfillmentChannel = params.fulfillmentChannel;
@@ -492,8 +477,7 @@ export function createAmazonController(
 			await data.upsert(
 				"listing",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updatedListing as Record<string, any>,
+				updatedListing as Record<string, unknown>,
 			);
 
 			events?.emit(
@@ -557,8 +541,7 @@ export function createAmazonController(
 					await data.upsert(
 						"listing",
 						listingData.id,
-						// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-						listingData as Record<string, any>,
+						listingData as Record<string, unknown>,
 					);
 					synced++;
 				}
@@ -662,8 +645,7 @@ export function createAmazonController(
 					await data.upsert(
 						"amazonOrder",
 						orderData.id,
-						// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-						orderData as Record<string, any>,
+						orderData as Record<string, unknown>,
 					);
 					synced++;
 				}

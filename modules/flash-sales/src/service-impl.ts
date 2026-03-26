@@ -57,8 +57,7 @@ export function createFlashSaleController(
 					description: params.description,
 				}),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("flashSale", id, sale as Record<string, any>);
+			await data.upsert("flashSale", id, sale as Record<string, unknown>);
 			return sale;
 		},
 
@@ -97,8 +96,7 @@ export function createFlashSaleController(
 					: (params.description ?? current.description);
 			if (descVal != null) base.description = descVal;
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("flashSale", id, base as Record<string, any>);
+			await data.upsert("flashSale", id, base as Record<string, unknown>);
 			return base;
 		},
 
@@ -169,8 +167,11 @@ export function createFlashSaleController(
 				}),
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("flashSaleProduct", id, product as Record<string, any>);
+			await data.upsert(
+				"flashSaleProduct",
+				id,
+				product as Record<string, unknown>,
+			);
 			return product;
 		},
 
@@ -205,8 +206,7 @@ export function createFlashSaleController(
 			await data.upsert(
 				"flashSaleProduct",
 				current.id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updated as Record<string, any>,
+				updated as Record<string, unknown>,
 			);
 			return updated;
 		},
@@ -290,8 +290,7 @@ export function createFlashSaleController(
 			await data.upsert(
 				"flashSaleProduct",
 				current.id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updated as Record<string, any>,
+				updated as Record<string, unknown>,
 			);
 			return updated;
 		},

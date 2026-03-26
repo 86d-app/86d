@@ -1,6 +1,6 @@
 import type { ModuleController } from "@86d-app/core";
 
-export interface Address {
+export type Address = {
 	id: string;
 	customerId: string;
 	label?: string | undefined;
@@ -18,9 +18,9 @@ export interface Address {
 	isDefaultBilling: boolean;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface AddressInput {
+export type AddressInput = {
 	label?: string | undefined;
 	firstName: string;
 	lastName: string;
@@ -34,14 +34,14 @@ export interface AddressInput {
 	phone?: string | undefined;
 	isDefault?: boolean | undefined;
 	isDefaultBilling?: boolean | undefined;
-}
+};
 
-export interface AddressSummary {
+export type AddressSummary = {
 	totalAddresses: number;
 	countryCounts: Array<{ country: string; count: number }>;
-}
+};
 
-export interface SavedAddressesController extends ModuleController {
+export type SavedAddressesController = ModuleController & {
 	create(customerId: string, input: AddressInput): Promise<Address>;
 
 	update(
@@ -79,4 +79,4 @@ export interface SavedAddressesController extends ModuleController {
 
 	/** Admin: get summary stats. */
 	getSummary(): Promise<AddressSummary>;
-}
+};

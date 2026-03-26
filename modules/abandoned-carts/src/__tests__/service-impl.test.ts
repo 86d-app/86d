@@ -557,8 +557,7 @@ describe("createAbandonedCartController", () => {
 			await mockData.upsert("abandonedCart", cart.id, {
 				...cart,
 				abandonedAt: old,
-				// biome-ignore lint/suspicious/noExplicitAny: test override
-			} as Record<string, any>);
+			} as Record<string, unknown>);
 
 			// Create a recent cart
 			await controller.create({
@@ -589,8 +588,7 @@ describe("createAbandonedCartController", () => {
 			await mockData.upsert("abandonedCart", cart.id, {
 				...recovered,
 				abandonedAt: old,
-				// biome-ignore lint/suspicious/noExplicitAny: test override
-			} as Record<string, any>);
+			} as Record<string, unknown>);
 
 			const expired = await controller.bulkExpire(30);
 			expect(expired).toBe(0);

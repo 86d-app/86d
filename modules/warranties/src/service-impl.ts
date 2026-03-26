@@ -16,8 +16,7 @@ export function createWarrantyController(
 
 	async function updateClaim(
 		id: string,
-		// biome-ignore lint/suspicious/noExplicitAny: dynamic field updates
-		updates: Record<string, any>,
+		updates: Record<string, unknown>,
 	): Promise<WarrantyClaim | null> {
 		const existing = await data.get("warrantyClaim", id);
 		if (!existing) return null;
@@ -27,12 +26,7 @@ export function createWarrantyController(
 			...updates,
 			updatedAt: new Date(),
 		};
-		await data.upsert(
-			"warrantyClaim",
-			id,
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			updated as Record<string, any>,
-		);
+		await data.upsert("warrantyClaim", id, updated as Record<string, unknown>);
 		return updated;
 	}
 
@@ -62,12 +56,7 @@ export function createWarrantyController(
 				updatedAt: now,
 			};
 
-			await data.upsert(
-				"warrantyPlan",
-				id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				plan as Record<string, any>,
-			);
+			await data.upsert("warrantyPlan", id, plan as Record<string, unknown>);
 			return plan;
 		},
 
@@ -87,12 +76,7 @@ export function createWarrantyController(
 				updatedAt: new Date(),
 			};
 
-			await data.upsert(
-				"warrantyPlan",
-				id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updated as Record<string, any>,
-			);
+			await data.upsert("warrantyPlan", id, updated as Record<string, unknown>);
 			return updated as WarrantyPlan;
 		},
 
@@ -103,8 +87,7 @@ export function createWarrantyController(
 		},
 
 		async listPlans(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: dynamic where clause
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.type) where.type = params.type;
 			if (params?.productId) where.productId = params.productId;
 			if (params?.activeOnly) where.isActive = true;
@@ -169,8 +152,7 @@ export function createWarrantyController(
 			await data.upsert(
 				"warrantyRegistration",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				registration as Record<string, any>,
+				registration as Record<string, unknown>,
 			);
 			return registration;
 		},
@@ -182,8 +164,7 @@ export function createWarrantyController(
 		},
 
 		async getRegistrationsByCustomer(customerId, params) {
-			// biome-ignore lint/suspicious/noExplicitAny: dynamic where clause
-			const where: Record<string, any> = { customerId };
+			const where: Record<string, unknown> = { customerId };
 			if (params?.status) where.status = params.status;
 
 			const raw = await data.findMany("warrantyRegistration", {
@@ -196,8 +177,7 @@ export function createWarrantyController(
 		},
 
 		async listRegistrations(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: dynamic where clause
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status) where.status = params.status;
 
 			const raw = await data.findMany("warrantyRegistration", {
@@ -230,8 +210,7 @@ export function createWarrantyController(
 			await data.upsert(
 				"warrantyRegistration",
 				id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updated as Record<string, any>,
+				updated as Record<string, unknown>,
 			);
 			return updated;
 		},
@@ -275,12 +254,7 @@ export function createWarrantyController(
 				updatedAt: now,
 			};
 
-			await data.upsert(
-				"warrantyClaim",
-				id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				claim as Record<string, any>,
-			);
+			await data.upsert("warrantyClaim", id, claim as Record<string, unknown>);
 			return claim;
 		},
 
@@ -299,8 +273,7 @@ export function createWarrantyController(
 		},
 
 		async getClaimsByCustomer(customerId, params) {
-			// biome-ignore lint/suspicious/noExplicitAny: dynamic where clause
-			const where: Record<string, any> = { customerId };
+			const where: Record<string, unknown> = { customerId };
 			if (params?.status) where.status = params.status;
 
 			const raw = await data.findMany("warrantyClaim", {
@@ -313,8 +286,7 @@ export function createWarrantyController(
 		},
 
 		async listClaims(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: dynamic where clause
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.status) where.status = params.status;
 
 			const raw = await data.findMany("warrantyClaim", {

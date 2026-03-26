@@ -1,6 +1,6 @@
 import type { ModuleController } from "@86d-app/core";
 
-export interface Bundle {
+export type Bundle = {
 	id: string;
 	name: string;
 	slug: string;
@@ -16,9 +16,9 @@ export interface Bundle {
 	sortOrder?: number | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface BundleItem {
+export type BundleItem = {
 	id: string;
 	bundleId: string;
 	productId: string;
@@ -26,9 +26,9 @@ export interface BundleItem {
 	quantity: number;
 	sortOrder?: number | undefined;
 	createdAt: Date;
-}
+};
 
-export interface CreateBundleParams {
+export type CreateBundleParams = {
 	name: string;
 	slug: string;
 	description?: string | undefined;
@@ -40,21 +40,21 @@ export interface CreateBundleParams {
 	endsAt?: string | undefined;
 	imageUrl?: string | undefined;
 	sortOrder?: number | undefined;
-}
+};
 
-export interface AddBundleItemParams {
+export type AddBundleItemParams = {
 	bundleId: string;
 	productId: string;
 	variantId?: string | undefined;
 	quantity: number;
 	sortOrder?: number | undefined;
-}
+};
 
-export interface BundleWithItems extends Bundle {
+export type BundleWithItems = Bundle & {
 	items: BundleItem[];
-}
+};
 
-export interface BundleController extends ModuleController {
+export type BundleController = ModuleController & {
 	create(params: CreateBundleParams): Promise<Bundle>;
 
 	get(id: string): Promise<Bundle | null>;
@@ -111,4 +111,4 @@ export interface BundleController extends ModuleController {
 	}): Promise<BundleWithItems[]>;
 
 	countAll(): Promise<number>;
-}
+};

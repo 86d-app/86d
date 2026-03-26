@@ -226,10 +226,8 @@ const HEADER_MAP: Record<string, string> = {
 function rowToProduct(
 	headers: string[],
 	values: string[],
-	// biome-ignore lint/suspicious/noExplicitAny: flexible CSV row parsing
-): Record<string, any> {
-	// biome-ignore lint/suspicious/noExplicitAny: flexible CSV row parsing
-	const product: Record<string, any> = {};
+): Record<string, unknown> {
+	const product: Record<string, unknown> = {};
 
 	for (let i = 0; i < headers.length; i++) {
 		const header = headers[i].toLowerCase().trim();
@@ -279,14 +277,12 @@ function ImportDialog({
 	onImport,
 }: {
 	onClose: () => void;
-	// biome-ignore lint/suspicious/noExplicitAny: CSV row data is untyped
-	onImport: (products: Record<string, any>[]) => Promise<ImportResult>;
+	onImport: (products: Record<string, unknown>[]) => Promise<ImportResult>;
 }) {
 	const fileRef = useRef<HTMLInputElement>(null);
 	const [preview, setPreview] = useState<{
 		headers: string[];
-		// biome-ignore lint/suspicious/noExplicitAny: CSV preview rows are untyped
-		rows: Record<string, any>[];
+		rows: Record<string, unknown>[];
 	} | null>(null);
 	const [importing, setImporting] = useState(false);
 	const [result, setResult] = useState<ImportResult | null>(null);
@@ -463,16 +459,16 @@ function ImportDialog({
 															{i + 1}
 														</td>
 														<td className="px-3 py-1.5 text-foreground">
-															{row.name || "—"}
+															{String(row.name || "—")}
 														</td>
 														<td className="px-3 py-1.5 text-foreground">
-															${row.price || "—"}
+															${String(row.price || "—")}
 														</td>
 														<td className="px-3 py-1.5 text-muted-foreground">
-															{row.sku || "—"}
+															{String(row.sku || "—")}
 														</td>
 														<td className="px-3 py-1.5 text-muted-foreground">
-															{row.status || "draft"}
+															{String(row.status || "draft")}
 														</td>
 													</tr>
 												))}
@@ -728,8 +724,7 @@ export function ProductList() {
 	}, [api.listProducts, search, status, category, categoryNameById]);
 
 	const handleImport = useCallback(
-		// biome-ignore lint/suspicious/noExplicitAny: CSV row data
-		async (rows: Record<string, any>[]): Promise<ImportResult> => {
+		async (rows: Record<string, unknown>[]): Promise<ImportResult> => {
 			const result = (await api.importProducts.fetch({
 				products: rows,
 			})) as ImportResult;

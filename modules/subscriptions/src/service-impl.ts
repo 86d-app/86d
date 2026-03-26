@@ -52,8 +52,11 @@ export function createSubscriptionController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("subscriptionPlan", id, plan as Record<string, any>);
+			await data.upsert(
+				"subscriptionPlan",
+				id,
+				plan as Record<string, unknown>,
+			);
 			return plan;
 		},
 
@@ -94,8 +97,11 @@ export function createSubscriptionController(
 				createdAt: base.createdAt,
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("subscriptionPlan", id, updated as Record<string, any>);
+			await data.upsert(
+				"subscriptionPlan",
+				id,
+				updated as Record<string, unknown>,
+			);
 			return updated;
 		},
 
@@ -139,8 +145,7 @@ export function createSubscriptionController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("subscription", id, sub as Record<string, any>);
+			await data.upsert("subscription", id, sub as Record<string, unknown>);
 
 			if (events) {
 				void events.emit("subscription.created", {
@@ -166,8 +171,7 @@ export function createSubscriptionController(
 		},
 
 		async getSubscriptionByEmail(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = { email: params.email };
+			const where: Record<string, unknown> = { email: params.email };
 			if (params.planId) where.planId = params.planId;
 
 			const matches = await data.findMany("subscription", {
@@ -198,8 +202,7 @@ export function createSubscriptionController(
 			await data.upsert(
 				"subscription",
 				params.id,
-				// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-				updated as Record<string, any>,
+				updated as Record<string, unknown>,
 			);
 
 			if (events && updated.status === "cancelled") {
@@ -236,8 +239,7 @@ export function createSubscriptionController(
 				cancelAtPeriodEnd: false,
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("subscription", id, updated as Record<string, any>);
+			await data.upsert("subscription", id, updated as Record<string, unknown>);
 
 			if (events) {
 				void events.emit("subscription.renewed", {
@@ -282,8 +284,7 @@ export function createSubscriptionController(
 					await data.upsert(
 						"subscription",
 						sub.id,
-						// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-						updated as Record<string, any>,
+						updated as Record<string, unknown>,
 					);
 					count++;
 				}
@@ -292,8 +293,7 @@ export function createSubscriptionController(
 		},
 
 		async listSubscriptions(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.email) where.email = params.email;
 			if (params?.planId) where.planId = params.planId;
 			if (params?.status) where.status = params.status;

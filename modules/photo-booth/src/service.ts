@@ -2,7 +2,7 @@ import type { ModuleController } from "@86d-app/core";
 
 export type SendStatus = "pending" | "sent" | "failed" | "none";
 
-export interface Photo {
+export type Photo = {
 	id: string;
 	sessionId: string;
 	imageUrl: string;
@@ -15,9 +15,9 @@ export interface Photo {
 	metadata: Record<string, unknown>;
 	isPublic: boolean;
 	createdAt: Date;
-}
+};
 
-export interface PhotoSession {
+export type PhotoSession = {
 	id: string;
 	name: string;
 	description?: string | undefined;
@@ -28,9 +28,9 @@ export interface PhotoSession {
 	settings: Record<string, unknown>;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface PhotoStream {
+export type PhotoStream = {
 	id: string;
 	name: string;
 	isLive: boolean;
@@ -38,9 +38,9 @@ export interface PhotoStream {
 	settings: Record<string, unknown>;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface PhotoBoothController extends ModuleController {
+export type PhotoBoothController = ModuleController & {
 	capturePhoto(params: {
 		sessionId: string;
 		imageUrl: string;
@@ -110,4 +110,4 @@ export interface PhotoBoothController extends ModuleController {
 		take?: number | undefined;
 		skip?: number | undefined;
 	}): Promise<PhotoStream[]>;
-}
+};

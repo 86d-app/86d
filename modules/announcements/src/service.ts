@@ -1,7 +1,7 @@
 import type { ModuleController } from "@86d-app/core";
 
 /** An announcement displayed to store visitors */
-export interface Announcement {
+export type Announcement = {
 	id: string;
 	/** Short heading displayed in the announcement */
 	title: string;
@@ -42,9 +42,9 @@ export interface Announcement {
 	metadata?: Record<string, unknown> | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface AnnouncementsController extends ModuleController {
+export type AnnouncementsController = ModuleController & {
 	/** Create a new announcement */
 	createAnnouncement(params: {
 		title: string;
@@ -129,4 +129,4 @@ export interface AnnouncementsController extends ModuleController {
 		clickRate: number;
 		dismissRate: number;
 	}>;
-}
+};

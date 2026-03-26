@@ -1,6 +1,6 @@
 import type { ModuleController } from "@86d-app/core";
 
-export interface MetaTag {
+export type MetaTag = {
 	id: string;
 	path: string;
 	title?: string | undefined;
@@ -19,11 +19,11 @@ export interface MetaTag {
 	jsonLd?: Record<string, unknown> | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
 export type RedirectStatusCode = 301 | 302 | 307 | 308;
 
-export interface Redirect {
+export type Redirect = {
 	id: string;
 	fromPath: string;
 	toPath: string;
@@ -31,9 +31,9 @@ export interface Redirect {
 	active: boolean;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface SeoController extends ModuleController {
+export type SeoController = ModuleController & {
 	// Meta tags
 	upsertMetaTag(params: {
 		path: string;
@@ -97,4 +97,4 @@ export interface SeoController extends ModuleController {
 	getSitemapEntries(): Promise<
 		Array<{ path: string; lastModified?: Date | undefined }>
 	>;
-}
+};

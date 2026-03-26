@@ -6,7 +6,7 @@ export type DiscountAppliesTo =
 	| "specific_products"
 	| "specific_categories";
 
-export interface Discount {
+export type Discount = {
 	id: string;
 	name: string;
 	description?: string | undefined;
@@ -25,9 +25,9 @@ export interface Discount {
 	metadata?: Record<string, unknown> | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface DiscountCode {
+export type DiscountCode = {
 	id: string;
 	discountId: string;
 	code: string;
@@ -36,9 +36,9 @@ export interface DiscountCode {
 	isActive: boolean;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface ApplyResult {
+export type ApplyResult = {
 	valid: boolean;
 	discountAmount: number;
 	/** Free shipping granted */
@@ -46,9 +46,9 @@ export interface ApplyResult {
 	discount?: Discount | undefined;
 	code?: DiscountCode | undefined;
 	error?: string | undefined;
-}
+};
 
-export interface DiscountController extends ModuleController {
+export type DiscountController = ModuleController & {
 	/** Create a new discount rule */
 	create(params: {
 		id?: string | undefined;
@@ -228,14 +228,14 @@ export interface DiscountController extends ModuleController {
 
 	/** Increment usage counters for applied price rules (call at order confirmation) */
 	applyPriceRules(ruleIds: string[]): Promise<void>;
-}
+};
 
-export interface BulkCodeResult {
+export type BulkCodeResult = {
 	generated: number;
 	codes: DiscountCode[];
-}
+};
 
-export interface CodeStats {
+export type CodeStats = {
 	total: number;
 	active: number;
 	inactive: number;
@@ -243,9 +243,9 @@ export interface CodeStats {
 	fullyUsed: number;
 	unused: number;
 	redemptionRate: number;
-}
+};
 
-export interface DiscountAnalytics {
+export type DiscountAnalytics = {
 	totalDiscounts: number;
 	activeCount: number;
 	expiredCount: number;
@@ -254,9 +254,9 @@ export interface DiscountAnalytics {
 	totalCodes: number;
 	typeDistribution: Record<string, number>;
 	topByUsage: DiscountSummary[];
-}
+};
 
-export interface DiscountSummary {
+export type DiscountSummary = {
 	id: string;
 	name: string;
 	type: DiscountType;
@@ -265,7 +265,7 @@ export interface DiscountSummary {
 	maximumUses?: number | undefined;
 	isActive: boolean;
 	codesCount: number;
-}
+};
 
 // --- Cart Price Rules (auto-apply discounts) ---
 
@@ -275,13 +275,13 @@ export type CartPriceRuleConditionType =
 	| "contains_product"
 	| "contains_category";
 
-export interface CartPriceRuleCondition {
+export type CartPriceRuleCondition = {
 	type: CartPriceRuleConditionType;
 	/** For minimum_subtotal: amount in cents. For minimum_item_count: count. For contains_*: ID */
 	value: string | number;
-}
+};
 
-export interface CartPriceRule {
+export type CartPriceRule = {
 	id: string;
 	name: string;
 	description?: string | undefined;
@@ -303,18 +303,18 @@ export interface CartPriceRule {
 	metadata?: Record<string, unknown> | undefined;
 	createdAt: Date;
 	updatedAt: Date;
-}
+};
 
-export interface CartPriceRuleApplyResult {
+export type CartPriceRuleApplyResult = {
 	ruleId: string;
 	ruleName: string;
 	type: DiscountType;
 	discountAmount: number;
 	freeShipping: boolean;
-}
+};
 
-export interface CartAutoDiscountResult {
+export type CartAutoDiscountResult = {
 	rules: CartPriceRuleApplyResult[];
 	totalDiscount: number;
 	freeShipping: boolean;
-}
+};

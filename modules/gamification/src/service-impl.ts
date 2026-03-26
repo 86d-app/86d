@@ -58,8 +58,7 @@ export function createGamificationController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("game", id, game as Record<string, any>);
+			await data.upsert("game", id, game as Record<string, unknown>);
 			void events?.emit("game.created", { gameId: id, name: game.name });
 			return game;
 		},
@@ -102,8 +101,7 @@ export function createGamificationController(
 				...(params.settings !== undefined ? { settings: params.settings } : {}),
 				updatedAt: new Date(),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("game", id, updated as Record<string, any>);
+			await data.upsert("game", id, updated as Record<string, unknown>);
 			void events?.emit("game.updated", { gameId: id, name: updated.name });
 			return updated;
 		},
@@ -117,8 +115,7 @@ export function createGamificationController(
 		},
 
 		async listGames(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.isActive !== undefined) where.isActive = params.isActive;
 
 			const all = await data.findMany("game", {
@@ -156,8 +153,7 @@ export function createGamificationController(
 				isActive: params.isActive ?? true,
 				createdAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("prize", id, prize as Record<string, any>);
+			await data.upsert("prize", id, prize as Record<string, unknown>);
 			return prize;
 		},
 
@@ -186,8 +182,7 @@ export function createGamificationController(
 					: {}),
 				...(params.isActive !== undefined ? { isActive: params.isActive } : {}),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("prize", id, updated as Record<string, any>);
+			await data.upsert("prize", id, updated as Record<string, unknown>);
 			return updated;
 		},
 
@@ -308,8 +303,7 @@ export function createGamificationController(
 				userAgent: params.userAgent,
 				createdAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("play", playId, play as Record<string, any>);
+			await data.upsert("play", playId, play as Record<string, unknown>);
 
 			// Update prize currentWins
 			if (selectedPrize) {
@@ -320,8 +314,7 @@ export function createGamificationController(
 				await data.upsert(
 					"prize",
 					selectedPrize.id,
-					// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-					updatedPrize as Record<string, any>,
+					updatedPrize as Record<string, unknown>,
 				);
 			}
 
@@ -332,8 +325,7 @@ export function createGamificationController(
 				totalWins: result === "win" ? game.totalWins + 1 : game.totalWins,
 				updatedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("game", gameId, updatedGame as Record<string, any>);
+			await data.upsert("game", gameId, updatedGame as Record<string, unknown>);
 
 			// Emit events
 			if (result === "win") {
@@ -375,8 +367,7 @@ export function createGamificationController(
 				isRedeemed: true,
 				redeemedAt: now,
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: ModuleDataService requires any
-			await data.upsert("play", playId, updated as Record<string, any>);
+			await data.upsert("play", playId, updated as Record<string, unknown>);
 			void events?.emit("prize.redeemed", {
 				playId,
 				gameId: play.gameId,
@@ -387,8 +378,7 @@ export function createGamificationController(
 		},
 
 		async getPlayHistory(params) {
-			// biome-ignore lint/suspicious/noExplicitAny: JSONB where filter
-			const where: Record<string, any> = {};
+			const where: Record<string, unknown> = {};
 			if (params?.gameId) where.gameId = params.gameId;
 
 			const all = await data.findMany("play", {

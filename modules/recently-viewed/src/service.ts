@@ -1,6 +1,6 @@
 import type { ModuleController } from "@86d-app/core";
 
-export interface ProductView {
+export type ProductView = {
 	id: string;
 	customerId?: string | undefined;
 	sessionId?: string | undefined;
@@ -10,17 +10,17 @@ export interface ProductView {
 	productImage?: string | undefined;
 	productPrice?: number | undefined;
 	viewedAt: Date;
-}
+};
 
-export interface PopularProduct {
+export type PopularProduct = {
 	productId: string;
 	productName: string;
 	productSlug: string;
 	productImage?: string | undefined;
 	viewCount: number;
-}
+};
 
-export interface RecentlyViewedController extends ModuleController {
+export type RecentlyViewedController = ModuleController & {
 	trackView(params: {
 		customerId?: string | undefined;
 		sessionId?: string | undefined;
@@ -65,4 +65,4 @@ export interface RecentlyViewedController extends ModuleController {
 		sessionId: string;
 		customerId: string;
 	}): Promise<number>;
-}
+};
