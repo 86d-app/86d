@@ -638,6 +638,57 @@ if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
 `;
 	}
 
+	// Generate DoorDash Drive wiring code
+	const hasDoordash = modules.includes("@86d-app/doordash");
+	let doordashWiringCode = "";
+	if (hasDoordash) {
+		doordashWiringCode = `
+// ── DoorDash Drive wiring (env-var based) ──
+if (process.env.DOORDASH_DEVELOPER_ID && process.env.DOORDASH_KEY_ID && process.env.DOORDASH_SIGNING_SECRET) {
+  moduleOptions["@86d-app/doordash"] = {
+    ...moduleOptions["@86d-app/doordash"],
+    developerId: process.env.DOORDASH_DEVELOPER_ID,
+    keyId: process.env.DOORDASH_KEY_ID,
+    signingSecret: process.env.DOORDASH_SIGNING_SECRET,
+    ...(process.env.DOORDASH_SANDBOX !== undefined ? { sandbox: process.env.DOORDASH_SANDBOX === "true" } : {}),
+  };
+}
+`;
+	}
+
+	// Generate Uber Direct wiring code
+	const hasUberDirect = modules.includes("@86d-app/uber-direct");
+	let uberDirectWiringCode = "";
+	if (hasUberDirect) {
+		uberDirectWiringCode = `
+// ── Uber Direct wiring (env-var based) ──
+if (process.env.UBER_CLIENT_ID && process.env.UBER_CLIENT_SECRET && process.env.UBER_CUSTOMER_ID) {
+  moduleOptions["@86d-app/uber-direct"] = {
+    ...moduleOptions["@86d-app/uber-direct"],
+    clientId: process.env.UBER_CLIENT_ID,
+    clientSecret: process.env.UBER_CLIENT_SECRET,
+    customerId: process.env.UBER_CUSTOMER_ID,
+  };
+}
+`;
+	}
+
+	// Generate Recommendations module wiring code (AI embeddings)
+	const hasRecommendations = modules.includes("@86d-app/recommendations");
+	let recommendationsWiringCode = "";
+	if (hasRecommendations) {
+		recommendationsWiringCode = `
+// ── Recommendations module wiring (AI embeddings, env-var based) ──
+if (process.env.OPENAI_API_KEY || process.env.OPENROUTER_API_KEY) {
+  moduleOptions["@86d-app/recommendations"] = {
+    ...moduleOptions["@86d-app/recommendations"],
+    ...(process.env.OPENAI_API_KEY ? { openaiApiKey: process.env.OPENAI_API_KEY } : {}),
+    ...(process.env.OPENROUTER_API_KEY ? { openrouterApiKey: process.env.OPENROUTER_API_KEY } : {}),
+  };
+}
+`;
+	}
+
 	// Generate analytics module wiring code (GTM, GA4, Sentry)
 	const hasAnalytics = modules.includes("@86d-app/analytics");
 	let analyticsWiringCode = "";
@@ -668,7 +719,7 @@ ${moduleImports}
 ${providerImports.length > 0 ? `\n${providerImports.join("\n")}\n` : ""}
 // biome-ignore lint/suspicious/noExplicitAny: module option types are heterogeneous across modules
 const moduleOptions: Record<string, Record<string, any>> = ${JSON.stringify(moduleOptions, null, 2)};
-${providerWiringCode}${searchWiringCode}${toastWiringCode}${shippingWiringCode}${taxWiringCode}${notificationsWiringCode}${analyticsWiringCode}
+${providerWiringCode}${searchWiringCode}${toastWiringCode}${shippingWiringCode}${taxWiringCode}${notificationsWiringCode}${doordashWiringCode}${uberDirectWiringCode}${recommendationsWiringCode}${analyticsWiringCode}
 const modules = [
 ${moduleInstances}
 ];
