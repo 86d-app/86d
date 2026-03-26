@@ -1665,8 +1665,11 @@
       "devDependencies": {
         "@biomejs/biome": "catalog:",
         "@types/react": "catalog:react",
+        "@types/react-dom": "catalog:react",
         "react": "catalog:react",
+        "react-dom": "catalog:react",
         "typescript": "catalog:",
+        "vitest": "catalog:vite",
       },
       "peerDependencies": {
         "react": ">=18",

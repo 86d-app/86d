@@ -30,6 +30,7 @@
 		"check": "biome check src",
 		"check:fix": "biome check --write src",
 		"clean": "git clean -xdf .cache .turbo dist node_modules",
+		"test": "vitest run",
 		"typecheck": "tsc --noEmit --emitDeclarationOnly false"
 	},
 	"dependencies": {
@@ -38,8 +39,11 @@
 	"devDependencies": {
 		"@biomejs/biome": "catalog:",
 		"@types/react": "catalog:react",
+		"@types/react-dom": "catalog:react",
 		"react": "catalog:react",
-		"typescript": "catalog:"
+		"react-dom": "catalog:react",
+		"typescript": "catalog:",
+		"vitest": "catalog:vite"
 	},
 	"peerDependencies": {
 		"react": ">=18"
