@@ -707,6 +707,116 @@ if (process.env.NEXT_PUBLIC_GOOGLE_TAG_MANAGER_ID || process.env.GA4_MEASUREMENT
 `;
 	}
 
+	// Generate Amazon SP-API wiring code
+	const hasAmazon = modules.includes("@86d-app/amazon");
+	let amazonWiringCode = "";
+	if (hasAmazon) {
+		amazonWiringCode = `
+// ── Amazon SP-API wiring (env-var based) ──
+if (process.env.AMAZON_SELLER_ID && process.env.AMAZON_CLIENT_ID && process.env.AMAZON_CLIENT_SECRET && process.env.AMAZON_REFRESH_TOKEN) {
+  moduleOptions["@86d-app/amazon"] = {
+    ...moduleOptions["@86d-app/amazon"],
+    sellerId: process.env.AMAZON_SELLER_ID,
+    clientId: process.env.AMAZON_CLIENT_ID,
+    clientSecret: process.env.AMAZON_CLIENT_SECRET,
+    refreshToken: process.env.AMAZON_REFRESH_TOKEN,
+    marketplaceId: process.env.AMAZON_MARKETPLACE_ID ?? "ATVPDKIKX0DER",
+    region: process.env.AMAZON_REGION ?? "NA",
+  };
+}
+`;
+	}
+
+	// Generate TikTok Shop wiring code
+	const hasTiktokShop = modules.includes("@86d-app/tiktok-shop");
+	let tiktokShopWiringCode = "";
+	if (hasTiktokShop) {
+		tiktokShopWiringCode = `
+// ── TikTok Shop wiring (env-var based) ──
+if (process.env.TIKTOK_APP_KEY && process.env.TIKTOK_APP_SECRET && process.env.TIKTOK_ACCESS_TOKEN && process.env.TIKTOK_SHOP_ID) {
+  moduleOptions["@86d-app/tiktok-shop"] = {
+    ...moduleOptions["@86d-app/tiktok-shop"],
+    appKey: process.env.TIKTOK_APP_KEY,
+    appSecret: process.env.TIKTOK_APP_SECRET,
+    accessToken: process.env.TIKTOK_ACCESS_TOKEN,
+    shopId: process.env.TIKTOK_SHOP_ID,
+    ...(process.env.TIKTOK_SANDBOX !== undefined ? { sandbox: process.env.TIKTOK_SANDBOX } : {}),
+  };
+}
+`;
+	}
+
+	// Generate Google Shopping wiring code
+	const hasGoogleShopping = modules.includes("@86d-app/google-shopping");
+	let googleShoppingWiringCode = "";
+	if (hasGoogleShopping) {
+		googleShoppingWiringCode = `
+// ── Google Shopping wiring (env-var based) ──
+if (process.env.GOOGLE_MERCHANT_ID && process.env.GOOGLE_MERCHANT_API_KEY) {
+  moduleOptions["@86d-app/google-shopping"] = {
+    ...moduleOptions["@86d-app/google-shopping"],
+    merchantId: process.env.GOOGLE_MERCHANT_ID,
+    apiKey: process.env.GOOGLE_MERCHANT_API_KEY,
+    ...(process.env.GOOGLE_MERCHANT_TARGET_COUNTRY ? { targetCountry: process.env.GOOGLE_MERCHANT_TARGET_COUNTRY } : {}),
+    ...(process.env.GOOGLE_MERCHANT_CONTENT_LANGUAGE ? { contentLanguage: process.env.GOOGLE_MERCHANT_CONTENT_LANGUAGE } : {}),
+  };
+}
+`;
+	}
+
+	// Generate Facebook Shop wiring code
+	const hasFacebookShop = modules.includes("@86d-app/facebook-shop");
+	let facebookShopWiringCode = "";
+	if (hasFacebookShop) {
+		facebookShopWiringCode = `
+// ── Facebook Shop wiring (env-var based) ──
+if (process.env.FACEBOOK_ACCESS_TOKEN && process.env.FACEBOOK_CATALOG_ID && process.env.FACEBOOK_COMMERCE_ACCOUNT_ID) {
+  moduleOptions["@86d-app/facebook-shop"] = {
+    ...moduleOptions["@86d-app/facebook-shop"],
+    accessToken: process.env.FACEBOOK_ACCESS_TOKEN,
+    catalogId: process.env.FACEBOOK_CATALOG_ID,
+    commerceAccountId: process.env.FACEBOOK_COMMERCE_ACCOUNT_ID,
+    ...(process.env.FACEBOOK_PAGE_ID ? { pageId: process.env.FACEBOOK_PAGE_ID } : {}),
+  };
+}
+`;
+	}
+
+	// Generate Instagram Shop wiring code
+	const hasInstagramShop = modules.includes("@86d-app/instagram-shop");
+	let instagramShopWiringCode = "";
+	if (hasInstagramShop) {
+		instagramShopWiringCode = `
+// ── Instagram Shop wiring (env-var based) ──
+if (process.env.INSTAGRAM_ACCESS_TOKEN && process.env.INSTAGRAM_CATALOG_ID && process.env.INSTAGRAM_COMMERCE_ACCOUNT_ID) {
+  moduleOptions["@86d-app/instagram-shop"] = {
+    ...moduleOptions["@86d-app/instagram-shop"],
+    accessToken: process.env.INSTAGRAM_ACCESS_TOKEN,
+    catalogId: process.env.INSTAGRAM_CATALOG_ID,
+    commerceAccountId: process.env.INSTAGRAM_COMMERCE_ACCOUNT_ID,
+    ...(process.env.INSTAGRAM_BUSINESS_ID ? { businessId: process.env.INSTAGRAM_BUSINESS_ID } : {}),
+  };
+}
+`;
+	}
+
+	// Generate Etsy wiring code
+	const hasEtsy = modules.includes("@86d-app/etsy");
+	let etsyWiringCode = "";
+	if (hasEtsy) {
+		etsyWiringCode = `
+// ── Etsy API wiring (env-var based) ──
+if (process.env.ETSY_API_KEY && process.env.ETSY_SHOP_ID && process.env.ETSY_ACCESS_TOKEN) {
+  moduleOptions["@86d-app/etsy"] = {
+    ...moduleOptions["@86d-app/etsy"],
+    apiKey: process.env.ETSY_API_KEY,
+    shopId: process.env.ETSY_SHOP_ID,
+    accessToken: process.env.ETSY_ACCESS_TOKEN,
+  };
+}
+`;
+	}
+
 	// Generate API router content
 	const routerContent = `// Auto-generated file - do not edit manually
 // Run 'pnpm generate:modules' to regenerate
@@ -719,7 +829,7 @@ ${moduleImports}
 ${providerImports.length > 0 ? `\n${providerImports.join("\n")}\n` : ""}
 // biome-ignore lint/suspicious/noExplicitAny: module option types are heterogeneous across modules
 const moduleOptions: Record<string, Record<string, any>> = ${JSON.stringify(moduleOptions, null, 2)};
-${providerWiringCode}${searchWiringCode}${toastWiringCode}${shippingWiringCode}${taxWiringCode}${notificationsWiringCode}${doordashWiringCode}${uberDirectWiringCode}${recommendationsWiringCode}${analyticsWiringCode}
+${providerWiringCode}${searchWiringCode}${toastWiringCode}${shippingWiringCode}${taxWiringCode}${notificationsWiringCode}${doordashWiringCode}${uberDirectWiringCode}${recommendationsWiringCode}${analyticsWiringCode}${amazonWiringCode}${tiktokShopWiringCode}${googleShoppingWiringCode}${facebookShopWiringCode}${instagramShopWiringCode}${etsyWiringCode}
 const modules = [
 ${moduleInstances}
 ];
