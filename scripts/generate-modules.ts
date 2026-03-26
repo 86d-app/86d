@@ -418,8 +418,7 @@ export type Router = typeof router;
 	const moduleInstances = modules
 		.map((moduleName, idx) => {
 			const optionsKey = moduleName;
-			return `  // biome-ignore lint/suspicious/noExplicitAny: runtime module options are untyped
-  module${idx}(moduleOptions["${optionsKey}"] as any || {}),`;
+			return `  module${idx}((moduleOptions["${optionsKey}"] ?? {}) as Parameters<typeof module${idx}>[0]),`;
 		})
 		.join("\n");
 
@@ -823,20 +822,18 @@ if (process.env.ETSY_API_KEY && process.env.ETSY_SHOP_ID && process.env.ETSY_ACC
 // Generated from: ${CONFIG_PATH}
 
 import { createRouter } from "better-call";
-import type { RouterConfig } from "better-call";
+import type { Endpoint, RouterConfig } from "better-call";
 import type { ModuleContext } from "@86d-app/core";
 ${moduleImports}
 ${providerImports.length > 0 ? `\n${providerImports.join("\n")}\n` : ""}
-// biome-ignore lint/suspicious/noExplicitAny: module option types are heterogeneous across modules
-const moduleOptions: Record<string, Record<string, any>> = ${JSON.stringify(moduleOptions, null, 2)};
+const moduleOptions: Record<string, Record<string, unknown>> = ${JSON.stringify(moduleOptions, null, 2)};
 ${providerWiringCode}${searchWiringCode}${toastWiringCode}${shippingWiringCode}${taxWiringCode}${notificationsWiringCode}${doordashWiringCode}${uberDirectWiringCode}${recommendationsWiringCode}${analyticsWiringCode}${amazonWiringCode}${tiktokShopWiringCode}${googleShoppingWiringCode}${facebookShopWiringCode}${instagramShopWiringCode}${etsyWiringCode}
 const modules = [
 ${moduleInstances}
 ];
 
 // Collect ALL endpoints (customer + admin)
-// biome-ignore lint/suspicious/noExplicitAny: better-call endpoint types are dynamic
-const allEndpoints: Record<string, any> = {};
+const allEndpoints: Record<string, Endpoint> = {};
 for (const mod of modules) {
   if (mod.endpoints?.store) Object.assign(allEndpoints, mod.endpoints.store);
   if (mod.endpoints?.admin) Object.assign(allEndpoints, mod.endpoints.admin);
@@ -920,13 +917,10 @@ function getBaseUrl(): string {
   return "http://localhost:3000";
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: avoids TS2742 portability error with transitive @better-fetch/fetch
-export const api: any = createClient<Router>({
-  baseURL: getBaseUrl(),
-});
-
-// Export typed API client
-export { api as client };
+// The better-call client is not exported here because @better-fetch/fetch types
+// are not portable under Bun's module layout (TS2742).
+// Use generated/hooks.ts useApi() for typed client-side access instead.
+export {};
 `;
 
 	ensureDir(GENERATED_DIR);
@@ -1122,8 +1116,7 @@ export function useApi() {
   return useMemo(() => buildApi(client), [client]);
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: generated accessor wraps dynamically typed module hooks
-function buildApi(client: ModuleClient<any>) {
+function buildApi(client: ModuleClient) {
   return {
 `;
 
