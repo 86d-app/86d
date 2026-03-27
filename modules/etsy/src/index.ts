@@ -3,7 +3,7 @@ import { createAdminEndpointsWithSettings } from "./admin/endpoints";
 import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
 import { etsySchema } from "./schema";
 import { createEtsyController } from "./service-impl";
-import { storeEndpoints } from "./store/endpoints";
+import { createStoreEndpoints } from "./store/endpoints";
 
 export type {
 	ChannelStats,
@@ -20,6 +20,8 @@ export interface EtsyOptions extends ModuleConfig {
 	shopId?: string | undefined;
 	/** Etsy OAuth2 access token */
 	accessToken?: string | undefined;
+	/** Etsy webhook signing secret for HMAC-SHA256 verification */
+	webhookSecret?: string | undefined;
 }
 
 export default function etsy(options?: EtsyOptions): Module {
@@ -55,7 +57,7 @@ export default function etsy(options?: EtsyOptions): Module {
 			return { controllers: { etsy: controller } };
 		},
 		endpoints: {
-			store: storeEndpoints,
+			store: createStoreEndpoints(options?.webhookSecret),
 			admin: createAdminEndpointsWithSettings(settingsEndpoint),
 		},
 		admin: {

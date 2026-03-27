@@ -3,7 +3,7 @@ import { createAdminEndpointsWithSettings } from "./admin/endpoints";
 import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
 import { amazonSchema } from "./schema";
 import { createAmazonController } from "./service-impl";
-import { storeEndpoints } from "./store/endpoints";
+import { createStoreEndpoints } from "./store/endpoints";
 
 export type {
 	AmazonController,
@@ -27,6 +27,8 @@ export interface AmazonOptions extends ModuleConfig {
 	marketplaceId?: string;
 	/** Amazon region: "NA" | "EU" | "FE" (default: "NA") */
 	region?: string;
+	/** Webhook signing secret for HMAC-SHA256 signature verification */
+	webhookSecret?: string;
 }
 
 export default function amazon(options?: AmazonOptions): Module {
@@ -68,7 +70,7 @@ export default function amazon(options?: AmazonOptions): Module {
 			return { controllers: { amazon: controller } };
 		},
 		endpoints: {
-			store: storeEndpoints,
+			store: createStoreEndpoints(options?.webhookSecret),
 			admin: createAdminEndpointsWithSettings(settingsEndpoint),
 		},
 		admin: {

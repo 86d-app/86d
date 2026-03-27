@@ -1,30 +1,29 @@
 import { createMockDataService } from "@86d-app/core/test-utils";
 import { describe, expect, it, vi } from "vitest";
 import { verifyWebhookSignature } from "../provider";
-import { createFacebookShopController } from "../service-impl";
-import { createFacebookShopWebhook } from "../store/endpoints/webhook";
+import { createGoogleShoppingController } from "../service-impl";
+import { createGoogleShoppingWebhook } from "../store/endpoints/webhooks";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-const TEST_APP_SECRET = "test-meta-app-secret-for-unit-tests";
+const TEST_WEBHOOK_SECRET = "test-google-webhook-secret";
 
-async function computeHubSignature(
+async function computeHmacHex(
 	payload: string,
-	appSecret: string,
+	secret: string,
 ): Promise<string> {
 	const encoder = new TextEncoder();
 	const key = await crypto.subtle.importKey(
 		"raw",
-		encoder.encode(appSecret),
+		encoder.encode(secret),
 		{ name: "HMAC", hash: "SHA-256" },
 		false,
 		["sign"],
 	);
 	const sig = await crypto.subtle.sign("HMAC", key, encoder.encode(payload));
-	const hex = Array.from(new Uint8Array(sig))
+	return Array.from(new Uint8Array(sig))
 		.map((b) => b.toString(16).padStart(2, "0"))
 		.join("");
-	return `sha256=${hex}`;
 }
 
 function createMockEvents() {
@@ -38,14 +37,14 @@ function createMockEvents() {
 function createTestContext() {
 	const data = createMockDataService();
 	const events = createMockEvents();
-	const controller = createFacebookShopController(data, events);
+	const controller = createGoogleShoppingController(data, events);
 	return {
-		context: { controllers: { facebookShop: controller }, events },
+		context: { controllers: { "google-shopping": controller }, events },
 	};
 }
 
 async function callWebhook(
-	handler: ReturnType<typeof createFacebookShopWebhook>,
+	handler: ReturnType<typeof createGoogleShoppingWebhook>,
 	request: Request,
 	context?: Record<string, unknown>,
 ): Promise<Response> {
@@ -57,76 +56,57 @@ async function callWebhook(
 const ORDER_PAYLOAD = {
 	type: "order.created",
 	payload: {
-		externalOrderId: "fb-12345",
-		status: "pending",
+		googleOrderId: "GOOG-12345",
 		items: [],
 		subtotal: 100,
-		shippingFee: 10,
-		platformFee: 5,
-		total: 115,
-		shippingAddress: { city: "New York" },
+		shippingCost: 10,
+		tax: 8,
+		total: 118,
+		shippingAddress: { city: "Mountain View" },
 	},
 };
 
 // ── Signature verification function tests ────────────────────────────────────
 
 describe("verifyWebhookSignature", () => {
-	it("returns true for a valid sha256= prefixed signature", async () => {
+	it("returns true for valid signature", async () => {
 		const body = JSON.stringify(ORDER_PAYLOAD);
-		const signature = await computeHubSignature(body, TEST_APP_SECRET);
+		const signature = await computeHmacHex(body, TEST_WEBHOOK_SECRET);
 		const result = await verifyWebhookSignature(
 			body,
 			signature,
-			TEST_APP_SECRET,
+			TEST_WEBHOOK_SECRET,
 		);
 		expect(result).toBe(true);
 	});
 
-	it("returns true for a valid hex signature without prefix", async () => {
+	it("returns false for tampered payload", async () => {
 		const body = JSON.stringify(ORDER_PAYLOAD);
-		const signature = await computeHubSignature(body, TEST_APP_SECRET);
-		const hexOnly = signature.replace("sha256=", "");
-		const result = await verifyWebhookSignature(body, hexOnly, TEST_APP_SECRET);
-		expect(result).toBe(true);
-	});
-
-	it("returns false for a tampered payload", async () => {
-		const body = JSON.stringify(ORDER_PAYLOAD);
-		const signature = await computeHubSignature(body, TEST_APP_SECRET);
+		const signature = await computeHmacHex(body, TEST_WEBHOOK_SECRET);
 		const result = await verifyWebhookSignature(
 			'{"type":"order.cancelled"}',
 			signature,
-			TEST_APP_SECRET,
+			TEST_WEBHOOK_SECRET,
 		);
 		expect(result).toBe(false);
 	});
 
-	it("returns false for a wrong signature", async () => {
+	it("returns false for empty signature", async () => {
 		const body = JSON.stringify(ORDER_PAYLOAD);
-		const result = await verifyWebhookSignature(
-			body,
-			"sha256=0000000000000000000000000000000000000000000000000000000000000000",
-			TEST_APP_SECRET,
-		);
-		expect(result).toBe(false);
-	});
-
-	it("returns false for an empty signature", async () => {
-		const body = JSON.stringify(ORDER_PAYLOAD);
-		const result = await verifyWebhookSignature(body, "", TEST_APP_SECRET);
+		const result = await verifyWebhookSignature(body, "", TEST_WEBHOOK_SECRET);
 		expect(result).toBe(false);
 	});
 });
 
 // ── Webhook endpoint tests ───────────────────────────────────────────────────
 
-describe("facebook-shop webhook endpoint", () => {
+describe("google-shopping webhook endpoint", () => {
 	describe("without signature verification", () => {
-		const endpoint = createFacebookShopWebhook();
+		const endpoint = createGoogleShoppingWebhook();
 
 		it("rejects invalid JSON with 400", async () => {
 			const request = new Request(
-				"https://store.example.com/facebook-shop/webhooks",
+				"https://store.example.com/google-shopping/webhooks",
 				{
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
@@ -140,7 +120,7 @@ describe("facebook-shop webhook endpoint", () => {
 
 		it("handles order.created events", async () => {
 			const request = new Request(
-				"https://store.example.com/facebook-shop/webhooks",
+				"https://store.example.com/google-shopping/webhooks",
 				{
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
@@ -156,18 +136,18 @@ describe("facebook-shop webhook endpoint", () => {
 	});
 
 	describe("with signature verification", () => {
-		const signedEndpoint = createFacebookShopWebhook(TEST_APP_SECRET);
+		const signedEndpoint = createGoogleShoppingWebhook(TEST_WEBHOOK_SECRET);
 
-		it("accepts a valid signature", async () => {
+		it("accepts valid signature", async () => {
 			const body = JSON.stringify(ORDER_PAYLOAD);
-			const signature = await computeHubSignature(body, TEST_APP_SECRET);
+			const signature = await computeHmacHex(body, TEST_WEBHOOK_SECRET);
 			const request = new Request(
-				"https://store.example.com/facebook-shop/webhooks",
+				"https://store.example.com/google-shopping/webhooks",
 				{
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
-						"x-hub-signature-256": signature,
+						"x-goog-signature": signature,
 					},
 					body,
 				},
@@ -179,7 +159,7 @@ describe("facebook-shop webhook endpoint", () => {
 
 		it("rejects missing signature with 401", async () => {
 			const request = new Request(
-				"https://store.example.com/facebook-shop/webhooks",
+				"https://store.example.com/google-shopping/webhooks",
 				{
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
@@ -195,13 +175,13 @@ describe("facebook-shop webhook endpoint", () => {
 
 		it("rejects invalid signature with 401", async () => {
 			const request = new Request(
-				"https://store.example.com/facebook-shop/webhooks",
+				"https://store.example.com/google-shopping/webhooks",
 				{
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
-						"x-hub-signature-256":
-							"sha256=0000000000000000000000000000000000000000000000000000000000000000",
+						"x-goog-signature":
+							"0000000000000000000000000000000000000000000000000000000000000000",
 					},
 					body: JSON.stringify(ORDER_PAYLOAD),
 				},
@@ -215,17 +195,14 @@ describe("facebook-shop webhook endpoint", () => {
 
 		it("rejects tampered body with 401", async () => {
 			const originalBody = JSON.stringify(ORDER_PAYLOAD);
-			const signature = await computeHubSignature(
-				originalBody,
-				TEST_APP_SECRET,
-			);
+			const signature = await computeHmacHex(originalBody, TEST_WEBHOOK_SECRET);
 			const request = new Request(
-				"https://store.example.com/facebook-shop/webhooks",
+				"https://store.example.com/google-shopping/webhooks",
 				{
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
-						"x-hub-signature-256": signature,
+						"x-goog-signature": signature,
 					},
 					body: JSON.stringify({
 						type: "order.cancelled",

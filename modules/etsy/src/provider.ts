@@ -372,3 +372,43 @@ export function mapWhoMadeFromApi(
 export function etsyMoney(money: { amount: number; divisor: number }): number {
 	return money.amount / money.divisor;
 }
+
+// ── Webhook signature verification ──────────────────────────────────────────
+
+/**
+ * Verify an Etsy webhook signature.
+ * Uses HMAC-SHA256 with a shared webhook secret.
+ * The signature is sent in the X-Etsy-Signature header as a hex string.
+ */
+export async function verifyWebhookSignature(
+	payload: string,
+	signature: string,
+	webhookSecret: string,
+): Promise<boolean> {
+	if (!signature) return false;
+
+	const encoder = new TextEncoder();
+	const key = await crypto.subtle.importKey(
+		"raw",
+		encoder.encode(webhookSecret),
+		{ name: "HMAC", hash: "SHA-256" },
+		false,
+		["sign"],
+	);
+	const computed = await crypto.subtle.sign(
+		"HMAC",
+		key,
+		encoder.encode(payload),
+	);
+	const computedHex = Array.from(new Uint8Array(computed))
+		.map((b) => b.toString(16).padStart(2, "0"))
+		.join("");
+
+	// Timing-safe comparison
+	if (computedHex.length !== signature.length) return false;
+	let mismatch = 0;
+	for (let i = 0; i < computedHex.length; i++) {
+		mismatch |= computedHex.charCodeAt(i) ^ signature.charCodeAt(i);
+	}
+	return mismatch === 0;
+}

@@ -3,7 +3,7 @@ import { createAdminEndpointsWithSettings } from "./admin/endpoints";
 import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
 import { googleShoppingSchema } from "./schema";
 import { createGoogleShoppingController } from "./service-impl";
-import { storeEndpoints } from "./store/endpoints";
+import { createStoreEndpoints } from "./store/endpoints";
 
 export type {
 	ChannelOrder,
@@ -23,6 +23,8 @@ export interface GoogleShoppingOptions extends ModuleConfig {
 	targetCountry?: string;
 	/** Content language (default: "en") */
 	contentLanguage?: string;
+	/** Webhook secret for HMAC-SHA256 signature verification */
+	webhookSecret?: string;
 }
 
 export default function googleShopping(
@@ -61,7 +63,7 @@ export default function googleShopping(
 			return { controllers: { "google-shopping": controller } };
 		},
 		endpoints: {
-			store: storeEndpoints,
+			store: createStoreEndpoints(options?.webhookSecret),
 			admin: createAdminEndpointsWithSettings(settingsEndpoint),
 		},
 		admin: {

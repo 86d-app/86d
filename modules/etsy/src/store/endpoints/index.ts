@@ -1,5 +1,11 @@
-import { webhookEndpoint } from "./webhooks";
+import { createEtsyWebhook } from "./webhooks";
 
-export const storeEndpoints = {
-	"/etsy/webhooks": webhookEndpoint,
-};
+export { createEtsyWebhook };
+
+export function createStoreEndpoints(webhookSecret?: string | undefined) {
+	return {
+		"/etsy/webhooks": createEtsyWebhook(webhookSecret),
+	};
+}
+
+export const storeEndpoints = createStoreEndpoints();
