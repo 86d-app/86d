@@ -77,8 +77,7 @@ export class SquarePaymentProvider implements PaymentProvider {
 			},
 			...(jsonBody !== undefined ? { body: jsonBody } : {}),
 		});
-		// biome-ignore lint/suspicious/noExplicitAny: dynamic JSON response
-		const json = (await res.json()) as any;
+		const json: unknown = await res.json();
 		if (!res.ok) {
 			const err = json as SquareErrorResponse;
 			const detail = err.errors?.[0]?.detail ?? `HTTP ${res.status}`;

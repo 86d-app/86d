@@ -816,6 +816,94 @@ if (process.env.ETSY_API_KEY && process.env.ETSY_SHOP_ID && process.env.ETSY_ACC
 `;
 	}
 
+	// Generate eBay wiring code
+	const hasEbay = modules.includes("@86d-app/ebay");
+	let ebayWiringCode = "";
+	if (hasEbay) {
+		ebayWiringCode = `
+// ── eBay API wiring (env-var based) ──
+if (process.env.EBAY_CLIENT_ID && process.env.EBAY_CLIENT_SECRET && process.env.EBAY_REFRESH_TOKEN) {
+  moduleOptions["@86d-app/ebay"] = {
+    ...moduleOptions["@86d-app/ebay"],
+    clientId: process.env.EBAY_CLIENT_ID,
+    clientSecret: process.env.EBAY_CLIENT_SECRET,
+    refreshToken: process.env.EBAY_REFRESH_TOKEN,
+    ...(process.env.EBAY_SITE_ID ? { siteId: process.env.EBAY_SITE_ID } : {}),
+  };
+}
+`;
+	}
+
+	// Generate Walmart wiring code
+	const hasWalmart = modules.includes("@86d-app/walmart");
+	let walmartWiringCode = "";
+	if (hasWalmart) {
+		walmartWiringCode = `
+// ── Walmart Marketplace wiring (env-var based) ──
+if (process.env.WALMART_CLIENT_ID && process.env.WALMART_CLIENT_SECRET) {
+  moduleOptions["@86d-app/walmart"] = {
+    ...moduleOptions["@86d-app/walmart"],
+    clientId: process.env.WALMART_CLIENT_ID,
+    clientSecret: process.env.WALMART_CLIENT_SECRET,
+    ...(process.env.WALMART_CHANNEL_TYPE ? { channelType: process.env.WALMART_CHANNEL_TYPE } : {}),
+  };
+}
+`;
+	}
+
+	// Generate Pinterest Shop wiring code
+	const hasPinterestShop = modules.includes("@86d-app/pinterest-shop");
+	let pinterestShopWiringCode = "";
+	if (hasPinterestShop) {
+		pinterestShopWiringCode = `
+// ── Pinterest Shop wiring (env-var based) ──
+if (process.env.PINTEREST_ACCESS_TOKEN) {
+  moduleOptions["@86d-app/pinterest-shop"] = {
+    ...moduleOptions["@86d-app/pinterest-shop"],
+    accessToken: process.env.PINTEREST_ACCESS_TOKEN,
+    ...(process.env.PINTEREST_AD_ACCOUNT_ID ? { adAccountId: process.env.PINTEREST_AD_ACCOUNT_ID } : {}),
+    ...(process.env.PINTEREST_CATALOG_ID ? { catalogId: process.env.PINTEREST_CATALOG_ID } : {}),
+  };
+}
+`;
+	}
+
+	// Generate X Shop wiring code
+	const hasXShop = modules.includes("@86d-app/x-shop");
+	let xShopWiringCode = "";
+	if (hasXShop) {
+		xShopWiringCode = `
+// ── X (Twitter) Shop wiring (env-var based) ──
+if (process.env.X_API_KEY && process.env.X_API_SECRET) {
+  moduleOptions["@86d-app/x-shop"] = {
+    ...moduleOptions["@86d-app/x-shop"],
+    apiKey: process.env.X_API_KEY,
+    apiSecret: process.env.X_API_SECRET,
+    ...(process.env.X_ACCESS_TOKEN ? { accessToken: process.env.X_ACCESS_TOKEN } : {}),
+    ...(process.env.X_REFRESH_TOKEN ? { refreshToken: process.env.X_REFRESH_TOKEN } : {}),
+    ...(process.env.X_MERCHANT_ID ? { merchantId: process.env.X_MERCHANT_ID } : {}),
+  };
+}
+`;
+	}
+
+	// Generate Uber Eats wiring code
+	const hasUberEats = modules.includes("@86d-app/uber-eats");
+	let uberEatsWiringCode = "";
+	if (hasUberEats) {
+		uberEatsWiringCode = `
+// ── Uber Eats wiring (env-var based) ──
+if (process.env.UBER_EATS_CLIENT_ID && process.env.UBER_EATS_CLIENT_SECRET && process.env.UBER_EATS_RESTAURANT_ID) {
+  moduleOptions["@86d-app/uber-eats"] = {
+    ...moduleOptions["@86d-app/uber-eats"],
+    clientId: process.env.UBER_EATS_CLIENT_ID,
+    clientSecret: process.env.UBER_EATS_CLIENT_SECRET,
+    restaurantId: process.env.UBER_EATS_RESTAURANT_ID,
+  };
+}
+`;
+	}
+
 	// Generate API router content
 	const routerContent = `// Auto-generated file - do not edit manually
 // Run 'pnpm generate:modules' to regenerate
@@ -827,7 +915,7 @@ import type { ModuleContext } from "@86d-app/core";
 ${moduleImports}
 ${providerImports.length > 0 ? `\n${providerImports.join("\n")}\n` : ""}
 const moduleOptions: Record<string, Record<string, unknown>> = ${JSON.stringify(moduleOptions, null, 2)};
-${providerWiringCode}${searchWiringCode}${toastWiringCode}${shippingWiringCode}${taxWiringCode}${notificationsWiringCode}${doordashWiringCode}${uberDirectWiringCode}${recommendationsWiringCode}${analyticsWiringCode}${amazonWiringCode}${tiktokShopWiringCode}${googleShoppingWiringCode}${facebookShopWiringCode}${instagramShopWiringCode}${etsyWiringCode}
+${providerWiringCode}${searchWiringCode}${toastWiringCode}${shippingWiringCode}${taxWiringCode}${notificationsWiringCode}${doordashWiringCode}${uberDirectWiringCode}${recommendationsWiringCode}${analyticsWiringCode}${amazonWiringCode}${tiktokShopWiringCode}${googleShoppingWiringCode}${facebookShopWiringCode}${instagramShopWiringCode}${etsyWiringCode}${ebayWiringCode}${walmartWiringCode}${pinterestShopWiringCode}${xShopWiringCode}${uberEatsWiringCode}
 const modules = [
 ${moduleInstances}
 ];
