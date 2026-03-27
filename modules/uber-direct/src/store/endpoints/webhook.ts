@@ -44,9 +44,8 @@ export function createUberDirectWebhook(signingKey?: string | undefined) {
 			method: "POST",
 			requireRequest: true,
 		},
-		// biome-ignore lint/suspicious/noExplicitAny: endpoint handler requires raw request access
-		async (ctx: any): Promise<Response> => {
-			const request = ctx.request as Request;
+		async (ctx) => {
+			const request = ctx.request;
 
 			let rawBody: string;
 			try {
@@ -98,8 +97,7 @@ export function createUberDirectWebhook(signingKey?: string | undefined) {
 
 			const controller = ctx.context?.controllers
 				?.uberDirect as UberDirectController;
-			// biome-ignore lint/suspicious/noExplicitAny: scoped event emitter
-			const events = ctx.context?.events as any;
+			const events = ctx.context?.events;
 
 			void events?.emit("uber-direct.webhook.received", {
 				kind: payload.kind,

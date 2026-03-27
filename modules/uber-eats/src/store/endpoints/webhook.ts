@@ -30,9 +30,8 @@ export function createUberEatsWebhook(opts: UberEatsWebhookOptions) {
 			method: "POST",
 			requireRequest: true,
 		},
-		// biome-ignore lint/suspicious/noExplicitAny: endpoint handler
-		async (ctx: any): Promise<Response> => {
-			const request = ctx.request as Request;
+		async (ctx) => {
+			const request = ctx.request;
 			const rawBody = await request.text();
 
 			// Verify webhook signature using X-Uber-Signature header
@@ -66,8 +65,7 @@ export function createUberEatsWebhook(opts: UberEatsWebhookOptions) {
 			const controller = ctx.context?.controllers?.["uber-eats"] as
 				| UberEatsController
 				| undefined;
-			// biome-ignore lint/suspicious/noExplicitAny: scoped event emitter
-			const events = ctx.context?.events as any;
+			const events = ctx.context?.events;
 
 			const resourceId =
 				event.meta?.resource_id ?? event.resource_href?.split("/").pop();

@@ -58,9 +58,8 @@ export function createDoordashWebhook() {
 			method: "POST",
 			requireRequest: true,
 		},
-		// biome-ignore lint/suspicious/noExplicitAny: endpoint handler requires raw request access
-		async (ctx: any): Promise<Response> => {
-			const request = ctx.request as Request;
+		async (ctx) => {
+			const request = ctx.request;
 
 			let payload: WebhookPayload;
 			try {
@@ -78,8 +77,7 @@ export function createDoordashWebhook() {
 
 			const controller = ctx.context?.controllers
 				?.doordash as DoordashController;
-			// biome-ignore lint/suspicious/noExplicitAny: scoped event emitter
-			const events = ctx.context?.events as any;
+			const events = ctx.context?.events;
 
 			void events?.emit("doordash.webhook.received", {
 				eventName: payload.event_name,

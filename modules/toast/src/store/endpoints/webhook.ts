@@ -63,9 +63,8 @@ export function createToastWebhook(opts: ToastWebhookOptions) {
 			method: "POST",
 			requireRequest: true,
 		},
-		// biome-ignore lint/suspicious/noExplicitAny: endpoint handler
-		async (ctx: any): Promise<Response> => {
-			const request = ctx.request as Request;
+		async (ctx) => {
+			const request = ctx.request;
 			const rawBody = await request.text();
 
 			// Signature verification (skipped if no secret configured)
@@ -99,8 +98,7 @@ export function createToastWebhook(opts: ToastWebhookOptions) {
 			const controller = ctx.context?.controllers?.toast as
 				| ToastController
 				| undefined;
-			// biome-ignore lint/suspicious/noExplicitAny: scoped event emitter
-			const events = ctx.context?.events as any;
+			const events = ctx.context?.events;
 
 			if (controller && event.entityGuid) {
 				const entityGuid = event.entityGuid;
