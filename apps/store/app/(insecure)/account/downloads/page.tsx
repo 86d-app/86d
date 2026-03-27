@@ -66,11 +66,10 @@ export default function DownloadsPage() {
 
 	async function handleDownload(token: string) {
 		try {
-			const result = await downloadApi.fetch({
+			const result = (await downloadApi.fetch({
 				params: { token },
-			});
-			// biome-ignore lint/suspicious/noExplicitAny: download response may include URL
-			const url = (result as any)?.url;
+			})) as { url?: string };
+			const url = result?.url;
 			if (url) {
 				window.open(url, "_blank", "noopener,noreferrer");
 			}

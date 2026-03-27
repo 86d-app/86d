@@ -1,5 +1,9 @@
 import { createAdminEndpoint, z } from "@86d-app/core";
-import type { TicketController } from "../../service";
+import type {
+	TicketController,
+	TicketPriority,
+	TicketStatus,
+} from "../../service";
 
 export const listTickets = createAdminEndpoint(
 	"/admin/tickets",
@@ -19,8 +23,13 @@ export const listTickets = createAdminEndpoint(
 		const controller = ctx.context.controllers.tickets as TicketController;
 		const { query = {} } = ctx;
 
-		// biome-ignore lint/suspicious/noExplicitAny: dynamic filter construction
-		const tickets = await controller.listTickets(query as any);
+		const tickets = await controller.listTickets({
+			status: query.status as TicketStatus | undefined,
+			priority: query.priority as TicketPriority | undefined,
+			categoryId: query.categoryId,
+			assigneeId: query.assigneeId,
+			customerEmail: query.customerEmail,
+		});
 
 		return { tickets };
 	},

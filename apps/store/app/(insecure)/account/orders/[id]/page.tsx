@@ -1,7 +1,7 @@
 "use client";
 
 import { cartState } from "@86d-app/cart/state";
-import { useModuleClient } from "@86d-app/core/client";
+import { ModuleClientError, useModuleClient } from "@86d-app/core/client";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import { StatusBadge } from "~/components/status-badge";
@@ -140,8 +140,7 @@ export default function OrderDetailPage() {
 
 	const cancelMutation = cancelApi.useMutation({
 		onError: (err: Error) => {
-			// biome-ignore lint/suspicious/noExplicitAny: accessing HTTP error body property
-			const body = (err as any)?.body;
+			const body = err instanceof ModuleClientError ? err.body : undefined;
 			setCancelError(
 				typeof body?.error === "string"
 					? body.error
@@ -204,8 +203,8 @@ export default function OrderDetailPage() {
 	}
 
 	if (isError || !data?.order) {
-		// biome-ignore lint/suspicious/noExplicitAny: accessing HTTP status from module client error
-		const status = (error as any)?.status;
+		const status =
+			error instanceof ModuleClientError ? error.status : undefined;
 		const message =
 			status === 404 ? "Order not found." : "Failed to load order details.";
 		return (

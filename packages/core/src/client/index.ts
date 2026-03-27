@@ -48,6 +48,8 @@
 export { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 // Client factory
 export { createModuleClient } from "./create-client";
+// Error class for HTTP failures
+export { ModuleClientError } from "./hooks";
 export type { ModuleClientProviderProps } from "./provider";
 // Provider and hooks
 export { ModuleClientProvider, useModuleClient } from "./provider";

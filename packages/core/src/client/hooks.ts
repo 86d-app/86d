@@ -7,6 +7,21 @@ import {
 } from "@tanstack/react-query";
 import type { ClientConfig, MutationHook, QueryHook } from "./types";
 
+/**
+ * Error thrown by module client when an HTTP request fails.
+ * Carries the HTTP status code and the parsed JSON response body.
+ */
+export class ModuleClientError extends Error {
+	readonly status: number;
+	body: Record<string, unknown> | undefined;
+
+	constructor(status: number, statusText: string) {
+		super(`HTTP ${status}: ${statusText}`);
+		this.name = "ModuleClientError";
+		this.status = status;
+	}
+}
+
 interface HookOptions {
 	path: string;
 	method: string;
@@ -144,14 +159,9 @@ function createFetchFn(options: HookOptions) {
 		const response = await fetch(url, fetchOptions);
 
 		if (!response.ok) {
-			const error = new Error(
-				`HTTP ${response.status}: ${response.statusText}`,
-			);
-			// biome-ignore lint/suspicious/noExplicitAny: extending Error with HTTP-specific properties
-			(error as any).status = response.status;
+			const error = new ModuleClientError(response.status, response.statusText);
 			try {
-				// biome-ignore lint/suspicious/noExplicitAny: extending Error with HTTP-specific properties
-				(error as any).body = await response.json();
+				error.body = (await response.json()) as Record<string, unknown>;
 			} catch {
 				// Ignore JSON parse errors
 			}

@@ -50,45 +50,30 @@ export function TaxReporting() {
 	>("physical");
 	const [nexusNotes, setNexusNotes] = useState("");
 
-	// biome-ignore lint/suspicious/noExplicitAny: client types are dynamic
-	const reportQuery = (client as any).admin["/admin/tax/report"].useQuery(
-		["tax-report", filterCountry, filterState],
-		{
-			query: {
-				...(filterCountry ? { country: filterCountry } : {}),
-				...(filterState ? { state: filterState } : {}),
-			},
-		},
-	);
+	const taxAdmin = client.module("tax").admin;
 
-	const transactionsQuery =
-		// biome-ignore lint/suspicious/noExplicitAny: client types are dynamic
-		(client as any).admin["/admin/tax/transactions"].useQuery(
-			["tax-transactions", filterCountry, filterState],
-			{
-				query: {
-					...(filterCountry ? { country: filterCountry } : {}),
-					...(filterState ? { state: filterState } : {}),
-					limit: "50",
-				},
-			},
-		);
+	const reportQuery = taxAdmin["/admin/tax/report"].useQuery({
+		...(filterCountry ? { country: filterCountry } : {}),
+		...(filterState ? { state: filterState } : {}),
+	}) as { data: { report?: TaxReportRow[] } | undefined; refetch: () => void };
 
-	// biome-ignore lint/suspicious/noExplicitAny: client types are dynamic
-	const nexusQuery = (client as any).admin["/admin/tax/nexus"].useQuery(
-		["tax-nexus"],
-		{ query: {} },
-	);
+	const transactionsQuery = taxAdmin["/admin/tax/transactions"].useQuery({
+		...(filterCountry ? { country: filterCountry } : {}),
+		...(filterState ? { state: filterState } : {}),
+		limit: "50",
+	}) as {
+		data: { transactions?: TaxTransactionRow[] } | undefined;
+	};
 
-	const createNexusMutation =
-		// biome-ignore lint/suspicious/noExplicitAny: client types are dynamic
-		(client as any).admin["/admin/tax/nexus/create"].useMutation(["tax-nexus"]);
+	const nexusQuery = taxAdmin["/admin/tax/nexus"].useQuery({}) as {
+		data: { nexus?: NexusRow[] } | undefined;
+		refetch: () => void;
+	};
+
+	const createNexusMutation = taxAdmin["/admin/tax/nexus/create"].useMutation();
 
 	const deleteNexusMutation =
-		// biome-ignore lint/suspicious/noExplicitAny: client types are dynamic
-		(client as any).admin["/admin/tax/nexus/:id/delete"].useMutation([
-			"tax-nexus",
-		]);
+		taxAdmin["/admin/tax/nexus/:id/delete"].useMutation();
 
 	const report: TaxReportRow[] = reportQuery.data?.report ?? [];
 	const transactions: TaxTransactionRow[] =

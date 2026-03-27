@@ -1,6 +1,6 @@
 "use client";
 
-import { useModuleClient } from "@86d-app/core/client";
+import { ModuleClientError, useModuleClient } from "@86d-app/core/client";
 import { useCallback, useMemo, useState } from "react";
 import OrderDetailTemplate from "./order-detail.mdx";
 
@@ -652,8 +652,7 @@ function FulfillDialog({
 			onClose();
 		},
 		onError: (err: Error) => {
-			// biome-ignore lint/suspicious/noExplicitAny: accessing HTTP error body
-			const body = (err as any)?.body;
+			const body = err instanceof ModuleClientError ? err.body : undefined;
 			setError(
 				typeof body?.error === "string"
 					? body.error

@@ -74,13 +74,14 @@ export default function CustomerInvoicePage() {
 		setLoading(true);
 		setError("");
 		try {
-			const res = await api.fetch({ params: { id: orderId } });
-			// biome-ignore lint/suspicious/noExplicitAny: API response shape
-			const data = res as any;
-			if (data.error) {
-				setError(data.error);
-			} else {
-				setInvoice(data.invoice);
+			const res = (await api.fetch({ params: { id: orderId } })) as {
+				invoice?: InvoiceData;
+				error?: string;
+			};
+			if (res.error) {
+				setError(res.error);
+			} else if (res.invoice) {
+				setInvoice(res.invoice);
 			}
 		} catch {
 			setError("Failed to load invoice");

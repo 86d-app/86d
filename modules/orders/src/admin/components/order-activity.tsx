@@ -382,8 +382,7 @@ export function OrderActivity({ orderId }: { orderId: string }) {
 
 		// Add notes
 		const notes =
-			// biome-ignore lint/suspicious/noExplicitAny: API response shape
-			((notesQuery.data as any)?.notes ?? []) as OrderNote[];
+			(notesQuery.data as { notes?: OrderNote[] } | undefined)?.notes ?? [];
 		for (const note of notes) {
 			list.push({
 				id: note.id,
@@ -398,9 +397,11 @@ export function OrderActivity({ orderId }: { orderId: string }) {
 
 		// Add fulfillment events
 		const fulfillments =
-			// biome-ignore lint/suspicious/noExplicitAny: API response shape
-			((fulfillmentsQuery.data as any)?.fulfillments ??
-				[]) as FulfillmentWithItems[];
+			(
+				fulfillmentsQuery.data as
+					| { fulfillments?: FulfillmentWithItems[] }
+					| undefined
+			)?.fulfillments ?? [];
 		for (const f of fulfillments) {
 			list.push({
 				id: `ff-${f.id}`,
@@ -432,8 +433,8 @@ export function OrderActivity({ orderId }: { orderId: string }) {
 
 		// Add return events
 		const returns =
-			// biome-ignore lint/suspicious/noExplicitAny: API response shape
-			((returnsQuery.data as any)?.returns ?? []) as ReturnRequestWithItems[];
+			(returnsQuery.data as { returns?: ReturnRequestWithItems[] } | undefined)
+				?.returns ?? [];
 		for (const r of returns) {
 			list.push({
 				id: `ret-${r.id}`,

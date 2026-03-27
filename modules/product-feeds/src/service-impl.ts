@@ -107,9 +107,9 @@ function resolveField(
 	const { sourceField, transform, transformValue, defaultValue } = mapping;
 
 	// Check custom fields first, then standard fields
-	const rawValue = (product.customFields?.[sourceField] ??
-		// biome-ignore lint/suspicious/noExplicitAny: ProductData has dynamic field access
-		(product as any)[sourceField]) as unknown;
+	const rawValue: unknown =
+		product.customFields?.[sourceField] ??
+		(product as Record<string, unknown>)[sourceField];
 
 	if (rawValue === undefined || rawValue === null || rawValue === "") {
 		return defaultValue ?? null;
