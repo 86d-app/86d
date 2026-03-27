@@ -1,5 +1,17 @@
 import { createStoreEndpoint } from "@86d-app/core";
 
+/** Minimal typed shape of a Square webhook event data. */
+interface SquareEventData {
+	object?: {
+		payment?: { id?: string };
+		refund?: {
+			id?: string;
+			payment_id?: string;
+			amount_money?: { amount?: number };
+		};
+	};
+}
+
 interface SquareWebhookOptions {
 	/** Square webhook signature key. When provided, the `x-square-hmacsha256-signature`
 	 *  header is verified against the raw body + notification URL. */
@@ -77,12 +89,23 @@ const SQUARE_EVENT_MAP: Record<string, EventMapping> = {
 
 const SQUARE_REFUND_EVENTS = new Set(["refund.completed", "refund.updated"]);
 
+interface WebhookEventResult {
+	id: string;
+	amount: number;
+	currency: string;
+	orderId?: string;
+}
+
+interface WebhookRefundResult {
+	intent: { id: string };
+	refund: { id: string; amount: number };
+}
+
 /** Extract the provider intent ID from a Square webhook event. */
 function extractProviderIntentId(
 	event: Record<string, unknown>,
 ): string | undefined {
-	// biome-ignore lint/suspicious/noExplicitAny: Square event structure is nested
-	const data = event.data as any;
+	const data = event.data as SquareEventData | undefined;
 	const obj = data?.object;
 	if (!obj) return undefined;
 
@@ -102,8 +125,7 @@ function extractRefundDetails(event: Record<string, unknown>):
 			amount: number;
 	  }
 	| undefined {
-	// biome-ignore lint/suspicious/noExplicitAny: Square event structure is nested
-	const data = event.data as any;
+	const data = event.data as SquareEventData | undefined;
 	const refund = data?.object?.refund;
 	if (!refund) return undefined;
 
@@ -130,9 +152,8 @@ export function createSquareWebhook(opts: SquareWebhookOptions) {
 			method: "POST",
 			requireRequest: true,
 		},
-		// biome-ignore lint/suspicious/noExplicitAny: endpoint handler
-		async (ctx: any): Promise<Response> => {
-			const request = ctx.request as Request;
+		async (ctx) => {
+			const request = ctx.request;
 			const rawBody = await request.text();
 
 			if (opts.webhookSignatureKey && opts.notificationUrl) {
@@ -166,20 +187,18 @@ export function createSquareWebhook(opts: SquareWebhookOptions) {
 
 			// ── Process payment events ──────────────────────────────────────
 			const providerIntentId = extractProviderIntentId(event);
-			// biome-ignore lint/suspicious/noExplicitAny: cross-module controller access
-			const payments = ctx.context?.controllers?.payments as any;
-			// biome-ignore lint/suspicious/noExplicitAny: scoped event emitter
-			const events = ctx.context?.events as any;
+			const payments = ctx.context?.controllers?.payments;
+			const events = ctx.context?.events;
 
 			if (providerIntentId && payments) {
 				if (SQUARE_REFUND_EVENTS.has(eventType)) {
 					const refundDetails = extractRefundDetails(event);
-					const result = await payments.handleWebhookRefund({
+					const result = (await payments.handleWebhookRefund({
 						providerIntentId,
 						providerRefundId:
 							refundDetails?.providerRefundId ?? `sq_re_${crypto.randomUUID()}`,
 						amount: refundDetails?.amount,
-					});
+					})) as WebhookRefundResult | null;
 					if (result && events) {
 						await events.emit("payment.refunded", {
 							paymentIntentId: result.intent.id,
@@ -196,14 +215,14 @@ export function createSquareWebhook(opts: SquareWebhookOptions) {
 
 				const mapping = SQUARE_EVENT_MAP[eventType];
 				if (mapping) {
-					const updated = await payments.handleWebhookEvent({
+					const updated = (await payments.handleWebhookEvent({
 						providerIntentId,
 						status: mapping.status,
 						providerMetadata: {
 							squareEventId: event.event_id,
 							squareEventType: eventType,
 						},
-					});
+					})) as WebhookEventResult | null;
 					if (updated && mapping.domainEvent && events) {
 						await events.emit(mapping.domainEvent, {
 							paymentIntentId: updated.id,

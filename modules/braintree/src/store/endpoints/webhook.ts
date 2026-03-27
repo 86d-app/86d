@@ -135,6 +135,18 @@ function isRefundNotification(kind: string, btPayload: string): boolean {
 	}
 }
 
+interface WebhookEventResult {
+	id: string;
+	amount: number;
+	currency: string;
+	orderId?: string;
+}
+
+interface WebhookRefundResult {
+	intent: { id: string };
+	refund: { id: string; amount: number };
+}
+
 // ── Endpoint factory ──────────────────────────────────────────────────────────
 
 /**
@@ -149,9 +161,8 @@ export function createBraintreeWebhook(opts: BraintreeWebhookOptions) {
 			method: "POST",
 			requireRequest: true,
 		},
-		// biome-ignore lint/suspicious/noExplicitAny: endpoint handler
-		async (ctx: any): Promise<Response> => {
-			const request = ctx.request as Request;
+		async (ctx) => {
+			const request = ctx.request;
 			const rawBody = await request.text();
 
 			// Braintree sends application/x-www-form-urlencoded
@@ -189,20 +200,18 @@ export function createBraintreeWebhook(opts: BraintreeWebhookOptions) {
 
 			// ── Process payment events ──────────────────────────────────────
 			const transactionId = extractTransactionId(btPayload);
-			// biome-ignore lint/suspicious/noExplicitAny: cross-module controller access
-			const paymentsCtrl = ctx.context?.controllers?.payments as any;
-			// biome-ignore lint/suspicious/noExplicitAny: scoped event emitter
-			const events = ctx.context?.events as any;
+			const paymentsCtrl = ctx.context?.controllers?.payments;
+			const events = ctx.context?.events;
 
 			if (transactionId && paymentsCtrl) {
 				// Check if this is a refund notification
 				if (isRefundNotification(kind, btPayload)) {
 					const amount = extractAmount(btPayload);
-					const result = await paymentsCtrl.handleWebhookRefund({
+					const result = (await paymentsCtrl.handleWebhookRefund({
 						providerIntentId: transactionId,
 						providerRefundId: `bt_re_${transactionId}`,
 						amount,
-					});
+					})) as WebhookRefundResult | null;
 					if (result && events) {
 						await events.emit("payment.refunded", {
 							paymentIntentId: result.intent.id,
@@ -219,13 +228,13 @@ export function createBraintreeWebhook(opts: BraintreeWebhookOptions) {
 
 				const mapping = BRAINTREE_EVENT_MAP[kind];
 				if (mapping) {
-					const updated = await paymentsCtrl.handleWebhookEvent({
+					const updated = (await paymentsCtrl.handleWebhookEvent({
 						providerIntentId: transactionId,
 						status: mapping.status,
 						providerMetadata: {
 							braintreeKind: kind,
 						},
-					});
+					})) as WebhookEventResult | null;
 					if (updated && mapping.domainEvent && events) {
 						await events.emit(mapping.domainEvent, {
 							paymentIntentId: updated.id,

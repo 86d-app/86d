@@ -1,5 +1,15 @@
 import { createStoreEndpoint } from "@86d-app/core";
 
+/** Minimal typed shape of a Stripe webhook event. */
+interface StripeEventData {
+	object?: {
+		id?: string;
+		payment_intent?: string;
+		amount_refunded?: number;
+		refunds?: { data?: Array<{ id?: string; amount?: number }> };
+	};
+}
+
 interface StripeWebhookOptions {
 	/** Stripe webhook signing secret (whsec_...). When provided, incoming requests
 	 *  are rejected if the `Stripe-Signature` header is absent or invalid. */
@@ -99,12 +109,23 @@ const STRIPE_REFUND_EVENTS = new Set([
 	"charge.dispute.funds_withdrawn",
 ]);
 
+interface WebhookEventResult {
+	id: string;
+	amount: number;
+	currency: string;
+	orderId?: string;
+}
+
+interface WebhookRefundResult {
+	intent: { id: string };
+	refund: { id: string; amount: number };
+}
+
 /** Extract the Stripe payment intent ID from the event data object. */
 function extractProviderIntentId(
 	event: Record<string, unknown>,
 ): string | undefined {
-	// biome-ignore lint/suspicious/noExplicitAny: Stripe event structure is deeply nested
-	const data = event.data as any;
+	const data = event.data as StripeEventData | undefined;
 	const obj = data?.object;
 	if (!obj) return undefined;
 
@@ -124,8 +145,7 @@ function extractRefundDetails(event: Record<string, unknown>):
 			amount: number;
 	  }
 	| undefined {
-	// biome-ignore lint/suspicious/noExplicitAny: Stripe event structure is deeply nested
-	const data = event.data as any;
+	const data = event.data as StripeEventData | undefined;
 	const obj = data?.object;
 	if (!obj?.refunds?.data) return undefined;
 
@@ -157,9 +177,8 @@ export function createStripeWebhook(opts: StripeWebhookOptions) {
 			method: "POST",
 			requireRequest: true,
 		},
-		// biome-ignore lint/suspicious/noExplicitAny: endpoint handler
-		async (ctx: any): Promise<Response> => {
-			const request = ctx.request as Request;
+		async (ctx) => {
+			const request = ctx.request;
 
 			// Read raw body before any JSON.parse to preserve bytes for HMAC
 			const rawBody = await request.text();
@@ -194,20 +213,18 @@ export function createStripeWebhook(opts: StripeWebhookOptions) {
 
 			// ── Process payment events ──────────────────────────────────────
 			const providerIntentId = extractProviderIntentId(event);
-			// biome-ignore lint/suspicious/noExplicitAny: cross-module controller access
-			const payments = ctx.context?.controllers?.payments as any;
-			// biome-ignore lint/suspicious/noExplicitAny: scoped event emitter
-			const events = ctx.context?.events as any;
+			const payments = ctx.context?.controllers?.payments;
+			const events = ctx.context?.events;
 
 			if (providerIntentId && payments) {
 				if (STRIPE_REFUND_EVENTS.has(eventType)) {
 					const refundDetails = extractRefundDetails(event);
-					const result = await payments.handleWebhookRefund({
+					const result = (await payments.handleWebhookRefund({
 						providerIntentId,
 						providerRefundId:
 							refundDetails?.providerRefundId ?? `re_${crypto.randomUUID()}`,
 						amount: refundDetails?.amount,
-					});
+					})) as WebhookRefundResult | null;
 					if (result && events) {
 						await events.emit("payment.refunded", {
 							paymentIntentId: result.intent.id,
@@ -224,14 +241,14 @@ export function createStripeWebhook(opts: StripeWebhookOptions) {
 
 				const mapping = STRIPE_EVENT_MAP[eventType];
 				if (mapping) {
-					const updated = await payments.handleWebhookEvent({
+					const updated = (await payments.handleWebhookEvent({
 						providerIntentId,
 						status: mapping.status,
 						providerMetadata: {
 							stripeEventId: event.id,
 							stripeEventType: eventType,
 						},
-					});
+					})) as WebhookEventResult | null;
 					if (updated && mapping.domainEvent && events) {
 						await events.emit(mapping.domainEvent, {
 							paymentIntentId: updated.id,

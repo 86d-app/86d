@@ -1,5 +1,14 @@
 import { createStoreEndpoint } from "@86d-app/core";
 
+/** Minimal typed shape of a PayPal webhook event resource. */
+interface PayPalResource {
+	id?: string;
+	supplementary_data?: {
+		related_ids?: { order_id?: string };
+	};
+	amount?: { value?: string };
+}
+
 interface PayPalWebhookOptions {
 	clientId: string;
 	clientSecret: string;
@@ -133,12 +142,23 @@ const PAYPAL_REFUND_EVENTS = new Set([
 	"PAYMENT.SALE.REFUNDED",
 ]);
 
+interface WebhookEventResult {
+	id: string;
+	amount: number;
+	currency: string;
+	orderId?: string;
+}
+
+interface WebhookRefundResult {
+	intent: { id: string };
+	refund: { id: string; amount: number };
+}
+
 /** Extract the provider intent ID from a PayPal webhook event. */
 function extractProviderIntentId(
 	event: Record<string, unknown>,
 ): string | undefined {
-	// biome-ignore lint/suspicious/noExplicitAny: PayPal event structure varies by event type
-	const resource = event.resource as any;
+	const resource = event.resource as PayPalResource | undefined;
 	if (!resource) return undefined;
 
 	// PAYMENT.CAPTURE events: resource.id is the capture ID, supplementary_data has the order/intent
@@ -159,8 +179,7 @@ function extractRefundDetails(event: Record<string, unknown>):
 			amount: number;
 	  }
 	| undefined {
-	// biome-ignore lint/suspicious/noExplicitAny: PayPal event structure varies
-	const resource = event.resource as any;
+	const resource = event.resource as PayPalResource | undefined;
 	if (!resource) return undefined;
 
 	return {
@@ -192,9 +211,8 @@ export function createPayPalWebhook(opts: PayPalWebhookOptions) {
 			method: "POST",
 			requireRequest: true,
 		},
-		// biome-ignore lint/suspicious/noExplicitAny: endpoint handler
-		async (ctx: any): Promise<Response> => {
-			const request = ctx.request as Request;
+		async (ctx) => {
+			const request = ctx.request;
 			const rawBody = await request.text();
 
 			if (opts.webhookId) {
@@ -228,20 +246,18 @@ export function createPayPalWebhook(opts: PayPalWebhookOptions) {
 
 			// ── Process payment events ──────────────────────────────────────
 			const providerIntentId = extractProviderIntentId(event);
-			// biome-ignore lint/suspicious/noExplicitAny: cross-module controller access
-			const payments = ctx.context?.controllers?.payments as any;
-			// biome-ignore lint/suspicious/noExplicitAny: scoped event emitter
-			const events = ctx.context?.events as any;
+			const payments = ctx.context?.controllers?.payments;
+			const events = ctx.context?.events;
 
 			if (providerIntentId && payments) {
 				if (PAYPAL_REFUND_EVENTS.has(eventType)) {
 					const refundDetails = extractRefundDetails(event);
-					const result = await payments.handleWebhookRefund({
+					const result = (await payments.handleWebhookRefund({
 						providerIntentId,
 						providerRefundId:
 							refundDetails?.providerRefundId ?? `pp_re_${crypto.randomUUID()}`,
 						amount: refundDetails?.amount,
-					});
+					})) as WebhookRefundResult | null;
 					if (result && events) {
 						await events.emit("payment.refunded", {
 							paymentIntentId: result.intent.id,
@@ -258,14 +274,14 @@ export function createPayPalWebhook(opts: PayPalWebhookOptions) {
 
 				const mapping = PAYPAL_EVENT_MAP[eventType];
 				if (mapping) {
-					const updated = await payments.handleWebhookEvent({
+					const updated = (await payments.handleWebhookEvent({
 						providerIntentId,
 						status: mapping.status,
 						providerMetadata: {
 							paypalEventId: event.id,
 							paypalEventType: eventType,
 						},
-					});
+					})) as WebhookEventResult | null;
 					if (updated && mapping.domainEvent && events) {
 						await events.emit(mapping.domainEvent, {
 							paymentIntentId: updated.id,
