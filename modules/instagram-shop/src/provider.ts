@@ -338,3 +338,48 @@ export function parseMetaMoney(amount: string | undefined): number {
 	const cents = Number.parseInt(amount, 10);
 	return Number.isNaN(cents) ? 0 : cents / 100;
 }
+
+// ── Webhook signature verification ──────────────────────────────────────────
+
+/**
+ * Verify a Meta webhook signature.
+ * Meta signs webhook payloads with HMAC-SHA256 using the app secret.
+ * The signature is sent in the X-Hub-Signature-256 header as "sha256=<hex>".
+ */
+export async function verifyWebhookSignature(
+	payload: string,
+	signature: string,
+	appSecret: string,
+): Promise<boolean> {
+	const prefix = "sha256=";
+	const hex = signature.startsWith(prefix)
+		? signature.slice(prefix.length)
+		: signature;
+
+	if (!hex) return false;
+
+	const encoder = new TextEncoder();
+	const key = await crypto.subtle.importKey(
+		"raw",
+		encoder.encode(appSecret),
+		{ name: "HMAC", hash: "SHA-256" },
+		false,
+		["sign"],
+	);
+	const computed = await crypto.subtle.sign(
+		"HMAC",
+		key,
+		encoder.encode(payload),
+	);
+	const computedHex = Array.from(new Uint8Array(computed))
+		.map((b) => b.toString(16).padStart(2, "0"))
+		.join("");
+
+	// Timing-safe comparison
+	if (computedHex.length !== hex.length) return false;
+	let mismatch = 0;
+	for (let i = 0; i < computedHex.length; i++) {
+		mismatch |= computedHex.charCodeAt(i) ^ hex.charCodeAt(i);
+	}
+	return mismatch === 0;
+}

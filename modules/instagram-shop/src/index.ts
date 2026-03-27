@@ -3,7 +3,7 @@ import { createAdminEndpointsWithSettings } from "./admin/endpoints";
 import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
 import { instagramShopSchema } from "./schema";
 import { createInstagramShopController } from "./service-impl";
-import { storeEndpoints } from "./store/endpoints";
+import { createStoreEndpoints } from "./store/endpoints";
 
 export type {
 	CatalogSync,
@@ -22,6 +22,8 @@ export interface InstagramShopOptions extends ModuleConfig {
 	catalogId?: string;
 	/** Meta Commerce Manager account ID */
 	commerceAccountId?: string;
+	/** Meta app secret for webhook signature verification */
+	appSecret?: string;
 }
 
 export default function instagramShop(options?: InstagramShopOptions): Module {
@@ -58,7 +60,7 @@ export default function instagramShop(options?: InstagramShopOptions): Module {
 			return { controllers: { instagramShop: controller } };
 		},
 		endpoints: {
-			store: storeEndpoints,
+			store: createStoreEndpoints(options?.appSecret),
 			admin: createAdminEndpointsWithSettings(settingsEndpoint),
 		},
 		admin: {
