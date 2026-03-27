@@ -124,7 +124,7 @@ Package handles its own compilation.
 // apps/web/package.json
 {
   "dependencies": {
-    "@repo/ui": "workspace:*" // pnpm/bun
+    "@repo/ui": "workspace:*" // bun
     // "@repo/ui": "*"         // npm/yarn
   }
 }
@@ -133,7 +133,7 @@ Package handles its own compilation.
 ### Run Install
 
 ```bash
-pnpm install  # Updates lockfile with new dependency
+bun install  # Updates lockfile with new dependency
 ```
 
 ### Import and Use
@@ -238,7 +238,7 @@ packages/
 ### Wrong Workspace Syntax
 
 ```json
-// pnpm/bun
+// bun
 { "@repo/ui": "workspace:*" }  // Correct
 
 // npm/yarn

@@ -3,7 +3,7 @@
 /**
  * Store Initialization Script
  *
- * Invoked via: pnpm prepare (or automatically via predev/prebuild hooks)
+ * Invoked via: bun run prepare (or automatically via predev/prebuild hooks)
  *
  * Handles all initialization tasks before dev/build:
  * 1. Generate module imports from config.json

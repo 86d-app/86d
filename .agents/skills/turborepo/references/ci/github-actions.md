@@ -34,19 +34,14 @@ jobs:
 
 ## Package Manager Setup
 
-### pnpm
+### Bun (Recommended)
 
 ```yaml
-- uses: pnpm/action-setup@v3
+- uses: oven-sh/setup-bun@v1
   with:
-    version: 9
+    bun-version: latest
 
-- uses: actions/setup-node@v4
-  with:
-    node-version: 20
-    cache: "pnpm"
-
-- run: pnpm install --frozen-lockfile
+- run: bun install --frozen-lockfile
 ```
 
 ### Yarn
@@ -139,17 +134,12 @@ jobs:
         with:
           fetch-depth: 2
 
-      - uses: pnpm/action-setup@v3
+      - uses: oven-sh/setup-bun@v1
         with:
-          version: 9
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: "pnpm"
+          bun-version: latest
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: bun install --frozen-lockfile
 
       - name: Build
         run: turbo run build --affected

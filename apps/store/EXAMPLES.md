@@ -35,7 +35,7 @@ Create a products module:
 
 ```bash
 # From workspace root
-pnpm create:module products
+bun run create:module products
 ```
 
 This creates:
@@ -70,7 +70,7 @@ modules/products/
 **Generate**:
 ```bash
 cd apps/store
-pnpm prepare
+bun run prepare
 ```
 
 **Result** - Both modules available:
@@ -117,7 +117,7 @@ The script will:
        }
    }
    ```
-5. Run `pnpm install`
+5. Run `bun install`
 6. Generate `modules.ts` with imports from all three
 
 ---

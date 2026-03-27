@@ -8,11 +8,11 @@ Dependencies belong in the package that uses them, not the root.
 
 ```bash
 # Good: Install in specific package
-pnpm add react --filter=@repo/ui
-pnpm add next --filter=web
+bun add react --cwd packages/ui
+bun add next --cwd apps/web
 
 # Avoid: Installing in root
-pnpm add react -w  # Only for repo-level tools!
+bun add react --dev  # Only for repo-level tools!
 ```
 
 ## Benefits of Local Installation
@@ -77,24 +77,22 @@ Only repository-level tools:
 ### Single Package
 
 ```bash
-# pnpm
-pnpm add lodash --filter=@repo/utils
+# bun
+bun add lodash --cwd packages/utils
 
 # npm
 npm install lodash --workspace=@repo/utils
 
 # yarn
 yarn workspace @repo/utils add lodash
-
-# bun
-cd packages/utils && bun add lodash
 ```
 
 ### Multiple Packages
 
 ```bash
-# pnpm
-pnpm add jest --save-dev --filter=web --filter=@repo/ui
+# bun
+bun add -d jest --cwd apps/web
+bun add -d jest --cwd packages/ui
 
 # npm
 npm install jest --save-dev --workspace=web --workspace=@repo/ui
@@ -106,8 +104,8 @@ yarn workspaces foreach -R --from '{web,@repo/ui}' add jest --dev
 ### Internal Packages
 
 ```bash
-# pnpm
-pnpm add @repo/ui --filter=web
+# bun
+bun add @repo/ui --cwd apps/web
 
 # This updates package.json:
 {
@@ -137,24 +135,20 @@ npx sherif
 ### Option 2: Package Manager Commands
 
 ```bash
-# pnpm - Update everywhere
-pnpm up --recursive typescript@latest
+# bun - Update everywhere
+bun update typescript
 
 # npm - Update in all workspaces
 npm install typescript@latest --workspaces
 ```
 
-### Option 3: pnpm Catalogs (pnpm 9.5+)
+### Option 3: Bun Workspace Policies
 
 ```yaml
-# pnpm-workspace.yaml
-packages:
-  - "apps/*"
-  - "packages/*"
-
-catalog:
-  react: ^18.2.0
-  typescript: ^5.3.0
+# package.json
+{
+  "workspaces": ["apps/*", "packages/*"]
+}
 ```
 
 ```json
@@ -171,7 +165,7 @@ catalog:
 ### Internal (Workspace)
 
 ```json
-// pnpm/bun
+// bun
 { "@repo/ui": "workspace:*" }
 
 // npm/yarn
@@ -211,7 +205,7 @@ For library packages that expect the consumer to provide dependencies:
 ### "Module not found"
 
 1. Check the dependency is installed in the right package
-2. Run `pnpm install` / `npm install` to update lockfile
+2. Run `bun install` / `npm install` to update lockfile
 3. Check exports are defined in the package
 
 ### Version Conflicts
@@ -219,7 +213,7 @@ For library packages that expect the consumer to provide dependencies:
 Packages can use different versions - this is a feature, not a bug. But if you need consistency:
 
 1. Use tooling (syncpack, manypkg)
-2. Use pnpm catalogs
+2. Use shared workspace dependency policies
 3. Create a lint rule
 
 ### Hoisting Issues
@@ -227,7 +221,7 @@ Packages can use different versions - this is a feature, not a bug. But if you n
 Some tools expect dependencies in specific locations. Use package manager config:
 
 ```yaml
-# .npmrc (pnpm)
+# .npmrc
 public-hoist-pattern[]=*eslint*
 public-hoist-pattern[]=*prettier*
 ```
@@ -242,5 +236,5 @@ public-hoist-pattern[]=*prettier*
 
 ```bash
 # Commit your lockfile!
-git add pnpm-lock.yaml  # or package-lock.json, yarn.lock
+git add bun.lock  # or package-lock.json, yarn.lock
 ```

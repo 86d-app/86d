@@ -264,7 +264,7 @@ async function generateModulesFile() {
 		console.log("No modules defined in config.json");
 		// Generate empty modules file
 		const emptyContent = `// Auto-generated file - do not edit manually
-// Run 'pnpm generate:modules' to regenerate
+// Run 'bun run generate:modules' to regenerate
 
 import type { MDXComponents } from "mdx/types";
 
@@ -318,7 +318,7 @@ export const components: MDXComponents = {};
 
 	// Generate file content
 	const content = `// Auto-generated file - do not edit manually
-// Run 'pnpm generate:modules' to regenerate
+// Run 'bun run generate:modules' to regenerate
 // Generated from: ${CONFIG_PATH}
 
 import type { MDXComponents } from "mdx/types";
@@ -365,7 +365,7 @@ async function generateApiRouter() {
 		console.log("No modules defined for API router generation");
 		// Generate empty router
 		const emptyContent = `// Auto-generated file - do not edit manually
-// Run 'pnpm generate:modules' to regenerate
+// Run 'bun run generate:modules' to regenerate
 
 import { createRouter } from "better-call";
 
@@ -906,7 +906,7 @@ if (process.env.UBER_EATS_CLIENT_ID && process.env.UBER_EATS_CLIENT_SECRET && pr
 
 	// Generate API router content
 	const routerContent = `// Auto-generated file - do not edit manually
-// Run 'pnpm generate:modules' to regenerate
+// Run 'bun run generate:modules' to regenerate
 // Generated from: ${CONFIG_PATH}
 
 import { createRouter } from "better-call";
@@ -993,7 +993,7 @@ async function generateClient() {
 
 	// Generate client SDK
 	const clientContent = `// Auto-generated file - do not edit manually
-// Run 'pnpm generate:modules' to regenerate
+// Run 'bun run generate:modules' to regenerate
 // Generated from: ${CONFIG_PATH}
 
 import { createClient } from "better-call/client";
@@ -1132,7 +1132,7 @@ async function generateHooks() {
 
 	if (modules.length === 0) {
 		const emptyContent = `// Auto-generated file - do not edit manually
-// Run 'pnpm generate:modules' to regenerate
+// Run 'bun run generate:modules' to regenerate
 
 "use client";
 
@@ -1180,7 +1180,7 @@ export function useApi() {
 
 	// Generate the hooks file
 	let code = `// Auto-generated file - do not edit manually
-// Run 'pnpm generate:modules' to regenerate
+// Run 'bun run generate:modules' to regenerate
 // Generated from: ${CONFIG_PATH}
 
 "use client";
@@ -1266,7 +1266,7 @@ async function generateAdminLoaders() {
 		.join("\n");
 
 	const content = `// Auto-generated file - do not edit manually
-// Run 'pnpm generate:modules' to regenerate
+// Run 'bun run generate:modules' to regenerate
 // Generated from: ${CONFIG_PATH}
 
 import type { ComponentType } from "react";

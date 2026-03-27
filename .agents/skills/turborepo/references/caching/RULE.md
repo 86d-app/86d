@@ -16,7 +16,7 @@ If inputs haven't changed, restore outputs from cache instead of re-running the 
 
 These affect ALL tasks in the repo:
 
-- `package-lock.json` / `yarn.lock` / `pnpm-lock.yaml`
+- `package-lock.json` / `yarn.lock` / `bun.lock`
 - Files listed in `globalDependencies`
 - Environment variables in `globalEnv`
 - `turbo.json` configuration

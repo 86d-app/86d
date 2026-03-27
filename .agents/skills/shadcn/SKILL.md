@@ -8,7 +8,7 @@ user-invocable: false
 
 A framework for building ui, components and design systems. Components are added as source code to the user's project via the CLI.
 
-> **IMPORTANT:** Run all CLI commands using the project's package runner: `npx shadcn@latest`, `pnpm dlx shadcn@latest`, or `bunx --bun shadcn@latest` — based on the project's `packageManager`. Examples below use `npx shadcn@latest` but substitute the correct runner for the project.
+> **IMPORTANT:** Run all CLI commands using the project's package runner: `npx shadcn@latest` or `bunx --bun shadcn@latest` — based on the project's `packageManager`. Examples below use `bunx --bun shadcn@latest` for Bun projects.
 
 ## Current Project Context
 
@@ -148,7 +148,7 @@ The injected project context contains these key fields:
 - **`iconLibrary`** → determines icon imports. Use `lucide-react` for `lucide`, `@tabler/icons-react` for `tabler`, etc. Never assume `lucide-react`.
 - **`resolvedPaths`** → exact file-system destinations for components, utils, hooks, etc.
 - **`framework`** → routing and file conventions (e.g. Next.js App Router vs Vite SPA).
-- **`packageManager`** → use this for any non-shadcn dependency installs (e.g. `pnpm add date-fns` vs `npm install date-fns`).
+- **`packageManager`** → use this for any non-shadcn dependency installs (e.g. `bun add date-fns` vs `npm install date-fns`).
 
 See [cli.md — `info` command](./cli.md) for the full field reference.
 

@@ -6,14 +6,14 @@ The customer-facing storefront application built with Next.js and MDX.
 
 ```bash
 # First time setup
-pnpm prepare
+bun run prepare
 
 # Development
-pnpm dev
+bun run dev
 
 # Production build
-pnpm build
-pnpm start
+bun run build
+bun run start
 ```
 
 ## Project Structure
@@ -67,7 +67,7 @@ This app uses a dynamic module system. Modules are listed in `config.json` and a
 
 2. Run prepare:
    ```bash
-   pnpm prepare
+   bun run prepare
    ```
 
 The script will:
@@ -105,7 +105,7 @@ The module generator merges all components from enabled modules into the MDX com
 ## Development Workflow
 
 1. Edit `templates/brisa/config.json` to enable/disable modules
-2. Run `pnpm dev` (automatically runs prepare → generates modules)
+2. Run `bun run dev` (automatically runs prepare → generates modules)
 3. Components from modules are available in MDX
 4. Edit MDX files in `templates/brisa/` directory
 

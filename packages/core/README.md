@@ -26,7 +26,7 @@ Core types and utilities for building modules in the 86d module system. This pac
 ```bash
 npm install @86d-app/core
 # or
-pnpm add @86d-app/core
+bun add @86d-app/core
 ```
 
 ## Features

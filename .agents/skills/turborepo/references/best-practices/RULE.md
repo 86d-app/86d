@@ -18,8 +18,8 @@ my-monorepo/
 │   └── config-*/           # Shared configs (eslint, typescript, etc.)
 ├── package.json            # Root package.json (minimal deps)
 ├── turbo.json              # Turborepo configuration
-├── pnpm-workspace.yaml     # (pnpm) or workspaces in package.json
-└── pnpm-lock.yaml          # Lockfile (required)
+├── package.json            # with workspaces
+└── bun.lock                # Lockfile (required)
 ```
 
 ### Key Principles
@@ -114,10 +114,10 @@ Install dependencies in the package that uses them, not the root.
 
 ```bash
 # Good: Install in the package that needs it
-pnpm add lodash --filter=@repo/utils
+bun add lodash --cwd packages/utils
 
 # Avoid: Installing everything at root
-pnpm add lodash -w  # Only for repo-level tools
+bun add lodash --dev  # Only for repo-level tools
 ```
 
 ### Root Dependencies
@@ -133,7 +133,7 @@ Only these belong in root `package.json`:
 Use workspace protocol for internal packages:
 
 ```json
-// pnpm/bun
+// bun
 { "@repo/ui": "workspace:*" }
 
 // npm/yarn

@@ -4,16 +4,16 @@ Detailed guidance on structuring a Turborepo monorepo.
 
 ## Workspace Configuration
 
-### pnpm (Recommended)
+### Bun (Recommended)
 
 ```yaml
-# pnpm-workspace.yaml
-packages:
-  - "apps/*"
-  - "packages/*"
+// package.json
+{
+  "workspaces": ["apps/*", "packages/*"]
+}
 ```
 
-### npm/yarn/bun
+### npm/yarn
 
 ```json
 // package.json
@@ -28,7 +28,7 @@ packages:
 {
   "name": "my-monorepo",
   "private": true,
-  "packageManager": "pnpm@9.0.0",
+  "packageManager": "bun@1.3.6",
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
@@ -120,12 +120,10 @@ Package tasks enable Turborepo to:
 You can group packages by adding more workspace paths:
 
 ```yaml
-# pnpm-workspace.yaml
-packages:
-  - "apps/*"
-  - "packages/*"
-  - "packages/config/*" # Grouped configs
-  - "packages/features/*" # Feature packages
+// package.json
+{
+  "workspaces": ["apps/*", "packages/*", "packages/config/*", "packages/features/*"]
+}
 ```
 
 This allows:
