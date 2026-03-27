@@ -2,9 +2,10 @@
 	"extends": "../../tsconfig.base.json",
 	"compilerOptions": {
 		"lib": ["ES2022", "dom", "dom.iterable"],
+		"types": ["node", "mdx"],
 		"jsx": "preserve",
-		"baseUrl": ".",
 		"paths": {
+			"*": ["./*"],
 			"~/*": ["./*"],
 			"template/*": ["../../templates/brisa/*"],
 			"@86d-app/core": ["../../packages/core/src/index.ts"],
