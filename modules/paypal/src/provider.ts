@@ -218,6 +218,7 @@ export class PayPalPaymentProvider implements PaymentProvider {
 	async createRefund(params: {
 		providerIntentId: string;
 		amount?: number | undefined;
+		currency?: string | undefined;
 		reason?: string | undefined;
 	}): Promise<ProviderRefundResult> {
 		// Step 1: fetch the order to find the capture ID
@@ -236,7 +237,7 @@ export class PayPalPaymentProvider implements PaymentProvider {
 		const refundBody: Record<string, unknown> = {};
 		if (params.amount !== undefined) {
 			refundBody.amount = {
-				currency_code: "USD",
+				currency_code: (params.currency ?? "USD").toUpperCase(),
 				value: this.formatAmount(params.amount),
 			};
 		}

@@ -251,6 +251,7 @@ export function createPaymentController(
 				const result = await provider.createRefund({
 					providerIntentId: pi.providerIntentId,
 					amount: params.amount,
+					currency: pi.currency,
 					reason: params.reason,
 				});
 				providerRefundId = result.providerRefundId;

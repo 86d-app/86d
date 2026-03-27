@@ -190,6 +190,7 @@ export class SquarePaymentProvider implements PaymentProvider {
 	async createRefund(params: {
 		providerIntentId: string;
 		amount?: number | undefined;
+		currency?: string | undefined;
 		reason?: string | undefined;
 	}): Promise<ProviderRefundResult> {
 		const body: Record<string, unknown> = {
@@ -197,7 +198,10 @@ export class SquarePaymentProvider implements PaymentProvider {
 			payment_id: params.providerIntentId,
 		};
 		if (params.amount !== undefined) {
-			body.amount_money = { amount: params.amount, currency: "USD" };
+			body.amount_money = {
+				amount: params.amount,
+				currency: (params.currency ?? "USD").toUpperCase(),
+			};
 		}
 		if (params.reason !== undefined) {
 			body.reason = params.reason;

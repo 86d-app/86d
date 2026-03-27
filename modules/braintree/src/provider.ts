@@ -186,6 +186,7 @@ export class BraintreePaymentProvider implements PaymentProvider {
 	async createRefund(params: {
 		providerIntentId: string;
 		amount?: number | undefined;
+		currency?: string | undefined;
 		reason?: string | undefined;
 	}): Promise<ProviderRefundResult> {
 		const refundBody =

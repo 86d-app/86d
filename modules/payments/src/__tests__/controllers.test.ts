@@ -623,6 +623,7 @@ describe("payment controller edge cases", () => {
 			expect(mockProvider.createRefund).toHaveBeenCalledWith({
 				providerIntentId: "pi_check_params",
 				amount: 2000,
+				currency: "USD",
 				reason: "Damaged item",
 			});
 		});

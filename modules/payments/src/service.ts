@@ -81,6 +81,7 @@ export type PaymentProvider = {
 	createRefund(params: {
 		providerIntentId: string;
 		amount?: number | undefined;
+		currency?: string | undefined;
 		reason?: string | undefined;
 	}): Promise<ProviderRefundResult>;
 };

@@ -178,6 +178,7 @@ export class StripePaymentProvider implements PaymentProvider {
 	async createRefund(params: {
 		providerIntentId: string;
 		amount?: number | undefined;
+		currency?: string | undefined;
 		reason?: string | undefined;
 	}): Promise<ProviderRefundResult> {
 		const body: Record<string, string | number | undefined> = {
