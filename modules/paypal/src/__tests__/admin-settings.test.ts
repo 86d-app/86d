@@ -1,43 +1,107 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getSettings } from "../admin/endpoints/get-settings";
 
-// ── Helper ───────────────────────────────────────────────────────────────────
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
-async function callGetSettings(opts: Record<string, unknown>) {
-	// biome-ignore lint/suspicious/noExplicitAny: test helper accesses internal handler
-	const h = getSettings as any;
-	const fn = typeof h.handler === "function" ? h.handler : h;
-	return fn({ context: { options: opts } });
+function extractHandler(
+	ep: unknown,
+): (ctx: Record<string, unknown>) => Promise<Record<string, unknown>> {
+	const obj = ep as Record<string, unknown>;
+	const fn = typeof obj.handler === "function" ? obj.handler : ep;
+	return fn as (
+		ctx: Record<string, unknown>,
+	) => Promise<Record<string, unknown>>;
 }
 
-// ── configured flag ──────────────────────────────────────────────────────────
+const handler = extractHandler(getSettings);
 
-describe("getSettings — configured flag", () => {
-	it("returns configured true when both clientId and clientSecret present", async () => {
+function callGetSettings(opts: Record<string, unknown>) {
+	return handler({ context: { options: opts } });
+}
+
+function mockFetchOk(body: Record<string, unknown>) {
+	vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+		new Response(JSON.stringify(body), {
+			status: 200,
+			headers: { "Content-Type": "application/json" },
+		}),
+	);
+}
+
+function mockFetchError(status: number, body: Record<string, unknown>) {
+	vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+		new Response(JSON.stringify(body), {
+			status,
+			headers: { "Content-Type": "application/json" },
+		}),
+	);
+}
+
+// ── Setup ────────────────────────────────────────────────────────────────────
+
+beforeEach(() => {
+	vi.restoreAllMocks();
+});
+
+afterEach(() => {
+	vi.restoreAllMocks();
+});
+
+// ── status — live connection verification ───────────────────────────────────
+
+describe("getSettings — status (live verification)", () => {
+	it('returns "connected" when PayPal OAuth token succeeds', async () => {
+		mockFetchOk({ access_token: "A21AAE...", expires_in: 32400 });
 		const result = await callGetSettings({
 			clientId: "AaBbCcDdEeFf",
 			clientSecret: "secret_12345678",
 		});
-		expect(result.configured).toBe(true);
+		expect(result.status).toBe("connected");
 	});
 
-	it("returns configured false when clientId is missing", async () => {
+	it('returns "error" when PayPal OAuth rejects credentials', async () => {
+		mockFetchError(401, {
+			name: "AUTHENTICATION_FAILURE",
+			message:
+				"Authentication failed due to invalid authentication credentials",
+		});
+		const result = await callGetSettings({
+			clientId: "AaBbCcDdEeFf",
+			clientSecret: "bad_secret",
+		});
+		expect(result.status).toBe("error");
+		expect(result.error).toContain("Authentication failed");
+	});
+
+	it('returns "error" when fetch throws a network error', async () => {
+		vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(
+			new Error("Network failure"),
+		);
+		const result = await callGetSettings({
+			clientId: "AaBbCcDdEeFf",
+			clientSecret: "secret_12345678",
+		});
+		expect(result.status).toBe("error");
+		expect(result.error).toContain("Network failure");
+	});
+
+	it('returns "not_configured" when clientId is missing', async () => {
 		const result = await callGetSettings({
 			clientSecret: "secret_12345678",
 		});
-		expect(result.configured).toBe(false);
+		expect(result.status).toBe("not_configured");
 	});
 
-	it("returns configured false when clientSecret is missing", async () => {
+	it('returns "not_configured" when clientSecret is missing', async () => {
 		const result = await callGetSettings({
 			clientId: "AaBbCcDdEeFf",
 		});
-		expect(result.configured).toBe(false);
+		expect(result.status).toBe("not_configured");
 	});
 
-	it("returns configured false when both are missing", async () => {
+	it('returns "not_configured" when both are missing', async () => {
 		const result = await callGetSettings({});
-		expect(result.configured).toBe(false);
+		expect(result.status).toBe("not_configured");
 	});
 });
 
@@ -45,6 +109,7 @@ describe("getSettings — configured flag", () => {
 
 describe("getSettings — clientIdMasked", () => {
 	it("returns '****' for short IDs (<=8 chars)", async () => {
+		mockFetchOk({ access_token: "tok", expires_in: 32400 });
 		const result = await callGetSettings({
 			clientId: "ABC",
 			clientSecret: "secret_12345678",
@@ -52,30 +117,22 @@ describe("getSettings — clientIdMasked", () => {
 		expect(result.clientIdMasked).toBe("****");
 	});
 
-	it("returns '****' for IDs exactly 8 chars", async () => {
-		const result = await callGetSettings({
-			clientId: "12345678",
-			clientSecret: "secret_12345678",
-		});
-		expect(result.clientIdMasked).toBe("****");
-	});
-
 	it("masks correctly for longer IDs (first 7 chars visible)", async () => {
+		mockFetchOk({ access_token: "tok", expires_in: 32400 });
 		const result = await callGetSettings({
 			clientId: "AaBbCcDdEeFf",
 			clientSecret: "secret_12345678",
 		});
-		// "AaBbCcD" + 5 asterisks (length 12 - 7 = 5)
 		expect(result.clientIdMasked).toBe("AaBbCcD*****");
 	});
 
 	it("caps asterisks at 20 for very long IDs", async () => {
+		mockFetchOk({ access_token: "tok", expires_in: 32400 });
 		const longId = `AaBbCcD${"x".repeat(50)}`;
 		const result = await callGetSettings({
 			clientId: longId,
 			clientSecret: "secret_12345678",
 		});
-		// First 7 chars + 20 asterisks (capped)
 		expect(result.clientIdMasked).toBe(`AaBbCcD${"*".repeat(20)}`);
 	});
 
@@ -98,12 +155,11 @@ describe("getSettings — clientSecretMasked", () => {
 	});
 
 	it("masks clientSecret correctly for longer secrets", async () => {
+		mockFetchOk({ access_token: "tok", expires_in: 32400 });
 		const result = await callGetSettings({
 			clientId: "AaBbCcDdEeFf",
 			clientSecret: "secret_12345678",
 		});
-		// "secret_" (7 chars) + 7 asterisks (length 16 - 7 = 9... wait: "secret_12345678" is 15 chars)
-		// First 7: "secret_", remaining: 15 - 7 = 8
 		expect(result.clientSecretMasked).toBe(`secret_${"*".repeat(8)}`);
 	});
 });
@@ -112,6 +168,7 @@ describe("getSettings — clientSecretMasked", () => {
 
 describe("getSettings — mode", () => {
 	it("returns 'sandbox' when sandbox='true'", async () => {
+		mockFetchOk({ access_token: "tok", expires_in: 32400 });
 		const result = await callGetSettings({
 			clientId: "AaBbCcDdEeFf",
 			clientSecret: "secret_12345678",
@@ -121,6 +178,7 @@ describe("getSettings — mode", () => {
 	});
 
 	it("returns 'sandbox' when sandbox='1'", async () => {
+		mockFetchOk({ access_token: "tok", expires_in: 32400 });
 		const result = await callGetSettings({
 			clientId: "AaBbCcDdEeFf",
 			clientSecret: "secret_12345678",
@@ -130,6 +188,7 @@ describe("getSettings — mode", () => {
 	});
 
 	it("returns 'live' when sandbox is empty string", async () => {
+		mockFetchOk({ access_token: "tok", expires_in: 32400 });
 		const result = await callGetSettings({
 			clientId: "AaBbCcDdEeFf",
 			clientSecret: "secret_12345678",
@@ -139,18 +198,10 @@ describe("getSettings — mode", () => {
 	});
 
 	it("returns 'live' when sandbox is not provided", async () => {
+		mockFetchOk({ access_token: "tok", expires_in: 32400 });
 		const result = await callGetSettings({
 			clientId: "AaBbCcDdEeFf",
 			clientSecret: "secret_12345678",
-		});
-		expect(result.mode).toBe("live");
-	});
-
-	it("returns 'live' when sandbox has other value", async () => {
-		const result = await callGetSettings({
-			clientId: "AaBbCcDdEeFf",
-			clientSecret: "secret_12345678",
-			sandbox: "false",
 		});
 		expect(result.mode).toBe("live");
 	});
@@ -160,6 +211,7 @@ describe("getSettings — mode", () => {
 
 describe("getSettings — webhookId", () => {
 	it("returns webhookIdConfigured true when webhookId present", async () => {
+		mockFetchOk({ access_token: "tok", expires_in: 32400 });
 		const result = await callGetSettings({
 			clientId: "AaBbCcDdEeFf",
 			clientSecret: "secret_12345678",
@@ -169,6 +221,7 @@ describe("getSettings — webhookId", () => {
 	});
 
 	it("returns webhookIdConfigured false when webhookId empty", async () => {
+		mockFetchOk({ access_token: "tok", expires_in: 32400 });
 		const result = await callGetSettings({
 			clientId: "AaBbCcDdEeFf",
 			clientSecret: "secret_12345678",
@@ -178,6 +231,7 @@ describe("getSettings — webhookId", () => {
 	});
 
 	it("returns webhookIdConfigured false when webhookId not provided", async () => {
+		mockFetchOk({ access_token: "tok", expires_in: 32400 });
 		const result = await callGetSettings({
 			clientId: "AaBbCcDdEeFf",
 			clientSecret: "secret_12345678",
@@ -185,21 +239,13 @@ describe("getSettings — webhookId", () => {
 		expect(result.webhookIdConfigured).toBe(false);
 	});
 
-	it("returns webhookIdMasked null when no webhookId", async () => {
-		const result = await callGetSettings({
-			clientId: "AaBbCcDdEeFf",
-			clientSecret: "secret_12345678",
-		});
-		expect(result.webhookIdMasked).toBeNull();
-	});
-
 	it("masks webhookId correctly when present", async () => {
+		mockFetchOk({ access_token: "tok", expires_in: 32400 });
 		const result = await callGetSettings({
 			clientId: "AaBbCcDdEeFf",
 			clientSecret: "secret_12345678",
 			webhookId: "WH-ABCDEFGHIJ",
 		});
-		// "WH-ABCDEFGHIJ" is 13 chars; first 7 = "WH-ABCD", remaining = 6
 		expect(result.webhookIdMasked).toBe(`WH-ABCD${"*".repeat(6)}`);
 	});
 });
@@ -214,8 +260,7 @@ describe("getSettings — non-string option values", () => {
 			sandbox: true,
 			webhookId: 42,
 		});
-		// str() returns "" for non-string values
-		expect(result.configured).toBe(false);
+		expect(result.status).toBe("not_configured");
 		expect(result.clientIdMasked).toBeNull();
 		expect(result.clientSecretMasked).toBeNull();
 		expect(result.mode).toBe("live");

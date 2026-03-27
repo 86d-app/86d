@@ -86,6 +86,22 @@ export class SquarePaymentProvider implements PaymentProvider {
 		return json as T;
 	}
 
+	async verifyConnection(): Promise<
+		{ ok: true; locationCount: number } | { ok: false; error: string }
+	> {
+		try {
+			const data = await this.request<{
+				locations?: Array<{ id: string }>;
+			}>("GET", "/v2/locations");
+			return { ok: true, locationCount: data.locations?.length ?? 0 };
+		} catch (e) {
+			return {
+				ok: false,
+				error: e instanceof Error ? e.message : String(e),
+			};
+		}
+	}
+
 	private mapPaymentStatus(
 		status: SquarePaymentStatus,
 	): ProviderIntentResult["status"] {

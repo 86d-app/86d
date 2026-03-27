@@ -155,6 +155,26 @@ export class StripePaymentProvider implements PaymentProvider {
 		};
 	}
 
+	async verifyConnection(): Promise<
+		{ ok: true; accountName: string } | { ok: false; error: string }
+	> {
+		try {
+			const account = await this.request<{
+				id: string;
+				business_profile?: { name?: string | null };
+			}>("GET", "/account");
+			return {
+				ok: true,
+				accountName: account.business_profile?.name ?? account.id,
+			};
+		} catch (e) {
+			return {
+				ok: false,
+				error: e instanceof Error ? e.message : String(e),
+			};
+		}
+	}
+
 	async createRefund(params: {
 		providerIntentId: string;
 		amount?: number | undefined;

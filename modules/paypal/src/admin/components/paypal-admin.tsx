@@ -4,7 +4,8 @@ import { useModuleClient } from "@86d-app/core/client";
 import PayPalAdminTemplate from "./paypal-admin.mdx";
 
 interface PayPalSettings {
-	configured: boolean;
+	status: "connected" | "not_configured" | "error";
+	error?: string;
 	clientIdMasked: string | null;
 	clientSecretMasked: string | null;
 	mode: "sandbox" | "live";
@@ -23,6 +24,28 @@ const MODE_COLORS: Record<string, string> = {
 	live: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
 	sandbox:
 		"bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
+};
+
+const STATUS_CONFIG: Record<
+	PayPalSettings["status"],
+	{ label: string; badge: string; badgeClass: string }
+> = {
+	connected: {
+		label: "Connected",
+		badge: "active",
+		badgeClass:
+			"bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+	},
+	not_configured: {
+		label: "Not configured",
+		badge: "inactive",
+		badgeClass: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+	},
+	error: {
+		label: "Error",
+		badge: "error",
+		badgeClass: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+	},
 };
 
 function SettingsCard({
@@ -99,6 +122,7 @@ export function PayPalAdmin() {
 	}
 
 	const settings = data;
+	const statusInfo = STATUS_CONFIG[settings?.status ?? "not_configured"];
 
 	return (
 		<PayPalAdminTemplate
@@ -108,13 +132,9 @@ export function PayPalAdmin() {
 						<div className="divide-y divide-border">
 							<StatusRow
 								label="Status"
-								value={settings?.configured ? "Connected" : "Not configured"}
-								badge={settings?.configured ? "active" : "inactive"}
-								badgeClass={
-									settings?.configured
-										? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-										: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-								}
+								value={statusInfo.label}
+								badge={statusInfo.badge}
+								badgeClass={statusInfo.badgeClass}
 							/>
 							<StatusRow
 								label="Environment"
@@ -138,10 +158,17 @@ export function PayPalAdmin() {
 							)}
 						</div>
 
-						{!settings?.configured && (
+						{settings?.status === "not_configured" && (
 							<div className="mt-3 rounded-md bg-yellow-50 p-3 text-sm text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300">
 								Add your PayPal client ID and secret to the module configuration
 								to enable payment processing.
+							</div>
+						)}
+
+						{settings?.status === "error" && (
+							<div className="mt-3 rounded-md bg-red-50 p-3 text-red-800 text-sm dark:bg-red-900/20 dark:text-red-300">
+								{settings.error ??
+									"Could not connect to PayPal. Check your credentials."}
 							</div>
 						)}
 					</SettingsCard>

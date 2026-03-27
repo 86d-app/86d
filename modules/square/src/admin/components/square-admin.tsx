@@ -4,7 +4,9 @@ import { useModuleClient } from "@86d-app/core/client";
 import SquareAdminTemplate from "./square-admin.mdx";
 
 interface SquareSettings {
-	configured: boolean;
+	status: "connected" | "not_configured" | "error";
+	error?: string;
+	locationCount?: number;
 	accessTokenMasked: string | null;
 	webhookSignatureConfigured: boolean;
 	webhookSignatureKeyMasked: string | null;
@@ -17,6 +19,28 @@ function useSquareAdminApi() {
 		getSettings: client.module("square").admin["/admin/square/settings"],
 	};
 }
+
+const STATUS_CONFIG: Record<
+	SquareSettings["status"],
+	{ label: string; badge: string; badgeClass: string }
+> = {
+	connected: {
+		label: "Connected",
+		badge: "active",
+		badgeClass:
+			"bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+	},
+	not_configured: {
+		label: "Not configured",
+		badge: "inactive",
+		badgeClass: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+	},
+	error: {
+		label: "Error",
+		badge: "error",
+		badgeClass: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+	},
+};
 
 function SettingsCard({
 	label,
@@ -92,6 +116,7 @@ export function SquareAdmin() {
 	}
 
 	const settings = data;
+	const statusInfo = STATUS_CONFIG[settings?.status ?? "not_configured"];
 
 	return (
 		<SquareAdminTemplate
@@ -101,14 +126,17 @@ export function SquareAdmin() {
 						<div className="divide-y divide-border">
 							<StatusRow
 								label="Status"
-								value={settings?.configured ? "Connected" : "Not configured"}
-								badge={settings?.configured ? "active" : "inactive"}
-								badgeClass={
-									settings?.configured
-										? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-										: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-								}
+								value={statusInfo.label}
+								badge={statusInfo.badge}
+								badgeClass={statusInfo.badgeClass}
 							/>
+							{settings?.status === "connected" &&
+								settings.locationCount !== undefined && (
+									<StatusRow
+										label="Locations"
+										value={String(settings.locationCount)}
+									/>
+								)}
 							{settings?.accessTokenMasked && (
 								<StatusRow
 									label="Access token"
@@ -118,10 +146,17 @@ export function SquareAdmin() {
 							)}
 						</div>
 
-						{!settings?.configured && (
+						{settings?.status === "not_configured" && (
 							<div className="mt-3 rounded-md bg-yellow-50 p-3 text-sm text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300">
 								Add your Square access token to the module configuration to
 								enable payment processing.
+							</div>
+						)}
+
+						{settings?.status === "error" && (
+							<div className="mt-3 rounded-md bg-red-50 p-3 text-red-800 text-sm dark:bg-red-900/20 dark:text-red-300">
+								{settings.error ??
+									"Could not connect to Square. Check your access token."}
 							</div>
 						)}
 					</SettingsCard>

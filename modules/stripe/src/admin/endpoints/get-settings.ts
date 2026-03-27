@@ -1,4 +1,5 @@
 import { createAdminEndpoint } from "@86d-app/core";
+import { StripePaymentProvider } from "../../provider";
 
 function maskKey(key: string): string {
 	if (key.length <= 8) return "****";
@@ -18,8 +19,26 @@ export const getSettings = createAdminEndpoint(
 		const apiKey = str(opts.apiKey);
 		const webhookSecret = str(opts.webhookSecret);
 
+		let status: "connected" | "not_configured" | "error" = "not_configured";
+		let error: string | undefined;
+		let accountName: string | undefined;
+
+		if (apiKey.length > 0) {
+			const provider = new StripePaymentProvider(apiKey);
+			const result = await provider.verifyConnection();
+			if (result.ok) {
+				status = "connected";
+				accountName = result.accountName;
+			} else {
+				status = "error";
+				error = result.error;
+			}
+		}
+
 		return {
-			configured: apiKey.length > 0,
+			status,
+			error,
+			accountName,
 			apiKeyMasked: apiKey ? maskKey(apiKey) : null,
 			apiKeyMode: apiKey.startsWith("sk_live_")
 				? "live"

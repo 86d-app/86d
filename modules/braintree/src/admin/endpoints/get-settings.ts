@@ -1,4 +1,5 @@
 import { createAdminEndpoint } from "@86d-app/core";
+import { BraintreePaymentProvider } from "../../provider";
 
 function maskKey(key: string): string {
 	if (key.length <= 8) return "****";
@@ -20,16 +21,36 @@ export const getSettings = createAdminEndpoint(
 		const privateKey = str(opts.privateKey);
 		const sandbox = str(opts.sandbox);
 
+		const isSandbox = sandbox === "true" || sandbox === "1";
+		const allKeysPresent =
+			merchantId.length > 0 && publicKey.length > 0 && privateKey.length > 0;
+
+		let status: "connected" | "not_configured" | "error" = "not_configured";
+		let error: string | undefined;
+
+		if (allKeysPresent) {
+			const provider = new BraintreePaymentProvider(
+				merchantId,
+				publicKey,
+				privateKey,
+				isSandbox,
+			);
+			const result = await provider.verifyConnection();
+			if (result.ok) {
+				status = "connected";
+			} else {
+				status = "error";
+				error = result.error;
+			}
+		}
+
 		return {
-			configured:
-				merchantId.length > 0 && publicKey.length > 0 && privateKey.length > 0,
+			status,
+			error,
 			merchantIdMasked: merchantId ? maskKey(merchantId) : null,
 			publicKeyMasked: publicKey ? maskKey(publicKey) : null,
 			privateKeyMasked: privateKey ? maskKey(privateKey) : null,
-			mode:
-				sandbox === "true" || sandbox === "1"
-					? ("sandbox" as const)
-					: ("production" as const),
+			mode: isSandbox ? ("sandbox" as const) : ("production" as const),
 		};
 	},
 );

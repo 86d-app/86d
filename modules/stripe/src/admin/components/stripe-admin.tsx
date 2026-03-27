@@ -4,7 +4,9 @@ import { useModuleClient } from "@86d-app/core/client";
 import StripeAdminTemplate from "./stripe-admin.mdx";
 
 interface StripeSettings {
-	configured: boolean;
+	status: "connected" | "not_configured" | "error";
+	error?: string;
+	accountName?: string;
 	apiKeyMasked: string | null;
 	apiKeyMode: "live" | "test" | "unknown";
 	webhookSecretConfigured: boolean;
@@ -22,6 +24,28 @@ const MODE_COLORS: Record<string, string> = {
 	live: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
 	test: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
 	unknown: "bg-gray-100 text-gray-600 dark:bg-gray-900/30 dark:text-gray-400",
+};
+
+const STATUS_CONFIG: Record<
+	StripeSettings["status"],
+	{ label: string; badge: string; badgeClass: string }
+> = {
+	connected: {
+		label: "Connected",
+		badge: "active",
+		badgeClass:
+			"bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+	},
+	not_configured: {
+		label: "Not configured",
+		badge: "inactive",
+		badgeClass: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+	},
+	error: {
+		label: "Error",
+		badge: "error",
+		badgeClass: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+	},
 };
 
 function SettingsCard({
@@ -98,6 +122,7 @@ export function StripeAdmin() {
 	}
 
 	const settings = data;
+	const statusInfo = STATUS_CONFIG[settings?.status ?? "not_configured"];
 
 	return (
 		<StripeAdminTemplate
@@ -107,14 +132,13 @@ export function StripeAdmin() {
 						<div className="divide-y divide-border">
 							<StatusRow
 								label="Status"
-								value={settings?.configured ? "Connected" : "Not configured"}
-								badge={settings?.configured ? "active" : "inactive"}
-								badgeClass={
-									settings?.configured
-										? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-										: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-								}
+								value={statusInfo.label}
+								badge={statusInfo.badge}
+								badgeClass={statusInfo.badgeClass}
 							/>
+							{settings?.accountName && (
+								<StatusRow label="Account" value={settings.accountName} />
+							)}
 							{settings?.apiKeyMasked && (
 								<StatusRow
 									label="API key"
@@ -126,10 +150,17 @@ export function StripeAdmin() {
 							)}
 						</div>
 
-						{!settings?.configured && (
+						{settings?.status === "not_configured" && (
 							<div className="mt-3 rounded-md bg-yellow-50 p-3 text-sm text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300">
 								Add your Stripe secret key to the module configuration to enable
 								payment processing.
+							</div>
+						)}
+
+						{settings?.status === "error" && (
+							<div className="mt-3 rounded-md bg-red-50 p-3 text-red-800 text-sm dark:bg-red-900/20 dark:text-red-300">
+								{settings.error ??
+									"Could not connect to Stripe. Check your API key."}
 							</div>
 						)}
 					</SettingsCard>

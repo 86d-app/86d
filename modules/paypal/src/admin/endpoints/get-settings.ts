@@ -1,4 +1,5 @@
 import { createAdminEndpoint } from "@86d-app/core";
+import { PayPalPaymentProvider } from "../../provider";
 
 function maskKey(key: string): string {
 	if (key.length <= 8) return "****";
@@ -20,14 +21,32 @@ export const getSettings = createAdminEndpoint(
 		const sandbox = str(opts.sandbox);
 		const webhookId = str(opts.webhookId);
 
+		const isSandbox = sandbox === "true" || sandbox === "1";
+
+		let status: "connected" | "not_configured" | "error" = "not_configured";
+		let error: string | undefined;
+
+		if (clientId.length > 0 && clientSecret.length > 0) {
+			const provider = new PayPalPaymentProvider(
+				clientId,
+				clientSecret,
+				isSandbox,
+			);
+			const result = await provider.verifyConnection();
+			if (result.ok) {
+				status = "connected";
+			} else {
+				status = "error";
+				error = result.error;
+			}
+		}
+
 		return {
-			configured: clientId.length > 0 && clientSecret.length > 0,
+			status,
+			error,
 			clientIdMasked: clientId ? maskKey(clientId) : null,
 			clientSecretMasked: clientSecret ? maskKey(clientSecret) : null,
-			mode:
-				sandbox === "true" || sandbox === "1"
-					? ("sandbox" as const)
-					: ("live" as const),
+			mode: isSandbox ? ("sandbox" as const) : ("live" as const),
 			webhookIdConfigured: webhookId.length > 0,
 			webhookIdMasked: webhookId ? maskKey(webhookId) : null,
 		};

@@ -56,6 +56,24 @@ export class BraintreePaymentProvider implements PaymentProvider {
 		return `Basic ${btoa(`${this.publicKey}:${this.privateKey}`)}`;
 	}
 
+	async verifyConnection(): Promise<
+		{ ok: true } | { ok: false; error: string }
+	> {
+		try {
+			await this.request<{ clientToken: { value: string } }>(
+				"POST",
+				"/client_token",
+				{ client_token: { version: 2 } },
+			);
+			return { ok: true };
+		} catch (e) {
+			return {
+				ok: false,
+				error: e instanceof Error ? e.message : String(e),
+			};
+		}
+	}
+
 	private formatAmount(amountInCents: number): string {
 		return (amountInCents / 100).toFixed(2);
 	}

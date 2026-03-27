@@ -111,6 +111,23 @@ export class PayPalPaymentProvider implements PaymentProvider {
 		return json as T;
 	}
 
+	async verifyConnection(): Promise<
+		{ ok: true; mode: "sandbox" | "live" } | { ok: false; error: string }
+	> {
+		try {
+			await this.getAccessToken();
+			const mode = this.baseUrl.includes("sandbox")
+				? ("sandbox" as const)
+				: ("live" as const);
+			return { ok: true, mode };
+		} catch (e) {
+			return {
+				ok: false,
+				error: e instanceof Error ? e.message : String(e),
+			};
+		}
+	}
+
 	private formatAmount(amountInCents: number): string {
 		return (amountInCents / 100).toFixed(2);
 	}

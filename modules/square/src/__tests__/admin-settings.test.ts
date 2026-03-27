@@ -1,157 +1,233 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getSettings } from "../admin/endpoints/get-settings";
 
-// biome-ignore lint/suspicious/noExplicitAny: test helper accesses internal handler
-const h = getSettings as any;
-const fn = typeof h.handler === "function" ? h.handler : h;
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
-async function callSettings(opts: Record<string, unknown>) {
-	return fn({ context: { options: opts } });
+function extractHandler(
+	ep: unknown,
+): (ctx: Record<string, unknown>) => Promise<Record<string, unknown>> {
+	const obj = ep as Record<string, unknown>;
+	const fn = typeof obj.handler === "function" ? obj.handler : ep;
+	return fn as (
+		ctx: Record<string, unknown>,
+	) => Promise<Record<string, unknown>>;
 }
 
-describe("getSettings admin endpoint", () => {
-	// ── configured ────────────────────────────────────────────────────────
+const handler = extractHandler(getSettings);
 
-	describe("configured", () => {
-		it("returns true when accessToken is present", async () => {
-			const result = await callSettings({
-				accessToken: "sq_token_abc123",
-			});
-			expect(result.configured).toBe(true);
-		});
+function callSettings(opts: Record<string, unknown>) {
+	return handler({ context: { options: opts } });
+}
 
-		it("returns false when accessToken is empty string", async () => {
-			const result = await callSettings({ accessToken: "" });
-			expect(result.configured).toBe(false);
-		});
+function mockFetchOk(body: Record<string, unknown>) {
+	vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+		new Response(JSON.stringify(body), {
+			status: 200,
+			headers: { "Content-Type": "application/json" },
+		}),
+	);
+}
 
-		it("returns false when accessToken is non-string value", async () => {
-			const result = await callSettings({ accessToken: 12345 });
-			expect(result.configured).toBe(false);
+function mockFetchError(status: number, body: Record<string, unknown>) {
+	vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+		new Response(JSON.stringify(body), {
+			status,
+			headers: { "Content-Type": "application/json" },
+		}),
+	);
+}
+
+// ── Setup ────────────────────────────────────────────────────────────────────
+
+beforeEach(() => {
+	vi.restoreAllMocks();
+});
+
+afterEach(() => {
+	vi.restoreAllMocks();
+});
+
+// ── status — live connection verification ───────────────────────────────────
+
+describe("getSettings — status (live verification)", () => {
+	it('returns "connected" with locationCount when Square API responds OK', async () => {
+		mockFetchOk({
+			locations: [{ id: "LOC_1" }, { id: "LOC_2" }],
 		});
+		const result = await callSettings({ accessToken: "sq_token_abc123" });
+		expect(result.status).toBe("connected");
+		expect(result.locationCount).toBe(2);
 	});
 
-	// ── accessTokenMasked ─────────────────────────────────────────────────
-
-	describe("accessTokenMasked", () => {
-		it("returns null when no accessToken", async () => {
-			const result = await callSettings({});
-			expect(result.accessTokenMasked).toBeNull();
+	it('returns "error" when Square API rejects the token', async () => {
+		mockFetchError(401, {
+			errors: [
+				{
+					detail: "Could not find developer application.",
+					category: "AUTHENTICATION_ERROR",
+					code: "UNAUTHORIZED",
+				},
+			],
 		});
-
-		it("returns null when accessToken is empty string", async () => {
-			const result = await callSettings({ accessToken: "" });
-			expect(result.accessTokenMasked).toBeNull();
-		});
-
-		it('returns "****" for short tokens (8 chars or fewer)', async () => {
-			const result = await callSettings({ accessToken: "abcdefgh" });
-			expect(result.accessTokenMasked).toBe("****");
-		});
-
-		it('returns "****" for very short tokens', async () => {
-			const result = await callSettings({ accessToken: "ab" });
-			expect(result.accessTokenMasked).toBe("****");
-		});
-
-		it("masks correctly for longer tokens (shows first 7 chars)", async () => {
-			// 12 chars: first 7 visible, remaining 5 masked
-			const result = await callSettings({ accessToken: "abcdefghijkl" });
-			expect(result.accessTokenMasked).toBe("abcdefg*****");
-		});
-
-		it("caps asterisks at 20 for very long tokens", async () => {
-			// 40 chars total: first 7 visible, remaining 33 but capped at 20 asterisks
-			const longToken = `abcdefg${"x".repeat(33)}`;
-			const result = await callSettings({ accessToken: longToken });
-			expect(result.accessTokenMasked).toBe(`abcdefg${"*".repeat(20)}`);
-		});
+		const result = await callSettings({ accessToken: "sq_bad_token" });
+		expect(result.status).toBe("error");
+		expect(result.error).toContain("Could not find developer application");
 	});
 
-	// ── webhookSignatureConfigured ────────────────────────────────────────
-
-	describe("webhookSignatureConfigured", () => {
-		it("returns true when webhookSignatureKey is present", async () => {
-			const result = await callSettings({
-				accessToken: "sq_tok",
-				webhookSignatureKey: "sig_key_12345678901",
-			});
-			expect(result.webhookSignatureConfigured).toBe(true);
-		});
-
-		it("returns false when webhookSignatureKey is empty", async () => {
-			const result = await callSettings({
-				accessToken: "sq_tok",
-				webhookSignatureKey: "",
-			});
-			expect(result.webhookSignatureConfigured).toBe(false);
-		});
-
-		it("returns false when webhookSignatureKey is missing", async () => {
-			const result = await callSettings({ accessToken: "sq_tok" });
-			expect(result.webhookSignatureConfigured).toBe(false);
-		});
+	it('returns "error" when fetch throws a network error', async () => {
+		vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(
+			new Error("Network failure"),
+		);
+		const result = await callSettings({ accessToken: "sq_token_abc123" });
+		expect(result.status).toBe("error");
+		expect(result.error).toContain("Network failure");
 	});
 
-	// ── webhookSignatureKeyMasked ─────────────────────────────────────────
-
-	describe("webhookSignatureKeyMasked", () => {
-		it("returns null when no webhookSignatureKey", async () => {
-			const result = await callSettings({ accessToken: "sq_tok" });
-			expect(result.webhookSignatureKeyMasked).toBeNull();
-		});
-
-		it("masks correctly when key is present", async () => {
-			const result = await callSettings({
-				accessToken: "sq_tok",
-				webhookSignatureKey: "webhook_secret_key_123",
-			});
-			// 22 chars: first 7 visible, remaining 15 masked
-			expect(result.webhookSignatureKeyMasked).toBe(`webhook${"*".repeat(15)}`);
-		});
+	it('returns "not_configured" when accessToken is empty string', async () => {
+		const result = await callSettings({ accessToken: "" });
+		expect(result.status).toBe("not_configured");
 	});
 
-	// ── webhookNotificationUrl ────────────────────────────────────────────
-
-	describe("webhookNotificationUrl", () => {
-		it("returns the URL when present", async () => {
-			const result = await callSettings({
-				accessToken: "sq_tok",
-				webhookNotificationUrl: "https://example.com/api/square/webhook",
-			});
-			expect(result.webhookNotificationUrl).toBe(
-				"https://example.com/api/square/webhook",
-			);
-		});
-
-		it("returns null when webhookNotificationUrl is empty", async () => {
-			const result = await callSettings({
-				accessToken: "sq_tok",
-				webhookNotificationUrl: "",
-			});
-			expect(result.webhookNotificationUrl).toBeNull();
-		});
-
-		it("returns null when webhookNotificationUrl is missing", async () => {
-			const result = await callSettings({ accessToken: "sq_tok" });
-			expect(result.webhookNotificationUrl).toBeNull();
-		});
+	it('returns "not_configured" when accessToken is non-string value', async () => {
+		const result = await callSettings({ accessToken: 12345 });
+		expect(result.status).toBe("not_configured");
 	});
 
-	// ── edge cases ────────────────────────────────────────────────────────
+	it('returns "not_configured" when accessToken is missing', async () => {
+		const result = await callSettings({});
+		expect(result.status).toBe("not_configured");
+	});
+});
 
-	describe("edge cases", () => {
-		it("handles non-string option values gracefully", async () => {
-			const result = await callSettings({
-				accessToken: 999,
-				webhookSignatureKey: null,
-				webhookNotificationUrl: false,
-			});
-			expect(result.configured).toBe(false);
-			expect(result.accessTokenMasked).toBeNull();
-			expect(result.webhookSignatureConfigured).toBe(false);
-			expect(result.webhookSignatureKeyMasked).toBeNull();
-			expect(result.webhookNotificationUrl).toBeNull();
+// ── accessTokenMasked ────────────────────────────────────────────────────────
+
+describe("getSettings — accessTokenMasked", () => {
+	it("returns null when no accessToken", async () => {
+		const result = await callSettings({});
+		expect(result.accessTokenMasked).toBeNull();
+	});
+
+	it("returns null when accessToken is empty string", async () => {
+		const result = await callSettings({ accessToken: "" });
+		expect(result.accessTokenMasked).toBeNull();
+	});
+
+	it('returns "****" for short tokens (8 chars or fewer)', async () => {
+		mockFetchOk({ locations: [] });
+		const result = await callSettings({ accessToken: "abcdefgh" });
+		expect(result.accessTokenMasked).toBe("****");
+	});
+
+	it("masks correctly for longer tokens (shows first 7 chars)", async () => {
+		mockFetchOk({ locations: [] });
+		const result = await callSettings({ accessToken: "abcdefghijkl" });
+		expect(result.accessTokenMasked).toBe("abcdefg*****");
+	});
+
+	it("caps asterisks at 20 for very long tokens", async () => {
+		mockFetchOk({ locations: [] });
+		const longToken = `abcdefg${"x".repeat(33)}`;
+		const result = await callSettings({ accessToken: longToken });
+		expect(result.accessTokenMasked).toBe(`abcdefg${"*".repeat(20)}`);
+	});
+});
+
+// ── webhookSignatureConfigured ───────────────────────────────────────────────
+
+describe("getSettings — webhookSignatureConfigured", () => {
+	it("returns true when webhookSignatureKey is present", async () => {
+		mockFetchOk({ locations: [] });
+		const result = await callSettings({
+			accessToken: "sq_tok_abcdef123",
+			webhookSignatureKey: "sig_key_12345678901",
 		});
+		expect(result.webhookSignatureConfigured).toBe(true);
+	});
+
+	it("returns false when webhookSignatureKey is empty", async () => {
+		mockFetchOk({ locations: [] });
+		const result = await callSettings({
+			accessToken: "sq_tok_abcdef123",
+			webhookSignatureKey: "",
+		});
+		expect(result.webhookSignatureConfigured).toBe(false);
+	});
+
+	it("returns false when webhookSignatureKey is missing", async () => {
+		mockFetchOk({ locations: [] });
+		const result = await callSettings({
+			accessToken: "sq_tok_abcdef123",
+		});
+		expect(result.webhookSignatureConfigured).toBe(false);
+	});
+});
+
+// ── webhookSignatureKeyMasked ────────────────────────────────────────────────
+
+describe("getSettings — webhookSignatureKeyMasked", () => {
+	it("returns null when no webhookSignatureKey", async () => {
+		mockFetchOk({ locations: [] });
+		const result = await callSettings({
+			accessToken: "sq_tok_abcdef123",
+		});
+		expect(result.webhookSignatureKeyMasked).toBeNull();
+	});
+
+	it("masks correctly when key is present", async () => {
+		mockFetchOk({ locations: [] });
+		const result = await callSettings({
+			accessToken: "sq_tok_abcdef123",
+			webhookSignatureKey: "webhook_secret_key_123",
+		});
+		expect(result.webhookSignatureKeyMasked).toBe(`webhook${"*".repeat(15)}`);
+	});
+});
+
+// ── webhookNotificationUrl ───────────────────────────────────────────────────
+
+describe("getSettings — webhookNotificationUrl", () => {
+	it("returns the URL when present", async () => {
+		mockFetchOk({ locations: [] });
+		const result = await callSettings({
+			accessToken: "sq_tok_abcdef123",
+			webhookNotificationUrl: "https://example.com/api/square/webhook",
+		});
+		expect(result.webhookNotificationUrl).toBe(
+			"https://example.com/api/square/webhook",
+		);
+	});
+
+	it("returns null when webhookNotificationUrl is empty", async () => {
+		mockFetchOk({ locations: [] });
+		const result = await callSettings({
+			accessToken: "sq_tok_abcdef123",
+			webhookNotificationUrl: "",
+		});
+		expect(result.webhookNotificationUrl).toBeNull();
+	});
+
+	it("returns null when webhookNotificationUrl is missing", async () => {
+		mockFetchOk({ locations: [] });
+		const result = await callSettings({
+			accessToken: "sq_tok_abcdef123",
+		});
+		expect(result.webhookNotificationUrl).toBeNull();
+	});
+});
+
+// ── edge cases ───────────────────────────────────────────────────────────────
+
+describe("getSettings — edge cases", () => {
+	it("handles non-string option values gracefully", async () => {
+		const result = await callSettings({
+			accessToken: 999,
+			webhookSignatureKey: null,
+			webhookNotificationUrl: false,
+		});
+		expect(result.status).toBe("not_configured");
+		expect(result.accessTokenMasked).toBeNull();
+		expect(result.webhookSignatureConfigured).toBe(false);
+		expect(result.webhookSignatureKeyMasked).toBeNull();
+		expect(result.webhookNotificationUrl).toBeNull();
 	});
 });

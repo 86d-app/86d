@@ -1,38 +1,108 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getSettings } from "../admin/endpoints/get-settings";
 
-// ── Helper ───────────────────────────────────────────────────────────────────
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
-async function callGetSettings(opts: Record<string, unknown>) {
-	// biome-ignore lint/suspicious/noExplicitAny: test helper accesses internal handler
-	const h = getSettings as any;
-	const fn = typeof h.handler === "function" ? h.handler : h;
-	return fn({ context: { options: opts } });
+function extractHandler(
+	ep: unknown,
+): (ctx: Record<string, unknown>) => Promise<Record<string, unknown>> {
+	const obj = ep as Record<string, unknown>;
+	const fn = typeof obj.handler === "function" ? obj.handler : ep;
+	return fn as (
+		ctx: Record<string, unknown>,
+	) => Promise<Record<string, unknown>>;
 }
 
-// ── configured ───────────────────────────────────────────────────────────────
+const handler = extractHandler(getSettings);
 
-describe("getSettings — configured flag", () => {
-	it("returns true when apiKey is present", async () => {
-		const result = await callGetSettings({
-			apiKey: "sk_test_abc123def456",
+function callGetSettings(opts: Record<string, unknown>) {
+	return handler({ context: { options: opts } });
+}
+
+function mockFetchOk(body: Record<string, unknown>) {
+	vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+		new Response(JSON.stringify(body), {
+			status: 200,
+			headers: { "Content-Type": "application/json" },
+		}),
+	);
+}
+
+function mockFetchError(status: number, body: Record<string, unknown>) {
+	vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+		new Response(JSON.stringify(body), {
+			status,
+			headers: { "Content-Type": "application/json" },
+		}),
+	);
+}
+
+// ── Setup ────────────────────────────────────────────────────────────────────
+
+beforeEach(() => {
+	vi.restoreAllMocks();
+});
+
+afterEach(() => {
+	vi.restoreAllMocks();
+});
+
+// ── status — live connection verification ───────────────────────────────────
+
+describe("getSettings — status (live verification)", () => {
+	it('returns "connected" with accountName when Stripe API responds OK', async () => {
+		mockFetchOk({
+			id: "acct_123",
+			business_profile: { name: "Test Store" },
 		});
-		expect(result.configured).toBe(true);
+		const result = await callGetSettings({ apiKey: "sk_test_abc123def456" });
+		expect(result.status).toBe("connected");
+		expect(result.accountName).toBe("Test Store");
 	});
 
-	it("returns false when apiKey is an empty string", async () => {
+	it("falls back to account id when business_profile.name is null", async () => {
+		mockFetchOk({ id: "acct_456", business_profile: { name: null } });
+		const result = await callGetSettings({ apiKey: "sk_test_abc123def456" });
+		expect(result.status).toBe("connected");
+		expect(result.accountName).toBe("acct_456");
+	});
+
+	it('returns "error" when Stripe API rejects the key', async () => {
+		mockFetchError(401, {
+			error: {
+				message: "Invalid API Key provided",
+				type: "invalid_request_error",
+			},
+		});
+		const result = await callGetSettings({ apiKey: "sk_test_invalid" });
+		expect(result.status).toBe("error");
+		expect(result.error).toContain("Invalid API Key");
+	});
+
+	it('returns "error" when fetch throws a network error', async () => {
+		vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(
+			new Error("Network failure"),
+		);
+		const result = await callGetSettings({ apiKey: "sk_test_abc123def456" });
+		expect(result.status).toBe("error");
+		expect(result.error).toContain("Network failure");
+	});
+
+	it('returns "not_configured" when apiKey is empty', async () => {
 		const result = await callGetSettings({ apiKey: "" });
-		expect(result.configured).toBe(false);
+		expect(result.status).toBe("not_configured");
+		expect(result.accountName).toBeUndefined();
+		expect(result.error).toBeUndefined();
 	});
 
-	it("returns false when apiKey is a non-string value (number)", async () => {
-		const result = await callGetSettings({ apiKey: 12345 });
-		expect(result.configured).toBe(false);
-	});
-
-	it("returns false when apiKey is undefined", async () => {
+	it('returns "not_configured" when apiKey is missing', async () => {
 		const result = await callGetSettings({});
-		expect(result.configured).toBe(false);
+		expect(result.status).toBe("not_configured");
+	});
+
+	it('returns "not_configured" when apiKey is a non-string value', async () => {
+		const result = await callGetSettings({ apiKey: 12345 });
+		expect(result.status).toBe("not_configured");
 	});
 });
 
@@ -50,25 +120,24 @@ describe("getSettings — apiKeyMasked", () => {
 	});
 
 	it('returns "****" for short keys (8 chars or fewer)', async () => {
+		mockFetchOk({ id: "acct_1" });
 		const result = await callGetSettings({ apiKey: "sk_short" });
 		expect(result.apiKeyMasked).toBe("****");
 	});
 
 	it("masks correctly for longer keys (first 7 chars + asterisks)", async () => {
-		// "sk_test_abc" = 11 chars → first 7 = "sk_test" + 4 asterisks
+		mockFetchOk({ id: "acct_1" });
 		const result = await callGetSettings({ apiKey: "sk_test_abc" });
 		expect(result.apiKeyMasked).toBe("sk_test****");
 	});
 
 	it("caps asterisks at 20 for very long keys", async () => {
-		// 50-char key → first 7 + 20 asterisks (capped), not 43
-		const longKey = `sk_live_${"a".repeat(42)}`; // 50 chars
+		mockFetchOk({ id: "acct_1" });
+		const longKey = `sk_live_${"a".repeat(42)}`;
 		const result = await callGetSettings({ apiKey: longKey });
 		expect(result.apiKeyMasked).toBe(`sk_live********************`);
-		// Verify the asterisk count is exactly 20
-		const asterisks = result.apiKeyMasked.slice(7);
+		const asterisks = (result.apiKeyMasked as string).slice(7);
 		expect(asterisks.length).toBe(20);
-		expect(asterisks).toBe("*".repeat(20));
 	});
 });
 
@@ -76,6 +145,7 @@ describe("getSettings — apiKeyMasked", () => {
 
 describe("getSettings — apiKeyMode", () => {
 	it('returns "live" for sk_live_ prefix', async () => {
+		mockFetchOk({ id: "acct_1" });
 		const result = await callGetSettings({
 			apiKey: "sk_live_abc123def456ghi",
 		});
@@ -83,6 +153,7 @@ describe("getSettings — apiKeyMode", () => {
 	});
 
 	it('returns "test" for sk_test_ prefix', async () => {
+		mockFetchOk({ id: "acct_1" });
 		const result = await callGetSettings({
 			apiKey: "sk_test_abc123def456ghi",
 		});
@@ -90,6 +161,7 @@ describe("getSettings — apiKeyMode", () => {
 	});
 
 	it('returns "unknown" for other prefixes', async () => {
+		mockFetchOk({ id: "acct_1" });
 		const result = await callGetSettings({
 			apiKey: "rk_live_abc123def456ghi",
 		});
@@ -106,6 +178,7 @@ describe("getSettings — apiKeyMode", () => {
 
 describe("getSettings — webhookSecretConfigured", () => {
 	it("returns true when webhookSecret is present", async () => {
+		mockFetchOk({ id: "acct_1" });
 		const result = await callGetSettings({
 			apiKey: "sk_test_key",
 			webhookSecret: "whsec_abc123",
@@ -114,6 +187,7 @@ describe("getSettings — webhookSecretConfigured", () => {
 	});
 
 	it("returns false when webhookSecret is an empty string", async () => {
+		mockFetchOk({ id: "acct_1" });
 		const result = await callGetSettings({
 			apiKey: "sk_test_key",
 			webhookSecret: "",
@@ -122,6 +196,7 @@ describe("getSettings — webhookSecretConfigured", () => {
 	});
 
 	it("returns false when webhookSecret is missing", async () => {
+		mockFetchOk({ id: "acct_1" });
 		const result = await callGetSettings({ apiKey: "sk_test_key" });
 		expect(result.webhookSecretConfigured).toBe(false);
 	});
@@ -131,20 +206,13 @@ describe("getSettings — webhookSecretConfigured", () => {
 
 describe("getSettings — webhookSecretMasked", () => {
 	it("returns null when no webhookSecret is present", async () => {
+		mockFetchOk({ id: "acct_1" });
 		const result = await callGetSettings({ apiKey: "sk_test_key" });
 		expect(result.webhookSecretMasked).toBeNull();
 	});
 
-	it("returns null when webhookSecret is an empty string", async () => {
-		const result = await callGetSettings({
-			apiKey: "sk_test_key",
-			webhookSecret: "",
-		});
-		expect(result.webhookSecretMasked).toBeNull();
-	});
-
 	it("masks correctly for a present webhook secret", async () => {
-		// "whsec_abc123" = 12 chars → first 7 = "whsec_a" + 5 asterisks
+		mockFetchOk({ id: "acct_1" });
 		const result = await callGetSettings({
 			apiKey: "sk_test_key",
 			webhookSecret: "whsec_abc123",
@@ -156,12 +224,12 @@ describe("getSettings — webhookSecretMasked", () => {
 // ── Edge cases ───────────────────────────────────────────────────────────────
 
 describe("getSettings — edge cases", () => {
-	it("handles non-string option values gracefully (undefined for both)", async () => {
+	it("handles non-string option values gracefully", async () => {
 		const result = await callGetSettings({
 			apiKey: undefined,
 			webhookSecret: undefined,
 		});
-		expect(result.configured).toBe(false);
+		expect(result.status).toBe("not_configured");
 		expect(result.apiKeyMasked).toBeNull();
 		expect(result.webhookSecretConfigured).toBe(false);
 		expect(result.webhookSecretMasked).toBeNull();

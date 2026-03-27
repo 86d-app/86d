@@ -1,4 +1,5 @@
 import { createAdminEndpoint } from "@86d-app/core";
+import { SquarePaymentProvider } from "../../provider";
 
 function maskKey(key: string): string {
 	if (key.length <= 8) return "****";
@@ -19,8 +20,26 @@ export const getSettings = createAdminEndpoint(
 		const webhookSignatureKey = str(opts.webhookSignatureKey);
 		const webhookNotificationUrl = str(opts.webhookNotificationUrl);
 
+		let status: "connected" | "not_configured" | "error" = "not_configured";
+		let error: string | undefined;
+		let locationCount: number | undefined;
+
+		if (accessToken.length > 0) {
+			const provider = new SquarePaymentProvider(accessToken);
+			const result = await provider.verifyConnection();
+			if (result.ok) {
+				status = "connected";
+				locationCount = result.locationCount;
+			} else {
+				status = "error";
+				error = result.error;
+			}
+		}
+
 		return {
-			configured: accessToken.length > 0,
+			status,
+			error,
+			locationCount,
 			accessTokenMasked: accessToken ? maskKey(accessToken) : null,
 			webhookSignatureConfigured: webhookSignatureKey.length > 0,
 			webhookSignatureKeyMasked: webhookSignatureKey
