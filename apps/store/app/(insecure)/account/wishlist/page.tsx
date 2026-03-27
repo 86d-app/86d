@@ -48,12 +48,18 @@ export default function WishlistPage() {
 	const wishlistApi = client.module("wishlist").store["/wishlist"];
 	const removeApi = client.module("wishlist").store["/wishlist/remove/:id"];
 
-	const { data: wishlistData, isLoading } = wishlistApi.useQuery(
-		customerId ? { customerId } : undefined,
-		{ enabled: !!customerId },
-	) as {
+	const {
+		data: wishlistData,
+		isLoading,
+		isError,
+		refetch,
+	} = wishlistApi.useQuery(customerId ? { customerId } : undefined, {
+		enabled: !!customerId,
+	}) as {
 		data: { items: WishlistItem[] } | undefined;
 		isLoading: boolean;
+		isError: boolean;
+		refetch: () => void;
 	};
 
 	const items = wishlistData?.items ?? [];
@@ -89,7 +95,21 @@ export default function WishlistPage() {
 				</p>
 			)}
 
-			{isLoading || !customerId ? (
+			{isError ? (
+				<div
+					className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-destructive text-sm"
+					role="alert"
+				>
+					<p>Failed to load your wishlist.</p>
+					<button
+						type="button"
+						onClick={() => refetch()}
+						className="mt-1 font-medium underline"
+					>
+						Try again
+					</button>
+				</div>
+			) : isLoading || !customerId ? (
 				<div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
 					{[1, 2, 3].map((n) => (
 						<Skeleton key={n} className="h-48 rounded-xl" />

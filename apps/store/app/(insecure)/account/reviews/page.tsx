@@ -95,9 +95,13 @@ export default function MyReviewsPage() {
 		queryInput.status = statusFilter;
 	}
 
-	const { data, isLoading } = reviewsApi.useQuery(queryInput) as {
+	const { data, isLoading, isError, refetch } = reviewsApi.useQuery(
+		queryInput,
+	) as {
 		data: ReviewsListResponse | undefined;
 		isLoading: boolean;
+		isError: boolean;
+		refetch: () => void;
 	};
 
 	const reviews = data?.reviews ?? [];
@@ -139,7 +143,21 @@ export default function MyReviewsPage() {
 				))}
 			</div>
 
-			{isLoading ? (
+			{isError ? (
+				<div
+					className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-destructive text-sm"
+					role="alert"
+				>
+					<p>Failed to load your reviews.</p>
+					<button
+						type="button"
+						onClick={() => refetch()}
+						className="mt-1 font-medium underline"
+					>
+						Try again
+					</button>
+				</div>
+			) : isLoading ? (
 				<div className="flex flex-col gap-3">
 					{[1, 2, 3].map((n) => (
 						<Skeleton key={n} className="h-28 rounded-xl" />

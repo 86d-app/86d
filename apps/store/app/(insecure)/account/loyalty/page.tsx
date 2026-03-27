@@ -96,18 +96,31 @@ export default function LoyaltyPage() {
 	const historyApi =
 		client.module("customers").store["/customers/me/loyalty/history"];
 
-	const { data: balanceData, isLoading: balanceLoading } =
-		balanceApi.useQuery() as {
-			data: { balance: LoyaltyBalance } | undefined;
-			isLoading: boolean;
-		};
+	const {
+		data: balanceData,
+		isLoading: balanceLoading,
+		isError: balanceError,
+		refetch: balanceRefetch,
+	} = balanceApi.useQuery() as {
+		data: { balance: LoyaltyBalance } | undefined;
+		isLoading: boolean;
+		isError: boolean;
+		refetch: () => void;
+	};
 
-	const { data: historyData, isLoading: historyLoading } = historyApi.useQuery({
+	const {
+		data: historyData,
+		isLoading: historyLoading,
+		isError: historyError,
+		refetch: historyRefetch,
+	} = historyApi.useQuery({
 		limit: PAGE_SIZE,
 		offset: page * PAGE_SIZE,
 	}) as {
 		data: { transactions: LoyaltyTransaction[]; total: number } | undefined;
 		isLoading: boolean;
+		isError: boolean;
+		refetch: () => void;
 	};
 
 	const balance = balanceData?.balance;
@@ -115,6 +128,7 @@ export default function LoyaltyPage() {
 	const total = historyData?.total ?? 0;
 	const totalPages = Math.ceil(total / PAGE_SIZE);
 	const isLoading = balanceLoading || historyLoading;
+	const isError = balanceError || historyError;
 
 	return (
 		<div>
@@ -127,6 +141,26 @@ export default function LoyaltyPage() {
 					Earn points with every purchase, redeem them for rewards.
 				</p>
 			</div>
+
+			{/* Error */}
+			{isError && (
+				<div
+					className="mb-6 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-destructive text-sm"
+					role="alert"
+				>
+					<p>Failed to load loyalty data.</p>
+					<button
+						type="button"
+						onClick={() => {
+							balanceRefetch();
+							historyRefetch();
+						}}
+						className="mt-1 font-medium underline"
+					>
+						Try again
+					</button>
+				</div>
+			)}
 
 			{/* Stats */}
 			{isLoading && !balance ? (

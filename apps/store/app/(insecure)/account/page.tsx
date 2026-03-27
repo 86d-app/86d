@@ -52,12 +52,19 @@ export default function AccountPage() {
 
 	const ordersApi = client.module("orders").store["/orders/me"];
 
-	const { data: ordersData, isLoading: ordersLoading } = ordersApi.useQuery({
+	const {
+		data: ordersData,
+		isLoading: ordersLoading,
+		isError: ordersError,
+		refetch: ordersRefetch,
+	} = ordersApi.useQuery({
 		page: String(page),
 		limit: "5",
 	}) as {
 		data: OrderListResponse | undefined;
 		isLoading: boolean;
+		isError: boolean;
+		refetch: () => void;
 	};
 
 	const orders = ordersData?.orders ?? [];
@@ -111,7 +118,21 @@ export default function AccountPage() {
 					)}
 				</div>
 
-				{ordersLoading ? (
+				{ordersError ? (
+					<div
+						className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-destructive text-sm"
+						role="alert"
+					>
+						<p>Failed to load your recent orders.</p>
+						<button
+							type="button"
+							onClick={() => ordersRefetch()}
+							className="mt-1 font-medium underline"
+						>
+							Try again
+						</button>
+					</div>
+				) : ordersLoading ? (
 					<div className="flex flex-col gap-3">
 						{[1, 2, 3].map((n) => (
 							<Skeleton key={n} className="h-[72px] rounded-xl" />

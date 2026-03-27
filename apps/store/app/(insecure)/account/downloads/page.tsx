@@ -1,6 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
+import { useState } from "react";
 import { StatusBadge } from "~/components/status-badge";
 import { Button, buttonVariants } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -51,20 +52,28 @@ export default function DownloadsPage() {
 
 	const downloadsApi =
 		client.module("digital-downloads").store["/downloads/me"];
-	const { data: downloadsData, isLoading } = downloadsApi.useQuery(
-		email ? { email } : undefined,
-		{ enabled: !!email },
-	) as {
+	const {
+		data: downloadsData,
+		isLoading,
+		isError,
+		refetch,
+	} = downloadsApi.useQuery(email ? { email } : undefined, {
+		enabled: !!email,
+	}) as {
 		data: { tokens: DownloadToken[] } | undefined;
 		isLoading: boolean;
+		isError: boolean;
+		refetch: () => void;
 	};
 
 	const downloadApi =
 		client.module("digital-downloads").store["/downloads/:token"];
 
 	const tokens = downloadsData?.tokens ?? [];
+	const [downloadError, setDownloadError] = useState("");
 
 	async function handleDownload(token: string) {
+		setDownloadError("");
 		try {
 			const result = (await downloadApi.fetch({
 				params: { token },
@@ -74,7 +83,7 @@ export default function DownloadsPage() {
 				window.open(url, "_blank", "noopener,noreferrer");
 			}
 		} catch {
-			// Download failed silently — the button state handles feedback
+			setDownloadError("Failed to start download. Please try again.");
 		}
 	}
 
@@ -100,7 +109,30 @@ export default function DownloadsPage() {
 				</p>
 			</div>
 
-			{isLoading || !email ? (
+			{downloadError && (
+				<div
+					className="mb-4 rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-destructive text-sm"
+					role="alert"
+				>
+					{downloadError}
+				</div>
+			)}
+
+			{isError ? (
+				<div
+					className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-destructive text-sm"
+					role="alert"
+				>
+					<p>Failed to load your downloads.</p>
+					<button
+						type="button"
+						onClick={() => refetch()}
+						className="mt-1 font-medium underline"
+					>
+						Try again
+					</button>
+				</div>
+			) : isLoading || !email ? (
 				<div className="flex flex-col gap-3">
 					{[1, 2, 3].map((n) => (
 						<Skeleton key={n} className="h-20 rounded-xl" />

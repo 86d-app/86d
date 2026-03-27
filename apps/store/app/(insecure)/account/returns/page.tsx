@@ -144,9 +144,13 @@ export default function ReturnsPage() {
 		queryInput.status = statusFilter;
 	}
 
-	const { data, isLoading } = returnsApi.useQuery(queryInput) as {
+	const { data, isLoading, isError, refetch } = returnsApi.useQuery(
+		queryInput,
+	) as {
 		data: ReturnsListResponse | undefined;
 		isLoading: boolean;
+		isError: boolean;
+		refetch: () => void;
 	};
 
 	const returns = data?.returns ?? [];
@@ -188,7 +192,21 @@ export default function ReturnsPage() {
 				))}
 			</div>
 
-			{isLoading ? (
+			{isError ? (
+				<div
+					className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-destructive text-sm"
+					role="alert"
+				>
+					<p>Failed to load your returns.</p>
+					<button
+						type="button"
+						onClick={() => refetch()}
+						className="mt-1 font-medium underline"
+					>
+						Try again
+					</button>
+				</div>
+			) : isLoading ? (
 				<div className="flex flex-col gap-3">
 					{[1, 2, 3].map((n) => (
 						<Skeleton key={n} className="h-28 rounded-xl" />
