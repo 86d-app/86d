@@ -321,9 +321,17 @@ function SearchResults() {
 		return input;
 	}, [page, pageSize, sort, order, urlQuery, category]);
 
-	const { data: productsData, isLoading } = api.listProducts.useQuery(
-		urlQuery ? queryInput : undefined,
-	) as { data: ListResult | undefined; isLoading: boolean };
+	const {
+		data: productsData,
+		isLoading,
+		isError,
+		refetch,
+	} = api.listProducts.useQuery(urlQuery ? queryInput : undefined) as {
+		data: ListResult | undefined;
+		isLoading: boolean;
+		isError: boolean;
+		refetch: () => void;
+	};
 
 	const { data: categoriesData } = api.listCategories.useQuery() as {
 		data: { categories: Category[] } | undefined;
@@ -457,8 +465,25 @@ function SearchResults() {
 						</select>
 					</div>
 
+					{/* Error state */}
+					{isError && (
+						<div
+							className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-destructive text-sm"
+							role="alert"
+						>
+							<p>Something went wrong loading search results.</p>
+							<button
+								type="button"
+								onClick={() => refetch()}
+								className="mt-1 font-medium underline"
+							>
+								Try again
+							</button>
+						</div>
+					)}
+
 					{/* Loading skeleton */}
-					{isLoading && (
+					{isLoading && !isError && (
 						<div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
 							{Array.from({ length: 8 }).map((_, i) => (
 								<div key={`skeleton-${i}`}>
@@ -473,7 +498,7 @@ function SearchResults() {
 					)}
 
 					{/* No results */}
-					{!isLoading && products.length === 0 && (
+					{!isLoading && !isError && products.length === 0 && (
 						<div className="flex flex-col items-center justify-center py-16 text-center">
 							<div className="mb-4 flex size-14 items-center justify-center rounded-2xl bg-muted">
 								<SearchIcon className="size-6 text-muted-foreground" />
@@ -494,7 +519,7 @@ function SearchResults() {
 					)}
 
 					{/* Product grid */}
-					{!isLoading && products.length > 0 && (
+					{!isLoading && !isError && products.length > 0 && (
 						<div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
 							{products.map((product) => (
 								<ProductCard key={product.id} product={product} />

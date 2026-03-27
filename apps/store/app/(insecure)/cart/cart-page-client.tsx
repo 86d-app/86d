@@ -268,9 +268,16 @@ const CartPageClient = observer(function CartPageClient() {
 	const api = useApi();
 	const { cart: cartStore } = useStore();
 
-	const { data: cart, isLoading } = api.cart.getCart.useQuery() as {
+	const {
+		data: cart,
+		isLoading,
+		isError,
+		refetch,
+	} = api.cart.getCart.useQuery() as {
 		data: CartData | undefined;
 		isLoading: boolean;
+		isError: boolean;
+		refetch: () => void;
 	};
 
 	const removeMutation = api.cart.removeFromCart.useMutation({
@@ -313,6 +320,26 @@ const CartPageClient = observer(function CartPageClient() {
 
 	if (isLoading) {
 		return <CartSkeleton />;
+	}
+
+	if (isError) {
+		return (
+			<div className="mx-auto w-full max-w-4xl px-4 py-12 sm:px-6">
+				<div
+					className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-destructive text-sm"
+					role="alert"
+				>
+					<p>Failed to load your cart.</p>
+					<button
+						type="button"
+						onClick={() => refetch()}
+						className="mt-1 font-medium underline"
+					>
+						Try again
+					</button>
+				</div>
+			</div>
+		);
 	}
 
 	if (!cart || cart.itemCount === 0) {
