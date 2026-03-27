@@ -627,6 +627,38 @@ describe("payment controller edge cases", () => {
 				reason: "Damaged item",
 			});
 		});
+
+		it("provider createRefund receives non-USD currency from intent", async () => {
+			const mockProvider: PaymentProvider = {
+				createIntent: vi.fn().mockResolvedValue({
+					providerIntentId: "pi_eur",
+					status: "succeeded",
+					providerMetadata: {},
+				}),
+				confirmIntent: vi.fn().mockResolvedValue({
+					status: "succeeded",
+					providerMetadata: {},
+				}),
+				cancelIntent: vi.fn(),
+				createRefund: vi.fn().mockResolvedValue({
+					providerRefundId: "re_eur",
+					status: "succeeded",
+				}),
+			};
+			const ctrl = createPaymentController(mockData, mockProvider);
+			const intent = await ctrl.createIntent({
+				amount: 3000,
+				currency: "EUR",
+			});
+			await ctrl.confirmIntent(intent.id);
+			await ctrl.createRefund({ intentId: intent.id, amount: 1500 });
+			expect(mockProvider.createRefund).toHaveBeenCalledWith({
+				providerIntentId: "pi_eur",
+				amount: 1500,
+				currency: "EUR",
+				reason: undefined,
+			});
+		});
 	});
 
 	// ── listRefunds edge cases ──────────────────────────────────────────

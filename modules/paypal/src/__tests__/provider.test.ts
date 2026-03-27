@@ -503,6 +503,61 @@ describe("PayPalPaymentProvider", () => {
 			expect(parsed.note_to_payer).toBe("Customer request");
 		});
 
+		it("sends currency from params in refund amount", async () => {
+			let capturedRefundBody: string | undefined;
+			globalThis.fetch = vi
+				.fn()
+				.mockImplementation((url: string, init?: RequestInit) => {
+					if (url.includes("/oauth2/token")) {
+						return Promise.resolve({
+							ok: true,
+							status: 200,
+							json: () =>
+								Promise.resolve({
+									access_token: "tok",
+									expires_in: 3600,
+								}),
+						});
+					}
+					if (url.includes("/checkout/orders/")) {
+						return Promise.resolve({
+							ok: true,
+							status: 200,
+							json: () =>
+								Promise.resolve({
+									id: "ord",
+									status: "COMPLETED",
+									purchase_units: [
+										{
+											payments: {
+												captures: [{ id: "cap_eur", status: "COMPLETED" }],
+											},
+										},
+									],
+								}),
+						});
+					}
+					capturedRefundBody = init?.body as string;
+					return Promise.resolve({
+						ok: true,
+						status: 200,
+						json: () =>
+							Promise.resolve({ id: "ref_eur", status: "COMPLETED" }),
+					});
+				});
+
+			await provider.createRefund({
+				providerIntentId: "pp_order_eur",
+				amount: 2500,
+				currency: "EUR",
+			});
+
+			expect(capturedRefundBody).toBeDefined();
+			const parsed = JSON.parse(capturedRefundBody as string);
+			expect(parsed.amount.currency_code).toBe("EUR");
+			expect(parsed.amount.value).toBe("25.00");
+		});
+
 		it("maps PENDING refund status to pending", async () => {
 			globalThis.fetch = vi.fn().mockImplementation((url: string) => {
 				if (url.includes("/oauth2/token")) {

@@ -327,6 +327,28 @@ describe("SquarePaymentProvider", () => {
 			expect(body.amount_money.amount).toBe(2000);
 		});
 
+		it("sends currency from params in refund amount_money", async () => {
+			globalThis.fetch = mockFetchResponse({
+				refund: {
+					id: "sq_ref_gbp",
+					status: "PENDING",
+					amount_money: { amount: 1500, currency: "GBP" },
+				},
+			});
+
+			await provider.createRefund({
+				providerIntentId: "sq_pay_gbp",
+				amount: 1500,
+				currency: "GBP",
+			});
+
+			const body = JSON.parse(
+				(globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body,
+			);
+			expect(body.amount_money.currency).toBe("GBP");
+			expect(body.amount_money.amount).toBe(1500);
+		});
+
 		it("maps REJECTED status to failed", async () => {
 			globalThis.fetch = mockFetchResponse({
 				refund: {
