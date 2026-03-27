@@ -5,6 +5,7 @@ import {
 	type DriveDeliveryResponse,
 	type DriveQuoteResponse,
 	mapDriveStatusToInternal,
+	verifyWebhookSignature,
 } from "../provider";
 
 // ── Realistic DoorDash Drive API fixtures ────────────────────────────────────
@@ -362,6 +363,82 @@ describe("createJwt", () => {
 });
 
 // ── Status mapping tests ─────────────────────────────────────────────────────
+
+// ── Webhook signature verification tests ─────────────────────────────────────
+
+describe("verifyWebhookSignature", () => {
+	const signingSecret = MOCK_CREDENTIALS.signingSecret;
+
+	async function computeHmacHex(
+		payload: string,
+		secret: string,
+	): Promise<string> {
+		const binary = atob(secret);
+		const bytes = new Uint8Array(binary.length);
+		for (let i = 0; i < binary.length; i++) {
+			bytes[i] = binary.charCodeAt(i);
+		}
+		const key = await crypto.subtle.importKey(
+			"raw",
+			bytes.buffer as ArrayBuffer,
+			{ name: "HMAC", hash: "SHA-256" },
+			false,
+			["sign"],
+		);
+		const sig = await crypto.subtle.sign(
+			"HMAC",
+			key,
+			new TextEncoder().encode(payload),
+		);
+		return Array.from(new Uint8Array(sig))
+			.map((b) => b.toString(16).padStart(2, "0"))
+			.join("");
+	}
+
+	it("returns true for a valid signature", async () => {
+		const payload = '{"event_name":"DASHER_CONFIRMED"}';
+		const signature = await computeHmacHex(payload, signingSecret);
+		const result = await verifyWebhookSignature(
+			payload,
+			signature,
+			signingSecret,
+		);
+		expect(result).toBe(true);
+	});
+
+	it("returns false for a tampered payload", async () => {
+		const payload = '{"event_name":"DASHER_CONFIRMED"}';
+		const signature = await computeHmacHex(payload, signingSecret);
+		const result = await verifyWebhookSignature(
+			'{"event_name":"DELIVERY_CANCELLED"}',
+			signature,
+			signingSecret,
+		);
+		expect(result).toBe(false);
+	});
+
+	it("returns false for a wrong signature", async () => {
+		const payload = '{"event_name":"DASHER_CONFIRMED"}';
+		const result = await verifyWebhookSignature(
+			payload,
+			"0000000000000000000000000000000000000000000000000000000000000000",
+			signingSecret,
+		);
+		expect(result).toBe(false);
+	});
+
+	it("returns false for a signature with different length", async () => {
+		const payload = '{"event_name":"DASHER_CONFIRMED"}';
+		const result = await verifyWebhookSignature(payload, "abcd", signingSecret);
+		expect(result).toBe(false);
+	});
+
+	it("returns false for an empty signature", async () => {
+		const payload = '{"event_name":"DASHER_CONFIRMED"}';
+		const result = await verifyWebhookSignature(payload, "", signingSecret);
+		expect(result).toBe(false);
+	});
+});
 
 describe("mapDriveStatusToInternal", () => {
 	it("maps created to pending", () => {

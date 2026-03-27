@@ -1,5 +1,8 @@
 import { createStoreEndpoint } from "@86d-app/core";
-import { mapDriveStatusToInternal } from "../../provider";
+import {
+	mapDriveStatusToInternal,
+	verifyWebhookSignature,
+} from "../../provider";
 import type { DoordashController } from "../../service";
 
 /**
@@ -47,11 +50,10 @@ interface WebhookPayload {
 
 /**
  * Create the DoorDash webhook endpoint.
- * DoorDash uses Basic Auth or OAuth for webhook authentication (configured in
- * the DoorDash developer portal). There is no HMAC signature to verify —
- * authentication is handled at the HTTP transport level.
+ * Verifies HMAC-SHA256 signature using the signing secret when configured.
+ * The signature is sent in the X-DoorDash-Signature header as a hex string.
  */
-export function createDoordashWebhook() {
+export function createDoordashWebhook(signingSecret?: string | undefined) {
 	return createStoreEndpoint(
 		"/doordash/webhook",
 		{
@@ -61,9 +63,43 @@ export function createDoordashWebhook() {
 		async (ctx) => {
 			const request = ctx.request;
 
+			let rawBody: string;
+			try {
+				rawBody = await request.text();
+			} catch {
+				return Response.json(
+					{ error: "Failed to read request body." },
+					{ status: 400 },
+				);
+			}
+
+			// Verify signature if signing secret is configured
+			if (signingSecret) {
+				const signature = request.headers.get("x-doordash-signature") ?? "";
+
+				if (!signature) {
+					return Response.json(
+						{ error: "Missing webhook signature." },
+						{ status: 401 },
+					);
+				}
+
+				const valid = await verifyWebhookSignature(
+					rawBody,
+					signature,
+					signingSecret,
+				);
+				if (!valid) {
+					return Response.json(
+						{ error: "Invalid webhook signature." },
+						{ status: 401 },
+					);
+				}
+			}
+
 			let payload: WebhookPayload;
 			try {
-				payload = (await request.json()) as WebhookPayload;
+				payload = JSON.parse(rawBody) as WebhookPayload;
 			} catch {
 				return Response.json({ error: "Invalid JSON body." }, { status: 400 });
 			}

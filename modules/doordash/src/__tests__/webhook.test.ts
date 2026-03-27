@@ -273,3 +273,133 @@ describe("doordash webhook endpoint", () => {
 		expect(body.handled).toBe(false);
 	});
 });
+
+// ── Signature verification tests ────────────────────────────────────────────
+
+const TEST_SIGNING_SECRET = "dGVzdC1zaWduaW5nLXNlY3JldC1mb3ItdW5pdC10ZXN0cw==";
+
+async function computeSignature(
+	payload: string,
+	secret: string,
+): Promise<string> {
+	const binary = atob(secret);
+	const bytes = new Uint8Array(binary.length);
+	for (let i = 0; i < binary.length; i++) {
+		bytes[i] = binary.charCodeAt(i);
+	}
+	const key = await crypto.subtle.importKey(
+		"raw",
+		bytes.buffer as ArrayBuffer,
+		{ name: "HMAC", hash: "SHA-256" },
+		false,
+		["sign"],
+	);
+	const sig = await crypto.subtle.sign(
+		"HMAC",
+		key,
+		new TextEncoder().encode(payload),
+	);
+	return Array.from(new Uint8Array(sig))
+		.map((b) => b.toString(16).padStart(2, "0"))
+		.join("");
+}
+
+function makeSignedRequest(body: string, signature: string | null): Request {
+	const headers: Record<string, string> = {
+		"Content-Type": "application/json",
+	};
+	if (signature !== null) {
+		headers["x-doordash-signature"] = signature;
+	}
+	return new Request("https://store.example.com/api/doordash/webhook", {
+		method: "POST",
+		headers,
+		body,
+	});
+}
+
+describe("doordash webhook signature verification", () => {
+	const signedEndpoint = createDoordashWebhook(TEST_SIGNING_SECRET);
+
+	it("accepts a valid signature", async () => {
+		const body = JSON.stringify(DASHER_CONFIRMED_PAYLOAD);
+		const signature = await computeSignature(body, TEST_SIGNING_SECRET);
+		const request = makeSignedRequest(body, signature);
+		const { context } = createTestContext();
+
+		const response = await callWebhook(signedEndpoint, request, context);
+
+		expect(response.status).toBe(200);
+		const json = await response.json();
+		expect(json.received).toBe(true);
+	});
+
+	it("rejects missing signature with 401", async () => {
+		const body = JSON.stringify(DASHER_CONFIRMED_PAYLOAD);
+		const request = makeSignedRequest(body, null);
+		const { context } = createTestContext();
+
+		const response = await callWebhook(signedEndpoint, request, context);
+
+		expect(response.status).toBe(401);
+		const json = await response.json();
+		expect(json.error).toBe("Missing webhook signature.");
+	});
+
+	it("rejects empty signature with 401", async () => {
+		const body = JSON.stringify(DASHER_CONFIRMED_PAYLOAD);
+		const request = makeSignedRequest(body, "");
+		const { context } = createTestContext();
+
+		const response = await callWebhook(signedEndpoint, request, context);
+
+		expect(response.status).toBe(401);
+		const json = await response.json();
+		expect(json.error).toBe("Missing webhook signature.");
+	});
+
+	it("rejects invalid signature with 401", async () => {
+		const body = JSON.stringify(DASHER_CONFIRMED_PAYLOAD);
+		const request = makeSignedRequest(
+			body,
+			"0000000000000000000000000000000000000000000000000000000000000000",
+		);
+		const { context } = createTestContext();
+
+		const response = await callWebhook(signedEndpoint, request, context);
+
+		expect(response.status).toBe(401);
+		const json = await response.json();
+		expect(json.error).toBe("Invalid webhook signature.");
+	});
+
+	it("rejects tampered body with 401", async () => {
+		const originalBody = JSON.stringify(DASHER_CONFIRMED_PAYLOAD);
+		const signature = await computeSignature(originalBody, TEST_SIGNING_SECRET);
+		const tamperedBody = JSON.stringify({
+			...DASHER_CONFIRMED_PAYLOAD,
+			event_name: "DELIVERY_CANCELLED",
+		});
+		const request = makeSignedRequest(tamperedBody, signature);
+		const { context } = createTestContext();
+
+		const response = await callWebhook(signedEndpoint, request, context);
+
+		expect(response.status).toBe(401);
+	});
+
+	it("skips verification when no signing secret configured", async () => {
+		const unsignedEndpoint = createDoordashWebhook();
+		const body = JSON.stringify(DASHER_CONFIRMED_PAYLOAD);
+		// No signature header at all
+		const request = makeSignedRequest(body, null);
+		const { context } = createTestContext();
+
+		const response = await callWebhook(unsignedEndpoint, request, context);
+
+		// Should process normally without signature check
+		expect(response.status).toBe(200);
+		const json = await response.json();
+		expect(json.received).toBe(true);
+	});
+});

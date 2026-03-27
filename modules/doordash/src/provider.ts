@@ -296,6 +296,42 @@ export function mapDriveStatusToInternal(
 	}
 }
 
+// ── Webhook signature verification ──────────────────────────────────────────
+
+/**
+ * Verify a DoorDash webhook signature.
+ * DoorDash signs webhook payloads with HMAC-SHA256 using the same
+ * base64-encoded signing secret used for JWT creation.
+ * The signature is sent as a hex string in the X-DoorDash-Signature header.
+ */
+export async function verifyWebhookSignature(
+	payload: string,
+	signature: string,
+	signingSecret: string,
+): Promise<boolean> {
+	const secretBytes = decodeSigningSecret(signingSecret);
+	const key = await crypto.subtle.importKey(
+		"raw",
+		secretBytes.buffer as ArrayBuffer,
+		{ name: "HMAC", hash: "SHA-256" },
+		false,
+		["sign"],
+	);
+
+	const computed = await crypto.subtle.sign("HMAC", key, enc.encode(payload));
+	const computedHex = Array.from(new Uint8Array(computed))
+		.map((b) => b.toString(16).padStart(2, "0"))
+		.join("");
+
+	// Timing-safe comparison to prevent timing attacks
+	if (computedHex.length !== signature.length) return false;
+	let mismatch = 0;
+	for (let i = 0; i < computedHex.length; i++) {
+		mismatch |= computedHex.charCodeAt(i) ^ signature.charCodeAt(i);
+	}
+	return mismatch === 0;
+}
+
 // ── Export JWT creation for testing ──────────────────────────────────────────
 
 export { createJwt };

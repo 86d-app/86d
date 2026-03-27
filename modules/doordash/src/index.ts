@@ -32,7 +32,7 @@ export default function doordash(options?: DoordashOptions): Module {
 	);
 
 	// Build endpoints — include webhook and settings when credentials are present
-	const webhookEndpoint = createDoordashWebhook();
+	const webhookEndpoint = createDoordashWebhook(options?.signingSecret);
 	const settingsEndpoint = createGetSettingsEndpoint({
 		developerId: options?.developerId,
 		keyId: options?.keyId,
