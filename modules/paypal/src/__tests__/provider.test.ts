@@ -541,8 +541,7 @@ describe("PayPalPaymentProvider", () => {
 					return Promise.resolve({
 						ok: true,
 						status: 200,
-						json: () =>
-							Promise.resolve({ id: "ref_eur", status: "COMPLETED" }),
+						json: () => Promise.resolve({ id: "ref_eur", status: "COMPLETED" }),
 					});
 				});
 
