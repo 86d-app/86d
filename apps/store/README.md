@@ -84,10 +84,9 @@ Both types are treated the same way and can export components for use in MDX.
 
 ## Scripts
 
-- `pnpm prepare` - Initialize store (run after config changes or first time setup)
-- `pnpm dev` - Start dev server (auto-runs prepare)
-- `pnpm build` - Build for production (auto-runs prepare)
-- `pnpm generate:modules` - Manually regenerate module imports only
+- `bun run generate:modules` - Initialize/regenerate module imports from repo root
+- `bun run dev` - Start dev server
+- `bun run build` - Build for production (runs codegen with `--frozen` first)
 
 ## MDX Components
 

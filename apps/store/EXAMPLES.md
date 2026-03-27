@@ -100,7 +100,7 @@ Add third-party modules from npm:
 **Run**:
 ```bash
 cd apps/store
-pnpm prepare
+bun run generate:modules
 ```
 
 The script will:
@@ -266,27 +266,27 @@ const components: MDXComponents = {
 ### Initial Setup
 ```bash
 cd apps/store
-pnpm prepare
+bun run generate:modules
 ```
 
 ### Add a Module
 1. Edit `templates/brisa/config.json` → add module name
-2. Run `pnpm prepare` → auto-installs and generates
+2. Run `bun run generate:modules` → installs missing modules (if needed) and regenerates files
 3. Use components in MDX
 
 ### Remove a Module
 1. Edit `templates/brisa/config.json` → remove module name
-2. Run `pnpm prepare` → regenerates without that module
+2. Run `bun run generate:modules` → regenerates without that module
 3. Optionally remove from `package.json` manually
 
 ### Development
 ```bash
-pnpm dev  # Automatically runs predev → generate:modules
+bun run dev  # Run codegen first if config changed
 ```
 
 ### Production
 ```bash
-pnpm build  # Automatically runs prebuild → generate:modules
+bun run build  # Runs codegen with --frozen before build
 ```
 
 ---
@@ -297,4 +297,4 @@ pnpm build  # Automatically runs prebuild → generate:modules
 2. **Dependencies**: The script manages `package.json` but you can manually update versions
 3. **Type Safety**: Generated file uses `as const` for type-safe module lists
 4. **Empty Modules**: Modules without components are tracked but don't add to MDX registry
-5. **Hot Reload**: Changes to `config.json` require running `pnpm prepare` or restarting dev server
+5. **Hot Reload**: Changes to `config.json` require running `bun run generate:modules` or restarting dev server
