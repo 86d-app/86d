@@ -3,7 +3,7 @@ import { createAdminEndpointsWithSettings } from "./admin/endpoints";
 import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
 import { tiktokShopSchema } from "./schema";
 import { createTikTokShopController } from "./service-impl";
-import { storeEndpoints } from "./store/endpoints";
+import { createStoreEndpoints } from "./store/endpoints";
 
 export type {
 	CatalogSync,
@@ -63,7 +63,7 @@ export default function tiktokShop(options?: TikTokShopOptions): Module {
 			return { controllers: { tiktokShop: controller } };
 		},
 		endpoints: {
-			store: storeEndpoints,
+			store: createStoreEndpoints(options?.appSecret),
 			admin: createAdminEndpointsWithSettings(settingsEndpoint),
 		},
 		admin: {

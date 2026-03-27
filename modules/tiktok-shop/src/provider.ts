@@ -345,6 +345,65 @@ export function mapTikTokProductStatus(
 	return "draft";
 }
 
+// ── Webhook signature verification ──────────────────────────────────────────
+
+/**
+ * Verify a TikTok Shop webhook signature.
+ * TikTok signs webhook push requests using HMAC-SHA256 with the app_secret.
+ * The sign string is: path + sorted query params (key+value, excluding sign
+ * and access_token) + request body. The signature is a hex string sent as
+ * the `sign` query parameter.
+ */
+export async function verifyWebhookSignature(
+	path: string,
+	params: Record<string, string>,
+	body: string,
+	appSecret: string,
+): Promise<boolean> {
+	const expectedSign = params.sign;
+	if (!expectedSign) return false;
+
+	// Build the sign string: exclude "sign" and "access_token" from params
+	const filtered: Record<string, string> = {};
+	for (const [key, value] of Object.entries(params)) {
+		if (key !== "sign" && key !== "access_token") {
+			filtered[key] = value;
+		}
+	}
+
+	const sortedKeys = Object.keys(filtered).sort();
+	let signString = path;
+	for (const key of sortedKeys) {
+		signString += key + filtered[key];
+	}
+	if (body) signString += body;
+
+	const encoder = new TextEncoder();
+	const key = await crypto.subtle.importKey(
+		"raw",
+		encoder.encode(appSecret),
+		{ name: "HMAC", hash: "SHA-256" },
+		false,
+		["sign"],
+	);
+	const signature = await crypto.subtle.sign(
+		"HMAC",
+		key,
+		encoder.encode(signString),
+	);
+	const computedHex = Array.from(new Uint8Array(signature))
+		.map((b) => b.toString(16).padStart(2, "0"))
+		.join("");
+
+	// Timing-safe comparison
+	if (computedHex.length !== expectedSign.length) return false;
+	let mismatch = 0;
+	for (let i = 0; i < computedHex.length; i++) {
+		mismatch |= computedHex.charCodeAt(i) ^ expectedSign.charCodeAt(i);
+	}
+	return mismatch === 0;
+}
+
 /** Parse a TikTok money string (already in dollars/units). */
 export function parseTikTokMoney(amount: string | undefined): number {
 	if (!amount) return 0;
