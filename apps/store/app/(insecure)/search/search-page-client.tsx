@@ -12,6 +12,7 @@ import {
 	useState,
 } from "react";
 import { Skeleton } from "~/components/ui/skeleton";
+import type { RootStore } from "~/lib/store";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -170,8 +171,7 @@ const ProductCard = memo(function ProductCard({
 }) {
 	const cartApi = useCartMutation();
 	const track = useTrack();
-	// biome-ignore lint/suspicious/noExplicitAny: store context shape varies per app
-	const store = useStoreContext<{ cart: any }>();
+	const store = useStoreContext<RootStore>();
 
 	const addToCartMutation = cartApi.addToCart.useMutation({
 		onSuccess: (data: {

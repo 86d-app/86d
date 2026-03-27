@@ -37,7 +37,6 @@ interface StoreSearchResult {
 
 function SearchIcon({ className }: { className?: string }) {
 	return (
-		// biome-ignore lint/a11y/noSvgWithoutTitle: decorative icon, aria-hidden
 		<svg
 			xmlns="http://www.w3.org/2000/svg"
 			width="18"
@@ -49,8 +48,9 @@ function SearchIcon({ className }: { className?: string }) {
 			strokeLinecap="round"
 			strokeLinejoin="round"
 			className={className}
-			aria-hidden
+			aria-hidden="true"
 		>
+			<title>Search</title>
 			<circle cx="11" cy="11" r="8" />
 			<path d="m21 21-4.3-4.3" />
 		</svg>
