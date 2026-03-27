@@ -1,6 +1,6 @@
 {
 	"name": "@86d-app/quotes",
-	"version": "0.0.23",
+	"version": "0.0.24",
 	"type": "module",
 	"exports": {
 		"./components": "./src/store/components",
