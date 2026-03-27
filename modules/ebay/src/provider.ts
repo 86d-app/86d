@@ -182,6 +182,7 @@ export interface EbayProviderConfig {
 	clientSecret: string;
 	refreshToken: string;
 	siteId?: string | undefined;
+	currency?: string | undefined;
 	sandbox?: boolean | undefined;
 }
 
@@ -190,6 +191,7 @@ export class EbayProvider {
 	private readonly clientSecret: string;
 	private readonly refreshToken: string;
 	private readonly siteId: string;
+	private readonly currency: string;
 	private readonly baseUrl: string;
 	private readonly tokenUrl: string;
 
@@ -201,6 +203,7 @@ export class EbayProvider {
 		this.clientSecret = config.clientSecret;
 		this.refreshToken = config.refreshToken;
 		this.siteId = config.siteId ?? "EBAY_US";
+		this.currency = config.currency ?? "USD";
 		this.baseUrl = config.sandbox ? EBAY_SANDBOX_API_BASE : EBAY_API_BASE;
 		this.tokenUrl = config.sandbox ? EBAY_SANDBOX_TOKEN_URL : EBAY_TOKEN_URL;
 	}
@@ -363,13 +366,13 @@ export class EbayProvider {
 				pricingSummary: {
 					price: {
 						value: params.price.toFixed(2),
-						currency: "USD",
+						currency: this.currency,
 					},
 					...(params.format === "auction" && params.auctionStartPrice
 						? {
 								auctionStartPrice: {
 									value: params.auctionStartPrice.toFixed(2),
-									currency: "USD",
+									currency: this.currency,
 								},
 							}
 						: {}),
@@ -414,7 +417,7 @@ export class EbayProvider {
 			body.pricingSummary = {
 				price: {
 					value: params.price.toFixed(2),
-					currency: "USD",
+					currency: this.currency,
 				},
 			};
 		}

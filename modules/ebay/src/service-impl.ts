@@ -20,6 +20,7 @@ export function createEbayController(
 		clientSecret?: string | undefined;
 		refreshToken?: string | undefined;
 		siteId?: string | undefined;
+		currency?: string | undefined;
 	},
 ): EbayController {
 	const provider =
@@ -29,6 +30,7 @@ export function createEbayController(
 					clientSecret: options.clientSecret,
 					refreshToken: options.refreshToken,
 					siteId: options.siteId,
+					currency: options.currency,
 				} satisfies EbayProviderConfig)
 			: null;
 

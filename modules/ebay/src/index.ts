@@ -25,6 +25,8 @@ export interface EbayOptions extends ModuleConfig {
 	refreshToken?: string;
 	/** eBay site ID (default: "EBAY_US") */
 	siteId?: string;
+	/** Listing currency code (default: "USD") */
+	currency?: string;
 }
 
 export default function ebay(options?: EbayOptions): Module {
@@ -58,6 +60,7 @@ export default function ebay(options?: EbayOptions): Module {
 				clientSecret: options?.clientSecret,
 				refreshToken: options?.refreshToken,
 				siteId: options?.siteId,
+				currency: options?.currency,
 			});
 			return { controllers: { ebay: controller } };
 		},
