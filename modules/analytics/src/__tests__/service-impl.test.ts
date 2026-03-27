@@ -273,11 +273,12 @@ describe("createAnalyticsController", () => {
 			const now = new Date();
 			const oneDay = 24 * 60 * 60 * 1000;
 			const since = new Date(now.getTime() - oneDay);
+			const until = new Date(now.getTime() + oneDay);
 
 			await controller.track({ type: "purchase", value: 1000 });
 			const summary = await controller.getRevenueSummary({
 				since,
-				until: now,
+				until,
 			});
 			expect(summary.totalRevenue).toBe(1000);
 			expect(summary.previousRevenue).toBe(0);
