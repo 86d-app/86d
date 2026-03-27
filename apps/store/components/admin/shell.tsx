@@ -97,6 +97,7 @@ function CollapsibleSubGroup({
 			<button
 				type="button"
 				onClick={onToggle}
+				aria-expanded={isOpen}
 				className="flex w-full items-center gap-2 rounded-md px-3 py-1 text-left transition-colors hover:bg-muted/50"
 			>
 				{subgroup.icon ? (
@@ -167,6 +168,7 @@ function CollapsibleGroup({
 			<button
 				type="button"
 				onClick={onToggle}
+				aria-expanded={isOpen}
 				className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left transition-colors hover:bg-muted"
 			>
 				{group.icon ? (
@@ -330,6 +332,15 @@ export function AdminShell({
 	children: React.ReactNode;
 }) {
 	const [sidebarOpen, setSidebarOpen] = useState(false);
+
+	useEffect(() => {
+		if (!sidebarOpen) return;
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") setSidebarOpen(false);
+		};
+		document.addEventListener("keydown", handleKeyDown);
+		return () => document.removeEventListener("keydown", handleKeyDown);
+	}, [sidebarOpen]);
 
 	return (
 		<div className="flex h-svh overflow-hidden bg-background">
