@@ -37,10 +37,13 @@ const emptyForm: AddressForm = {
 export function AddressBook() {
 	const api = useCustomerApi();
 	const client = useModuleClient();
-	const { data, refetch } = api.listAddresses.useQuery() as {
-		data: { addresses: Address[] } | undefined;
-		refetch: () => void;
-	};
+	const { data, isLoading, isError, refetch } =
+		api.listAddresses.useQuery() as {
+			data: { addresses: Address[] } | undefined;
+			isLoading: boolean;
+			isError: boolean;
+			refetch: () => void;
+		};
 
 	const [showForm, setShowForm] = useState(false);
 	const [editingId, setEditingId] = useState<string | null>(null);
@@ -121,6 +124,9 @@ export function AddressBook() {
 	return (
 		<AddressBookTemplate
 			addresses={data?.addresses ?? []}
+			isLoading={isLoading}
+			isError={isError}
+			onRetry={() => refetch()}
 			showForm={showForm}
 			editingId={editingId}
 			form={form}

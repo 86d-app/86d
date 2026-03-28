@@ -36,8 +36,14 @@ interface CartData {
 export const CartDrawerInner = observer(() => {
 	const api = useCartApi();
 	const track = useTrack();
-	const { data: cart } = api.getCart.useQuery() as {
+	const {
+		data: cart,
+		isError: cartError,
+		refetch: cartRefetch,
+	} = api.getCart.useQuery() as {
 		data: CartData | undefined;
+		isError: boolean;
+		refetch: () => void;
 	};
 
 	const removeMutation = api.removeFromCart.useMutation({
@@ -87,126 +93,135 @@ export const CartDrawerInner = observer(() => {
 		clearMutation.mutate(undefined);
 	};
 
-	const bodyContent =
-		!cart || itemCount === 0 ? (
-			<div className="flex h-full flex-col items-center justify-center gap-2 text-center">
-				<p className="text-foreground text-sm">Your cart is empty</p>
-				<p className="text-muted-foreground text-xs">
-					Add items to get started.
-				</p>
-				<button
-					type="button"
-					onClick={() => cartState.closeDrawer()}
-					className="mt-3 rounded-md bg-foreground px-4 py-1.5 font-medium text-background text-xs transition-opacity hover:opacity-85"
-				>
-					Continue shopping
-				</button>
-			</div>
-		) : (
-			<ul className="divide-y divide-border/40">
-				{cart.items.map((item) => {
-					const price = item.price;
-					const image = item.product.images?.[0];
-					return (
-						<li key={item.id} className="flex gap-3 py-3.5">
-							<a
-								href={`/products/${item.product.slug}`}
-								className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-md bg-muted"
-							>
-								{image ? (
-									<img
-										src={image}
-										alt={item.product.name}
-										className="h-full w-full object-cover object-center"
-									/>
-								) : (
-									<div className="flex h-full w-full items-center justify-center text-muted-foreground/30">
-										<svg
-											xmlns="http://www.w3.org/2000/svg"
-											width="16"
-											height="16"
-											viewBox="0 0 24 24"
-											fill="none"
-											stroke="currentColor"
-											strokeWidth="1.5"
-											strokeLinecap="round"
-											strokeLinejoin="round"
-											aria-hidden="true"
-										>
-											<rect width="18" height="18" x="3" y="3" rx="2" />
-											<circle cx="9" cy="9" r="2" />
-											<path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-										</svg>
-									</div>
-								)}
-							</a>
-
-							<div className="flex min-w-0 flex-1 flex-col gap-0.5">
-								<div className="flex items-start justify-between gap-2">
-									<div className="min-w-0">
-										<a
-											href={`/products/${item.product.slug}`}
-											className="block truncate text-foreground text-sm"
-										>
-											{item.product.name}
-										</a>
-										{item.variant && (
-											<p className="text-muted-foreground text-xs">
-												{item.variant.options &&
-												Object.keys(item.variant.options).length > 0
-													? Object.values(item.variant.options).join(" / ")
-													: item.variant.name}
-											</p>
-										)}
-									</div>
-									<p className="flex-shrink-0 text-foreground text-sm tabular-nums">
-										{formatPrice(price * item.quantity)}
-									</p>
+	const bodyContent = cartError ? (
+		<div className="flex h-full flex-col items-center justify-center gap-2 text-center">
+			<p className="font-medium text-destructive text-sm">
+				Failed to load cart
+			</p>
+			<p className="text-muted-foreground text-xs">
+				Something went wrong. Please try again.
+			</p>
+			<button
+				type="button"
+				onClick={() => cartRefetch()}
+				className="mt-3 rounded-md bg-foreground px-4 py-1.5 font-medium text-background text-xs transition-opacity hover:opacity-85"
+			>
+				Try again
+			</button>
+		</div>
+	) : !cart || itemCount === 0 ? (
+		<div className="flex h-full flex-col items-center justify-center gap-2 text-center">
+			<p className="text-foreground text-sm">Your cart is empty</p>
+			<p className="text-muted-foreground text-xs">Add items to get started.</p>
+			<button
+				type="button"
+				onClick={() => cartState.closeDrawer()}
+				className="mt-3 rounded-md bg-foreground px-4 py-1.5 font-medium text-background text-xs transition-opacity hover:opacity-85"
+			>
+				Continue shopping
+			</button>
+		</div>
+	) : (
+		<ul className="divide-y divide-border/40">
+			{cart.items.map((item) => {
+				const price = item.price;
+				const image = item.product.images?.[0];
+				return (
+					<li key={item.id} className="flex gap-3 py-3.5">
+						<a
+							href={`/products/${item.product.slug}`}
+							className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-md bg-muted"
+						>
+							{image ? (
+								<img
+									src={image}
+									alt={item.product.name}
+									className="h-full w-full object-cover object-center"
+								/>
+							) : (
+								<div className="flex h-full w-full items-center justify-center text-muted-foreground/30">
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										width="16"
+										height="16"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										strokeWidth="1.5"
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										aria-hidden="true"
+									>
+										<rect width="18" height="18" x="3" y="3" rx="2" />
+										<circle cx="9" cy="9" r="2" />
+										<path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+									</svg>
 								</div>
+							)}
+						</a>
 
-								<div className="mt-auto flex items-center gap-2.5 pt-0.5">
-									<div className="flex items-center rounded-md border border-border">
-										<button
-											type="button"
-											onClick={() =>
-												handleUpdateQty(item.id, item.quantity - 1)
-											}
-											disabled={loading}
-											className="flex h-6 w-6 items-center justify-center text-muted-foreground text-xs transition-colors hover:text-foreground disabled:opacity-40"
-											aria-label="Decrease quantity"
-										>
-											−
-										</button>
-										<span className="min-w-5 text-center text-foreground text-xs tabular-nums">
-											{item.quantity}
-										</span>
-										<button
-											type="button"
-											onClick={() =>
-												handleUpdateQty(item.id, item.quantity + 1)
-											}
-											disabled={loading}
-											className="flex h-6 w-6 items-center justify-center text-muted-foreground text-xs transition-colors hover:text-foreground disabled:opacity-40"
-											aria-label="Increase quantity"
-										>
-											+
-										</button>
-									</div>
+						<div className="flex min-w-0 flex-1 flex-col gap-0.5">
+							<div className="flex items-start justify-between gap-2">
+								<div className="min-w-0">
+									<a
+										href={`/products/${item.product.slug}`}
+										className="block truncate text-foreground text-sm"
+									>
+										{item.product.name}
+									</a>
+									{item.variant && (
+										<p className="text-muted-foreground text-xs">
+											{item.variant.options &&
+											Object.keys(item.variant.options).length > 0
+												? Object.values(item.variant.options).join(" / ")
+												: item.variant.name}
+										</p>
+									)}
+								</div>
+								<p className="flex-shrink-0 text-foreground text-sm tabular-nums">
+									{formatPrice(price * item.quantity)}
+								</p>
+							</div>
+
+							<div className="mt-auto flex items-center gap-2.5 pt-0.5">
+								<div className="flex items-center rounded-md border border-border">
 									<button
 										type="button"
-										onClick={() => handleRemove(item.id)}
+										onClick={() => handleUpdateQty(item.id, item.quantity - 1)}
 										disabled={loading}
-										className="text-muted-foreground text-xs transition-colors hover:text-destructive disabled:opacity-40"
+										className="flex h-6 w-6 items-center justify-center text-muted-foreground text-xs transition-colors hover:text-foreground disabled:opacity-40"
+										aria-label="Decrease quantity"
 									>
-										Remove
+										−
+									</button>
+									<span className="min-w-5 text-center text-foreground text-xs tabular-nums">
+										{item.quantity}
+									</span>
+									<button
+										type="button"
+										onClick={() => handleUpdateQty(item.id, item.quantity + 1)}
+										disabled={loading}
+										className="flex h-6 w-6 items-center justify-center text-muted-foreground text-xs transition-colors hover:text-foreground disabled:opacity-40"
+										aria-label="Increase quantity"
+									>
+										+
 									</button>
 								</div>
+								<button
+									type="button"
+									onClick={() => handleRemove(item.id)}
+									disabled={loading}
+									className="text-muted-foreground text-xs transition-colors hover:text-destructive disabled:opacity-40"
+								>
+									Remove
+								</button>
 							</div>
-						</li>
-					);
-				})}
-			</ul>
-		);
+						</div>
+					</li>
+				);
+			})}
+		</ul>
+	);
 
 	const footerContent =
 		cart && itemCount > 0 ? (

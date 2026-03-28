@@ -1,4 +1,20 @@
-{props.customer ? (
+{props.isError ? (
+  <div
+    className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-6 text-center"
+    role="alert"
+  >
+    <p className="font-medium text-destructive text-sm">
+      Failed to load profile
+    </p>
+    <button
+      type="button"
+      onClick={props.onRetry}
+      className="mt-2 font-medium text-destructive text-sm underline underline-offset-4"
+    >
+      Try again
+    </button>
+  </div>
+) : props.customer ? (
   <div className="space-y-6">
     <div className="flex items-center justify-between">
       <h2 className="text-lg font-semibold">Profile</h2>

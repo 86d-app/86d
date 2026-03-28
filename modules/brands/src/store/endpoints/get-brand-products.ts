@@ -17,7 +17,7 @@ export const getBrandProducts = createStoreEndpoint(
 		const controller = ctx.context.controllers.brands as BrandController;
 		const brand = await controller.getBrandBySlug(ctx.params.slug);
 
-		if (!brand || !brand.isActive) {
+		if (!brand?.isActive) {
 			return { error: "Brand not found", status: 404 };
 		}
 

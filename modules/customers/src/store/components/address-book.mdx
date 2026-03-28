@@ -1,7 +1,7 @@
 <div className="space-y-6">
   <div className="flex items-center justify-between">
     <h2 className="text-lg font-semibold">Addresses</h2>
-    {!props.showForm && (
+    {!props.showForm && !props.isError && !props.isLoading && (
       <button
         type="button"
         onClick={props.onAdd}
@@ -12,7 +12,35 @@
     )}
   </div>
 
-  {props.showForm && (
+  {props.isError ? (
+    <div
+      className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-6 text-center"
+      role="alert"
+    >
+      <p className="font-medium text-destructive text-sm">
+        Failed to load addresses
+      </p>
+      <button
+        type="button"
+        onClick={props.onRetry}
+        className="mt-2 font-medium text-destructive text-sm underline underline-offset-4"
+      >
+        Try again
+      </button>
+    </div>
+  ) : props.isLoading ? (
+    <div className="space-y-3">
+      {[1, 2].map((n) => (
+        <div key={n} className="animate-pulse rounded-lg border border-border p-4">
+          <div className="h-4 w-32 rounded bg-muted" />
+          <div className="mt-2 h-3 w-48 rounded bg-muted" />
+          <div className="mt-1 h-3 w-40 rounded bg-muted" />
+        </div>
+      ))}
+    </div>
+  ) : null}
+
+  {!props.isError && !props.isLoading && props.showForm && (
     <div className="rounded-lg border border-border p-4">
       <h3 className="mb-4 text-sm font-semibold">
         {props.editingId ? "Edit address" : "New address"}
@@ -154,11 +182,11 @@
     </div>
   )}
 
-  {props.addresses.length === 0 && !props.showForm ? (
+  {!props.isError && !props.isLoading && props.addresses.length === 0 && !props.showForm ? (
     <p className="py-6 text-center text-sm text-muted-foreground">
       No saved addresses yet.
     </p>
-  ) : (
+  ) : !props.isError && !props.isLoading ? (
     <div className="space-y-3">
       {props.addresses.map((addr) => (
         <div
@@ -207,5 +235,5 @@
         </div>
       ))}
     </div>
-  )}
+  ) : null}
 </div>

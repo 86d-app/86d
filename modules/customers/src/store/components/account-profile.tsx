@@ -15,8 +15,10 @@ interface CustomerData {
 
 export function AccountProfile() {
 	const api = useCustomerApi();
-	const { data, refetch } = api.getMe.useQuery() as {
+	const { data, isLoading, isError, refetch } = api.getMe.useQuery() as {
 		data: { customer: CustomerData } | undefined;
+		isLoading: boolean;
+		isError: boolean;
 		refetch: () => void;
 	};
 	const client = useModuleClient();
@@ -61,6 +63,9 @@ export function AccountProfile() {
 	return (
 		<AccountProfileTemplate
 			customer={customer}
+			isLoading={isLoading}
+			isError={isError}
+			onRetry={() => refetch()}
 			editing={editing}
 			firstName={firstName}
 			lastName={lastName}
