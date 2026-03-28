@@ -227,6 +227,31 @@ export class EasyPostProvider {
 			`/shipments/${encodeURIComponent(shipmentId)}`,
 		);
 	}
+
+	/**
+	 * Verify API credentials by fetching the user resource.
+	 * Returns account name on success, error message on failure.
+	 */
+	async verifyConnection(): Promise<
+		{ ok: true; accountName: string } | { ok: false; error: string }
+	> {
+		try {
+			const user = await this.request<{
+				id: string;
+				name: string | null;
+				email: string | null;
+			}>("GET", "/users");
+			return {
+				ok: true,
+				accountName: user.name ?? user.email ?? user.id,
+			};
+		} catch (e) {
+			return {
+				ok: false,
+				error: e instanceof Error ? e.message : String(e),
+			};
+		}
+	}
 }
 
 // ── Status mapping ──────────────────────────────────────────────────────────

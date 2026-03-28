@@ -440,6 +440,102 @@ describe("EasyPostProvider", () => {
 			);
 		});
 	});
+
+	describe("verifyConnection", () => {
+		it("returns ok with account name when API responds with user", async () => {
+			globalThis.fetch = vi.fn().mockResolvedValue({
+				ok: true,
+				json: () =>
+					Promise.resolve({
+						id: "user_abc123",
+						name: "Test Business",
+						email: "test@example.com",
+					}),
+			});
+
+			const result = await provider.verifyConnection();
+
+			expect(result).toEqual({
+				ok: true,
+				accountName: "Test Business",
+			});
+
+			const url = vi.mocked(globalThis.fetch).mock.calls[0][0];
+			expect(url).toBe("https://api.easypost.com/v2/users");
+		});
+
+		it("falls back to email when name is null", async () => {
+			globalThis.fetch = vi.fn().mockResolvedValue({
+				ok: true,
+				json: () =>
+					Promise.resolve({
+						id: "user_abc123",
+						name: null,
+						email: "fallback@example.com",
+					}),
+			});
+
+			const result = await provider.verifyConnection();
+
+			expect(result).toEqual({
+				ok: true,
+				accountName: "fallback@example.com",
+			});
+		});
+
+		it("falls back to id when name and email are null", async () => {
+			globalThis.fetch = vi.fn().mockResolvedValue({
+				ok: true,
+				json: () =>
+					Promise.resolve({
+						id: "user_abc123",
+						name: null,
+						email: null,
+					}),
+			});
+
+			const result = await provider.verifyConnection();
+
+			expect(result).toEqual({
+				ok: true,
+				accountName: "user_abc123",
+			});
+		});
+
+		it("returns error when API returns 401", async () => {
+			globalThis.fetch = vi.fn().mockResolvedValue({
+				ok: false,
+				status: 401,
+				json: () =>
+					Promise.resolve({
+						error: {
+							code: "UNAUTHORIZED",
+							message: "Invalid API key",
+						},
+					}),
+			});
+
+			const result = await provider.verifyConnection();
+
+			expect(result.ok).toBe(false);
+			if (!result.ok) {
+				expect(result.error).toContain("Invalid API key");
+			}
+		});
+
+		it("returns error when fetch throws a network error", async () => {
+			globalThis.fetch = vi
+				.fn()
+				.mockRejectedValue(new Error("Network request failed"));
+
+			const result = await provider.verifyConnection();
+
+			expect(result).toEqual({
+				ok: false,
+				error: "Network request failed",
+			});
+		});
+	});
 });
 
 // ── Status mapping tests ─────────────────────────────────────────────────────

@@ -40,9 +40,19 @@ function extractError(error: Error | null, fallback: string): string {
 	return fallback;
 }
 
+interface SettingsData {
+	status: "connected" | "not_configured" | "error";
+	error?: string | undefined;
+	accountName?: string | undefined;
+	configured: boolean;
+	testMode: boolean;
+	apiKeyMasked: string | null;
+}
+
 function useShippingAdminApi() {
 	const client = useModuleClient();
 	return {
+		getSettings: client.module("shipping").admin["/admin/shipping/settings"],
 		listZones: client.module("shipping").admin["/admin/shipping/zones"],
 		createZone: client.module("shipping").admin["/admin/shipping/zones/create"],
 		updateZone:
@@ -58,6 +68,57 @@ function useShippingAdminApi() {
 		deleteRate:
 			client.module("shipping").admin["/admin/shipping/rates/:id/delete"],
 	};
+}
+
+function ConnectionStatus({ settings }: { settings: SettingsData }) {
+	if (settings.status === "connected") {
+		return (
+			<div className="mb-4 flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-800 dark:bg-green-900/20">
+				<div className="size-2 rounded-full bg-green-500" />
+				<div className="flex-1">
+					<p className="font-medium text-green-800 text-sm dark:text-green-300">
+						EasyPost connected
+						{settings.accountName ? ` — ${settings.accountName}` : ""}
+					</p>
+					<p className="text-green-700 text-xs dark:text-green-400">
+						{settings.testMode ? "Test mode" : "Live mode"}
+						{settings.apiKeyMasked ? ` · ${settings.apiKeyMasked}` : ""}
+					</p>
+				</div>
+			</div>
+		);
+	}
+
+	if (settings.status === "error") {
+		return (
+			<div className="mb-4 flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20">
+				<div className="size-2 rounded-full bg-red-500" />
+				<div className="flex-1">
+					<p className="font-medium text-red-800 text-sm dark:text-red-300">
+						EasyPost connection error
+					</p>
+					<p className="text-red-700 text-xs dark:text-red-400">
+						{settings.error ?? "Unable to verify credentials"}
+					</p>
+				</div>
+			</div>
+		);
+	}
+
+	return (
+		<div className="mb-4 flex items-center gap-3 rounded-lg border border-border bg-muted/30 p-3">
+			<div className="size-2 rounded-full bg-muted-foreground" />
+			<div className="flex-1">
+				<p className="font-medium text-foreground text-sm">
+					EasyPost not configured
+				</p>
+				<p className="text-muted-foreground text-xs">
+					Set the <code className="text-xs">easypostApiKey</code> option to
+					enable live rate shopping and label purchases.
+				</p>
+			</div>
+		</div>
+	);
 }
 
 function RateRow({
@@ -311,6 +372,10 @@ export function ShippingAdmin() {
 	const [saving, setSaving] = useState(false);
 	const [error, setError] = useState("");
 
+	const { data: settingsData } = api.getSettings.useQuery() as {
+		data: SettingsData | undefined;
+	};
+
 	const { data: zonesData, isLoading: loading } = api.listZones.useQuery() as {
 		data: { zones: ShippingZone[] } | undefined;
 		isLoading: boolean;
@@ -445,6 +510,7 @@ export function ShippingAdmin() {
 			}}
 			content={
 				<>
+					{settingsData && <ConnectionStatus settings={settingsData} />}
 					<div className="overflow-hidden rounded-lg border border-border bg-card">
 						<table className="w-full">
 							<thead>
