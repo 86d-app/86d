@@ -28,10 +28,15 @@
               <p className="text-muted-foreground text-sm">Send transactional and marketing emails</p>
             </div>
           </div>
-          {props.data?.email.configured ? (
+          {props.data?.email.status === "connected" ? (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/10 px-3 py-1 font-medium text-green-600 text-xs dark:text-green-400">
               <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
               Connected
+            </span>
+          ) : props.data?.email.status === "error" ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/10 px-3 py-1 font-medium text-red-600 text-xs dark:text-red-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+              Error
             </span>
           ) : (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-3 py-1 font-medium text-amber-600 text-xs dark:text-amber-400">
@@ -40,7 +45,7 @@
             </span>
           )}
         </div>
-        {props.data?.email.configured ? (
+        {props.data?.email.status === "connected" ? (
           <div className="mt-4 grid grid-cols-2 gap-4 rounded-md bg-muted/30 p-3">
             <div>
               <p className="text-muted-foreground text-xs">From Address</p>
@@ -48,8 +53,12 @@
             </div>
             <div>
               <p className="text-muted-foreground text-xs">API Key</p>
-              <p className="mt-0.5 font-mono text-foreground text-sm">{props.data.email.apiKey}</p>
+              <p className="mt-0.5 font-mono text-foreground text-sm">{props.data.email.apiKeyMasked}</p>
             </div>
+          </div>
+        ) : props.data?.email.status === "error" ? (
+          <div className="mt-3 rounded-md bg-red-50 p-3 text-red-800 text-sm dark:bg-red-900/20 dark:text-red-300">
+            {props.data.email.error}
           </div>
         ) : (
           <p className="mt-3 text-muted-foreground text-sm">
@@ -69,10 +78,15 @@
               <p className="text-muted-foreground text-sm">Send SMS notifications to customers</p>
             </div>
           </div>
-          {props.data?.sms.configured ? (
+          {props.data?.sms.status === "connected" ? (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/10 px-3 py-1 font-medium text-green-600 text-xs dark:text-green-400">
               <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
               Connected
+            </span>
+          ) : props.data?.sms.status === "error" ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/10 px-3 py-1 font-medium text-red-600 text-xs dark:text-red-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+              Error
             </span>
           ) : (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-3 py-1 font-medium text-amber-600 text-xs dark:text-amber-400">
@@ -81,7 +95,7 @@
             </span>
           )}
         </div>
-        {props.data?.sms.configured ? (
+        {props.data?.sms.status === "connected" ? (
           <div className="mt-4 grid grid-cols-2 gap-4 rounded-md bg-muted/30 p-3">
             <div>
               <p className="text-muted-foreground text-xs">From Number</p>
@@ -89,8 +103,12 @@
             </div>
             <div>
               <p className="text-muted-foreground text-xs">Account SID</p>
-              <p className="mt-0.5 font-mono text-foreground text-sm">{props.data.sms.accountSid}</p>
+              <p className="mt-0.5 font-mono text-foreground text-sm">{props.data.sms.accountSidMasked}</p>
             </div>
+          </div>
+        ) : props.data?.sms.status === "error" ? (
+          <div className="mt-3 rounded-md bg-red-50 p-3 text-red-800 text-sm dark:bg-red-900/20 dark:text-red-300">
+            {props.data.sms.error}
           </div>
         ) : (
           <p className="mt-3 text-muted-foreground text-sm">

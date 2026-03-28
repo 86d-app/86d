@@ -115,6 +115,38 @@ export class ResendProvider {
 		const data = (await res.json()) as ResendSendResponse;
 		return { success: true, messageId: data.id };
 	}
+
+	/**
+	 * Verify API credentials by listing API keys.
+	 */
+	async verifyConnection(): Promise<
+		{ ok: true; accountName: string } | { ok: false; error: string }
+	> {
+		try {
+			const res = await fetch(`${this.baseUrl}/api-keys`, {
+				method: "GET",
+				headers: { Authorization: `Bearer ${this.apiKey}` },
+			});
+			if (!res.ok) {
+				const errBody = (await res.json().catch(() => ({
+					message: `HTTP ${res.status}`,
+				}))) as ResendErrorResponse;
+				return {
+					ok: false,
+					error: `Resend error: ${errBody.message ?? `HTTP ${res.status}`}`,
+				};
+			}
+			return {
+				ok: true,
+				accountName: `Resend (${this.fromAddress})`,
+			};
+		} catch (e) {
+			return {
+				ok: false,
+				error: e instanceof Error ? e.message : String(e),
+			};
+		}
+	}
 }
 
 // ── Twilio provider ─────────────────────────────────────────────────────────
@@ -176,5 +208,46 @@ export class TwilioProvider {
 			};
 		}
 		return { success: true, messageId: data.sid };
+	}
+
+	/**
+	 * Verify API credentials by fetching the account resource.
+	 */
+	async verifyConnection(): Promise<
+		{ ok: true; accountName: string } | { ok: false; error: string }
+	> {
+		try {
+			const credentials = btoa(`${this.accountSid}:${this.authToken}`);
+			const res = await fetch(
+				`${this.baseUrl}/Accounts/${encodeURIComponent(this.accountSid)}.json`,
+				{
+					method: "GET",
+					headers: { Authorization: `Basic ${credentials}` },
+				},
+			);
+			if (!res.ok) {
+				const errBody = (await res.json().catch(() => ({
+					message: `HTTP ${res.status}`,
+				}))) as TwilioErrorResponse;
+				return {
+					ok: false,
+					error: `Twilio error: ${errBody.message ?? `HTTP ${res.status}`}`,
+				};
+			}
+			const data = (await res.json()) as {
+				friendly_name: string;
+				sid: string;
+			};
+			return {
+				ok: true,
+				accountName:
+					data.friendly_name || `Twilio (${this.accountSid.slice(0, 8)}...)`,
+			};
+		} catch (e) {
+			return {
+				ok: false,
+				error: e instanceof Error ? e.message : String(e),
+			};
+		}
 	}
 }

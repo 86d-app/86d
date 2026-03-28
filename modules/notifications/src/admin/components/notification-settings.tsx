@@ -4,12 +4,15 @@ import { useModuleClient } from "@86d-app/core/client";
 import NotificationSettingsTemplate from "./notification-settings.mdx";
 
 interface ProviderStatus {
+	status: "connected" | "not_configured" | "error";
+	error?: string | undefined;
+	accountName?: string | undefined;
 	configured: boolean;
 	provider: string;
 	fromAddress?: string | null;
 	fromNumber?: string | null;
-	apiKey?: string | null;
-	accountSid?: string | null;
+	apiKeyMasked?: string | null;
+	accountSidMasked?: string | null;
 }
 
 interface SettingsData {

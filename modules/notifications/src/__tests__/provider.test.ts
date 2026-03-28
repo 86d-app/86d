@@ -191,6 +191,59 @@ describe("ResendProvider", () => {
 		expect(result.success).toBe(false);
 		expect(result.error).toContain("Resend error");
 	});
+
+	describe("verifyConnection", () => {
+		it("returns ok with from address when API responds", async () => {
+			fetchSpy.mockResolvedValueOnce(
+				new Response(JSON.stringify({ data: [] }), { status: 200 }),
+			);
+
+			const provider = new ResendProvider("re_test", "noreply@store.com");
+			const result = await provider.verifyConnection();
+
+			expect(result).toEqual({
+				ok: true,
+				accountName: "Resend (noreply@store.com)",
+			});
+
+			const [url, options] = fetchSpy.mock.calls[0] as [string, RequestInit];
+			expect(url).toBe("https://api.resend.com/api-keys");
+			expect(options.method).toBe("GET");
+		});
+
+		it("returns error when API key is invalid", async () => {
+			fetchSpy.mockResolvedValueOnce(
+				new Response(
+					JSON.stringify({
+						statusCode: 403,
+						message: "API key is invalid.",
+						name: "forbidden",
+					}),
+					{ status: 403 },
+				),
+			);
+
+			const provider = new ResendProvider("re_invalid", "noreply@store.com");
+			const result = await provider.verifyConnection();
+
+			expect(result.ok).toBe(false);
+			if (!result.ok) {
+				expect(result.error).toContain("API key is invalid");
+			}
+		});
+
+		it("returns error on network failure", async () => {
+			fetchSpy.mockRejectedValueOnce(new Error("Network request failed"));
+
+			const provider = new ResendProvider("re_test", "noreply@store.com");
+			const result = await provider.verifyConnection();
+
+			expect(result).toEqual({
+				ok: false,
+				error: "Network request failed",
+			});
+		});
+	});
 });
 
 describe("TwilioProvider", () => {
@@ -305,5 +358,63 @@ describe("TwilioProvider", () => {
 
 		expect(result.success).toBe(false);
 		expect(result.error).toContain("Twilio error");
+	});
+
+	describe("verifyConnection", () => {
+		it("returns ok with account name when API responds", async () => {
+			fetchSpy.mockResolvedValueOnce(
+				new Response(
+					JSON.stringify({
+						friendly_name: "My Business",
+						sid: "AC123",
+					}),
+					{ status: 200 },
+				),
+			);
+
+			const provider = new TwilioProvider("AC123", "token", "+15551234567");
+			const result = await provider.verifyConnection();
+
+			expect(result).toEqual({
+				ok: true,
+				accountName: "My Business",
+			});
+
+			const [url] = fetchSpy.mock.calls[0] as [string, RequestInit];
+			expect(url).toBe("https://api.twilio.com/2010-04-01/Accounts/AC123.json");
+		});
+
+		it("returns error when API returns 401", async () => {
+			fetchSpy.mockResolvedValueOnce(
+				new Response(
+					JSON.stringify({
+						code: 20003,
+						message: "Authenticate",
+						status: 401,
+					}),
+					{ status: 401 },
+				),
+			);
+
+			const provider = new TwilioProvider("AC123", "bad-token", "+15551234567");
+			const result = await provider.verifyConnection();
+
+			expect(result.ok).toBe(false);
+			if (!result.ok) {
+				expect(result.error).toContain("Authenticate");
+			}
+		});
+
+		it("returns error on network failure", async () => {
+			fetchSpy.mockRejectedValueOnce(new Error("Network request failed"));
+
+			const provider = new TwilioProvider("AC123", "token", "+15551234567");
+			const result = await provider.verifyConnection();
+
+			expect(result).toEqual({
+				ok: false,
+				error: "Network request failed",
+			});
+		});
 	});
 });
