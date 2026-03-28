@@ -25,12 +25,19 @@ export function WishlistPage({
 	const [removingId, setRemovingId] = useState<string | null>(null);
 	const [error, setError] = useState("");
 
-	const { data, isLoading: loading } = customerId
+	const {
+		data,
+		isLoading: loading,
+		isError: queryError,
+		refetch,
+	} = customerId
 		? (api.listWishlist.useQuery({}) as {
 				data: { items: WishlistItem[]; total: number } | undefined;
 				isLoading: boolean;
+				isError: boolean;
+				refetch: () => void;
 			})
-		: { data: undefined, isLoading: false };
+		: { data: undefined, isLoading: false, isError: false, refetch: () => {} };
 
 	const items = data?.items ?? [];
 
@@ -72,6 +79,27 @@ export function WishlistPage({
 				<p className="mt-4 text-gray-500 text-sm dark:text-gray-400">
 					Loading wishlist...
 				</p>
+			</div>
+		);
+	}
+
+	if (queryError) {
+		return (
+			<div className="py-16 text-center" role="alert">
+				<HeartIcon filled={false} large />
+				<h2 className="mt-4 font-semibold text-foreground text-lg">
+					Failed to load wishlist
+				</h2>
+				<p className="mt-2 text-muted-foreground text-sm">
+					Something went wrong. Please try again.
+				</p>
+				<button
+					type="button"
+					onClick={() => refetch()}
+					className="mt-4 rounded-lg bg-foreground px-4 py-2 font-medium text-background text-sm transition-colors hover:bg-foreground/90"
+				>
+					Try again
+				</button>
 			</div>
 		);
 	}

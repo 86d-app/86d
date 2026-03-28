@@ -45,12 +45,21 @@ export function ProductReviews({
 	const api = useReviewsApi();
 
 	// Initial page via useQuery — eliminates the fetch-on-mount useEffect
-	const { data: initialData, isLoading: loading } =
-		api.listProductReviews.useQuery({
-			params: { productId },
-			take: String(PAGE_SIZE),
-			skip: "0",
-		}) as { data: ReviewsResponse | undefined; isLoading: boolean };
+	const {
+		data: initialData,
+		isLoading: loading,
+		isError: queryError,
+		refetch,
+	} = api.listProductReviews.useQuery({
+		params: { productId },
+		take: String(PAGE_SIZE),
+		skip: "0",
+	}) as {
+		data: ReviewsResponse | undefined;
+		isLoading: boolean;
+		isError: boolean;
+		refetch: () => void;
+	};
 
 	// Extra reviews loaded via "Load more"
 	const [extraReviews, setExtraReviews] = useState<Review[]>([]);
@@ -112,6 +121,29 @@ export function ProductReviews({
 							<div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
 						</div>
 					))}
+				</div>
+			</section>
+		);
+	}
+
+	if (queryError) {
+		return (
+			<section className="py-8">
+				<h2 className="mb-4 font-semibold text-foreground text-lg">{title}</h2>
+				<div
+					className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-6 text-center"
+					role="alert"
+				>
+					<p className="font-medium text-destructive text-sm">
+						Failed to load reviews
+					</p>
+					<button
+						type="button"
+						onClick={() => refetch()}
+						className="mt-2 font-medium text-destructive text-sm underline underline-offset-4"
+					>
+						Try again
+					</button>
 				</div>
 			</section>
 		);
