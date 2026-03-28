@@ -8,6 +8,7 @@ import { buildCartRecoveryEmail } from "./emails/cart-recovery";
 import { buildOrderCancelledEmail } from "./emails/order-cancelled";
 import { buildOrderConfirmationEmail } from "./emails/order-confirmation";
 import { buildOrderFulfilledEmail } from "./emails/order-fulfilled";
+import { buildOrderShippedEmail } from "./emails/order-shipped";
 import { ResendProvider, TwilioProvider } from "./provider";
 import { notificationsSchema } from "./schema";
 import { createNotificationsController } from "./service-impl";
@@ -244,6 +245,37 @@ export default function notifications(options?: NotificationsOptions): Module {
 					}
 				},
 			);
+
+			interface OrderShippedPayload {
+				orderId: string;
+				orderNumber: string;
+				email: string;
+				customerName: string;
+				carrier?: string | undefined;
+				trackingNumber?: string | undefined;
+				trackingUrl?: string | undefined;
+			}
+
+			ctx.events?.on<OrderShippedPayload>("order.shipped", async (event) => {
+				const p = event.payload;
+				if (!p) return;
+
+				if (emailProvider && p.email) {
+					const { subject, html, text } = buildOrderShippedEmail(p);
+					await emailProvider
+						.sendEmail({
+							to: p.email,
+							subject,
+							html,
+							text,
+							tags: [
+								{ name: "type", value: "order_shipped" },
+								{ name: "order_id", value: p.orderId },
+							],
+						})
+						.catch(() => {});
+				}
+			});
 
 			ctx.events?.on<OrderLifecyclePayload>(
 				"order.cancelled",
