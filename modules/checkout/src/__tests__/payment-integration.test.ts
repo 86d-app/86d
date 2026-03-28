@@ -262,10 +262,12 @@ async function simulateCreatePayment(
 		};
 	}
 
-	// PayPal: requires customer approval before capture.
+	// Provider-specific client-side flows
 	const paymentType = intent.providerMetadata?.paymentType as
 		| string
 		| undefined;
+
+	// PayPal: requires customer approval before capture.
 	if (paymentType === "paypal") {
 		await checkoutCtrl.setPaymentIntent(sessionId, intent.id, intent.status);
 		return {
@@ -275,6 +277,20 @@ async function simulateCreatePayment(
 				amount: intent.amount,
 				currency: intent.currency,
 				paypalOrderId: intent.providerMetadata?.paypalOrderId as string,
+			},
+		};
+	}
+
+	// Braintree: requires client-side tokenization.
+	if (paymentType === "braintree") {
+		return {
+			payment: {
+				id: intent.id,
+				status: intent.status,
+				amount: intent.amount,
+				currency: intent.currency,
+				braintreeClientToken: intent.providerMetadata
+					?.braintreeClientToken as string,
 			},
 		};
 	}
@@ -1123,6 +1139,175 @@ describe("checkout → payment integration", () => {
 			);
 			expect(cancelCalls).toHaveLength(1);
 			expect(cancelCalls[0].id).toBe(intentId);
+		});
+	});
+
+	describe("Braintree two-phase payment flow", () => {
+		/**
+		 * Creates a mock payment controller that simulates Braintree's two-phase flow:
+		 * Phase 1 (no nonce): returns braintreeClientToken so the frontend can render Drop-in.
+		 * Phase 2 (with nonce): creates a transaction using the nonce.
+		 */
+		function createBraintreePaymentController(): PaymentProcessController & {
+			_intents: Map<string, MockIntent>;
+			_calls: Array<{
+				method: string;
+				id?: string | undefined;
+				amount?: number | undefined;
+				metadata?: Record<string, unknown> | undefined;
+			}>;
+		} {
+			const intents = new Map<string, MockIntent>();
+			const calls: Array<{
+				method: string;
+				id?: string | undefined;
+				amount?: number | undefined;
+				metadata?: Record<string, unknown> | undefined;
+			}> = [];
+			return {
+				_intents: intents,
+				_calls: calls,
+
+				async createIntent(params) {
+					const nonce = params.metadata?.paymentMethodNonce as
+						| string
+						| undefined;
+					calls.push({
+						method: "createIntent",
+						amount: params.amount,
+						metadata: params.metadata,
+					});
+
+					if (!nonce) {
+						// Phase 1: return client token
+						const id = `bt_pending_${crypto.randomUUID().slice(0, 8)}`;
+						const intent: MockIntent = {
+							id,
+							status: "pending",
+							amount: params.amount,
+							currency: params.currency ?? "USD",
+							providerMetadata: {
+								paymentType: "braintree",
+								braintreeClientToken: "bt_client_token_test_abc",
+							},
+						};
+						intents.set(id, intent);
+						return intent;
+					}
+
+					// Phase 2: create transaction with nonce
+					const id = `bt_txn_${crypto.randomUUID().slice(0, 8)}`;
+					const intent: MockIntent = {
+						id,
+						status: "pending",
+						amount: params.amount,
+						currency: params.currency ?? "USD",
+						providerMetadata: { braintreeStatus: "authorized" },
+					};
+					intents.set(id, intent);
+					return intent;
+				},
+
+				async confirmIntent(id) {
+					const intent = intents.get(id);
+					if (!intent) return null;
+					intent.status = "succeeded";
+					calls.push({ method: "confirmIntent", id });
+					return { id: intent.id, status: intent.status };
+				},
+
+				async getIntent(id) {
+					calls.push({ method: "getIntent", id });
+					return intents.get(id) ?? null;
+				},
+
+				async cancelIntent(id) {
+					const intent = intents.get(id);
+					if (!intent) return null;
+					intent.status = "cancelled";
+					calls.push({ method: "cancelIntent", id });
+					return { id: intent.id, status: intent.status };
+				},
+			};
+		}
+
+		it("returns braintreeClientToken on first call (no nonce)", async () => {
+			const checkoutCtrl = createCheckoutController(createMockDataService());
+			const paymentCtrl = createBraintreePaymentController();
+
+			const session = await checkoutCtrl.create(makeSession());
+			const result = await simulateCreatePayment(
+				checkoutCtrl,
+				session.id,
+				paymentCtrl,
+			);
+
+			expect(result.payment?.braintreeClientToken).toBe(
+				"bt_client_token_test_abc",
+			);
+			expect(result.payment?.status).toBe("pending");
+			expect(result.payment?.amount).toBe(4900);
+		});
+
+		it("does NOT auto-confirm on first call", async () => {
+			const checkoutCtrl = createCheckoutController(createMockDataService());
+			const paymentCtrl = createBraintreePaymentController();
+
+			const session = await checkoutCtrl.create(makeSession());
+			await simulateCreatePayment(checkoutCtrl, session.id, paymentCtrl);
+
+			const confirmCalls = paymentCtrl._calls.filter(
+				(c) => c.method === "confirmIntent",
+			);
+			expect(confirmCalls).toHaveLength(0);
+		});
+
+		it("does NOT store intent on session for phase 1 (client token only)", async () => {
+			const checkoutCtrl = createCheckoutController(createMockDataService());
+			const paymentCtrl = createBraintreePaymentController();
+
+			const session = await checkoutCtrl.create(makeSession());
+			await simulateCreatePayment(checkoutCtrl, session.id, paymentCtrl);
+
+			// Session should not have intent stored during phase 1
+			const updated = await checkoutCtrl.getById(session.id);
+			expect(updated?.paymentIntentId).toBeFalsy();
+		});
+
+		it("creates transaction on second call with nonce and auto-confirms", async () => {
+			const checkoutCtrl = createCheckoutController(createMockDataService());
+			const paymentCtrl = createBraintreePaymentController();
+
+			const session = await checkoutCtrl.create(makeSession());
+
+			// Phase 1: get client token
+			await simulateCreatePayment(checkoutCtrl, session.id, paymentCtrl);
+
+			// Phase 2: simulate with nonce via direct intent creation + confirm
+			const intent = await paymentCtrl.createIntent({
+				amount: session.total,
+				currency: session.currency,
+				metadata: { paymentMethodNonce: "fake-nonce-123" },
+			});
+
+			// The intent should have been created without the braintree client token metadata
+			expect(intent.providerMetadata?.paymentType).toBeUndefined();
+			expect(intent.providerMetadata?.braintreeStatus).toBe("authorized");
+
+			// Auto-confirm
+			const confirmed = await paymentCtrl.confirmIntent(intent.id);
+			expect(confirmed?.status).toBe("succeeded");
+
+			// Store on session
+			await checkoutCtrl.setPaymentIntent(
+				session.id,
+				intent.id,
+				confirmed?.status ?? intent.status,
+			);
+
+			const updated = await checkoutCtrl.getById(session.id);
+			expect(updated?.paymentIntentId).toBe(intent.id);
+			expect(updated?.paymentStatus).toBe("succeeded");
 		});
 	});
 });

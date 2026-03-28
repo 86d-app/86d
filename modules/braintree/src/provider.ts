@@ -130,6 +130,15 @@ export class BraintreePaymentProvider implements PaymentProvider {
 		}
 	}
 
+	async generateClientToken(): Promise<string> {
+		const data = await this.request<{ clientToken: { value: string } }>(
+			"POST",
+			"/client_token",
+			{ client_token: { version: 2 } },
+		);
+		return data.clientToken.value;
+	}
+
 	async createIntent(params: {
 		amount: number;
 		currency: string;
@@ -137,9 +146,17 @@ export class BraintreePaymentProvider implements PaymentProvider {
 	}): Promise<ProviderIntentResult> {
 		const nonce = params.metadata?.paymentMethodNonce as string | undefined;
 		if (!nonce) {
-			throw new Error(
-				"Braintree requires a paymentMethodNonce in metadata to create a transaction",
-			);
+			// No nonce yet — generate a client token so the frontend can
+			// render the Braintree Drop-in UI and collect card details.
+			const clientToken = await this.generateClientToken();
+			return {
+				providerIntentId: `braintree_pending_${crypto.randomUUID()}`,
+				status: "pending",
+				providerMetadata: {
+					paymentType: "braintree",
+					braintreeClientToken: clientToken,
+				},
+			};
 		}
 		const data = await this.request<{ transaction: BraintreeTransaction }>(
 			"POST",

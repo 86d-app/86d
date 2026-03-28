@@ -476,7 +476,7 @@ describe("braintree endpoint security", () => {
 	// ── Nonce Requirement (Provider) ────────────────────────────────
 
 	describe("nonce requirement enforcement", () => {
-		it("provider rejects createIntent without a payment method nonce", async () => {
+		it("provider returns client token when createIntent called without nonce", async () => {
 			const { BraintreePaymentProvider } = await import("../provider");
 			const provider = new BraintreePaymentProvider(
 				"merchant_id",
@@ -484,15 +484,28 @@ describe("braintree endpoint security", () => {
 				"priv_key",
 				true,
 			);
-			await expect(
-				provider.createIntent({
+			const origFetch = globalThis.fetch;
+			globalThis.fetch = vi.fn().mockResolvedValue({
+				ok: true,
+				status: 200,
+				json: () => Promise.resolve({ clientToken: { value: "bt_token_sec" } }),
+			});
+			try {
+				const result = await provider.createIntent({
 					amount: 1000,
 					currency: "USD",
-				}),
-			).rejects.toThrow("paymentMethodNonce");
+				});
+				expect(result.status).toBe("pending");
+				expect(result.providerMetadata?.paymentType).toBe("braintree");
+				expect(result.providerMetadata?.braintreeClientToken).toBe(
+					"bt_token_sec",
+				);
+			} finally {
+				globalThis.fetch = origFetch;
+			}
 		});
 
-		it("provider rejects createIntent with metadata but no nonce key", async () => {
+		it("provider returns client token when metadata has no nonce key", async () => {
 			const { BraintreePaymentProvider } = await import("../provider");
 			const provider = new BraintreePaymentProvider(
 				"merchant_id",
@@ -500,13 +513,26 @@ describe("braintree endpoint security", () => {
 				"priv_key",
 				true,
 			);
-			await expect(
-				provider.createIntent({
+			const origFetch = globalThis.fetch;
+			globalThis.fetch = vi.fn().mockResolvedValue({
+				ok: true,
+				status: 200,
+				json: () =>
+					Promise.resolve({ clientToken: { value: "bt_token_sec2" } }),
+			});
+			try {
+				const result = await provider.createIntent({
 					amount: 2000,
 					currency: "USD",
 					metadata: { customerId: "cust_123" },
-				}),
-			).rejects.toThrow("paymentMethodNonce");
+				});
+				expect(result.status).toBe("pending");
+				expect(result.providerMetadata?.braintreeClientToken).toBe(
+					"bt_token_sec2",
+				);
+			} finally {
+				globalThis.fetch = origFetch;
+			}
 		});
 	});
 

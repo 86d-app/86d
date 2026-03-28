@@ -2,6 +2,7 @@
 
 import type { CheckoutStep } from "@86d-app/checkout/state";
 import { observer } from "@86d-app/core/state";
+import { BraintreePaymentForm } from "components/braintree-payment-form";
 import { PayPalPaymentForm } from "components/paypal-payment-form";
 import { StripePaymentForm } from "components/stripe-payment-form";
 import { useApi } from "generated/hooks";
@@ -81,6 +82,7 @@ interface PaymentResult {
 		status?: string;
 		clientSecret?: string;
 		paypalOrderId?: string;
+		braintreeClientToken?: string;
 	};
 	session?: CheckoutSessionData;
 }
@@ -592,6 +594,9 @@ const CheckoutPage = observer(function CheckoutPage() {
 		null,
 	);
 	const [paypalOrderId, setPaypalOrderId] = useState<string | null>(null);
+	const [braintreeClientToken, setBraintreeClientToken] = useState<
+		string | null
+	>(null);
 	const emailId = useId();
 	const formRef = useRef<HTMLFormElement>(null);
 
@@ -872,7 +877,14 @@ const CheckoutPage = observer(function CheckoutPage() {
 				return;
 			}
 
-			// Fallback: no clientSecret/paypalOrderId and not succeeded
+			// If a braintreeClientToken is returned, Drop-in UI will handle it
+			if (payment?.braintreeClientToken) {
+				setBraintreeClientToken(payment.braintreeClientToken);
+				co.setProcessing(false);
+				return;
+			}
+
+			// Fallback: no provider-specific client flow and not succeeded
 			setError("Payment could not be processed. Please try again.");
 		} catch {
 			// Error handled by mutation onError
@@ -931,6 +943,42 @@ const CheckoutPage = observer(function CheckoutPage() {
 		}
 	}, [co, api.checkout.capturePayment]);
 
+	// ── Braintree nonce received → create transaction with the nonce
+	const handleBraintreeNonce = useCallback(
+		async (nonce: string) => {
+			if (!co.sessionId) return;
+			setError(null);
+			co.setProcessing(true);
+
+			try {
+				const payResult: PaymentResult = await createPaymentMut.mutateAsync({
+					params: { id: co.sessionId },
+					body: { paymentMethodNonce: nonce },
+				});
+
+				const payment = payResult?.payment;
+				const sess = payResult?.session ?? session;
+				if (sess) setSession(sess);
+
+				if (
+					payment?.status === "succeeded" ||
+					payment?.status === "processing" ||
+					payment?.status === "authorized"
+				) {
+					setBraintreeClientToken(null);
+					co.setStep("review");
+				} else {
+					setError("Payment could not be processed. Please try again.");
+					co.setProcessing(false);
+				}
+			} catch {
+				setError("Payment failed. Please try again.");
+				co.setProcessing(false);
+			}
+		},
+		[co, createPaymentMut, session],
+	);
+
 	// ── Auto-create payment intent when entering payment step
 	const paymentInitRef = useRef(false);
 	useEffect(() => {
@@ -938,6 +986,7 @@ const CheckoutPage = observer(function CheckoutPage() {
 			co.currentStep === "payment" &&
 			!paymentClientSecret &&
 			!paypalOrderId &&
+			!braintreeClientToken &&
 			co.sessionId &&
 			!paymentInitRef.current
 		) {
@@ -952,6 +1001,7 @@ const CheckoutPage = observer(function CheckoutPage() {
 		co.sessionId,
 		paymentClientSecret,
 		paypalOrderId,
+		braintreeClientToken,
 		handlePaymentSubmit,
 	]);
 
@@ -1477,7 +1527,7 @@ const CheckoutPage = observer(function CheckoutPage() {
 								Payment
 							</h2>
 
-							{/* Payment form — Stripe, PayPal, or demo fallback */}
+							{/* Payment form — Stripe, PayPal, Braintree, or demo fallback */}
 							{paymentClientSecret ? (
 								<StripePaymentForm
 									clientSecret={paymentClientSecret}
@@ -1499,6 +1549,18 @@ const CheckoutPage = observer(function CheckoutPage() {
 									setProcessing={(v) => co.setProcessing(v)}
 									onBack={() => {
 										setPaypalOrderId(null);
+										co.setStep("shipping");
+									}}
+								/>
+							) : braintreeClientToken ? (
+								<BraintreePaymentForm
+									clientToken={braintreeClientToken}
+									onNonce={(nonce) => void handleBraintreeNonce(nonce)}
+									onError={(msg) => setError(msg)}
+									isProcessing={co.isProcessing}
+									setProcessing={(v) => co.setProcessing(v)}
+									onBack={() => {
+										setBraintreeClientToken(null);
 										co.setStep("shipping");
 									}}
 								/>

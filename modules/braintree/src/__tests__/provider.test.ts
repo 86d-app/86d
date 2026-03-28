@@ -111,6 +111,35 @@ describe("BraintreePaymentProvider", () => {
 		});
 	});
 
+	// ── generateClientToken ──────────────────────────────────────────────
+
+	describe("generateClientToken", () => {
+		it("returns a client token from the Braintree API", async () => {
+			globalThis.fetch = mockFetchResponse({
+				clientToken: { value: "bt_client_token_123" },
+			});
+
+			const token = await provider.generateClientToken();
+			expect(token).toBe("bt_client_token_123");
+			expect(globalThis.fetch).toHaveBeenCalledWith(
+				expect.stringContaining("/client_token"),
+				expect.objectContaining({ method: "POST" }),
+			);
+		});
+
+		it("throws on Braintree API error", async () => {
+			globalThis.fetch = mockFetchResponse(
+				{ apiErrorResponse: { message: "Unauthorized" } },
+				false,
+				401,
+			);
+
+			await expect(provider.generateClientToken()).rejects.toThrow(
+				"Braintree error: Unauthorized",
+			);
+		});
+	});
+
 	// ── createIntent ─────────────────────────────────────────────────────
 
 	describe("createIntent", () => {
@@ -146,20 +175,38 @@ describe("BraintreePaymentProvider", () => {
 			);
 		});
 
-		it("throws when paymentMethodNonce is missing", async () => {
-			await expect(
-				provider.createIntent({ amount: 1000, currency: "USD" }),
-			).rejects.toThrow("Braintree requires a paymentMethodNonce in metadata");
+		it("returns client token when paymentMethodNonce is missing", async () => {
+			globalThis.fetch = mockFetchResponse({
+				clientToken: { value: "bt_client_token_abc" },
+			});
+
+			const result = await provider.createIntent({
+				amount: 1000,
+				currency: "USD",
+			});
+			expect(result.status).toBe("pending");
+			expect(result.providerMetadata?.paymentType).toBe("braintree");
+			expect(result.providerMetadata?.braintreeClientToken).toBe(
+				"bt_client_token_abc",
+			);
+			expect(result.providerIntentId).toMatch(/^braintree_pending_/);
 		});
 
-		it("throws when metadata is provided without nonce", async () => {
-			await expect(
-				provider.createIntent({
-					amount: 1000,
-					currency: "USD",
-					metadata: { someOtherField: "value" },
-				}),
-			).rejects.toThrow("Braintree requires a paymentMethodNonce in metadata");
+		it("returns client token when metadata is provided without nonce", async () => {
+			globalThis.fetch = mockFetchResponse({
+				clientToken: { value: "bt_client_token_def" },
+			});
+
+			const result = await provider.createIntent({
+				amount: 1000,
+				currency: "USD",
+				metadata: { someOtherField: "value" },
+			});
+			expect(result.status).toBe("pending");
+			expect(result.providerMetadata?.paymentType).toBe("braintree");
+			expect(result.providerMetadata?.braintreeClientToken).toBe(
+				"bt_client_token_def",
+			);
 		});
 
 		it("maps settled status to succeeded", async () => {

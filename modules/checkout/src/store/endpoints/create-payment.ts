@@ -9,6 +9,11 @@ export const createPayment = createStoreEndpoint(
 	{
 		method: "POST",
 		params: z.object({ id: z.string().max(128) }),
+		body: z
+			.object({
+				paymentMethodNonce: z.string().max(4096).optional(),
+			})
+			.optional(),
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers.checkout as CheckoutController;
@@ -101,13 +106,20 @@ export const createPayment = createStoreEndpoint(
 
 		// Create the intent through the payments module
 		const email = existing.guestEmail ?? ctx.context.session?.user.email;
+		const paymentMethodNonce = ctx.body?.paymentMethodNonce;
+		const intentMetadata: Record<string, unknown> = {
+			cartId: existing.cartId,
+		};
+		if (paymentMethodNonce) {
+			intentMetadata.paymentMethodNonce = paymentMethodNonce;
+		}
 		const intent = await paymentController.createIntent({
 			amount: existing.total,
 			currency: existing.currency,
 			customerId: existing.customerId,
 			email: email ?? undefined,
 			checkoutSessionId: ctx.params.id,
-			metadata: { cartId: existing.cartId },
+			metadata: intentMetadata,
 		});
 
 		// Extract clientSecret from providerMetadata (set by Stripe/other providers)
@@ -135,11 +147,13 @@ export const createPayment = createStoreEndpoint(
 			};
 		}
 
-		// PayPal: requires customer approval via PayPal buttons before capture.
-		// Return the PayPal order ID so the frontend can render PayPal buttons.
+		// Provider-specific client-side flows: return the necessary data
+		// so the frontend can render the appropriate payment UI.
 		const paymentType = intent.providerMetadata?.paymentType as
 			| string
 			| undefined;
+
+		// PayPal: requires customer approval via PayPal buttons before capture.
 		if (paymentType === "paypal") {
 			const updated = await controller.setPaymentIntent(
 				ctx.params.id,
@@ -155,6 +169,22 @@ export const createPayment = createStoreEndpoint(
 					paypalOrderId: intent.providerMetadata?.paypalOrderId as string,
 				},
 				session: updated,
+			};
+		}
+
+		// Braintree: requires client-side tokenization via Drop-in UI.
+		// Return the client token so the frontend can collect a nonce.
+		if (paymentType === "braintree") {
+			return {
+				payment: {
+					id: intent.id,
+					status: intent.status,
+					amount: intent.amount,
+					currency: intent.currency,
+					braintreeClientToken: intent.providerMetadata
+						?.braintreeClientToken as string,
+				},
+				session: existing,
 			};
 		}
 

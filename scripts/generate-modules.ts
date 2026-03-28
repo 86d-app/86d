@@ -992,22 +992,13 @@ async function generateClient() {
 	}
 
 	// Generate client SDK
+	// The better-call client is not exported here because @better-fetch/fetch types
+	// are not portable under Bun's module layout (TS2742).
+	// Use generated/hooks.ts useApi() for typed client-side access instead.
 	const clientContent = `// Auto-generated file - do not edit manually
 // Run 'bun run generate:modules' to regenerate
 // Generated from: ${CONFIG_PATH}
 
-import { createClient } from "better-call/client";
-import type { Router } from "./api";
-
-function getBaseUrl(): string {
-  if (typeof window !== "undefined") return "";
-  if (process.env.APP_URL) return process.env.APP_URL;
-  return "http://localhost:3000";
-}
-
-// The better-call client is not exported here because @better-fetch/fetch types
-// are not portable under Bun's module layout (TS2742).
-// Use generated/hooks.ts useApi() for typed client-side access instead.
 export {};
 `;
 
