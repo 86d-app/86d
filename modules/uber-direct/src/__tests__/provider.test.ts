@@ -382,6 +382,44 @@ describe("UberDirectProvider", () => {
 			expect(url).toContain("limit=10");
 		});
 	});
+
+	describe("verifyConnection", () => {
+		it("returns ok when OAuth token is obtained successfully", async () => {
+			mockFetchResponse(200, MOCK_TOKEN_RESPONSE);
+
+			const provider = new UberDirectProvider(TEST_CREDENTIALS);
+			const result = await provider.verifyConnection();
+
+			expect(result).toEqual({
+				ok: true,
+				accountName: "Uber Direct (test-cus...)",
+			});
+		});
+
+		it("returns error when OAuth token request fails", async () => {
+			mockFetchResponse(401, "Unauthorized");
+
+			const provider = new UberDirectProvider(TEST_CREDENTIALS);
+			const result = await provider.verifyConnection();
+
+			expect(result.ok).toBe(false);
+			if (!result.ok) {
+				expect(result.error).toContain("Uber OAuth error");
+			}
+		});
+
+		it("returns error on network failure", async () => {
+			fetchSpy.mockRejectedValueOnce(new Error("Network request failed"));
+
+			const provider = new UberDirectProvider(TEST_CREDENTIALS);
+			const result = await provider.verifyConnection();
+
+			expect(result).toEqual({
+				ok: false,
+				error: "Network request failed",
+			});
+		});
+	});
 });
 
 // ── Status mapping ──────────────────────────────────────────────────────────

@@ -7,9 +7,12 @@ import UberDirectAdminTemplate from "./uber-direct-admin.mdx";
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface UberDirectSettings {
+	status: "connected" | "not_configured" | "error";
+	error?: string | undefined;
+	accountName?: string | undefined;
 	configured: boolean;
-	clientId: string | null;
-	customerId: string | null;
+	clientIdMasked: string | null;
+	customerIdMasked: string | null;
 }
 
 interface DeliveryItem {
@@ -209,19 +212,41 @@ export function UberDirectAdmin() {
 					<div className="divide-y divide-border">
 						<StatusRow
 							label="Status"
-							value={settings?.configured ? "Connected" : "Not configured"}
-							badge={settings?.configured ? "active" : "inactive"}
+							value={
+								settings?.status === "connected"
+									? (settings.accountName ?? "Connected")
+									: settings?.status === "error"
+										? "Error"
+										: "Not configured"
+							}
+							badge={
+								settings?.status === "connected"
+									? "connected"
+									: settings?.status === "error"
+										? "error"
+										: "inactive"
+							}
 							badgeClass={
-								settings?.configured
+								settings?.status === "connected"
 									? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-									: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+									: settings?.status === "error"
+										? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+										: "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
 							}
 						/>
-						{settings?.clientId && (
-							<StatusRow label="Client ID" value={settings.clientId} mono />
+						{settings?.clientIdMasked && (
+							<StatusRow
+								label="Client ID"
+								value={settings.clientIdMasked}
+								mono
+							/>
 						)}
-						{settings?.customerId && (
-							<StatusRow label="Customer ID" value={settings.customerId} mono />
+						{settings?.customerIdMasked && (
+							<StatusRow
+								label="Customer ID"
+								value={settings.customerIdMasked}
+								mono
+							/>
 						)}
 						<StatusRow
 							label="Webhook endpoint"
@@ -230,7 +255,13 @@ export function UberDirectAdmin() {
 						/>
 					</div>
 
-					{!settings?.configured && (
+					{settings?.status === "error" && settings.error && (
+						<div className="mt-3 rounded-md bg-red-50 p-3 text-red-800 text-sm dark:bg-red-900/20 dark:text-red-300">
+							{settings.error}
+						</div>
+					)}
+
+					{settings?.status === "not_configured" && (
 						<div className="mt-3 rounded-md bg-yellow-50 p-3 text-sm text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300">
 							Add your Uber Direct client ID, client secret, and customer ID to
 							the module configuration to enable delivery integration.

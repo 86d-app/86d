@@ -313,6 +313,27 @@ export class UberDirectProvider {
 		const path = `/deliveries${qs ? `?${qs}` : ""}`;
 		return this.request<UberListDeliveriesResponse>("GET", path);
 	}
+
+	/**
+	 * Verify API credentials by obtaining an OAuth token.
+	 * If the client_credentials flow succeeds, the credentials are valid.
+	 */
+	async verifyConnection(): Promise<
+		{ ok: true; accountName: string } | { ok: false; error: string }
+	> {
+		try {
+			await this.getAccessToken();
+			return {
+				ok: true,
+				accountName: `Uber Direct (${this.credentials.customerId.slice(0, 8)}...)`,
+			};
+		} catch (e) {
+			return {
+				ok: false,
+				error: e instanceof Error ? e.message : String(e),
+			};
+		}
+	}
 }
 
 // ── Status mapping ──────────────────────────────────────────────────────────
