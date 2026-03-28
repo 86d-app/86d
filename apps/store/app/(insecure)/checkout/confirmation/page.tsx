@@ -398,9 +398,15 @@ function ConfirmationContent() {
 
 			{/* Actions */}
 			<div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
-				<a href="/account/orders" className={buttonVariants()}>
-					View my orders
-				</a>
+				{guestEmail ? (
+					<a href="/track" className={buttonVariants()}>
+						Track your order
+					</a>
+				) : (
+					<a href="/account/orders" className={buttonVariants()}>
+						View my orders
+					</a>
+				)}
 				<a href="/products" className={buttonVariants({ variant: "outline" })}>
 					Continue shopping
 				</a>
