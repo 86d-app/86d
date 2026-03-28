@@ -164,7 +164,7 @@ describe("SquarePaymentProvider", () => {
 			expect(result.status).toBe("pending");
 		});
 
-		it("includes idempotency_key in request body", async () => {
+		it("derives idempotency_key from source nonce for retry safety", async () => {
 			globalThis.fetch = mockFetchResponse({
 				payment: {
 					id: "sq_pay_idem",
@@ -180,9 +180,7 @@ describe("SquarePaymentProvider", () => {
 			const body = JSON.parse(
 				(globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body,
 			);
-			expect(body.idempotency_key).toBeDefined();
-			expect(typeof body.idempotency_key).toBe("string");
-			expect(body.idempotency_key.length).toBeGreaterThan(0);
+			expect(body.idempotency_key).toBe("create-cnon:card-nonce-ok");
 		});
 
 		it("sets autocomplete to false", async () => {
@@ -468,7 +466,7 @@ describe("SquarePaymentProvider", () => {
 			expect(body.reason).toBe("Customer request");
 		});
 
-		it("includes idempotency_key in refund request", async () => {
+		it("derives deterministic idempotency_key for full refund", async () => {
 			globalThis.fetch = mockFetchResponse({
 				refund: {
 					id: "sq_ref_idem",
@@ -482,9 +480,28 @@ describe("SquarePaymentProvider", () => {
 			const body = JSON.parse(
 				(globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body,
 			);
-			expect(body.idempotency_key).toBeDefined();
-			expect(typeof body.idempotency_key).toBe("string");
-			expect(body.idempotency_key.length).toBeGreaterThan(0);
+			expect(body.idempotency_key).toBe("refund-sq_pay_1-full");
+		});
+
+		it("derives deterministic idempotency_key for partial refund", async () => {
+			globalThis.fetch = mockFetchResponse({
+				refund: {
+					id: "sq_ref_partial",
+					status: "COMPLETED",
+					amount_money: { amount: 300, currency: "USD" },
+				},
+			});
+
+			await provider.createRefund({
+				providerIntentId: "sq_pay_2",
+				amount: 300,
+				currency: "usd",
+			});
+
+			const body = JSON.parse(
+				(globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body,
+			);
+			expect(body.idempotency_key).toBe("refund-sq_pay_2-300-USD");
 		});
 
 		it("does not send amount_money when no amount specified", async () => {

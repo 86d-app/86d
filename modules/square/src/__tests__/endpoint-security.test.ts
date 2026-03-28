@@ -386,7 +386,7 @@ describe("square endpoint security", () => {
 			expect(headers?.Authorization).toBe("Bearer sq_secret_token");
 		});
 
-		it("sends unique idempotency_key for each createIntent call", async () => {
+		it("derives deterministic idempotency_key from nonce for retry safety", async () => {
 			globalThis.fetch = mockFetchResponse({
 				payment: {
 					id: "p1",
@@ -420,12 +420,12 @@ describe("square endpoint security", () => {
 				(globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body,
 			);
 
-			expect(body1.idempotency_key).toBeDefined();
-			expect(body2.idempotency_key).toBeDefined();
-			expect(body1.idempotency_key).not.toBe(body2.idempotency_key);
+			// Same nonce → same key (retry-safe idempotency)
+			expect(body1.idempotency_key).toBe(body2.idempotency_key);
+			expect(body1.idempotency_key).toBe("create-cnon:card-nonce-ok");
 		});
 
-		it("sends unique idempotency_key for each createRefund call", async () => {
+		it("produces different idempotency_key for different refund operations", async () => {
 			globalThis.fetch = mockFetchResponse({
 				refund: {
 					id: "r1",
@@ -449,15 +449,16 @@ describe("square endpoint security", () => {
 				},
 			});
 			await provider.createRefund({
-				providerIntentId: "p1",
+				providerIntentId: "p2",
 			});
 			const body2 = JSON.parse(
 				(globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body,
 			);
 
-			expect(body1.idempotency_key).toBeDefined();
-			expect(body2.idempotency_key).toBeDefined();
+			// Different payment IDs → different keys
 			expect(body1.idempotency_key).not.toBe(body2.idempotency_key);
+			expect(body1.idempotency_key).toBe("refund-p1-full");
+			expect(body2.idempotency_key).toBe("refund-p2-full");
 		});
 
 		it("sets autocomplete to false on createIntent to prevent auto-capture", async () => {

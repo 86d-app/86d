@@ -159,7 +159,7 @@ export class SquarePaymentProvider implements PaymentProvider {
 				currency: params.currency.toUpperCase(),
 			},
 			autocomplete: false,
-			idempotency_key: crypto.randomUUID(),
+			idempotency_key: `create-${sourceId}`,
 		};
 		const response = await this.request<SquarePaymentResponse>(
 			"POST",
@@ -206,8 +206,12 @@ export class SquarePaymentProvider implements PaymentProvider {
 		currency?: string | undefined;
 		reason?: string | undefined;
 	}): Promise<ProviderRefundResult> {
+		const refundKey =
+			params.amount !== undefined
+				? `refund-${params.providerIntentId}-${params.amount}-${(params.currency ?? "USD").toUpperCase()}`
+				: `refund-${params.providerIntentId}-full`;
 		const body: Record<string, unknown> = {
-			idempotency_key: crypto.randomUUID(),
+			idempotency_key: refundKey,
 			payment_id: params.providerIntentId,
 		};
 		if (params.amount !== undefined) {
