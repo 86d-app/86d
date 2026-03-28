@@ -7,10 +7,13 @@ import DoorDashAdminTemplate from "./doordash-admin.mdx";
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface DoordashSettings {
+	status: "connected" | "not_configured" | "error";
+	error?: string | undefined;
+	accountName?: string | undefined;
 	configured: boolean;
 	sandbox: boolean;
-	developerId: string | null;
-	keyId: string | null;
+	developerIdMasked: string | null;
+	keyIdMasked: string | null;
 }
 
 interface Delivery {
@@ -267,18 +270,32 @@ export function DoorDashAdmin() {
 					<div className="divide-y divide-border">
 						<StatusRow
 							label="Status"
-							value={settings?.configured ? "Connected" : "Not configured"}
-							badge={settings?.configured ? "active" : "inactive"}
+							value={
+								settings?.status === "connected"
+									? (settings.accountName ?? "Connected")
+									: settings?.status === "error"
+										? "Error"
+										: "Not configured"
+							}
+							badge={
+								settings?.status === "connected"
+									? "connected"
+									: settings?.status === "error"
+										? "error"
+										: "inactive"
+							}
 							badgeClass={
-								settings?.configured
+								settings?.status === "connected"
 									? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-									: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+									: settings?.status === "error"
+										? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+										: "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
 							}
 						/>
-						{settings?.developerId && (
+						{settings?.developerIdMasked && (
 							<StatusRow
 								label="Developer ID"
-								value={settings.developerId}
+								value={settings.developerIdMasked}
 								mono
 								badge={settings.sandbox ? "sandbox" : "production"}
 								badgeClass={
@@ -288,8 +305,8 @@ export function DoorDashAdmin() {
 								}
 							/>
 						)}
-						{settings?.keyId && (
-							<StatusRow label="Key ID" value={settings.keyId} mono />
+						{settings?.keyIdMasked && (
+							<StatusRow label="Key ID" value={settings.keyIdMasked} mono />
 						)}
 						<StatusRow
 							label="Webhook endpoint"
@@ -298,7 +315,13 @@ export function DoorDashAdmin() {
 						/>
 					</div>
 
-					{!settings?.configured && (
+					{settings?.status === "error" && settings.error && (
+						<div className="mt-3 rounded-md bg-red-50 p-3 text-red-800 text-sm dark:bg-red-900/20 dark:text-red-300">
+							{settings.error}
+						</div>
+					)}
+
+					{settings?.status === "not_configured" && (
 						<div className="mt-3 rounded-md bg-yellow-50 p-3 text-sm text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300">
 							Add your DoorDash developer ID, key ID, and signing secret to the
 							module configuration to enable delivery integration.

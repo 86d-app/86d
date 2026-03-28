@@ -267,6 +267,27 @@ export class DoordashDriveProvider {
 			{},
 		);
 	}
+
+	/**
+	 * Verify API credentials by listing deliveries.
+	 * DoorDash has no /account endpoint, so we use GET /deliveries as an auth check.
+	 */
+	async verifyConnection(): Promise<
+		{ ok: true; accountName: string } | { ok: false; error: string }
+	> {
+		try {
+			await this.request<unknown>("GET", "/deliveries");
+			return {
+				ok: true,
+				accountName: `DoorDash Drive (${this.credentials.developerId.slice(0, 8)}...)`,
+			};
+		} catch (e) {
+			return {
+				ok: false,
+				error: e instanceof Error ? e.message : String(e),
+			};
+		}
+	}
 }
 
 // ── Status mapping ───────────────────────────────────────────────────────────

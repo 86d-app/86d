@@ -315,6 +315,57 @@ describe("DoordashDriveProvider", () => {
 			expect(fetchCall[1]?.method).toBe("POST");
 		});
 	});
+
+	describe("verifyConnection", () => {
+		it("returns ok with developer ID snippet when API responds", async () => {
+			globalThis.fetch = vi.fn().mockResolvedValue({
+				ok: true,
+				json: () => Promise.resolve([]),
+			});
+
+			const result = await provider.verifyConnection();
+
+			expect(result).toEqual({
+				ok: true,
+				accountName: "DoorDash Drive (d5f0a1b2...)",
+			});
+
+			const url = vi.mocked(globalThis.fetch).mock.calls[0][0];
+			expect(url).toBe("https://openapi.doordash.com/drive/v2/deliveries");
+		});
+
+		it("returns error when API returns 401", async () => {
+			globalThis.fetch = vi.fn().mockResolvedValue({
+				ok: false,
+				status: 401,
+				json: () =>
+					Promise.resolve({
+						code: "unauthorized",
+						message: "Invalid credentials",
+					}),
+			});
+
+			const result = await provider.verifyConnection();
+
+			expect(result.ok).toBe(false);
+			if (!result.ok) {
+				expect(result.error).toContain("Invalid credentials");
+			}
+		});
+
+		it("returns error when fetch throws a network error", async () => {
+			globalThis.fetch = vi
+				.fn()
+				.mockRejectedValue(new Error("Network request failed"));
+
+			const result = await provider.verifyConnection();
+
+			expect(result).toEqual({
+				ok: false,
+				error: "Network request failed",
+			});
+		});
+	});
 });
 
 // ── JWT generation tests ─────────────────────────────────────────────────────
