@@ -162,17 +162,13 @@ export function createGoogleShoppingController(
 			const allItems = await data.findMany("productFeed", {});
 			const items = allItems as unknown as ProductFeedItem[];
 
-			const approved = items.filter((i) => i.status === "active").length;
-			const disapproved = items.filter(
-				(i) => i.status === "disapproved",
-			).length;
-
 			const submission: FeedSubmission = {
 				id,
-				status: "pending",
+				status: provider ? "processing" : "pending",
 				totalProducts: items.length,
-				approvedProducts: approved,
-				disapprovedProducts: disapproved,
+				approvedProducts: items.filter((i) => i.status === "active").length,
+				disapprovedProducts: items.filter((i) => i.status === "disapproved")
+					.length,
 				submittedAt: now,
 				createdAt: now,
 			};
@@ -182,7 +178,97 @@ export function createGoogleShoppingController(
 				id,
 				submission as unknown as Record<string, unknown>,
 			);
-			return submission;
+
+			if (!provider || items.length === 0) return submission;
+
+			let pushed = 0;
+			let failed = 0;
+
+			for (const item of items) {
+				const googleProduct: GoogleProduct = {
+					offerId: item.localProductId,
+					title: item.title,
+					description: item.description,
+					link: item.link,
+					imageLink: item.imageLink,
+					contentLanguage,
+					targetCountry,
+					channel: "online",
+					availability: mapAvailabilityToGoogle(item.availability),
+					condition: item.condition,
+					price: { value: String(item.price), currency: "USD" },
+					...(item.salePrice !== undefined
+						? {
+								salePrice: {
+									value: String(item.salePrice),
+									currency: "USD",
+								},
+							}
+						: {}),
+					...(item.gtin ? { gtin: item.gtin } : {}),
+					...(item.mpn ? { mpn: item.mpn } : {}),
+					...(item.brand ? { brand: item.brand } : {}),
+					...(item.googleCategory
+						? { googleProductCategory: item.googleCategory }
+						: {}),
+				};
+
+				try {
+					const inserted = await provider.insertProduct(googleProduct);
+					const updatedItem: ProductFeedItem = {
+						...item,
+						googleProductId: inserted.id ?? item.googleProductId,
+						status: "active",
+						lastSyncedAt: new Date(),
+						updatedAt: new Date(),
+					};
+					await data.upsert(
+						"productFeed",
+						item.id,
+						updatedItem as unknown as Record<string, unknown>,
+					);
+					pushed++;
+				} catch {
+					failed++;
+				}
+			}
+
+			let approvedProducts = 0;
+			let disapprovedProducts = 0;
+
+			try {
+				const statusesResponse = await provider.listProductStatuses();
+				const statuses = statusesResponse.resources ?? [];
+				for (const status of statuses) {
+					const internalStatus = mapProductStatusToInternal(
+						status.destinationStatuses,
+					);
+					if (internalStatus === "active") approvedProducts++;
+					else if (internalStatus === "disapproved") disapprovedProducts++;
+				}
+			} catch {
+				approvedProducts = pushed;
+			}
+
+			const completed: FeedSubmission = {
+				...submission,
+				status: failed === items.length ? "failed" : "completed",
+				approvedProducts,
+				disapprovedProducts,
+				completedAt: new Date(),
+				...(failed > 0
+					? {
+							error: `${failed} of ${items.length} products failed to submit`,
+						}
+					: {}),
+			};
+
+			await data.upsert(
+				"feedSubmission",
+				id,
+				completed as unknown as Record<string, unknown>,
+			);
+			return completed;
 		},
 
 		async getLastSubmission() {

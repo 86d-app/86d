@@ -540,4 +540,260 @@ describe("google-shopping service-impl (provider integration)", () => {
 			expect(url).toContain("key=test-key");
 		});
 	});
+
+	// ── submitFeed ──────────────────────────────────────────────────────
+
+	describe("submitFeed", () => {
+		it("pushes all feed items to Google and returns completed submission", async () => {
+			const controller = createGoogleShoppingController(mockData, undefined, {
+				merchantId: "123456789",
+				apiKey: "test-key",
+			});
+
+			await controller.createFeedItem({
+				localProductId: "prod-1",
+				title: "Widget A",
+				price: 10,
+				link: "https://store.example.com/a",
+				imageLink: "https://store.example.com/a.jpg",
+			});
+			await controller.createFeedItem({
+				localProductId: "prod-2",
+				title: "Widget B",
+				price: 20,
+				link: "https://store.example.com/b",
+				imageLink: "https://store.example.com/b.jpg",
+			});
+
+			// First two calls: insertProduct for each item
+			// Third call: listProductStatuses for approval counts
+			let callCount = 0;
+			globalThis.fetch = vi.fn().mockImplementation(() => {
+				callCount++;
+				if (callCount <= 2) {
+					return Promise.resolve({
+						ok: true,
+						status: 200,
+						json: () =>
+							Promise.resolve({
+								...INSERTED_PRODUCT_RESPONSE,
+								id: `online:en:US:prod-${callCount}`,
+								offerId: `prod-${callCount}`,
+							}),
+					});
+				}
+				return Promise.resolve({
+					ok: true,
+					status: 200,
+					json: () => Promise.resolve(STATUSES_WITH_ISSUES),
+				});
+			});
+
+			const result = await controller.submitFeed();
+
+			expect(result.status).toBe("completed");
+			expect(result.totalProducts).toBe(2);
+			expect(result.completedAt).toBeInstanceOf(Date);
+			expect(result.error).toBeUndefined();
+			// 3 calls: 2 insertProduct + 1 listProductStatuses
+			expect(callCount).toBe(3);
+		});
+
+		it("returns pending submission when provider is not configured", async () => {
+			const controller = createGoogleShoppingController(mockData);
+
+			await controller.createFeedItem({
+				localProductId: "prod-1",
+				title: "Widget",
+				price: 10,
+				link: "https://store.example.com/w",
+				imageLink: "https://store.example.com/w.jpg",
+			});
+
+			const result = await controller.submitFeed();
+
+			expect(result.status).toBe("pending");
+			expect(result.totalProducts).toBe(1);
+			expect(result.approvedProducts).toBe(0);
+			expect(result.completedAt).toBeUndefined();
+		});
+
+		it("returns processing submission with zero products immediately", async () => {
+			const controller = createGoogleShoppingController(mockData, undefined, {
+				merchantId: "123456789",
+				apiKey: "test-key",
+			});
+
+			const result = await controller.submitFeed();
+
+			expect(result.status).toBe("processing");
+			expect(result.totalProducts).toBe(0);
+		});
+
+		it("handles partial failures and reports error", async () => {
+			const controller = createGoogleShoppingController(mockData, undefined, {
+				merchantId: "123456789",
+				apiKey: "test-key",
+			});
+
+			await controller.createFeedItem({
+				localProductId: "prod-ok",
+				title: "Good Widget",
+				price: 10,
+				link: "https://store.example.com/ok",
+				imageLink: "https://store.example.com/ok.jpg",
+			});
+			await controller.createFeedItem({
+				localProductId: "prod-bad",
+				title: "Bad Widget",
+				price: 20,
+				link: "https://store.example.com/bad",
+				imageLink: "https://store.example.com/bad.jpg",
+			});
+
+			let callCount = 0;
+			globalThis.fetch = vi.fn().mockImplementation(() => {
+				callCount++;
+				if (callCount === 1) {
+					return Promise.resolve({
+						ok: true,
+						status: 200,
+						json: () =>
+							Promise.resolve({
+								...INSERTED_PRODUCT_RESPONSE,
+								id: "online:en:US:prod-ok",
+							}),
+					});
+				}
+				if (callCount === 2) {
+					return Promise.resolve({
+						ok: false,
+						status: 400,
+						json: () =>
+							Promise.resolve({ error: { message: "Invalid product" } }),
+					});
+				}
+				return Promise.resolve({
+					ok: true,
+					status: 200,
+					json: () => Promise.resolve(EMPTY_STATUSES),
+				});
+			});
+
+			const result = await controller.submitFeed();
+
+			expect(result.status).toBe("completed");
+			expect(result.error).toBe("1 of 2 products failed to submit");
+		});
+
+		it("returns failed submission when all items fail", async () => {
+			const controller = createGoogleShoppingController(mockData, undefined, {
+				merchantId: "123456789",
+				apiKey: "test-key",
+			});
+
+			await controller.createFeedItem({
+				localProductId: "prod-1",
+				title: "Widget",
+				price: 10,
+				link: "https://store.example.com/w",
+				imageLink: "https://store.example.com/w.jpg",
+			});
+
+			globalThis.fetch = vi.fn().mockResolvedValue({
+				ok: false,
+				status: 500,
+				json: () => Promise.resolve({ error: { message: "Server error" } }),
+			});
+
+			const result = await controller.submitFeed();
+
+			expect(result.status).toBe("failed");
+			expect(result.error).toBe("1 of 1 products failed to submit");
+		});
+
+		it("updates local feed items with Google IDs after push", async () => {
+			const controller = createGoogleShoppingController(mockData, undefined, {
+				merchantId: "123456789",
+				apiKey: "test-key",
+			});
+
+			const item = await controller.createFeedItem({
+				localProductId: "prod-1",
+				title: "Widget",
+				price: 10,
+				link: "https://store.example.com/w",
+				imageLink: "https://store.example.com/w.jpg",
+			});
+
+			expect(item.googleProductId).toBeUndefined();
+			expect(item.status).toBe("pending");
+
+			let callCount = 0;
+			globalThis.fetch = vi.fn().mockImplementation(() => {
+				callCount++;
+				if (callCount === 1) {
+					return Promise.resolve({
+						ok: true,
+						status: 200,
+						json: () =>
+							Promise.resolve({
+								...INSERTED_PRODUCT_RESPONSE,
+								id: "online:en:US:prod-1",
+							}),
+					});
+				}
+				return Promise.resolve({
+					ok: true,
+					status: 200,
+					json: () => Promise.resolve(EMPTY_STATUSES),
+				});
+			});
+
+			await controller.submitFeed();
+
+			const updated = await controller.getFeedItem(item.id);
+			expect(updated?.googleProductId).toBe("online:en:US:prod-1");
+			expect(updated?.status).toBe("active");
+			expect(updated?.lastSyncedAt).toBeInstanceOf(Date);
+		});
+
+		it("uses approval counts from Google status API", async () => {
+			const controller = createGoogleShoppingController(mockData, undefined, {
+				merchantId: "123456789",
+				apiKey: "test-key",
+			});
+
+			await controller.createFeedItem({
+				localProductId: "prod-1",
+				title: "Widget",
+				price: 10,
+				link: "https://store.example.com/w",
+				imageLink: "https://store.example.com/w.jpg",
+			});
+
+			let callCount = 0;
+			globalThis.fetch = vi.fn().mockImplementation(() => {
+				callCount++;
+				if (callCount === 1) {
+					return Promise.resolve({
+						ok: true,
+						status: 200,
+						json: () => Promise.resolve(INSERTED_PRODUCT_RESPONSE),
+					});
+				}
+				// Status API returns 1 approved + 1 disapproved + 1 pending
+				return Promise.resolve({
+					ok: true,
+					status: 200,
+					json: () => Promise.resolve(STATUSES_WITH_ISSUES),
+				});
+			});
+
+			const result = await controller.submitFeed();
+
+			expect(result.approvedProducts).toBe(1);
+			expect(result.disapprovedProducts).toBe(1);
+		});
+	});
 });
