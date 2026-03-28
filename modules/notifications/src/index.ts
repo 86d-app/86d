@@ -9,6 +9,7 @@ import { buildOrderCancelledEmail } from "./emails/order-cancelled";
 import { buildOrderConfirmationEmail } from "./emails/order-confirmation";
 import { buildOrderFulfilledEmail } from "./emails/order-fulfilled";
 import { buildOrderShippedEmail } from "./emails/order-shipped";
+import { buildReturnStatusEmail } from "./emails/return-status";
 import { ResendProvider, TwilioProvider } from "./provider";
 import { notificationsSchema } from "./schema";
 import { createNotificationsController } from "./service-impl";
@@ -319,6 +320,56 @@ export default function notifications(options?: NotificationsOptions): Module {
 					}
 				},
 			);
+
+			interface ReturnEventPayload {
+				returnId: string;
+				orderId: string;
+				orderNumber: string;
+				email: string;
+				customerName: string;
+				reason?: string | undefined;
+				adminNotes?: string | undefined;
+			}
+
+			const returnStatuses = [
+				"requested",
+				"approved",
+				"rejected",
+				"completed",
+			] as const;
+
+			for (const status of returnStatuses) {
+				ctx.events?.on<ReturnEventPayload>(
+					`return.${status}`,
+					async (event) => {
+						const p = event.payload;
+						if (!p) return;
+
+						if (emailProvider && p.email) {
+							const { subject, html, text } = buildReturnStatusEmail({
+								status,
+								orderNumber: p.orderNumber,
+								customerName: p.customerName,
+								reason: p.reason,
+								adminNotes: p.adminNotes,
+							});
+							await emailProvider
+								.sendEmail({
+									to: p.email,
+									subject,
+									html,
+									text,
+									tags: [
+										{ name: "type", value: `return_${status}` },
+										{ name: "return_id", value: p.returnId },
+										{ name: "order_id", value: p.orderId },
+									],
+								})
+								.catch(() => {});
+						}
+					},
+				);
+			}
 
 			interface CartRecoveryPayload {
 				cartId: string;
