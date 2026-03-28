@@ -1,5 +1,10 @@
 import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
-import type { CheckoutController, DiscountController } from "../../service";
+import type {
+	CheckoutController,
+	DiscountController,
+	TaxCalculateController,
+} from "../../service";
+import { recalculateTax } from "./recalculate-tax";
 
 export const applyDiscount = createStoreEndpoint(
 	"/checkout/sessions/:id/discount",
@@ -46,11 +51,23 @@ export const applyDiscount = createStoreEndpoint(
 			freeShipping = result.freeShipping;
 		}
 
-		const updated = await checkoutController.applyDiscount(ctx.params.id, {
+		let updated = await checkoutController.applyDiscount(ctx.params.id, {
 			code: ctx.body.code,
 			discountAmount,
 			freeShipping,
 		});
+
+		// Recalculate tax on post-discount amounts
+		if (updated) {
+			const taxController = ctx.context.controllers.tax as unknown as
+				| TaxCalculateController
+				| undefined;
+			updated = await recalculateTax(
+				updated,
+				checkoutController,
+				taxController,
+			);
+		}
 
 		return { session: updated };
 	},

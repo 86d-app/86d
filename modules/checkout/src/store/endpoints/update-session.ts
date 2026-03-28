@@ -1,5 +1,6 @@
 import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { CheckoutController, TaxCalculateController } from "../../service";
+import { recalculateTax } from "./recalculate-tax";
 
 const addressSchema = z.object({
 	firstName: z.string().min(1).max(200).transform(sanitizeText),
@@ -58,35 +59,7 @@ export const updateSession = createStoreEndpoint(
 			const taxController = ctx.context.controllers.tax as unknown as
 				| TaxCalculateController
 				| undefined;
-
-			if (taxController?.calculate) {
-				const lineItems = await controller.getLineItems(session.id);
-				const taxResult = await taxController.calculate({
-					address: {
-						country: session.shippingAddress.country,
-						state: session.shippingAddress.state,
-						city: session.shippingAddress.city,
-						postalCode: session.shippingAddress.postalCode,
-					},
-					lineItems: lineItems.map((item) => ({
-						productId: item.productId,
-						amount: item.price * item.quantity,
-						quantity: item.quantity,
-					})),
-					shippingAmount: session.shippingAmount,
-					customerId: session.customerId,
-				});
-
-				if (taxResult && typeof taxResult.totalTax === "number") {
-					// Update session with calculated tax through the controller
-					const updated = await controller.update(ctx.params.id, {
-						taxAmount: taxResult.totalTax,
-					});
-					if (updated) {
-						session = updated;
-					}
-				}
-			}
+			session = await recalculateTax(session, controller, taxController);
 		}
 
 		return { session };
