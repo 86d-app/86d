@@ -4,6 +4,7 @@ import {
 	createAdminEndpointsWithSettings,
 } from "./admin/endpoints";
 import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
+import { buildCartRecoveryEmail } from "./emails/cart-recovery";
 import { buildOrderCancelledEmail } from "./emails/order-cancelled";
 import { buildOrderConfirmationEmail } from "./emails/order-confirmation";
 import { buildOrderFulfilledEmail } from "./emails/order-fulfilled";
@@ -284,6 +285,65 @@ export default function notifications(options?: NotificationsOptions): Module {
 							})
 							.catch(() => {});
 					}
+				},
+			);
+
+			interface CartRecoveryPayload {
+				cartId: string;
+				channel: string;
+				recipient: string;
+				attemptId: string;
+			}
+
+			ctx.events?.on<CartRecoveryPayload>(
+				"cart.recoveryAttempted",
+				async (event) => {
+					const p = event.payload;
+					if (!p || p.channel !== "email" || !emailProvider) return;
+
+					const abandonedCartsCtrl = ctx.controllers.abandonedCarts as
+						| {
+								get(id: string): Promise<{
+									id: string;
+									items: Array<{
+										name: string;
+										quantity: number;
+										price: number;
+										imageUrl?: string | undefined;
+									}>;
+									cartTotal: number;
+									currency: string;
+									recoveryToken: string;
+								} | null>;
+						  }
+						| undefined;
+
+					if (!abandonedCartsCtrl) return;
+
+					const cart = await abandonedCartsCtrl.get(p.cartId).catch(() => null);
+					if (!cart) return;
+
+					const recoveryUrl = `/abandoned-carts/recover/${cart.recoveryToken}`;
+					const { subject, html, text } = buildCartRecoveryEmail({
+						items: cart.items,
+						cartTotal: cart.cartTotal,
+						currency: cart.currency,
+						recoveryUrl,
+					});
+
+					await emailProvider
+						.sendEmail({
+							to: p.recipient,
+							subject,
+							html,
+							text,
+							tags: [
+								{ name: "type", value: "cart_recovery" },
+								{ name: "cart_id", value: p.cartId },
+								{ name: "attempt_id", value: p.attemptId },
+							],
+						})
+						.catch(() => {});
 				},
 			);
 
