@@ -207,6 +207,26 @@ export class AmazonProvider {
 		return (await res.json()) as T;
 	}
 
+	// ── Connection verification ──────────────────────────────────────────
+
+	/**
+	 * Verify that the credentials are valid by searching listings with
+	 * pageSize=1.
+	 */
+	async verifyConnection(): Promise<
+		{ ok: true; sellerId: string } | { ok: false; error: string }
+	> {
+		try {
+			await this.searchListings({ pageSize: 1 });
+			return { ok: true, sellerId: this.sellerId };
+		} catch (err) {
+			return {
+				ok: false,
+				error: err instanceof Error ? err.message : "Connection failed",
+			};
+		}
+	}
+
 	// ── Listings Items API ────────────────────────────────────────────────
 
 	/**

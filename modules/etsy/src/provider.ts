@@ -156,6 +156,24 @@ export class EtsyProvider {
 	}
 
 	/**
+	 * Verify that the API key, shop ID, and access token are valid by
+	 * fetching listings with limit=1.
+	 */
+	async verifyConnection(): Promise<
+		{ ok: true; shopId: string } | { ok: false; error: string }
+	> {
+		try {
+			await this.getListings({ limit: 1 });
+			return { ok: true, shopId: this.shopId };
+		} catch (err) {
+			return {
+				ok: false,
+				error: err instanceof Error ? err.message : "Connection failed",
+			};
+		}
+	}
+
+	/**
 	 * Get all active listings for the shop.
 	 * GET /application/shops/{shop_id}/listings
 	 */

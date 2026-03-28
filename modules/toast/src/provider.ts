@@ -161,6 +161,26 @@ export class ToastPosProvider {
 		return JSON.parse(text) as T;
 	}
 
+	// ── Connection verification ──────────────────────────────────────────
+
+	/**
+	 * Verify that the access token and restaurant GUID are valid by
+	 * fetching the menus endpoint.
+	 */
+	async verifyConnection(): Promise<
+		{ ok: true; menuCount: number } | { ok: false; error: string }
+	> {
+		try {
+			const menus = await this.getMenus();
+			return { ok: true, menuCount: menus.length };
+		} catch (err) {
+			return {
+				ok: false,
+				error: err instanceof Error ? err.message : "Connection failed",
+			};
+		}
+	}
+
 	// ── Menu endpoints ────────────────────────────────────────────────────
 
 	/**

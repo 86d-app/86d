@@ -1,4 +1,5 @@
 import { createAdminEndpoint } from "@86d-app/core";
+import { AmazonProvider } from "../../provider";
 
 interface SettingsOptions {
 	sellerId?: string | undefined;
@@ -20,7 +21,37 @@ export function createGetSettingsEndpoint(options: SettingsOptions) {
 					options.clientSecret &&
 					options.refreshToken,
 			);
+
+			let status: "connected" | "not_configured" | "error" = "not_configured";
+			let error: string | undefined;
+
+			if (
+				hasCredentials &&
+				options.sellerId &&
+				options.clientId &&
+				options.clientSecret &&
+				options.refreshToken
+			) {
+				const provider = new AmazonProvider({
+					sellerId: options.sellerId,
+					clientId: options.clientId,
+					clientSecret: options.clientSecret,
+					refreshToken: options.refreshToken,
+					marketplaceId: options.marketplaceId ?? "ATVPDKIKX0DER",
+					region: options.region,
+				});
+				const result = await provider.verifyConnection();
+				if (result.ok) {
+					status = "connected";
+				} else {
+					status = "error";
+					error = result.error;
+				}
+			}
+
 			return {
+				status,
+				error,
 				configured: hasCredentials,
 				sellerId: options.sellerId ?? null,
 				marketplaceId: options.marketplaceId ?? null,
