@@ -19,12 +19,21 @@ export function ProductReviewsSection({
 }: ProductReviewsSectionProps) {
 	const reviewsApi = useReviewsApi();
 
-	const { data: initialData, isLoading: loading } =
-		reviewsApi.listProductReviews.useQuery({
-			params: { productId },
-			take: String(REVIEWS_PAGE_SIZE),
-			skip: "0",
-		}) as { data: ReviewsResponse | undefined; isLoading: boolean };
+	const {
+		data: initialData,
+		isLoading: loading,
+		isError: queryError,
+		refetch,
+	} = reviewsApi.listProductReviews.useQuery({
+		params: { productId },
+		take: String(REVIEWS_PAGE_SIZE),
+		skip: "0",
+	}) as {
+		data: ReviewsResponse | undefined;
+		isLoading: boolean;
+		isError: boolean;
+		refetch: () => void;
+	};
 
 	const [extraReviews, setExtraReviews] = useState<Review[]>([]);
 	const [loadingMore, setLoadingMore] = useState(false);
@@ -110,6 +119,31 @@ export function ProductReviewsSection({
 							<div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
 						</div>
 					))}
+				</div>
+			</section>
+		);
+	}
+
+	if (queryError) {
+		return (
+			<section id="reviews" className="border-border/50 border-t py-10">
+				<h2 className="font-display font-semibold text-foreground text-lg tracking-tight">
+					Customer Reviews
+				</h2>
+				<div
+					className="mt-4 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-6 text-center"
+					role="alert"
+				>
+					<p className="font-medium text-destructive text-sm">
+						Failed to load reviews
+					</p>
+					<button
+						type="button"
+						onClick={() => refetch()}
+						className="mt-2 font-medium text-destructive text-sm underline underline-offset-4"
+					>
+						Try again
+					</button>
 				</div>
 			</section>
 		);

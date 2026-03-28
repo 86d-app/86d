@@ -58,12 +58,21 @@ export interface ProductQASectionProps {
 export function ProductQASection({ productId }: ProductQASectionProps) {
 	const api = useProductQaApi();
 
-	const { data: initialData, isLoading: loading } =
-		api.listProductQuestions.useQuery({
-			params: { productId },
-			take: String(PAGE_SIZE),
-			skip: "0",
-		}) as { data: QuestionsResponse | undefined; isLoading: boolean };
+	const {
+		data: initialData,
+		isLoading: loading,
+		isError: queryError,
+		refetch,
+	} = api.listProductQuestions.useQuery({
+		params: { productId },
+		take: String(PAGE_SIZE),
+		skip: "0",
+	}) as {
+		data: QuestionsResponse | undefined;
+		isLoading: boolean;
+		isError: boolean;
+		refetch: () => void;
+	};
 
 	const { data: summaryData } = api.productQaSummary.useQuery({
 		params: { productId },
@@ -141,6 +150,31 @@ export function ProductQASection({ productId }: ProductQASectionProps) {
 							<div className="h-4 w-2/3 animate-pulse rounded bg-muted" />
 						</div>
 					))}
+				</div>
+			</section>
+		);
+	}
+
+	if (queryError) {
+		return (
+			<section id="questions" className="border-border/50 border-t py-10">
+				<h2 className="font-display font-semibold text-foreground text-lg tracking-tight">
+					Questions & Answers
+				</h2>
+				<div
+					className="mt-4 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-6 text-center"
+					role="alert"
+				>
+					<p className="font-medium text-destructive text-sm">
+						Failed to load questions
+					</p>
+					<button
+						type="button"
+						onClick={() => refetch()}
+						className="mt-2 font-medium text-destructive text-sm underline underline-offset-4"
+					>
+						Try again
+					</button>
 				</div>
 			</section>
 		);
