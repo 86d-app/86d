@@ -190,6 +190,25 @@ export class TikTokShopProvider {
 		return result.data as T;
 	}
 
+	// ── Connection verification ──────────────────────────────────────────
+
+	/**
+	 * Verify that the credentials are valid by listing products.
+	 */
+	async verifyConnection(): Promise<
+		{ ok: true; shopId: string } | { ok: false; error: string }
+	> {
+		try {
+			await this.listProducts({ page_size: 1 });
+			return { ok: true, shopId: this.shopId };
+		} catch (err) {
+			return {
+				ok: false,
+				error: err instanceof Error ? err.message : "Connection failed",
+			};
+		}
+	}
+
 	// ── Product operations ────────────────────────────────────────────────
 
 	/** Create a product. */

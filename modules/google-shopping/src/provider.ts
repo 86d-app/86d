@@ -113,6 +113,23 @@ export class GoogleShoppingProvider {
 	}
 
 	/**
+	 * Verify that the merchant ID and API key are valid by listing products.
+	 */
+	async verifyConnection(): Promise<
+		{ ok: true; merchantId: string } | { ok: false; error: string }
+	> {
+		try {
+			await this.listProducts({ maxResults: 1 });
+			return { ok: true, merchantId: this.merchantId };
+		} catch (err) {
+			return {
+				ok: false,
+				error: err instanceof Error ? err.message : "Connection failed",
+			};
+		}
+	}
+
+	/**
 	 * Insert or update a product in Merchant Center.
 	 * POST /{merchantId}/products
 	 */

@@ -152,6 +152,25 @@ export class MetaInstagramProvider {
 		return (await res.json()) as T;
 	}
 
+	// ── Connection verification ──────────────────────────────────────────
+
+	/**
+	 * Verify that the access token and catalog ID are valid by listing products.
+	 */
+	async verifyConnection(): Promise<
+		{ ok: true } | { ok: false; error: string }
+	> {
+		try {
+			await this.listProducts({ limit: 1 });
+			return { ok: true };
+		} catch (err) {
+			return {
+				ok: false,
+				error: err instanceof Error ? err.message : "Connection failed",
+			};
+		}
+	}
+
 	// ── Catalog / Product operations ──────────────────────────────────────
 
 	/** Create a product in the catalog. */
