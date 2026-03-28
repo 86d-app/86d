@@ -262,8 +262,21 @@ async function generateModulesFile() {
 
 	if (modules.length === 0) {
 		console.log("No modules defined in config.json");
-		// Generate empty modules file
-		const emptyContent = `// Auto-generated file - do not edit manually
+		// Even with no modules, template component overrides can still provide components
+		const templateDir = join(CONFIG_PATH, "..");
+		const templateOverridePath = join(templateDir, "components", "index.tsx");
+		const hasOverrides = existsSync(templateOverridePath);
+		const emptyContent = hasOverrides
+			? `// Auto-generated file - do not edit manually
+// Run 'bun run generate:modules' to regenerate
+
+import type { MDXComponents } from "mdx/types";
+import templateOverrides from "template/components";
+
+export const modules: string[] = [];
+export const components: MDXComponents = { ...templateOverrides };
+`
+			: `// Auto-generated file - do not edit manually
 // Run 'bun run generate:modules' to regenerate
 
 import type { MDXComponents } from "mdx/types";
@@ -305,11 +318,26 @@ export const components: MDXComponents = {};
 		)
 		.join("\n");
 
-	// Generate merge logic
+	// Detect template component overrides
+	const templateDir = join(CONFIG_PATH, "..");
+	const templateOverridePath = join(templateDir, "components", "index.tsx");
+	const hasTemplateOverrides = existsSync(templateOverridePath);
+
+	const templateImport = hasTemplateOverrides
+		? `import templateOverrides from "template/components";`
+		: "";
+
+	// Generate merge logic — template overrides are spread last so they take precedence
+	const moduleSpread = modulesWithComponents
+		.map((_, idx) => `...moduleComponents${idx},`)
+		.join("\n    ");
+	const templateSpread = hasTemplateOverrides ? "...templateOverrides," : "";
+	const allSpreads = [moduleSpread, templateSpread].filter(Boolean).join("\n    ");
+
 	const componentsMerge =
-		modulesWithComponents.length > 0
+		modulesWithComponents.length > 0 || hasTemplateOverrides
 			? `const components: MDXComponents = {
-    ${modulesWithComponents.map((_, idx) => `...moduleComponents${idx},`).join("\n    ")}
+    ${allSpreads}
 };`
 			: `const components: MDXComponents = {};`;
 
@@ -317,12 +345,14 @@ export const components: MDXComponents = {};
 	const moduleList = modules.map((m) => `    "${m}"`).join(",\n");
 
 	// Generate file content
+	const allImports = [imports, templateImport].filter(Boolean).join("\n");
+
 	const content = `// Auto-generated file - do not edit manually
 // Run 'bun run generate:modules' to regenerate
 // Generated from: ${CONFIG_PATH}
 
 import type { MDXComponents } from "mdx/types";
-${imports}
+${allImports}
 
 export const modules = [
 ${moduleList}
@@ -336,7 +366,7 @@ export { components };
 	ensureDir(GENERATED_DIR);
 	writeFileSync(OUTPUT_PATH, content);
 	console.log(
-		`✓ Generated components.ts with ${modulesWithComponents.length} module(s)`,
+		`✓ Generated components.ts with ${modulesWithComponents.length} module(s)${hasTemplateOverrides ? " + template overrides" : ""}`,
 	);
 
 	// Log module types for transparency
