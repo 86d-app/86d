@@ -24,7 +24,35 @@ describe("SquarePaymentProvider", () => {
 	// ── createIntent ─────────────────────────────────────────────────────
 
 	describe("createIntent", () => {
-		it("creates a payment via Square API", async () => {
+		const validMeta = { paymentMethodNonce: "cnon:card-nonce-ok" };
+
+		it("returns square payment type when no nonce provided", async () => {
+			const result = await provider.createIntent({
+				amount: 5000,
+				currency: "USD",
+			});
+			expect(result.status).toBe("pending");
+			expect(result.providerMetadata?.paymentType).toBe("square");
+			expect(result.providerIntentId).toMatch(/^square_pending_/);
+		});
+
+		it("returns square payment type when metadata has no nonce", async () => {
+			const result = await provider.createIntent({
+				amount: 1000,
+				currency: "USD",
+				metadata: { someOther: "value" },
+			});
+			expect(result.status).toBe("pending");
+			expect(result.providerMetadata?.paymentType).toBe("square");
+		});
+
+		it("does not call Square API when no nonce provided", async () => {
+			globalThis.fetch = vi.fn();
+			await provider.createIntent({ amount: 1000, currency: "USD" });
+			expect(globalThis.fetch).not.toHaveBeenCalled();
+		});
+
+		it("creates a payment via Square API with nonce", async () => {
 			globalThis.fetch = mockFetchResponse({
 				payment: {
 					id: "sq_pay_123",
@@ -36,6 +64,7 @@ describe("SquarePaymentProvider", () => {
 			const result = await provider.createIntent({
 				amount: 5000,
 				currency: "USD",
+				metadata: validMeta,
 			});
 			expect(result.providerIntentId).toBe("sq_pay_123");
 			expect(result.status).toBe("pending"); // APPROVED → pending
@@ -63,6 +92,7 @@ describe("SquarePaymentProvider", () => {
 			const result = await provider.createIntent({
 				amount: 1000,
 				currency: "USD",
+				metadata: validMeta,
 			});
 			expect(result.status).toBe("succeeded");
 		});
@@ -78,6 +108,7 @@ describe("SquarePaymentProvider", () => {
 			const result = await provider.createIntent({
 				amount: 1000,
 				currency: "USD",
+				metadata: validMeta,
 			});
 			expect(result.status).toBe("cancelled");
 		});
@@ -93,6 +124,7 @@ describe("SquarePaymentProvider", () => {
 			const result = await provider.createIntent({
 				amount: 1000,
 				currency: "USD",
+				metadata: validMeta,
 			});
 			expect(result.status).toBe("failed");
 		});
@@ -105,7 +137,11 @@ describe("SquarePaymentProvider", () => {
 					amount_money: { amount: 500, currency: "EUR" },
 				},
 			});
-			await provider.createIntent({ amount: 500, currency: "eur" });
+			await provider.createIntent({
+				amount: 500,
+				currency: "eur",
+				metadata: validMeta,
+			});
 			const body = JSON.parse(
 				(globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body,
 			);
@@ -123,6 +159,7 @@ describe("SquarePaymentProvider", () => {
 			const result = await provider.createIntent({
 				amount: 1000,
 				currency: "USD",
+				metadata: validMeta,
 			});
 			expect(result.status).toBe("pending");
 		});
@@ -135,7 +172,11 @@ describe("SquarePaymentProvider", () => {
 					amount_money: { amount: 2000, currency: "USD" },
 				},
 			});
-			await provider.createIntent({ amount: 2000, currency: "USD" });
+			await provider.createIntent({
+				amount: 2000,
+				currency: "USD",
+				metadata: validMeta,
+			});
 			const body = JSON.parse(
 				(globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body,
 			);
@@ -152,14 +193,18 @@ describe("SquarePaymentProvider", () => {
 					amount_money: { amount: 3000, currency: "USD" },
 				},
 			});
-			await provider.createIntent({ amount: 3000, currency: "USD" });
+			await provider.createIntent({
+				amount: 3000,
+				currency: "USD",
+				metadata: validMeta,
+			});
 			const body = JSON.parse(
 				(globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body,
 			);
 			expect(body.autocomplete).toBe(false);
 		});
 
-		it("sets source_id to EXTERNAL", async () => {
+		it("uses nonce as source_id", async () => {
 			globalThis.fetch = mockFetchResponse({
 				payment: {
 					id: "sq_pay_src",
@@ -167,11 +212,15 @@ describe("SquarePaymentProvider", () => {
 					amount_money: { amount: 1500, currency: "USD" },
 				},
 			});
-			await provider.createIntent({ amount: 1500, currency: "USD" });
+			await provider.createIntent({
+				amount: 1500,
+				currency: "USD",
+				metadata: { paymentMethodNonce: "cnon:my-card-nonce" },
+			});
 			const body = JSON.parse(
 				(globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body,
 			);
-			expect(body.source_id).toBe("EXTERNAL");
+			expect(body.source_id).toBe("cnon:my-card-nonce");
 		});
 
 		it("includes Square-Version header", async () => {
@@ -182,7 +231,11 @@ describe("SquarePaymentProvider", () => {
 					amount_money: { amount: 1000, currency: "USD" },
 				},
 			});
-			await provider.createIntent({ amount: 1000, currency: "USD" });
+			await provider.createIntent({
+				amount: 1000,
+				currency: "USD",
+				metadata: validMeta,
+			});
 			const callArgs = (globalThis.fetch as ReturnType<typeof vi.fn>).mock
 				.calls[0][1];
 			expect(callArgs.headers["Square-Version"]).toBe("2024-01-18");
@@ -204,7 +257,11 @@ describe("SquarePaymentProvider", () => {
 			);
 
 			await expect(
-				provider.createIntent({ amount: 1000, currency: "USD" }),
+				provider.createIntent({
+					amount: 1000,
+					currency: "USD",
+					metadata: validMeta,
+				}),
 			).rejects.toThrow("Square error: Not found");
 		});
 	});

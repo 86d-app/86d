@@ -366,6 +366,8 @@ describe("square endpoint security", () => {
 			globalThis.fetch = originalFetch;
 		});
 
+		const validMeta = { paymentMethodNonce: "cnon:card-nonce-ok" };
+
 		it("includes Bearer token in every outbound request", async () => {
 			globalThis.fetch = mockFetchResponse({
 				payment: {
@@ -377,6 +379,7 @@ describe("square endpoint security", () => {
 			await provider.createIntent({
 				amount: 1000,
 				currency: "USD",
+				metadata: validMeta,
 			});
 			const call = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
 			const headers = call?.[1]?.headers as Record<string, string>;
@@ -395,6 +398,7 @@ describe("square endpoint security", () => {
 			await provider.createIntent({
 				amount: 500,
 				currency: "USD",
+				metadata: validMeta,
 			});
 			const body1 = JSON.parse(
 				(globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body,
@@ -410,6 +414,7 @@ describe("square endpoint security", () => {
 			await provider.createIntent({
 				amount: 500,
 				currency: "USD",
+				metadata: validMeta,
 			});
 			const body2 = JSON.parse(
 				(globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body,
@@ -467,6 +472,7 @@ describe("square endpoint security", () => {
 			await provider.createIntent({
 				amount: 2000,
 				currency: "USD",
+				metadata: validMeta,
 			});
 			const body = JSON.parse(
 				(globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body,
@@ -486,6 +492,7 @@ describe("square endpoint security", () => {
 			await provider.createIntent({
 				amount: 1234,
 				currency: "USD",
+				metadata: validMeta,
 			});
 			const body = JSON.parse(
 				(globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body,
@@ -512,6 +519,7 @@ describe("square endpoint security", () => {
 				provider.createIntent({
 					amount: 99999,
 					currency: "USD",
+					metadata: validMeta,
 				}),
 			).rejects.toThrow("Square error: Insufficient funds");
 		});
@@ -523,6 +531,7 @@ describe("square endpoint security", () => {
 				provider.createIntent({
 					amount: 1000,
 					currency: "USD",
+					metadata: validMeta,
 				}),
 			).rejects.toThrow("Square error: HTTP 500");
 		});

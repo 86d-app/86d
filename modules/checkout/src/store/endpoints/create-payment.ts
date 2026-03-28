@@ -188,6 +188,20 @@ export const createPayment = createStoreEndpoint(
 			};
 		}
 
+		// Square: requires client-side tokenization via Web Payments SDK.
+		if (paymentType === "square") {
+			return {
+				payment: {
+					id: intent.id,
+					status: intent.status,
+					amount: intent.amount,
+					currency: intent.currency,
+					squarePayment: true,
+				},
+				session: existing,
+			};
+		}
+
 		// No clientSecret and no provider-specific flow — auto-confirm
 		const confirmed = await paymentController.confirmIntent(intent.id);
 		const finalStatus = confirmed?.status ?? intent.status;

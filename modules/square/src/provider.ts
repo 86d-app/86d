@@ -139,8 +139,21 @@ export class SquarePaymentProvider implements PaymentProvider {
 		currency: string;
 		metadata?: Record<string, unknown> | undefined;
 	}): Promise<ProviderIntentResult> {
+		const sourceId = params.metadata?.paymentMethodNonce as string | undefined;
+		if (!sourceId) {
+			// No tokenized card yet — signal that the frontend must render
+			// the Square Web Payments SDK to collect card details.
+			return {
+				providerIntentId: `square_pending_${crypto.randomUUID()}`,
+				status: "pending",
+				providerMetadata: {
+					paymentType: "square",
+				},
+			};
+		}
+
 		const body: Record<string, unknown> = {
-			source_id: "EXTERNAL",
+			source_id: sourceId,
 			amount_money: {
 				amount: params.amount,
 				currency: params.currency.toUpperCase(),

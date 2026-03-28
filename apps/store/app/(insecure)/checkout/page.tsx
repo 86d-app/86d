@@ -4,6 +4,7 @@ import type { CheckoutStep } from "@86d-app/checkout/state";
 import { observer } from "@86d-app/core/state";
 import { BraintreePaymentForm } from "components/braintree-payment-form";
 import { PayPalPaymentForm } from "components/paypal-payment-form";
+import { SquarePaymentForm } from "components/square-payment-form";
 import { StripePaymentForm } from "components/stripe-payment-form";
 import { useApi } from "generated/hooks";
 import { useAnalytics } from "hooks/use-analytics";
@@ -83,6 +84,7 @@ interface PaymentResult {
 		clientSecret?: string;
 		paypalOrderId?: string;
 		braintreeClientToken?: string;
+		squarePayment?: boolean;
 	};
 	session?: CheckoutSessionData;
 }
@@ -597,6 +599,7 @@ const CheckoutPage = observer(function CheckoutPage() {
 	const [braintreeClientToken, setBraintreeClientToken] = useState<
 		string | null
 	>(null);
+	const [squarePaymentActive, setSquarePaymentActive] = useState(false);
 	const emailId = useId();
 	const formRef = useRef<HTMLFormElement>(null);
 
@@ -884,6 +887,13 @@ const CheckoutPage = observer(function CheckoutPage() {
 				return;
 			}
 
+			// If Square payment is signaled, Web Payments SDK will handle it
+			if (payment?.squarePayment) {
+				setSquarePaymentActive(true);
+				co.setProcessing(false);
+				return;
+			}
+
 			// Fallback: no provider-specific client flow and not succeeded
 			setError("Payment could not be processed. Please try again.");
 		} catch {
@@ -979,6 +989,42 @@ const CheckoutPage = observer(function CheckoutPage() {
 		[co, createPaymentMut, session],
 	);
 
+	// ── Square nonce received → create payment with the token
+	const handleSquareNonce = useCallback(
+		async (nonce: string) => {
+			if (!co.sessionId) return;
+			setError(null);
+			co.setProcessing(true);
+
+			try {
+				const payResult: PaymentResult = await createPaymentMut.mutateAsync({
+					params: { id: co.sessionId },
+					body: { paymentMethodNonce: nonce },
+				});
+
+				const payment = payResult?.payment;
+				const sess = payResult?.session ?? session;
+				if (sess) setSession(sess);
+
+				if (
+					payment?.status === "succeeded" ||
+					payment?.status === "processing" ||
+					payment?.status === "pending"
+				) {
+					setSquarePaymentActive(false);
+					co.setStep("review");
+				} else {
+					setError("Payment could not be processed. Please try again.");
+					co.setProcessing(false);
+				}
+			} catch {
+				setError("Payment failed. Please try again.");
+				co.setProcessing(false);
+			}
+		},
+		[co, createPaymentMut, session],
+	);
+
 	// ── Auto-create payment intent when entering payment step
 	const paymentInitRef = useRef(false);
 	useEffect(() => {
@@ -987,6 +1033,7 @@ const CheckoutPage = observer(function CheckoutPage() {
 			!paymentClientSecret &&
 			!paypalOrderId &&
 			!braintreeClientToken &&
+			!squarePaymentActive &&
 			co.sessionId &&
 			!paymentInitRef.current
 		) {
@@ -1002,6 +1049,7 @@ const CheckoutPage = observer(function CheckoutPage() {
 		paymentClientSecret,
 		paypalOrderId,
 		braintreeClientToken,
+		squarePaymentActive,
 		handlePaymentSubmit,
 	]);
 
@@ -1561,6 +1609,17 @@ const CheckoutPage = observer(function CheckoutPage() {
 									setProcessing={(v) => co.setProcessing(v)}
 									onBack={() => {
 										setBraintreeClientToken(null);
+										co.setStep("shipping");
+									}}
+								/>
+							) : squarePaymentActive ? (
+								<SquarePaymentForm
+									onNonce={(nonce) => void handleSquareNonce(nonce)}
+									onError={(msg) => setError(msg)}
+									isProcessing={co.isProcessing}
+									setProcessing={(v) => co.setProcessing(v)}
+									onBack={() => {
+										setSquarePaymentActive(false);
 										co.setStep("shipping");
 									}}
 								/>

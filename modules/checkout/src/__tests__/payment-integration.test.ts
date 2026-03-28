@@ -295,6 +295,19 @@ async function simulateCreatePayment(
 		};
 	}
 
+	// Square: requires client-side tokenization via Web Payments SDK.
+	if (paymentType === "square") {
+		return {
+			payment: {
+				id: intent.id,
+				status: intent.status,
+				amount: intent.amount,
+				currency: intent.currency,
+				squarePayment: true,
+			},
+		};
+	}
+
 	// No clientSecret and no provider-specific flow — auto-confirm
 	const confirmed = await paymentCtrl.confirmIntent(intent.id);
 	const finalStatus = confirmed?.status ?? intent.status;
@@ -1299,6 +1312,144 @@ describe("checkout → payment integration", () => {
 			expect(confirmed?.status).toBe("succeeded");
 
 			// Store on session
+			await checkoutCtrl.setPaymentIntent(
+				session.id,
+				intent.id,
+				confirmed?.status ?? intent.status,
+			);
+
+			const updated = await checkoutCtrl.getById(session.id);
+			expect(updated?.paymentIntentId).toBe(intent.id);
+			expect(updated?.paymentStatus).toBe("succeeded");
+		});
+	});
+
+	describe("Square two-phase payment flow", () => {
+		function createSquarePaymentController(): PaymentProcessController & {
+			_intents: Map<string, MockIntent>;
+			_calls: Array<{
+				method: string;
+				id?: string | undefined;
+				amount?: number | undefined;
+			}>;
+		} {
+			const intents = new Map<string, MockIntent>();
+			const calls: Array<{
+				method: string;
+				id?: string | undefined;
+				amount?: number | undefined;
+			}> = [];
+			return {
+				_intents: intents,
+				_calls: calls,
+
+				async createIntent(params) {
+					const nonce = params.metadata?.paymentMethodNonce as
+						| string
+						| undefined;
+					calls.push({
+						method: "createIntent",
+						amount: params.amount,
+					});
+
+					if (!nonce) {
+						const id = `sq_pending_${crypto.randomUUID().slice(0, 8)}`;
+						const intent: MockIntent = {
+							id,
+							status: "pending",
+							amount: params.amount,
+							currency: params.currency ?? "USD",
+							providerMetadata: { paymentType: "square" },
+						};
+						intents.set(id, intent);
+						return intent;
+					}
+
+					const id = `sq_pay_${crypto.randomUUID().slice(0, 8)}`;
+					const intent: MockIntent = {
+						id,
+						status: "pending",
+						amount: params.amount,
+						currency: params.currency ?? "USD",
+						providerMetadata: { squareStatus: "APPROVED" },
+					};
+					intents.set(id, intent);
+					return intent;
+				},
+
+				async confirmIntent(id) {
+					const intent = intents.get(id);
+					if (!intent) return null;
+					intent.status = "succeeded";
+					calls.push({ method: "confirmIntent", id });
+					return { id: intent.id, status: intent.status };
+				},
+
+				async getIntent(id) {
+					calls.push({ method: "getIntent", id });
+					return intents.get(id) ?? null;
+				},
+
+				async cancelIntent(id) {
+					const intent = intents.get(id);
+					if (!intent) return null;
+					intent.status = "cancelled";
+					calls.push({ method: "cancelIntent", id });
+					return { id: intent.id, status: intent.status };
+				},
+			};
+		}
+
+		it("returns squarePayment flag on first call (no nonce)", async () => {
+			const checkoutCtrl = createCheckoutController(createMockDataService());
+			const paymentCtrl = createSquarePaymentController();
+
+			const session = await checkoutCtrl.create(makeSession());
+			const result = await simulateCreatePayment(
+				checkoutCtrl,
+				session.id,
+				paymentCtrl,
+			);
+
+			expect(result.payment?.squarePayment).toBe(true);
+			expect(result.payment?.status).toBe("pending");
+		});
+
+		it("does NOT auto-confirm on first call", async () => {
+			const checkoutCtrl = createCheckoutController(createMockDataService());
+			const paymentCtrl = createSquarePaymentController();
+
+			const session = await checkoutCtrl.create(makeSession());
+			await simulateCreatePayment(checkoutCtrl, session.id, paymentCtrl);
+
+			const confirmCalls = paymentCtrl._calls.filter(
+				(c) => c.method === "confirmIntent",
+			);
+			expect(confirmCalls).toHaveLength(0);
+		});
+
+		it("creates payment on second call with nonce and auto-confirms", async () => {
+			const checkoutCtrl = createCheckoutController(createMockDataService());
+			const paymentCtrl = createSquarePaymentController();
+
+			const session = await checkoutCtrl.create(makeSession());
+
+			// Phase 1: get square signal
+			await simulateCreatePayment(checkoutCtrl, session.id, paymentCtrl);
+
+			// Phase 2: with nonce
+			const intent = await paymentCtrl.createIntent({
+				amount: session.total,
+				currency: session.currency,
+				metadata: { paymentMethodNonce: "cnon:card-nonce-ok" },
+			});
+
+			expect(intent.providerMetadata?.paymentType).toBeUndefined();
+			expect(intent.providerMetadata?.squareStatus).toBe("APPROVED");
+
+			const confirmed = await paymentCtrl.confirmIntent(intent.id);
+			expect(confirmed?.status).toBe("succeeded");
+
 			await checkoutCtrl.setPaymentIntent(
 				session.id,
 				intent.id,
