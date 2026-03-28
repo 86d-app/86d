@@ -231,4 +231,31 @@ export class TaxJarProvider {
 		const path = `/rates/${encodeURIComponent(zip)}${queryStr ? `?${queryStr}` : ""}`;
 		return this.request<TaxJarRateResponse>("GET", path);
 	}
+
+	/**
+	 * Verify API credentials by fetching the categories list.
+	 * TaxJar has no /account endpoint, so we use /categories as a lightweight auth check.
+	 */
+	async verifyConnection(): Promise<
+		{ ok: true; accountName: string } | { ok: false; error: string }
+	> {
+		try {
+			const result = await this.request<{
+				categories: Array<{
+					product_tax_code: string;
+					name: string;
+					description: string;
+				}>;
+			}>("GET", "/categories");
+			return {
+				ok: true,
+				accountName: `TaxJar (${result.categories.length} tax categories)`,
+			};
+		} catch (e) {
+			return {
+				ok: false,
+				error: e instanceof Error ? e.message : String(e),
+			};
+		}
+	}
 }

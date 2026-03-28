@@ -451,4 +451,72 @@ describe("TaxJarProvider", () => {
 			);
 		});
 	});
+
+	describe("verifyConnection", () => {
+		it("returns ok with category count when API responds", async () => {
+			globalThis.fetch = vi.fn().mockResolvedValue({
+				ok: true,
+				json: () =>
+					Promise.resolve({
+						categories: [
+							{
+								product_tax_code: "20010",
+								name: "Clothing",
+								description: "All human wearing apparel",
+							},
+							{
+								product_tax_code: "40030",
+								name: "Food & Groceries",
+								description: "Food for human consumption",
+							},
+						],
+					}),
+			});
+
+			const result = await provider.verifyConnection();
+
+			expect(result).toEqual({
+				ok: true,
+				accountName: "TaxJar (2 tax categories)",
+			});
+
+			const url = vi.mocked(globalThis.fetch).mock.calls[0][0];
+			expect(url).toBe("https://api.sandbox.taxjar.com/v2/categories");
+		});
+
+		it("returns error when API returns 401", async () => {
+			globalThis.fetch = vi.fn().mockResolvedValue({
+				ok: false,
+				status: 401,
+				json: () =>
+					Promise.resolve({
+						status: 401,
+						error: "Unauthorized",
+						detail: "Not authorized for route 'GET /v2/categories'",
+					}),
+			});
+
+			const result = await provider.verifyConnection();
+
+			expect(result.ok).toBe(false);
+			if (!result.ok) {
+				expect(result.error).toContain(
+					"Not authorized for route 'GET /v2/categories'",
+				);
+			}
+		});
+
+		it("returns error when fetch throws a network error", async () => {
+			globalThis.fetch = vi
+				.fn()
+				.mockRejectedValue(new Error("Network request failed"));
+
+			const result = await provider.verifyConnection();
+
+			expect(result).toEqual({
+				ok: false,
+				error: "Network request failed",
+			});
+		});
+	});
 });

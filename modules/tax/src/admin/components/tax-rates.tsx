@@ -40,9 +40,12 @@ const COMMON_COUNTRIES = [
 ];
 
 interface TaxSettings {
+	status: "connected" | "not_configured" | "error";
+	error?: string | undefined;
+	accountName?: string | undefined;
 	configured: boolean;
 	sandbox: boolean;
-	apiKey: string | null;
+	apiKeyMasked: string | null;
 }
 
 function useTaxAdminApi() {
@@ -61,6 +64,22 @@ function useTaxAdminApi() {
 }
 
 function TaxJarStatus({ settings }: { settings: TaxSettings | undefined }) {
+	if (!settings) return null;
+
+	const statusColor =
+		settings.status === "connected"
+			? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+			: settings.status === "error"
+				? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+				: "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400";
+
+	const statusLabel =
+		settings.status === "connected"
+			? "Connected"
+			: settings.status === "error"
+				? "Error"
+				: "Not configured";
+
 	return (
 		<div className="rounded-lg border border-border bg-card p-5">
 			<h3 className="mb-3 font-semibold text-foreground text-sm">
@@ -71,20 +90,18 @@ function TaxJarStatus({ settings }: { settings: TaxSettings | undefined }) {
 					<span className="text-muted-foreground text-sm">Status</span>
 					<div className="flex items-center gap-2">
 						<span
-							className={`inline-flex items-center rounded-full px-2 py-0.5 font-medium text-xs ${
-								settings?.configured
-									? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-									: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-							}`}
+							className={`inline-flex items-center rounded-full px-2 py-0.5 font-medium text-xs ${statusColor}`}
 						>
-							{settings?.configured ? "active" : "inactive"}
+							{statusLabel}
 						</span>
-						<span className="text-foreground text-sm">
-							{settings?.configured ? "Connected" : "Not configured"}
-						</span>
+						{settings.accountName && (
+							<span className="text-foreground text-sm">
+								{settings.accountName}
+							</span>
+						)}
 					</div>
 				</div>
-				{settings?.apiKey && (
+				{settings.apiKeyMasked && (
 					<div className="flex items-center justify-between py-2">
 						<span className="text-muted-foreground text-sm">API key</span>
 						<div className="flex items-center gap-2">
@@ -98,14 +115,20 @@ function TaxJarStatus({ settings }: { settings: TaxSettings | undefined }) {
 								{settings.sandbox ? "sandbox" : "production"}
 							</span>
 							<span className="font-mono text-foreground text-xs">
-								{settings.apiKey}
+								{settings.apiKeyMasked}
 							</span>
 						</div>
 					</div>
 				)}
 			</div>
 
-			{!settings?.configured && (
+			{settings.status === "error" && settings.error && (
+				<div className="mt-3 rounded-md bg-red-50 p-3 text-red-800 text-sm dark:bg-red-900/20 dark:text-red-300">
+					{settings.error}
+				</div>
+			)}
+
+			{settings.status === "not_configured" && (
 				<div className="mt-3 rounded-md bg-yellow-50 p-3 text-sm text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300">
 					Add your TaxJar API key to the module configuration to enable
 					real-time tax calculation. Without it, manual tax rates below will be
