@@ -11,7 +11,7 @@ export const getMenuEndpoint = createStoreEndpoint(
 		const controller = ctx.context.controllers
 			.navigation as NavigationController;
 		const menu = await controller.getMenuBySlug(ctx.params.slug);
-		if (!menu || !menu.isActive) {
+		if (!menu?.isActive) {
 			return { menu: null };
 		}
 		const withItems = await controller.getMenuWithItems(menu.id);

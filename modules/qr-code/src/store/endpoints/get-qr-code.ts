@@ -10,7 +10,7 @@ export const getQrCodeEndpoint = createStoreEndpoint(
 	async (ctx) => {
 		const controller = ctx.context.controllers.qrCode as QrCodeController;
 		const qrCode = await controller.get(ctx.params.id);
-		if (!qrCode || !qrCode.isActive) return { qrCode: null };
+		if (!qrCode?.isActive) return { qrCode: null };
 		return { qrCode };
 	},
 );

@@ -266,7 +266,7 @@ export function createBackordersController(
 		async checkEligibility(productId, quantity) {
 			const policy = await findPolicy(productId);
 
-			if (!policy || !policy.enabled) {
+			if (!policy?.enabled) {
 				return { eligible: false, reason: "Backorders not available" };
 			}
 

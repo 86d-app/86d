@@ -308,7 +308,7 @@ export function createProductLabelController(
 					assignment.labelId,
 				)) as unknown as Label | null;
 
-				if (!label || !label.isActive) continue;
+				if (!label?.isActive) continue;
 
 				// Check date range
 				if (label.startsAt && new Date(label.startsAt) > now) continue;

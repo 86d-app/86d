@@ -22,7 +22,7 @@ export const submitForm = createStoreEndpoint(
 		const formsController = ctx.context.controllers.forms as FormsController;
 		const form = await formsController.getFormBySlug(ctx.params.slug);
 
-		if (!form || !form.isActive) {
+		if (!form?.isActive) {
 			return { error: "Form not found", status: 404 };
 		}
 

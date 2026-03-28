@@ -88,7 +88,7 @@ export function createFulfillmentController(
 			if (!existing) return null;
 
 			const allowed = STATUS_TRANSITIONS[existing.status];
-			if (!allowed || !allowed.includes(status)) {
+			if (!allowed?.includes(status)) {
 				throw new Error(
 					`Cannot transition from "${existing.status}" to "${status}"`,
 				);

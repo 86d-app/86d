@@ -19,7 +19,7 @@ export const itemWrapping = createStoreEndpoint(
 			.giftWrapping as GiftWrappingController;
 		const selection = await controller.getItemSelection(ctx.params.orderItemId);
 
-		if (selection && selection.customerId && selection.customerId !== userId) {
+		if (selection?.customerId && selection.customerId !== userId) {
 			return { selection: null };
 		}
 

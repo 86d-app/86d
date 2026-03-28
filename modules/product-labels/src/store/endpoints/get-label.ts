@@ -14,7 +14,7 @@ export const getLabel = createStoreEndpoint(
 			.productLabels as ProductLabelController;
 
 		const label = await controller.getLabelBySlug(ctx.params.slug);
-		if (!label || !label.isActive) {
+		if (!label?.isActive) {
 			return { error: "Label not found", status: 404 };
 		}
 

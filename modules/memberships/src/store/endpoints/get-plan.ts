@@ -14,7 +14,7 @@ export const getPlan = createStoreEndpoint(
 			.memberships as MembershipController;
 
 		const plan = await controller.getPlanBySlug(ctx.params.slug);
-		if (!plan || !plan.isActive) {
+		if (!plan?.isActive) {
 			return { error: "Plan not found", status: 404 };
 		}
 

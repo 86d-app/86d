@@ -14,7 +14,7 @@ export const getLocation = createStoreEndpoint(
 			.storeLocator as StoreLocatorController;
 
 		const location = await controller.getLocationBySlug(ctx.params.slug);
-		if (!location || !location.isActive) {
+		if (!location?.isActive) {
 			return { error: "Location not found", status: 404 };
 		}
 

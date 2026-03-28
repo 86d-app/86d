@@ -13,7 +13,7 @@ export const getCategory = createStoreEndpoint(
 		const faqController = ctx.context.controllers.faq as FaqController;
 
 		const category = await faqController.getCategoryBySlug(ctx.params.slug);
-		if (!category || !category.isVisible) {
+		if (!category?.isVisible) {
 			return { error: "Category not found", status: 404 };
 		}
 

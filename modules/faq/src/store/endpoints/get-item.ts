@@ -13,7 +13,7 @@ export const getItem = createStoreEndpoint(
 		const faqController = ctx.context.controllers.faq as FaqController;
 
 		const item = await faqController.getItemBySlug(ctx.params.slug);
-		if (!item || !item.isVisible) {
+		if (!item?.isVisible) {
 			return { error: "FAQ item not found", status: 404 };
 		}
 

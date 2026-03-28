@@ -18,7 +18,7 @@ export const getCollectionProducts = createStoreEndpoint(
 			.collections as CollectionController;
 
 		const collection = await controller.getCollectionBySlug(ctx.params.slug);
-		if (!collection || !collection.isActive) {
+		if (!collection?.isActive) {
 			return { error: "Collection not found", status: 404 };
 		}
 
