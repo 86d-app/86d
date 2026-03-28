@@ -646,6 +646,106 @@ describe("PayPalPaymentProvider", () => {
 			expect(result.status).toBe("pending");
 			expect(result.providerMetadata?.paypalStatus).toBe("CANCELLED");
 		});
+
+		it("sends deterministic PayPal-Request-Id header for full refund", async () => {
+			globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+				if (url.includes("/oauth2/token")) {
+					return Promise.resolve({
+						ok: true,
+						status: 200,
+						json: () =>
+							Promise.resolve({
+								access_token: "test_token",
+								expires_in: 3600,
+							}),
+					});
+				}
+				if (url.includes("/checkout/orders/")) {
+					return Promise.resolve({
+						ok: true,
+						status: 200,
+						json: () =>
+							Promise.resolve({
+								id: "pp_order_idem",
+								status: "COMPLETED",
+								purchase_units: [
+									{
+										payments: {
+											captures: [{ id: "cap_idem_1", status: "COMPLETED" }],
+										},
+									},
+								],
+							}),
+					});
+				}
+				return Promise.resolve({
+					ok: true,
+					status: 200,
+					json: () => Promise.resolve({ id: "ref_idem", status: "COMPLETED" }),
+				});
+			});
+			await provider.createRefund({ providerIntentId: "pp_order_idem" });
+			const refundCall = (
+				globalThis.fetch as ReturnType<typeof vi.fn>
+			).mock.calls.find(
+				(c: [string]) => typeof c[0] === "string" && c[0].includes("/refund"),
+			);
+			expect(refundCall).toBeDefined();
+			const headers = refundCall?.[1]?.headers as Record<string, string>;
+			expect(headers["PayPal-Request-Id"]).toBe("refund-cap_idem_1-full");
+		});
+
+		it("sends deterministic PayPal-Request-Id header for partial refund", async () => {
+			globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+				if (url.includes("/oauth2/token")) {
+					return Promise.resolve({
+						ok: true,
+						status: 200,
+						json: () =>
+							Promise.resolve({
+								access_token: "test_token",
+								expires_in: 3600,
+							}),
+					});
+				}
+				if (url.includes("/checkout/orders/")) {
+					return Promise.resolve({
+						ok: true,
+						status: 200,
+						json: () =>
+							Promise.resolve({
+								id: "pp_order_part",
+								status: "COMPLETED",
+								purchase_units: [
+									{
+										payments: {
+											captures: [{ id: "cap_part_1", status: "COMPLETED" }],
+										},
+									},
+								],
+							}),
+					});
+				}
+				return Promise.resolve({
+					ok: true,
+					status: 200,
+					json: () => Promise.resolve({ id: "ref_part", status: "COMPLETED" }),
+				});
+			});
+			await provider.createRefund({
+				providerIntentId: "pp_order_part",
+				amount: 1500,
+				currency: "eur",
+			});
+			const refundCall = (
+				globalThis.fetch as ReturnType<typeof vi.fn>
+			).mock.calls.find(
+				(c: [string]) => typeof c[0] === "string" && c[0].includes("/refund"),
+			);
+			expect(refundCall).toBeDefined();
+			const headers = refundCall?.[1]?.headers as Record<string, string>;
+			expect(headers["PayPal-Request-Id"]).toBe("refund-cap_part_1-1500-EUR");
+		});
 	});
 
 	// ── auth token caching ───────────────────────────────────────────────

@@ -65,6 +65,7 @@ export class StripePaymentProvider implements PaymentProvider {
 		method: "GET" | "POST",
 		path: string,
 		body?: Record<string, string | number | undefined>,
+		extraHeaders?: Record<string, string>,
 	): Promise<T> {
 		const encodedBody =
 			body && method === "POST" ? this.encodeBody(body) : undefined;
@@ -73,6 +74,7 @@ export class StripePaymentProvider implements PaymentProvider {
 			headers: {
 				Authorization: `Bearer ${this.apiKey}`,
 				"Content-Type": "application/x-www-form-urlencoded",
+				...extraHeaders,
 			},
 			...(encodedBody !== undefined ? { body: encodedBody } : {}),
 		});
@@ -186,7 +188,13 @@ export class StripePaymentProvider implements PaymentProvider {
 		};
 		if (params.amount !== undefined) body.amount = params.amount;
 		if (params.reason) body.reason = params.reason;
-		const refund = await this.request<StripeRefund>("POST", "/refunds", body);
+		const idempotencyKey =
+			params.amount !== undefined
+				? `refund-${params.providerIntentId}-${params.amount}`
+				: `refund-${params.providerIntentId}-full`;
+		const refund = await this.request<StripeRefund>("POST", "/refunds", body, {
+			"Idempotency-Key": idempotencyKey,
+		});
 		return {
 			providerRefundId: refund.id,
 			status:

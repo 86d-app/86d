@@ -91,6 +91,7 @@ export class PayPalPaymentProvider implements PaymentProvider {
 		method: "GET" | "POST" | "PATCH",
 		path: string,
 		body?: Record<string, unknown>,
+		extraHeaders?: Record<string, string>,
 	): Promise<T> {
 		const token = await this.getAccessToken();
 		const encodedBody = body !== undefined ? JSON.stringify(body) : undefined;
@@ -100,6 +101,7 @@ export class PayPalPaymentProvider implements PaymentProvider {
 				Authorization: `Bearer ${token}`,
 				"Content-Type": "application/json",
 				Accept: "application/json",
+				...extraHeaders,
 			},
 			...(encodedBody !== undefined ? { body: encodedBody } : {}),
 		});
@@ -245,10 +247,15 @@ export class PayPalPaymentProvider implements PaymentProvider {
 			refundBody.note_to_payer = params.reason;
 		}
 
+		const idempotencyKey =
+			params.amount !== undefined
+				? `refund-${captureId}-${params.amount}-${(params.currency ?? "USD").toUpperCase()}`
+				: `refund-${captureId}-full`;
 		const refund = await this.request<PayPalRefund>(
 			"POST",
 			`/v2/payments/captures/${captureId}/refund`,
 			refundBody,
+			{ "PayPal-Request-Id": idempotencyKey },
 		);
 
 		const refundStatus =

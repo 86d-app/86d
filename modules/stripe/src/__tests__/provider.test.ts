@@ -396,5 +396,40 @@ describe("StripePaymentProvider", () => {
 			expect(body).not.toContain("reason=");
 			expect(body).toContain("payment_intent=pi_minimal");
 		});
+
+		it("sends deterministic Idempotency-Key header for full refund", async () => {
+			globalThis.fetch = mockFetchResponse({
+				id: "re_idem",
+				object: "refund",
+				amount: 5000,
+				charge: "ch_1",
+				payment_intent: "pi_idem",
+				status: "succeeded",
+				reason: null,
+			});
+			await provider.createRefund({ providerIntentId: "pi_idem" });
+			const headers = (globalThis.fetch as ReturnType<typeof vi.fn>).mock
+				.calls[0][1].headers;
+			expect(headers["Idempotency-Key"]).toBe("refund-pi_idem-full");
+		});
+
+		it("sends deterministic Idempotency-Key header for partial refund", async () => {
+			globalThis.fetch = mockFetchResponse({
+				id: "re_partial",
+				object: "refund",
+				amount: 1500,
+				charge: "ch_1",
+				payment_intent: "pi_partial",
+				status: "succeeded",
+				reason: null,
+			});
+			await provider.createRefund({
+				providerIntentId: "pi_partial",
+				amount: 1500,
+			});
+			const headers = (globalThis.fetch as ReturnType<typeof vi.fn>).mock
+				.calls[0][1].headers;
+			expect(headers["Idempotency-Key"]).toBe("refund-pi_partial-1500");
+		});
 	});
 });
