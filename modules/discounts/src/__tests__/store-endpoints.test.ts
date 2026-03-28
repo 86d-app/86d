@@ -156,7 +156,7 @@ describe("store endpoint: active promotions", () => {
 			type: "fixed_amount",
 			value: 500,
 			isActive: true,
-			endsAt: "2020-01-01T00:00:00.000Z",
+			endsAt: new Date("2020-01-01T00:00:00.000Z"),
 		});
 		await controller.create({
 			name: "Current",
@@ -177,7 +177,7 @@ describe("store endpoint: active promotions", () => {
 			type: "percentage",
 			value: 25,
 			isActive: true,
-			startsAt: "2099-01-01T00:00:00.000Z",
+			startsAt: new Date("2099-01-01T00:00:00.000Z"),
 		});
 
 		const result = await simulateActivePromotions(data);
@@ -450,7 +450,7 @@ describe("store endpoint: validate code — error paths", () => {
 			type: "percentage",
 			value: 10,
 			isActive: true,
-			endsAt: "2020-01-01T00:00:00.000Z",
+			endsAt: new Date("2020-01-01T00:00:00.000Z"),
 		});
 		await controller.createCode({ discountId: discount.id, code: "OLD" });
 
@@ -742,7 +742,7 @@ describe("store endpoint: evaluate cart rules", () => {
 			type: "percentage",
 			value: 50,
 			isActive: true,
-			endsAt: "2020-01-01T00:00:00.000Z",
+			endsAt: new Date("2020-01-01T00:00:00.000Z"),
 		});
 
 		const result = await simulateEvaluateCartRules(data, {
