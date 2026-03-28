@@ -688,8 +688,7 @@ describe("PayPalPaymentProvider", () => {
 			const refundCall = (
 				globalThis.fetch as ReturnType<typeof vi.fn>
 			).mock.calls.find(
-				(c: string[]) =>
-					typeof c[0] === "string" && c[0].includes("/refund"),
+				(c: string[]) => typeof c[0] === "string" && c[0].includes("/refund"),
 			);
 			expect(refundCall).toBeDefined();
 			const headers = refundCall?.[1]?.headers as Record<string, string>;
@@ -741,8 +740,7 @@ describe("PayPalPaymentProvider", () => {
 			const refundCall = (
 				globalThis.fetch as ReturnType<typeof vi.fn>
 			).mock.calls.find(
-				(c: string[]) =>
-					typeof c[0] === "string" && c[0].includes("/refund"),
+				(c: string[]) => typeof c[0] === "string" && c[0].includes("/refund"),
 			);
 			expect(refundCall).toBeDefined();
 			const headers = refundCall?.[1]?.headers as Record<string, string>;
