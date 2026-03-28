@@ -34,9 +34,13 @@ export function BlogList({
 	if (category) queryInput.category = category;
 	if (tag) queryInput.tag = tag;
 
-	const { data, isLoading } = api.listPosts.useQuery(queryInput) as {
+	const { data, isLoading, isError, refetch } = api.listPosts.useQuery(
+		queryInput,
+	) as {
 		data: { posts: BlogPost[]; total: number } | undefined;
 		isLoading: boolean;
+		isError: boolean;
+		refetch: () => void;
 	};
 
 	const posts = data?.posts ?? [];
@@ -44,6 +48,8 @@ export function BlogList({
 	return (
 		<BlogListTemplate
 			isLoading={isLoading}
+			isError={isError}
+			onRetry={refetch}
 			posts={posts}
 			formatDate={formatDate}
 		/>

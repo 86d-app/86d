@@ -20,16 +20,35 @@ export function CollectionGrid({
 	const queryInput: Record<string, unknown> = {};
 	if (featured) queryInput.featured = "true";
 
-	const { data, isLoading, isError } = listCollections.useQuery(queryInput) as {
+	const { data, isLoading, isError, refetch } = listCollections.useQuery(
+		queryInput,
+	) as {
 		data: { collections: CollectionCardData[] } | undefined;
 		isLoading: boolean;
 		isError: boolean;
+		refetch: () => void;
 	};
 
 	const collections = data?.collections ?? [];
 
-	// Silently hide on error — homepage sections are non-critical
-	if (isError) return null;
+	if (isError) {
+		return (
+			<section className="py-12 sm:py-14">
+				<div className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-6 text-center">
+					<p className="font-medium text-destructive text-sm">
+						Failed to load collections
+					</p>
+					<button
+						type="button"
+						onClick={() => refetch()}
+						className="mt-2 font-medium text-destructive text-sm underline underline-offset-4"
+					>
+						Try again
+					</button>
+				</div>
+			</section>
+		);
+	}
 
 	if (isLoading) {
 		return (
