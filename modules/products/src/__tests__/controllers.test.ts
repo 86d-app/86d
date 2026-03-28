@@ -1173,7 +1173,7 @@ describe("category controllers", () => {
 
 			const tree = (await controllers.category.getTree(
 				makeControllerCtx(data),
-			)) as any[];
+			)) as (Category & { children: Category[] })[];
 			expect(tree).toHaveLength(1);
 			expect(tree[0].id).toBe("root");
 			expect(tree[0].children).toHaveLength(1);
@@ -1194,7 +1194,7 @@ describe("category controllers", () => {
 
 			const tree = (await controllers.category.getTree(
 				makeControllerCtx(data),
-			)) as any[];
+			)) as (Category & { children: Category[] })[];
 			expect(tree).toHaveLength(1);
 		});
 	});

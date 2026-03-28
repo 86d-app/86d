@@ -123,7 +123,7 @@ export async function toMarkdownCollectionDetail(
 			collection: { getBySlug: (ctx: unknown) => Promise<Collection | null> };
 		}
 	).collection.getBySlug(withQuery(ctx, { slug }))) as Collection | null;
-	if (!bySlug || !bySlug.isVisible) return null;
+	if (!bySlug?.isVisible) return null;
 
 	const collection = (await (
 		ctx.controllers as {

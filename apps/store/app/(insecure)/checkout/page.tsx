@@ -1623,7 +1623,7 @@ const CheckoutPage = observer(function CheckoutPage() {
 										co.setStep("shipping");
 									}}
 								/>
-							) : (
+							) : co.isProcessing ? (
 								<div className="flex flex-col items-center justify-center py-10">
 									<svg
 										className="h-6 w-6 animate-spin text-foreground"
@@ -1649,6 +1649,36 @@ const CheckoutPage = observer(function CheckoutPage() {
 									<p className="mt-3 text-muted-foreground text-sm">
 										Preparing payment...
 									</p>
+								</div>
+							) : (
+								<div className="flex flex-col items-center justify-center py-10 text-center">
+									<p className="font-medium text-foreground text-sm">
+										Payment could not be initialized
+									</p>
+									<p className="mt-1 text-muted-foreground text-sm">
+										Please go back and try again, or contact support if the
+										problem persists.
+									</p>
+									<div className="mt-4 flex gap-3">
+										<button
+											type="button"
+											onClick={() => co.setStep("shipping")}
+											className="rounded-lg border border-border px-4 py-2 font-medium text-foreground text-sm transition-colors hover:bg-muted"
+										>
+											Go back
+										</button>
+										<button
+											type="button"
+											onClick={() => {
+												paymentInitRef.current = false;
+												setError(null);
+												void handlePaymentSubmit();
+											}}
+											className="rounded-lg bg-foreground px-4 py-2 font-medium text-background text-sm transition-colors hover:bg-foreground/90"
+										>
+											Try again
+										</button>
+									</div>
 								</div>
 							)}
 						</div>
