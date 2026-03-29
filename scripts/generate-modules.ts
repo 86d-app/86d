@@ -438,8 +438,18 @@ export type Router = typeof router;
 			pathPatterns.push({ pattern: ep.path, moduleId });
 		}
 	}
-	// Sort by pattern length descending so more specific patterns match first
-	pathPatterns.sort((a, b) => b.pattern.length - a.pattern.length);
+	// Sort by pattern length descending so more specific patterns match first.
+	// Tie-break: catalog paths shared with @86d-app/products must resolve to `products`
+	// first (same pattern string can appear on both products and collections modules).
+	const moduleMatchPriority = (moduleId: string): number =>
+		moduleId === "products" ? 0 : moduleId === "collections" ? 1 : 2;
+	pathPatterns.sort((a, b) => {
+		const len = b.pattern.length - a.pattern.length;
+		if (len !== 0) return len;
+		const p = moduleMatchPriority(a.moduleId) - moduleMatchPriority(b.moduleId);
+		if (p !== 0) return p;
+		return a.pattern.localeCompare(b.pattern);
+	});
 
 	const pathPatternsJson = JSON.stringify(pathPatterns, null, 2);
 

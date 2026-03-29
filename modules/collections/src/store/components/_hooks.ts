@@ -5,11 +5,11 @@ import { useModuleClient } from "@86d-app/core/client";
 export function useCollectionsApi() {
 	const client = useModuleClient();
 	return {
-		listCollections: client.module("collections").store["/collections"],
-		getCollection: client.module("collections").store["/collections/:slug"],
+		listCollections: client.module("products").store["/collections"],
+		getCollection: client.module("products").store["/collections/:id"],
 		getCollectionProducts:
 			client.module("collections").store["/collections/:slug/products"],
-		getFeatured: client.module("collections").store["/collections/featured"],
+		getFeatured: client.module("products").store["/collections"],
 		getProductCollections:
 			client.module("collections").store["/collections/product/:productId"],
 	};
