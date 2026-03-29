@@ -1,6 +1,6 @@
 {
 	"name": "@86d-app/stripe",
-	"version": "0.0.24",
+	"version": "0.0.25",
 	"description": "Stripe payment provider for 86d commerce platform",
 	"keywords": [
 		"commerce",
