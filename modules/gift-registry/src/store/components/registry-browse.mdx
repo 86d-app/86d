@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 # Gift Registries
 
 Find the perfect gift from a friend or family member's registry.
@@ -10,7 +12,7 @@ Find the perfect gift from a friend or family member's registry.
   ) : (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {props.registries.map((reg) => (
-        <a
+        <Link
           key={reg.id}
           href={`/gift-registry/${reg.slug}`}
           className="group rounded-lg border p-4 transition-colors hover:bg-muted/30"
@@ -29,7 +31,7 @@ Find the perfect gift from a friend or family member's registry.
             <span className="font-medium">{reg.purchasedCount}</span>
             <span className="text-muted-foreground"> of {reg.itemCount} items purchased</span>
           </div>
-        </a>
+        </Link>
       ))}
     </div>
   )}

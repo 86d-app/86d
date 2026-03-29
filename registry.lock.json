@@ -1,6 +1,6 @@
 {
   "lockfileVersion": 1,
-  "generatedAt": "2026-03-29T06:34:53.165Z",
+  "generatedAt": "2026-03-29T07:10:22.087Z",
   "modules": {
     "abandoned-carts": {
       "source": "local",
@@ -76,7 +76,7 @@
       "source": "local",
       "packageName": "@86d-app/blog",
       "version": "0.0.25",
-      "integrity": "sha256-e00d8437e41b11a7ee86ce1df1555a4e0800206c76e5a2ede1853dbb65a4af78",
+      "integrity": "sha256-a529ebbe43786dda16c3473c0d1783ab8e3a7f099f5c2eaf8647d0f1094617ba",
       "localPath": "modules/blog"
     },
     "braintree": {
@@ -111,7 +111,7 @@
       "source": "local",
       "packageName": "@86d-app/cart",
       "version": "0.0.25",
-      "integrity": "sha256-2bbb30999b82fc76516ea33964896fbab193a690001b1d9c5342ad29d1814ba3",
+      "integrity": "sha256-7d74971efc624b7721bd4e453e89f60730338008a9b7487d1a078de407a8b7dd",
       "localPath": "modules/cart"
     },
     "checkout": {
@@ -216,7 +216,7 @@
       "source": "local",
       "packageName": "@86d-app/flash-sales",
       "version": "0.0.25",
-      "integrity": "sha256-d1dd50055adee094242eb9aafe2af4032c1522c5e8c371befe71049ec80777e7",
+      "integrity": "sha256-3931dc14955a024313bef8e5ac84e0aa048cb4ac9e09cab4ecd56748c6e2d63a",
       "localPath": "modules/flash-sales"
     },
     "forms": {
@@ -321,7 +321,7 @@
       "source": "local",
       "packageName": "@86d-app/memberships",
       "version": "0.0.25",
-      "integrity": "sha256-27b2dbdfcffedb47e43b17ab30175bf6ed45f08f62b3c0963018910c448822bd",
+      "integrity": "sha256-97f0d90414e7b1a36c576644f7c009be3f965b1ad7faa30935f64835486b6a62",
       "localPath": "modules/memberships"
     },
     "multi-currency": {
@@ -440,7 +440,7 @@
       "source": "local",
       "packageName": "@86d-app/products",
       "version": "0.0.25",
-      "integrity": "sha256-09b790f46ce5370fc9a4f8a9cce0898374b53e98bbd8b9ff0a61e6ff9cd83bea",
+      "integrity": "sha256-ec6268df15f9b5db453508bfa6ec56524098187822cb76d21a431db98cf18aa8",
       "localPath": "modules/products"
     },
     "qr-code": {

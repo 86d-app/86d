@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 {props.isLoading ? (
   <div className="space-y-6">
     {Array.from({ length: 3 }).map((_, i) => (
@@ -20,7 +22,7 @@
 ) : (
   <div className="space-y-4">
     {props.pages.map((page) => (
-      <a
+      <Link
         key={page.id}
         href={`/p/${page.slug}`}
         className="group block rounded-xl border border-border/60 bg-card p-6 transition-colors hover:border-border hover:bg-muted/20"
@@ -33,7 +35,7 @@
             {page.excerpt}
           </p>
         )}
-      </a>
+      </Link>
     ))}
   </div>
 )}

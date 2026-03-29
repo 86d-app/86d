@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useModuleClient } from "@86d-app/core/client";
 import type { CollectionCardData, Product } from "./_types";
 import CollectionDetailTemplate from "./collection-detail.mdx";
@@ -35,9 +36,9 @@ export function CollectionDetail(props: CollectionDetailProps) {
 			<div className="rounded-md border border-border bg-muted/30 p-4 text-muted-foreground">
 				<p className="font-medium">Collection not found</p>
 				<p className="mt-1 text-sm">No collection was specified.</p>
-				<a href="/collections" className="mt-3 inline-block text-sm underline">
+				<Link href="/collections" className="mt-3 inline-block text-sm underline">
 					Back to collections
-				</a>
+				</Link>
 			</div>
 		);
 	}
@@ -73,12 +74,12 @@ export function CollectionDetail(props: CollectionDetailProps) {
 				<p className="mt-1 text-muted-foreground text-sm">
 					We couldn&apos;t load this collection. Please try again.
 				</p>
-				<a
+				<Link
 					href="/collections"
 					className="mt-3 text-muted-foreground text-sm transition-colors hover:text-foreground"
 				>
 					Back to collections
-				</a>
+				</Link>
 			</div>
 		);
 	}
@@ -89,12 +90,12 @@ export function CollectionDetail(props: CollectionDetailProps) {
 				<p className="font-medium text-foreground text-sm">
 					Collection not found
 				</p>
-				<a
+				<Link
 					href="/collections"
 					className="mt-2 text-muted-foreground text-sm transition-colors hover:text-foreground"
 				>
 					Back to collections
-				</a>
+				</Link>
 			</div>
 		);
 	}
@@ -103,16 +104,16 @@ export function CollectionDetail(props: CollectionDetailProps) {
 
 	const breadcrumbs = (
 		<nav className="mb-6 flex items-center gap-1.5 text-muted-foreground text-xs">
-			<a href="/" className="transition-colors hover:text-foreground">
+			<Link href="/" className="transition-colors hover:text-foreground">
 				Home
-			</a>
+			</Link>
 			<span className="text-border">/</span>
-			<a
+			<Link
 				href="/collections"
 				className="transition-colors hover:text-foreground"
 			>
 				Collections
-			</a>
+			</Link>
 			<span className="text-border">/</span>
 			<span className="truncate text-foreground">{collection.name}</span>
 		</nav>

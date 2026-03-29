@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useFlashSalesApi } from "./_hooks";
 import { formatPrice } from "./_utils";
 import { Countdown } from "./countdown";
@@ -99,7 +100,7 @@ export function FlashSaleListing() {
 					<section key={sale.id}>
 						<div className="mb-4 flex flex-wrap items-start justify-between gap-3">
 							<div>
-								<a
+								<Link
 									href={`/flash-sales/${sale.slug}`}
 									className="group/link inline-flex items-center gap-2"
 								>
@@ -111,7 +112,7 @@ export function FlashSaleListing() {
 											Up to {bestDiscount}% off
 										</span>
 									)}
-								</a>
+								</Link>
 								{sale.description && (
 									<p className="mt-0.5 text-muted-foreground text-sm">
 										{sale.description}
@@ -185,7 +186,7 @@ export function FlashSaleListing() {
 
 						{sale.products.length > 8 && (
 							<div className="mt-4 text-center">
-								<a
+								<Link
 									href={`/flash-sales/${sale.slug}`}
 									className="inline-flex items-center gap-1 rounded-md border border-border px-4 py-1.5 text-foreground text-xs transition-colors hover:bg-muted"
 								>
@@ -204,7 +205,7 @@ export function FlashSaleListing() {
 									>
 										<path d="m9 18 6-6-6-6" />
 									</svg>
-								</a>
+								</Link>
 							</div>
 						)}
 					</section>

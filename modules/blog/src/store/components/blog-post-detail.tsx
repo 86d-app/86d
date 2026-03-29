@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useBlogApi } from "./_hooks";
 import { formatDate } from "./_utils";
 import BlogPostDetailTemplate from "./blog-post-detail.mdx";
@@ -41,9 +42,9 @@ export function BlogPostDetail(props: {
 			<div className="rounded-md border border-border bg-muted/30 p-4 text-muted-foreground">
 				<p className="font-medium">Post not found</p>
 				<p className="mt-1 text-sm">No post was specified.</p>
-				<a href="/blog" className="mt-3 inline-block text-sm underline">
+				<Link href="/blog" className="mt-3 inline-block text-sm underline">
 					Back to blog
-				</a>
+				</Link>
 			</div>
 		);
 	}
@@ -71,12 +72,12 @@ export function BlogPostDetail(props: {
 				<p className="mt-2 text-muted-foreground text-sm">
 					This post may have been removed or is no longer available.
 				</p>
-				<a
+				<Link
 					href="/blog"
 					className="mt-4 inline-block text-primary text-sm hover:underline"
 				>
 					&larr; Back to blog
-				</a>
+				</Link>
 			</div>
 		);
 	}

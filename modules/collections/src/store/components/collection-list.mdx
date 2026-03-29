@@ -1,8 +1,10 @@
+import Link from "next/link";
+
 # Collection List
 
 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
   {props.collections?.map((collection) => (
-    <a
+    <Link
       key={collection.id}
       href={`/collections/${collection.slug}`}
       className="group block overflow-hidden rounded-lg border border-border bg-card transition-shadow hover:shadow-md"
@@ -24,6 +26,6 @@
           </p>
         )}
       </div>
-    </a>
+    </Link>
   ))}
 </div>

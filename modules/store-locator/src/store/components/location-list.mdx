@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 # Our Locations
 
 {props.countries?.length > 1 && (
@@ -20,7 +22,7 @@
 ) : (
   <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
     {props.locations?.map((location) => (
-      <a
+      <Link
         key={location.id}
         href={`/locations/${location.slug}`}
         className="group block rounded-lg border border-border bg-card p-6 transition-shadow hover:shadow-md"
@@ -57,7 +59,7 @@
             </span>
           )}
         </div>
-      </a>
+      </Link>
     ))}
   </div>
 )}

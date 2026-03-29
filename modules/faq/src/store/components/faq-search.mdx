@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 {/* FAQ Search — search bar with live results */}
 
 export default function FaqSearchTemplate({
@@ -32,7 +34,7 @@ export default function FaqSearchTemplate({
             <ul className="space-y-3">
               {results.map((item) => (
                 <li key={item.id}>
-                  <a
+                  <Link
                     href={`/faq/item/${item.slug}`}
                     className="block p-4 rounded-lg border border-gray-100 hover:border-gray-300 transition-colors"
                   >
@@ -40,7 +42,7 @@ export default function FaqSearchTemplate({
                     <p className="text-sm text-gray-500 line-clamp-2">
                       {item.answer}
                     </p>
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>

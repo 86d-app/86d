@@ -1,10 +1,12 @@
+import Link from "next/link";
+
 # Featured Collections
 
 <section className="py-8">
   <h2 className="mb-6 text-2xl font-bold text-foreground">Shop by Collection</h2>
   <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
     {props.collections?.map((collection) => (
-      <a
+      <Link
         key={collection.id}
         href={`/collections/${collection.slug}`}
         className="group relative overflow-hidden rounded-xl"
@@ -24,7 +26,7 @@
         <div className="absolute inset-x-0 bottom-0 p-4">
           <h3 className="font-semibold text-white">{collection.title}</h3>
         </div>
-      </a>
+      </Link>
     ))}
   </div>
 </section>

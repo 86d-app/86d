@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 {/* FAQ Accordion — collapsible question/answer pairs */}
 
 export default function FaqAccordionTemplate({
@@ -19,12 +21,12 @@ export default function FaqAccordionTemplate({
           <ul className="flex flex-wrap gap-2">
             {categories.map((cat) => (
               <li key={cat.id}>
-                <a
+                <Link
                   href={`/faq/${cat.slug}`}
                   className="inline-block px-4 py-2 rounded-full border border-gray-200 hover:border-gray-400 transition-colors text-sm"
                 >
                   {cat.name}
-                </a>
+                </Link>
               </li>
             ))}
           </ul>

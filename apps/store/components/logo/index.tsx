@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
 	ContextMenu,
 	ContextMenuContent,
@@ -78,13 +79,21 @@ const LogoBrandDownload = ({
 	);
 };
 
+function isInternalStorePath(url: string): boolean {
+	return url.startsWith("/") && !url.startsWith("//");
+}
+
 const Logo = ({ url, className, children, ...props }: LogoProps) => {
+	const mergedClass = cn("flex max-h-8 items-center gap-2", className);
+	if (isInternalStorePath(url)) {
+		return (
+			<Link href={url} className={mergedClass}>
+				{children}
+			</Link>
+		);
+	}
 	return (
-		<a
-			href={url}
-			className={cn("flex max-h-8 items-center gap-2", className)}
-			{...props}
-		>
+		<a href={url} className={mergedClass} {...props}>
 			{children}
 		</a>
 	);

@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 {props.isLoading ? (
   <section className="py-8">
     <h2 className="mb-4 font-semibold text-foreground text-lg">{props.title}</h2>
@@ -16,7 +18,7 @@
     <h2 className="mb-4 font-semibold text-foreground text-lg">{props.title}</h2>
     <div className="flex gap-4 overflow-x-auto pb-2">
       {props.items?.map((item) => (
-        <a
+        <Link
           key={item.id}
           href={item.href}
           className="group w-44 shrink-0 space-y-2"
@@ -41,7 +43,7 @@
           {item.price && (
             <p className="text-muted-foreground text-sm">{item.price}</p>
           )}
-        </a>
+        </Link>
       ))}
     </div>
   </section>

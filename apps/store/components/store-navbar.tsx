@@ -4,7 +4,6 @@ import { useTheme } from "next-themes";
 import type React from "react";
 import { useCallback, useState } from "react";
 import {
-	useEffectOnce,
 	useKeyPressEvent,
 	useLockBodyScroll,
 	useWindowScroll,
@@ -27,31 +26,23 @@ interface StoreNavbarProps {
 
 export function StoreNavbar({ config, navItems, actions }: StoreNavbarProps) {
 	const [isOpen, setIsOpen] = useState(false);
-	const [mounted, setMounted] = useState(false);
 	const { y } = useWindowScroll();
-	const { resolvedTheme, setTheme } = useTheme();
-
-	useEffectOnce(() => setMounted(true));
+	const { setTheme } = useTheme();
 
 	useLockBodyScroll(isOpen);
 
 	useKeyPressEvent("Escape", () => setIsOpen(false));
 
 	const scrolled = y > 8;
-	const logo =
-		mounted && resolvedTheme === "dark" ? config.logo.dark : config.logo.light;
 
 	const handleNavClick = useCallback(() => setIsOpen(false), []);
-
-	const toggleTheme = useCallback(() => {
-		setTheme(resolvedTheme === "dark" ? "light" : "dark");
-	}, [resolvedTheme, setTheme]);
 
 	const toggleMenu = useCallback(() => setIsOpen((prev) => !prev), []);
 
 	return (
 		<NavbarTemplate
-			logo={logo}
+			logoLight={config.logo.light}
+			logoDark={config.logo.dark}
 			storeName={config.name}
 			navItems={navItems}
 			actions={actions}
@@ -59,9 +50,7 @@ export function StoreNavbar({ config, navItems, actions }: StoreNavbarProps) {
 			isOpen={isOpen}
 			handleNavClick={handleNavClick}
 			toggleMenu={toggleMenu}
-			mounted={mounted}
-			resolvedTheme={resolvedTheme ?? "light"}
-			toggleTheme={toggleTheme}
+			setTheme={setTheme}
 		/>
 	);
 }

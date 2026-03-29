@@ -1,8 +1,10 @@
+import Link from "next/link";
+
 # Our Brands
 
 <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
   {props.brands?.map((brand) => (
-    <a
+    <Link
       key={brand.id}
       href={`/brands/${brand.slug}`}
       className="group flex flex-col items-center gap-3 rounded-lg border border-border bg-card p-6 transition-shadow hover:shadow-md"
@@ -30,6 +32,6 @@
           </p>
         )}
       </div>
-    </a>
+    </Link>
   ))}
 </div>

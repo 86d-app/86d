@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 <article>
   {props.post.coverImage && (
     <img
@@ -43,8 +45,8 @@
   )}
 
   <div className="mt-8 border-border border-t pt-6">
-    <a href="/blog" className="text-primary text-sm hover:underline">
+    <Link href="/blog" className="text-primary text-sm hover:underline">
       &larr; Back to blog
-    </a>
+    </Link>
   </div>
 </article>

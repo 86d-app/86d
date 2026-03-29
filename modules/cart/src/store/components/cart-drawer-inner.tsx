@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { observer } from "@86d-app/core/state";
 import { useEffect } from "react";
 import { cartState } from "../../state";
@@ -128,7 +129,7 @@ export const CartDrawerInner = observer(() => {
 				const image = item.product.images?.[0];
 				return (
 					<li key={item.id} className="flex gap-3 py-3.5">
-						<a
+						<Link
 							href={`/products/${item.product.slug}`}
 							className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-md bg-muted"
 						>
@@ -158,17 +159,17 @@ export const CartDrawerInner = observer(() => {
 									</svg>
 								</div>
 							)}
-						</a>
+						</Link>
 
 						<div className="flex min-w-0 flex-1 flex-col gap-0.5">
 							<div className="flex items-start justify-between gap-2">
 								<div className="min-w-0">
-									<a
+									<Link
 										href={`/products/${item.product.slug}`}
 										className="block truncate text-foreground text-sm"
 									>
 										{item.product.name}
-									</a>
+									</Link>
 									{item.variant && (
 										<p className="text-muted-foreground text-xs">
 											{item.variant.options &&

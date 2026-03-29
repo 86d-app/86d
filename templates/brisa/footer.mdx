@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 <footer className="border-border/40 border-t bg-background">
   {/* Newsletter strip */}
   <div className="border-border/40 border-b">
@@ -21,7 +23,7 @@
           <ul className="space-y-2.5">
             {section.links.map((link, linkIdx) => (
               <li key={linkIdx}>
-                <a href={link.href} className="text-sm text-muted-foreground transition-colors hover:text-foreground">{link.name}</a>
+                <Link href={link.href} className="text-sm text-muted-foreground transition-colors hover:text-foreground">{link.name}</Link>
               </li>
             ))}
           </ul>
@@ -30,8 +32,8 @@
       <div>
         <p className="mb-4 text-xs font-medium uppercase tracking-wider text-foreground">Legal</p>
         <ul className="space-y-2.5">
-          <li><a href="/terms" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Terms of service</a></li>
-          <li><a href="/privacy" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Privacy policy</a></li>
+          <li><Link href="/terms" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Terms of service</Link></li>
+          <li><Link href="/privacy" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Privacy policy</Link></li>
         </ul>
       </div>
     </div>
@@ -41,10 +43,16 @@
       <div className="flex items-center gap-3">
         <Logo url={props.logo.url}>
           <LogoImage
-            src={props.logo.src}
+            src={props.logo.lightSrc}
             alt={props.logo.alt}
             title={props.logo.title}
-            className="h-5"
+            className="h-5 dark:hidden"
+          />
+          <LogoImage
+            src={props.logo.darkSrc}
+            alt={props.logo.alt}
+            title={props.logo.title}
+            className="hidden h-5 dark:block"
           />
         </Logo>
         <span className="text-xs text-muted-foreground">

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useProductsApi } from "./_hooks";
 import FeaturedProductsTemplate from "./featured-products.mdx";
 import { ProductCard } from "./product-card";
@@ -53,12 +54,12 @@ export function FeaturedProducts({
 	if (products.length === 0) return null;
 
 	const viewAllLink = (
-		<a
+		<Link
 			href="/products"
 			className="text-muted-foreground text-sm transition-colors hover:text-foreground"
 		>
 			View all
-		</a>
+		</Link>
 	);
 
 	const gridContent = (

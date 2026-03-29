@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 <section className="py-4">
   <h3 className="mb-3 font-semibold text-gray-900 text-sm dark:text-gray-100">
     {props.title}
@@ -18,7 +20,7 @@
   ) : (
     <div className="flex gap-3 overflow-x-auto pb-1">
       {props.views.map((view) => (
-        <a
+        <Link
           key={view.productId}
           href={`/products/${view.productSlug}`}
           className="group flex shrink-0 items-center gap-2 rounded-lg border border-gray-100 p-2 transition-colors hover:border-gray-300 dark:border-gray-800 dark:hover:border-gray-600"
@@ -49,7 +51,7 @@
               </p>
             )}
           </div>
-        </a>
+        </Link>
       ))}
     </div>
   )}

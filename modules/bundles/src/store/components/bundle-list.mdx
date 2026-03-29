@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 {props.loading ? (
   <div className="py-12 text-center">
     <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-gray-200 border-t-gray-900 dark:border-gray-700 dark:border-t-gray-100" />
@@ -9,7 +11,7 @@
 ) : (
   <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
     {props.bundles.map((bundle) => (
-      <a
+      <Link
         key={bundle.id}
         href={`/bundles/${bundle.slug}`}
         className="group overflow-hidden rounded-lg border border-gray-200 bg-white transition-shadow hover:shadow-md dark:border-gray-800 dark:bg-gray-900"
@@ -41,7 +43,7 @@
             {bundle.items.length} {bundle.items.length === 1 ? "item" : "items"}
           </p>
         </div>
-      </a>
+      </Link>
     ))}
   </div>
 )}

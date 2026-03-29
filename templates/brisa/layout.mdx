@@ -19,7 +19,8 @@ import Footer from "./footer.mdx";
 <Footer
   logo={{
     url: "/",
-    src: props.theme.resolvedTheme === "dark" ? props.config.logo.dark : props.config.logo.light,
+    lightSrc: props.config.logo.light,
+    darkSrc: props.config.logo.dark,
     alt: props.config.name,
     title: props.config.name,
   }}

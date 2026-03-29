@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMembershipsApi } from "./_hooks";
 import { formatInterval, formatPrice } from "./_utils";
 import PlanListingTemplate from "./plan-listing.mdx";
@@ -86,7 +87,7 @@ export function PlanListing() {
 	const sorted = [...plans].sort((a, b) => a.sortOrder - b.sortOrder);
 
 	const planCards = sorted.map((plan) => (
-		<a
+		<Link
 			key={plan.id}
 			href={`/memberships/${plan.slug}`}
 			className="group flex flex-col rounded-xl border border-border bg-background p-6 transition-shadow hover:shadow-md"
@@ -159,7 +160,7 @@ export function PlanListing() {
 					<path d="m9 18 6-6-6-6" />
 				</svg>
 			</div>
-		</a>
+		</Link>
 	));
 
 	return <PlanListingTemplate planCards={planCards} />;

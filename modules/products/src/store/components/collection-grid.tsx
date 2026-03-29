@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useModuleClient } from "@86d-app/core/client";
 import type { CollectionCardData } from "./_types";
 import { CollectionCard } from "./collection-card";
@@ -76,12 +77,12 @@ export function CollectionGrid({
 	if (collections.length === 0) return null;
 
 	const viewAllLink = (
-		<a
+		<Link
 			href="/collections"
 			className="text-muted-foreground text-sm transition-colors hover:text-foreground"
 		>
 			View all
-		</a>
+		</Link>
 	);
 
 	const gridContent = (

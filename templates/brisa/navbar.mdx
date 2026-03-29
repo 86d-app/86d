@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 <header
   className={`sticky top-0 z-50 w-full transition-[background-color,border-color,backdrop-filter] duration-300 ${
     props.scrolled
@@ -7,26 +9,35 @@
 >
   <div className="mx-auto flex h-16 max-w-7xl items-center px-4 sm:px-6 lg:px-8">
     {/* Logo */}
-    <a
+    <Link
       href="/"
       className="flex shrink-0 items-center gap-2.5 transition-opacity hover:opacity-70"
     >
-      <img src={props.logo} alt={props.storeName} className="h-6 w-auto" />
+      <img
+        src={props.logoLight}
+        alt={props.storeName}
+        className="h-6 w-auto dark:hidden"
+      />
+      <img
+        src={props.logoDark}
+        alt={props.storeName}
+        className="hidden h-6 w-auto dark:block"
+      />
       <span className="font-display font-semibold text-foreground text-sm tracking-tight">
         {props.storeName}
       </span>
-    </a>
+    </Link>
 
     {/* Desktop navigation */}
     <nav className="ml-auto hidden items-center gap-1 md:flex lg:ml-10">
       {props.navItems.map((link) => (
-        <a
+        <Link
           key={link.label}
           href={link.href}
           className="rounded-md px-3 py-1.5 text-muted-foreground text-sm transition-colors hover:text-foreground"
         >
           {link.label}
-        </a>
+        </Link>
       ))}
     </nav>
 
@@ -36,7 +47,7 @@
       <StoreSearchCommand />
 
       {/* Account */}
-      <a
+      <Link
         href="/account"
         className="hidden size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground sm:flex"
         aria-label="My account"
@@ -57,57 +68,59 @@
           <circle cx="12" cy="8" r="5" />
           <path d="M20 21a8 8 0 0 0-16 0" />
         </svg>
-      </a>
+      </Link>
 
-      {/* Theme toggle */}
-      {props.mounted && (
-        <button
-          type="button"
-          onClick={props.toggleTheme}
-          className="hidden size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground sm:flex"
-          aria-label={`Switch to ${props.resolvedTheme === "dark" ? "light" : "dark"} mode`}
+      {/* Theme toggle — CSS visibility matches `html.dark` (no `resolvedTheme` flash) */}
+      <button
+        type="button"
+        onClick={() => props.setTheme("light")}
+        className="hidden size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground dark:sm:flex"
+        aria-label="Switch to light mode"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
         >
-          {props.resolvedTheme === "dark" ? (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <circle cx="12" cy="12" r="4" />
-              <path d="M12 2v2" />
-              <path d="M12 20v2" />
-              <path d="m4.93 4.93 1.41 1.41" />
-              <path d="m17.66 17.66 1.41 1.41" />
-              <path d="M2 12h2" />
-              <path d="M20 12h2" />
-              <path d="m6.34 17.66-1.41 1.41" />
-              <path d="m19.07 4.93-1.41 1.41" />
-            </svg>
-          ) : (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
-            </svg>
-          )}
-        </button>
-      )}
+          <circle cx="12" cy="12" r="4" />
+          <path d="M12 2v2" />
+          <path d="M12 20v2" />
+          <path d="m4.93 4.93 1.41 1.41" />
+          <path d="m17.66 17.66 1.41 1.41" />
+          <path d="M2 12h2" />
+          <path d="M20 12h2" />
+          <path d="m6.34 17.66-1.41 1.41" />
+          <path d="m19.07 4.93-1.41 1.41" />
+        </svg>
+      </button>
+      <button
+        type="button"
+        onClick={() => props.setTheme("dark")}
+        className="hidden size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground sm:flex dark:hidden"
+        aria-label="Switch to dark mode"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+        </svg>
+      </button>
 
       {/* Additional actions (e.g., CartButton from MDX) */}
       {props.actions}
@@ -154,18 +167,18 @@
   >
     <nav className="flex flex-1 flex-col px-6 pt-6">
       {props.navItems.map((link) => (
-        <a
+        <Link
           key={link.label}
           href={link.href}
           onClick={props.handleNavClick}
           className="border-border/30 border-b py-4 font-medium text-foreground text-lg transition-colors hover:text-muted-foreground"
         >
           {link.label}
-        </a>
+        </Link>
       ))}
 
       <div className="mt-6 flex flex-col gap-3">
-        <a
+        <Link
           href="/account"
           onClick={props.handleNavClick}
           className="flex items-center gap-3 text-muted-foreground text-sm transition-colors hover:text-foreground"
@@ -184,48 +197,52 @@
             <path d="M20 21a8 8 0 0 0-16 0" />
           </svg>
           Account
-        </a>
+        </Link>
         <button
           type="button"
-          onClick={props.toggleTheme}
-          className="flex items-center gap-3 text-muted-foreground text-sm transition-colors hover:text-foreground"
+          onClick={() => props.setTheme("light")}
+          className="hidden items-center gap-3 text-muted-foreground text-sm transition-colors hover:text-foreground dark:flex"
         >
-          {props.resolvedTheme === "dark" ? (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              aria-hidden="true"
-            >
-              <circle cx="12" cy="12" r="4" />
-              <path d="M12 2v2" />
-              <path d="M12 20v2" />
-              <path d="m4.93 4.93 1.41 1.41" />
-              <path d="m17.66 17.66 1.41 1.41" />
-              <path d="M2 12h2" />
-              <path d="M20 12h2" />
-              <path d="m6.34 17.66-1.41 1.41" />
-              <path d="m19.07 4.93-1.41 1.41" />
-            </svg>
-          ) : (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              aria-hidden="true"
-            >
-              <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
-            </svg>
-          )}
-          {props.resolvedTheme === "dark" ? "Light mode" : "Dark mode"}
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 2v2" />
+            <path d="M12 20v2" />
+            <path d="m4.93 4.93 1.41 1.41" />
+            <path d="m17.66 17.66 1.41 1.41" />
+            <path d="M2 12h2" />
+            <path d="M20 12h2" />
+            <path d="m6.34 17.66-1.41 1.41" />
+            <path d="m19.07 4.93-1.41 1.41" />
+          </svg>
+          Light mode
+        </button>
+        <button
+          type="button"
+          onClick={() => props.setTheme("dark")}
+          className="flex items-center gap-3 text-muted-foreground text-sm transition-colors hover:text-foreground dark:hidden"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            aria-hidden="true"
+          >
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+          </svg>
+          Dark mode
         </button>
       </div>
     </nav>

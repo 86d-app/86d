@@ -40,7 +40,12 @@
 		"@biomejs/biome": "catalog:",
 		"@types/mdx": "catalog:mdx",
 		"@types/react": "catalog:react",
+		"next": "catalog:next",
 		"typescript": "catalog:",
 		"vitest": "catalog:vite"
+	},
+	"peerDependencies": {
+		"next": ">=15",
+		"react": ">=19"
 	}
 }

@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 {props.isError ? (
   <div
     className="rounded-xl border border-destructive/20 bg-destructive/5 px-6 py-8 text-center"
@@ -38,7 +40,7 @@
   <div className="space-y-8">
     {props.posts.map((post) => (
       <article key={post.id}>
-        <a
+        <Link
           href={`/blog/${post.slug}`}
           className="group block rounded-xl border border-border/60 bg-card p-6 transition-colors hover:border-border hover:bg-muted/20"
         >
@@ -80,7 +82,7 @@
               ))}
             </div>
           )}
-        </a>
+        </Link>
       </article>
     ))}
   </div>

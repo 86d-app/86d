@@ -1,6 +1,7 @@
 "use client";
 
 import { useModuleClient, useStoreContext } from "@86d-app/core/client";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
 	memo,
@@ -215,7 +216,7 @@ const ProductCard = memo(function ProductCard({
 	};
 
 	return (
-		<a
+		<Link
 			href={`/products/${product.slug}`}
 			className="group relative flex flex-col"
 		>
@@ -283,7 +284,7 @@ const ProductCard = memo(function ProductCard({
 					)}
 				</div>
 			</div>
-		</a>
+		</Link>
 	);
 });
 
@@ -507,12 +508,12 @@ function SearchResults() {
 							<p className="mt-1.5 max-w-sm text-muted-foreground text-sm">
 								We couldn&apos;t find any products matching &ldquo;{urlQuery}
 								&rdquo;. Try a different search term or browse our{" "}
-								<a
+								<Link
 									href="/products"
 									className="text-foreground underline underline-offset-2"
 								>
 									full catalog
-								</a>
+								</Link>
 								.
 							</p>
 						</div>

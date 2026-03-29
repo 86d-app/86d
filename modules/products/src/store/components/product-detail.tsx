@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useStoreContext } from "@86d-app/core/client";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -140,9 +141,9 @@ export function ProductDetail(props: ProductDetailProps) {
 			<div className="rounded-md border border-border bg-muted/30 p-4 text-muted-foreground">
 				<p className="font-medium">Product not found</p>
 				<p className="mt-1 text-sm">No product was specified.</p>
-				<a href="/products" className="mt-3 inline-block text-sm underline">
+				<Link href="/products" className="mt-3 inline-block text-sm underline">
 					Back to products
-				</a>
+				</Link>
 			</div>
 		);
 	}
@@ -172,12 +173,12 @@ export function ProductDetail(props: ProductDetailProps) {
 				<p className="mt-1 text-muted-foreground text-sm">
 					We couldn&apos;t load this product. Please try again.
 				</p>
-				<a
+				<Link
 					href="/products"
 					className="mt-3 text-muted-foreground text-sm transition-colors hover:text-foreground"
 				>
 					Back to products
-				</a>
+				</Link>
 			</div>
 		);
 	}
@@ -186,12 +187,12 @@ export function ProductDetail(props: ProductDetailProps) {
 		return (
 			<div className="flex flex-col items-center justify-center py-24 text-center">
 				<p className="font-medium text-foreground text-sm">Product not found</p>
-				<a
+				<Link
 					href="/products"
 					className="mt-2 text-muted-foreground text-sm transition-colors hover:text-foreground"
 				>
 					Back to products
-				</a>
+				</Link>
 			</div>
 		);
 	}
@@ -251,13 +252,13 @@ export function ProductDetail(props: ProductDetailProps) {
 
 	const breadcrumbs = (
 		<nav className="mb-6 flex items-center gap-1.5 text-muted-foreground text-xs">
-			<a href="/" className="transition-colors hover:text-foreground">
+			<Link href="/" className="transition-colors hover:text-foreground">
 				Home
-			</a>
+			</Link>
 			<span className="text-border">/</span>
-			<a href="/products" className="transition-colors hover:text-foreground">
+			<Link href="/products" className="transition-colors hover:text-foreground">
 				Products
-			</a>
+			</Link>
 			<span className="text-border">/</span>
 			<span className="truncate text-foreground">{product.name}</span>
 		</nav>
@@ -319,12 +320,12 @@ export function ProductDetail(props: ProductDetailProps) {
 	);
 
 	const categoryLink = product.category ? (
-		<a
+		<Link
 			href={`/products?category=${product.category.id}`}
 			className="w-fit text-muted-foreground text-xs transition-colors hover:text-foreground"
 		>
 			{product.category.name}
-		</a>
+		</Link>
 	) : null;
 
 	const reviewSummaryLink =
@@ -500,13 +501,13 @@ export function ProductDetail(props: ProductDetailProps) {
 		product.tags.length > 0 ? (
 			<div className="flex flex-wrap gap-1">
 				{product.tags.map((t) => (
-					<a
+					<Link
 						key={t}
 						href={`/products?tag=${encodeURIComponent(t)}`}
 						className="rounded-md bg-muted px-2 py-0.5 text-muted-foreground text-xs transition-colors hover:bg-muted-foreground/20 hover:text-foreground"
 					>
 						{t}
-					</a>
+					</Link>
 				))}
 			</div>
 		) : null;

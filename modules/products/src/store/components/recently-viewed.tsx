@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useAnalyticsApi } from "./_hooks";
 import { formatPrice } from "./_utils";
 
@@ -51,7 +52,7 @@ export function RecentlyViewedProducts({
 			</h2>
 			<div className="scrollbar-none flex gap-4 overflow-x-auto pb-2">
 				{items.map((item) => (
-					<a
+					<Link
 						key={item.productId}
 						href={`/products/${item.slug}`}
 						className="group flex w-36 flex-none flex-col sm:w-44"
@@ -92,7 +93,7 @@ export function RecentlyViewedProducts({
 								{formatPrice(item.price)}
 							</p>
 						</div>
-					</a>
+					</Link>
 				))}
 			</div>
 		</section>

@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 <section className="py-6">
   <h2 className="mb-4 font-semibold text-lg text-gray-900 dark:text-gray-100">
     {props.title}
@@ -28,7 +30,7 @@
             {props.items.map((item) => (
               <th key={item.productId} className="min-w-[200px] px-4 py-3 align-top">
                 <div className="space-y-2">
-                  <a href={`/products/${item.productSlug}`} className="block">
+                  <Link href={`/products/${item.productSlug}`} className="block">
                     {item.productImage ? (
                       <img
                         src={item.productImage}
@@ -43,13 +45,13 @@
                         </svg>
                       </div>
                     )}
-                  </a>
-                  <a
+                  </Link>
+                  <Link
                     href={`/products/${item.productSlug}`}
                     className="block font-medium text-gray-900 hover:text-blue-600 dark:text-gray-100 dark:hover:text-blue-400"
                   >
                     {item.productName}
-                  </a>
+                  </Link>
                   <button
                     type="button"
                     onClick={() => props.onRemove(item.productId)}

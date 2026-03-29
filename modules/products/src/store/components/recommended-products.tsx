@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRecommendationsApi } from "./_hooks";
 import { formatPrice } from "./_utils";
 import RecommendedProductsTemplate from "./recommended-products.mdx";
@@ -63,7 +64,7 @@ export function RecommendedProducts({
 	const gridContent = (
 		<div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
 			{recommendations.map((r) => (
-				<a
+				<Link
 					key={r.productId}
 					href={`/products/${r.productSlug}`}
 					className="group"
@@ -108,7 +109,7 @@ export function RecommendedProducts({
 							</p>
 						)}
 					</div>
-				</a>
+				</Link>
 			))}
 		</div>
 	);
