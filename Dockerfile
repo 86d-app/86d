@@ -10,9 +10,14 @@
 FROM oven/bun:1.3.6 AS deps
 WORKDIR /app
 
+ENV NODE_ENV=production
+
 # Store image: manifests for the store app, generate-modules (@86d-app/registry),
-# @86d-app/runtime (api-registry / ModuleRegistry), and other workspace deps. Omit CLI only.
+# @86d-app/runtime, lockfile-listed workspaces (internals/github, packages/cli stubs).
 COPY package.json bun.lock ./
+# Workspace members referenced by bun.lock (frozen install requires manifests on disk)
+COPY internals/github/package.json internals/github/
+COPY packages/cli/package.json packages/cli/
 COPY apps/store/package.json apps/store/
 COPY packages/core/package.json packages/core/
 COPY packages/db/package.json packages/db/
@@ -36,8 +41,9 @@ RUN mkdir -p modules && \
     done && \
     rm -rf /tmp/all-modules
 
-# Install all dependencies
-RUN bun install --ignore-scripts
+# Hoisted linker only in Docker: avoids isolated-install resolution issues (e.g. tsc in packages/utils)
+# on Linux/Railway; local dev keeps Bun's default workspace linker from bun.lock configVersion.
+RUN bun install --ignore-scripts --frozen-lockfile --linker hoisted
 
 # ── Stage 2: Build ─────────────────────────────────────────────────────────
 FROM oven/bun:1.3.6 AS builder
