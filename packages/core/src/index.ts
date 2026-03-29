@@ -32,6 +32,13 @@ export {
 	validateContracts,
 } from "./contracts";
 export {
+	formatPathConflicts,
+	validateUniquePaths,
+	type ModulePathConflict,
+	type ModulePathKind,
+	type ModulePathSource,
+} from "./paths";
+export {
 	createEventBus,
 	createScopedEmitter,
 	type EventBus,

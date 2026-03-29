@@ -2,7 +2,7 @@ import { createAdminEndpoint, z } from "@86d-app/core";
 import type { OrderController } from "../../service";
 
 export const adminGetReturn = createAdminEndpoint(
-	"/admin/returns/:id",
+	"/admin/orders/returns/:id",
 	{
 		method: "GET",
 		params: z.object({ id: z.string() }),

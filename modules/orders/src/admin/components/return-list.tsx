@@ -69,7 +69,7 @@ function timeAgo(dateStr: string): string {
 function useReturnsAdminApi() {
 	const client = useModuleClient();
 	return {
-		listReturns: client.module("orders").admin["/admin/returns"],
+		listReturns: client.module("orders").admin["/admin/orders/returns"],
 	};
 }
 

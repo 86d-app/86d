@@ -5,6 +5,12 @@ import { NextResponse } from "next/server";
 import { logger } from "utils/logger";
 import { createRateLimiter } from "utils/rate-limit";
 import { getStorage } from "~/lib/storage";
+import {
+	buildPublicUploadUrl,
+	hasInvalidUploadKey,
+	isProxyingUploadUrls,
+	normalizeUploadKey,
+} from "~/lib/upload-storage";
 
 /** Upload rate limit: 30 uploads per 5 minutes per user. */
 const uploadLimiter = createRateLimiter({ limit: 30, window: 300_000 });
@@ -181,7 +187,9 @@ export async function POST(request: Request) {
 			contentType: file.type,
 		});
 
-		return NextResponse.json({ url: result.url });
+		return NextResponse.json({
+			url: isProxyingUploadUrls() ? buildPublicUploadUrl(key) : result.url,
+		});
 	} catch (error) {
 		logger.error("Upload failed", { error: String(error) });
 		return NextResponse.json({ error: "Upload failed" }, { status: 500 });
@@ -209,14 +217,15 @@ export async function DELETE(request: Request) {
 
 	try {
 		const body = await request.json();
-		const key = typeof body?.key === "string" ? body.key : "";
+		const rawKey = typeof body?.key === "string" ? body.key : "";
+		const key = normalizeUploadKey(rawKey);
 
 		if (!key) {
 			return NextResponse.json({ error: "Missing file key" }, { status: 400 });
 		}
 
 		// Reject path traversal attempts
-		if (key.includes("..") || key.includes("\0")) {
+		if (hasInvalidUploadKey(key)) {
 			return NextResponse.json({ error: "Invalid key" }, { status: 400 });
 		}
 

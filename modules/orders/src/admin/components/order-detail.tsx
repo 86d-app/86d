@@ -227,8 +227,10 @@ function useOrderAdminApi() {
 			client.module("orders").admin["/admin/fulfillments/:id/update"],
 		deleteFulfillment:
 			client.module("orders").admin["/admin/fulfillments/:id/delete"],
-		updateReturn: client.module("orders").admin["/admin/returns/:id/update"],
-		deleteReturn: client.module("orders").admin["/admin/returns/:id/delete"],
+		updateReturn:
+			client.module("orders").admin["/admin/orders/returns/:id/update"],
+		deleteReturn:
+			client.module("orders").admin["/admin/orders/returns/:id/delete"],
 		listOrderReturns:
 			client.module("orders").admin["/admin/orders/:id/returns"],
 	};

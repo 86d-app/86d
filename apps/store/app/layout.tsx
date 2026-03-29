@@ -69,6 +69,8 @@ const ibmPlexMono = IBM_Plex_Mono({
 /** Matches `globals.css` :root / .dark --background for first paint before Tailwind vars apply. */
 const THEME_BG_LIGHT = "oklch(1 0 0)";
 const THEME_BG_DARK = "oklch(0.145 0 0)";
+const isVercelProduction =
+	env.NODE_ENV === "production" && process.env.VERCEL_ENV === "production";
 
 /**
  * Hint for critical CSS: which appearance to paint before client theme runs.
@@ -149,7 +151,7 @@ export default async function RootLayout({
 				className="min-h-screen bg-background text-foreground antialiased"
 				suppressHydrationWarning
 			>
-				<Analytics />
+				{isVercelProduction ? <Analytics /> : null}
 				<NuqsAdapter>
 					<StoreQueryProvider>
 						<ThemeProvider

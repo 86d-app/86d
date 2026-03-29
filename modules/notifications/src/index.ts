@@ -1,8 +1,5 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
-import {
-	adminEndpoints,
-	createAdminEndpointsWithSettings,
-} from "./admin/endpoints";
+import { createAdminEndpointsWithSettings } from "./admin/endpoints";
 import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
 import { buildCartRecoveryEmail } from "./emails/cart-recovery";
 import { buildOrderCancelledEmail } from "./emails/order-cancelled";
@@ -63,9 +60,6 @@ export default function notifications(options?: NotificationsOptions): Module {
 					options.twilioFromNumber,
 				)
 			: undefined;
-
-	const hasEmailProvider = Boolean(emailProvider);
-	const hasSmsProvider = Boolean(smsProvider);
 
 	const settingsEndpoint = createGetSettingsEndpoint({
 		resendApiKey: options?.resendApiKey,
@@ -434,10 +428,7 @@ export default function notifications(options?: NotificationsOptions): Module {
 		},
 		endpoints: {
 			store: storeEndpoints,
-			admin:
-				hasEmailProvider || hasSmsProvider
-					? createAdminEndpointsWithSettings(settingsEndpoint)
-					: adminEndpoints,
+			admin: createAdminEndpointsWithSettings(settingsEndpoint),
 		},
 		admin: {
 			pages: [

@@ -1,7 +1,7 @@
 import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
 
 export const updateCollection = createAdminEndpoint(
-	"/admin/collections/:id/update",
+	"/admin/products/collections/:id/update",
 	{
 		method: "PUT",
 		params: z.object({ id: z.string() }),

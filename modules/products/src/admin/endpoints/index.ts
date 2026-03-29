@@ -34,10 +34,11 @@ export const adminEndpoints = {
 	"/admin/categories/create": createCategory,
 	"/admin/categories/:id/update": updateCategory,
 	"/admin/categories/:id/delete": deleteCategory,
-	"/admin/collections/list": adminListCollections,
-	"/admin/collections/create": createCollection,
-	"/admin/collections/:id/update": updateCollection,
-	"/admin/collections/:id/delete": deleteCollection,
-	"/admin/collections/:id/products": addCollectionProduct,
-	"/admin/collections/:id/products/:productId/remove": removeCollectionProduct,
+	"/admin/products/collections/list": adminListCollections,
+	"/admin/products/collections/create": createCollection,
+	"/admin/products/collections/:id/update": updateCollection,
+	"/admin/products/collections/:id/delete": deleteCollection,
+	"/admin/products/collections/:id/products": addCollectionProduct,
+	"/admin/products/collections/:id/products/:productId/remove":
+		removeCollectionProduct,
 };

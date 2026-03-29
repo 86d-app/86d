@@ -184,12 +184,10 @@ describe("analytics — module factory settings wiring", () => {
 		expect(mod.endpoints?.admin).toHaveProperty("/admin/analytics/settings");
 	});
 
-	it("settings endpoint is not included when no providers are configured", async () => {
+	it("settings endpoint is included when no providers are configured", async () => {
 		const { default: analytics } = await import("../index");
 		const mod = analytics({});
-		expect(mod.endpoints?.admin).not.toHaveProperty(
-			"/admin/analytics/settings",
-		);
+		expect(mod.endpoints?.admin).toHaveProperty("/admin/analytics/settings");
 	});
 
 	it("admin pages always include the Settings page", async () => {

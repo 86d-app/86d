@@ -13,9 +13,11 @@ import {
 	createScopedEmitter,
 	type EventBus,
 	type EventBusOptions,
+	formatPathConflicts,
 	formatViolations,
 	getRequiredModuleIds,
 	validateContracts,
+	validateUniquePaths,
 } from "@86d-app/core";
 
 /**
@@ -165,10 +167,14 @@ export class ModuleRegistry {
 			return;
 		}
 
-		// Resolve store ID
-		this.resolvedStoreId = await this.config.resolveStoreId(this.storeIdParam);
+		const pathConflicts = validateUniquePaths(this.modules);
+		if (pathConflicts.length > 0) {
+			const messages = formatPathConflicts(pathConflicts);
+			throw new Error(
+				`Module path conflicts:\n${messages.map((m) => `  - ${m}`).join("\n")}`,
+			);
+		}
 
-		// Validate contracts before any init
 		const violations = validateContracts(this.modules);
 		if (violations.length > 0) {
 			const messages = formatViolations(violations);
@@ -176,6 +182,9 @@ export class ModuleRegistry {
 				`Module contract violations:\n${messages.map((m) => `  - ${m}`).join("\n")}`,
 			);
 		}
+
+		// Resolve store ID
+		this.resolvedStoreId = await this.config.resolveStoreId(this.storeIdParam);
 
 		// Create shared event bus
 		this.eventBus = createEventBus(this.config.eventBusOptions);

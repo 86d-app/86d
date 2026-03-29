@@ -37,18 +37,25 @@ interface ProductListResult {
 function useCollectionsAdminApi() {
 	const client = useModuleClient();
 	return {
-		listCollections: client.module("products").admin["/admin/collections/list"],
+		listCollections:
+			client.module("products").admin["/admin/products/collections/list"],
 		createCollection:
-			client.module("products").admin["/admin/collections/create"],
+			client.module("products").admin["/admin/products/collections/create"],
 		updateCollection:
-			client.module("products").admin["/admin/collections/:id/update"],
+			client.module("products").admin[
+				"/admin/products/collections/:id/update"
+			],
 		deleteCollection:
-			client.module("products").admin["/admin/collections/:id/delete"],
+			client.module("products").admin[
+				"/admin/products/collections/:id/delete"
+			],
 		addProduct:
-			client.module("products").admin["/admin/collections/:id/products"],
+			client.module("products").admin[
+				"/admin/products/collections/:id/products"
+			],
 		removeProduct:
 			client.module("products").admin[
-				"/admin/collections/:id/products/:productId/remove"
+				"/admin/products/collections/:id/products/:productId/remove"
 			],
 		listProducts: client.module("products").admin["/admin/products/list"],
 	};

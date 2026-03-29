@@ -138,10 +138,14 @@ Payment provider modules (stripe, square, paypal, braintree) each implement webh
   - SVG files are checked for XSS (scripts, event handlers, javascript URIs)
   - Size limits: 4.5 MB for images, 10 MB for PDFs
   - Files stored at `stores/{storeId}/{uuid}` via `@86d-app/storage` abstraction
+  - When `STORAGE_PUBLIC_URL_MODE=proxy`, upload responses return same-origin `/uploads/{key}` URLs
 - `DELETE /api/upload` — Admin-only file deletion with store isolation (cross-store deletion prevented)
-- `GET /uploads/[...path]` — Serves locally-stored files (when `STORAGE_PROVIDER=local`)
+- `GET /uploads/[...path]` — Serves local files or proxies S3-backed uploads
+  - Local mode reads from `STORAGE_LOCAL_DIR`
+  - S3 proxy mode fetches from the internal storage URL and re-serves it as a same-origin response
   - Path traversal protection, immutable cache headers
   - SVGs served with restrictive CSP (`default-src 'none'; style-src 'unsafe-inline'`)
+  - PDFs served as attachments
 
 ## Key details
 

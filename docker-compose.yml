@@ -4,11 +4,12 @@
 # Quick start:
 #   docker compose up
 #
-# If host ports 5432 / 3000 are already in use:
-#   POSTGRES_PUBLISH_PORT=5433 STORE_PUBLISH_PORT=3001 docker compose up
+# If host ports 5432 / 3000 / 9000 / 9001 are already in use:
+#   POSTGRES_PUBLISH_PORT=5433 STORE_PUBLISH_PORT=3001 MINIO_API_PUBLISH_PORT=9002 MINIO_CONSOLE_PUBLISH_PORT=9003 docker compose up
 #
 # This starts:
 #   - PostgreSQL 16 database
+#   - MinIO object storage + admin console
 #   - 86d store app (mapped host port → container 3000)
 #
 # The store auto-runs migrations and seeds demo data on first boot.
@@ -35,6 +36,39 @@ services:
       timeout: 3s
       retries: 10
 
+  # ── MinIO Object Storage ────────────────────────────────────────────────
+  minio:
+    image: quay.io/minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: "${MINIO_ROOT_USER:-minioadmin}"
+      MINIO_ROOT_PASSWORD: "${MINIO_ROOT_PASSWORD:-minioadmin}"
+    ports:
+      - "${MINIO_API_PUBLISH_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PUBLISH_PORT:-9001}:9001"
+    volumes:
+      - minio_data:/data
+
+  minio-init:
+    image: quay.io/minio/mc:latest
+    depends_on:
+      - minio
+    environment:
+      MINIO_ROOT_USER: "${MINIO_ROOT_USER:-minioadmin}"
+      MINIO_ROOT_PASSWORD: "${MINIO_ROOT_PASSWORD:-minioadmin}"
+      S3_BUCKET: "${S3_BUCKET:-86d-uploads}"
+    entrypoint: >
+      /bin/sh -c '
+      set -e;
+      until mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD"; do
+        echo "Waiting for MinIO...";
+        sleep 2;
+      done;
+      mc mb --ignore-existing "local/$$S3_BUCKET";
+      mc anonymous set download "local/$$S3_BUCKET";
+      '
+
   # ── 86d Store Application ────────────────────────────────────────────────
   store:
     build:
@@ -50,21 +84,25 @@ services:
       STORE_ID: "${STORE_ID:-de005b9d-c517-4c65-896e-8edef5cf5a94}"
       NODE_ENV: "${NODE_ENV:-production}"
       AUTO_SEED: "true"
-      # Storage — local filesystem by default in Docker
-      STORAGE_PROVIDER: "local"
-      STORAGE_LOCAL_DIR: "/app/uploads"
-      STORAGE_LOCAL_BASE_URL: "/uploads"
+      # Storage — MinIO bucket by default in Docker
+      STORAGE_PROVIDER: "s3"
+      STORAGE_PUBLIC_URL_MODE: "proxy"
+      S3_ENDPOINT: "http://minio:9000"
+      S3_BUCKET: "${S3_BUCKET:-86d-uploads}"
+      S3_REGION: "${S3_REGION:-us-east-1}"
+      S3_ACCESS_KEY: "${MINIO_ROOT_USER:-minioadmin}"
+      S3_SECRET_KEY: "${MINIO_ROOT_PASSWORD:-minioadmin}"
       # Optional: 86d API integration (quoted to allow digit-prefixed names)
       "86D_API_URL": ""
       "86D_API_KEY": ""
     depends_on:
       postgres:
         condition: service_healthy
-    volumes:
-      - uploads_data:/app/uploads
+      minio-init:
+        condition: service_completed_successfully
 
 volumes:
   postgres_data:
     driver: local
-  uploads_data:
+  minio_data:
     driver: local

@@ -109,7 +109,7 @@ export default function orders(options?: OrdersOptions): Module {
 				{ path: "/admin/orders/:id/invoice", component: "OrderInvoice" },
 				{ path: "/admin/orders/:id/activity", component: "OrderActivity" },
 				{
-					path: "/admin/returns",
+					path: "/admin/orders/returns",
 					component: "ReturnList",
 					label: "Returns",
 					icon: "ArrowUUpLeft",

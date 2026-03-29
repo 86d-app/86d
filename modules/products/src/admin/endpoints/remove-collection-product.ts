@@ -1,7 +1,7 @@
 import { createAdminEndpoint, z } from "@86d-app/core";
 
 export const removeCollectionProduct = createAdminEndpoint(
-	"/admin/collections/:id/products/:productId/remove",
+	"/admin/products/collections/:id/products/:productId/remove",
 	{
 		method: "DELETE",
 		params: z.object({

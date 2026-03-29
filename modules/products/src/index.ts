@@ -84,7 +84,7 @@ export default function products(options?: ProductsOptions): Module {
 					group: "Catalog",
 				},
 				{
-					path: "/admin/collections",
+					path: "/admin/products/collections",
 					component: "CollectionsAdmin",
 					label: "Collections",
 					icon: "Stack",

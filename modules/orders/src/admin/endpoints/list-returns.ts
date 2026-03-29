@@ -2,7 +2,7 @@ import { createAdminEndpoint, z } from "@86d-app/core";
 import type { OrderController, ReturnStatus } from "../../service";
 
 export const adminListReturns = createAdminEndpoint(
-	"/admin/returns",
+	"/admin/orders/returns",
 	{
 		method: "GET",
 		query: z.object({

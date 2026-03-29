@@ -1,8 +1,5 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
-import {
-	adminEndpoints,
-	createAdminEndpointsWithSettings,
-} from "./admin/endpoints";
+import { createAdminEndpointsWithSettings } from "./admin/endpoints";
 import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
 import { GA4Provider } from "./providers/ga4";
 import { analyticsSchema } from "./schema";
@@ -39,10 +36,6 @@ export interface AnalyticsOptions extends ModuleConfig {
 }
 
 export default function analytics(options?: AnalyticsOptions): Module {
-	const hasProviders = Boolean(
-		options?.gtmContainerId || options?.sentryDsn || options?.ga4MeasurementId,
-	);
-
 	const ga4Provider =
 		options?.ga4MeasurementId && options?.ga4ApiSecret
 			? new GA4Provider(options.ga4MeasurementId, options.ga4ApiSecret)
@@ -84,9 +77,7 @@ export default function analytics(options?: AnalyticsOptions): Module {
 				...storeEndpoints,
 				"/analytics/client-config": clientConfigEndpoint,
 			},
-			admin: hasProviders
-				? createAdminEndpointsWithSettings(settingsEndpoint)
-				: adminEndpoints,
+			admin: createAdminEndpointsWithSettings(settingsEndpoint),
 		},
 		admin: {
 			pages: [

@@ -59,6 +59,12 @@ function interpolate(
 	);
 }
 
+function runInBackground(task: Promise<unknown>, label: string) {
+	void task.catch((error: unknown) => {
+		console.error(`[notifications] ${label} failed`, error);
+	});
+}
+
 export function createNotificationsController(
 	data: ModuleDataService,
 	events?: ScopedEventEmitter | undefined,
@@ -209,15 +215,21 @@ export function createNotificationsController(
 			await enforceMaxPerCustomer(params.customerId);
 
 			// Dispatch external delivery (email/SMS) — fire and forget
-			void deliverExternal(notification);
+			runInBackground(
+				deliverExternal(notification),
+				`external delivery for notification ${id}`,
+			);
 
 			if (events) {
-				void events.emit("notifications.created", {
-					notificationId: id,
-					customerId: params.customerId,
-					type: notification.type,
-					priority: notification.priority,
-				});
+				runInBackground(
+					events.emit("notifications.created", {
+						notificationId: id,
+						customerId: params.customerId,
+						type: notification.type,
+						priority: notification.priority,
+					}),
+					`notifications.created emit for ${id}`,
+				);
 			}
 
 			return notification;
@@ -285,10 +297,13 @@ export function createNotificationsController(
 			await data.upsert("notification", id, updated as Record<string, unknown>);
 
 			if (events) {
-				void events.emit("notifications.read", {
-					notificationId: id,
-					customerId: notification.customerId,
-				});
+				runInBackground(
+					events.emit("notifications.read", {
+						notificationId: id,
+						customerId: notification.customerId,
+					}),
+					`notifications.read emit for ${id}`,
+				);
 			}
 
 			return updated;
@@ -313,10 +328,13 @@ export function createNotificationsController(
 			}
 
 			if (events && count > 0) {
-				void events.emit("notifications.all_read", {
-					customerId,
-					count,
-				});
+				runInBackground(
+					events.emit("notifications.all_read", {
+						customerId,
+						count,
+					}),
+					`notifications.all_read emit for ${customerId}`,
+				);
 			}
 
 			return count;

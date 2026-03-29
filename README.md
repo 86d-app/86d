@@ -37,6 +37,21 @@ bun run dev
 
 The store will be available at [http://localhost:3000](http://localhost:3000).
 
+## Docker Compose
+
+```bash
+docker compose up
+```
+
+This starts PostgreSQL, a MinIO S3-compatible bucket, and the store app.
+
+- Store: [http://localhost:3000](http://localhost:3000)
+- MinIO API: [http://localhost:9000](http://localhost:9000)
+- MinIO Console: [http://localhost:9001](http://localhost:9001)
+- Upload bucket: `86d-uploads`
+
+In Docker, uploads are stored in MinIO and returned as same-origin `/uploads/...` URLs, so the browser never needs the raw bucket URL.
+
 ## Repository Structure
 
 ```
@@ -84,6 +99,7 @@ See [`apps/store/.env.example`](apps/store/.env.example) for the full list.
 | `DATABASE_URL_UNPOOLED`| Same (used for migrations)           |
 | `BETTER_AUTH_SECRET`   | Auth signing key (random string)     |
 | `STORE_ID`             | Store identifier                     |
+| `STORAGE_PUBLIC_URL_MODE` | Upload URL mode: `direct` or `proxy` |
 
 ## Creating a Module
 

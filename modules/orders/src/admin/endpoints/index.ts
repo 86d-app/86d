@@ -34,8 +34,8 @@ export const adminEndpoints = {
 	"/admin/fulfillments/:id/update": adminUpdateFulfillment,
 	"/admin/fulfillments/:id/delete": adminDeleteFulfillment,
 	"/admin/orders/:id/returns": adminListOrderReturns,
-	"/admin/returns": adminListReturns,
-	"/admin/returns/:id": adminGetReturn,
-	"/admin/returns/:id/update": adminUpdateReturn,
-	"/admin/returns/:id/delete": adminDeleteReturn,
+	"/admin/orders/returns": adminListReturns,
+	"/admin/orders/returns/:id": adminGetReturn,
+	"/admin/orders/returns/:id/update": adminUpdateReturn,
+	"/admin/orders/returns/:id/delete": adminDeleteReturn,
 };

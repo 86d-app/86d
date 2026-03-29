@@ -8,6 +8,7 @@ export default defineConfig({
 	},
 	resolve: {
 		alias: {
+			"~": resolve(__dirname, "./"),
 			"~/": resolve(__dirname, "./"),
 			"lib/": resolve(__dirname, "../../packages/lib/src/"),
 			utils: resolve(__dirname, "../../packages/utils/src"),

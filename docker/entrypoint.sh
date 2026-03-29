@@ -72,7 +72,10 @@ fi
 # ── Seed database (only on first run) ─────────────────────────────────────
 if [ "$AUTO_SEED" = "true" ] && [ -f "scripts/seed.ts" ]; then
   echo "→ Seeding database..."
-  bun run scripts/seed.ts 2>&1 || echo "⚠ Seed skipped (may already exist)"
+  if ! bun run scripts/seed.ts 2>&1; then
+    echo "✗ Seed failed"
+    exit 1
+  fi
   echo "✓ Seed complete"
 fi
 

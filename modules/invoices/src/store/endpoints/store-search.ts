@@ -6,7 +6,7 @@ export const storeSearch = createStoreEndpoint(
 	{
 		method: "GET",
 		query: z.object({
-			q: z.string().min(1).max(200).transform(sanitizeText),
+			q: z.string().min(0).max(200).transform(sanitizeText),
 		}),
 	},
 	async (ctx) => {
@@ -15,9 +15,14 @@ export const storeSearch = createStoreEndpoint(
 			return { error: "Unauthorized", status: 401 };
 		}
 
+		const q = ctx.query.q.trim();
+		if (q.length === 0) {
+			return { results: [], total: 0 };
+		}
+
 		const controller = ctx.context.controllers.invoice as InvoiceController;
 		const { invoices, total } = await controller.list({
-			search: ctx.query.q,
+			search: q,
 			customerId: userId,
 			limit: 10,
 		});

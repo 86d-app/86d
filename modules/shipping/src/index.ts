@@ -1,8 +1,5 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
-import {
-	adminEndpoints,
-	createAdminEndpointsWithSettings,
-} from "./admin/endpoints";
+import { createAdminEndpointsWithSettings } from "./admin/endpoints";
 import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
 import { shippingSchema } from "./schema";
 import { createShippingController } from "./service-impl";
@@ -74,9 +71,7 @@ export default function shipping(options?: ShippingOptions): Module {
 		},
 		endpoints: {
 			store: hasEasyPost ? createStoreEndpointsWithRates() : storeEndpoints,
-			admin: hasEasyPost
-				? createAdminEndpointsWithSettings(settingsEndpoint)
-				: adminEndpoints,
+			admin: createAdminEndpointsWithSettings(settingsEndpoint),
 		},
 		admin: {
 			pages: [

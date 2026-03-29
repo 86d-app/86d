@@ -1,7 +1,7 @@
 import { createAdminEndpoint, z } from "@86d-app/core";
 
 export const addCollectionProduct = createAdminEndpoint(
-	"/admin/collections/:id/products",
+	"/admin/products/collections/:id/products",
 	{
 		method: "POST",
 		params: z.object({ id: z.string() }),

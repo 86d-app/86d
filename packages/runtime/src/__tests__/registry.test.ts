@@ -265,6 +265,26 @@ describe("ModuleRegistry", () => {
 			);
 		});
 
+		it("throws on duplicate module paths before resolving the store", async () => {
+			const config = createMockConfig();
+			const modules = [
+				createMinimalModule("products", {
+					admin: {
+						pages: [{ path: "/admin/collections", component: "CollectionsAdmin" }],
+					},
+				}),
+				createMinimalModule("collections", {
+					admin: {
+						pages: [{ path: "/admin/collections", component: "CollectionAdmin" }],
+					},
+				}),
+			];
+			const registry = new ModuleRegistry(modules, "store-1", config);
+
+			await expect(registry.boot()).rejects.toThrow("Module path conflicts");
+			expect(config.resolveStoreId).not.toHaveBeenCalled();
+		});
+
 		it("initializes dependencies before dependents via topological sort", async () => {
 			const modules = [
 				createMinimalModule("cart", {

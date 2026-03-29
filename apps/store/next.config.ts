@@ -24,10 +24,14 @@ function loadTranspilePackages(): string[] {
 	}
 }
 
+const isVercelProduction = process.env.VERCEL_ENV === "production";
+
 const cspDirectives = [
 	"default-src 'self'",
 	// Next.js requires unsafe-inline and unsafe-eval for its runtime
-	"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com",
+	`script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com${
+		isVercelProduction ? " https://va.vercel-scripts.com" : ""
+	}`,
 	"style-src 'self' 'unsafe-inline'",
 	"img-src 'self' data: https: blob:",
 	"font-src 'self'",

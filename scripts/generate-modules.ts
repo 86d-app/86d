@@ -26,6 +26,7 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { join, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import {
 	detectCircularDependencies,
 	fetchModule,
@@ -38,6 +39,12 @@ import {
 	writeLockfile,
 } from "@86d-app/registry";
 import type { ResolvedModule } from "@86d-app/registry";
+import {
+	formatPathConflicts,
+	validateUniquePaths,
+	type Module,
+	type ModulePathSource,
+} from "@86d-app/core";
 
 interface PackageJson {
 	dependencies?: Record<string, string>;
@@ -287,9 +294,6 @@ export const components: MDXComponents = {};
 		return;
 	}
 
-	// Ensure all modules are in package.json and installed
-	await ensureModuleDependencies(modules);
-
 	// Gather module info
 	const moduleInfos: ModuleInfo[] = await Promise.all(
 		modules.map(async (moduleName) => {
@@ -387,6 +391,7 @@ export { components };
 async function generateApiRouter() {
 	const config = readStoreConfig(CONFIG_PATH);
 	const modules = getCachedModules();
+	const pathSources = getCachedPathSources();
 	const moduleOptions = config.moduleOptions || {};
 
 	if (modules.length === 0) {
@@ -415,38 +420,21 @@ export type Router = typeof router;
 		.map((moduleName, idx) => `import module${idx} from "${moduleName}";`)
 		.join("\n");
 
-	// Build path → module id map for request context (workspace modules only)
 	const pathPatterns: Array<{ pattern: string; moduleId: string }> = [];
-	for (const moduleName of modules) {
-		if (getModuleType(moduleName) !== "workspace") continue;
-		const shortName = moduleName.replace("@86d-app/", "");
-		const mappings = extractEndpointMappings(moduleName);
-		const moduleDir = join(WORKSPACE_ROOT, "modules", shortName, "src");
-		const indexPath = join(moduleDir, "index.ts");
-		let moduleId = shortName;
-		if (existsSync(indexPath)) {
-			const indexContent = readFileSync(indexPath, "utf-8");
-			const idMatch = indexContent.match(/id:\s*"([^"]+)"/);
-			if (idMatch) moduleId = idMatch[1];
+	for (const source of pathSources) {
+		for (const path of source.storeEndpoints ?? []) {
+			pathPatterns.push({ pattern: path, moduleId: source.moduleId });
 		}
-		for (const ep of mappings.store) {
-			pathPatterns.push({ pattern: ep.path, moduleId });
-		}
-		for (const ep of mappings.admin) {
-			pathPatterns.push({ pattern: ep.path, moduleId });
+		for (const path of source.adminEndpoints ?? []) {
+			pathPatterns.push({ pattern: path, moduleId: source.moduleId });
 		}
 	}
-	// Sort by pattern length descending so more specific patterns match first.
-	// Tie-break: catalog paths shared with @86d-app/products must resolve to `products`
-	// first (same pattern string can appear on both products and collections modules).
-	const moduleMatchPriority = (moduleId: string): number =>
-		moduleId === "products" ? 0 : moduleId === "collections" ? 1 : 2;
 	pathPatterns.sort((a, b) => {
 		const len = b.pattern.length - a.pattern.length;
 		if (len !== 0) return len;
-		const p = moduleMatchPriority(a.moduleId) - moduleMatchPriority(b.moduleId);
-		if (p !== 0) return p;
-		return a.pattern.localeCompare(b.pattern);
+		const patternCmp = a.pattern.localeCompare(b.pattern);
+		if (patternCmp !== 0) return patternCmp;
+		return a.moduleId.localeCompare(b.moduleId);
 	});
 
 	const pathPatternsJson = JSON.stringify(pathPatterns, null, 2);
@@ -1150,6 +1138,71 @@ function extractEndpointMappings(moduleName: string): {
 	return result;
 }
 
+async function loadModuleDefinition(
+	moduleName: string,
+	options: Record<string, unknown>,
+): Promise<Module> {
+	const importTarget =
+		getModuleType(moduleName) === "workspace"
+			? pathToFileURL(
+					join(
+						WORKSPACE_ROOT,
+						"modules",
+						moduleName.replace("@86d-app/", ""),
+						"src",
+						"index.ts",
+					),
+				).href
+			: moduleName;
+	const imported = (await import(importTarget)) as {
+		default?: ((options?: Record<string, unknown>) => Module) | undefined;
+	};
+
+	if (typeof imported.default !== "function") {
+		throw new Error(`Module "${moduleName}" does not export a default module factory.`);
+	}
+
+	return imported.default(options);
+}
+
+async function collectModulePathSources(
+	moduleNames: string[],
+	moduleOptions: Record<string, Record<string, unknown>>,
+): Promise<ModulePathSource[]> {
+	const sources: ModulePathSource[] = [];
+
+	for (const moduleName of moduleNames) {
+		const mod = await loadModuleDefinition(
+			moduleName,
+			moduleOptions[moduleName] ?? {},
+		);
+		const mappings =
+			getModuleType(moduleName) === "workspace"
+				? extractEndpointMappings(moduleName)
+				: { store: [], admin: [] };
+
+		sources.push({
+			moduleId: mod.id,
+			adminPages: mod.admin?.pages?.map((page) => page.path) ?? [],
+			storePages: mod.store?.pages?.map((page) => page.path) ?? [],
+			adminEndpoints: [
+				...new Set([
+					...Object.keys(mod.endpoints?.admin ?? {}),
+					...mappings.admin.map((entry) => entry.path),
+				]),
+			],
+			storeEndpoints: [
+				...new Set([
+					...Object.keys(mod.endpoints?.store ?? {}),
+					...mappings.store.map((entry) => entry.path),
+				]),
+			],
+		});
+	}
+
+	return sources;
+}
+
 /**
  * Generate hooks.ts with typed useApi() hook
  *
@@ -1404,6 +1457,7 @@ function generateTranspilePackages() {
 // Cache resolved modules list so it's only computed once
 let _cachedModules: string[] | undefined;
 let _cachedResolved: ResolvedModule[] | undefined;
+let _cachedPathSources: ModulePathSource[] | undefined;
 
 function getCachedModules(): string[] {
 	if (!_cachedModules) {
@@ -1419,6 +1473,13 @@ function getCachedResolved(): ResolvedModule[] {
 	return _cachedResolved;
 }
 
+function getCachedPathSources(): ModulePathSource[] {
+	if (!_cachedPathSources) {
+		throw new Error("Module paths not collected yet — call collectModulePathSources() first");
+	}
+	return _cachedPathSources;
+}
+
 const isFrozen = process.argv.includes("--frozen");
 
 // Run all generators
@@ -1427,6 +1488,8 @@ async function runGenerators() {
 	console.log("Resolving modules...");
 	_cachedResolved = await resolveModulesFromRegistry();
 	_cachedModules = resolvedToPackageNames(_cachedResolved);
+	const resolvedModules = getCachedResolved();
+	const moduleNames = getCachedModules();
 
 	// Check for circular dependencies in the registry manifest
 	const { readLocalManifest } = await import("@86d-app/registry");
@@ -1451,7 +1514,7 @@ async function runGenerators() {
 			);
 			process.exit(1);
 		}
-		const diff = verifyLockfile(existingLock, _cachedResolved);
+		const diff = verifyLockfile(existingLock, resolvedModules);
 		if (!isLockfileSatisfied(diff)) {
 			console.error("✗ registry.lock.json is out of date:");
 			if (diff.added.length > 0)
@@ -1467,10 +1530,24 @@ async function runGenerators() {
 		}
 		console.log("✓ registry.lock.json is up to date");
 	} else {
-		const lockfile = generateLockfile(_cachedResolved, WORKSPACE_ROOT);
+		const lockfile = generateLockfile(resolvedModules, WORKSPACE_ROOT);
 		writeLockfile(WORKSPACE_ROOT, lockfile);
 		console.log(
 			`✓ Generated registry.lock.json with ${Object.keys(lockfile.modules).length} module(s)`,
+		);
+	}
+
+	await ensureModuleDependencies(moduleNames);
+
+	_cachedPathSources = await collectModulePathSources(
+		moduleNames,
+		readStoreConfig(CONFIG_PATH).moduleOptions || {},
+	);
+	const pathConflicts = validateUniquePaths(_cachedPathSources);
+	if (pathConflicts.length > 0) {
+		const messages = formatPathConflicts(pathConflicts);
+		throw new Error(
+			`Module path conflicts:\n${messages.map((message) => `  - ${message}`).join("\n")}`,
 		);
 	}
 

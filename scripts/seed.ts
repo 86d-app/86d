@@ -670,12 +670,17 @@ async function seedModules(client: pg.PoolClient) {
 	console.log("  Creating module records...");
 	await ensureStoreRecord(client);
 	for (const name of moduleNames) {
-		await client.query(
+		const { rows } = await client.query<{ id: string }>(
 			`INSERT INTO "Module" (id, cuid, name, version, "isEnabled", "storeId", "createdAt", "updatedAt")
 			 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-			 ON CONFLICT ("storeId", name) DO UPDATE SET "isEnabled" = true, "updatedAt" = $8`,
+			 ON CONFLICT ("storeId", name) DO UPDATE SET "isEnabled" = true, "updatedAt" = $8
+			 RETURNING id`,
 			[moduleIds[name], cuid(), name, "0.0.4", true, STORE_ID, now, now],
 		);
+		const row = rows[0];
+		if (row) {
+			moduleIds[name] = row.id;
+		}
 	}
 }
 
