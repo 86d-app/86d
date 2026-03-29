@@ -101,16 +101,15 @@ COPY --from=builder /app/packages/db/prisma.config.ts ./packages/db/prisma.confi
 COPY --from=builder /app/packages/core/prisma ./packages/core/prisma
 COPY --from=builder /app/packages/core/src/prisma ./packages/core/src/prisma
 
-# Merge prisma-installer into standalone node_modules (Prisma 7 needs valibot, @prisma/*, etc.).
-# A single `COPY ... node_modules` fails when standalone has node_modules/pg as a non-directory.
-COPY --from=prisma-installer /app/node_modules /tmp/prisma-only
+# Merge only `prisma` CLI + `pg` from prisma-installer. Copying the entire installer node_modules
+# overwrites Next standalone hoists (e.g. @prisma/instrumentation) and breaks symlinks under
+# apps/store/.next/node_modules → import-in-the-middle ENOENT at runtime.
+COPY --from=prisma-installer /app/node_modules/prisma /tmp/prisma-only/prisma
+COPY --from=prisma-installer /app/node_modules/pg /tmp/prisma-only/pg
 RUN set -e; \
-    for pkg in /tmp/prisma-only/*; do \
-      [ -e "$pkg" ] || continue; \
-      base=$(basename "$pkg"); \
-      rm -rf "./node_modules/$base" 2>/dev/null || true; \
-      cp -a "$pkg" ./node_modules/; \
-    done && \
+    rm -rf ./node_modules/prisma ./node_modules/pg 2>/dev/null || true; \
+    cp -a /tmp/prisma-only/prisma ./node_modules/prisma && \
+    cp -a /tmp/prisma-only/pg ./node_modules/pg && \
     rm -rf /tmp/prisma-only
 
 # Copy seed script and its dependencies
