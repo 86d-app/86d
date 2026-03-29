@@ -10,7 +10,8 @@
 FROM oven/bun:1.3.6 AS deps
 WORKDIR /app
 
-# Copy package manifests for all workspaces
+# Store image: manifests for the store app, generate-modules (@86d-app/registry),
+# @86d-app/runtime (api-registry / ModuleRegistry), and other workspace deps. Omit CLI only.
 COPY package.json bun.lock ./
 COPY apps/store/package.json apps/store/
 COPY packages/core/package.json packages/core/
@@ -23,7 +24,6 @@ COPY packages/emails/package.json packages/emails/
 COPY packages/registry/package.json packages/registry/
 COPY packages/runtime/package.json packages/runtime/
 COPY packages/sdk/package.json packages/sdk/
-COPY packages/cli/package.json packages/cli/
 COPY packages/storage/package.json packages/storage/
 
 # Copy only module package.json files (not source code) for better layer caching

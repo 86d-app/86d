@@ -88,6 +88,7 @@
 		"@86d-app/referrals": "workspace:*",
 		"@86d-app/returns": "workspace:*",
 		"@86d-app/reviews": "workspace:*",
+		"@86d-app/runtime": "workspace:*",
 		"@86d-app/saved-addresses": "workspace:*",
 		"@86d-app/sdk": "workspace:*",
 		"@86d-app/search": "workspace:*",

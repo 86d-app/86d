@@ -36,8 +36,8 @@ import {
 	resolveModules,
 	verifyLockfile,
 	writeLockfile,
-} from "../packages/registry/src/index.js";
-import type { ResolvedModule } from "../packages/registry/src/index.js";
+} from "@86d-app/registry";
+import type { ResolvedModule } from "@86d-app/registry";
 
 interface PackageJson {
 	dependencies?: Record<string, string>;
@@ -116,9 +116,7 @@ async function resolveModulesFromRegistry(): Promise<ResolvedModule[]> {
 		console.log(`  Fetching ${toFetch.length} missing module(s)...`);
 
 		// Load manifest for fetch operations
-		const { readLocalManifest } = await import(
-			"../packages/registry/src/index.js"
-		);
+		const { readLocalManifest } = await import("@86d-app/registry");
 		const manifest = readLocalManifest(
 			join(WORKSPACE_ROOT, "registry.json"),
 		);
@@ -1431,9 +1429,7 @@ async function runGenerators() {
 	_cachedModules = resolvedToPackageNames(_cachedResolved);
 
 	// Check for circular dependencies in the registry manifest
-	const { readLocalManifest } = await import(
-		"../packages/registry/src/index.js"
-	);
+	const { readLocalManifest } = await import("@86d-app/registry");
 	const manifest = readLocalManifest(join(WORKSPACE_ROOT, "registry.json"));
 	if (manifest) {
 		const cycles = detectCircularDependencies(manifest);

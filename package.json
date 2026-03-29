@@ -32,7 +32,9 @@
 		"bump-version": "tsx scripts/bump-version.ts"
 	},
 	"dependencies": {
-		"tsx": "catalog:"
+		"@86d-app/registry": "workspace:*",
+		"tsx": "catalog:",
+		"zod": "catalog:"
 	},
 	"devDependencies": {
 		"@axe-core/playwright": "^4.11.1",
