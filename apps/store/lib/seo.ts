@@ -133,29 +133,12 @@ export const fetchProductForSeo = cache(
 );
 
 /**
- * Resolve the collections module DB ID for the current store.
- */
-const getCollectionsModuleId = cache(async (): Promise<string | null> => {
-	const storeId = env.STORE_ID;
-	if (!storeId) return null;
-
-	try {
-		const mod = await db.module.findFirst({
-			where: { storeId, name: "collections" },
-			select: { id: true },
-		});
-		return mod?.id ?? null;
-	} catch {
-		return null;
-	}
-});
-
-/**
  * Fetch a single collection by slug for metadata generation.
+ * Catalog collections live on the products module (same source as storefront list/detail).
  */
 export const fetchCollectionForSeo = cache(
 	async (slug: string): Promise<CollectionSeo | null> => {
-		const moduleId = await getCollectionsModuleId();
+		const moduleId = await getProductsModuleId();
 		if (!moduleId) return null;
 
 		const row = await db.moduleData.findFirst({
@@ -246,7 +229,7 @@ export async function fetchProductSlugsForSitemap(): Promise<SitemapEntry[]> {
 export async function fetchCollectionSlugsForSitemap(): Promise<
 	SitemapEntry[]
 > {
-	const moduleId = await getCollectionsModuleId();
+	const moduleId = await getProductsModuleId();
 	if (!moduleId) return [];
 
 	const rows = await db.moduleData.findMany({
@@ -454,7 +437,7 @@ export async function fetchProductsForLlms(): Promise<
 export async function fetchCollectionsForLlms(): Promise<
 	import("lib/llms-content").LlmsCollection[]
 > {
-	const moduleId = await getCollectionsModuleId();
+	const moduleId = await getProductsModuleId();
 	if (!moduleId) return [];
 
 	const rows = await db.moduleData.findMany({

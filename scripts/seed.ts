@@ -724,7 +724,7 @@ async function seedProducts(client: pg.PoolClient) {
 async function seedCollections(client: pg.PoolClient) {
 	console.log("  Creating collections...");
 	for (const col of collections) {
-		await insertModuleData(client, "collections", "collection", col.id, {
+		await insertModuleData(client, "products", "collection", col.id, {
 			...col,
 			type: "manual",
 			sortOrder: "manual",
@@ -740,7 +740,7 @@ async function seedCollections(client: pg.PoolClient) {
 		const linkId = uuid(`collection-product:${collectionIds.featured}:${featuredProducts[i].id}`);
 		await insertModuleData(
 			client,
-			"collections",
+			"products",
 			"collectionProduct",
 			linkId,
 			{
@@ -758,7 +758,7 @@ async function seedCollections(client: pg.PoolClient) {
 		const linkId = uuid(`collection-product:${collectionIds.newArrivals}:${products[i].id}`);
 		await insertModuleData(
 			client,
-			"collections",
+			"products",
 			"collectionProduct",
 			linkId,
 			{
@@ -776,7 +776,7 @@ async function seedCollections(client: pg.PoolClient) {
 		const linkId = uuid(`collection-product:${collectionIds.bestSellers}:${products[i].id}`);
 		await insertModuleData(
 			client,
-			"collections",
+			"products",
 			"collectionProduct",
 			linkId,
 			{
