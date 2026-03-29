@@ -95,8 +95,17 @@ COPY --from=builder /app/packages/db/prisma.config.ts ./packages/db/prisma.confi
 COPY --from=builder /app/packages/core/prisma ./packages/core/prisma
 COPY --from=builder /app/packages/core/src/prisma ./packages/core/src/prisma
 
-# Copy Prisma CLI for runtime migrations (installed in isolated stage above)
-COPY --from=prisma-installer /app/node_modules ./node_modules
+# Merge prisma-installer into standalone node_modules (Prisma 7 needs valibot, @prisma/*, etc.).
+# A single `COPY ... node_modules` fails when standalone has node_modules/pg as a non-directory.
+COPY --from=prisma-installer /app/node_modules /tmp/prisma-only
+RUN set -e; \
+    for pkg in /tmp/prisma-only/*; do \
+      [ -e "$pkg" ] || continue; \
+      base=$(basename "$pkg"); \
+      rm -rf "./node_modules/$base" 2>/dev/null || true; \
+      cp -a "$pkg" ./node_modules/; \
+    done && \
+    rm -rf /tmp/prisma-only
 
 # Copy seed script and its dependencies
 COPY --from=builder /app/scripts/seed.ts ./scripts/seed.ts

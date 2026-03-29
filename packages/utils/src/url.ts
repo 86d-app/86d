@@ -9,6 +9,10 @@ export function getBaseUrl(): string {
 		return process.env.NEXT_PUBLIC_STORE_URL;
 	}
 
+	if (process.env.RAILWAY_PUBLIC_DOMAIN) {
+		return `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`;
+	}
+
 	if (process.env.VERCEL_URL) {
 		return `https://${process.env.VERCEL_URL}`;
 	}

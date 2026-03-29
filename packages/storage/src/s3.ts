@@ -12,6 +12,16 @@ interface S3Config {
 	region: string;
 	accessKey: string;
 	secretKey: string;
+	/** Railway Bucket / AWS virtual-hosted: `https://{bucket}.{endpoint-host}/{key}` */
+	virtualHosted?: boolean | undefined;
+}
+
+function encodeKeyPath(key: string): string {
+	const parts = key.split("/").filter(Boolean);
+	if (parts.length === 0) {
+		return "/";
+	}
+	return `/${parts.map((p) => encodeURIComponent(p)).join("/")}`;
 }
 
 /** Minimal S3-compatible client using AWS Signature V4 and fetch. */
@@ -22,15 +32,45 @@ export class S3StorageProvider implements StorageProvider {
 		this.config = config;
 	}
 
-	private getBaseUrl(): string {
-		const { endpoint, bucket } = this.config;
-		// Path-style for MinIO compatibility
-		return `${endpoint.replace(/\/$/, "")}/${bucket}`;
+	private pathStyleObjectUrl(key: string): string {
+		const base = `${this.config.endpoint.replace(/\/$/, "")}/${this.config.bucket}`;
+		const path = encodeKeyPath(key);
+		return `${base}${path === "/" ? "/" : path}`;
+	}
+
+	private virtualHostedObjectUrl(key: string): string {
+		const endpointUrl = new URL(this.config.endpoint);
+		const base = `https://${this.config.bucket}.${endpointUrl.host}`;
+		const path = encodeKeyPath(key);
+		return `${base}${path === "/" ? "/" : path}`;
+	}
+
+	private objectUrl(key: string): string {
+		return this.config.virtualHosted
+			? this.virtualHostedObjectUrl(key)
+			: this.pathStyleObjectUrl(key);
+	}
+
+	/** Canonical URI (path only) for SigV4 — excludes query string. */
+	private canonicalObjectPath(key: string): string {
+		const path = encodeKeyPath(key);
+		if (this.config.virtualHosted) {
+			return path === "/" ? "/" : path;
+		}
+		return `/${this.config.bucket}${path === "/" ? "" : path}`;
+	}
+
+	private requestHost(): string {
+		if (this.config.virtualHosted) {
+			const endpointUrl = new URL(this.config.endpoint);
+			return `${this.config.bucket}.${endpointUrl.host}`;
+		}
+		return new URL(this.config.endpoint).host;
 	}
 
 	private sign(
 		method: string,
-		path: string,
+		canonicalPath: string,
 		headers: Record<string, string>,
 		payload: Buffer | null,
 	): Record<string, string> {
@@ -46,7 +86,7 @@ export class S3StorageProvider implements StorageProvider {
 			.digest("hex");
 		const allHeaders: Record<string, string> = {
 			...headers,
-			host: new URL(this.getBaseUrl()).host,
+			host: this.requestHost(),
 			"x-amz-date": amzDate,
 			"x-amz-content-sha256": payloadHash,
 		};
@@ -58,7 +98,7 @@ export class S3StorageProvider implements StorageProvider {
 			.join("");
 		const canonicalRequest = [
 			method,
-			path,
+			canonicalPath,
 			"",
 			canonicalHeaders,
 			signedHeaders,
@@ -94,14 +134,14 @@ export class S3StorageProvider implements StorageProvider {
 			options.content instanceof ArrayBuffer
 				? Buffer.from(options.content)
 				: options.content;
-		const path = `/${this.config.bucket}/${options.key}`;
+		const canonicalPath = this.canonicalObjectPath(options.key);
 		const headers = this.sign(
 			"PUT",
-			path,
+			canonicalPath,
 			{ "content-type": options.contentType },
 			buffer,
 		);
-		const url = `${this.getBaseUrl()}/${options.key}`;
+		const url = this.objectUrl(options.key);
 
 		const response = await fetch(url, {
 			method: "PUT",
@@ -119,9 +159,9 @@ export class S3StorageProvider implements StorageProvider {
 	}
 
 	async delete(options: StorageDeleteOptions): Promise<void> {
-		const path = `/${this.config.bucket}/${options.key}`;
-		const headers = this.sign("DELETE", path, {}, null);
-		const url = `${this.getBaseUrl()}/${options.key}`;
+		const canonicalPath = this.canonicalObjectPath(options.key);
+		const headers = this.sign("DELETE", canonicalPath, {}, null);
+		const url = this.objectUrl(options.key);
 
 		const response = await fetch(url, { method: "DELETE", headers });
 		if (!response.ok && response.status !== 404) {
@@ -132,14 +172,20 @@ export class S3StorageProvider implements StorageProvider {
 	}
 
 	getUrl(key: string): string {
-		return `${this.getBaseUrl()}/${key}`;
+		return this.objectUrl(key);
 	}
 
 	async healthCheck(): Promise<boolean> {
 		try {
-			const path = `/${this.config.bucket}`;
-			const headers = this.sign("HEAD", path, {}, null);
-			const response = await fetch(`${this.getBaseUrl()}/`, {
+			const endpointUrl = new URL(this.config.endpoint);
+			const url = this.config.virtualHosted
+				? `https://${this.config.bucket}.${endpointUrl.host}/`
+				: `${this.config.endpoint.replace(/\/$/, "")}/${this.config.bucket}/`;
+			const canonicalPath = this.config.virtualHosted
+				? "/"
+				: `/${this.config.bucket}/`;
+			const headers = this.sign("HEAD", canonicalPath, {}, null);
+			const response = await fetch(url, {
 				method: "HEAD",
 				headers,
 			});

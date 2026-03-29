@@ -54,6 +54,8 @@ export const storageConfigSchema = z.object({
 	s3AccessKey: z.string().optional(),
 	/** S3 secret key. */
 	s3SecretKey: z.string().optional(),
+	/** Use virtual-hosted URLs (Railway Bucket, AWS). */
+	s3VirtualHosted: z.boolean().optional().default(false),
 });
 
 export type StorageConfig = z.infer<typeof storageConfigSchema>;

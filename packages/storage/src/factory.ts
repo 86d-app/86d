@@ -30,6 +30,7 @@ export function createStorage(config: StorageConfig): StorageProvider {
 				region: config.s3Region ?? "us-east-1",
 				accessKey: config.s3AccessKey,
 				secretKey: config.s3SecretKey,
+				virtualHosted: config.s3VirtualHosted ?? false,
 			});
 		}
 		default:
@@ -53,5 +54,8 @@ export function createStorageFromEnv(): StorageProvider {
 		s3Region: process.env.S3_REGION ?? "us-east-1",
 		s3AccessKey: process.env.S3_ACCESS_KEY,
 		s3SecretKey: process.env.S3_SECRET_KEY,
+		s3VirtualHosted:
+			process.env.S3_VIRTUAL_HOSTED_STYLE === "1" ||
+			process.env.S3_VIRTUAL_HOSTED_STYLE === "true",
 	});
 }

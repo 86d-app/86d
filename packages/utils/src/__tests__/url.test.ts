@@ -6,6 +6,7 @@ describe("getBaseUrl", () => {
 
 	beforeEach(() => {
 		delete process.env.NEXT_PUBLIC_STORE_URL;
+		delete process.env.RAILWAY_PUBLIC_DOMAIN;
 		delete process.env.VERCEL_URL;
 		delete process.env.PORT;
 	});
@@ -28,6 +29,18 @@ describe("getBaseUrl", () => {
 		process.env.NEXT_PUBLIC_STORE_URL = "https://mystore.com";
 		process.env.VERCEL_URL = "my-app.vercel.app";
 		expect(getBaseUrl()).toBe("https://mystore.com");
+	});
+
+	it("uses RAILWAY_PUBLIC_DOMAIN with https when set (after NEXT_PUBLIC)", () => {
+		process.env.RAILWAY_PUBLIC_DOMAIN = "svc.up.railway.app";
+		process.env.VERCEL_URL = "my-app.vercel.app";
+		expect(getBaseUrl()).toBe("https://svc.up.railway.app");
+	});
+
+	it("prefers NEXT_PUBLIC_STORE_URL over RAILWAY_PUBLIC_DOMAIN", () => {
+		process.env.NEXT_PUBLIC_STORE_URL = "https://custom.example";
+		process.env.RAILWAY_PUBLIC_DOMAIN = "svc.up.railway.app";
+		expect(getBaseUrl()).toBe("https://custom.example");
 	});
 
 	it("returns localhost with PORT when no URLs set", () => {

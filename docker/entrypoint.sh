@@ -33,10 +33,23 @@ if [ "$SKIP_MIGRATIONS" != "true" ] && [ -d "packages/db/prisma" ]; then
   cd packages/db
   if [ -d "prisma/migrations" ]; then
     # Production: use migrate deploy when migration files exist
-    bunx prisma migrate deploy --schema prisma 2>&1 || {
-      echo "✗ Migration failed"
-      exit 1
-    }
+    deploy_out=$(bunx prisma migrate deploy --schema prisma 2>&1) || deploy_ok=1
+    if [ -n "${deploy_ok:-}" ]; then
+      printf '%s\n' "$deploy_out"
+      # init.sql (nanoid, extensions) leaves public non-empty; migrate deploy then returns P3005
+      if printf '%s' "$deploy_out" | grep -q 'P3005'; then
+        echo "→ Baseline conflict (P3005); syncing schema with db push"
+        bunx prisma db push --schema prisma --accept-data-loss 2>&1 || {
+          echo "✗ db push failed"
+          exit 1
+        }
+      else
+        echo "✗ Migration failed"
+        exit 1
+      fi
+    else
+      printf '%s\n' "$deploy_out"
+    fi
   else
     # Development: use db push when no migration files exist
     # --accept-data-loss is safe here: Docker starts with an empty database
@@ -45,6 +58,13 @@ if [ "$SKIP_MIGRATIONS" != "true" ] && [ -d "packages/db/prisma" ]; then
       exit 1
     }
   fi
+  # Migration files may only ship SQL helpers (e.g. nanoid); ORM models still need db push.
+  # --accept-data-loss: Prisma may warn on constraint changes over an already-migrated DB (Docker dev).
+  echo "→ Syncing Prisma schema to database..."
+  bunx prisma db push --schema prisma --accept-data-loss 2>&1 || {
+    echo "✗ db push failed"
+    exit 1
+  }
   cd /app
   echo "✓ Migrations complete"
 fi

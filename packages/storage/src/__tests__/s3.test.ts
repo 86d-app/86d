@@ -39,6 +39,16 @@ describe("S3StorageProvider", () => {
 				"https://s3.example.com/test-bucket/file.txt",
 			);
 		});
+
+		it("returns virtual-hosted URL when virtualHosted is true", () => {
+			const p = new S3StorageProvider({
+				...DEFAULT_CONFIG,
+				virtualHosted: true,
+			});
+			expect(p.getUrl("images/photo.png")).toBe(
+				"https://test-bucket.s3.example.com/images/photo.png",
+			);
+		});
 	});
 
 	describe("upload", () => {

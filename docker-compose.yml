@@ -4,9 +4,12 @@
 # Quick start:
 #   docker compose up
 #
+# If host ports 5432 / 3000 are already in use:
+#   POSTGRES_PUBLISH_PORT=5433 STORE_PUBLISH_PORT=3001 docker compose up
+#
 # This starts:
 #   - PostgreSQL 16 database
-#   - 86d store app (port 3000)
+#   - 86d store app (mapped host port → container 3000)
 #
 # The store auto-runs migrations and seeds demo data on first boot.
 # Default admin: admin@example.com / password123
@@ -22,10 +25,10 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PUBLISH_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      # nanoid + pgcrypto are created by packages/db/prisma/migrations/0 — do not mount init.sql or Postgres gets duplicate nanoid() overloads and db push fails
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d 86d"]
       interval: 5s
@@ -39,7 +42,7 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "${STORE_PUBLISH_PORT:-3000}:3000"
     environment:
       DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/86d"
       DATABASE_URL_UNPOOLED: "postgresql://postgres:postgres@postgres:5432/86d"

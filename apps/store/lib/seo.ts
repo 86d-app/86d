@@ -330,7 +330,7 @@ export const fetchBlogPostForSeo = cache(
 		const row = await db.moduleData.findFirst({
 			where: {
 				moduleId,
-				entityType: "blogPost",
+				entityType: "post",
 				data: {
 					path: ["slug"],
 					equals: slug,
@@ -366,7 +366,7 @@ export async function fetchBlogPostSlugsForSitemap(): Promise<SitemapEntry[]> {
 	const rows = await db.moduleData.findMany({
 		where: {
 			moduleId,
-			entityType: "blogPost",
+			entityType: "post",
 			data: {
 				path: ["status"],
 				equals: "published",
@@ -478,7 +478,7 @@ export async function fetchBlogPostsForLlms(): Promise<
 	const rows = await db.moduleData.findMany({
 		where: {
 			moduleId,
-			entityType: "blogPost",
+			entityType: "post",
 			data: { path: ["status"], equals: "published" },
 		},
 		orderBy: { createdAt: "desc" },

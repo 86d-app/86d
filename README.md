@@ -17,6 +17,8 @@
 > [!WARNING]
 > This project is under active development and is not ready for production use. Please proceed with caution. Use at your own risk. 
 
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/WKYLrk?referralCode=zU4Wyt&utm_medium=integration&utm_source=template&utm_campaign=generic)
+
 Modular open-source commerce platform. Bun + Turborepo monorepo.
 
 ## Prerequisites
