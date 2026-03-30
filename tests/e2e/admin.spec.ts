@@ -216,6 +216,51 @@ test.describe("Store Admin — Module Pages", () => {
 	}
 });
 
+test.describe("Store Admin — Named Module Smoke", () => {
+	test.beforeEach(async ({ admin }) => {
+		await admin.signIn();
+	});
+
+	const moduleRoutes = [
+		{ heading: /Bulk Pricing/i, path: "/admin/bulk-pricing" },
+		{ heading: /Wish/i, path: "/admin/wish" },
+		{ heading: /Kiosk Overview/i, path: "/admin/kiosk" },
+		{ heading: /Kiosk Stations/i, path: "/admin/kiosk/stations" },
+	];
+
+	for (const { heading, path } of moduleRoutes) {
+		test(`${path} loads without loader or client errors`, async ({ admin }) => {
+			const consoleErrors: string[] = [];
+			const pageErrors: string[] = [];
+
+			admin.page.on("console", (message) => {
+				if (message.type() === "error") {
+					consoleErrors.push(message.text());
+				}
+			});
+			admin.page.on("pageerror", (error) => {
+				pageErrors.push(error.message);
+			});
+
+			await admin.page.goto(path);
+			await admin.page.waitForLoadState("networkidle");
+
+			await expect(
+				admin.page.locator("h1, h2").filter({ hasText: heading }).first(),
+			).toBeVisible({ timeout: 10_000 });
+			await expect(
+				admin.page.getByText("Failed to load admin page"),
+			).toHaveCount(0);
+			await expect(
+				admin.page.getByText(/encountered an error/i),
+			).toHaveCount(0);
+
+			expect(pageErrors, pageErrors.join("\n")).toEqual([]);
+			expect(consoleErrors, consoleErrors.join("\n")).toEqual([]);
+		});
+	}
+});
+
 test.describe("Store Admin — Access Control", () => {
 	test("403 page shows correct error UI elements", async ({ page }) => {
 		/* Directly check the 403 page structure — if accessing admin

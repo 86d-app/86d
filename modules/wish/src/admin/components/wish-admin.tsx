@@ -6,7 +6,7 @@ import WishAdminTemplate from "./wish-admin.mdx";
 function useWishAdminApi() {
 	const client = useModuleClient();
 	return {
-		listProducts: client.module("wish").admin["/admin/wish"],
+		listProducts: client.module("wish").admin["/admin/wish/products"],
 	};
 }
 

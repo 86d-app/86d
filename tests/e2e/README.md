@@ -50,9 +50,9 @@ Tests use page-object fixtures from `fixtures/test-fixtures.ts`:
 
 Run `bun run db:seed` to create:
 - Admin user (`admin@example.com` / `password123`)
-- 8 demo products across 6 categories
-- 3 collections (Featured, New Arrivals, Best Sellers)
-- 2 demo customers, store settings, inventory, navigation, 1 demo order
+- 16 luxury demo products across 6 categories
+- 6 collections (House Icons, Leather Atelier, Timepiece Gallery, Travel Salon, Evening Edit, Gift Selection)
+- 3 demo customers, brand/content/merchandising data, store settings, inventory, navigation, and 1 demo order
 
 ## Conventions
 

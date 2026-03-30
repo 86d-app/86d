@@ -1,6 +1,7 @@
 "use client";
 
 import { adminComponentLoaders } from "generated/admin-loaders";
+import { resolveAdminRouteComponent } from "./admin-component-loader";
 import {
 	Component as ReactComponent,
 	Suspense,
@@ -69,6 +70,9 @@ export function AdminModuleRouteClient({
 	const [error, setError] = useState<Error | null>(null);
 
 	useEffect(() => {
+		setComponent(null);
+		setError(null);
+
 		const loader = adminComponentLoaders[moduleId];
 		if (!loader) {
 			setError(new Error(`No admin loader for module: ${moduleId}`));
@@ -76,19 +80,12 @@ export function AdminModuleRouteClient({
 		}
 		loader()
 			.then((mod) => {
-				const C = (
-					mod as Record<
-						string,
-						React.ComponentType<{ params?: Record<string, string> }>
-					>
-				)[component];
-				if (!C) {
-					setError(
-						new Error(`Component ${component} not found in module ${moduleId}`),
-					);
-					return;
-				}
-				setComponent(() => C);
+				const resolved = resolveAdminRouteComponent(
+					mod as Record<string, unknown>,
+					moduleId,
+					component,
+				);
+				setComponent(() => resolved);
 			})
 			.catch(setError);
 	}, [moduleId, component]);

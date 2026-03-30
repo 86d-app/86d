@@ -32,6 +32,13 @@ export {
 	validateContracts,
 } from "./contracts";
 export {
+	formatModuleClientEndpointReferenceConflicts,
+	validateModuleClientEndpointReferences,
+	type ModuleClientEndpointReference,
+	type ModuleClientEndpointReferenceConflict,
+	type ModuleClientEndpointSurface,
+} from "./endpoint-references";
+export {
 	formatPathConflicts,
 	validateUniquePaths,
 	type ModulePathConflict,

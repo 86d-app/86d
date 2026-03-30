@@ -22,10 +22,11 @@ import { execSync } from "node:child_process";
 import {
 	existsSync,
 	mkdirSync,
+	readdirSync,
 	readFileSync,
 	writeFileSync,
 } from "node:fs";
-import { join, resolve } from "node:path";
+import { join, relative, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import {
 	detectCircularDependencies,
@@ -40,8 +41,12 @@ import {
 } from "@86d-app/registry";
 import type { ResolvedModule } from "@86d-app/registry";
 import {
+	formatModuleClientEndpointReferenceConflicts,
 	formatPathConflicts,
+	validateModuleClientEndpointReferences,
 	validateUniquePaths,
+	type ModuleClientEndpointReference,
+	type ModuleClientEndpointReferenceConflict,
 	type Module,
 	type ModulePathSource,
 } from "@86d-app/core";
@@ -1138,6 +1143,89 @@ function extractEndpointMappings(moduleName: string): {
 	return result;
 }
 
+function walkTypeScriptFiles(dirPath: string): string[] {
+	if (!existsSync(dirPath)) return [];
+
+	const entries = readdirSync(dirPath, { withFileTypes: true });
+	const files: string[] = [];
+
+	for (const entry of entries) {
+		const fullPath = join(dirPath, entry.name);
+		if (entry.isDirectory()) {
+			files.push(...walkTypeScriptFiles(fullPath));
+			continue;
+		}
+		if (entry.isFile() && /\.(ts|tsx)$/.test(entry.name)) {
+			files.push(fullPath);
+		}
+	}
+
+	return files;
+}
+
+const moduleClientReferenceRegex =
+	/client\.module\((["'])([^"'`]+)\1\)\.(admin|store)\[(["'])(\/[^"'`]+)\4\]/g;
+
+function collectModuleClientEndpointReferences(
+	moduleName: string,
+	moduleId: string,
+): ModuleClientEndpointReference[] {
+	if (getModuleType(moduleName) !== "workspace") return [];
+
+	const shortName = moduleName.replace("@86d-app/", "");
+	const moduleDir = join(WORKSPACE_ROOT, "modules", shortName, "src");
+	const componentDirs = [
+		join(moduleDir, "admin", "components"),
+		join(moduleDir, "store", "components"),
+	];
+
+	const references: ModuleClientEndpointReference[] = [];
+
+	for (const componentDir of componentDirs) {
+		for (const filePath of walkTypeScriptFiles(componentDir)) {
+			const source = readFileSync(filePath, "utf-8");
+			moduleClientReferenceRegex.lastIndex = 0;
+
+			let match: RegExpExecArray | null;
+			while ((match = moduleClientReferenceRegex.exec(source)) !== null) {
+				const [, , referencedModuleId, surface, , path] = match;
+				if (referencedModuleId !== moduleId) continue;
+
+				references.push({
+					moduleId,
+					filePath: relative(WORKSPACE_ROOT, filePath),
+					surface: surface as ModuleClientEndpointReference["surface"],
+					path,
+				});
+			}
+		}
+	}
+
+	return references;
+}
+
+function validateWorkspaceModuleClientEndpointReferences(
+	moduleNames: string[],
+	pathSources: ModulePathSource[],
+) {
+	const conflicts: ModuleClientEndpointReferenceConflict[] = [];
+
+	for (const moduleName of moduleNames) {
+		if (getModuleType(moduleName) !== "workspace") continue;
+
+		const moduleId = getModuleIdFromWorkspace(moduleName);
+		const source = pathSources.find((entry) => entry.moduleId === moduleId);
+		if (!source) continue;
+
+		const references = collectModuleClientEndpointReferences(moduleName, moduleId);
+		conflicts.push(
+			...validateModuleClientEndpointReferences(source, references),
+		);
+	}
+
+	return conflicts;
+}
+
 async function loadModuleDefinition(
 	moduleName: string,
 	options: Record<string, unknown>,
@@ -1548,6 +1636,19 @@ async function runGenerators() {
 		const messages = formatPathConflicts(pathConflicts);
 		throw new Error(
 			`Module path conflicts:\n${messages.map((message) => `  - ${message}`).join("\n")}`,
+		);
+	}
+	const moduleClientEndpointConflicts =
+		validateWorkspaceModuleClientEndpointReferences(
+			moduleNames,
+			_cachedPathSources,
+		);
+	if (moduleClientEndpointConflicts.length > 0) {
+		const messages = formatModuleClientEndpointReferenceConflicts(
+			moduleClientEndpointConflicts,
+		);
+		throw new Error(
+			`Module client endpoint references are invalid:\n${messages.map((message) => `  - ${message}`).join("\n")}`,
 		);
 	}
 

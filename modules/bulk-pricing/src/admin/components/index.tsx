@@ -16,7 +16,7 @@ interface BulkPriceRule {
 function useBulkPricingApi() {
 	const client = useModuleClient();
 	return {
-		list: client.module("bulk-pricing").admin["/admin/bulk-pricing"],
+		list: client.module("bulk-pricing").admin["/admin/bulk-pricing/rules"],
 	};
 }
 

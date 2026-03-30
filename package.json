@@ -29,6 +29,7 @@
 		"release": "turbo run build --filter=./packages/* --filter=./modules/* && changeset publish --provenance",
 		"86d": "tsx packages/cli/src/index.ts",
 		"db:seed": "dotenv -- tsx scripts/seed.ts",
+		"seed:fetch-luxury-assets": "tsx scripts/seed/fetch-luxury-stock-assets.ts",
 		"bump-version": "tsx scripts/bump-version.ts"
 	},
 	"dependencies": {
@@ -50,6 +51,7 @@
 		"@vitest/coverage-v8": "^4.0.16",
 		"dotenv-cli": "catalog:",
 		"pg": "^8.20.0",
+		"sharp": "^0.34.5",
 		"turbo": "^2.8.20",
 		"type-fest": "catalog:",
 		"typescript": "catalog:",
