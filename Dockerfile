@@ -43,7 +43,13 @@ RUN mkdir -p modules && \
 
 # Hoisted linker only in Docker: avoids isolated-install resolution issues (e.g. tsc in packages/utils)
 # on Linux/Railway; local dev keeps Bun's default workspace linker from bun.lock configVersion.
-RUN bun install --ignore-scripts --frozen-lockfile --linker hoisted
+RUN for attempt in 1 2 3; do \
+      bun install --ignore-scripts --frozen-lockfile && exit 0; \
+      echo "bun install failed (attempt ${attempt}/3), retrying..." >&2; \
+      sleep 2; \
+    done; \
+    echo "bun install failed after 3 attempts" >&2; \
+    exit 1
 
 # ── Stage 2: Build ─────────────────────────────────────────────────────────
 FROM oven/bun:1.3.6 AS builder
@@ -51,6 +57,13 @@ WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+RUN for attempt in 1 2 3; do \
+      bun install --ignore-scripts --frozen-lockfile && exit 0; \
+      echo "bun install failed (attempt ${attempt}/3), retrying..." >&2; \
+      sleep 2; \
+    done; \
+    echo "bun install failed after 3 attempts" >&2; \
+    exit 1
 
 # Generate Prisma client
 RUN cd packages/core && bunx prisma generate --schema prisma
@@ -68,9 +81,19 @@ RUN bun run build:store
 # Separate stage so we can copy node_modules/prisma into the slim runner
 FROM oven/bun:1.3.6 AS prisma-installer
 WORKDIR /app
-# prisma: runtime migrations. pg: used by seed.ts via raw SQL.
-RUN echo '{"dependencies":{"prisma":"7.3.0","pg":"8.20.0"}}' > package.json && \
+RUN echo '{"dependencies":{"prisma":"7.3.0"}}' > package.json && \
     bun install --ignore-scripts
+
+# ── Stage 3b: Full `pg` tree for seed.ts ───────────────────────────────────
+# Standalone image + a lone `pg` copy is missing hoisted deps (e.g. pg-types).
+FROM oven/bun:1.3.6 AS pg-export
+WORKDIR /app
+RUN echo '{"dependencies":{"pg":"8.20.0"}}' > package.json && bun install --ignore-scripts
+RUN mkdir -p /export && cd node_modules && \
+    for d in pg pg-connection-string pg-int8 pg-pool pg-protocol pg-types pgpass \
+      postgres-array postgres-bytea postgres-date postgres-interval xtend; do \
+      if [ -e "$d" ]; then cp -aL "$d" "/export/$d"; fi; \
+    done
 
 # ── Stage 4: Production runtime ────────────────────────────────────────────
 FROM oven/bun:1.3.6-slim AS runner
@@ -105,16 +128,27 @@ COPY --from=builder /app/packages/core/src/prisma ./packages/core/src/prisma
 # overwrites Next standalone hoists (e.g. @prisma/instrumentation) and breaks symlinks under
 # apps/store/.next/node_modules → import-in-the-middle ENOENT at runtime.
 COPY --from=prisma-installer /app/node_modules/prisma /tmp/prisma-only/prisma
-COPY --from=prisma-installer /app/node_modules/pg /tmp/prisma-only/pg
+COPY --from=pg-export /export /tmp/pg-export
 RUN set -e; \
-    rm -rf ./node_modules/prisma ./node_modules/pg 2>/dev/null || true; \
+    rm -rf ./node_modules/prisma ./node_modules/pg ./node_modules/pg-connection-string \
+      ./node_modules/pg-int8 ./node_modules/pg-pool ./node_modules/pg-protocol \
+      ./node_modules/pg-types ./node_modules/pgpass ./node_modules/postgres-array \
+      ./node_modules/postgres-bytea ./node_modules/postgres-date ./node_modules/postgres-interval \
+      ./node_modules/xtend 2>/dev/null || true; \
     cp -a /tmp/prisma-only/prisma ./node_modules/prisma && \
-    cp -a /tmp/prisma-only/pg ./node_modules/pg && \
-    rm -rf /tmp/prisma-only
+    cp -a /tmp/pg-export/. ./node_modules/ && \
+    rm -rf /tmp/prisma-only /tmp/pg-export
 
 # Copy seed script and its dependencies
 COPY --from=builder /app/scripts/seed.ts ./scripts/seed.ts
+COPY --from=builder /app/scripts/seed ./scripts/seed
+COPY --from=builder /app/scripts/seed-assets ./scripts/seed-assets
 COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/packages/storage ./packages/storage
+COPY --from=builder /app/packages/storage/node_modules/zod ./packages/storage/node_modules/zod
+RUN \
+    mkdir -p ./node_modules/@86d-app && \
+    ln -sfn ../../packages/storage ./node_modules/@86d-app/storage
 
 # Copy entrypoint
 COPY docker/entrypoint.sh /app/entrypoint.sh

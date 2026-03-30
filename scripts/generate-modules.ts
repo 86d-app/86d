@@ -40,16 +40,6 @@ import {
 	writeLockfile,
 } from "@86d-app/registry";
 import type { ResolvedModule } from "@86d-app/registry";
-import {
-	formatModuleClientEndpointReferenceConflicts,
-	formatPathConflicts,
-	validateModuleClientEndpointReferences,
-	validateUniquePaths,
-	type ModuleClientEndpointReference,
-	type ModuleClientEndpointReferenceConflict,
-	type Module,
-	type ModulePathSource,
-} from "@86d-app/core";
 
 interface PackageJson {
 	dependencies?: Record<string, string>;
@@ -61,6 +51,54 @@ interface ModuleInfo {
 	packageName: string;
 	hasComponents: boolean;
 	type: "workspace" | "npm";
+}
+
+type ModuleClientEndpointSurface = "admin" | "store";
+
+interface ModuleClientEndpointReference {
+	moduleId: string;
+	filePath: string;
+	surface: ModuleClientEndpointSurface;
+	path: string;
+}
+
+interface ModuleClientEndpointReferenceConflict {
+	moduleId: string;
+	filePath: string;
+	surface: ModuleClientEndpointSurface;
+	path: string;
+}
+
+type ModulePathKind =
+	| "admin_page"
+	| "store_page"
+	| "admin_endpoint"
+	| "store_endpoint";
+
+interface ModulePathSource {
+	moduleId: string;
+	adminPages?: string[];
+	storePages?: string[];
+	adminEndpoints?: string[];
+	storeEndpoints?: string[];
+}
+
+interface ModulePathConflict {
+	kind: ModulePathKind;
+	path: string;
+	moduleIds: string[];
+}
+
+interface Module {
+	id: string;
+	version: string;
+	admin?: { pages?: Array<{ path: string }> };
+	store?: { pages?: Array<{ path: string }> };
+	endpoints?: {
+		admin?: Record<string, unknown>;
+		store?: Record<string, unknown>;
+	};
+	search?: { admin?: string; store?: string };
 }
 
 const WORKSPACE_ROOT = resolve(import.meta.dirname, "..");
@@ -75,6 +113,101 @@ const ADMIN_LOADERS_PATH = join(GENERATED_DIR, "admin-loaders.ts");
 const STORE_LOADERS_PATH = join(GENERATED_DIR, "store-loaders.ts");
 const TRANSPILE_PACKAGES_PATH = join(GENERATED_DIR, "transpile-packages.json");
 const PACKAGE_JSON_PATH = join(STORE_ROOT, "package.json");
+
+function validateUniquePaths(sources: ModulePathSource[]): ModulePathConflict[] {
+	const collect = (
+		kind: ModulePathKind,
+		getPaths: (source: ModulePathSource) => string[] | undefined,
+	): ModulePathConflict[] => {
+		const ownersByPath = new Map<string, string[]>();
+		for (const source of sources) {
+			for (const path of getPaths(source) ?? []) {
+				const owners = ownersByPath.get(path);
+				if (owners) owners.push(source.moduleId);
+				else ownersByPath.set(path, [source.moduleId]);
+			}
+		}
+		return [...ownersByPath.entries()]
+			.filter(([, moduleIds]) => moduleIds.length > 1)
+			.sort((a, b) => a[0].localeCompare(b[0]))
+			.map(([path, moduleIds]) => ({ kind, path, moduleIds }));
+	};
+
+	return [
+		...collect("admin_page", (source) => source.adminPages),
+		...collect("store_page", (source) => source.storePages),
+		...collect("admin_endpoint", (source) => source.adminEndpoints),
+		...collect("store_endpoint", (source) => source.storeEndpoints),
+	];
+}
+
+function formatPathConflicts(conflicts: ModulePathConflict[]): string[] {
+	const describeKind = (kind: ModulePathKind): string => {
+		switch (kind) {
+			case "admin_page":
+				return "admin page";
+			case "store_page":
+				return "store page";
+			case "admin_endpoint":
+				return "admin endpoint";
+			case "store_endpoint":
+				return "store endpoint";
+		}
+	};
+
+	return conflicts.map((conflict) => {
+		const uniqueModuleIds = [...new Set(conflict.moduleIds)];
+		const kind = describeKind(conflict.kind);
+		if (uniqueModuleIds.length === 1) {
+			return `Module "${uniqueModuleIds[0]}" declares ${kind} "${conflict.path}" multiple times.`;
+		}
+		return `Modules ${uniqueModuleIds.map((moduleId) => `"${moduleId}"`).join(", ")} all declare ${kind} "${conflict.path}".`;
+	});
+}
+
+function validateModuleClientEndpointReferences(
+	source: ModulePathSource,
+	references: ModuleClientEndpointReference[],
+): ModuleClientEndpointReferenceConflict[] {
+	const seen = new Set<string>();
+	const conflicts: ModuleClientEndpointReferenceConflict[] = [];
+
+	for (const reference of references) {
+		if (reference.moduleId !== source.moduleId) continue;
+		const availablePaths = new Set(
+			reference.surface === "admin"
+				? source.adminEndpoints ?? []
+				: source.storeEndpoints ?? [],
+		);
+		if (availablePaths.has(reference.path)) continue;
+		const key = [
+			reference.moduleId,
+			reference.filePath,
+			reference.surface,
+			reference.path,
+		].join("\0");
+		if (seen.has(key)) continue;
+		seen.add(key);
+		conflicts.push(reference);
+	}
+
+	return conflicts.sort((a, b) => {
+		const fileComparison = a.filePath.localeCompare(b.filePath);
+		if (fileComparison !== 0) return fileComparison;
+		const surfaceComparison = a.surface.localeCompare(b.surface);
+		if (surfaceComparison !== 0) return surfaceComparison;
+		return a.path.localeCompare(b.path);
+	});
+}
+
+function formatModuleClientEndpointReferenceConflicts(
+	conflicts: ModuleClientEndpointReferenceConflict[],
+): string[] {
+	return conflicts.map((conflict) => {
+		const surface = conflict.surface === "admin" ? "admin endpoint" : "store endpoint";
+		return `Module "${conflict.moduleId}" references missing ${surface} "${conflict.path}" in "${conflict.filePath}".`;
+	});
+}
 
 /**
  * Ensure a directory exists, creating it if necessary

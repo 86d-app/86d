@@ -23,7 +23,10 @@ import { createHash, randomBytes, scryptSync } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { extname, resolve } from "node:path";
 import pg from "pg";
-import { createStorageFromEnv, type StorageProvider } from "@86d-app/storage";
+import {
+	createStorageFromEnv,
+	type StorageProvider,
+} from "../packages/storage/src/index.ts";
 import {
 	activityEvents,
 	announcement,
@@ -150,6 +153,14 @@ type AssetResolver = {
 	resolveUrl(relativePath: string): Promise<string>;
 };
 
+function shouldProxyUploadUrls(): boolean {
+	return (process.env.STORAGE_PUBLIC_URL_MODE ?? "direct") === "proxy";
+}
+
+function buildPublicUploadUrl(key: string): string {
+	return `/uploads/${key}`;
+}
+
 function createAssetResolver(storage: StorageProvider): AssetResolver {
 	const cache = new Map<string, string>();
 
@@ -166,8 +177,11 @@ function createAssetResolver(storage: StorageProvider): AssetResolver {
 				content,
 				contentType: mimeTypeForPath(relativePath),
 			});
-			cache.set(relativePath, result.url);
-			return result.url;
+			const publicUrl = shouldProxyUploadUrls()
+				? buildPublicUploadUrl(key)
+				: result.url;
+			cache.set(relativePath, publicUrl);
+			return publicUrl;
 		},
 	};
 }
@@ -486,26 +500,27 @@ async function resetManagedModuleData(client: pg.PoolClient) {
 }
 
 async function resolveProducts(assets: AssetResolver): Promise<ResolvedProduct[]> {
-	return Promise.all(
-		products.map(async (product) => {
-			const images = await Promise.all(
-				product.imagePaths.map((relativePath) => assets.resolveUrl(relativePath)),
-			);
-			const variantRecords = product.variants.map((variant) => ({
-				...variant,
-				id: variantIdByKey[variant.key],
-				productId: productIds[product.key],
-			}));
-			return {
-				...product,
-				id: productIds[product.key],
-				categoryId: categoryIds[product.categoryKey],
-				inventory: variantRecords.reduce((sum, variant) => sum + variant.inventory, 0),
-				images,
-				variantRecords,
-			};
-		}),
-	);
+	const resolvedProducts: ResolvedProduct[] = [];
+	for (const product of products) {
+		const images: string[] = [];
+		for (const relativePath of product.imagePaths) {
+			images.push(await assets.resolveUrl(relativePath));
+		}
+		const variantRecords = product.variants.map((variant) => ({
+			...variant,
+			id: variantIdByKey[variant.key],
+			productId: productIds[product.key],
+		}));
+		resolvedProducts.push({
+			...product,
+			id: productIds[product.key],
+			categoryId: categoryIds[product.categoryKey],
+			inventory: variantRecords.reduce((sum, variant) => sum + variant.inventory, 0),
+			images,
+			variantRecords,
+		});
+	}
+	return resolvedProducts;
 }
 
 async function seedProducts(client: pg.PoolClient, assets: AssetResolver) {

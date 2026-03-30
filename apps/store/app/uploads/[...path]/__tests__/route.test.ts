@@ -107,6 +107,41 @@ describe("/uploads route", () => {
 		expect(mocks.getUrl).toHaveBeenCalledWith("stores/store-123/object");
 	});
 
+	it("proxies deeply nested seed asset paths", async () => {
+		process.env.STORAGE_PROVIDER = "s3";
+		process.env.STORAGE_PUBLIC_URL_MODE = "proxy";
+		mocks.getUrl.mockReturnValue(
+			"http://minio:9000/86d-uploads/stores/store-123/seed/luxury-house/blog/inside-the-atelier.webp",
+		);
+		vi.spyOn(globalThis, "fetch").mockResolvedValue(
+			new Response(PNG_BYTES, {
+				status: 200,
+				headers: {
+					"Content-Type": "image/webp",
+				},
+			}),
+		);
+
+		const { GET } = await import("../route");
+		const response = await GET(new Request("http://localhost/uploads/test"), {
+			params: Promise.resolve({
+				path: [
+					"stores",
+					"store-123",
+					"seed",
+					"luxury-house",
+					"blog",
+					"inside-the-atelier.webp",
+				],
+			}),
+		});
+
+		expect(response.status).toBe(200);
+		expect(mocks.getUrl).toHaveBeenCalledWith(
+			"stores/store-123/seed/luxury-house/blog/inside-the-atelier.webp",
+		);
+	});
+
 	it("adds attachment headers for proxied PDFs", async () => {
 		process.env.STORAGE_PROVIDER = "s3";
 		process.env.STORAGE_PUBLIC_URL_MODE = "proxy";
