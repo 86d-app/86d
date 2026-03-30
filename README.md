@@ -21,7 +21,7 @@ Modular open-source commerce platform. Bun + Turborepo monorepo.
 
 ## Deploy
 
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/WKYLrk?referralCode=zU4Wyt&utm_medium=integration&utm_source=template&utm_campaign=generic)
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/86d?referralCode=zU4Wyt&utm_medium=integration&utm_source=template&utm_campaign=generic)
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2F86d-app%2F86d)
 
