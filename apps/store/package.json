@@ -6,7 +6,7 @@
 	"scripts": {
 		"build": "next build",
 		"check": "biome check .",
-		"check:fix": "biome check --write .",
+		"check:fix": "biome check --write --unsafe .",
 		"clean": "git clean -xdf .cache .turbo dist node_modules .next .tw-patch logs certificates tsconfig.tsbuildinfo",
 		"dev": "next dev --turbo",
 		"dev:https": "next dev --turbo --experimental-https",

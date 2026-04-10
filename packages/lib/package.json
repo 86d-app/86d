@@ -26,7 +26,7 @@
 		"test": "vitest run",
 		"clean": "git clean -xdf .cache .turbo dist node_modules",
 		"check": "biome check src",
-		"check:fix": "biome check --write src",
+		"check:fix": "biome check --write --unsafe src",
 		"typecheck": "tsc --noEmit --emitDeclarationOnly false"
 	},
 	"devDependencies": {

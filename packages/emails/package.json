@@ -28,7 +28,7 @@
 	"scripts": {
 		"build": "tsc",
 		"check": "biome check src",
-		"check:fix": "biome check --write src",
+		"check:fix": "biome check --write --unsafe src",
 		"clean": "git clean -xdf .cache .turbo dist node_modules",
 		"test": "vitest run",
 		"typecheck": "tsc --noEmit --emitDeclarationOnly false"

@@ -10,7 +10,7 @@
 	"scripts": {
 		"build": "tsc",
 		"check": "biome check src",
-		"check:fix": "biome check --write src",
+		"check:fix": "biome check --write --unsafe src",
 		"test": "vitest run",
 		"test:watch": "vitest watch",
 		"typecheck": "tsc --noEmit --emitDeclarationOnly false"
