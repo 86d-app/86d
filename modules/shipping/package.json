@@ -1,6 +1,6 @@
 {
 	"name": "@86d-app/shipping",
-	"version": "0.0.25",
+	"version": "0.0.26",
 	"description": "Shipping zones and rates module for 86d commerce platform",
 	"keywords": [
 		"commerce",

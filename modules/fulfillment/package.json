@@ -1,6 +1,6 @@
 {
 	"name": "@86d-app/fulfillment",
-	"version": "0.0.25",
+	"version": "0.0.26",
 	"description": "Order fulfillment management for 86d commerce platform",
 	"keywords": [
 		"commerce",

@@ -1,6 +1,6 @@
 {
 	"name": "@86d-app/braintree",
-	"version": "0.0.25",
+	"version": "0.0.26",
 	"description": "Braintree payment provider for 86d commerce platform",
 	"keywords": [
 		"commerce",
