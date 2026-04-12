@@ -26,11 +26,11 @@ export function AnnouncementDetail({ id }: { id: string }) {
 	const api = useAnnouncementsAdminApi();
 	const [error, setError] = useState("");
 
-	const query = api.getAnnouncement.useQuery({ params: { id } });
+	const announcementQuery = api.getAnnouncement.useQuery({ params: { id } });
 	const toggleMutation = api.updateAnnouncement.useMutation();
 	const deleteMutation = api.deleteAnnouncement.useMutation();
 
-	const announcement = query.data?.announcement as
+	const announcement = announcementQuery.data?.announcement as
 		| {
 				id: string;
 				title: string;
@@ -63,7 +63,7 @@ export function AnnouncementDetail({ id }: { id: string }) {
 				params: { id },
 				body: { isActive: !announcement.isActive },
 			});
-			query.refetch();
+			void announcementQuery.refetch();
 		} catch (err) {
 			setError(extractError(err));
 		}
@@ -78,7 +78,7 @@ export function AnnouncementDetail({ id }: { id: string }) {
 		}
 	}
 
-	if (query.isLoading) return <p>Loading...</p>;
+	if (announcementQuery.isLoading) return <p>Loading...</p>;
 	if (!announcement) return <p>Announcement not found</p>;
 
 	return (
