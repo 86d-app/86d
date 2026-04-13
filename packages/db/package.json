@@ -23,6 +23,7 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "catalog:",
+		"@types/node": "catalog:node",
 		"typescript": "catalog:"
 	}
 }

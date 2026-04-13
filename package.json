@@ -28,6 +28,7 @@
 		"version-packages": "changeset version",
 		"release": "turbo run build --filter=./packages/* --filter=./modules/* && changeset publish --provenance",
 		"86d": "tsx packages/cli/src/index.ts",
+		"prisma": "cd packages/db && dotenv -e ../../.env -- bun run prisma",
 		"db:seed": "dotenv -- tsx scripts/seed.ts",
 		"seed:fetch-luxury-assets": "tsx scripts/seed/fetch-luxury-stock-assets.ts",
 		"bump-version": "tsx scripts/bump-version.ts"
