@@ -3,16 +3,35 @@
 import { useModuleClient } from "@86d-app/core/client";
 import AnalyticsSettingsTemplate from "./analytics-settings.mdx";
 
-interface ProviderStatus {
+type ConnectionStatus = "connected" | "not_configured" | "error";
+
+interface GtmStatus {
 	configured: boolean;
 	provider: string;
-	containerId?: string | null;
-	dsn?: string | null;
+	containerId: string | null;
+}
+
+interface Ga4Status {
+	status: ConnectionStatus;
+	error?: string;
+	configured: boolean;
+	provider: string;
+	measurementId: string | null;
+}
+
+interface SentryStatus {
+	status: ConnectionStatus;
+	error?: string;
+	configured: boolean;
+	provider: string;
+	dsn: string | null;
+	host: string | null;
 }
 
 interface SettingsData {
-	gtm: ProviderStatus;
-	sentry: ProviderStatus;
+	gtm: GtmStatus;
+	ga4: Ga4Status;
+	sentry: SentryStatus;
 }
 
 function useAnalyticsSettingsApi() {

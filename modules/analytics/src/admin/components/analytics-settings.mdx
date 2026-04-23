@@ -65,10 +65,15 @@
               <p className="text-muted-foreground text-sm">Server-side event forwarding to Google Analytics 4</p>
             </div>
           </div>
-          {props.data?.ga4?.configured ? (
+          {props.data?.ga4?.status === "connected" ? (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/10 px-3 py-1 font-medium text-green-600 text-xs dark:text-green-400">
               <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
               Connected
+            </span>
+          ) : props.data?.ga4?.status === "error" ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/10 px-3 py-1 font-medium text-red-600 text-xs dark:text-red-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+              Error
             </span>
           ) : (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-3 py-1 font-medium text-amber-600 text-xs dark:text-amber-400">
@@ -77,12 +82,16 @@
             </span>
           )}
         </div>
-        {props.data?.ga4?.configured ? (
+        {props.data?.ga4?.status === "connected" ? (
           <div className="mt-4 rounded-md bg-muted/30 p-3">
             <div>
               <p className="text-muted-foreground text-xs">Measurement ID</p>
               <p className="mt-0.5 font-mono text-foreground text-sm">{props.data.ga4.measurementId}</p>
             </div>
+          </div>
+        ) : props.data?.ga4?.status === "error" ? (
+          <div className="mt-4 rounded-md border border-red-500/40 bg-red-500/5 p-3 text-red-700 text-sm dark:text-red-300">
+            {props.data.ga4.error ?? "Could not reach the GA4 Measurement Protocol. Check your measurement ID and API secret."}
           </div>
         ) : (
           <p className="mt-3 text-muted-foreground text-sm">
@@ -102,10 +111,15 @@
               <p className="text-muted-foreground text-sm">Error tracking and performance monitoring</p>
             </div>
           </div>
-          {props.data?.sentry.configured ? (
+          {props.data?.sentry.status === "connected" ? (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/10 px-3 py-1 font-medium text-green-600 text-xs dark:text-green-400">
               <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
               Connected
+            </span>
+          ) : props.data?.sentry.status === "error" ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/10 px-3 py-1 font-medium text-red-600 text-xs dark:text-red-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+              Error
             </span>
           ) : (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-3 py-1 font-medium text-amber-600 text-xs dark:text-amber-400">
@@ -114,12 +128,22 @@
             </span>
           )}
         </div>
-        {props.data?.sentry.configured ? (
-          <div className="mt-4 rounded-md bg-muted/30 p-3">
+        {props.data?.sentry.status === "connected" ? (
+          <div className="mt-4 rounded-md bg-muted/30 p-3 space-y-2">
             <div>
               <p className="text-muted-foreground text-xs">DSN</p>
               <p className="mt-0.5 font-mono text-foreground text-sm">{props.data.sentry.dsn}</p>
             </div>
+            {props.data.sentry.host && (
+              <div>
+                <p className="text-muted-foreground text-xs">Host</p>
+                <p className="mt-0.5 font-mono text-foreground text-sm">{props.data.sentry.host}</p>
+              </div>
+            )}
+          </div>
+        ) : props.data?.sentry.status === "error" ? (
+          <div className="mt-4 rounded-md border border-red-500/40 bg-red-500/5 p-3 text-red-700 text-sm dark:text-red-300">
+            {props.data.sentry.error ?? "Sentry DSN is invalid. Check the format: https://publicKey@host/projectId"}
           </div>
         ) : (
           <p className="mt-3 text-muted-foreground text-sm">

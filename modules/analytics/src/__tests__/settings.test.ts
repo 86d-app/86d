@@ -1,163 +1,275 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
- * Tests for the analytics settings logic.
+ * Tests for the analytics settings endpoint.
  *
- * Verifies correct configuration status reporting for GTM and Sentry
- * providers across all configuration combinations.
+ * Covers: GTM presence reporting, Sentry DSN format validation,
+ * live GA4 Measurement Protocol verification, error propagation, and
+ * module factory wiring.
  */
 
-interface SettingsOptions {
-	gtmContainerId?: string | undefined;
-	sentryDsn?: string | undefined;
-	ga4MeasurementId?: string | undefined;
-	ga4Configured?: boolean | undefined;
-}
-
-/** Mirrors the logic inside createGetSettingsEndpoint without the HTTP wrapper. */
-function getSettings(options: SettingsOptions) {
-	const gtmConfigured = Boolean(options.gtmContainerId);
-	const sentryConfigured = Boolean(options.sentryDsn);
-	const ga4Configured = Boolean(options.ga4Configured);
-	return {
-		gtm: {
-			configured: gtmConfigured,
-			provider: "google-tag-manager" as const,
-			containerId: options.gtmContainerId ?? null,
-		},
-		ga4: {
-			configured: ga4Configured,
-			provider: "ga4-measurement-protocol" as const,
-			measurementId: options.ga4MeasurementId ?? null,
-		},
-		sentry: {
-			configured: sentryConfigured,
-			provider: "sentry" as const,
-			dsn: options.sentryDsn ? `${options.sentryDsn.slice(0, 20)}...` : null,
-		},
+interface SettingsResult {
+	gtm: { configured: boolean; provider: string; containerId: string | null };
+	ga4: {
+		status: "connected" | "not_configured" | "error";
+		error?: string;
+		configured: boolean;
+		provider: string;
+		measurementId: string | null;
+	};
+	sentry: {
+		status: "connected" | "not_configured" | "error";
+		error?: string;
+		configured: boolean;
+		provider: string;
+		dsn: string | null;
+		host: string | null;
 	};
 }
 
-describe("analytics — settings", () => {
+function extractHandler(
+	ep: unknown,
+): (ctx: Record<string, unknown>) => Promise<SettingsResult> {
+	const obj = ep as Record<string, unknown>;
+	const fn = typeof obj.handler === "function" ? obj.handler : ep;
+	return fn as (ctx: Record<string, unknown>) => Promise<SettingsResult>;
+}
+
+async function callGetSettings(opts: {
+	gtmContainerId?: string | undefined;
+	sentryDsn?: string | undefined;
+	ga4MeasurementId?: string | undefined;
+	ga4ApiSecret?: string | undefined;
+}): Promise<SettingsResult> {
+	const { createGetSettingsEndpoint } = await import(
+		"../admin/endpoints/get-settings"
+	);
+	const endpoint = createGetSettingsEndpoint(opts);
+	const handler = extractHandler(endpoint);
+	return handler({ context: { options: opts } });
+}
+
+describe("analytics — settings endpoint", () => {
+	let fetchSpy: ReturnType<typeof vi.fn>;
+
+	beforeEach(() => {
+		fetchSpy = vi.fn().mockResolvedValue({
+			ok: true,
+			json: () => Promise.resolve({ validationMessages: [] }),
+		});
+		vi.stubGlobal("fetch", fetchSpy);
+	});
+
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
 	describe("GTM configuration status", () => {
-		it("reports GTM as configured when containerId is provided", () => {
-			const result = getSettings({ gtmContainerId: "GTM-XXXXXXX" });
+		it("reports GTM as configured when containerId is provided", async () => {
+			const result = await callGetSettings({ gtmContainerId: "GTM-XXXXXXX" });
 			expect(result.gtm.configured).toBe(true);
 			expect(result.gtm.containerId).toBe("GTM-XXXXXXX");
 			expect(result.gtm.provider).toBe("google-tag-manager");
 		});
 
-		it("reports GTM as not configured when containerId is missing", () => {
-			const result = getSettings({});
+		it("reports GTM as not configured when containerId is missing", async () => {
+			const result = await callGetSettings({});
 			expect(result.gtm.configured).toBe(false);
 			expect(result.gtm.containerId).toBeNull();
 		});
 
-		it("reports GTM as not configured when containerId is empty string", () => {
-			const result = getSettings({ gtmContainerId: "" });
+		it("reports GTM as not configured when containerId is empty string", async () => {
+			const result = await callGetSettings({ gtmContainerId: "" });
 			expect(result.gtm.configured).toBe(false);
-		});
-
-		it("reports GTM as not configured when containerId is undefined", () => {
-			const result = getSettings({ gtmContainerId: undefined });
-			expect(result.gtm.configured).toBe(false);
-			expect(result.gtm.containerId).toBeNull();
 		});
 	});
 
-	describe("Sentry configuration status", () => {
-		it("reports Sentry as configured when DSN is provided", () => {
-			const dsn = "https://abc123@o123.ingest.sentry.io/456";
-			const result = getSettings({ sentryDsn: dsn });
+	describe("Sentry DSN validation", () => {
+		it("reports connected for a well-formed DSN", async () => {
+			const dsn = "https://abc123def@o123.ingest.sentry.io/456";
+			const result = await callGetSettings({ sentryDsn: dsn });
+			expect(result.sentry.status).toBe("connected");
 			expect(result.sentry.configured).toBe(true);
-			expect(result.sentry.provider).toBe("sentry");
+			expect(result.sentry.host).toBe("o123.ingest.sentry.io");
+			expect(result.sentry.error).toBeUndefined();
 		});
 
-		it("truncates the Sentry DSN for display", () => {
-			const dsn = "https://abc123@o123.ingest.sentry.io/456";
-			const result = getSettings({ sentryDsn: dsn });
+		it("truncates the Sentry DSN for display", async () => {
+			const dsn = "https://abc123def@o123.ingest.sentry.io/456";
+			const result = await callGetSettings({ sentryDsn: dsn });
 			expect(result.sentry.dsn).toBe(`${dsn.slice(0, 20)}...`);
 			expect(result.sentry.dsn).not.toBe(dsn);
 		});
 
-		it("reports Sentry as not configured when DSN is missing", () => {
-			const result = getSettings({});
+		it("reports not_configured when DSN is missing", async () => {
+			const result = await callGetSettings({});
+			expect(result.sentry.status).toBe("not_configured");
 			expect(result.sentry.configured).toBe(false);
 			expect(result.sentry.dsn).toBeNull();
 		});
 
-		it("reports Sentry as not configured when DSN is empty string", () => {
-			const result = getSettings({ sentryDsn: "" });
+		it("reports not_configured when DSN is empty string", async () => {
+			const result = await callGetSettings({ sentryDsn: "" });
+			expect(result.sentry.status).toBe("not_configured");
 			expect(result.sentry.configured).toBe(false);
 		});
 
-		it("reports Sentry as not configured when DSN is undefined", () => {
-			const result = getSettings({ sentryDsn: undefined });
+		it("reports error for an unparseable DSN", async () => {
+			const result = await callGetSettings({ sentryDsn: "not a url" });
+			expect(result.sentry.status).toBe("error");
 			expect(result.sentry.configured).toBe(false);
-			expect(result.sentry.dsn).toBeNull();
+			expect(result.sentry.error).toMatch(/valid URL/i);
+		});
+
+		it("reports error when DSN has no public key", async () => {
+			const result = await callGetSettings({
+				sentryDsn: "https://o123.ingest.sentry.io/456",
+			});
+			expect(result.sentry.status).toBe("error");
+			expect(result.sentry.error).toMatch(/public key/i);
+		});
+
+		it("reports error when DSN has no project id", async () => {
+			const result = await callGetSettings({
+				sentryDsn: "https://key@o123.ingest.sentry.io/",
+			});
+			expect(result.sentry.status).toBe("error");
+			expect(result.sentry.error).toMatch(/project id/i);
+		});
+
+		it("reports error when DSN project id is non-numeric", async () => {
+			const result = await callGetSettings({
+				sentryDsn: "https://key@o123.ingest.sentry.io/abc",
+			});
+			expect(result.sentry.status).toBe("error");
+			expect(result.sentry.error).toMatch(/project id/i);
 		});
 	});
 
-	describe("GA4 Measurement Protocol configuration status", () => {
-		it("reports GA4 as configured when ga4Configured is true", () => {
-			const result = getSettings({
-				ga4MeasurementId: "G-TEST123",
-				ga4Configured: true,
+	describe("GA4 live verification", () => {
+		it("reports connected when the Measurement Protocol returns no validation errors", async () => {
+			fetchSpy.mockResolvedValueOnce({
+				ok: true,
+				json: () => Promise.resolve({ validationMessages: [] }),
 			});
+
+			const result = await callGetSettings({
+				ga4MeasurementId: "G-TEST123",
+				ga4ApiSecret: "secret-xyz",
+			});
+
+			expect(result.ga4.status).toBe("connected");
 			expect(result.ga4.configured).toBe(true);
 			expect(result.ga4.measurementId).toBe("G-TEST123");
-			expect(result.ga4.provider).toBe("ga4-measurement-protocol");
+			expect(result.ga4.error).toBeUndefined();
+
+			expect(fetchSpy).toHaveBeenCalledOnce();
+			const url = fetchSpy.mock.calls[0][0] as string;
+			expect(url).toContain(
+				"https://www.google-analytics.com/debug/mp/collect",
+			);
+			expect(url).toContain("measurement_id=G-TEST123");
+			expect(url).toContain("api_secret=secret-xyz");
 		});
 
-		it("reports GA4 as not configured when ga4Configured is false", () => {
-			const result = getSettings({
-				ga4MeasurementId: "G-TEST123",
-				ga4Configured: false,
+		it("reports error when the debug endpoint returns validation messages", async () => {
+			fetchSpy.mockResolvedValueOnce({
+				ok: true,
+				json: () =>
+					Promise.resolve({
+						validationMessages: [{ description: "Measurement ID not found" }],
+					}),
 			});
-			expect(result.ga4.configured).toBe(false);
+
+			const result = await callGetSettings({
+				ga4MeasurementId: "G-WRONG",
+				ga4ApiSecret: "secret",
+			});
+
+			expect(result.ga4.status).toBe("error");
+			expect(result.ga4.error).toBe("Measurement ID not found");
 		});
 
-		it("reports GA4 as not configured when options are missing", () => {
-			const result = getSettings({});
+		it("reports error when the debug endpoint returns non-ok", async () => {
+			fetchSpy.mockResolvedValueOnce({
+				ok: false,
+				status: 401,
+			});
+
+			const result = await callGetSettings({
+				ga4MeasurementId: "G-TEST",
+				ga4ApiSecret: "bad-secret",
+			});
+
+			expect(result.ga4.status).toBe("error");
+			expect(result.ga4.error).toBe("HTTP 401");
+		});
+
+		it("reports error when fetch throws", async () => {
+			fetchSpy.mockRejectedValueOnce(new Error("Network down"));
+
+			const result = await callGetSettings({
+				ga4MeasurementId: "G-TEST",
+				ga4ApiSecret: "secret",
+			});
+
+			expect(result.ga4.status).toBe("error");
+			expect(result.ga4.error).toBe("Network down");
+		});
+
+		it("skips verification and reports not_configured when only measurement id is set", async () => {
+			const result = await callGetSettings({
+				ga4MeasurementId: "G-TEST",
+			});
+
+			expect(result.ga4.status).toBe("not_configured");
+			expect(result.ga4.configured).toBe(false);
+			expect(fetchSpy).not.toHaveBeenCalled();
+		});
+
+		it("skips verification and reports not_configured when only api secret is set", async () => {
+			const result = await callGetSettings({
+				ga4ApiSecret: "secret",
+			});
+
+			expect(result.ga4.status).toBe("not_configured");
+			expect(result.ga4.configured).toBe(false);
+			expect(fetchSpy).not.toHaveBeenCalled();
+		});
+
+		it("reports not_configured when no GA4 options are provided", async () => {
+			const result = await callGetSettings({});
+			expect(result.ga4.status).toBe("not_configured");
 			expect(result.ga4.configured).toBe(false);
 			expect(result.ga4.measurementId).toBeNull();
+			expect(fetchSpy).not.toHaveBeenCalled();
 		});
 	});
 
 	describe("combined configuration", () => {
-		it("reports all providers as configured when all are provided", () => {
-			const result = getSettings({
+		it("reports all providers as connected when each verifies successfully", async () => {
+			fetchSpy.mockResolvedValueOnce({
+				ok: true,
+				json: () => Promise.resolve({ validationMessages: [] }),
+			});
+
+			const result = await callGetSettings({
 				gtmContainerId: "GTM-ABC123",
-				sentryDsn: "https://key@sentry.io/123",
+				sentryDsn: "https://publicKey@sentry.io/123",
 				ga4MeasurementId: "G-TEST123",
-				ga4Configured: true,
+				ga4ApiSecret: "secret",
 			});
+
 			expect(result.gtm.configured).toBe(true);
-			expect(result.sentry.configured).toBe(true);
-			expect(result.ga4.configured).toBe(true);
+			expect(result.sentry.status).toBe("connected");
+			expect(result.ga4.status).toBe("connected");
 		});
 
-		it("reports no providers as configured when all are missing", () => {
-			const result = getSettings({});
+		it("reports all providers independently when none are configured", async () => {
+			const result = await callGetSettings({});
 			expect(result.gtm.configured).toBe(false);
-			expect(result.sentry.configured).toBe(false);
-			expect(result.ga4.configured).toBe(false);
-		});
-
-		it("reports only GTM when only GTM is provided", () => {
-			const result = getSettings({ gtmContainerId: "GTM-XYZ" });
-			expect(result.gtm.configured).toBe(true);
-			expect(result.sentry.configured).toBe(false);
-			expect(result.ga4.configured).toBe(false);
-		});
-
-		it("reports only Sentry when only Sentry is provided", () => {
-			const result = getSettings({
-				sentryDsn: "https://key@sentry.io/123",
-			});
-			expect(result.gtm.configured).toBe(false);
-			expect(result.sentry.configured).toBe(true);
-			expect(result.ga4.configured).toBe(false);
+			expect(result.sentry.status).toBe("not_configured");
+			expect(result.ga4.status).toBe("not_configured");
 		});
 	});
 });

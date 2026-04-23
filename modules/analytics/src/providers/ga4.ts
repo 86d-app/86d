@@ -134,4 +134,33 @@ export class GA4Provider {
 			validationMessages: Array<{ description: string }>;
 		};
 	}
+
+	/**
+	 * Verify the measurement ID and API secret work by sending a single
+	 * valid event to the debug endpoint. Returns ok when the Measurement
+	 * Protocol reports no validation errors; otherwise returns the first
+	 * validation message or the transport-level error.
+	 */
+	async verifyConnection(): Promise<
+		{ ok: true } | { ok: false; error: string }
+	> {
+		try {
+			const result = await this.validate({
+				clientId: "86d-connection-check",
+				events: [{ name: "page_view", params: {} }],
+			});
+			if (result.validationMessages.length === 0) {
+				return { ok: true };
+			}
+			return {
+				ok: false,
+				error: result.validationMessages[0].description,
+			};
+		} catch (err) {
+			return {
+				ok: false,
+				error: err instanceof Error ? err.message : "Connection failed",
+			};
+		}
+	}
 }

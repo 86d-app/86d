@@ -45,7 +45,7 @@ export default function analytics(options?: AnalyticsOptions): Module {
 		gtmContainerId: options?.gtmContainerId,
 		sentryDsn: options?.sentryDsn,
 		ga4MeasurementId: options?.ga4MeasurementId,
-		ga4Configured: Boolean(ga4Provider),
+		ga4ApiSecret: options?.ga4ApiSecret,
 	});
 
 	const clientConfigEndpoint = createClientConfigEndpoint({
