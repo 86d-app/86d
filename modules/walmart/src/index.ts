@@ -26,6 +26,8 @@ export interface WalmartOptions extends ModuleConfig {
 	clientSecret?: string;
 	/** Channel type designation provided during onboarding */
 	channelType?: string;
+	/** Use the Walmart sandbox API instead of production */
+	sandbox?: boolean;
 }
 
 export default function walmart(options?: WalmartOptions): Module {
@@ -33,6 +35,7 @@ export default function walmart(options?: WalmartOptions): Module {
 		clientId: options?.clientId,
 		clientSecret: options?.clientSecret,
 		channelType: options?.channelType,
+		sandbox: options?.sandbox,
 	});
 
 	return {

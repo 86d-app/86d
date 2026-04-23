@@ -169,6 +169,7 @@ export class WalmartProvider {
 	private readonly clientSecret: string;
 	private readonly channelType: string;
 	private readonly baseUrl: string;
+	private readonly sandbox: boolean;
 
 	private accessToken: string | null = null;
 	private tokenExpiresAt = 0;
@@ -177,7 +178,72 @@ export class WalmartProvider {
 		this.clientId = config.clientId;
 		this.clientSecret = config.clientSecret;
 		this.channelType = config.channelType ?? "";
+		this.sandbox = Boolean(config.sandbox);
 		this.baseUrl = config.sandbox ? WALMART_SANDBOX_API_BASE : WALMART_API_BASE;
+	}
+
+	/**
+	 * Verify the configured clientId and clientSecret by exchanging them for
+	 * an OAuth2 access token. Returns whether the credentials were accepted
+	 * and whether the sandbox or production endpoint was hit so admins can
+	 * tell at a glance which environment is active.
+	 */
+	async verifyConnection(): Promise<
+		{ ok: true; mode: "sandbox" | "live" } | { ok: false; error: string }
+	> {
+		try {
+			const credentials = btoa(`${this.clientId}:${this.clientSecret}`);
+			const res = await fetch(`${this.baseUrl}${WALMART_TOKEN_PATH}`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/x-www-form-urlencoded",
+					Authorization: `Basic ${credentials}`,
+					Accept: "application/json",
+					"WM_SVC.NAME": "86d-Commerce",
+					"WM_QOS.CORRELATION_ID": crypto.randomUUID(),
+				},
+				body: new URLSearchParams({
+					grant_type: "client_credentials",
+				}).toString(),
+			});
+
+			if (!res.ok) {
+				let message = `HTTP ${res.status}`;
+				try {
+					const body = (await res.json()) as WalmartApiErrorResponse & {
+						error_description?: string;
+						error?: string;
+					};
+					if (body?.error_description) {
+						message = body.error_description;
+					} else if (body?.error) {
+						message = body.error;
+					} else if (body?.errors?.[0]?.message) {
+						message = body.errors[0].message;
+					}
+				} catch {
+					// Fall back to HTTP status message
+				}
+				return { ok: false, error: message };
+			}
+
+			const data = (await res.json()) as {
+				access_token: string;
+				expires_in: number;
+				token_type: string;
+			};
+			this.accessToken = data.access_token;
+			this.tokenExpiresAt = Date.now() + (data.expires_in - 60) * 1000;
+			return {
+				ok: true,
+				mode: this.sandbox ? "sandbox" : "live",
+			};
+		} catch (err) {
+			return {
+				ok: false,
+				error: err instanceof Error ? err.message : "Connection failed",
+			};
+		}
 	}
 
 	/** Obtain a fresh OAuth2 access token via client credentials grant. */

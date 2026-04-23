@@ -62,6 +62,118 @@ describe("WalmartProvider", () => {
 		vi.restoreAllMocks();
 	});
 
+	// ── Verify connection ────────────────────────────────────────────────
+
+	describe("verifyConnection", () => {
+		it("returns ok with live mode when Walmart returns a token", async () => {
+			fetchSpy.mockResolvedValueOnce(mockFetchResponse(TOKEN_RESPONSE));
+			const result = await provider.verifyConnection();
+
+			expect(result).toEqual({ ok: true, mode: "live" });
+
+			const call = fetchSpy.mock.calls[0];
+			expect(call[0]).toBe("https://marketplace.walmartapis.com/v3/token");
+			expect(call[1].method).toBe("POST");
+			expect(call[1].body).toContain("grant_type=client_credentials");
+		});
+
+		it("returns ok with sandbox mode and hits the sandbox token endpoint", async () => {
+			const sandboxProvider = new WalmartProvider({
+				...CONFIG,
+				sandbox: true,
+			});
+			fetchSpy.mockResolvedValueOnce(mockFetchResponse(TOKEN_RESPONSE));
+
+			const result = await sandboxProvider.verifyConnection();
+
+			expect(result).toEqual({ ok: true, mode: "sandbox" });
+			expect(fetchSpy.mock.calls[0][0]).toBe(
+				"https://sandbox.walmartapis.com/v3/token",
+			);
+		});
+
+		it("returns error with Walmart message on 401", async () => {
+			fetchSpy.mockResolvedValueOnce(
+				mockFetchResponse(
+					{
+						errors: [
+							{
+								code: "INVALID_CREDENTIALS.GMP_GATEWAY_API",
+								message: "Invalid credentials",
+								severity: "ERROR",
+							},
+						],
+					},
+					401,
+				),
+			);
+			const result = await provider.verifyConnection();
+
+			expect(result).toEqual({
+				ok: false,
+				error: "Invalid credentials",
+			});
+		});
+
+		it("surfaces OAuth error_description when provided", async () => {
+			fetchSpy.mockResolvedValueOnce(
+				mockFetchResponse(
+					{
+						error: "invalid_client",
+						error_description: "Client authentication failed",
+					},
+					401,
+				),
+			);
+			const result = await provider.verifyConnection();
+
+			expect(result).toEqual({
+				ok: false,
+				error: "Client authentication failed",
+			});
+		});
+
+		it("returns error with HTTP status when body is not JSON", async () => {
+			fetchSpy.mockResolvedValueOnce({
+				ok: false,
+				status: 503,
+				json: () => Promise.reject(new Error("invalid json")),
+			});
+			const result = await provider.verifyConnection();
+
+			expect(result).toEqual({
+				ok: false,
+				error: "HTTP 503",
+			});
+		});
+
+		it("returns error when fetch throws", async () => {
+			fetchSpy.mockRejectedValueOnce(new Error("ECONNREFUSED"));
+			const result = await provider.verifyConnection();
+
+			expect(result).toEqual({
+				ok: false,
+				error: "ECONNREFUSED",
+			});
+		});
+
+		it("caches the token so subsequent API calls don't re-authenticate", async () => {
+			fetchSpy
+				.mockResolvedValueOnce(mockFetchResponse(TOKEN_RESPONSE))
+				.mockResolvedValueOnce(
+					mockFetchResponse({ ItemResponse: [], totalItems: 0 }),
+				);
+
+			const verify = await provider.verifyConnection();
+			expect(verify.ok).toBe(true);
+
+			await provider.getItems();
+
+			expect(fetchSpy).toHaveBeenCalledTimes(2);
+			expect(fetchSpy.mock.calls[1][0]).toContain("/v3/items");
+		});
+	});
+
 	// ── Authentication ─────────────────────────────────────────────────────
 
 	describe("authentication", () => {

@@ -6,6 +6,9 @@ import { useState } from "react";
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface SettingsData {
+	status: "connected" | "not_configured" | "error";
+	error?: string;
+	mode: "sandbox" | "live";
 	configured: boolean;
 	channelType: string | null;
 	clientId: string | null;
@@ -138,7 +141,7 @@ function StatCard({
 }
 
 function ConnectionStatus({ settings }: { settings: SettingsData }) {
-	if (settings.configured) {
+	if (settings.status === "connected") {
 		return (
 			<div className="flex flex-col gap-4 rounded-lg border border-border bg-card p-5">
 				<div className="flex items-center justify-between">
@@ -149,7 +152,7 @@ function ConnectionStatus({ settings }: { settings: SettingsData }) {
 						</span>
 					</div>
 					<span className="rounded-full bg-green-100 px-2.5 py-0.5 font-medium text-green-800 text-xs dark:bg-green-900/30 dark:text-green-400">
-						Active
+						{settings.mode === "sandbox" ? "Sandbox" : "Live"}
 					</span>
 				</div>
 				<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -170,6 +173,32 @@ function ConnectionStatus({ settings }: { settings: SettingsData }) {
 						</div>
 					)}
 				</div>
+			</div>
+		);
+	}
+
+	if (settings.status === "error") {
+		return (
+			<div className="flex flex-col gap-3 rounded-lg border border-red-500/30 bg-red-500/5 p-5">
+				<div className="flex items-center justify-between">
+					<div className="flex items-center gap-2">
+						<div className="size-2.5 rounded-full bg-red-500" />
+						<span className="font-medium text-foreground text-sm">
+							Connection Error
+						</span>
+					</div>
+					<span className="rounded-full bg-red-100 px-2.5 py-0.5 font-medium text-red-800 text-xs dark:bg-red-900/30 dark:text-red-400">
+						{settings.mode === "sandbox" ? "Sandbox" : "Live"}
+					</span>
+				</div>
+				<p className="break-words text-muted-foreground text-sm">
+					{settings.error ??
+						"Walmart rejected the supplied credentials. Verify the client ID and secret are for the correct environment."}
+				</p>
+				<p className="text-muted-foreground text-xs">
+					Rotate the client secret from the Walmart Seller Center if it has been
+					compromised or revoked.
+				</p>
 			</div>
 		);
 	}
@@ -556,7 +585,8 @@ export function WalmartAdmin() {
 						<button
 							type="button"
 							disabled={
-								syncOrdersMutation.isPending || !settingsData?.configured
+								syncOrdersMutation.isPending ||
+								settingsData?.status !== "connected"
 							}
 							onClick={handleSyncOrders}
 							className="rounded-md bg-foreground px-3.5 py-1.5 font-medium text-background text-sm transition-opacity hover:opacity-90 disabled:opacity-40"
