@@ -7,6 +7,9 @@ import UberEatsAdminTemplate from "./uber-eats-admin.mdx";
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface UberEatsSettings {
+	status: "connected" | "not_configured" | "error";
+	error?: string;
+	missingScopes: string[];
 	configured: boolean;
 	clientIdMasked: string | null;
 	clientSecretMasked: string | null;
@@ -284,12 +287,26 @@ export function UberEatsAdmin() {
 						<div className="divide-y divide-border">
 							<StatusRow
 								label="Status"
-								value={settings?.configured ? "Connected" : "Not configured"}
-								badge={settings?.configured ? "active" : "inactive"}
+								value={
+									settings?.status === "connected"
+										? "Connected"
+										: settings?.status === "error"
+											? "Connection error"
+											: "Not configured"
+								}
+								badge={
+									settings?.status === "connected"
+										? "active"
+										: settings?.status === "error"
+											? "error"
+											: "inactive"
+								}
 								badgeClass={
-									settings?.configured
+									settings?.status === "connected"
 										? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-										: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+										: settings?.status === "error"
+											? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+											: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
 								}
 							/>
 							{settings?.clientIdMasked && (
@@ -320,7 +337,31 @@ export function UberEatsAdmin() {
 							/>
 						</div>
 
-						{!settings?.configured && (
+						{settings?.status === "error" && (
+							<div className="mt-3 rounded-md bg-red-50 p-3 text-red-800 text-sm dark:bg-red-900/20 dark:text-red-300">
+								<p className="break-words font-medium">
+									{settings.error ??
+										"Uber Eats rejected the supplied credentials."}
+								</p>
+								<p className="mt-1 text-xs opacity-80">
+									Verify the client ID and secret in the Uber Developer Portal
+									and that the application is authorized for this restaurant.
+								</p>
+							</div>
+						)}
+
+						{settings?.status === "connected" &&
+							settings.missingScopes.length > 0 && (
+								<div className="mt-3 rounded-md bg-amber-50 p-3 text-amber-800 text-sm dark:bg-amber-900/20 dark:text-amber-300">
+									<p className="font-medium">Missing OAuth scopes</p>
+									<p className="mt-1 text-xs opacity-80">
+										Re-authorize the application to grant:{" "}
+										{settings.missingScopes.join(", ")}
+									</p>
+								</div>
+							)}
+
+						{settings?.status === "not_configured" && (
 							<div className="mt-3 rounded-md bg-yellow-50 p-3 text-sm text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300">
 								Add your Uber Eats client ID, client secret, and restaurant ID
 								to the module configuration to enable marketplace integration.
@@ -463,7 +504,7 @@ export function UberEatsAdmin() {
 							<button
 								type="button"
 								onClick={handleSyncMenu}
-								disabled={syncing || !settings?.configured}
+								disabled={syncing || settings?.status !== "connected"}
 								className="rounded-md bg-foreground px-3 py-1.5 font-medium text-background text-xs transition-colors hover:bg-foreground/90 disabled:opacity-50"
 							>
 								{syncing ? "Syncing…" : "Sync now"}

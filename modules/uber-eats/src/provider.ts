@@ -159,6 +159,65 @@ export class UberEatsProvider {
 		this.restaurantId = restaurantId;
 	}
 
+	/**
+	 * Verify the configured clientId/clientSecret by exchanging them for an
+	 * access token at Uber's OAuth2 endpoint. Returns the granted scopes so
+	 * admins can detect missing permissions (e.g. orders without store-status
+	 * write).
+	 */
+	async verifyConnection(): Promise<
+		{ ok: true; scopes: string[] } | { ok: false; error: string }
+	> {
+		try {
+			const body = new URLSearchParams({
+				client_id: this.clientId,
+				client_secret: this.clientSecret,
+				grant_type: "client_credentials",
+				scope:
+					"eats.store eats.store.status.write eats.order eats.store.orders.read",
+			});
+
+			const tokenRes = await fetch(this.authUrl, {
+				method: "POST",
+				headers: { "Content-Type": "application/x-www-form-urlencoded" },
+				body: body.toString(),
+			});
+
+			if (!tokenRes.ok) {
+				let message = `HTTP ${tokenRes.status}`;
+				try {
+					const errBody = (await tokenRes.json()) as {
+						error?: string;
+						error_description?: string;
+					};
+					if (errBody?.error_description) {
+						message = errBody.error_description;
+					} else if (errBody?.error) {
+						message = errBody.error;
+					}
+				} catch {
+					const text = await tokenRes.text().catch(() => "");
+					if (text) message = text.slice(0, 200);
+				}
+				return { ok: false, error: message };
+			}
+
+			const token = (await tokenRes.json()) as UberEatsTokenResponse;
+			this.accessToken = token.access_token;
+			this.tokenExpiresAt = Date.now() + (token.expires_in - 300) * 1000;
+
+			return {
+				ok: true,
+				scopes: token.scope ? token.scope.split(" ").filter(Boolean) : [],
+			};
+		} catch (err) {
+			return {
+				ok: false,
+				error: err instanceof Error ? err.message : "Connection failed",
+			};
+		}
+	}
+
 	// ── Authentication ───────────────────────────────────────────────────
 
 	private async ensureToken(): Promise<string> {

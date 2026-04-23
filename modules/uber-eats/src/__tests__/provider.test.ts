@@ -162,6 +162,101 @@ describe("UberEatsProvider", () => {
 		);
 	}
 
+	describe("verifyConnection", () => {
+		it("returns ok with scopes on successful token exchange", async () => {
+			const fetcher = mockFetchSequence([
+				{ status: 200, body: TOKEN_RESPONSE },
+			]);
+			globalThis.fetch = fetcher;
+
+			const provider = createProvider();
+			const result = await provider.verifyConnection();
+
+			expect(result).toEqual({
+				ok: true,
+				scopes: [
+					"eats.store",
+					"eats.store.status.write",
+					"eats.order",
+					"eats.store.orders.read",
+				],
+			});
+			expect(fetcher.calls).toHaveLength(1);
+			expect(fetcher.calls[0][0]).toBe("https://auth.uber.com/oauth/v2/token");
+		});
+
+		it("returns error with Uber description on 401", async () => {
+			globalThis.fetch = mockFetchSequence([
+				{
+					status: 401,
+					body: {
+						error: "invalid_client",
+						error_description: "The client credentials are invalid",
+					},
+				},
+			]);
+
+			const provider = createProvider();
+			const result = await provider.verifyConnection();
+
+			expect(result).toEqual({
+				ok: false,
+				error: "The client credentials are invalid",
+			});
+		});
+
+		it("falls back to the OAuth error code when no description", async () => {
+			globalThis.fetch = mockFetchSequence([
+				{
+					status: 400,
+					body: { error: "invalid_grant" },
+				},
+			]);
+
+			const provider = createProvider();
+			const result = await provider.verifyConnection();
+
+			expect(result).toEqual({
+				ok: false,
+				error: "invalid_grant",
+			});
+		});
+
+		it("returns error when fetch throws", async () => {
+			globalThis.fetch = vi
+				.fn()
+				.mockRejectedValueOnce(
+					new Error("ECONNREFUSED"),
+				) as typeof globalThis.fetch;
+
+			const provider = createProvider();
+			const result = await provider.verifyConnection();
+
+			expect(result).toEqual({
+				ok: false,
+				error: "ECONNREFUSED",
+			});
+		});
+
+		it("caches the token so subsequent API calls don't re-authenticate", async () => {
+			const fetcher = mockFetchSequence([
+				{ status: 200, body: TOKEN_RESPONSE },
+				{ status: 200, body: ORDER_RESPONSE },
+			]);
+			globalThis.fetch = fetcher;
+
+			const provider = createProvider();
+			const verify = await provider.verifyConnection();
+			expect(verify.ok).toBe(true);
+
+			await provider.getOrder("order-1");
+
+			// Token exchange once + one API call
+			expect(fetcher.calls).toHaveLength(2);
+			expect(fetcher.calls[1][0]).toContain("/v1/eats/order/order-1");
+		});
+	});
+
 	describe("authentication", () => {
 		it("obtains an access token with client credentials", async () => {
 			const fetcher = mockFetchSequence([
