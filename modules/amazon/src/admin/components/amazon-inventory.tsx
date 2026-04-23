@@ -104,7 +104,7 @@ export function AmazonInventory() {
 
 	const { data: settingsData, isLoading: settingsLoading } =
 		api.settings.useQuery({}) as {
-			data: { configured: boolean } | undefined;
+			data: { status: "connected" | "not_configured" | "error" } | undefined;
 			isLoading: boolean;
 		};
 
@@ -234,7 +234,9 @@ export function AmazonInventory() {
 				</div>
 				<button
 					type="button"
-					disabled={syncMutation.isPending || !settingsData?.configured}
+					disabled={
+						syncMutation.isPending || settingsData?.status !== "connected"
+					}
 					onClick={handleSync}
 					className="rounded-md bg-foreground px-3.5 py-1.5 font-medium text-background text-sm transition-opacity hover:opacity-90 disabled:opacity-40"
 				>

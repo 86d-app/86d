@@ -6,7 +6,8 @@ import { useState } from "react";
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface SettingsData {
-	configured: boolean;
+	status: "connected" | "not_configured" | "error";
+	error?: string;
 	sellerId: string | null;
 	marketplaceId: string | null;
 	region: string;
@@ -143,7 +144,7 @@ function StatCard({
 }
 
 function ConnectionStatus({ settings }: { settings: SettingsData }) {
-	if (settings.configured) {
+	if (settings.status === "connected") {
 		return (
 			<div className="flex flex-col gap-4 rounded-lg border border-border bg-card p-5">
 				<div className="flex items-center justify-between">
@@ -180,6 +181,33 @@ function ConnectionStatus({ settings }: { settings: SettingsData }) {
 						</span>
 					</div>
 				</div>
+			</div>
+		);
+	}
+
+	if (settings.status === "error") {
+		return (
+			<div className="flex flex-col gap-3 rounded-lg border border-red-500/30 bg-red-500/5 p-5">
+				<div className="flex items-center justify-between">
+					<div className="flex items-center gap-2">
+						<div className="size-2.5 rounded-full bg-red-500" />
+						<span className="font-medium text-foreground text-sm">
+							Connection Error
+						</span>
+					</div>
+					<span className="rounded-full bg-red-100 px-2.5 py-0.5 font-medium text-red-800 text-xs dark:bg-red-900/30 dark:text-red-400">
+						{settings.region}
+					</span>
+				</div>
+				<p className="break-words text-muted-foreground text-sm">
+					{settings.error ??
+						"Amazon SP-API rejected the supplied credentials. Verify the seller ID, LWA client ID, secret, and refresh token."}
+				</p>
+				<p className="text-muted-foreground text-xs">
+					LWA refresh tokens are revoked if the seller disables the app in
+					Seller Central. Re-authorize from the Amazon Developer Console if
+					needed.
+				</p>
 			</div>
 		);
 	}
@@ -425,7 +453,8 @@ export function AmazonAdmin() {
 						<button
 							type="button"
 							disabled={
-								syncListingsMutation.isPending || !settingsData?.configured
+								syncListingsMutation.isPending ||
+								settingsData?.status !== "connected"
 							}
 							onClick={handleSyncListings}
 							className="rounded-md bg-foreground px-3.5 py-1.5 font-medium text-background text-sm transition-opacity hover:opacity-90 disabled:opacity-40"
@@ -614,7 +643,8 @@ export function AmazonAdmin() {
 						<button
 							type="button"
 							disabled={
-								syncOrdersMutation.isPending || !settingsData?.configured
+								syncOrdersMutation.isPending ||
+								settingsData?.status !== "connected"
 							}
 							onClick={handleSyncOrders}
 							className="rounded-md bg-foreground px-3.5 py-1.5 font-medium text-background text-sm transition-opacity hover:opacity-90 disabled:opacity-40"
