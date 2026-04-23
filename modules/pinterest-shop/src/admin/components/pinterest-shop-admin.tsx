@@ -6,7 +6,11 @@ import { useState } from "react";
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface SettingsData {
+	status: "connected" | "not_configured" | "error";
+	error?: string;
 	configured: boolean;
+	username?: string;
+	accountType?: "BUSINESS" | "PINNER";
 	adAccountId: string | null;
 	catalogId: string | null;
 	accessToken: string | null;
@@ -157,7 +161,7 @@ function StatCard({
 }
 
 function ConnectionStatus({ settings }: { settings: SettingsData }) {
-	if (settings.configured) {
+	if (settings.status === "connected") {
 		return (
 			<div className="flex flex-col gap-4 rounded-lg border border-border bg-card p-5">
 				<div className="flex items-center justify-between">
@@ -168,10 +172,18 @@ function ConnectionStatus({ settings }: { settings: SettingsData }) {
 						</span>
 					</div>
 					<span className="rounded-full bg-green-100 px-2.5 py-0.5 font-medium text-green-800 text-xs dark:bg-green-900/30 dark:text-green-400">
-						Active
+						{settings.accountType === "BUSINESS" ? "Business" : "Personal"}
 					</span>
 				</div>
 				<div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+					{settings.username && (
+						<div className="flex flex-col gap-0.5">
+							<span className="text-muted-foreground text-xs">Account</span>
+							<span className="font-medium font-mono text-foreground text-sm">
+								@{settings.username}
+							</span>
+						</div>
+					)}
 					{settings.accessToken && (
 						<div className="flex flex-col gap-0.5">
 							<span className="text-muted-foreground text-xs">
@@ -201,6 +213,33 @@ function ConnectionStatus({ settings }: { settings: SettingsData }) {
 						</div>
 					)}
 				</div>
+			</div>
+		);
+	}
+
+	if (settings.status === "error") {
+		return (
+			<div className="flex flex-col gap-3 rounded-lg border border-red-500/30 bg-red-500/5 p-5">
+				<div className="flex items-center justify-between">
+					<div className="flex items-center gap-2">
+						<div className="size-2.5 rounded-full bg-red-500" />
+						<span className="font-medium text-foreground text-sm">
+							Connection Error
+						</span>
+					</div>
+					<span className="rounded-full bg-red-100 px-2.5 py-0.5 font-medium text-red-800 text-xs dark:bg-red-900/30 dark:text-red-400">
+						Invalid
+					</span>
+				</div>
+				<p className="break-words text-muted-foreground text-sm">
+					{settings.error ??
+						"Pinterest rejected the access token. Verify it hasn't expired and has the required scopes."}
+				</p>
+				<p className="text-muted-foreground text-xs">
+					Access tokens expire after 30 days. Regenerate one from the Pinterest
+					Developer portal and update{" "}
+					<code className="rounded bg-muted px-1">PINTEREST_ACCESS_TOKEN</code>.
+				</p>
 			</div>
 		);
 	}
@@ -417,7 +456,9 @@ export function PinterestShopAdmin() {
 						<div className="flex-1" />
 						<button
 							type="button"
-							disabled={syncMutation.isPending || !settingsData?.configured}
+							disabled={
+								syncMutation.isPending || settingsData?.status !== "connected"
+							}
 							onClick={handleSync}
 							className="rounded-md bg-foreground px-3.5 py-1.5 font-medium text-background text-sm transition-opacity hover:opacity-90 disabled:opacity-40"
 						>
@@ -675,7 +716,9 @@ export function PinterestShopAdmin() {
 					<div className="flex items-center justify-end">
 						<button
 							type="button"
-							disabled={syncMutation.isPending || !settingsData?.configured}
+							disabled={
+								syncMutation.isPending || settingsData?.status !== "connected"
+							}
 							onClick={handleSync}
 							className="rounded-md bg-foreground px-3.5 py-1.5 font-medium text-background text-sm transition-opacity hover:opacity-90 disabled:opacity-40"
 						>

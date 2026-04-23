@@ -206,6 +206,106 @@ describe("PinterestApiProvider", () => {
 		});
 	}
 
+	// ── Verify connection ──
+
+	describe("verifyConnection", () => {
+		const USER_ACCOUNT_RESPONSE = {
+			account_type: "BUSINESS",
+			profile_image: "https://i.pinimg.com/avatar.jpg",
+			website_url: "https://store.example.com",
+			username: "examplestore",
+			about: "Example store on Pinterest",
+			business_name: "Example Store",
+			board_count: 12,
+			pin_count: 340,
+			follower_count: 2500,
+			following_count: 180,
+			monthly_views: 45000,
+		};
+
+		it("returns ok with username and account type on success", async () => {
+			mockFetch(USER_ACCOUNT_RESPONSE);
+			const result = await provider.verifyConnection();
+
+			expect(result).toEqual({
+				ok: true,
+				username: "examplestore",
+				accountType: "BUSINESS",
+			});
+
+			const call = vi.mocked(globalThis.fetch).mock.calls[0];
+			expect(call[0]).toBe("https://api.pinterest.com/v5/user_account");
+			expect(call[1]?.method).toBe("GET");
+			expect(call[1]?.headers).toEqual({
+				Authorization: "Bearer pina_AaBbCcDdEeFfGgHh1234567890",
+				"Content-Type": "application/json",
+			});
+		});
+
+		it("defaults accountType to PINNER when absent", async () => {
+			mockFetch({ username: "casualpinner" });
+			const result = await provider.verifyConnection();
+
+			expect(result).toEqual({
+				ok: true,
+				username: "casualpinner",
+				accountType: "PINNER",
+			});
+		});
+
+		it("returns error with Pinterest message on 401", async () => {
+			mockFetch(
+				{
+					code: 2,
+					message: "Authentication failed.",
+				},
+				401,
+			);
+			const result = await provider.verifyConnection();
+
+			expect(result).toEqual({
+				ok: false,
+				error: "Authentication failed.",
+			});
+		});
+
+		it("returns error with Pinterest message on 403", async () => {
+			mockFetch(PINTEREST_ERROR_RESPONSE, 403);
+			const result = await provider.verifyConnection();
+
+			expect(result).toEqual({
+				ok: false,
+				error: "Not authorized to access the user account.",
+			});
+		});
+
+		it("returns error with HTTP status when body is not JSON", async () => {
+			globalThis.fetch = vi.fn().mockResolvedValue({
+				ok: false,
+				status: 503,
+				json: () => Promise.reject(new Error("invalid json")),
+			});
+			const result = await provider.verifyConnection();
+
+			expect(result).toEqual({
+				ok: false,
+				error: "HTTP 503",
+			});
+		});
+
+		it("returns error when fetch throws", async () => {
+			globalThis.fetch = vi
+				.fn()
+				.mockRejectedValue(new Error("network unreachable"));
+			const result = await provider.verifyConnection();
+
+			expect(result).toEqual({
+				ok: false,
+				error: "network unreachable",
+			});
+		});
+	});
+
 	// ── Catalogs ──
 
 	describe("listCatalogs", () => {

@@ -11,6 +11,19 @@ interface PinterestApiError {
 	message: string;
 }
 
+interface PinterestUserAccount {
+	username: string;
+	account_type?: "BUSINESS" | "PINNER";
+	business_name?: string;
+	profile_image?: string;
+	website_url?: string;
+	board_count?: number;
+	pin_count?: number;
+	follower_count?: number;
+	following_count?: number;
+	monthly_views?: number;
+}
+
 interface PinterestCatalogItemAttributes {
 	title: string;
 	description: string;
@@ -133,6 +146,51 @@ export class PinterestApiProvider {
 
 	constructor(config: PinterestProviderConfig) {
 		this.config = config;
+	}
+
+	/**
+	 * Verify the configured access token against the Pinterest API by calling
+	 * GET /user_account. Returns the authenticated account's username and type
+	 * so admins can confirm they've connected the right Pinterest identity.
+	 */
+	async verifyConnection(): Promise<
+		| { ok: true; username: string; accountType: "BUSINESS" | "PINNER" }
+		| { ok: false; error: string }
+	> {
+		try {
+			const res = await fetch(`${PINTEREST_API_BASE}/user_account`, {
+				method: "GET",
+				headers: {
+					Authorization: `Bearer ${this.config.accessToken}`,
+					"Content-Type": "application/json",
+				},
+			});
+
+			if (!res.ok) {
+				let message = `HTTP ${res.status}`;
+				try {
+					const body = (await res.json()) as PinterestApiError;
+					if (body?.message) {
+						message = body.message;
+					}
+				} catch {
+					// Fall back to HTTP status message
+				}
+				return { ok: false, error: message };
+			}
+
+			const account = (await res.json()) as PinterestUserAccount;
+			return {
+				ok: true,
+				username: account.username,
+				accountType: account.account_type ?? "PINNER",
+			};
+		} catch (err) {
+			return {
+				ok: false,
+				error: err instanceof Error ? err.message : "Connection failed",
+			};
+		}
 	}
 
 	private async request<T>(
