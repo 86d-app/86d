@@ -1,6 +1,6 @@
 {
 	"name": "@86d-app/store-credits",
-	"version": "0.0.26",
+	"version": "0.0.27",
 	"description": "Store credit accounts and transactions for 86d commerce platform",
 	"keywords": [
 		"commerce",

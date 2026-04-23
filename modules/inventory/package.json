@@ -1,6 +1,6 @@
 {
 	"name": "@86d-app/inventory",
-	"version": "0.0.26",
+	"version": "0.0.27",
 	"description": "Inventory and stock tracking module for 86d commerce platform",
 	"keywords": [
 		"commerce",
