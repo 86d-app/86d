@@ -6,9 +6,15 @@ import { useState } from "react";
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface SettingsData {
+	status: "connected" | "not_configured" | "error";
+	error?: string;
+	mode: "sandbox" | "live";
+	missingScopes: string[];
 	configured: boolean;
 	siteId: string;
 	clientId: string | null;
+	clientSecretMasked?: string | null;
+	refreshTokenMasked?: string | null;
 }
 
 interface ChannelStats {
@@ -140,7 +146,7 @@ function StatCard({
 }
 
 function ConnectionStatus({ settings }: { settings: SettingsData }) {
-	if (settings.configured) {
+	if (settings.status === "connected") {
 		return (
 			<div className="flex flex-col gap-4 rounded-lg border border-border bg-card p-5">
 				<div className="flex items-center justify-between">
@@ -151,7 +157,7 @@ function ConnectionStatus({ settings }: { settings: SettingsData }) {
 						</span>
 					</div>
 					<span className="rounded-full bg-green-100 px-2.5 py-0.5 font-medium text-green-800 text-xs dark:bg-green-900/30 dark:text-green-400">
-						Active
+						{settings.mode === "sandbox" ? "Sandbox" : "Live"}
 					</span>
 				</div>
 				<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -168,6 +174,45 @@ function ConnectionStatus({ settings }: { settings: SettingsData }) {
 						</span>
 					</div>
 				</div>
+				{settings.missingScopes.length > 0 && (
+					<div className="flex flex-col gap-1 rounded-md border border-amber-500/30 bg-amber-500/5 p-3 text-sm">
+						<span className="font-medium text-amber-700 dark:text-amber-400">
+							Missing OAuth scopes
+						</span>
+						<span className="text-muted-foreground text-xs">
+							Re-authorize the connection to grant:{" "}
+							{settings.missingScopes
+								.map((s) => s.split("/").pop() ?? s)
+								.join(", ")}
+						</span>
+					</div>
+				)}
+			</div>
+		);
+	}
+
+	if (settings.status === "error") {
+		return (
+			<div className="flex flex-col gap-3 rounded-lg border border-red-500/30 bg-red-500/5 p-5">
+				<div className="flex items-center justify-between">
+					<div className="flex items-center gap-2">
+						<div className="size-2.5 rounded-full bg-red-500" />
+						<span className="font-medium text-foreground text-sm">
+							Connection Error
+						</span>
+					</div>
+					<span className="rounded-full bg-red-100 px-2.5 py-0.5 font-medium text-red-800 text-xs dark:bg-red-900/30 dark:text-red-400">
+						{settings.mode === "sandbox" ? "Sandbox" : "Live"}
+					</span>
+				</div>
+				<p className="break-words text-muted-foreground text-sm">
+					{settings.error ??
+						"eBay rejected the supplied credentials. Verify the client ID, secret, and refresh token."}
+				</p>
+				<p className="text-muted-foreground text-xs">
+					Refresh tokens expire after 18 months of inactivity. Regenerate one
+					from the eBay Developer Portal if needed.
+				</p>
 			</div>
 		);
 	}
@@ -576,7 +621,8 @@ export function EbayAdmin() {
 						<button
 							type="button"
 							disabled={
-								syncOrdersMutation.isPending || !settingsData?.configured
+								syncOrdersMutation.isPending ||
+								settingsData?.status !== "connected"
 							}
 							onClick={handleSyncOrders}
 							className="rounded-md bg-foreground px-3.5 py-1.5 font-medium text-background text-sm transition-opacity hover:opacity-90 disabled:opacity-40"

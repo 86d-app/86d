@@ -21,6 +21,7 @@ export function createEbayController(
 		refreshToken?: string | undefined;
 		siteId?: string | undefined;
 		currency?: string | undefined;
+		sandbox?: boolean | undefined;
 	},
 ): EbayController {
 	const provider =
@@ -31,6 +32,7 @@ export function createEbayController(
 					refreshToken: options.refreshToken,
 					siteId: options.siteId,
 					currency: options.currency,
+					sandbox: options.sandbox,
 				} satisfies EbayProviderConfig)
 			: null;
 

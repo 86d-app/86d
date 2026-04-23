@@ -194,6 +194,7 @@ export class EbayProvider {
 	private readonly currency: string;
 	private readonly baseUrl: string;
 	private readonly tokenUrl: string;
+	private readonly sandbox: boolean;
 
 	private accessToken: string | null = null;
 	private tokenExpiresAt = 0;
@@ -204,8 +205,77 @@ export class EbayProvider {
 		this.refreshToken = config.refreshToken;
 		this.siteId = config.siteId ?? "EBAY_US";
 		this.currency = config.currency ?? "USD";
+		this.sandbox = Boolean(config.sandbox);
 		this.baseUrl = config.sandbox ? EBAY_SANDBOX_API_BASE : EBAY_API_BASE;
 		this.tokenUrl = config.sandbox ? EBAY_SANDBOX_TOKEN_URL : EBAY_TOKEN_URL;
+	}
+
+	/**
+	 * Verify that the configured clientId, clientSecret, and refreshToken can
+	 * be exchanged for an access token. Returns the token scopes eBay granted
+	 * so admins can detect missing permissions (e.g. sell.fulfillment).
+	 */
+	async verifyConnection(): Promise<
+		| { ok: true; mode: "sandbox" | "live"; scopes: string[] }
+		| { ok: false; error: string }
+	> {
+		try {
+			const credentials = btoa(`${this.clientId}:${this.clientSecret}`);
+			const res = await fetch(this.tokenUrl, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/x-www-form-urlencoded",
+					Authorization: `Basic ${credentials}`,
+				},
+				body: new URLSearchParams({
+					grant_type: "refresh_token",
+					refresh_token: this.refreshToken,
+					scope:
+						"https://api.ebay.com/oauth/api_scope/sell.inventory https://api.ebay.com/oauth/api_scope/sell.fulfillment https://api.ebay.com/oauth/api_scope/sell.account",
+				}).toString(),
+			});
+
+			if (!res.ok) {
+				const text = await res.text().catch(() => "");
+				let message = `HTTP ${res.status}`;
+				try {
+					const parsed = JSON.parse(text) as {
+						error?: string;
+						error_description?: string;
+					};
+					if (parsed.error_description) {
+						message = parsed.error_description;
+					} else if (parsed.error) {
+						message = parsed.error;
+					}
+				} catch {
+					if (text) message = text.slice(0, 200);
+				}
+				return { ok: false, error: message };
+			}
+
+			const data = (await res.json()) as {
+				access_token: string;
+				expires_in: number;
+				token_type: string;
+				refresh_token_expires_in?: number;
+				scope?: string;
+			};
+
+			this.accessToken = data.access_token;
+			this.tokenExpiresAt = Date.now() + (data.expires_in - 60) * 1000;
+
+			return {
+				ok: true,
+				mode: this.sandbox ? "sandbox" : "live",
+				scopes: data.scope ? data.scope.split(" ").filter(Boolean) : [],
+			};
+		} catch (err) {
+			return {
+				ok: false,
+				error: err instanceof Error ? err.message : "Connection failed",
+			};
+		}
 	}
 
 	/** Obtain a fresh OAuth2 access token, caching until near expiry. */

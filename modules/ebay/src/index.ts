@@ -27,6 +27,8 @@ export interface EbayOptions extends ModuleConfig {
 	siteId?: string;
 	/** Listing currency code (default: "USD") */
 	currency?: string;
+	/** Use the eBay Sandbox environment instead of production */
+	sandbox?: boolean;
 }
 
 export default function ebay(options?: EbayOptions): Module {
@@ -35,6 +37,8 @@ export default function ebay(options?: EbayOptions): Module {
 		clientSecret: options?.clientSecret,
 		refreshToken: options?.refreshToken,
 		siteId: options?.siteId,
+		currency: options?.currency,
+		sandbox: options?.sandbox,
 	});
 
 	return {
@@ -61,6 +65,7 @@ export default function ebay(options?: EbayOptions): Module {
 				refreshToken: options?.refreshToken,
 				siteId: options?.siteId,
 				currency: options?.currency,
+				sandbox: options?.sandbox,
 			});
 			return { controllers: { ebay: controller } };
 		},
