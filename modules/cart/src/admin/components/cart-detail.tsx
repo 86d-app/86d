@@ -33,6 +33,8 @@ interface CartDetailResult {
 	subtotal: number;
 }
 
+const DETAIL_SKELETON_IDS = ["header", "body", "footer"] as const;
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatPrice(cents: number): string {
@@ -136,8 +138,11 @@ export function CartDetail(props: CartDetailProps) {
 					<div className="h-5 w-48 animate-pulse rounded bg-muted" />
 				</div>
 				<div className="space-y-2 rounded-md border border-border bg-card p-6">
-					{Array.from({ length: 3 }).map((_, i) => (
-						<div key={i} className="h-8 animate-pulse rounded bg-muted" />
+					{DETAIL_SKELETON_IDS.map((id) => (
+						<div
+							key={`detail-skeleton-${id}`}
+							className="h-8 animate-pulse rounded bg-muted"
+						/>
 					))}
 				</div>
 			</div>

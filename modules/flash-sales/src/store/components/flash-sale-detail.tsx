@@ -18,6 +18,15 @@ interface FlashSaleData {
 	endsAt: string;
 }
 
+const PRODUCT_SKELETON_KEYS = [
+	"skel-1",
+	"skel-2",
+	"skel-3",
+	"skel-4",
+	"skel-5",
+	"skel-6",
+];
+
 export function FlashSaleDetail({ slug }: { slug: string }) {
 	const api = useFlashSalesApi();
 
@@ -35,8 +44,8 @@ export function FlashSaleDetail({ slug }: { slug: string }) {
 				<div className="mb-2 h-7 w-64 rounded bg-muted" />
 				<div className="mb-6 h-4 w-96 rounded bg-muted-foreground/10" />
 				<div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-					{Array.from({ length: 6 }).map((_, i) => (
-						<div key={i} className="rounded-lg border border-border p-4">
+					{PRODUCT_SKELETON_KEYS.map((key) => (
+						<div key={key} className="rounded-lg border border-border p-4">
 							<div className="mb-3 aspect-square rounded-md bg-muted" />
 							<div className="mb-2 h-4 w-20 rounded bg-muted-foreground/10" />
 							<div className="h-8 w-full rounded bg-muted" />

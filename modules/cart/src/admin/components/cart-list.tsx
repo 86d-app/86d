@@ -38,6 +38,9 @@ interface CartDetailResult {
 	subtotal: number;
 }
 
+const DETAIL_SKELETON_IDS = ["header", "body", "footer"] as const;
+const ROW_SKELETON_IDS = ["a", "b", "c", "d", "e"] as const;
+
 function formatPrice(cents: number): string {
 	return new Intl.NumberFormat("en-US", {
 		style: "currency",
@@ -83,8 +86,11 @@ function CartDetailInline({
 	if (loading) {
 		return (
 			<div className="space-y-2 rounded-md border border-border bg-card p-4">
-				{Array.from({ length: 3 }).map((_, i) => (
-					<div key={i} className="h-6 animate-pulse rounded bg-muted" />
+				{DETAIL_SKELETON_IDS.map((id) => (
+					<div
+						key={`cart-item-skeleton-${id}`}
+						className="h-6 animate-pulse rounded bg-muted"
+					/>
 				))}
 			</div>
 		);
@@ -248,8 +254,11 @@ export function CartList() {
 
 	const mainContent = loading ? (
 		<div className="space-y-2">
-			{Array.from({ length: 5 }).map((_, i) => (
-				<div key={i} className="h-12 animate-pulse rounded-md bg-muted" />
+			{ROW_SKELETON_IDS.map((id) => (
+				<div
+					key={`cart-row-skeleton-${id}`}
+					className="h-12 animate-pulse rounded-md bg-muted"
+				/>
 			))}
 		</div>
 	) : carts.length === 0 ? (

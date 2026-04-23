@@ -70,16 +70,8 @@ export function validateUniquePaths(
 	const sources = input.map(toPathSource);
 
 	return [
-		...collectConflicts(
-			"admin_page",
-			(source) => source.adminPages,
-			sources,
-		),
-		...collectConflicts(
-			"store_page",
-			(source) => source.storePages,
-			sources,
-		),
+		...collectConflicts("admin_page", (source) => source.adminPages, sources),
+		...collectConflicts("store_page", (source) => source.storePages, sources),
 		...collectConflicts(
 			"admin_endpoint",
 			(source) => source.adminEndpoints,
@@ -106,9 +98,7 @@ function describeKind(kind: ModulePathKind): string {
 	}
 }
 
-export function formatPathConflicts(
-	conflicts: ModulePathConflict[],
-): string[] {
+export function formatPathConflicts(conflicts: ModulePathConflict[]): string[] {
 	return conflicts.map((conflict) => {
 		const uniqueModuleIds = [...new Set(conflict.moduleIds)];
 		const kind = describeKind(conflict.kind);

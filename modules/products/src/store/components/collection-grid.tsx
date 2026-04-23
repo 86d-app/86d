@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useModuleClient } from "@86d-app/core/client";
+import Link from "next/link";
 import type { CollectionCardData } from "./_types";
 import { CollectionCard } from "./collection-card";
 import CollectionGridTemplate from "./collection-grid.mdx";
@@ -60,15 +60,17 @@ export function CollectionGrid({
 					</h2>
 				</div>
 				<div className="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
-					{Array.from({ length: 3 }).map((_, i) => (
-						<div key={i}>
-							<div className="aspect-[16/10] animate-pulse rounded-lg bg-muted" />
-							<div className="mt-3 space-y-1.5">
-								<div className="h-3.5 w-1/2 animate-pulse rounded bg-muted-foreground/10" />
-								<div className="h-3 w-3/4 animate-pulse rounded bg-muted-foreground/10" />
+					{Array.from({ length: 3 }, (_, i) => `collection-grid-skel-${i}`).map(
+						(id) => (
+							<div key={id}>
+								<div className="aspect-[16/10] animate-pulse rounded-lg bg-muted" />
+								<div className="mt-3 space-y-1.5">
+									<div className="h-3.5 w-1/2 animate-pulse rounded bg-muted-foreground/10" />
+									<div className="h-3 w-3/4 animate-pulse rounded bg-muted-foreground/10" />
+								</div>
 							</div>
-						</div>
-					))}
+						),
+					)}
 				</div>
 			</section>
 		);

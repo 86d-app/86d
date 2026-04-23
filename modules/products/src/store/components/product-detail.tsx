@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useStoreContext } from "@86d-app/core/client";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import {
 	normalizeCartQueryData,
@@ -109,7 +109,7 @@ export function ProductDetail(props: ProductDetailProps) {
 		if (product && firstVariant) {
 			setSelectedVariant(firstVariant);
 		}
-	}, [product?.id]);
+	}, [product, firstVariant]);
 
 	const addToCartMutation = cartApi.addToCart.useMutation({
 		onSuccess: (data: AddToCartResponse) => {
@@ -256,7 +256,10 @@ export function ProductDetail(props: ProductDetailProps) {
 				Home
 			</Link>
 			<span className="text-border">/</span>
-			<Link href="/products" className="transition-colors hover:text-foreground">
+			<Link
+				href="/products"
+				className="transition-colors hover:text-foreground"
+			>
 				Products
 			</Link>
 			<span className="text-border">/</span>
@@ -298,7 +301,7 @@ export function ProductDetail(props: ProductDetailProps) {
 				<div className="flex gap-1.5">
 					{product.images.map((img, i) => (
 						<button
-							key={i}
+							key={img}
 							type="button"
 							onClick={() => setSelectedImage(i)}
 							className={`h-14 w-14 overflow-hidden rounded-md transition-all ${

@@ -26,6 +26,9 @@ interface FlashSaleData {
 	products: FlashSaleProduct[];
 }
 
+const SALE_SKELETON_KEYS = ["sale-1", "sale-2"];
+const PRODUCT_SKELETON_KEYS = ["prod-1", "prod-2", "prod-3", "prod-4"];
+
 export function FlashSaleListing() {
 	const api = useFlashSalesApi();
 
@@ -39,13 +42,16 @@ export function FlashSaleListing() {
 	if (isLoading) {
 		return (
 			<div className="space-y-8">
-				{Array.from({ length: 2 }).map((_, i) => (
-					<div key={i} className="animate-pulse">
+				{SALE_SKELETON_KEYS.map((saleKey) => (
+					<div key={saleKey} className="animate-pulse">
 						<div className="mb-3 h-6 w-48 rounded bg-muted" />
 						<div className="mb-4 h-4 w-72 rounded bg-muted-foreground/10" />
 						<div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-							{Array.from({ length: 4 }).map((_, j) => (
-								<div key={j} className="rounded-lg border border-border p-4">
+							{PRODUCT_SKELETON_KEYS.map((productKey) => (
+								<div
+									key={`${saleKey}-${productKey}`}
+									className="rounded-lg border border-border p-4"
+								>
 									<div className="mb-3 aspect-square rounded-md bg-muted" />
 									<div className="mb-2 h-4 w-20 rounded bg-muted-foreground/10" />
 									<div className="h-8 w-full rounded bg-muted" />

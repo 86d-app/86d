@@ -28,6 +28,9 @@ interface ListResult {
 	collections: Collection[];
 }
 
+const ROW_SKELETON_IDS = ["a", "b", "c", "d"] as const;
+const CELL_SKELETON_IDS = ["a", "b", "c", "d", "e"] as const;
+
 interface ProductListResult {
 	products: Product[];
 }
@@ -42,13 +45,9 @@ function useCollectionsAdminApi() {
 		createCollection:
 			client.module("products").admin["/admin/products/collections/create"],
 		updateCollection:
-			client.module("products").admin[
-				"/admin/products/collections/:id/update"
-			],
+			client.module("products").admin["/admin/products/collections/:id/update"],
 		deleteCollection:
-			client.module("products").admin[
-				"/admin/products/collections/:id/delete"
-			],
+			client.module("products").admin["/admin/products/collections/:id/delete"],
 		addProduct:
 			client.module("products").admin[
 				"/admin/products/collections/:id/products"
@@ -530,10 +529,10 @@ export function CollectionsAdmin() {
 					</thead>
 					<tbody className="divide-y divide-border">
 						{loading ? (
-							Array.from({ length: 4 }).map((_, i) => (
-								<tr key={`skeleton-${i}`}>
-									{Array.from({ length: 5 }).map((_, j) => (
-										<td key={`skeleton-cell-${j}`} className="px-4 py-3">
+							ROW_SKELETON_IDS.map((rowId) => (
+								<tr key={`collection-skeleton-${rowId}`}>
+									{CELL_SKELETON_IDS.map((cellId) => (
+										<td key={`collection-cell-${cellId}`} className="px-4 py-3">
 											<div className="h-4 w-24 animate-pulse rounded bg-muted" />
 										</td>
 									))}

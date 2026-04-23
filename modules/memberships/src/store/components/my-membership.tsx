@@ -47,6 +47,8 @@ export function MyMembership() {
 		isLoading: boolean;
 	};
 
+	const cancelMutation = api.cancel.useMutation();
+
 	if (isLoading) {
 		return (
 			<div className="space-y-6">
@@ -113,7 +115,7 @@ export function MyMembership() {
 	const handleCancel = async () => {
 		setCancelling(true);
 		try {
-			await api.cancel.useMutation().mutateAsync({
+			await cancelMutation.mutateAsync({
 				membershipId: membership.id,
 			});
 			setCancelled(true);

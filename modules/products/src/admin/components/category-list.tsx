@@ -26,6 +26,8 @@ interface ListResult {
 	limit: number;
 }
 
+const ROW_SKELETON_IDS = ["a", "b", "c", "d", "e"] as const;
+
 // ─── Module Client ───────────────────────────────────────────────────────────
 
 function useCategoriesAdminApi() {
@@ -78,8 +80,8 @@ export function CategoryList({ onCreateNew, onEdit }: CategoryListProps) {
 	};
 
 	const tableBody = loading ? (
-		Array.from({ length: 5 }).map((_, i) => (
-			<tr key={i}>
+		ROW_SKELETON_IDS.map((id) => (
+			<tr key={`category-skeleton-${id}`}>
 				<td className="px-4 py-3">
 					<div className="h-4 w-28 animate-pulse rounded bg-muted" />
 				</td>

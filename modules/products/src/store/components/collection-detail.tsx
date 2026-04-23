@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useModuleClient } from "@86d-app/core/client";
+import Link from "next/link";
 import type { CollectionCardData, Product } from "./_types";
 import CollectionDetailTemplate from "./collection-detail.mdx";
 import { ProductCard } from "./product-card";
@@ -36,7 +36,10 @@ export function CollectionDetail(props: CollectionDetailProps) {
 			<div className="rounded-md border border-border bg-muted/30 p-4 text-muted-foreground">
 				<p className="font-medium">Collection not found</p>
 				<p className="mt-1 text-sm">No collection was specified.</p>
-				<Link href="/collections" className="mt-3 inline-block text-sm underline">
+				<Link
+					href="/collections"
+					className="mt-3 inline-block text-sm underline"
+				>
 					Back to collections
 				</Link>
 			</div>
@@ -51,8 +54,11 @@ export function CollectionDetail(props: CollectionDetailProps) {
 					<div className="h-4 w-1/3 animate-pulse rounded bg-muted" />
 				</div>
 				<div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
-					{Array.from({ length: 4 }).map((_, i) => (
-						<div key={i}>
+					{Array.from(
+						{ length: 4 },
+						(_, i) => `collection-detail-skel-${i}`,
+					).map((id) => (
+						<div key={id}>
 							<div className="aspect-[3/4] animate-pulse rounded-lg bg-muted" />
 							<div className="mt-3 space-y-1.5">
 								<div className="h-3.5 w-3/4 animate-pulse rounded bg-muted-foreground/10" />

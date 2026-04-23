@@ -1,13 +1,13 @@
 "use client";
 
 import { adminComponentLoaders } from "generated/admin-loaders";
-import { resolveAdminRouteComponent } from "./admin-component-loader";
 import {
 	Component as ReactComponent,
 	Suspense,
 	useEffect,
 	useState,
 } from "react";
+import { resolveAdminRouteComponent } from "./admin-component-loader";
 
 interface AdminModuleRouteClientProps {
 	moduleId: string;

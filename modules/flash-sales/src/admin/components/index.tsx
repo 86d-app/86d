@@ -127,6 +127,8 @@ function discountPercent(original: number, sale: number): number {
 	return Math.round(((original - sale) / original) * 100);
 }
 
+const SALE_LIST_SKELETON_KEYS = ["skel-1", "skel-2", "skel-3"];
+
 // ---------------------------------------------------------------------------
 // FlashSaleList — main list page
 // ---------------------------------------------------------------------------
@@ -386,9 +388,9 @@ export function FlashSaleList() {
 			{/* Sale list */}
 			{isLoading ? (
 				<div className="space-y-3">
-					{Array.from({ length: 3 }).map((_, i) => (
+					{SALE_LIST_SKELETON_KEYS.map((key) => (
 						<div
-							key={`skel-${i}`}
+							key={key}
 							className="h-20 animate-pulse rounded-lg border border-border bg-muted/30"
 						/>
 					))}

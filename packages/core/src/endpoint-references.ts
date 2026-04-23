@@ -21,8 +21,8 @@ function getAvailablePaths(
 	surface: ModuleClientEndpointSurface,
 ): string[] {
 	return surface === "admin"
-		? source.adminEndpoints ?? []
-		: source.storeEndpoints ?? [];
+		? (source.adminEndpoints ?? [])
+		: (source.storeEndpoints ?? []);
 }
 
 export function validateModuleClientEndpointReferences(
@@ -35,7 +35,9 @@ export function validateModuleClientEndpointReferences(
 	for (const reference of references) {
 		if (reference.moduleId !== source.moduleId) continue;
 
-		const availablePaths = new Set(getAvailablePaths(source, reference.surface));
+		const availablePaths = new Set(
+			getAvailablePaths(source, reference.surface),
+		);
 		if (availablePaths.has(reference.path)) continue;
 
 		const key = [

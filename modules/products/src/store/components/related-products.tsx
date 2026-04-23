@@ -34,15 +34,17 @@ export function RelatedProducts({
 					{title}
 				</h2>
 				<div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
-					{Array.from({ length: limit }).map((_, i) => (
-						<div key={i}>
-							<div className="aspect-[3/4] animate-pulse rounded-lg bg-muted" />
-							<div className="mt-3 space-y-1.5">
-								<div className="h-3.5 w-3/4 animate-pulse rounded bg-muted-foreground/10" />
-								<div className="h-3.5 w-1/3 animate-pulse rounded bg-muted-foreground/10" />
+					{Array.from({ length: limit }, (_, i) => `related-skel-${i}`).map(
+						(id) => (
+							<div key={id}>
+								<div className="aspect-[3/4] animate-pulse rounded-lg bg-muted" />
+								<div className="mt-3 space-y-1.5">
+									<div className="h-3.5 w-3/4 animate-pulse rounded bg-muted-foreground/10" />
+									<div className="h-3.5 w-1/3 animate-pulse rounded bg-muted-foreground/10" />
+								</div>
 							</div>
-						</div>
-					))}
+						),
+					)}
 				</div>
 			</section>
 		);

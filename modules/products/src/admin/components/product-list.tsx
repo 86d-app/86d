@@ -282,7 +282,7 @@ function ImportDialog({
 	const fileRef = useRef<HTMLInputElement>(null);
 	const [preview, setPreview] = useState<{
 		headers: string[];
-		rows: Record<string, unknown>[];
+		rows: Array<Record<string, unknown> & { _rowId: string }>;
 	} | null>(null);
 	const [importing, setImporting] = useState(false);
 	const [result, setResult] = useState<ImportResult | null>(null);
@@ -319,7 +319,10 @@ function ImportDialog({
 			}
 
 			const dataRows = parsed.slice(1);
-			const products = dataRows.map((row) => rowToProduct(headers, row));
+			const products = dataRows.map((row, rowIdx) => ({
+				...rowToProduct(headers, row),
+				_rowId: `csv-row-${rowIdx}-${row.join("|").slice(0, 50)}`,
+			}));
 
 			setPreview({ headers, rows: products });
 		};
@@ -330,7 +333,9 @@ function ImportDialog({
 		if (!preview) return;
 		setImporting(true);
 		try {
-			const importResult = await onImport(preview.rows);
+			const importResult = await onImport(
+				preview.rows.map(({ _rowId: _unused, ...row }) => row),
+			);
 			setResult(importResult);
 		} finally {
 			setImporting(false);
@@ -454,7 +459,7 @@ function ImportDialog({
 											</thead>
 											<tbody className="divide-y divide-border">
 												{preview.rows.slice(0, 10).map((row, i) => (
-													<tr key={i}>
+													<tr key={row._rowId}>
 														<td className="px-3 py-1.5 text-muted-foreground">
 															{i + 1}
 														</td>
@@ -521,8 +526,10 @@ function ImportDialog({
 											{result.errors.length === 1 ? "error" : "errors"}
 										</p>
 										<ul className="mt-1 list-inside list-disc text-destructive text-xs">
-											{result.errors.map((err, i) => (
-												<li key={i}>
+											{result.errors.map((err) => (
+												<li
+													key={`import-error-${err.row}-${err.field}-${err.message}`}
+												>
 													Row {err.row}: {err.message}
 													{err.field !== "unknown" && ` (${err.field})`}
 												</li>
@@ -941,8 +948,11 @@ export function ProductList() {
 						</thead>
 						<tbody className="divide-y divide-border">
 							{loading ? (
-								Array.from({ length: 5 }).map((_, i) => (
-									<tr key={i}>
+								Array.from(
+									{ length: 5 },
+									(_, i) => `product-list-skel-${i}`,
+								).map((id) => (
+									<tr key={id}>
 										<td className="px-4 py-3">
 											<div className="h-4 w-4 animate-pulse rounded bg-muted" />
 										</td>

@@ -36,12 +36,15 @@ export function PlanDetail({ slug }: { slug?: string | undefined }) {
 		"success" | "error" | null
 	>(null);
 
-	const { data, isLoading } = slug
-		? (api.getPlan.useQuery({ slug }) as {
-				data: { plan: PlanData; benefits: BenefitData[] } | undefined;
-				isLoading: boolean;
-			})
-		: { data: undefined, isLoading: false };
+	const { data, isLoading } = api.getPlan.useQuery(
+		{ slug: slug ?? "" },
+		{ enabled: Boolean(slug) },
+	) as {
+		data: { plan: PlanData; benefits: BenefitData[] } | undefined;
+		isLoading: boolean;
+	};
+
+	const subscribeMutation = api.subscribe.useMutation();
 
 	if (!slug) {
 		return (
@@ -87,7 +90,7 @@ export function PlanDetail({ slug }: { slug?: string | undefined }) {
 		setSubscribing(true);
 		setSubscribeResult(null);
 		try {
-			await api.subscribe.useMutation().mutateAsync({
+			await subscribeMutation.mutateAsync({
 				planId: plan.id,
 			});
 			setSubscribeResult("success");

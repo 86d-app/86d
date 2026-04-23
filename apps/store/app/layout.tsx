@@ -6,8 +6,8 @@ import { ThemeProvider } from "next-themes";
 import { Toaster } from "~/components/ui/sonner";
 import "./globals.css";
 import { GoogleTagManager } from "@next/third-parties/google";
-import { ThemePreloadRelease } from "components/theme-preload-release";
 import { StoreQueryProvider } from "components/providers";
+import { ThemePreloadRelease } from "components/theme-preload-release";
 import env from "env";
 import { IBM_Plex_Mono, Merriweather } from "next/font/google";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
@@ -97,8 +97,7 @@ export default async function RootLayout({
 	const headerStore = await headers();
 	const themeCookie = cookieStore.get("theme");
 	const initialTheme =
-		(themeCookie?.value as "light" | "dark" | "system" | undefined) ||
-		"system";
+		(themeCookie?.value as "light" | "dark" | "system" | undefined) || "system";
 	const secChPrefers = headerStore.get("sec-ch-prefers-color-scheme");
 	const themePreload = themePreloadAttribute(initialTheme, secChPrefers);
 
@@ -120,16 +119,9 @@ export default async function RootLayout({
 			)}
 		>
 			<head>
-				<meta
-					httpEquiv="Accept-CH"
-					content="Sec-CH-Prefers-Color-Scheme"
-				/>
-				<style
-					dangerouslySetInnerHTML={{ __html: themePreloadCriticalCss }}
-				/>
-				<script
-					dangerouslySetInnerHTML={{ __html: themeScript }}
-				/>
+				<meta httpEquiv="Accept-CH" content="Sec-CH-Prefers-Color-Scheme" />
+				<style dangerouslySetInnerHTML={{ __html: themePreloadCriticalCss }} />
+				<script dangerouslySetInnerHTML={{ __html: themeScript }} />
 				<script
 					type="application/ld+json"
 					dangerouslySetInnerHTML={{

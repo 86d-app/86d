@@ -31,6 +31,22 @@ function timeAgo(dateStr: string): string {
 	return `${days}d ago`;
 }
 
+const SKELETON_ROW_KEYS = [
+	"skel-row-1",
+	"skel-row-2",
+	"skel-row-3",
+	"skel-row-4",
+	"skel-row-5",
+];
+const SKELETON_CELL_KEYS = [
+	"skel-cell-1",
+	"skel-cell-2",
+	"skel-cell-3",
+	"skel-cell-4",
+	"skel-cell-5",
+	"skel-cell-6",
+];
+
 const STATUS_COLORS: Record<string, string> = {
 	draft: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
 	published:
@@ -416,10 +432,10 @@ export function BlogAdmin() {
 	const subtitle = `${total} ${total === 1 ? "post" : "posts"}`;
 
 	const tableBody = loading ? (
-		Array.from({ length: 5 }).map((_, i) => (
-			<tr key={`skeleton-${i}`}>
-				{Array.from({ length: 6 }).map((_, j) => (
-					<td key={`skeleton-cell-${j}`} className="px-4 py-3">
+		SKELETON_ROW_KEYS.map((rowKey) => (
+			<tr key={rowKey}>
+				{SKELETON_CELL_KEYS.map((cellKey) => (
+					<td key={`${rowKey}-${cellKey}`} className="px-4 py-3">
 						<div className="h-4 w-24 animate-pulse rounded bg-muted" />
 					</td>
 				))}

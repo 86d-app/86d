@@ -270,12 +270,16 @@ describe("ModuleRegistry", () => {
 			const modules = [
 				createMinimalModule("products", {
 					admin: {
-						pages: [{ path: "/admin/collections", component: "CollectionsAdmin" }],
+						pages: [
+							{ path: "/admin/collections", component: "CollectionsAdmin" },
+						],
 					},
 				}),
 				createMinimalModule("collections", {
 					admin: {
-						pages: [{ path: "/admin/collections", component: "CollectionAdmin" }],
+						pages: [
+							{ path: "/admin/collections", component: "CollectionAdmin" },
+						],
 					},
 				}),
 			];

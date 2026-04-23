@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { observer } from "@86d-app/core/state";
+import Link from "next/link";
 import { useEffect } from "react";
 import { cartState } from "../../state";
 import { useCartApi, useTrack } from "./_hooks";

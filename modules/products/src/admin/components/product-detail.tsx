@@ -40,12 +40,22 @@ interface GetProductResult {
 	product?: Product;
 }
 
+interface VariantOption {
+	_uiId: string;
+	key: string;
+	value: string;
+}
+
 interface VariantFormData {
 	name: string;
 	sku: string;
 	price: string;
 	inventory: string;
-	options: Array<{ key: string; value: string }>;
+	options: VariantOption[];
+}
+
+function createOption(key = "", value = ""): VariantOption {
+	return { _uiId: crypto.randomUUID(), key, value };
 }
 
 const emptyVariantForm: VariantFormData = {
@@ -53,7 +63,7 @@ const emptyVariantForm: VariantFormData = {
 	sku: "",
 	price: "",
 	inventory: "0",
-	options: [{ key: "", value: "" }],
+	options: [createOption()],
 };
 
 // ─── Module Client ───────────────────────────────────────────────────────────
@@ -130,7 +140,7 @@ function VariantForm({
 	const addOption = () => {
 		setForm((prev) => ({
 			...prev,
-			options: [...prev.options, { key: "", value: "" }],
+			options: [...prev.options, createOption()],
 		}));
 	};
 
@@ -216,7 +226,7 @@ function VariantForm({
 				</div>
 				<div className="space-y-2">
 					{form.options.map((opt, idx) => (
-						<div key={idx} className="flex gap-2">
+						<div key={opt._uiId} className="flex gap-2">
 							<input
 								type="text"
 								value={opt.key}
@@ -491,7 +501,7 @@ export function ProductDetail(props: ProductDetailProps) {
 									<div className="flex gap-2">
 										{product.images.map((img, i) => (
 											<button
-												key={i}
+												key={`thumb-${img}`}
 												type="button"
 												onClick={() => setSelectedImage(i)}
 												className={`h-16 w-16 overflow-hidden rounded-md border-2 transition-colors ${
@@ -590,10 +600,7 @@ export function ProductDetail(props: ProductDetailProps) {
 										price: String(editingVariant.price),
 										inventory: String(editingVariant.inventory),
 										options: Object.entries(editingVariant.options).map(
-											([key, value]) => ({
-												key,
-												value,
-											}),
+											([key, value]) => createOption(key, value),
 										),
 									}}
 									onSubmit={handleUpdateVariant}

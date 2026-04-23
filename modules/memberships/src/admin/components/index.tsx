@@ -45,6 +45,9 @@ interface MembershipStats {
 	pausedMemberships: number;
 }
 
+const MEMBERSHIP_SKELETON_IDS = ["a", "b", "c", "d"] as const;
+const PLAN_SKELETON_IDS = ["a", "b", "c"] as const;
+
 // ---------------------------------------------------------------------------
 // API hook
 // ---------------------------------------------------------------------------
@@ -239,9 +242,9 @@ export function MembershipAdmin() {
 			{/* Membership list */}
 			{isLoading ? (
 				<div className="space-y-3">
-					{Array.from({ length: 4 }).map((_, i) => (
+					{MEMBERSHIP_SKELETON_IDS.map((id) => (
 						<div
-							key={`skel-${i}`}
+							key={`membership-skel-${id}`}
 							className="h-16 animate-pulse rounded-lg border border-border bg-muted/30"
 						/>
 					))}
@@ -539,9 +542,9 @@ export function MembershipPlans() {
 			{/* Plan list */}
 			{isLoading ? (
 				<div className="space-y-3">
-					{Array.from({ length: 3 }).map((_, i) => (
+					{PLAN_SKELETON_IDS.map((id) => (
 						<div
-							key={`skel-${i}`}
+							key={`plan-skel-${id}`}
 							className="h-20 animate-pulse rounded-lg border border-border bg-muted/30"
 						/>
 					))}

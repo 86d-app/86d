@@ -45,7 +45,9 @@ describe("validateUniquePaths", () => {
 			makeModule({
 				id: "products",
 				admin: {
-					pages: [{ path: "/admin/collections", component: "CollectionsAdmin" }],
+					pages: [
+						{ path: "/admin/collections", component: "CollectionsAdmin" },
+					],
 				},
 			}),
 			makeModule({

@@ -27,6 +27,8 @@ interface CategoryFormData {
 	isVisible: boolean;
 }
 
+const LOADING_SKELETON_IDS = ["a", "b", "c", "d", "e"] as const;
+
 interface CategoryFormProps {
 	categoryId?: string;
 	onSuccess?: () => void;
@@ -191,8 +193,11 @@ export function CategoryForm({ categoryId, onSuccess }: CategoryFormProps) {
 	if (loading) {
 		return (
 			<div className="space-y-4">
-				{Array.from({ length: 5 }).map((_, i) => (
-					<div key={i} className="h-12 animate-pulse rounded-md bg-muted" />
+				{LOADING_SKELETON_IDS.map((id) => (
+					<div
+						key={`field-skeleton-${id}`}
+						className="h-12 animate-pulse rounded-md bg-muted"
+					/>
 				))}
 			</div>
 		);

@@ -17,6 +17,8 @@ interface PlanData {
 	sortOrder: number;
 }
 
+const PLAN_SKELETON_IDS = ["a", "b", "c"] as const;
+
 export function PlanListing() {
 	const api = useMembershipsApi();
 
@@ -35,9 +37,9 @@ export function PlanListing() {
 					<div className="mx-auto mt-3 h-4 w-72 animate-pulse rounded bg-muted-foreground/10" />
 				</div>
 				<div className="mx-auto grid max-w-5xl gap-6 sm:grid-cols-2 lg:grid-cols-3">
-					{Array.from({ length: 3 }).map((_, i) => (
+					{PLAN_SKELETON_IDS.map((id) => (
 						<div
-							key={i}
+							key={`plan-skel-${id}`}
 							className="animate-pulse rounded-xl border border-border p-6"
 						>
 							<div className="mb-4 h-5 w-24 rounded bg-muted" />

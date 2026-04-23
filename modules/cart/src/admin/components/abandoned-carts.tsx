@@ -38,6 +38,9 @@ interface AbandonedListResult {
 	total: number;
 }
 
+const STAT_SKELETON_IDS = ["revenue", "orders", "carts", "conversion"] as const;
+const LIST_SKELETON_IDS = ["a", "b", "c", "d", "e"] as const;
+
 interface RecoveryStats {
 	totalAbandoned: number;
 	recoverySent: number;
@@ -84,8 +87,11 @@ function RecoveryStatsCard() {
 	if (isLoading) {
 		return (
 			<div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-				{Array.from({ length: 4 }).map((_, i) => (
-					<div key={i} className="h-20 animate-pulse rounded-md bg-muted" />
+				{STAT_SKELETON_IDS.map((id) => (
+					<div
+						key={`stat-skeleton-${id}`}
+						className="h-20 animate-pulse rounded-md bg-muted"
+					/>
 				))}
 			</div>
 		);
@@ -374,8 +380,11 @@ export function AbandonedCarts() {
 			{/* List */}
 			{loading ? (
 				<div className="space-y-2">
-					{Array.from({ length: 5 }).map((_, i) => (
-						<div key={i} className="h-12 animate-pulse rounded-md bg-muted" />
+					{LIST_SKELETON_IDS.map((id) => (
+						<div
+							key={`row-skeleton-${id}`}
+							className="h-12 animate-pulse rounded-md bg-muted"
+						/>
 					))}
 				</div>
 			) : carts.length === 0 ? (

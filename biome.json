@@ -2,9 +2,7 @@
 	"$schema": "https://biomejs.dev/schemas/2.4.10/schema.json",
 	"overrides": [
 		{
-			"includes": [
-				"apps/store/components/**/*.tsx"
-			],
+			"includes": ["apps/store/components/**/*.tsx"],
 			"linter": {
 				"rules": {
 					"a11y": {

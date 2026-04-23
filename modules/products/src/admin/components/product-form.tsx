@@ -433,12 +433,11 @@ export function ProductForm({ productId, onNavigate }: ProductFormProps) {
 	if (loading && isEditing) {
 		return (
 			<div className="space-y-4">
-				{Array.from({ length: 6 }).map((_, i) => (
-					<div
-						key={`skel-${i}`}
-						className="h-12 animate-pulse rounded-md bg-muted"
-					/>
-				))}
+				{Array.from({ length: 6 }, (_, i) => `product-form-skel-${i}`).map(
+					(id) => (
+						<div key={id} className="h-12 animate-pulse rounded-md bg-muted" />
+					),
+				)}
 			</div>
 		);
 	}

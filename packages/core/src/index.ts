@@ -33,18 +33,11 @@ export {
 } from "./contracts";
 export {
 	formatModuleClientEndpointReferenceConflicts,
-	validateModuleClientEndpointReferences,
 	type ModuleClientEndpointReference,
 	type ModuleClientEndpointReferenceConflict,
 	type ModuleClientEndpointSurface,
+	validateModuleClientEndpointReferences,
 } from "./endpoint-references";
-export {
-	formatPathConflicts,
-	validateUniquePaths,
-	type ModulePathConflict,
-	type ModulePathKind,
-	type ModulePathSource,
-} from "./paths";
 export {
 	createEventBus,
 	createScopedEmitter,
@@ -55,6 +48,13 @@ export {
 	type ModuleEvent,
 	type ScopedEventEmitter,
 } from "./events";
+export {
+	formatPathConflicts,
+	type ModulePathConflict,
+	type ModulePathKind,
+	type ModulePathSource,
+	validateUniquePaths,
+} from "./paths";
 export {
 	escapeScriptContent,
 	isSafeUrl,

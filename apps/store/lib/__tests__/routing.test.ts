@@ -21,7 +21,9 @@ describe("generated routing", () => {
 		expect(generatedApi).toContain('moduleId: "collections"');
 		expect(generatedApi).toContain('pattern: "/admin/returns"');
 		expect(generatedApi).toContain('moduleId: "returns"');
-		expect(generatedApi).not.toContain('pattern: "/admin/returns",\n\t\tmoduleId: "orders"');
+		expect(generatedApi).not.toContain(
+			'pattern: "/admin/returns",\n\t\tmoduleId: "orders"',
+		);
 	});
 
 	it("emits namespaced legacy product and order admin routes", () => {

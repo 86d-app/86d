@@ -19,6 +19,9 @@ interface ListResult {
 	total: number;
 }
 
+const ROW_SKELETON_IDS = ["a", "b", "c", "d"] as const;
+const CELL_SKELETON_IDS = ["a", "b", "c", "d", "e"] as const;
+
 // ─── Module Client ───────────────────────────────────────────────────────────
 
 function useCategoriesAdminApi() {
@@ -369,10 +372,10 @@ export function CategoriesAdmin() {
 					</thead>
 					<tbody className="divide-y divide-border">
 						{loading ? (
-							Array.from({ length: 4 }).map((_, i) => (
-								<tr key={`skeleton-${i}`}>
-									{Array.from({ length: 5 }).map((_, j) => (
-										<td key={`skeleton-cell-${j}`} className="px-4 py-3">
+							ROW_SKELETON_IDS.map((rowId) => (
+								<tr key={`skeleton-${rowId}`}>
+									{CELL_SKELETON_IDS.map((cellId) => (
+										<td key={`skeleton-cell-${cellId}`} className="px-4 py-3">
 											<div className="h-4 w-24 animate-pulse rounded bg-muted" />
 										</td>
 									))}
