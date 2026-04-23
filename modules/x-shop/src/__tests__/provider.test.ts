@@ -160,6 +160,90 @@ describe("XApiProvider", () => {
 		);
 	}
 
+	// ── Verify connection ──────────────────────────────────────────────
+
+	describe("verifyConnection", () => {
+		it("returns ok with user metadata on success", async () => {
+			const mock = mockApiCall(GET_USER_RESPONSE);
+			const result = await provider.verifyConnection();
+
+			expect(result).toEqual({
+				ok: true,
+				userId: "2244994945",
+				username: "86d_store",
+				name: "86d Store",
+			});
+
+			const call = mock.mock.calls[0];
+			expect(call[0]).toBe(
+				"https://api.twitter.com/2/users/me?user.fields=name,username",
+			);
+			expect(call[1]?.method).toBe("GET");
+			expect((call[1]?.headers as Record<string, string>).Authorization).toBe(
+				"Bearer at-test-mno345pqr678",
+			);
+		});
+
+		it("returns error with detail message on 401", async () => {
+			mockApiCall(
+				{
+					title: "Unauthorized",
+					type: "about:blank",
+					status: 401,
+					detail: "Unauthorized",
+				},
+				401,
+			);
+			const result = await provider.verifyConnection();
+
+			expect(result).toEqual({
+				ok: false,
+				error: "Unauthorized",
+			});
+		});
+
+		it("falls back to errors[0].message when detail missing", async () => {
+			mockApiCall(
+				{
+					errors: [{ message: "Invalid or expired token" }],
+				},
+				401,
+			);
+			const result = await provider.verifyConnection();
+
+			expect(result).toEqual({
+				ok: false,
+				error: "Invalid or expired token",
+			});
+		});
+
+		it("returns error with HTTP status when body is not JSON", async () => {
+			globalThis.fetch = vi.fn().mockResolvedValueOnce({
+				ok: false,
+				status: 503,
+				json: () => Promise.reject(new Error("invalid json")),
+			});
+			const result = await provider.verifyConnection();
+
+			expect(result).toEqual({
+				ok: false,
+				error: "HTTP 503",
+			});
+		});
+
+		it("returns error when fetch throws", async () => {
+			globalThis.fetch = vi
+				.fn()
+				.mockRejectedValueOnce(new Error("network unreachable"));
+			const result = await provider.verifyConnection();
+
+			expect(result).toEqual({
+				ok: false,
+				error: "network unreachable",
+			});
+		});
+	});
+
 	// ── Authentication ──────────────────────────────────────────────────
 
 	describe("authentication", () => {

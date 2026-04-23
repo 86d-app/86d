@@ -31,6 +31,8 @@ export default function xShop(options?: XShopOptions): Module {
 	const settingsEndpoint = createGetSettingsEndpoint({
 		apiKey: options?.apiKey,
 		apiSecret: options?.apiSecret,
+		accessToken: options?.accessToken,
+		refreshToken: options?.refreshToken,
 		merchantId: options?.merchantId,
 	});
 

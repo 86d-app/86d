@@ -6,7 +6,12 @@ import { useState } from "react";
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface SettingsData {
+	status: "connected" | "not_configured" | "error";
+	error?: string;
 	configured: boolean;
+	username?: string;
+	name?: string;
+	userId?: string;
 	merchantId: string | null;
 	apiKey: string | null;
 }
@@ -172,16 +177,29 @@ function StatCard({
 }
 
 function ConnectionStatus({ settings }: { settings: SettingsData }) {
-	if (settings.configured) {
+	if (settings.status === "connected") {
 		return (
 			<div className="flex flex-col gap-4 rounded-lg border border-border bg-card p-5">
-				<div className="flex items-center gap-2">
-					<div className="size-2.5 rounded-full bg-green-500" />
-					<span className="font-medium text-foreground text-sm">
-						Connected to X Commerce
+				<div className="flex items-center justify-between">
+					<div className="flex items-center gap-2">
+						<div className="size-2.5 rounded-full bg-green-500" />
+						<span className="font-medium text-foreground text-sm">
+							Connected to X
+						</span>
+					</div>
+					<span className="rounded-full bg-green-100 px-2.5 py-0.5 font-medium text-green-800 text-xs dark:bg-green-900/30 dark:text-green-400">
+						Active
 					</span>
 				</div>
-				<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+				<div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+					{settings.username && (
+						<div className="flex flex-col gap-0.5">
+							<span className="text-muted-foreground text-xs">Account</span>
+							<span className="font-medium font-mono text-foreground text-sm">
+								@{settings.username}
+							</span>
+						</div>
+					)}
 					<div className="flex flex-col gap-0.5">
 						<span className="text-muted-foreground text-xs">Merchant ID</span>
 						<span className="font-medium font-mono text-foreground text-sm">
@@ -195,6 +213,33 @@ function ConnectionStatus({ settings }: { settings: SettingsData }) {
 						</span>
 					</div>
 				</div>
+			</div>
+		);
+	}
+
+	if (settings.status === "error") {
+		return (
+			<div className="flex flex-col gap-3 rounded-lg border border-red-500/30 bg-red-500/5 p-5">
+				<div className="flex items-center justify-between">
+					<div className="flex items-center gap-2">
+						<div className="size-2.5 rounded-full bg-red-500" />
+						<span className="font-medium text-foreground text-sm">
+							Connection Error
+						</span>
+					</div>
+					<span className="rounded-full bg-red-100 px-2.5 py-0.5 font-medium text-red-800 text-xs dark:bg-red-900/30 dark:text-red-400">
+						Invalid
+					</span>
+				</div>
+				<p className="break-words text-muted-foreground text-sm">
+					{settings.error ??
+						"X rejected the supplied credentials. Verify the API key, secret, and access token haven't expired."}
+				</p>
+				<p className="text-muted-foreground text-xs">
+					OAuth 2.0 access tokens expire after 2 hours. Set{" "}
+					<code className="rounded bg-muted px-1">X_REFRESH_TOKEN</code> so the
+					module can renew the token automatically.
+				</p>
 			</div>
 		);
 	}

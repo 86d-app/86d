@@ -121,6 +121,59 @@ export class XApiProvider {
 		this.refreshToken = config.refreshToken;
 	}
 
+	/**
+	 * Verify the configured access token against the X API v2 by calling
+	 * GET /users/me. Returns the authenticated user's id and username so
+	 * admins can confirm they've connected the right account.
+	 */
+	async verifyConnection(): Promise<
+		| { ok: true; userId: string; username: string; name: string }
+		| { ok: false; error: string }
+	> {
+		try {
+			const res = await fetch(
+				`${X_API_BASE}/users/me?user.fields=name,username`,
+				{
+					method: "GET",
+					headers: {
+						Authorization: `Bearer ${this.accessToken}`,
+						"Content-Type": "application/json",
+					},
+				},
+			);
+
+			if (!res.ok) {
+				let message = `HTTP ${res.status}`;
+				try {
+					const body = (await res.json()) as XApiErrorResponse;
+					if (body?.detail) {
+						message = body.detail;
+					} else if (body?.errors?.[0]?.message) {
+						message = body.errors[0].message;
+					} else if (body?.title) {
+						message = body.title;
+					}
+				} catch {
+					// Fall back to HTTP status message
+				}
+				return { ok: false, error: message };
+			}
+
+			const body = (await res.json()) as XApiGetUserResponse;
+			return {
+				ok: true,
+				userId: body.data.id,
+				username: body.data.username,
+				name: body.data.name,
+			};
+		} catch (err) {
+			return {
+				ok: false,
+				error: err instanceof Error ? err.message : "Connection failed",
+			};
+		}
+	}
+
 	/** Refresh the access token using the refresh token. */
 	private async ensureAccessToken(): Promise<string> {
 		// tokenExpiresAt === 0 means we haven't refreshed yet — use the initial token
