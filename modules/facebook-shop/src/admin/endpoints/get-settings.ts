@@ -14,7 +14,10 @@ export function createGetSettingsEndpoint(options: SettingsOptions) {
 		{ method: "GET" },
 		async () => {
 			const hasCredentials = Boolean(
-				options.accessToken && options.pageId && options.catalogId,
+				options.accessToken &&
+					options.pageId &&
+					options.catalogId &&
+					options.commerceAccountId,
 			);
 
 			let status: "connected" | "not_configured" | "error" = "not_configured";
