@@ -162,6 +162,29 @@ describe("OpenAIEmbeddingProvider", () => {
 			expect(mockFetch).not.toHaveBeenCalled();
 		});
 
+		it("aligns embeddings to original indices when blank inputs are interleaved", async () => {
+			const shoesVec = [0.1, 0.2];
+			const hatsVec = [0.3, 0.4];
+			const socksVec = [0.5, 0.6];
+			mockEmbeddingResponse([shoesVec, hatsVec, socksVec]);
+
+			const provider = makeProvider();
+			const results = await provider.generateEmbeddings([
+				"Shoes",
+				"",
+				"Hats",
+				"   ",
+				"Socks",
+			]);
+
+			// Non-blank slots receive their own embeddings; blank slots stay null.
+			expect(results).toEqual([shoesVec, null, hatsVec, null, socksVec]);
+
+			// Only the non-blank texts are sent to the API.
+			const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+			expect(body.input).toEqual(["Shoes", "Hats", "Socks"]);
+		});
+
 		it("truncates inputs longer than 8000 chars", async () => {
 			mockEmbeddingResponse([[0.1]]);
 

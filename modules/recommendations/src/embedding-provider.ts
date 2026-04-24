@@ -40,8 +40,20 @@ export class OpenAIEmbeddingProvider implements EmbeddingProvider {
 	async generateEmbeddings(texts: string[]): Promise<Array<number[] | null>> {
 		if (texts.length === 0) return [];
 
-		const cleaned = texts.map((t) => t.slice(0, 8000).trim()).filter(Boolean);
-		if (cleaned.length === 0) return texts.map(() => null);
+		// Track each non-empty input's original position so the API response
+		// indices (which reference the submitted `input` array) can be mapped
+		// back to the caller's `texts` array. Without this, inputs that were
+		// dropped by the blank-filter would shift every later embedding one
+		// slot to the left, and products with empty descriptions would be
+		// recommended as similar to the wrong products.
+		const entries: Array<{ originalIndex: number; text: string }> = [];
+		for (let i = 0; i < texts.length; i++) {
+			const trimmed = texts[i].slice(0, 8000).trim();
+			if (trimmed) {
+				entries.push({ originalIndex: i, text: trimmed });
+			}
+		}
+		if (entries.length === 0) return texts.map(() => null);
 
 		try {
 			const res = await fetch(`${this.baseUrl}/embeddings`, {
@@ -51,7 +63,7 @@ export class OpenAIEmbeddingProvider implements EmbeddingProvider {
 					"Content-Type": "application/json",
 				},
 				body: JSON.stringify({
-					input: cleaned,
+					input: entries.map((e) => e.text),
 					model: this.model,
 				}),
 			});
@@ -67,8 +79,9 @@ export class OpenAIEmbeddingProvider implements EmbeddingProvider {
 			const json = (await res.json()) as EmbeddingResponse;
 			const results: Array<number[] | null> = texts.map(() => null);
 			for (const item of json.data) {
-				if (item.index < cleaned.length) {
-					results[item.index] = item.embedding;
+				const entry = entries[item.index];
+				if (entry) {
+					results[entry.originalIndex] = item.embedding;
 				}
 			}
 			return results;
