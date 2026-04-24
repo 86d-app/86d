@@ -7,8 +7,11 @@ import ToastAdminTemplate from "./toast-admin.mdx";
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface ToastSettings {
+	status: "connected" | "not_configured" | "error";
+	error?: string;
 	configured: boolean;
 	sandbox: boolean;
+	menuCount?: number;
 	apiKeyMasked: string | null;
 	restaurantGuidMasked: string | null;
 }
@@ -267,16 +270,37 @@ export function ToastAdmin() {
 					{/* ── Connection settings ────────────────────────────── */}
 					<SettingsCard label="Connection">
 						<div className="divide-y divide-border">
-							<StatusRow
-								label="Status"
-								value={settings?.configured ? "Connected" : "Not configured"}
-								badge={settings?.configured ? "active" : "inactive"}
-								badgeClass={
-									settings?.configured
-										? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-										: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+							{(() => {
+								const status = settings?.status ?? "not_configured";
+								if (status === "connected") {
+									return (
+										<StatusRow
+											label="Status"
+											value="Connected"
+											badge="connected"
+											badgeClass="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+										/>
+									);
 								}
-							/>
+								if (status === "error") {
+									return (
+										<StatusRow
+											label="Status"
+											value="Connection error"
+											badge="error"
+											badgeClass="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+										/>
+									);
+								}
+								return (
+									<StatusRow
+										label="Status"
+										value="Not configured"
+										badge="inactive"
+										badgeClass="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
+									/>
+								);
+							})()}
 							{settings?.apiKeyMasked && (
 								<StatusRow
 									label="API key"
@@ -297,6 +321,13 @@ export function ToastAdmin() {
 									mono
 								/>
 							)}
+							{settings?.status === "connected" &&
+								typeof settings.menuCount === "number" && (
+									<StatusRow
+										label="Menus synced"
+										value={String(settings.menuCount)}
+									/>
+								)}
 							<StatusRow
 								label="Webhook endpoint"
 								value="/api/store/toast/webhook"
@@ -304,7 +335,27 @@ export function ToastAdmin() {
 							/>
 						</div>
 
-						{!settings?.configured && (
+						{settings?.status === "error" && (
+							<div
+								data-testid="toast-status-error-details"
+								className="mt-3 rounded-md border border-red-500/30 bg-red-500/5 p-3 text-red-600 text-sm dark:text-red-400"
+							>
+								<p className="font-medium">
+									Toast rejected the configured credentials.
+								</p>
+								{settings.error && (
+									<p className="mt-1 font-mono text-xs opacity-90">
+										{settings.error}
+									</p>
+								)}
+								<p className="mt-2 text-muted-foreground text-xs">
+									Menu and order sync is paused until the connection is
+									repaired. Verify the API key is active and the restaurant GUID
+									is correct, then reload this page.
+								</p>
+							</div>
+						)}
+						{settings?.status === "not_configured" && (
 							<div className="mt-3 rounded-md bg-yellow-50 p-3 text-sm text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300">
 								Add your Toast API key and restaurant GUID to the module
 								configuration to enable POS integration.
