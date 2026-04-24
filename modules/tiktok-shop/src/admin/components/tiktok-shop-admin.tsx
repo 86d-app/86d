@@ -6,6 +6,8 @@ import { useState } from "react";
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface SettingsData {
+	status: "connected" | "not_configured" | "error";
+	error?: string;
 	configured: boolean;
 	shopId: string | null;
 	sandbox: boolean;
@@ -151,7 +153,7 @@ function StatCard({
 }
 
 function ConnectionStatus({ settings }: { settings: SettingsData }) {
-	if (settings.configured) {
+	if (settings.status === "connected") {
 		return (
 			<div className="flex flex-col gap-4 rounded-lg border border-border bg-card p-5">
 				<div className="flex items-center justify-between">
@@ -179,6 +181,33 @@ function ConnectionStatus({ settings }: { settings: SettingsData }) {
 						</span>
 					</div>
 				</div>
+			</div>
+		);
+	}
+
+	if (settings.status === "error") {
+		return (
+			<div className="flex flex-col gap-3 rounded-lg border border-red-500/30 bg-red-500/5 p-5">
+				<div className="flex items-center justify-between">
+					<div className="flex items-center gap-2">
+						<div className="size-2.5 rounded-full bg-red-500" />
+						<span className="font-medium text-foreground text-sm">
+							Connection Error
+						</span>
+					</div>
+					<span className="rounded-full bg-red-100 px-2.5 py-0.5 font-medium text-red-800 text-xs dark:bg-red-900/30 dark:text-red-400">
+						{settings.sandbox ? "Sandbox" : "Production"}
+					</span>
+				</div>
+				<p className="break-words text-muted-foreground text-sm">
+					{settings.error ??
+						"TikTok Shop rejected the credentials. Verify the access token hasn't expired and the app has the required scopes."}
+				</p>
+				<p className="text-muted-foreground text-xs">
+					Access tokens expire periodically. Regenerate one from the TikTok Shop
+					Partner Center and update{" "}
+					<code className="rounded bg-muted px-1">TIKTOK_ACCESS_TOKEN</code>.
+				</p>
 			</div>
 		);
 	}
@@ -375,7 +404,9 @@ export function TikTokShopAdmin() {
 						<div className="flex-1" />
 						<button
 							type="button"
-							disabled={syncMutation.isPending || !settingsData?.configured}
+							disabled={
+								syncMutation.isPending || settingsData?.status !== "connected"
+							}
 							onClick={handleSync}
 							className="rounded-md bg-foreground px-3.5 py-1.5 font-medium text-background text-sm transition-opacity hover:opacity-90 disabled:opacity-40"
 						>
