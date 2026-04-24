@@ -25,14 +25,21 @@ interface Synonym {
 	createdAt: string;
 }
 
+type ProviderStatus = "connected" | "not_configured" | "error";
+
 interface SearchSettings {
 	meilisearch: {
+		status: ProviderStatus;
+		error?: string;
 		configured: boolean;
 		host: string | null;
 		apiKey: string | null;
 		indexUid: string;
+		documentCount?: number;
 	};
 	embeddings: {
+		status: ProviderStatus;
+		error?: string;
 		configured: boolean;
 		provider: "openai" | "openrouter" | null;
 		model: string;
@@ -65,26 +72,36 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
 	);
 }
 
-function ConfigBadge({
-	configured,
+function StatusBadge({
+	status,
 	label,
+	testId,
 }: {
-	configured: boolean;
+	status: ProviderStatus;
 	label: string;
+	testId?: string;
 }) {
+	const palette =
+		status === "connected"
+			? {
+					bg: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+					dot: "bg-emerald-500",
+				}
+			: status === "error"
+				? {
+						bg: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+						dot: "bg-red-500",
+					}
+				: {
+						bg: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+						dot: "bg-amber-500",
+					};
 	return (
 		<span
-			className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 font-medium text-xs ${
-				configured
-					? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-					: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-			}`}
+			data-testid={testId}
+			className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 font-medium text-xs ${palette.bg}`}
 		>
-			<span
-				className={`inline-block size-1.5 rounded-full ${
-					configured ? "bg-emerald-500" : "bg-amber-500"
-				}`}
-			/>
+			<span className={`inline-block size-1.5 rounded-full ${palette.dot}`} />
 			{label}
 		</span>
 	);
@@ -189,20 +206,50 @@ export function SearchAnalytics() {
 								<span className="text-muted-foreground text-sm">
 									MeiliSearch
 								</span>
-								<ConfigBadge
-									configured={settingsData.meilisearch.configured}
+								<StatusBadge
+									testId={`meili-status-${settingsData.meilisearch.status.replace("_", "-")}`}
+									status={settingsData.meilisearch.status}
 									label={
-										settingsData.meilisearch.configured
+										settingsData.meilisearch.status === "connected"
 											? "Connected"
-											: "Not configured"
+											: settingsData.meilisearch.status === "error"
+												? "Connection Error"
+												: "Not configured"
 									}
 								/>
 							</div>
-							{settingsData.meilisearch.configured ? (
+							{settingsData.meilisearch.status === "connected" ? (
 								<div className="text-muted-foreground text-xs">
 									<p>Host: {settingsData.meilisearch.host}</p>
 									<p>Index: {settingsData.meilisearch.indexUid}</p>
 									<p>Key: {settingsData.meilisearch.apiKey}</p>
+									{typeof settingsData.meilisearch.documentCount ===
+									"number" ? (
+										<p>
+											Documents:{" "}
+											{settingsData.meilisearch.documentCount.toLocaleString()}
+										</p>
+									) : null}
+								</div>
+							) : settingsData.meilisearch.status === "error" ? (
+								<div
+									data-testid="meili-error-details"
+									className="rounded-md border border-red-500/30 bg-red-500/5 p-2.5 text-red-600 text-xs dark:text-red-400"
+								>
+									<p className="font-medium">
+										MeiliSearch at{" "}
+										{settingsData.meilisearch.host ?? "configured host"} is
+										unreachable.
+									</p>
+									{settingsData.meilisearch.error ? (
+										<p className="mt-1 font-mono opacity-90">
+											{settingsData.meilisearch.error}
+										</p>
+									) : null}
+									<p className="mt-1.5 text-[11px] text-muted-foreground">
+										Falling back to the local search engine. Verify the instance
+										URL and master key.
+									</p>
 								</div>
 							) : (
 								<p className="text-muted-foreground text-xs">
@@ -223,21 +270,46 @@ export function SearchAnalytics() {
 								<span className="text-muted-foreground text-sm">
 									AI Embeddings
 								</span>
-								<ConfigBadge
-									configured={settingsData.embeddings.configured}
+								<StatusBadge
+									testId={`embeddings-status-${settingsData.embeddings.status.replace("_", "-")}`}
+									status={settingsData.embeddings.status}
 									label={
-										settingsData.embeddings.configured
+										settingsData.embeddings.status === "connected"
 											? settingsData.embeddings.provider === "openai"
 												? "OpenAI"
 												: "OpenRouter"
-											: "Not configured"
+											: settingsData.embeddings.status === "error"
+												? "Connection Error"
+												: "Not configured"
 									}
 								/>
 							</div>
-							{settingsData.embeddings.configured ? (
+							{settingsData.embeddings.status === "connected" ? (
 								<p className="text-muted-foreground text-xs">
 									Model: {settingsData.embeddings.model}
 								</p>
+							) : settingsData.embeddings.status === "error" ? (
+								<div
+									data-testid="embeddings-error-details"
+									className="rounded-md border border-red-500/30 bg-red-500/5 p-2.5 text-red-600 text-xs dark:text-red-400"
+								>
+									<p className="font-medium">
+										{settingsData.embeddings.provider === "openai"
+											? "OpenAI"
+											: settingsData.embeddings.provider === "openrouter"
+												? "OpenRouter"
+												: "Embedding provider"}{" "}
+										rejected the configured key.
+									</p>
+									{settingsData.embeddings.error ? (
+										<p className="mt-1 font-mono opacity-90">
+											{settingsData.embeddings.error}
+										</p>
+									) : null}
+									<p className="mt-1.5 text-[11px] text-muted-foreground">
+										Semantic search is disabled until the key is replaced.
+									</p>
+								</div>
 							) : (
 								<p className="text-muted-foreground text-xs">
 									Semantic search disabled. Configure{" "}

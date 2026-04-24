@@ -4,6 +4,8 @@ import { useModuleClient } from "@86d-app/core/client";
 
 interface SettingsData {
 	ai: {
+		status: "connected" | "not_configured" | "error";
+		error?: string;
 		configured: boolean;
 		provider: "openai" | "openrouter" | null;
 		model: string;
@@ -63,6 +65,9 @@ export function RecommendationSettings() {
 	}
 
 	const ai = data?.ai;
+	const aiStatus = ai?.status ?? "not_configured";
+	const aiConnected = aiStatus === "connected";
+	const aiError = aiStatus === "error";
 	const providerLabel =
 		ai?.provider === "openai"
 			? "OpenAI"
@@ -113,20 +118,34 @@ export function RecommendationSettings() {
 								</p>
 							</div>
 						</div>
-						{ai?.configured ? (
-							<span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/10 px-3 py-1 font-medium text-green-600 text-xs dark:text-green-400">
+						{aiConnected ? (
+							<span
+								data-testid="ai-status-connected"
+								className="inline-flex items-center gap-1.5 rounded-full bg-green-500/10 px-3 py-1 font-medium text-green-600 text-xs dark:text-green-400"
+							>
 								<span className="h-1.5 w-1.5 rounded-full bg-green-500" />
 								Connected
 							</span>
+						) : aiError ? (
+							<span
+								data-testid="ai-status-error"
+								className="inline-flex items-center gap-1.5 rounded-full bg-red-500/10 px-3 py-1 font-medium text-red-600 text-xs dark:text-red-400"
+							>
+								<span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+								Connection Error
+							</span>
 						) : (
-							<span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-3 py-1 font-medium text-amber-600 text-xs dark:text-amber-400">
+							<span
+								data-testid="ai-status-not-configured"
+								className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-3 py-1 font-medium text-amber-600 text-xs dark:text-amber-400"
+							>
 								<span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
 								Not configured
 							</span>
 						)}
 					</div>
 
-					{ai?.configured ? (
+					{aiConnected && ai ? (
 						<div className="mt-4 grid gap-3 sm:grid-cols-3">
 							<div className="rounded-md bg-muted/30 p-3">
 								<p className="text-muted-foreground text-xs">Provider</p>
@@ -146,6 +165,23 @@ export function RecommendationSettings() {
 									{ai.apiKey}
 								</p>
 							</div>
+						</div>
+					) : aiError ? (
+						<div
+							data-testid="ai-error-details"
+							className="mt-4 rounded-md border border-red-500/30 bg-red-500/5 p-3 text-red-600 text-sm dark:text-red-400"
+						>
+							<p className="font-medium">
+								{providerLabel ?? "AI provider"} rejected the configured
+								credentials.
+							</p>
+							{ai?.error ? (
+								<p className="mt-1 font-mono text-xs opacity-90">{ai.error}</p>
+							) : null}
+							<p className="mt-2 text-muted-foreground text-xs">
+								Verify the key is active and has access to the embedding model,
+								then reload this page.
+							</p>
 						</div>
 					) : (
 						<p className="mt-3 text-muted-foreground text-sm">
@@ -176,12 +212,17 @@ export function RecommendationSettings() {
 							product embeddings stored
 						</span>
 					</div>
-					{ai?.configured ? (
+					{aiConnected ? (
 						<p className="mt-2 text-muted-foreground text-sm">
 							Product embeddings are generated automatically when products are
 							created or updated. Use the{" "}
 							<strong className="text-foreground">Generate Embedding</strong>{" "}
 							admin endpoint to manually embed specific products.
+						</p>
+					) : aiError ? (
+						<p className="mt-2 text-muted-foreground text-sm">
+							New embeddings will not be generated until the provider connection
+							above is repaired.
 						</p>
 					) : (
 						<p className="mt-2 text-muted-foreground text-sm">
