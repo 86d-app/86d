@@ -1,6 +1,6 @@
 {
 	"name": "@86d-app/store-pickup",
-	"version": "0.0.27",
+	"version": "0.0.28",
 	"description": "Store pickup (BOPIS) — let customers buy online and pick up in store with location management and time windows",
 	"keywords": [
 		"commerce",

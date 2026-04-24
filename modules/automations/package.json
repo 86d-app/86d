@@ -1,6 +1,6 @@
 {
 	"name": "@86d-app/automations",
-	"version": "0.0.27",
+	"version": "0.0.28",
 	"description": "Event-driven workflow automation module for 86d commerce platform",
 	"keywords": [
 		"commerce",
