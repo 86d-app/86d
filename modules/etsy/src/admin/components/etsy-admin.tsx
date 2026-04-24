@@ -6,6 +6,8 @@ import { useState } from "react";
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface SettingsData {
+	status: "connected" | "not_configured" | "error";
+	error?: string;
 	configured: boolean;
 	shopId: string | null;
 	apiKey: string | null;
@@ -158,9 +160,12 @@ function StatCard({
 }
 
 function ConnectionStatus({ settings }: { settings: SettingsData }) {
-	if (settings.configured) {
+	if (settings.status === "connected") {
 		return (
-			<div className="flex flex-col gap-4 rounded-lg border border-border bg-card p-5">
+			<div
+				data-testid="etsy-status-connected"
+				className="flex flex-col gap-4 rounded-lg border border-border bg-card p-5"
+			>
 				<div className="flex items-center justify-between">
 					<div className="flex items-center gap-2">
 						<div className="size-2.5 rounded-full bg-green-500" />
@@ -190,8 +195,54 @@ function ConnectionStatus({ settings }: { settings: SettingsData }) {
 		);
 	}
 
+	if (settings.status === "error") {
+		return (
+			<div
+				data-testid="etsy-status-error"
+				className="flex flex-col gap-3 rounded-lg border border-red-500/30 bg-red-500/5 p-5"
+			>
+				<div className="flex items-center justify-between">
+					<div className="flex items-center gap-2">
+						<div className="size-2.5 rounded-full bg-red-500" />
+						<span className="font-medium text-foreground text-sm">
+							Connection error
+						</span>
+					</div>
+					<span className="rounded-full bg-red-100 px-2.5 py-0.5 font-medium text-red-800 text-xs dark:bg-red-900/30 dark:text-red-400">
+						Check credentials
+					</span>
+				</div>
+				<p className="text-red-700 text-sm dark:text-red-300">
+					Etsy rejected the configured credentials. Listing, order, and review
+					sync is paused until the connection is repaired.
+				</p>
+				{settings.error && (
+					<p
+						data-testid="etsy-status-error-message"
+						className="font-mono text-red-600/90 text-xs dark:text-red-400/90"
+					>
+						{settings.error}
+					</p>
+				)}
+				<p className="text-muted-foreground text-xs">
+					Verify that{" "}
+					<code className="rounded bg-muted px-1 text-xs">ETSY_API_KEY</code>,{" "}
+					<code className="rounded bg-muted px-1 text-xs">ETSY_SHOP_ID</code>,
+					and{" "}
+					<code className="rounded bg-muted px-1 text-xs">
+						ETSY_ACCESS_TOKEN
+					</code>{" "}
+					are current and the OAuth token has not expired.
+				</p>
+			</div>
+		);
+	}
+
 	return (
-		<div className="flex flex-col gap-3 rounded-lg border border-amber-500/20 bg-amber-500/5 p-5">
+		<div
+			data-testid="etsy-status-not-configured"
+			className="flex flex-col gap-3 rounded-lg border border-amber-500/20 bg-amber-500/5 p-5"
+		>
 			<div className="flex items-center gap-2">
 				<div className="size-2.5 rounded-full bg-amber-500" />
 				<span className="font-medium text-foreground text-sm">
