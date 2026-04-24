@@ -14,7 +14,10 @@ export function createGetSettingsEndpoint(options: SettingsOptions) {
 		{ method: "GET" },
 		async () => {
 			const hasCredentials = Boolean(
-				options.accessToken && options.businessId && options.catalogId,
+				options.accessToken &&
+					options.businessId &&
+					options.catalogId &&
+					options.commerceAccountId,
 			);
 
 			let status: "connected" | "not_configured" | "error" = "not_configured";
@@ -24,7 +27,8 @@ export function createGetSettingsEndpoint(options: SettingsOptions) {
 				hasCredentials &&
 				options.accessToken &&
 				options.catalogId &&
-				options.commerceAccountId
+				options.commerceAccountId &&
+				options.businessId
 			) {
 				const provider = new MetaInstagramProvider({
 					accessToken: options.accessToken,

@@ -6,6 +6,8 @@ import { useState } from "react";
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface SettingsData {
+	status: "connected" | "not_configured" | "error";
+	error?: string;
 	configured: boolean;
 	businessId: string | null;
 	catalogId: string | null;
@@ -154,7 +156,7 @@ function StatCard({
 }
 
 function ConnectionStatus({ settings }: { settings: SettingsData }) {
-	if (settings.configured) {
+	if (settings.status === "connected") {
 		return (
 			<div className="flex flex-col gap-4 rounded-lg border border-border bg-card p-5">
 				<div className="flex items-center justify-between">
@@ -192,6 +194,34 @@ function ConnectionStatus({ settings }: { settings: SettingsData }) {
 		);
 	}
 
+	if (settings.status === "error") {
+		return (
+			<div className="flex flex-col gap-3 rounded-lg border border-red-500/30 bg-red-500/5 p-5">
+				<div className="flex items-center justify-between">
+					<div className="flex items-center gap-2">
+						<div className="size-2.5 rounded-full bg-red-500" />
+						<span className="font-medium text-foreground text-sm">
+							Connection Error
+						</span>
+					</div>
+					<span className="rounded-full bg-red-100 px-2.5 py-0.5 font-medium text-red-800 text-xs dark:bg-red-900/30 dark:text-red-400">
+						Action required
+					</span>
+				</div>
+				<p className="break-words text-muted-foreground text-sm">
+					{settings.error ??
+						"Meta rejected the credentials. Verify the access token hasn't expired and the Instagram Business account still has access to the catalog."}
+				</p>
+				<p className="text-muted-foreground text-xs">
+					Instagram access tokens expire or get revoked when an admin rotates
+					app permissions. Regenerate a long-lived token from Meta Business
+					Suite and update{" "}
+					<code className="rounded bg-muted px-1">INSTAGRAM_ACCESS_TOKEN</code>.
+				</p>
+			</div>
+		);
+	}
+
 	return (
 		<div className="flex flex-col gap-3 rounded-lg border border-amber-500/20 bg-amber-500/5 p-5">
 			<div className="flex items-center gap-2">
@@ -209,9 +239,13 @@ function ConnectionStatus({ settings }: { settings: SettingsData }) {
 				<code className="rounded bg-muted px-1 text-xs">
 					INSTAGRAM_BUSINESS_ID
 				</code>
-				, and{" "}
+				,{" "}
 				<code className="rounded bg-muted px-1 text-xs">
 					INSTAGRAM_CATALOG_ID
+				</code>
+				, and{" "}
+				<code className="rounded bg-muted px-1 text-xs">
+					INSTAGRAM_COMMERCE_ACCOUNT_ID
 				</code>{" "}
 				environment variables to connect your Instagram Shopping.
 			</p>
@@ -391,7 +425,9 @@ export function InstagramShopAdmin() {
 						<div className="flex-1" />
 						<button
 							type="button"
-							disabled={syncMutation.isPending || !settingsData?.configured}
+							disabled={
+								syncMutation.isPending || settingsData?.status !== "connected"
+							}
 							onClick={handleSync}
 							className="rounded-md bg-foreground px-3.5 py-1.5 font-medium text-background text-sm transition-opacity hover:opacity-90 disabled:opacity-40"
 						>
