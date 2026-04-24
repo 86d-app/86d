@@ -6,6 +6,8 @@ import { useState } from "react";
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface SettingsData {
+	status: "connected" | "not_configured" | "error";
+	error?: string;
 	configured: boolean;
 	merchantId: string | null;
 	targetCountry: string;
@@ -149,7 +151,7 @@ function StatCard({
 }
 
 function ConnectionStatus({ settings }: { settings: SettingsData }) {
-	if (settings.configured) {
+	if (settings.status === "connected") {
 		return (
 			<div className="flex flex-col gap-4 rounded-lg border border-border bg-card p-5">
 				<div className="flex items-center justify-between">
@@ -185,6 +187,33 @@ function ConnectionStatus({ settings }: { settings: SettingsData }) {
 						</span>
 					</div>
 				</div>
+			</div>
+		);
+	}
+
+	if (settings.status === "error") {
+		return (
+			<div className="flex flex-col gap-3 rounded-lg border border-red-500/30 bg-red-500/5 p-5">
+				<div className="flex items-center justify-between">
+					<div className="flex items-center gap-2">
+						<div className="size-2.5 rounded-full bg-red-500" />
+						<span className="font-medium text-foreground text-sm">
+							Connection Error
+						</span>
+					</div>
+					<span className="rounded-full bg-red-100 px-2.5 py-0.5 font-medium text-red-800 text-xs dark:bg-red-900/30 dark:text-red-400">
+						Action required
+					</span>
+				</div>
+				<p className="break-words text-muted-foreground text-sm">
+					{settings.error ??
+						"Google Merchant Center rejected the credentials. Verify the API key is valid and the Content API for Shopping is enabled on the project."}
+				</p>
+				<p className="text-muted-foreground text-xs">
+					API keys can be revoked or scoped too narrowly. Issue a new key from
+					the Google Cloud Console with Content API for Shopping access and
+					update <code className="rounded bg-muted px-1">GOOGLE_API_KEY</code>.
+				</p>
 			</div>
 		);
 	}
@@ -460,7 +489,9 @@ export function GoogleShoppingAdmin() {
 				</div>
 				<button
 					type="button"
-					disabled={submitMutation.isPending || !settingsData?.configured}
+					disabled={
+						submitMutation.isPending || settingsData?.status !== "connected"
+					}
 					onClick={handleSubmitFeed}
 					className="rounded-md bg-foreground px-3.5 py-1.5 font-medium text-background text-sm transition-opacity hover:opacity-90 disabled:opacity-40"
 				>
