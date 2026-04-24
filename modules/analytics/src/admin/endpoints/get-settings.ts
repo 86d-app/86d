@@ -1,5 +1,6 @@
 import { createAdminEndpoint } from "@86d-app/core";
 import { GA4Provider } from "../../providers/ga4";
+import { SentryProvider } from "../../providers/sentry";
 
 type ConnectionStatus = "connected" | "not_configured" | "error";
 
@@ -8,37 +9,6 @@ interface SettingsOptions {
 	sentryDsn?: string | undefined;
 	ga4MeasurementId?: string | undefined;
 	ga4ApiSecret?: string | undefined;
-}
-
-/**
- * A Sentry DSN looks like:
- *   https://<publicKey>@<host>/<projectId>
- * If the DSN parses to that shape, it is structurally valid. We stop short of
- * actually POSTing to the envelope endpoint because Sentry would count it as
- * an ingested event.
- */
-function checkSentryDsn(
-	dsn: string,
-):
-	| { ok: true; host: string; projectId: string }
-	| { ok: false; error: string } {
-	let parsed: URL;
-	try {
-		parsed = new URL(dsn);
-	} catch {
-		return { ok: false, error: "DSN is not a valid URL" };
-	}
-	if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
-		return { ok: false, error: "DSN must use http(s)" };
-	}
-	if (!parsed.username) {
-		return { ok: false, error: "DSN is missing the public key" };
-	}
-	const projectId = parsed.pathname.replace(/^\/+/, "").replace(/\/+$/, "");
-	if (!projectId || !/^\d+$/.test(projectId)) {
-		return { ok: false, error: "DSN is missing a numeric project id" };
-	}
-	return { ok: true, host: parsed.host, projectId };
 }
 
 export function createGetSettingsEndpoint(options: SettingsOptions) {
@@ -53,13 +23,19 @@ export function createGetSettingsEndpoint(options: SettingsOptions) {
 			let sentryError: string | undefined;
 			let sentryHost: string | null = null;
 			if (sentryDsn.length > 0) {
-				const result = checkSentryDsn(sentryDsn);
-				if (result.ok) {
-					sentryStatus = "connected";
-					sentryHost = result.host;
-				} else {
+				const build = SentryProvider.fromDsn(sentryDsn);
+				if (!build.ok) {
 					sentryStatus = "error";
-					sentryError = result.error;
+					sentryError = build.error;
+				} else {
+					sentryHost = build.provider.getParsedDsn().host;
+					const verify = await build.provider.verifyConnection();
+					if (verify.ok) {
+						sentryStatus = "connected";
+					} else {
+						sentryStatus = "error";
+						sentryError = verify.error;
+					}
 				}
 			}
 

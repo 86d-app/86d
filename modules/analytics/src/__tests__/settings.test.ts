@@ -3,10 +3,25 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 /**
  * Tests for the analytics settings endpoint.
  *
- * Covers: GTM presence reporting, Sentry DSN format validation,
+ * Covers: GTM presence reporting, live Sentry envelope verification,
  * live GA4 Measurement Protocol verification, error propagation, and
  * module factory wiring.
  */
+
+type EndpointResponseOverrides = {
+	sentry?: Partial<{
+		ok: boolean;
+		status: number;
+		json: () => Promise<unknown>;
+		text: () => Promise<string>;
+	}>;
+	ga4?: Partial<{
+		ok: boolean;
+		status: number;
+		json: () => Promise<unknown>;
+		text: () => Promise<string>;
+	}>;
+};
 
 interface SettingsResult {
 	gtm: { configured: boolean; provider: string; containerId: string | null };
@@ -52,11 +67,32 @@ async function callGetSettings(opts: {
 describe("analytics — settings endpoint", () => {
 	let fetchSpy: ReturnType<typeof vi.fn>;
 
-	beforeEach(() => {
-		fetchSpy = vi.fn().mockResolvedValue({
-			ok: true,
-			json: () => Promise.resolve({ validationMessages: [] }),
+	function routedFetch(overrides: EndpointResponseOverrides = {}) {
+		return vi.fn().mockImplementation((url: string) => {
+			if (url.includes("/envelope/")) {
+				return Promise.resolve({
+					ok: true,
+					status: 200,
+					json: () => Promise.resolve({ id: "evt123" }),
+					text: () => Promise.resolve(""),
+					...overrides.sentry,
+				});
+			}
+			if (url.includes("debug/mp/collect")) {
+				return Promise.resolve({
+					ok: true,
+					status: 200,
+					json: () => Promise.resolve({ validationMessages: [] }),
+					text: () => Promise.resolve(""),
+					...overrides.ga4,
+				});
+			}
+			return Promise.reject(new Error(`Unexpected URL: ${url}`));
 		});
+	}
+
+	beforeEach(() => {
+		fetchSpy = routedFetch();
 		vi.stubGlobal("fetch", fetchSpy);
 	});
 
@@ -85,13 +121,58 @@ describe("analytics — settings endpoint", () => {
 	});
 
 	describe("Sentry DSN validation", () => {
-		it("reports connected for a well-formed DSN", async () => {
+		it("reports connected when the envelope endpoint accepts the test event", async () => {
 			const dsn = "https://abc123def@o123.ingest.sentry.io/456";
 			const result = await callGetSettings({ sentryDsn: dsn });
 			expect(result.sentry.status).toBe("connected");
 			expect(result.sentry.configured).toBe(true);
 			expect(result.sentry.host).toBe("o123.ingest.sentry.io");
 			expect(result.sentry.error).toBeUndefined();
+
+			const envelopeCall = fetchSpy.mock.calls.find(
+				(call) =>
+					typeof call[0] === "string" &&
+					(call[0] as string).includes("/envelope/"),
+			);
+			expect(envelopeCall).toBeDefined();
+			expect(envelopeCall?.[0]).toBe(
+				"https://o123.ingest.sentry.io/api/456/envelope/",
+			);
+		});
+
+		it("reports error when the envelope endpoint rejects the DSN public key", async () => {
+			fetchSpy = routedFetch({
+				sentry: {
+					ok: false,
+					status: 401,
+					text: () => Promise.resolve(""),
+				},
+			});
+			vi.stubGlobal("fetch", fetchSpy);
+
+			const result = await callGetSettings({
+				sentryDsn: "https://bad@o.ingest.sentry.io/1",
+			});
+
+			expect(result.sentry.status).toBe("error");
+			expect(result.sentry.configured).toBe(false);
+			expect(result.sentry.error).toMatch(/401|public key/i);
+		});
+
+		it("reports error when the envelope fetch fails with a network error", async () => {
+			fetchSpy = vi.fn().mockImplementation((url: string) => {
+				if (url.includes("/envelope/"))
+					return Promise.reject(new Error("ECONNREFUSED"));
+				return Promise.reject(new Error(`Unexpected URL: ${url}`));
+			});
+			vi.stubGlobal("fetch", fetchSpy);
+
+			const result = await callGetSettings({
+				sentryDsn: "https://key@o.ingest.sentry.io/1",
+			});
+
+			expect(result.sentry.status).toBe("error");
+			expect(result.sentry.error).toBe("ECONNREFUSED");
 		});
 
 		it("truncates the Sentry DSN for display", async () => {
