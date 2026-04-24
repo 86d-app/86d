@@ -20,6 +20,7 @@ import {
 } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { buildManifest } from "../packages/registry/src/manifest.js";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -123,6 +124,21 @@ for (const pkgPath of packageJsonPaths) {
 }
 
 console.log(`\nUpdated ${updated} packages to ${targetVersion}`);
+
+// Regenerate registry.json so versions and integrity hashes stay in sync.
+// Without this, CLI consumers pulling from the registry get stale versions
+// and integrity verification fails against the actual module source.
+const registryPath = join(ROOT, "registry.json");
+const manifest = buildManifest(ROOT, {
+	baseUrl: "https://github.com/86d-app/86d",
+	defaultRef: "main",
+});
+writeFileSync(registryPath, `${JSON.stringify(manifest, null, "\t")}\n`);
+const moduleCount = Object.keys(manifest.modules).length;
+const templateCount = Object.keys(manifest.templates).length;
+console.log(
+	`Regenerated registry.json (${moduleCount} modules, ${templateCount} templates)`,
+);
 
 // Record timestamp so subsequent calls within 24h are skipped
 writeFileSync(STAMP_FILE, String(Date.now()));
