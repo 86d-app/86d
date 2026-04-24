@@ -82,9 +82,13 @@ function getMaxSizeForType(mime: string): number {
 	return MAX_IMAGE_SIZE;
 }
 
-/** Reject SVGs containing script tags, event handlers, or JS URIs. */
+/** Reject SVGs containing script tags, event handlers, JS URIs, or XXE. */
 function isSvgSafe(buffer: ArrayBuffer): boolean {
 	const text = new TextDecoder().decode(new Uint8Array(buffer));
+	// Block DOCTYPE and ENTITY declarations — XXE vector for any downstream
+	// server-side SVG parsing (thumbnail, dimension extraction).
+	if (/<!DOCTYPE/i.test(text)) return false;
+	if (/<!ENTITY/i.test(text)) return false;
 	// Block script elements (including namespace variants)
 	if (/<script[\s>/]/i.test(text)) return false;
 	// Block event handler attributes (onclick, onload, onerror, etc.)

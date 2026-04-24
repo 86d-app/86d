@@ -1,6 +1,7 @@
-import { execSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
+	cpSync,
 	existsSync,
 	mkdirSync,
 	readFileSync,
@@ -216,10 +217,18 @@ async function fetchFromGitHub(
 		const extractDir = join(tmpDir, "extracted");
 		mkdirSync(extractDir, { recursive: true });
 
-		// Extract tarball
-		execSync(`tar xzf "${tarballPath}" -C "${extractDir}"`, {
+		// Extract tarball with argv-style invocation so registry-supplied paths
+		// can never be interpreted as shell metacharacters.
+		const tarResult = spawnSync("tar", ["xzf", tarballPath, "-C", extractDir], {
 			stdio: "pipe",
 		});
+		if (tarResult.status !== 0) {
+			rmSync(tmpDir, { recursive: true, force: true });
+			return {
+				success: false,
+				error: `tar failed: ${tarResult.stderr?.toString() ?? "unknown error"}`,
+			};
+		}
 
 		// Find the extracted root directory (GitHub tarballs have a prefix dir)
 		const { readdirSync } = await import("node:fs");
@@ -243,11 +252,9 @@ async function fetchFromGitHub(
 			};
 		}
 
-		// Copy to target
+		// Copy to target via Node's fs.cp (no shell; no metacharacter risk).
 		mkdirSync(targetDir, { recursive: true });
-		execSync(`cp -R "${sourcePath}/"* "${targetDir}/"`, {
-			stdio: "pipe",
-		});
+		cpSync(sourcePath, targetDir, { recursive: true, force: true });
 
 		// Clean up temp files
 		rmSync(tmpDir, { recursive: true, force: true });
@@ -277,17 +284,22 @@ async function fetchFromNpm(
 	const installTarget = `${spec.packageName}${versionSuffix}`;
 
 	try {
-		// Try bun first, fall back to npm
-		try {
-			execSync(`bun add "${installTarget}"`, {
+		// Try bun first, fall back to npm. Pass the install target as an argv
+		// element so no metacharacter in the package spec is ever shell-evaluated.
+		const bunResult = spawnSync("bun", ["add", installTarget], {
+			cwd: storeDir,
+			stdio: "pipe",
+		});
+		if (bunResult.status !== 0) {
+			const npmResult = spawnSync("npm", ["install", installTarget], {
 				cwd: storeDir,
 				stdio: "pipe",
 			});
-		} catch {
-			execSync(`npm install "${installTarget}"`, {
-				cwd: storeDir,
-				stdio: "pipe",
-			});
+			if (npmResult.status !== 0) {
+				throw new Error(
+					`bun add and npm install both failed: ${npmResult.stderr?.toString() ?? "unknown"}`,
+				);
+			}
 		}
 
 		const localPath = join(root, "node_modules", spec.packageName);

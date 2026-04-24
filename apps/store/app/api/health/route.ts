@@ -1,5 +1,4 @@
 import { db } from "db";
-import env from "env";
 import { NextResponse } from "next/server";
 import { getStorage } from "~/lib/storage";
 
@@ -42,7 +41,6 @@ export async function GET() {
 	return NextResponse.json(
 		{
 			status: allOk ? "healthy" : critical ? "degraded" : "unhealthy",
-			storeId: env.STORE_ID,
 			checks,
 			timestamp: new Date().toISOString(),
 		},
