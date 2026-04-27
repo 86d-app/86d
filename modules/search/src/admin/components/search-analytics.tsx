@@ -9,6 +9,8 @@ interface AnalyticsData {
 	avgResultCount: number;
 	zeroResultCount: number;
 	zeroResultRate: number;
+	clickThroughRate: number;
+	avgClickPosition: number;
 	indexedItems: number;
 }
 
@@ -326,7 +328,7 @@ export function SearchAnalytics() {
 
 			{/* Stats overview */}
 			{analytics && (
-				<div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+				<div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-8">
 					<StatCard
 						label="Total Searches"
 						value={analytics.totalQueries.toLocaleString()}
@@ -343,6 +345,16 @@ export function SearchAnalytics() {
 					<StatCard
 						label="Zero Result Rate"
 						value={`${analytics.zeroResultRate}%`}
+					/>
+					<StatCard
+						label="Click-Through Rate"
+						value={`${analytics.clickThroughRate}%`}
+					/>
+					<StatCard
+						label="Avg Click Position"
+						value={
+							analytics.avgClickPosition > 0 ? analytics.avgClickPosition : "—"
+						}
 					/>
 					<StatCard
 						label="Indexed Items"
