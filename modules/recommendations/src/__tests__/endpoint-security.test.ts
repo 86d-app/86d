@@ -307,6 +307,108 @@ describe("recommendations endpoint security", () => {
 		});
 	});
 
+	// ── Click Recording (Impression Boundary) ───────────────────────
+
+	describe("click recording", () => {
+		it("rejects a click for a productId not in the served impression", async () => {
+			const impression = await controller.recordImpression({
+				surface: "trending",
+				productIds: ["prod-a", "prod-b"],
+				strategies: ["trending"],
+			});
+
+			const click = await controller.recordClick({
+				impressionId: impression.id,
+				productId: "prod-not-served",
+				position: 0,
+			});
+
+			expect(click).toBeNull();
+		});
+
+		it("accepts a click for any productId that was in the impression", async () => {
+			const impression = await controller.recordImpression({
+				surface: "for_product",
+				productIds: ["prod-x", "prod-y", "prod-z"],
+				strategies: ["manual"],
+			});
+
+			const click = await controller.recordClick({
+				impressionId: impression.id,
+				productId: "prod-z",
+				position: 2,
+				strategy: "manual",
+			});
+
+			expect(click).not.toBeNull();
+			expect(click?.productId).toBe("prod-z");
+			expect(click?.position).toBe(2);
+			expect(click?.strategy).toBe("manual");
+		});
+
+		it("returns null for a nonexistent impression ID", async () => {
+			const click = await controller.recordClick({
+				impressionId: "does-not-exist",
+				productId: "prod-a",
+				position: 0,
+			});
+
+			expect(click).toBeNull();
+		});
+
+		it("each click is stored independently and counts toward CTR", async () => {
+			const i1 = await controller.recordImpression({
+				surface: "trending",
+				productIds: ["prod-a"],
+				strategies: ["trending"],
+			});
+			const i2 = await controller.recordImpression({
+				surface: "trending",
+				productIds: ["prod-a"],
+				strategies: ["trending"],
+			});
+			// Third impression with no click
+			await controller.recordImpression({
+				surface: "trending",
+				productIds: ["prod-a"],
+				strategies: ["trending"],
+			});
+
+			await controller.recordClick({
+				impressionId: i1.id,
+				productId: "prod-a",
+				position: 0,
+			});
+			await controller.recordClick({
+				impressionId: i2.id,
+				productId: "prod-a",
+				position: 0,
+			});
+
+			const analytics = await controller.getAnalytics();
+			expect(analytics.totalImpressions).toBe(3);
+			expect(analytics.totalClicks).toBe(2);
+			// 2 of 3 impressions clicked → 66% (rounded)
+			expect(analytics.clickThroughRate).toBe(67);
+		});
+
+		it("inherits surface from impression when strategy is not given", async () => {
+			const impression = await controller.recordImpression({
+				surface: "trending",
+				productIds: ["prod-b"],
+				strategies: ["trending"],
+			});
+
+			const click = await controller.recordClick({
+				impressionId: impression.id,
+				productId: "prod-b",
+				position: 0,
+			});
+
+			expect(click?.surface).toBe("trending");
+		});
+	});
+
 	// ── Personalized Recommendations ────────────────────────────────
 
 	describe("getPersonalized", () => {

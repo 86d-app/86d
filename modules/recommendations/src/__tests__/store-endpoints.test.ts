@@ -1,6 +1,10 @@
 import { createMockDataService } from "@86d-app/core/test-utils";
 import { beforeEach, describe, expect, it } from "vitest";
-import type { RecommendedProduct } from "../service";
+import type {
+	RecommendationImpression,
+	RecommendationSurface,
+	RecommendedProduct,
+} from "../service";
 import { createRecommendationController } from "../service-impl";
 
 /**
@@ -13,6 +17,7 @@ import { createRecommendationController } from "../service-impl";
  * 3. get-for-product: strategy-based recommendations for a product
  * 4. track-interaction: records user interaction (view/purchase/add_to_cart),
  *    authenticated vs guest handling
+ * 5. record-click: records a recommendation click tied to an impression
  */
 
 type DataService = ReturnType<typeof createMockDataService>;
@@ -61,6 +66,28 @@ async function simulateGetForProduct(
 		take: query.take ?? 10,
 	});
 	return { products };
+}
+
+async function simulateRecordClick(
+	data: DataService,
+	body: {
+		impressionId: string;
+		productId: string;
+		position: number;
+		strategy?:
+			| "manual"
+			| "bought_together"
+			| "trending"
+			| "personalized"
+			| "ai_similar";
+	},
+) {
+	const controller = createRecommendationController(data);
+	const click = await controller.recordClick(body);
+	if (!click) {
+		return { error: "Impression not found", status: 404 };
+	}
+	return { id: click.id };
 }
 
 async function simulateTrackInteraction(
@@ -323,5 +350,120 @@ describe("store endpoint: track interaction", () => {
 		});
 
 		expect(result.success).toBe(true);
+	});
+});
+
+describe("store endpoint: record click", () => {
+	let data: DataService;
+
+	beforeEach(() => {
+		data = createMockDataService();
+	});
+
+	async function createImpression(
+		d: DataService,
+		productIds: string[],
+		surface: RecommendationSurface = "trending",
+	): Promise<RecommendationImpression> {
+		const ctrl = createRecommendationController(d);
+		return ctrl.recordImpression({
+			surface,
+			productIds,
+			strategies: ["trending"],
+		});
+	}
+
+	it("records a click for a product that was in the impression", async () => {
+		const impression = await createImpression(data, ["prod_a", "prod_b"]);
+
+		const result = await simulateRecordClick(data, {
+			impressionId: impression.id,
+			productId: "prod_a",
+			position: 0,
+			strategy: "trending",
+		});
+
+		expect("id" in result).toBe(true);
+		expect("error" in result).toBe(false);
+	});
+
+	it("returns 404 when impression does not exist", async () => {
+		const result = await simulateRecordClick(data, {
+			impressionId: "nonexistent-impression-id",
+			productId: "prod_a",
+			position: 0,
+		});
+
+		expect(result).toEqual({ error: "Impression not found", status: 404 });
+	});
+
+	it("returns 404 when productId was not in the served impression", async () => {
+		const impression = await createImpression(data, ["prod_a", "prod_b"]);
+
+		const result = await simulateRecordClick(data, {
+			impressionId: impression.id,
+			productId: "prod_not_served",
+			position: 0,
+		});
+
+		expect(result).toEqual({ error: "Impression not found", status: 404 });
+	});
+
+	it("records position and strategy on the click", async () => {
+		const ctrl = createRecommendationController(data);
+		const impression = await createImpression(
+			data,
+			["prod_1", "prod_2", "prod_3"],
+			"for_product",
+		);
+
+		await simulateRecordClick(data, {
+			impressionId: impression.id,
+			productId: "prod_2",
+			position: 1,
+			strategy: "manual",
+		});
+
+		const analytics = await ctrl.getAnalytics();
+		expect(analytics.totalClicks).toBe(1);
+		expect(analytics.clickThroughRate).toBeGreaterThan(0);
+	});
+
+	it("increments CTR when multiple impressions are clicked", async () => {
+		const ctrl = createRecommendationController(data);
+
+		const i1 = await createImpression(data, ["prod_a"]);
+		const i2 = await createImpression(data, ["prod_a"]);
+		await createImpression(data, ["prod_a"]);
+
+		await simulateRecordClick(data, {
+			impressionId: i1.id,
+			productId: "prod_a",
+			position: 0,
+		});
+		await simulateRecordClick(data, {
+			impressionId: i2.id,
+			productId: "prod_a",
+			position: 0,
+		});
+
+		const analytics = await ctrl.getAnalytics();
+		// 3 impressions, 2 with clicks → ~66% CTR
+		expect(analytics.totalImpressions).toBe(3);
+		expect(analytics.totalClicks).toBe(2);
+		expect(analytics.clickThroughRate).toBeGreaterThan(0);
+		expect(analytics.clickThroughRate).toBeLessThanOrEqual(100);
+	});
+
+	it("works without an explicit strategy (inherits from impression)", async () => {
+		const impression = await createImpression(data, ["prod_a"]);
+
+		const result = await simulateRecordClick(data, {
+			impressionId: impression.id,
+			productId: "prod_a",
+			position: 0,
+		});
+
+		expect("id" in result).toBe(true);
 	});
 });
