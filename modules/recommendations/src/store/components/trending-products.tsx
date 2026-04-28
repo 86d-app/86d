@@ -26,27 +26,47 @@ export function TrendingProducts({
 	limit = 8,
 }: TrendingProductsProps) {
 	const api = useRecommendationsApi();
+	const recordClick = api.recordClick.useMutation() as {
+		mutate: (opts: { body: Record<string, unknown> }) => void;
+	};
 
 	const { data, isLoading } = api.getTrending.useQuery({
 		...(limit ? { take: String(limit) } : {}),
 	}) as {
-		data: { recommendations: RecommendedProduct[] } | undefined;
+		data:
+			| {
+					recommendations: RecommendedProduct[];
+					impressionId?: string | null;
+			  }
+			| undefined;
 		isLoading: boolean;
 	};
 
 	const recommendations = data?.recommendations ?? [];
+	const impressionId = data?.impressionId ?? null;
 
 	if (!isLoading && recommendations.length === 0) {
 		return null;
 	}
 
-	const items = recommendations.map((r) => ({
+	const items = recommendations.map((r, index) => ({
 		id: r.productId,
 		name: r.productName,
 		slug: r.productSlug,
 		image: r.productImage,
 		price: r.productPrice != null ? formatPrice(r.productPrice) : undefined,
 		href: `/products/${r.productSlug}`,
+		onClick: () => {
+			if (!impressionId) return;
+			recordClick.mutate({
+				body: {
+					impressionId,
+					productId: r.productId,
+					position: index,
+					strategy: r.strategy,
+				},
+			});
+		},
 	}));
 
 	return (

@@ -67,4 +67,35 @@ export const recommendationsSchema = {
 			},
 		},
 	},
+	recommendationImpression: {
+		fields: {
+			id: { type: "string", required: true },
+			surface: { type: "string", required: true },
+			sourceProductId: { type: "string", required: false },
+			customerId: { type: "string", required: false },
+			sessionId: { type: "string", required: false },
+			productIds: { type: "json", required: true },
+			strategies: { type: "json", required: true },
+			servedAt: {
+				type: "date",
+				required: true,
+				defaultValue: () => new Date(),
+			},
+		},
+	},
+	recommendationClick: {
+		fields: {
+			id: { type: "string", required: true },
+			impressionId: { type: "string", required: true },
+			surface: { type: "string", required: true },
+			productId: { type: "string", required: true },
+			position: { type: "number", required: true },
+			strategy: { type: "string", required: false },
+			clickedAt: {
+				type: "date",
+				required: true,
+				defaultValue: () => new Date(),
+			},
+		},
+	},
 } satisfies ModuleSchema;

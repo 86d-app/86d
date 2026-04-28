@@ -911,6 +911,10 @@ describe("createRecommendationController", () => {
 				totalInteractions: 0,
 				embeddingsCount: 0,
 				aiConfigured: false,
+				totalImpressions: 0,
+				totalClicks: 0,
+				clickThroughRate: 0,
+				avgClickPosition: 0,
 			});
 		});
 
@@ -1239,6 +1243,206 @@ describe("createRecommendationController (with AI)", () => {
 			const stats = await aiController.getStats();
 			expect(stats.aiConfigured).toBe(true);
 			expect(stats.embeddingsCount).toBe(2);
+		});
+	});
+});
+
+// ============================================================
+// Impressions, clicks, analytics
+// ============================================================
+
+describe("recommendation impressions and clicks", () => {
+	let mockData: ReturnType<typeof createMockDataService>;
+	let controller: ReturnType<typeof createRecommendationController>;
+
+	beforeEach(() => {
+		mockData = createMockDataService();
+		controller = createRecommendationController(mockData);
+	});
+
+	describe("recordImpression", () => {
+		it("persists an impression with surface, productIds, and strategies", async () => {
+			const impression = await controller.recordImpression({
+				surface: "for_product",
+				sourceProductId: "src",
+				customerId: "cust_1",
+				productIds: ["a", "b", "c"],
+				strategies: ["manual", "bought_together"],
+			});
+
+			expect(impression.id).toBeDefined();
+			expect(impression.surface).toBe("for_product");
+			expect(impression.sourceProductId).toBe("src");
+			expect(impression.customerId).toBe("cust_1");
+			expect(impression.productIds).toEqual(["a", "b", "c"]);
+			expect(impression.strategies).toEqual(["manual", "bought_together"]);
+			expect(impression.servedAt).toBeInstanceOf(Date);
+		});
+	});
+
+	describe("recordClick", () => {
+		it("returns null when impression does not exist", async () => {
+			const click = await controller.recordClick({
+				impressionId: "missing",
+				productId: "a",
+				position: 0,
+			});
+			expect(click).toBeNull();
+		});
+
+		it("returns null when productId is not in the impression", async () => {
+			const impression = await controller.recordImpression({
+				surface: "trending",
+				productIds: ["a", "b"],
+				strategies: ["trending"],
+			});
+
+			const click = await controller.recordClick({
+				impressionId: impression.id,
+				productId: "not-in-impression",
+				position: 0,
+			});
+			expect(click).toBeNull();
+		});
+
+		it("persists a click and inherits surface from impression when not given", async () => {
+			const impression = await controller.recordImpression({
+				surface: "trending",
+				productIds: ["a", "b"],
+				strategies: ["trending"],
+			});
+
+			const click = await controller.recordClick({
+				impressionId: impression.id,
+				productId: "b",
+				position: 1,
+			});
+			expect(click).not.toBeNull();
+			expect(click?.surface).toBe("trending");
+			expect(click?.position).toBe(1);
+			expect(click?.productId).toBe("b");
+		});
+	});
+
+	describe("getAnalytics", () => {
+		it("returns zeroes when there is no data", async () => {
+			const analytics = await controller.getAnalytics();
+			expect(analytics.totalImpressions).toBe(0);
+			expect(analytics.totalClicks).toBe(0);
+			expect(analytics.clickThroughRate).toBe(0);
+			expect(analytics.avgClickPosition).toBe(0);
+			expect(analytics.bySurface).toEqual([]);
+		});
+
+		it("computes CTR as the percent of impressions that had at least one click", async () => {
+			const i1 = await controller.recordImpression({
+				surface: "for_product",
+				productIds: ["a", "b"],
+				strategies: ["manual"],
+			});
+			const i2 = await controller.recordImpression({
+				surface: "for_product",
+				productIds: ["c", "d"],
+				strategies: ["manual"],
+			});
+			await controller.recordImpression({
+				surface: "for_product",
+				productIds: ["e", "f"],
+				strategies: ["manual"],
+			});
+
+			// Two clicks on i1 should still count as one impression with clicks
+			await controller.recordClick({
+				impressionId: i1.id,
+				productId: "a",
+				position: 0,
+			});
+			await controller.recordClick({
+				impressionId: i1.id,
+				productId: "b",
+				position: 1,
+			});
+			await controller.recordClick({
+				impressionId: i2.id,
+				productId: "c",
+				position: 0,
+			});
+
+			const analytics = await controller.getAnalytics();
+			expect(analytics.totalImpressions).toBe(3);
+			expect(analytics.totalClicks).toBe(3);
+			// 2 of 3 impressions had at least one click → 67%
+			expect(analytics.clickThroughRate).toBe(67);
+			// avg position = (0+1+0)/3 = 0.3
+			expect(analytics.avgClickPosition).toBe(0.3);
+		});
+
+		it("groups stats by surface", async () => {
+			const t1 = await controller.recordImpression({
+				surface: "trending",
+				productIds: ["a"],
+				strategies: ["trending"],
+			});
+			await controller.recordImpression({
+				surface: "trending",
+				productIds: ["b"],
+				strategies: ["trending"],
+			});
+			const p1 = await controller.recordImpression({
+				surface: "personalized",
+				productIds: ["c"],
+				strategies: ["personalized"],
+			});
+
+			await controller.recordClick({
+				impressionId: t1.id,
+				productId: "a",
+				position: 0,
+			});
+			await controller.recordClick({
+				impressionId: p1.id,
+				productId: "c",
+				position: 0,
+			});
+
+			const analytics = await controller.getAnalytics();
+			const trending = analytics.bySurface.find(
+				(s) => s.surface === "trending",
+			);
+			const personalized = analytics.bySurface.find(
+				(s) => s.surface === "personalized",
+			);
+
+			expect(trending).toBeDefined();
+			expect(trending?.impressions).toBe(2);
+			expect(trending?.clicks).toBe(1);
+			expect(trending?.clickThroughRate).toBe(50);
+
+			expect(personalized).toBeDefined();
+			expect(personalized?.impressions).toBe(1);
+			expect(personalized?.clicks).toBe(1);
+			expect(personalized?.clickThroughRate).toBe(100);
+		});
+	});
+
+	describe("getStats includes click metrics", () => {
+		it("rolls up totals into the existing stats payload", async () => {
+			const i = await controller.recordImpression({
+				surface: "for_product",
+				productIds: ["a", "b"],
+				strategies: ["manual"],
+			});
+			await controller.recordClick({
+				impressionId: i.id,
+				productId: "a",
+				position: 2,
+			});
+
+			const stats = await controller.getStats();
+			expect(stats.totalImpressions).toBe(1);
+			expect(stats.totalClicks).toBe(1);
+			expect(stats.clickThroughRate).toBe(100);
+			expect(stats.avgClickPosition).toBe(2);
 		});
 	});
 });

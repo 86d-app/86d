@@ -21,6 +21,7 @@ import Link from "next/link";
         <Link
           key={item.id}
           href={item.href}
+          onClick={item.onClick}
           className="group w-44 shrink-0 space-y-2"
         >
           {item.image ? (

@@ -24,6 +24,10 @@ interface RecommendationStats {
 	activeRules: number;
 	totalCoOccurrences: number;
 	totalInteractions: number;
+	totalImpressions: number;
+	totalClicks: number;
+	clickThroughRate: number;
+	avgClickPosition: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -212,7 +216,7 @@ export function RecommendationAdmin() {
 
 			{/* Stats */}
 			{stats ? (
-				<div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+				<div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8">
 					<div className="rounded-lg border border-border bg-card p-4">
 						<p className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
 							Total Rules
@@ -243,6 +247,38 @@ export function RecommendationAdmin() {
 						</p>
 						<p className="mt-1 font-bold text-2xl text-foreground">
 							{stats.totalInteractions}
+						</p>
+					</div>
+					<div className="rounded-lg border border-border bg-card p-4">
+						<p className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
+							Impressions
+						</p>
+						<p className="mt-1 font-bold text-2xl text-foreground">
+							{stats.totalImpressions.toLocaleString()}
+						</p>
+					</div>
+					<div className="rounded-lg border border-border bg-card p-4">
+						<p className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
+							Clicks
+						</p>
+						<p className="mt-1 font-bold text-2xl text-foreground">
+							{stats.totalClicks.toLocaleString()}
+						</p>
+					</div>
+					<div className="rounded-lg border border-border bg-card p-4">
+						<p className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
+							Click-Through Rate
+						</p>
+						<p className="mt-1 font-bold text-2xl text-foreground">
+							{`${stats.clickThroughRate}%`}
+						</p>
+					</div>
+					<div className="rounded-lg border border-border bg-card p-4">
+						<p className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
+							Avg Click Position
+						</p>
+						<p className="mt-1 font-bold text-2xl text-foreground">
+							{stats.avgClickPosition > 0 ? stats.avgClickPosition : "—"}
 						</p>
 					</div>
 				</div>

@@ -5,12 +5,90 @@ import type {
 	CoOccurrence,
 	ProductEmbedding,
 	ProductInteraction,
+	RecommendationClick,
 	RecommendationController,
+	RecommendationImpression,
 	RecommendationRule,
+	RecommendationSurface,
 	RecommendedProduct,
 } from "./service";
 
 const DEFAULT_TAKE = 10;
+
+async function computeAnalytics(data: ModuleDataService) {
+	const allImpressions = (await data.findMany(
+		"recommendationImpression",
+		{},
+	)) as unknown as RecommendationImpression[];
+	const allClicks = (await data.findMany(
+		"recommendationClick",
+		{},
+	)) as unknown as RecommendationClick[];
+
+	const totalImpressions = allImpressions.length;
+	const totalServedItems = allImpressions.reduce(
+		(sum, i) => sum + (Array.isArray(i.productIds) ? i.productIds.length : 0),
+		0,
+	);
+	const totalClicks = allClicks.length;
+
+	const impressionIdsWithClick = new Set(allClicks.map((c) => c.impressionId));
+	const clickThroughRate =
+		totalImpressions > 0
+			? Math.round((impressionIdsWithClick.size / totalImpressions) * 100)
+			: 0;
+
+	const avgClickPosition =
+		allClicks.length > 0
+			? Math.round(
+					(allClicks.reduce((sum, c) => sum + c.position, 0) /
+						allClicks.length) *
+						10,
+				) / 10
+			: 0;
+
+	const surfaceStats = new Map<
+		RecommendationSurface,
+		{ impressions: number; clickedImpressionIds: Set<string> }
+	>();
+	for (const imp of allImpressions) {
+		const existing = surfaceStats.get(imp.surface);
+		if (existing) {
+			existing.impressions += 1;
+		} else {
+			surfaceStats.set(imp.surface, {
+				impressions: 1,
+				clickedImpressionIds: new Set(),
+			});
+		}
+	}
+	for (const click of allClicks) {
+		const existing = surfaceStats.get(click.surface);
+		if (existing) {
+			existing.clickedImpressionIds.add(click.impressionId);
+		}
+	}
+	const bySurface = Array.from(surfaceStats.entries())
+		.map(([surface, s]) => ({
+			surface,
+			impressions: s.impressions,
+			clicks: s.clickedImpressionIds.size,
+			clickThroughRate:
+				s.impressions > 0
+					? Math.round((s.clickedImpressionIds.size / s.impressions) * 100)
+					: 0,
+		}))
+		.sort((a, b) => b.impressions - a.impressions);
+
+	return {
+		totalImpressions,
+		totalServedItems,
+		totalClicks,
+		clickThroughRate,
+		avgClickPosition,
+		bySurface,
+	};
+}
 
 export function createRecommendationController(
 	data: ModuleDataService,
@@ -603,6 +681,62 @@ export function createRecommendationController(
 			return results;
 		},
 
+		// --- Impressions & clicks ---
+
+		async recordImpression(params) {
+			const id = crypto.randomUUID();
+			const impression: RecommendationImpression = {
+				id,
+				surface: params.surface,
+				sourceProductId: params.sourceProductId,
+				customerId: params.customerId,
+				sessionId: params.sessionId,
+				productIds: params.productIds,
+				strategies: params.strategies,
+				servedAt: new Date(),
+			};
+			await data.upsert(
+				"recommendationImpression",
+				id,
+				impression as unknown as Record<string, unknown>,
+			);
+			return impression;
+		},
+
+		async recordClick(params) {
+			const impression = (await data.get(
+				"recommendationImpression",
+				params.impressionId,
+			)) as unknown as RecommendationImpression | null;
+			if (!impression) return null;
+
+			const productIds = Array.isArray(impression.productIds)
+				? impression.productIds
+				: [];
+			if (!productIds.includes(params.productId)) return null;
+
+			const id = crypto.randomUUID();
+			const click: RecommendationClick = {
+				id,
+				impressionId: params.impressionId,
+				surface: params.surface ?? impression.surface,
+				productId: params.productId,
+				position: params.position,
+				strategy: params.strategy,
+				clickedAt: new Date(),
+			};
+			await data.upsert(
+				"recommendationClick",
+				id,
+				click as unknown as Record<string, unknown>,
+			);
+			return click;
+		},
+
+		async getAnalytics() {
+			return computeAnalytics(data);
+		},
+
 		// --- Stats ---
 
 		async getStats() {
@@ -613,6 +747,7 @@ export function createRecommendationController(
 			const allCo = await data.findMany("coOccurrence", {});
 			const allInteractions = await data.findMany("productInteraction", {});
 			const allEmbeddings = await data.findMany("productEmbedding", {});
+			const analytics = await computeAnalytics(data);
 
 			return {
 				totalRules: allRules.length,
@@ -621,6 +756,10 @@ export function createRecommendationController(
 				totalInteractions: allInteractions.length,
 				embeddingsCount: allEmbeddings.length,
 				aiConfigured: Boolean(embeddingProvider),
+				totalImpressions: analytics.totalImpressions,
+				totalClicks: analytics.totalClicks,
+				clickThroughRate: analytics.clickThroughRate,
+				avgClickPosition: analytics.avgClickPosition,
 			};
 		},
 	};

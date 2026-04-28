@@ -665,6 +665,10 @@ describe("recommendation controllers — edge cases", () => {
 				totalInteractions: 0,
 				embeddingsCount: 0,
 				aiConfigured: false,
+				totalImpressions: 0,
+				totalClicks: 0,
+				clickThroughRate: 0,
+				avgClickPosition: 0,
 			});
 		});
 

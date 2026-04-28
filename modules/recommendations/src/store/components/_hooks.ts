@@ -13,5 +13,7 @@ export function useRecommendationsApi() {
 			client.module("recommendations").store["/recommendations/personalized"],
 		trackInteraction:
 			client.module("recommendations").store["/recommendations/track"],
+		recordClick:
+			client.module("recommendations").store["/recommendations/click"],
 	};
 }

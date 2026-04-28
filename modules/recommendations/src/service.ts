@@ -51,6 +51,47 @@ export type ProductEmbedding = {
 	createdAt: Date;
 };
 
+export type RecommendationSurface =
+	| "for_product"
+	| "trending"
+	| "personalized"
+	| "ai_similar";
+
+export type RecommendationImpression = {
+	id: string;
+	surface: RecommendationSurface;
+	sourceProductId?: string | undefined;
+	customerId?: string | undefined;
+	sessionId?: string | undefined;
+	productIds: string[];
+	strategies: RecommendationStrategy[];
+	servedAt: Date;
+};
+
+export type RecommendationClick = {
+	id: string;
+	impressionId: string;
+	surface: RecommendationSurface;
+	productId: string;
+	position: number;
+	strategy?: RecommendationStrategy | undefined;
+	clickedAt: Date;
+};
+
+export type RecommendationAnalytics = {
+	totalImpressions: number;
+	totalServedItems: number;
+	totalClicks: number;
+	clickThroughRate: number;
+	avgClickPosition: number;
+	bySurface: Array<{
+		surface: RecommendationSurface;
+		impressions: number;
+		clicks: number;
+		clickThroughRate: number;
+	}>;
+};
+
 export type RecommendedProduct = {
 	productId: string;
 	productName: string;
@@ -157,6 +198,26 @@ export type RecommendationController = ModuleController & {
 		params?: { take?: number | undefined },
 	): Promise<RecommendedProduct[]>;
 
+	// --- Impressions & clicks ---
+	recordImpression(params: {
+		surface: RecommendationSurface;
+		sourceProductId?: string | undefined;
+		customerId?: string | undefined;
+		sessionId?: string | undefined;
+		productIds: string[];
+		strategies: RecommendationStrategy[];
+	}): Promise<RecommendationImpression>;
+
+	recordClick(params: {
+		impressionId: string;
+		productId: string;
+		position: number;
+		surface?: RecommendationSurface | undefined;
+		strategy?: RecommendationStrategy | undefined;
+	}): Promise<RecommendationClick | null>;
+
+	getAnalytics(): Promise<RecommendationAnalytics>;
+
 	// --- Admin stats ---
 	getStats(): Promise<{
 		totalRules: number;
@@ -165,5 +226,9 @@ export type RecommendationController = ModuleController & {
 		totalInteractions: number;
 		embeddingsCount: number;
 		aiConfigured: boolean;
+		totalImpressions: number;
+		totalClicks: number;
+		clickThroughRate: number;
+		avgClickPosition: number;
 	}>;
 };

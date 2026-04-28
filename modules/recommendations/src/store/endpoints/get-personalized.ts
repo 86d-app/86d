@@ -28,6 +28,17 @@ export const getPersonalized = createStoreEndpoint(
 				(Number.isFinite(defaultTake) ? defaultTake : undefined),
 		});
 
-		return { recommendations };
+		let impressionId: string | null = null;
+		if (recommendations.length > 0) {
+			const impression = await controller.recordImpression({
+				surface: "personalized",
+				customerId,
+				productIds: recommendations.map((r) => r.productId),
+				strategies: [...new Set(recommendations.map((r) => r.strategy))],
+			});
+			impressionId = impression.id;
+		}
+
+		return { recommendations, impressionId };
 	},
 );

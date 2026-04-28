@@ -27,6 +27,18 @@ export const getTrending = createStoreEndpoint(
 			since,
 		});
 
-		return { recommendations };
+		let impressionId: string | null = null;
+		if (recommendations.length > 0) {
+			const customerId = ctx.context.session?.user.id;
+			const impression = await controller.recordImpression({
+				surface: "trending",
+				customerId,
+				productIds: recommendations.map((r) => r.productId),
+				strategies: [...new Set(recommendations.map((r) => r.strategy))],
+			});
+			impressionId = impression.id;
+		}
+
+		return { recommendations, impressionId };
 	},
 );
