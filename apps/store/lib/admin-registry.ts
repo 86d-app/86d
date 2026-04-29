@@ -217,6 +217,11 @@ const SUBGROUP_CONFIG: Record<
 	],
 	Finance: [
 		{
+			label: "Reporting",
+			icon: "ChartBar",
+			segments: ["revenue"],
+		},
+		{
 			label: "Gateways",
 			icon: "CreditCard",
 			segments: ["stripe", "paypal", "square", "braintree"],
