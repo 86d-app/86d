@@ -1,5 +1,6 @@
 import { QueryClient } from "@tanstack/react-query";
 import { describe, expect, it } from "vitest";
+import type { Endpoint } from "../api";
 import { createModuleClient } from "../client/create-client";
 import type { Module } from "../types/module";
 
@@ -81,8 +82,9 @@ describe("createModuleClient", () => {
 	});
 
 	it("handles empty modules array", () => {
-		// biome-ignore lint/suspicious/noExplicitAny: casting to bypass never constraint for test
-		const client = createModuleClient([], makeConfig()) as any;
+		const client = createModuleClient([], makeConfig()) as unknown as {
+			module: (id: string) => unknown;
+		};
 		expect(() => client.module("anything")).toThrow();
 	});
 
@@ -90,8 +92,7 @@ describe("createModuleClient", () => {
 		const modWithEndpoints: Module = makeModule("shop", {
 			endpoints: {
 				store: {
-					// biome-ignore lint/suspicious/noExplicitAny: test mock
-					getProducts: {} as any,
+					getProducts: {} as unknown as Endpoint,
 				},
 				admin: {},
 			},

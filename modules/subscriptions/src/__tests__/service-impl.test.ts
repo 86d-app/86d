@@ -597,8 +597,7 @@ describe("createSubscriptionController", () => {
 			// Manually backdate the subscription's period end to the past
 			const pastDate = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000); // 2 days ago
 			await data.upsert("subscription", sub.id, {
-				// biome-ignore lint/suspicious/noExplicitAny: test manipulation
-				...(sub as any),
+				...(sub as unknown as Record<string, unknown>),
 				currentPeriodEnd: pastDate,
 			});
 
@@ -644,8 +643,7 @@ describe("createSubscriptionController", () => {
 			// Backdate period end
 			const pastDate = new Date(Date.now() - 24 * 60 * 60 * 1000);
 			await data.upsert("subscription", sub.id, {
-				// biome-ignore lint/suspicious/noExplicitAny: test manipulation
-				...(sub as any),
+				...(sub as unknown as Record<string, unknown>),
 				currentPeriodEnd: pastDate,
 			});
 
@@ -677,8 +675,7 @@ describe("createSubscriptionController", () => {
 			const pastDate = new Date(Date.now() - 24 * 60 * 60 * 1000);
 			const cancelled = await ctrl.getSubscription(sub.id);
 			await data.upsert("subscription", sub.id, {
-				// biome-ignore lint/suspicious/noExplicitAny: test manipulation
-				...(cancelled as any),
+				...(cancelled as unknown as Record<string, unknown>),
 				currentPeriodEnd: pastDate,
 			});
 

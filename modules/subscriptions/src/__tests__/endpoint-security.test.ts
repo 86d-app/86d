@@ -457,8 +457,7 @@ describe("subscriptions endpoint security", () => {
 			// Backdate period end to 2 days ago
 			const pastDate = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
 			await mockData.upsert("subscription", sub.id, {
-				// biome-ignore lint/suspicious/noExplicitAny: test manipulation
-				...(sub as any),
+				...(sub as unknown as Record<string, unknown>),
 				currentPeriodEnd: pastDate,
 			});
 
@@ -500,8 +499,7 @@ describe("subscriptions endpoint security", () => {
 			const cancelled = await controller.getSubscription(sub.id);
 			const pastDate = new Date(Date.now() - 24 * 60 * 60 * 1000);
 			await mockData.upsert("subscription", sub.id, {
-				// biome-ignore lint/suspicious/noExplicitAny: test manipulation
-				...(cancelled as any),
+				...(cancelled as unknown as Record<string, unknown>),
 				currentPeriodEnd: pastDate,
 			});
 
@@ -524,8 +522,7 @@ describe("subscriptions endpoint security", () => {
 
 			const pastDate = new Date(Date.now() - 24 * 60 * 60 * 1000);
 			await mockData.upsert("subscription", sub.id, {
-				// biome-ignore lint/suspicious/noExplicitAny: test manipulation
-				...(sub as any),
+				...(sub as unknown as Record<string, unknown>),
 				currentPeriodEnd: pastDate,
 			});
 
@@ -554,8 +551,7 @@ describe("subscriptions endpoint security", () => {
 			// Only backdate one subscription
 			const pastDate = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
 			await mockData.upsert("subscription", expiringSub.id, {
-				// biome-ignore lint/suspicious/noExplicitAny: test manipulation
-				...(expiringSub as any),
+				...(expiringSub as unknown as Record<string, unknown>),
 				currentPeriodEnd: pastDate,
 			});
 

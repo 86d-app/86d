@@ -844,8 +844,11 @@ describe("event emission", () => {
 			(e) => e.type === "inventory.back-in-stock",
 		);
 		expect(backInStock).toHaveLength(1);
-		// biome-ignore lint/suspicious/noExplicitAny: test assertion on event payload
-		const payload = backInStock[0].payload as any;
+		const payload = backInStock[0].payload as {
+			productId: string;
+			available: number;
+			subscribers: Array<{ email: string; productName?: string }>;
+		};
 		expect(payload.productId).toBe("p1");
 		expect(payload.available).toBe(10);
 		expect(payload.subscribers).toHaveLength(1);

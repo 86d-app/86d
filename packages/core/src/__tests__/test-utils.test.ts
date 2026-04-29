@@ -173,9 +173,8 @@ describe("createMockDataService", () => {
 
 		it("allows direct manipulation for test setup", () => {
 			data._store.set("product:p1", { name: "Injected" });
-			// biome-ignore lint/suspicious/noExplicitAny: test assertion needs flexible access
-			return data.get("product", "p1").then((result: any) => {
-				expect(result.name).toBe("Injected");
+			return data.get("product", "p1").then((result) => {
+				expect((result as Record<string, unknown>).name).toBe("Injected");
 			});
 		});
 	});
@@ -357,8 +356,7 @@ describe("makeControllerCtx", () => {
 		const ctx = makeControllerCtx(moduleCtx, { params: { id: "p1" } });
 
 		// Should pass through the full context
-		// biome-ignore lint/suspicious/noExplicitAny: test assertion needs flexible access
-		expect((ctx.context as any).storeId).toBe("store_xyz");
+		expect((ctx.context as Record<string, unknown>).storeId).toBe("store_xyz");
 		expect(ctx.context.data).toBe(moduleCtx.data);
 	});
 

@@ -54,13 +54,11 @@ function makeRequest(
 async function callWebhook(
 	handler: ReturnType<typeof createSquareWebhook>,
 	request: Request,
-	// biome-ignore lint/suspicious/noExplicitAny: optional mock context
-	context?: any,
+	context?: Record<string, unknown>,
 ): Promise<Response> {
-	// biome-ignore lint/suspicious/noExplicitAny: test helper
-	const h = handler as any;
+	const h = handler as unknown as Record<string, unknown>;
 	const fn = typeof h.handler === "function" ? h.handler : h;
-	return fn({ request, context }) as Promise<Response>;
+	return (fn as CallableFunction)({ request, context }) as Promise<Response>;
 }
 
 function mockFetchResponse(data: unknown, ok = true, status = 200) {

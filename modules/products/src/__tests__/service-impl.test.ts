@@ -1255,8 +1255,7 @@ describe("createProductController", () => {
 
 		it("reports errors for missing price", async () => {
 			const result = await controller.importProducts([
-				// biome-ignore lint/suspicious/noExplicitAny: testing invalid input
-				{ name: "Widget", price: undefined as any },
+				{ name: "Widget", price: undefined as unknown as number },
 			]);
 			expect(result.errors).toHaveLength(1);
 			expect(result.errors[0].field).toBe("price");

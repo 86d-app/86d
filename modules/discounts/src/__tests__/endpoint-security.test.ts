@@ -506,8 +506,7 @@ describe("discounts endpoint security", () => {
 			});
 
 			// Simulate exhaustion by setting usedCount to maximumUses
-			// biome-ignore lint/suspicious/noExplicitAny: test mock override
-			await (mockData as any).upsert("cartPriceRule", rule.id, {
+			await mockData.upsert("cartPriceRule", rule.id, {
 				...rule,
 				usedCount: 2,
 			});

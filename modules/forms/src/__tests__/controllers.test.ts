@@ -168,12 +168,21 @@ describe("forms controllers — edge cases", () => {
 			(first as { createdAt: Date }).createdAt = new Date(1000);
 			(second as { createdAt: Date }).createdAt = new Date(2000);
 			(third as { createdAt: Date }).createdAt = new Date(3000);
-			// biome-ignore lint/suspicious/noExplicitAny: updating mock store entries
-			await mockData.upsert("form", first.id, first as any);
-			// biome-ignore lint/suspicious/noExplicitAny: updating mock store entries
-			await mockData.upsert("form", second.id, second as any);
-			// biome-ignore lint/suspicious/noExplicitAny: updating mock store entries
-			await mockData.upsert("form", third.id, third as any);
+			await mockData.upsert(
+				"form",
+				first.id,
+				first as unknown as Record<string, unknown>,
+			);
+			await mockData.upsert(
+				"form",
+				second.id,
+				second as unknown as Record<string, unknown>,
+			);
+			await mockData.upsert(
+				"form",
+				third.id,
+				third as unknown as Record<string, unknown>,
+			);
 
 			const forms = await controller.listForms();
 			expect(forms[0].name).toBe("First");

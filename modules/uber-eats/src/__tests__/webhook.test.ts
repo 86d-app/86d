@@ -73,6 +73,15 @@ function createMockEvents() {
 	};
 }
 
+// ── Helpers ─────────────────────────────────────────────────────────────────
+
+function getHandler(
+	webhook: ReturnType<typeof createUberEatsWebhook>,
+): CallableFunction {
+	const h = webhook as unknown as Record<string, unknown>;
+	return (typeof h.handler === "function" ? h.handler : h) as CallableFunction;
+}
+
 // ── Tests ───────────────────────────────────────────────────────────────────
 
 describe("uber-eats webhook endpoint", () => {
@@ -90,8 +99,7 @@ describe("uber-eats webhook endpoint", () => {
 				"x-uber-signature": "invalid-signature-value",
 			});
 
-			// biome-ignore lint/suspicious/noExplicitAny: test context
-			const handler = (webhook as any).handler ?? (webhook as any);
+			const handler = getHandler(webhook);
 			const response = await handler({
 				request,
 				context: { controllers: { "uber-eats": createMockController() } },
@@ -114,8 +122,7 @@ describe("uber-eats webhook endpoint", () => {
 				"x-uber-signature": signature,
 			});
 
-			// biome-ignore lint/suspicious/noExplicitAny: test context
-			const handler = (webhook as any).handler ?? (webhook as any);
+			const handler = getHandler(webhook);
 			const response = await handler({
 				request,
 				context: {
@@ -136,8 +143,7 @@ describe("uber-eats webhook endpoint", () => {
 
 			const request = createMockRequest(body);
 
-			// biome-ignore lint/suspicious/noExplicitAny: test context
-			const handler = (webhook as any).handler ?? (webhook as any);
+			const handler = getHandler(webhook);
 			const response = await handler({
 				request,
 				context: {
@@ -155,8 +161,7 @@ describe("uber-eats webhook endpoint", () => {
 			const webhook = createUberEatsWebhook({});
 			const request = createMockRequest("not-json");
 
-			// biome-ignore lint/suspicious/noExplicitAny: test context
-			const handler = (webhook as any).handler ?? (webhook as any);
+			const handler = getHandler(webhook);
 			const response = await handler({
 				request,
 				context: { controllers: { "uber-eats": createMockController() } },
@@ -171,8 +176,7 @@ describe("uber-eats webhook endpoint", () => {
 			const webhook = createUberEatsWebhook({});
 			const request = createMockRequest(JSON.stringify({ meta: {} }));
 
-			// biome-ignore lint/suspicious/noExplicitAny: test context
-			const handler = (webhook as any).handler ?? (webhook as any);
+			const handler = getHandler(webhook);
 			const response = await handler({
 				request,
 				context: { controllers: { "uber-eats": createMockController() } },
@@ -192,8 +196,7 @@ describe("uber-eats webhook endpoint", () => {
 			});
 			const request = createMockRequest(body);
 
-			// biome-ignore lint/suspicious/noExplicitAny: test context
-			const handler = (webhook as any).handler ?? (webhook as any);
+			const handler = getHandler(webhook);
 			await handler({
 				request,
 				context: {
@@ -219,8 +222,7 @@ describe("uber-eats webhook endpoint", () => {
 			});
 			const request = createMockRequest(body);
 
-			// biome-ignore lint/suspicious/noExplicitAny: test context
-			const handler = (webhook as any).handler ?? (webhook as any);
+			const handler = getHandler(webhook);
 			await handler({
 				request,
 				context: {
@@ -246,8 +248,7 @@ describe("uber-eats webhook endpoint", () => {
 			});
 			const request = createMockRequest(body);
 
-			// biome-ignore lint/suspicious/noExplicitAny: test context
-			const handler = (webhook as any).handler ?? (webhook as any);
+			const handler = getHandler(webhook);
 			await handler({
 				request,
 				context: {
@@ -276,8 +277,7 @@ describe("uber-eats webhook endpoint", () => {
 			});
 			const request = createMockRequest(body);
 
-			// biome-ignore lint/suspicious/noExplicitAny: test context
-			const handler = (webhook as any).handler ?? (webhook as any);
+			const handler = getHandler(webhook);
 			await handler({
 				request,
 				context: {

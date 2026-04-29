@@ -624,12 +624,12 @@ describe("product-feeds controllers — edge cases", () => {
 
 			const parsed = JSON.parse(result.output);
 			const elec = parsed.products.find(
-				// biome-ignore lint/suspicious/noExplicitAny: test JSON parse
-				(p: any) => p.google_product_category === "Consumer Electronics",
+				(p: Record<string, unknown>) =>
+					p.google_product_category === "Consumer Electronics",
 			);
 			const cloth = parsed.products.find(
-				// biome-ignore lint/suspicious/noExplicitAny: test JSON parse
-				(p: any) => p.google_product_category === "Apparel & Accessories",
+				(p: Record<string, unknown>) =>
+					p.google_product_category === "Apparel & Accessories",
 			);
 			expect(elec).toBeDefined();
 			expect(cloth).toBeDefined();

@@ -43,8 +43,7 @@ export interface MockDataService extends ModuleDataService {
 	 * Internal store backing the mock. Keys are `${entityType}:${entityId}`.
 	 * Exposed for test assertions and manual manipulation.
 	 */
-	// biome-ignore lint/suspicious/noExplicitAny: test mock stores arbitrary JSONB data
-	_store: Map<string, Record<string, any>>;
+	_store: Map<string, Record<string, unknown>>;
 
 	/**
 	 * Clear all data from the mock store.
@@ -60,8 +59,7 @@ export interface MockDataService extends ModuleDataService {
 	/**
 	 * Return all stored entities of a given type.
 	 */
-	// biome-ignore lint/suspicious/noExplicitAny: test mock returns arbitrary JSONB data
-	all(entityType: string): Record<string, any>[];
+	all(entityType: string): Record<string, unknown>[];
 }
 
 /**
@@ -92,8 +90,7 @@ export interface MockDataService extends ModuleDataService {
  * ```
  */
 export function createMockDataService(): MockDataService {
-	// biome-ignore lint/suspicious/noExplicitAny: test mock stores arbitrary JSONB data
-	const store = new Map<string, Record<string, any>>();
+	const store = new Map<string, Record<string, unknown>>();
 
 	return {
 		_store: store,
@@ -113,8 +110,7 @@ export function createMockDataService(): MockDataService {
 
 		all(entityType: string) {
 			const prefix = `${entityType}:`;
-			// biome-ignore lint/suspicious/noExplicitAny: test mock returns arbitrary JSONB data
-			const results: Record<string, any>[] = [];
+			const results: Record<string, unknown>[] = [];
 			for (const [key, value] of store.entries()) {
 				if (key.startsWith(prefix)) results.push(value);
 			}
@@ -135,8 +131,7 @@ export function createMockDataService(): MockDataService {
 
 		async findMany(entityType, options) {
 			const prefix = `${entityType}:`;
-			// biome-ignore lint/suspicious/noExplicitAny: test mock collects arbitrary JSONB data
-			const results: Record<string, any>[] = [];
+			const results: Record<string, unknown>[] = [];
 
 			for (const [key, value] of store.entries()) {
 				if (!key.startsWith(prefix)) continue;
@@ -311,8 +306,7 @@ export function makeControllerCtx(
 		: { data: dataOrContext as ModuleDataService };
 
 	return {
-		// biome-ignore lint/suspicious/noExplicitAny: controller context is loosely typed
-		context: context as any,
+		context: context as { data: ModuleDataService } & Record<string, unknown>,
 		params: opts.params ?? {},
 		query: opts.query ?? {},
 		body: opts.body ?? {},

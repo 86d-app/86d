@@ -18,6 +18,19 @@ async function hmacSha256Hex(secret: string, data: string): Promise<string> {
 		.join("");
 }
 
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function invokeEndpoint(
+	endpoint: unknown,
+	ctx: Record<string, unknown>,
+): Promise<Response> {
+	const h = endpoint as Record<string, unknown>;
+	const fn = (
+		typeof h.handler === "function" ? h.handler : h
+	) as CallableFunction;
+	return fn(ctx) as Promise<Response>;
+}
+
 // ── Webhook handler tests ────────────────────────────────────────────────────
 
 describe("Toast webhook handler", () => {
@@ -42,8 +55,6 @@ describe("Toast webhook handler", () => {
 	it("rejects requests with invalid JSON", async () => {
 		const factory = await getWebhookFactory();
 		const endpoint = factory({});
-		// biome-ignore lint/suspicious/noExplicitAny: test context mock
-		const handler = (endpoint as any).handler ?? (endpoint as any);
 
 		const request = new Request("http://localhost/toast/webhook", {
 			method: "POST",
@@ -52,8 +63,7 @@ describe("Toast webhook handler", () => {
 		});
 
 		const ctx = { request, context: { controllers: {}, events: null } };
-		// biome-ignore lint/suspicious/noExplicitAny: test invocation
-		const res = await (handler as any)(ctx);
+		const res = await invokeEndpoint(endpoint, ctx);
 		expect(res.status).toBe(400);
 		const body = await res.json();
 		expect(body.error).toBe("Invalid JSON body.");
@@ -62,8 +72,6 @@ describe("Toast webhook handler", () => {
 	it("rejects requests with missing eventType", async () => {
 		const factory = await getWebhookFactory();
 		const endpoint = factory({});
-		// biome-ignore lint/suspicious/noExplicitAny: test context mock
-		const handler = (endpoint as any).handler ?? (endpoint as any);
 
 		const request = new Request("http://localhost/toast/webhook", {
 			method: "POST",
@@ -72,8 +80,7 @@ describe("Toast webhook handler", () => {
 		});
 
 		const ctx = { request, context: { controllers: {}, events: null } };
-		// biome-ignore lint/suspicious/noExplicitAny: test invocation
-		const res = await (handler as any)(ctx);
+		const res = await invokeEndpoint(endpoint, ctx);
 		expect(res.status).toBe(400);
 		const body = await res.json();
 		expect(body.error).toBe("Missing eventType.");
@@ -82,8 +89,6 @@ describe("Toast webhook handler", () => {
 	it("accepts valid webhook with known event type and no signature verification", async () => {
 		const factory = await getWebhookFactory();
 		const endpoint = factory({});
-		// biome-ignore lint/suspicious/noExplicitAny: test context mock
-		const handler = (endpoint as any).handler ?? (endpoint as any);
 
 		const syncMenuCalls: unknown[] = [];
 		const emittedEvents: unknown[] = [];
@@ -119,8 +124,7 @@ describe("Toast webhook handler", () => {
 			},
 		};
 
-		// biome-ignore lint/suspicious/noExplicitAny: test invocation
-		const res = await (handler as any)(ctx);
+		const res = await invokeEndpoint(endpoint, ctx);
 		expect(res.status).toBe(200);
 		const body = await res.json();
 		expect(body.received).toBe(true);
@@ -139,8 +143,6 @@ describe("Toast webhook handler", () => {
 	it("routes order events to syncOrder", async () => {
 		const factory = await getWebhookFactory();
 		const endpoint = factory({});
-		// biome-ignore lint/suspicious/noExplicitAny: test context mock
-		const handler = (endpoint as any).handler ?? (endpoint as any);
 
 		const mockController = {
 			syncOrder: vi.fn(async () => ({
@@ -164,8 +166,7 @@ describe("Toast webhook handler", () => {
 			context: { controllers: { toast: mockController }, events: null },
 		};
 
-		// biome-ignore lint/suspicious/noExplicitAny: test invocation
-		const res = await (handler as any)(ctx);
+		const res = await invokeEndpoint(endpoint, ctx);
 		expect(res.status).toBe(200);
 		expect(mockController.syncOrder).toHaveBeenCalledWith({
 			entityId: "order-guid-789",
@@ -177,8 +178,6 @@ describe("Toast webhook handler", () => {
 	it("routes stock events to syncInventory", async () => {
 		const factory = await getWebhookFactory();
 		const endpoint = factory({});
-		// biome-ignore lint/suspicious/noExplicitAny: test context mock
-		const handler = (endpoint as any).handler ?? (endpoint as any);
 
 		const mockController = {
 			syncInventory: vi.fn(async () => ({
@@ -202,8 +201,7 @@ describe("Toast webhook handler", () => {
 			context: { controllers: { toast: mockController }, events: null },
 		};
 
-		// biome-ignore lint/suspicious/noExplicitAny: test invocation
-		const res = await (handler as any)(ctx);
+		const res = await invokeEndpoint(endpoint, ctx);
 		expect(res.status).toBe(200);
 		expect(mockController.syncInventory).toHaveBeenCalledWith({
 			entityId: "stock-guid-001",
@@ -215,8 +213,6 @@ describe("Toast webhook handler", () => {
 	it("rejects invalid signature when webhookSecret is configured", async () => {
 		const factory = await getWebhookFactory();
 		const endpoint = factory({ webhookSecret: "my-secret" });
-		// biome-ignore lint/suspicious/noExplicitAny: test context mock
-		const handler = (endpoint as any).handler ?? (endpoint as any);
 
 		const request = new Request("http://localhost/toast/webhook", {
 			method: "POST",
@@ -228,8 +224,7 @@ describe("Toast webhook handler", () => {
 		});
 
 		const ctx = { request, context: { controllers: {}, events: null } };
-		// biome-ignore lint/suspicious/noExplicitAny: test invocation
-		const res = await (handler as any)(ctx);
+		const res = await invokeEndpoint(endpoint, ctx);
 		expect(res.status).toBe(401);
 		const body = await res.json();
 		expect(body.error).toBe("Invalid webhook signature.");
@@ -245,8 +240,6 @@ describe("Toast webhook handler", () => {
 
 		const factory = await getWebhookFactory();
 		const endpoint = factory({ webhookSecret: secret });
-		// biome-ignore lint/suspicious/noExplicitAny: test context mock
-		const handler = (endpoint as any).handler ?? (endpoint as any);
 
 		const mockController = {
 			syncOrder: vi.fn(async () => ({
@@ -270,8 +263,7 @@ describe("Toast webhook handler", () => {
 			context: { controllers: { toast: mockController }, events: null },
 		};
 
-		// biome-ignore lint/suspicious/noExplicitAny: test invocation
-		const res = await (handler as any)(ctx);
+		const res = await invokeEndpoint(endpoint, ctx);
 		expect(res.status).toBe(200);
 		expect(mockController.syncOrder).toHaveBeenCalled();
 	});
@@ -279,8 +271,6 @@ describe("Toast webhook handler", () => {
 	it("accepts unknown event types without routing to controllers", async () => {
 		const factory = await getWebhookFactory();
 		const endpoint = factory({});
-		// biome-ignore lint/suspicious/noExplicitAny: test context mock
-		const handler = (endpoint as any).handler ?? (endpoint as any);
 
 		const request = new Request("http://localhost/toast/webhook", {
 			method: "POST",
@@ -296,8 +286,7 @@ describe("Toast webhook handler", () => {
 			context: { controllers: { toast: {} }, events: null },
 		};
 
-		// biome-ignore lint/suspicious/noExplicitAny: test invocation
-		const res = await (handler as any)(ctx);
+		const res = await invokeEndpoint(endpoint, ctx);
 		expect(res.status).toBe(200);
 		const body = await res.json();
 		expect(body.received).toBe(true);

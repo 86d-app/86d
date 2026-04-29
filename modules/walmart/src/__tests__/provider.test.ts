@@ -53,8 +53,7 @@ describe("WalmartProvider", () => {
 		originalFetch = globalThis.fetch;
 		provider = new WalmartProvider(CONFIG);
 		fetchSpy = vi.fn();
-		// biome-ignore lint/suspicious/noExplicitAny: mock fetch for testing
-		globalThis.fetch = fetchSpy as any;
+		globalThis.fetch = fetchSpy as unknown as typeof globalThis.fetch;
 	});
 
 	afterEach(() => {

@@ -3,8 +3,7 @@ import { PayPalPaymentProvider } from "../provider";
 
 /** Tracks call count and returns different responses for auth vs API calls. */
 function createMockFetch(
-	// biome-ignore lint/suspicious/noExplicitAny: test mock
-	apiResponse: any,
+	apiResponse: Record<string, unknown>,
 	apiOk = true,
 	apiStatus = 200,
 ) {

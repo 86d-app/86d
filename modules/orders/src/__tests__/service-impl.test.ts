@@ -286,8 +286,7 @@ describe("createOrderController", () => {
 				...old,
 				createdAt: new Date("2024-01-15T00:00:00Z"),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: test data manipulation
-			await (mockData as any).upsert("order", old.id, backdated);
+			await mockData.upsert("order", old.id, backdated);
 
 			await controller.create({
 				...sampleOrder,
@@ -392,8 +391,7 @@ describe("createOrderController", () => {
 				createdAt: new Date("2024-06-01T00:00:00Z"),
 				updatedAt: new Date("2024-06-01T00:00:00Z"),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: test data manipulation
-			await (mockData as any).upsert("order", old.id, backdated);
+			await mockData.upsert("order", old.id, backdated);
 
 			const recent = await controller.create({
 				...sampleOrder,
@@ -431,8 +429,7 @@ describe("createOrderController", () => {
 				...first,
 				createdAt: new Date("2024-01-01T00:00:00Z"),
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: test data manipulation
-			await (mockData as any).upsert("order", first.id, backdated);
+			await mockData.upsert("order", first.id, backdated);
 
 			const second = await controller.create({
 				...sampleOrder,

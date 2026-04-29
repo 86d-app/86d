@@ -1023,8 +1023,11 @@ describe("createFormsControllers", () => {
 			(s2 as { createdAt: Date }).createdAt = new Date(
 				s1.createdAt.getTime() + 1000,
 			);
-			// biome-ignore lint/suspicious/noExplicitAny: updating mock store entry
-			await mockData.upsert("formSubmission", s2.id, s2 as any);
+			await mockData.upsert(
+				"formSubmission",
+				s2.id,
+				s2 as unknown as Record<string, unknown>,
+			);
 
 			const subs = await controller.listSubmissions({ formId: form.id });
 			expect(subs[0].values.order).toBe("second");

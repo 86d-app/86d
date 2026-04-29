@@ -409,8 +409,7 @@ describe("Cart Price Rules", () => {
 
 			// Manually set usedCount to max
 			await controller.updatePriceRule(rule.id, {});
-			// biome-ignore lint/suspicious/noExplicitAny: test mock override
-			await (mockData as any).upsert("cartPriceRule", rule.id, {
+			await mockData.upsert("cartPriceRule", rule.id, {
 				...rule,
 				usedCount: 5,
 			});

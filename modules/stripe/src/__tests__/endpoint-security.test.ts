@@ -61,13 +61,11 @@ function makeRequest(
 async function callWebhook(
 	handler: ReturnType<typeof createStripeWebhook>,
 	request: Request,
-	// biome-ignore lint/suspicious/noExplicitAny: optional mock context
-	context?: any,
+	context?: Record<string, unknown>,
 ): Promise<Response> {
-	// biome-ignore lint/suspicious/noExplicitAny: test helper accesses internal handler
-	const h = handler as any;
+	const h = handler as unknown as Record<string, unknown>;
 	const fn = typeof h.handler === "function" ? h.handler : h;
-	return fn({ request, context }) as Promise<Response>;
+	return (fn as CallableFunction)({ request, context }) as Promise<Response>;
 }
 
 function createTestContext() {
@@ -82,10 +80,8 @@ function createTestContext() {
 }
 
 async function seedIntent(
-	// biome-ignore lint/suspicious/noExplicitAny: mock data service
-	data: any,
-	// biome-ignore lint/suspicious/noExplicitAny: payments controller
-	payments: any,
+	data: ReturnType<typeof createMockDataService>,
+	payments: ReturnType<typeof createPaymentController>,
 	providerIntentId: string,
 	amount = 2000,
 	status = "pending",

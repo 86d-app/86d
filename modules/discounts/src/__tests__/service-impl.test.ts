@@ -407,8 +407,7 @@ describe("createDiscountController", () => {
 			if (code) {
 				// Deactivate by replacing with inactive version
 				const updated = { ...code, isActive: false };
-				// biome-ignore lint/suspicious/noExplicitAny: test helper
-				await (mockData as any).upsert("discountCode", code.id, updated);
+				await mockData.upsert("discountCode", code.id, updated);
 			}
 
 			const result = await controller.validateCode({

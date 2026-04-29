@@ -1572,10 +1572,7 @@ async function generateAdminLoaders() {
 // Run 'bun run generate:modules' to regenerate
 // Generated from: ${CONFIG_PATH}
 
-import type { ComponentType } from "react";
-
-// biome-ignore lint/suspicious/noExplicitAny: module admin components have varying props
-type AdminComponentModule = Record<string, ComponentType<any>>;
+type AdminComponentModule = Record<string, unknown>;
 
 /**
  * Lazy loaders for module admin component bundles.
@@ -1618,12 +1615,11 @@ async function generateStoreLoaders() {
 
 import type { ComponentType } from "react";
 
-// biome-ignore lint/suspicious/noExplicitAny: module store components have varying props
-type StoreComponentModule = Record<string, ComponentType<any>>;
+type StoreComponentModule = Record<string, ComponentType<Record<string, unknown>>>;
 
-// biome-ignore lint/suspicious/noExplicitAny: dynamic import module shape is untyped
-function unwrapDefault(m: any): StoreComponentModule {
-  return m.default ?? m;
+function unwrapDefault(m: unknown): StoreComponentModule {
+  const mod = m as StoreComponentModule & { default?: StoreComponentModule };
+  return mod.default ?? mod;
 }
 
 /**
