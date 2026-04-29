@@ -40,6 +40,9 @@ export default function qrCode(options?: QrCodeOptions): Module {
 			store: storeEndpoints,
 			admin: adminEndpoints,
 		},
+		store: {
+			pages: [{ path: "/qr/:id", component: "QrRedirect" }],
+		},
 		admin: {
 			pages: [
 				{
