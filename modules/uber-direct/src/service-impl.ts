@@ -2,11 +2,15 @@ import type { ModuleDataService, ScopedEventEmitter } from "@86d-app/core";
 import { mapUberStatusToInternal, UberDirectProvider } from "./provider";
 import type {
 	CreateDeliveryParams,
+	CreateServiceAreaParams,
 	Delivery,
+	DeliveryAvailability,
 	DeliveryStats,
 	Quote,
 	RequestQuoteParams,
+	ServiceArea,
 	UberDirectController,
+	UpdateServiceAreaParams,
 } from "./service";
 
 interface UberDirectControllerOptions {
@@ -383,6 +387,105 @@ export function createUberDirectController(
 			return results as unknown as Quote[];
 		},
 
+		async checkAvailability(coords: {
+			lat: number;
+			lng: number;
+		}): Promise<DeliveryAvailability> {
+			const areas = (await data.findMany("serviceArea", {
+				where: { isActive: true },
+			})) as unknown as ServiceArea[];
+
+			for (const area of areas) {
+				const dist = haversineDistanceKm(
+					area.centerLat,
+					area.centerLng,
+					coords.lat,
+					coords.lng,
+				);
+				if (dist <= area.radius) {
+					return { available: true, area };
+				}
+			}
+			return { available: false };
+		},
+
+		async createServiceArea(
+			params: CreateServiceAreaParams,
+		): Promise<ServiceArea> {
+			const id = crypto.randomUUID();
+			const now = new Date();
+			const area: ServiceArea = {
+				id,
+				name: params.name,
+				isActive: params.isActive ?? true,
+				radius: params.radius,
+				centerLat: params.centerLat,
+				centerLng: params.centerLng,
+				deliveryFee: params.deliveryFee,
+				estimatedMinutes: params.estimatedMinutes,
+				createdAt: now,
+				updatedAt: now,
+			};
+			await data.upsert(
+				"serviceArea",
+				id,
+				area as unknown as Record<string, unknown>,
+			);
+			return area;
+		},
+
+		async updateServiceArea(
+			id: string,
+			params: UpdateServiceAreaParams,
+		): Promise<ServiceArea | null> {
+			const raw = await data.get("serviceArea", id);
+			if (!raw) return null;
+			const existing = raw as unknown as ServiceArea;
+			const updated: ServiceArea = {
+				...existing,
+				...(params.name !== undefined ? { name: params.name } : {}),
+				...(params.isActive !== undefined ? { isActive: params.isActive } : {}),
+				...(params.radius !== undefined ? { radius: params.radius } : {}),
+				...(params.centerLat !== undefined
+					? { centerLat: params.centerLat }
+					: {}),
+				...(params.centerLng !== undefined
+					? { centerLng: params.centerLng }
+					: {}),
+				...(params.deliveryFee !== undefined
+					? { deliveryFee: params.deliveryFee }
+					: {}),
+				...(params.estimatedMinutes !== undefined
+					? { estimatedMinutes: params.estimatedMinutes }
+					: {}),
+				updatedAt: new Date(),
+			};
+			await data.upsert(
+				"serviceArea",
+				id,
+				updated as unknown as Record<string, unknown>,
+			);
+			return updated;
+		},
+
+		async deleteServiceArea(id: string): Promise<boolean> {
+			const raw = await data.get("serviceArea", id);
+			if (!raw) return false;
+			await data.delete("serviceArea", id);
+			return true;
+		},
+
+		async listServiceAreas(params?: {
+			isActive?: boolean | undefined;
+		}): Promise<ServiceArea[]> {
+			const where: Record<string, unknown> = {};
+			if (params?.isActive !== undefined) where.isActive = params.isActive;
+			const results = await data.findMany("serviceArea", {
+				...(Object.keys(where).length > 0 ? { where } : {}),
+			});
+			return results as unknown as ServiceArea[];
+		},
+
 		async getDeliveryStats(): Promise<DeliveryStats> {
 			const allDeliveries = (await data.findMany(
 				"delivery",
@@ -441,6 +544,25 @@ export function createUberDirectController(
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
+
+/** Haversine distance in km between two lat/lng pairs. */
+function haversineDistanceKm(
+	lat1: number,
+	lng1: number,
+	lat2: number,
+	lng2: number,
+): number {
+	const R = 6371;
+	const dLat = ((lat2 - lat1) * Math.PI) / 180;
+	const dLng = ((lng2 - lng1) * Math.PI) / 180;
+	const a =
+		Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+		Math.cos((lat1 * Math.PI) / 180) *
+			Math.cos((lat2 * Math.PI) / 180) *
+			Math.sin(dLng / 2) *
+			Math.sin(dLng / 2);
+	return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
 /** Extract a flat address string from the address object. */
 function extractAddress(addr: Record<string, unknown>): string {

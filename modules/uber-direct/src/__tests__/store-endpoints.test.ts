@@ -10,6 +10,7 @@ import { createUberDirectController } from "../service-impl";
  * 1. request-quote: requests a delivery quote for given addresses (admin only)
  * 2. create-delivery: creates a delivery from an accepted quote (admin only)
  * 3. get-delivery: retrieves delivery status and tracking info (admin only)
+ * 4. check-availability: checks delivery availability by coordinates (public)
  */
 
 type DataService = ReturnType<typeof createMockDataService>;
@@ -249,6 +250,113 @@ describe("store endpoint: create-delivery", () => {
 		if ("delivery" in result && result.delivery) {
 			expect(result.delivery.tip).toBe(0);
 		}
+	});
+});
+
+// ── Tests: check-availability ─────────────────────────────────────────
+
+describe("store endpoint: check-availability", () => {
+	let data: DataService;
+
+	beforeEach(() => {
+		data = createMockDataService();
+	});
+
+	it("returns available=false when no service areas are configured", async () => {
+		const controller = createUberDirectController(data);
+		const result = await controller.checkAvailability({
+			lat: 30.267,
+			lng: -97.743,
+		});
+		expect(result.available).toBe(false);
+		expect(result.area).toBeUndefined();
+	});
+
+	it("returns available=true when coordinates fall within an active service area", async () => {
+		const controller = createUberDirectController(data);
+		await controller.createServiceArea({
+			name: "Austin Downtown",
+			centerLat: 30.267,
+			centerLng: -97.743,
+			radius: 5,
+			deliveryFee: 499,
+			estimatedMinutes: 35,
+		});
+
+		const result = await controller.checkAvailability({
+			lat: 30.27,
+			lng: -97.74,
+		});
+		expect(result.available).toBe(true);
+		expect(result.area?.name).toBe("Austin Downtown");
+		expect(result.area?.deliveryFee).toBe(499);
+		expect(result.area?.estimatedMinutes).toBe(35);
+	});
+
+	it("returns available=false when coordinates are outside all service areas", async () => {
+		const controller = createUberDirectController(data);
+		await controller.createServiceArea({
+			name: "Austin Downtown",
+			centerLat: 30.267,
+			centerLng: -97.743,
+			radius: 2,
+			deliveryFee: 499,
+			estimatedMinutes: 35,
+		});
+
+		// Dallas is ~300 km away
+		const result = await controller.checkAvailability({
+			lat: 32.779,
+			lng: -96.799,
+		});
+		expect(result.available).toBe(false);
+	});
+
+	it("skips inactive service areas", async () => {
+		const controller = createUberDirectController(data);
+		await controller.createServiceArea({
+			name: "Inactive Zone",
+			centerLat: 30.267,
+			centerLng: -97.743,
+			radius: 100,
+			deliveryFee: 299,
+			estimatedMinutes: 20,
+			isActive: false,
+		});
+
+		const result = await controller.checkAvailability({
+			lat: 30.267,
+			lng: -97.743,
+		});
+		expect(result.available).toBe(false);
+	});
+
+	it("returns the nearest matching active area when multiple areas overlap", async () => {
+		const controller = createUberDirectController(data);
+		await controller.createServiceArea({
+			name: "Small Central",
+			centerLat: 30.267,
+			centerLng: -97.743,
+			radius: 1,
+			deliveryFee: 299,
+			estimatedMinutes: 20,
+		});
+		await controller.createServiceArea({
+			name: "Large Outer",
+			centerLat: 30.267,
+			centerLng: -97.743,
+			radius: 50,
+			deliveryFee: 599,
+			estimatedMinutes: 60,
+		});
+
+		const result = await controller.checkAvailability({
+			lat: 30.267,
+			lng: -97.743,
+		});
+		expect(result.available).toBe(true);
+		// First matching area is returned (Small Central)
+		expect(result.area?.name).toBe("Small Central");
 	});
 });
 

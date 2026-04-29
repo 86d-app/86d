@@ -7,10 +7,14 @@ import { createStoreEndpoints, storeEndpoints } from "./store/endpoints";
 import { createUberDirectWebhook } from "./store/endpoints/webhook";
 
 export type {
+	CreateServiceAreaParams,
 	Delivery,
+	DeliveryAvailability,
 	DeliveryStats,
 	Quote,
+	ServiceArea,
 	UberDirectController,
+	UpdateServiceAreaParams,
 } from "./service";
 
 export interface UberDirectOptions extends ModuleConfig {

@@ -68,6 +68,44 @@ export type DeliveryStats = {
 	totalTips: number;
 };
 
+export type ServiceArea = {
+	id: string;
+	name: string;
+	isActive: boolean;
+	radius: number;
+	centerLat: number;
+	centerLng: number;
+	deliveryFee: number;
+	estimatedMinutes: number;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type CreateServiceAreaParams = {
+	name: string;
+	radius: number;
+	centerLat: number;
+	centerLng: number;
+	deliveryFee: number;
+	estimatedMinutes: number;
+	isActive?: boolean | undefined;
+};
+
+export type UpdateServiceAreaParams = {
+	name?: string | undefined;
+	isActive?: boolean | undefined;
+	radius?: number | undefined;
+	centerLat?: number | undefined;
+	centerLng?: number | undefined;
+	deliveryFee?: number | undefined;
+	estimatedMinutes?: number | undefined;
+};
+
+export type DeliveryAvailability = {
+	available: boolean;
+	area?: ServiceArea | undefined;
+};
+
 export type UberDirectController = ModuleController & {
 	requestQuote(params: RequestQuoteParams): Promise<Quote>;
 
@@ -110,4 +148,22 @@ export type UberDirectController = ModuleController & {
 	}): Promise<Quote[]>;
 
 	getDeliveryStats(): Promise<DeliveryStats>;
+
+	checkAvailability(coords: {
+		lat: number;
+		lng: number;
+	}): Promise<DeliveryAvailability>;
+
+	createServiceArea(params: CreateServiceAreaParams): Promise<ServiceArea>;
+
+	updateServiceArea(
+		id: string,
+		params: UpdateServiceAreaParams,
+	): Promise<ServiceArea | null>;
+
+	deleteServiceArea(id: string): Promise<boolean>;
+
+	listServiceAreas(params?: {
+		isActive?: boolean | undefined;
+	}): Promise<ServiceArea[]>;
 };

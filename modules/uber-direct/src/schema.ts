@@ -56,4 +56,27 @@ export const uberDirectSchema = {
 			},
 		},
 	},
+	serviceArea: {
+		fields: {
+			id: { type: "string", required: true },
+			name: { type: "string", required: true },
+			isActive: { type: "boolean", required: true, defaultValue: true },
+			radius: { type: "number", required: true },
+			centerLat: { type: "number", required: true },
+			centerLng: { type: "number", required: true },
+			deliveryFee: { type: "number", required: true },
+			estimatedMinutes: { type: "number", required: true },
+			createdAt: {
+				type: "date",
+				required: true,
+				defaultValue: () => new Date(),
+			},
+			updatedAt: {
+				type: "date",
+				required: true,
+				defaultValue: () => new Date(),
+				onUpdate: () => new Date(),
+			},
+		},
+	},
 } satisfies ModuleSchema;

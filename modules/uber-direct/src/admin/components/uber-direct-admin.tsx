@@ -38,6 +38,17 @@ interface DeliveryStats {
 	totalTips: number;
 }
 
+interface ServiceAreaItem {
+	id: string;
+	name: string;
+	isActive: boolean;
+	radius: number;
+	centerLat: number;
+	centerLng: number;
+	deliveryFee: number;
+	estimatedMinutes: number;
+}
+
 // ── API hook ─────────────────────────────────────────────────────────────────
 
 const PAGE_SIZE = 20;
@@ -51,6 +62,10 @@ function useUberDirectAdminApi() {
 		updateStatus: mod.admin["/admin/uber-direct/deliveries/:id/status"],
 		quotes: mod.admin["/admin/uber-direct/quotes"],
 		stats: mod.admin["/admin/uber-direct/stats"],
+		listServiceAreas: mod.admin["/admin/uber-direct/service-areas"],
+		createServiceArea: mod.admin["/admin/uber-direct/service-areas/create"],
+		updateServiceArea: mod.admin["/admin/uber-direct/service-areas/:id"],
+		deleteServiceArea: mod.admin["/admin/uber-direct/service-areas/:id/delete"],
 	};
 }
 
@@ -153,10 +168,24 @@ const STATUS_COLORS: Record<string, string> = {
 
 // ── Main component ───────────────────────────────────────────────────────────
 
+function emptyAreaForm() {
+	return {
+		name: "",
+		radius: 10,
+		centerLat: 0,
+		centerLng: 0,
+		deliveryFee: 499,
+		estimatedMinutes: 45,
+	};
+}
+
 export function UberDirectAdmin() {
 	const api = useUberDirectAdminApi();
 	const [skip, setSkip] = useState(0);
 	const [statusFilter, setStatusFilter] = useState("");
+	const [showAreaForm, setShowAreaForm] = useState(false);
+	const [areaForm, setAreaForm] = useState(emptyAreaForm);
+	const [areaFormError, setAreaFormError] = useState<string | null>(null);
 
 	// ── Settings ─────────────────────────────────────────────────────────
 	const { data: settingsData, isLoading: settingsLoading } =
@@ -172,6 +201,31 @@ export function UberDirectAdmin() {
 		data: { stats: DeliveryStats } | undefined;
 		isLoading: boolean;
 	};
+
+	// ── Service areas ────────────────────────────────────────────────────
+	const {
+		data: areasData,
+		isLoading: areasLoading,
+		refetch: refetchAreas,
+	} = api.listServiceAreas.useQuery({}) as {
+		data: { areas: ServiceAreaItem[] } | undefined;
+		isLoading: boolean;
+		refetch: () => void;
+	};
+
+	const createAreaMutation = api.createServiceArea.useMutation({
+		onSuccess: () => {
+			setShowAreaForm(false);
+			setAreaForm(emptyAreaForm);
+			setAreaFormError(null);
+			refetchAreas();
+		},
+		onError: (e: Error) => setAreaFormError(e.message),
+	});
+
+	const deleteAreaMutation = api.deleteServiceArea.useMutation({
+		onSuccess: () => refetchAreas(),
+	});
 
 	// ── Deliveries ───────────────────────────────────────────────────────
 	const { data: listData, isLoading: deliveriesLoading } = api.list.useQuery({
@@ -308,6 +362,233 @@ export function UberDirectAdmin() {
 							No delivery activity yet. Stats will appear here once Uber Direct
 							deliveries start flowing.
 						</p>
+					)}
+				</SettingsCard>
+
+				{/* ── Service areas ─────────────────────────────────── */}
+				<SettingsCard label="Service areas">
+					<div className="mb-3 flex items-center justify-between">
+						<p className="text-muted-foreground text-xs">
+							Define geographic areas where Uber Direct delivery is offered to
+							customers.
+						</p>
+						<button
+							type="button"
+							onClick={() => setShowAreaForm((v) => !v)}
+							className="rounded border border-border px-2.5 py-1 text-xs hover:bg-muted"
+						>
+							{showAreaForm ? "Cancel" : "+ Add area"}
+						</button>
+					</div>
+
+					{showAreaForm && (
+						<form
+							className="mb-4 space-y-3 rounded-lg border border-border bg-muted/20 p-4"
+							onSubmit={(e) => {
+								e.preventDefault();
+								createAreaMutation.mutate({
+									name: areaForm.name,
+									radius: areaForm.radius,
+									centerLat: areaForm.centerLat,
+									centerLng: areaForm.centerLng,
+									deliveryFee: areaForm.deliveryFee,
+									estimatedMinutes: areaForm.estimatedMinutes,
+								});
+							}}
+						>
+							<div className="grid grid-cols-2 gap-3">
+								<div className="col-span-2 flex flex-col gap-1">
+									<label
+										htmlFor="area-name"
+										className="text-muted-foreground text-xs"
+									>
+										Area name
+									</label>
+									<input
+										id="area-name"
+										type="text"
+										value={areaForm.name}
+										onChange={(e) =>
+											setAreaForm((f) => ({ ...f, name: e.target.value }))
+										}
+										placeholder="Downtown"
+										required
+										className="rounded border border-border bg-background px-2.5 py-1.5 text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+									/>
+								</div>
+								<div className="flex flex-col gap-1">
+									<label
+										htmlFor="area-center-lat"
+										className="text-muted-foreground text-xs"
+									>
+										Center lat
+									</label>
+									<input
+										id="area-center-lat"
+										type="number"
+										step="any"
+										value={areaForm.centerLat}
+										onChange={(e) =>
+											setAreaForm((f) => ({
+												...f,
+												centerLat: parseFloat(e.target.value) || 0,
+											}))
+										}
+										className="rounded border border-border bg-background px-2.5 py-1.5 text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+									/>
+								</div>
+								<div className="flex flex-col gap-1">
+									<label
+										htmlFor="area-center-lng"
+										className="text-muted-foreground text-xs"
+									>
+										Center lng
+									</label>
+									<input
+										id="area-center-lng"
+										type="number"
+										step="any"
+										value={areaForm.centerLng}
+										onChange={(e) =>
+											setAreaForm((f) => ({
+												...f,
+												centerLng: parseFloat(e.target.value) || 0,
+											}))
+										}
+										className="rounded border border-border bg-background px-2.5 py-1.5 text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+									/>
+								</div>
+								<div className="flex flex-col gap-1">
+									<label
+										htmlFor="area-radius"
+										className="text-muted-foreground text-xs"
+									>
+										Radius (km)
+									</label>
+									<input
+										id="area-radius"
+										type="number"
+										step="0.1"
+										min="0.1"
+										value={areaForm.radius}
+										onChange={(e) =>
+											setAreaForm((f) => ({
+												...f,
+												radius: parseFloat(e.target.value) || 1,
+											}))
+										}
+										className="rounded border border-border bg-background px-2.5 py-1.5 text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+									/>
+								</div>
+								<div className="flex flex-col gap-1">
+									<label
+										htmlFor="area-delivery-fee"
+										className="text-muted-foreground text-xs"
+									>
+										Delivery fee (cents)
+									</label>
+									<input
+										id="area-delivery-fee"
+										type="number"
+										min="0"
+										value={areaForm.deliveryFee}
+										onChange={(e) =>
+											setAreaForm((f) => ({
+												...f,
+												deliveryFee: parseInt(e.target.value, 10) || 0,
+											}))
+										}
+										className="rounded border border-border bg-background px-2.5 py-1.5 text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+									/>
+								</div>
+								<div className="flex flex-col gap-1">
+									<label
+										htmlFor="area-estimated-minutes"
+										className="text-muted-foreground text-xs"
+									>
+										Est. minutes
+									</label>
+									<input
+										id="area-estimated-minutes"
+										type="number"
+										min="1"
+										value={areaForm.estimatedMinutes}
+										onChange={(e) =>
+											setAreaForm((f) => ({
+												...f,
+												estimatedMinutes: parseInt(e.target.value, 10) || 30,
+											}))
+										}
+										className="rounded border border-border bg-background px-2.5 py-1.5 text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+									/>
+								</div>
+							</div>
+							{areaFormError && (
+								<p className="text-destructive text-xs">{areaFormError}</p>
+							)}
+							<button
+								type="submit"
+								disabled={createAreaMutation.isPending}
+								className="rounded-md bg-foreground px-4 py-1.5 font-medium text-background text-sm transition-opacity hover:opacity-90 disabled:opacity-50"
+							>
+								{createAreaMutation.isPending ? "Saving…" : "Save area"}
+							</button>
+						</form>
+					)}
+
+					{areasLoading ? (
+						<div className="space-y-2">
+							{Array.from({ length: 2 }).map((_, i) => (
+								<div
+									key={`area-skel-${i}`}
+									className="h-12 animate-pulse rounded-md border border-border bg-muted/30"
+								/>
+							))}
+						</div>
+					) : (areasData?.areas ?? []).length === 0 ? (
+						<p className="rounded-md border border-border border-dashed p-6 text-center text-muted-foreground text-sm">
+							No service areas defined. Add an area to enable customer delivery
+							availability checks.
+						</p>
+					) : (
+						<div className="space-y-2">
+							{(areasData?.areas ?? []).map((area) => (
+								<div
+									key={area.id}
+									className="flex items-center justify-between rounded-md border border-border p-3"
+								>
+									<div className="flex flex-col gap-0.5">
+										<span className="font-medium text-foreground text-sm">
+											{area.name}
+										</span>
+										<span className="text-muted-foreground text-xs">
+											{area.radius} km radius ·{" "}
+											{formatCurrency(area.deliveryFee)} fee ·{" "}
+											{area.estimatedMinutes} min
+										</span>
+									</div>
+									<div className="flex items-center gap-2">
+										<span
+											className={`inline-flex items-center rounded-full px-2 py-0.5 font-medium text-xs ${
+												area.isActive
+													? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+													: "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
+											}`}
+										>
+											{area.isActive ? "active" : "inactive"}
+										</span>
+										<button
+											type="button"
+											onClick={() => deleteAreaMutation.mutate({ id: area.id })}
+											disabled={deleteAreaMutation.isPending}
+											className="text-muted-foreground text-xs hover:text-destructive disabled:opacity-40"
+										>
+											Delete
+										</button>
+									</div>
+								</div>
+							))}
+						</div>
 					)}
 				</SettingsCard>
 
