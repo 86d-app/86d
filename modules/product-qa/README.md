@@ -19,6 +19,8 @@
 
 # Product Q&A Module
 
+📚 **Documentation:** [86d.app/docs/modules/product-qa](https://86d.app/docs/modules/product-qa)
+
 Product-specific questions and answers for e-commerce storefronts. Customers can ask questions about products, and merchants or other customers can provide answers. Includes moderation, upvoting, and analytics.
 
 ## Installation

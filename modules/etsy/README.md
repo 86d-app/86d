@@ -17,6 +17,8 @@
 
 # Etsy Module
 
+📚 **Documentation:** [86d.app/docs/modules/etsy](https://86d.app/docs/modules/etsy)
+
 Etsy marketplace integration for managing handmade and vintage product listings, orders, reviews, and shop analytics.
 
 ## Installation

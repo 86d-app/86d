@@ -19,6 +19,8 @@
 
 # Media Module
 
+📚 **Documentation:** [86d.app/docs/modules/media](https://86d.app/docs/modules/media)
+
 Digital asset management module with folder-based organization, tagging, bulk operations, and store-facing display components for images, galleries, and video.
 
 ## Installation

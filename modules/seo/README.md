@@ -19,6 +19,8 @@
 
 # SEO Module
 
+📚 **Documentation:** [86d.app/docs/modules/seo](https://86d.app/docs/modules/seo)
+
 Per-page SEO management including meta tags (title, description, Open Graph, Twitter Card), structured data (JSON-LD), URL redirects, and sitemap generation.
 
 ## Installation

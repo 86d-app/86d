@@ -19,6 +19,8 @@
 
 # Analytics Module
 
+📚 **Documentation:** [86d.app/docs/modules/analytics](https://86d.app/docs/modules/analytics)
+
 Event tracking and reporting module for 86d stores. Records page views, product views, cart events, purchases, and custom events. Provides admin endpoints for stats aggregation, top-product reports, and raw event access.
 
 ## Installation

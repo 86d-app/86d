@@ -19,6 +19,8 @@
 
 # Abandoned Carts Module
 
+📚 **Documentation:** [86d.app/docs/modules/abandoned-carts](https://86d.app/docs/modules/abandoned-carts)
+
 Tracks shopping carts that have been inactive beyond a configurable threshold and provides multi-channel recovery workflows (email, SMS, push notifications) to convert abandoned carts into orders.
 
 ## Installation

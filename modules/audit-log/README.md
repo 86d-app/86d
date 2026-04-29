@@ -19,6 +19,8 @@
 
 # Audit Log Module
 
+📚 **Documentation:** [86d.app/docs/modules/audit-log](https://86d.app/docs/modules/audit-log)
+
 Records admin actions, system events, and API key usage for security auditing, compliance, and accountability. Other modules can record audit entries through the exported controller interface.
 
 ## Installation

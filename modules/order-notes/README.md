@@ -1,4 +1,8 @@
+
+
 # @86d-app/order-notes
+
+📚 **Documentation:** [86d.app/docs/modules/order-notes](https://86d.app/docs/modules/order-notes)
 
 Order notes and comments module for 86d. Allows customers, admins, and system events to add notes to orders with visibility controls.
 

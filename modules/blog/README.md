@@ -17,7 +17,10 @@
 > [!WARNING]
 > This project is under active development and is not ready for production use. Please proceed with caution. Use at your own risk.
 
+
 # Blog Module
+
+📚 **Documentation:** [86d.app/docs/modules/blog](https://86d.app/docs/modules/blog)
 
 Blog content management module for the 86d commerce platform. Supports scheduled publishing, featured posts, related post suggestions, reading time estimation, view tracking, search, bulk operations, and SEO metadata.
 

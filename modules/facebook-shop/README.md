@@ -17,6 +17,8 @@
 
 # Facebook Shop Module
 
+📚 **Documentation:** [86d.app/docs/modules/facebook-shop](https://86d.app/docs/modules/facebook-shop)
+
 Facebook/Meta Commerce integration for catalog synchronization, product listings, order management, and shop collections.
 
 ## Installation

@@ -17,6 +17,8 @@
 
 # X Shop Module
 
+📚 **Documentation:** [86d.app/docs/modules/x-shop](https://86d.app/docs/modules/x-shop)
+
 Integrates your 86d store with X (Twitter) Commerce for product listings, order management, and product drop campaigns. Supports scheduling product launches tied to tweets with engagement tracking (impressions, clicks, conversions).
 
 ## Installation

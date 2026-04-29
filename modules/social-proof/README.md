@@ -19,6 +19,8 @@
 
 # Social Proof Module
 
+📚 **Documentation:** [86d.app/docs/modules/social-proof](https://86d.app/docs/modules/social-proof)
+
 Social proof and trust signals module for driving conversions. Track and display aggregate product activity — purchase counts, viewer counts, trending indicators, and recent purchase notifications. Configure trust badges (secure checkout, money-back guarantee, free shipping) to build customer confidence.
 
 ## Installation

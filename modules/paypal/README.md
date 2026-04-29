@@ -19,6 +19,8 @@
 
 # PayPal Module
 
+📚 **Documentation:** [86d.app/docs/modules/paypal](https://86d.app/docs/modules/paypal)
+
 PayPal payment provider implementing the `PaymentProvider` interface from `@86d-app/payments`. Uses PayPal Orders API v2 via raw `fetch()` with OAuth2 client credentials — no PayPal SDK required.
 
 ## Installation

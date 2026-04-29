@@ -17,6 +17,8 @@
 
 # TikTok Shop Module
 
+📚 **Documentation:** [86d.app/docs/modules/tiktok-shop](https://86d.app/docs/modules/tiktok-shop)
+
 Integrates your 86d store with TikTok Shop for product listing synchronization, order management, and catalog syncing. Supports webhook ingestion for real-time updates from TikTok Shop.
 
 ## Installation

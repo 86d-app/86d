@@ -19,6 +19,8 @@
 
 # Stripe Module
 
+📚 **Documentation:** [86d.app/docs/modules/stripe](https://86d.app/docs/modules/stripe)
+
 Stripe payment provider for the 86d commerce platform. Implements the `PaymentProvider` interface from `@86d-app/payments` using raw `fetch()` calls to the Stripe REST API (no SDK dependency). Includes a webhook endpoint with HMAC-SHA256 signature verification.
 
 ![version](https://img.shields.io/badge/version-0.0.1-blue) ![license](https://img.shields.io/badge/license-MIT-green)

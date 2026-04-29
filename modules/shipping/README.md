@@ -19,6 +19,8 @@
 
 # Shipping Module
 
+📚 **Documentation:** [86d.app/docs/modules/shipping](https://86d.app/docs/modules/shipping)
+
 Complete shipping management for the 86d commerce platform. Supports multi-zone rate configuration, named shipping methods with delivery estimates, carrier definitions with tracking URL generation, and full shipment lifecycle tracking.
 
 ![version](https://img.shields.io/badge/version-0.1.0-blue) ![license](https://img.shields.io/badge/license-MIT-green)

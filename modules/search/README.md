@@ -19,6 +19,8 @@
 
 # Search Module
 
+📚 **Documentation:** [86d.app/docs/modules/search](https://86d.app/docs/modules/search)
+
 Full-text search with fuzzy matching, faceted filtering, autocomplete, click tracking, and search analytics for 86d commerce platform.
 
 ## Installation

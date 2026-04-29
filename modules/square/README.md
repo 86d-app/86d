@@ -19,6 +19,8 @@
 
 # Square Module
 
+📚 **Documentation:** [86d.app/docs/modules/square](https://86d.app/docs/modules/square)
+
 Square payment provider implementing the `PaymentProvider` interface from `@86d-app/payments`. Uses Square's Payments API via raw `fetch()` — no Square SDK required.
 
 ## Installation

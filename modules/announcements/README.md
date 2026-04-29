@@ -1,4 +1,8 @@
+
+
 # @86d-app/announcements
+
+📚 **Documentation:** [86d.app/docs/modules/announcements](https://86d.app/docs/modules/announcements)
 
 Site-wide announcement bars, promotional banners, and popup notices for the 86d commerce platform. Schedule announcements, target specific audiences, and track engagement with built-in analytics.
 

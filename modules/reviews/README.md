@@ -19,6 +19,8 @@
 
 # Reviews Module
 
+📚 **Documentation:** [86d.app/docs/modules/reviews](https://86d.app/docs/modules/reviews)
+
 Product reviews and ratings for the 86d commerce platform. Supports moderation queue, photo reviews, helpfulness voting with deduplication, review sorting, abuse reporting, and merchant responses.
 
 ![version](https://img.shields.io/badge/version-0.0.2-blue) ![license](https://img.shields.io/badge/license-MIT-green)

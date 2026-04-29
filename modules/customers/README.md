@@ -19,6 +19,8 @@
 
 # Customers Module
 
+📚 **Documentation:** [86d.app/docs/modules/customers](https://86d.app/docs/modules/customers)
+
 Customer profile and address management. Authenticated customers can view and edit their profile and saved addresses. Admins have full read/write access to all customer records.
 
 ## Installation

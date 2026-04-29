@@ -1,4 +1,8 @@
+
+
 # @86d-app/tickets
+
+📚 **Documentation:** [86d.app/docs/modules/tickets](https://86d.app/docs/modules/tickets)
 
 Customer support ticket system for the 86d commerce platform. Provides threaded ticket conversations with categories, priority levels, status tracking, internal notes, and admin management.
 

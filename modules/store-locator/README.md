@@ -1,4 +1,8 @@
+
+
 # @86d-app/store-locator
+
+📚 **Documentation:** [86d.app/docs/modules/store-locator](https://86d.app/docs/modules/store-locator)
 
 Physical store location management module for the 86d commerce platform. Enables brands with brick-and-mortar presence to manage store locations, provide proximity-based search, display operating hours, and support click-and-collect (BOPIS).
 

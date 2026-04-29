@@ -17,6 +17,8 @@
 
 # Social Sharing Module
 
+📚 **Documentation:** [86d.app/docs/modules/social-sharing](https://86d.app/docs/modules/social-sharing)
+
 Track share events and generate platform-specific share URLs for products, collections, pages, and blog posts across Twitter, Facebook, Pinterest, LinkedIn, WhatsApp, email, and copy-link.
 
 ## Installation

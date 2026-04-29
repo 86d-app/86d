@@ -19,6 +19,8 @@
 
 # Subscriptions Module
 
+📚 **Documentation:** [86d.app/docs/modules/subscriptions](https://86d.app/docs/modules/subscriptions)
+
 Subscription plan and subscriber management for the 86d commerce platform. Handles recurring billing cycles, trial periods, and subscription lifecycle. Payment processing is delegated to your payment provider.
 
 ![version](https://img.shields.io/badge/version-0.0.1-blue) ![license](https://img.shields.io/badge/license-MIT-green)

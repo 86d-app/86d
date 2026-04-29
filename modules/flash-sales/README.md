@@ -19,6 +19,8 @@
 
 # Flash Sales Module
 
+📚 **Documentation:** [86d.app/docs/modules/flash-sales](https://86d.app/docs/modules/flash-sales)
+
 Time-limited promotional events with per-product sale pricing, stock limits, and countdown timers. Creates urgency-driven shopping experiences with automatic availability based on date ranges and stock levels.
 
 ## Installation

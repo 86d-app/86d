@@ -17,6 +17,8 @@
 
 # eBay Module
 
+📚 **Documentation:** [86d.app/docs/modules/ebay](https://86d.app/docs/modules/ebay)
+
 eBay marketplace integration supporting fixed-price and auction listings, order management, and channel analytics.
 
 ## Installation

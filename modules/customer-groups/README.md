@@ -19,6 +19,8 @@
 
 # Customer Groups Module
 
+📚 **Documentation:** [86d.app/docs/modules/customer-groups](https://86d.app/docs/modules/customer-groups)
+
 Customer segmentation module for grouping customers into manual or rule-based segments. Enables wholesale pricing, VIP tiers, B2B customer management, and group-specific price adjustments.
 
 ## Installation

@@ -1,4 +1,8 @@
+
+
 # @86d-app/auctions
+
+📚 **Documentation:** [86d.app/docs/modules/auctions](https://86d.app/docs/modules/auctions)
 
 Time-limited product auctions for 86d commerce platform. Supports English (ascending), Dutch (descending), and sealed (blind) auction types with reserve prices, buy-it-now, anti-sniping protection, and auction watching.
 

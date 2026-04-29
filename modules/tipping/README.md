@@ -17,6 +17,8 @@
 
 # Tipping Module
 
+📚 **Documentation:** [86d.app/docs/modules/tipping](https://86d.app/docs/modules/tipping)
+
 Add tipping to orders with preset percentages, custom amounts, tip splitting between recipients, payout management, and configurable settings.
 
 ## Installation

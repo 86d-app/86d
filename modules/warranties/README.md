@@ -1,4 +1,8 @@
+
+
 # @86d-app/warranties
+
+📚 **Documentation:** [86d.app/docs/modules/warranties](https://86d.app/docs/modules/warranties)
 
 Product warranty management for 86d commerce platform. Create warranty plans, register customer warranties, and process warranty claims with a full approval workflow.
 

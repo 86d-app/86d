@@ -1,4 +1,8 @@
+
+
 # @86d-app/automations
+
+📚 **Documentation:** [86d.app/docs/modules/automations](https://86d.app/docs/modules/automations)
 
 Event-driven workflow automation for the 86d commerce platform. Create rules that trigger on platform events, evaluate conditions against the event payload, and execute configurable actions like sending notifications, webhooks, or updating records.
 

@@ -19,6 +19,8 @@
 
 # Loyalty Module
 
+📚 **Documentation:** [86d.app/docs/modules/loyalty](https://86d.app/docs/modules/loyalty)
+
 Points-based loyalty program with tiered rewards, configurable earning rules, and automatic point accrual on order placement. Supports bronze/silver/gold/platinum tiers with custom perks and multipliers.
 
 ## Installation

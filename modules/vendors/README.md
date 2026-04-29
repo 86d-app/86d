@@ -19,6 +19,8 @@
 
 # Vendors Module
 
+📚 **Documentation:** [86d.app/docs/modules/vendors](https://86d.app/docs/modules/vendors)
+
 Multi-vendor marketplace module for managing vendor profiles, product assignments, commission rates, and payout tracking. Enables store owners to operate a marketplace where multiple vendors sell through a single storefront.
 
 ## Installation

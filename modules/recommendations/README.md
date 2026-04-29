@@ -19,6 +19,8 @@
 
 # Recommendations Module
 
+📚 **Documentation:** [86d.app/docs/modules/recommendations](https://86d.app/docs/modules/recommendations)
+
 Product recommendation engine for cross-sells, upsells, and personalized discovery. Supports four strategies: manual (admin-curated associations), bought_together (co-occurrence analysis from purchase history), trending (weighted interaction velocity), and personalized (category affinity with co-occurrence fallback). Works for both guest and authenticated customers.
 
 ## Installation

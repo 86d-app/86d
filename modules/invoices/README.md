@@ -1,4 +1,8 @@
+
+
 # @86d-app/invoices
+
+📚 **Documentation:** [86d.app/docs/modules/invoices](https://86d.app/docs/modules/invoices)
 
 Invoices module for the 86d commerce platform. Provides full invoice lifecycle management including payment terms for B2B (net-30, net-60, etc.), partial payments, credit notes, overdue detection, and guest invoice tracking.
 

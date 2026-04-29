@@ -19,6 +19,8 @@
 
 # Fulfillment Module
 
+📚 **Documentation:** [86d.app/docs/modules/fulfillment](https://86d.app/docs/modules/fulfillment)
+
 Manages the order fulfillment lifecycle from packing through shipment tracking to delivery confirmation. Supports multiple fulfillments per order for partial shipments.
 
 ## Installation

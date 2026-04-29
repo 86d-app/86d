@@ -17,6 +17,8 @@
 
 # QR Code Module
 
+📚 **Documentation:** [86d.app/docs/modules/qr-code](https://86d.app/docs/modules/qr-code)
+
 Generate, manage, and track QR codes for products, collections, pages, orders, or custom URLs with scan analytics.
 
 ## Installation

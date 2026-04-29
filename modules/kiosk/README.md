@@ -17,6 +17,8 @@
 
 # Kiosk Module
 
+📚 **Documentation:** [86d.app/docs/modules/kiosk](https://86d.app/docs/modules/kiosk)
+
 Self-service kiosk management for 86d. Register kiosk stations, manage ordering sessions with cart operations, process payments, and track station health via heartbeats.
 
 ## Installation

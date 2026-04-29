@@ -19,6 +19,8 @@
 
 # Comparisons Module
 
+📚 **Documentation:** [86d.app/docs/modules/comparisons](https://86d.app/docs/modules/comparisons)
+
 Product comparison module that lets customers add products to a side-by-side comparison view. Supports comparing prices, categories, and arbitrary product attributes across up to 4 products (configurable). Works for both guest and authenticated customers.
 
 ## Installation

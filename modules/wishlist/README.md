@@ -19,6 +19,8 @@
 
 # Wishlist Module
 
+📚 **Documentation:** [86d.app/docs/modules/wishlist](https://86d.app/docs/modules/wishlist)
+
 Customer wishlist and favorites module for 86d commerce platform. Supports per-customer wishlists with sharing via shareable links, bulk operations, and configurable item limits.
 
 ## Installation

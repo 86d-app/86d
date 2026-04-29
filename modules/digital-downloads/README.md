@@ -19,6 +19,8 @@
 
 # Digital Downloads Module
 
+📚 **Documentation:** [86d.app/docs/modules/digital-downloads](https://86d.app/docs/modules/digital-downloads)
+
 Secure file delivery for the 86d commerce platform. Associates downloadable files with products and generates expiring, limited-use tokens for order fulfillment. Supports batch token creation for orders with multiple digital products.
 
 ![version](https://img.shields.io/badge/version-0.1.0-blue) ![license](https://img.shields.io/badge/license-MIT-green)

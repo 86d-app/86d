@@ -19,6 +19,8 @@
 
 # Import/Export Module
 
+📚 **Documentation:** [86d.app/docs/modules/import-export](https://86d.app/docs/modules/import-export)
+
 Manages bulk data import and export jobs for products, customers, orders, and inventory. Supports CSV and JSON formats with row-level error tracking for imports.
 
 ## Installation

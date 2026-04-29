@@ -19,6 +19,8 @@
 
 # Settings Module
 
+📚 **Documentation:** [86d.app/docs/modules/settings](https://86d.app/docs/modules/settings)
+
 Global key-value store for store configuration. Settings are organized into groups (general, contact, social, legal, commerce, appearance) and managed through dedicated admin sub-pages.
 
 ## Installation

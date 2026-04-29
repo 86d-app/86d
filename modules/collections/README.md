@@ -19,6 +19,8 @@
 
 # Collections Module
 
+📚 **Documentation:** [86d.app/docs/modules/collections](https://86d.app/docs/modules/collections)
+
 Curated product collections for merchandising. Create manual collections with hand-picked products, or automatic collections with rule-based conditions. Supports featured collections, SEO fields, product ordering, and bulk operations.
 
 ## Installation

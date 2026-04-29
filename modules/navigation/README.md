@@ -19,6 +19,8 @@
 
 # Navigation Module
 
+📚 **Documentation:** [86d.app/docs/modules/navigation](https://86d.app/docs/modules/navigation)
+
 Manages store navigation menus with nested, drag-and-drop-reorderable menu items. Supports multiple locations (header, footer, sidebar, mobile, custom) and item types including direct links, categories, collections, pages, and products.
 
 ## Installation

@@ -19,6 +19,8 @@
 
 # Product Labels Module
 
+📚 **Documentation:** [86d.app/docs/modules/product-labels](https://86d.app/docs/modules/product-labels)
+
 Visual merchandising module for adding labels and badges to products. Create labels like "New", "Sale", "Best Seller", "Limited Edition", or custom badges with configurable colors, types, and display positions. Supports scheduled labels with start/end dates and conditional assignment rules.
 
 ## Installation

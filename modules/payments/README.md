@@ -19,6 +19,8 @@
 
 # Payments Module
 
+📚 **Documentation:** [86d.app/docs/modules/payments](https://86d.app/docs/modules/payments)
+
 Provider-agnostic payment processing for the 86d commerce platform. Tracks payment intents, saved payment methods, and refunds locally. Delegates actual processing to a configurable `PaymentProvider` (Stripe, Square, PayPal, etc.).
 
 ![version](https://img.shields.io/badge/version-0.0.1-blue) ![license](https://img.shields.io/badge/license-MIT-green)

@@ -17,6 +17,8 @@
 
 # Toast Module
 
+📚 **Documentation:** [86d.app/docs/modules/toast](https://86d.app/docs/modules/toast)
+
 Toast POS integration for 86d. Bidirectional sync for menus, orders, and inventory between your store and Toast POS.
 
 ## Installation

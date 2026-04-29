@@ -19,6 +19,8 @@
 
 # FAQ Module
 
+📚 **Documentation:** [86d.app/docs/modules/faq](https://86d.app/docs/modules/faq)
+
 Self-service FAQ and knowledge base module. Organize questions into categories, enable full-text search, and let customers vote on helpfulness.
 
 ## Installation

@@ -19,6 +19,8 @@
 
 # Discounts Module
 
+📚 **Documentation:** [86d.app/docs/modules/discounts](https://86d.app/docs/modules/discounts)
+
 Discount and promo code management. Supports percentage, fixed-amount, and free-shipping discount types with optional product/category scoping, usage limits, and date windows. Standalone — no dependencies on other modules.
 
 ## Installation

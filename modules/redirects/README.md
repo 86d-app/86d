@@ -1,4 +1,8 @@
+
+
 # @86d-app/redirects
+
+📚 **Documentation:** [86d.app/docs/modules/redirects](https://86d.app/docs/modules/redirects)
 
 URL redirect management module for 86d. Create, manage, and track URL redirects for SEO and URL migration.
 

@@ -17,6 +17,8 @@
 
 # Instagram Shop Module
 
+📚 **Documentation:** [86d.app/docs/modules/instagram-shop](https://86d.app/docs/modules/instagram-shop)
+
 Instagram Shopping integration for product listings, Instagram media product tagging, catalog synchronization, and order management.
 
 ## Installation

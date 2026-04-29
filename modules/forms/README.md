@@ -1,4 +1,8 @@
+
+
 # @86d-app/forms
+
+📚 **Documentation:** [86d.app/docs/modules/forms](https://86d.app/docs/modules/forms)
 
 Custom forms module for the 86d commerce platform. Create contact forms, surveys, inquiry forms, feedback forms, and more with configurable fields and submission management.
 

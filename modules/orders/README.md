@@ -19,6 +19,8 @@
 
 # Orders Module
 
+📚 **Documentation:** [86d.app/docs/modules/orders](https://86d.app/docs/modules/orders)
+
 Full order lifecycle management. Handles order creation, status transitions, fulfillment tracking, returns, invoices, notes, bulk operations, guest tracking, and reordering.
 
 ## Installation

@@ -17,6 +17,8 @@
 
 # DoorDash Module
 
+📚 **Documentation:** [86d.app/docs/modules/doordash](https://86d.app/docs/modules/doordash)
+
 DoorDash delivery integration for 86d. Manage deliveries, define delivery zones with radius-based availability checks, and track driver assignments in real time.
 
 ## Installation

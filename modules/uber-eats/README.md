@@ -17,6 +17,8 @@
 
 # Uber Eats Module
 
+📚 **Documentation:** [86d.app/docs/modules/uber-eats](https://86d.app/docs/modules/uber-eats)
+
 Uber Eats marketplace integration for 86d. Receive and manage orders from Uber Eats, sync menus, and track order statistics.
 
 ## Installation

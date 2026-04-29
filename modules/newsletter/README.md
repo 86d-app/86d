@@ -19,6 +19,8 @@
 
 # Newsletter Module
 
+📚 **Documentation:** [86d.app/docs/modules/newsletter](https://86d.app/docs/modules/newsletter)
+
 Newsletter subscription management for the 86d commerce platform. Handles subscriber lifecycle (subscribe, unsubscribe, resubscribe) with idempotent operations and tagging support.
 
 ![version](https://img.shields.io/badge/version-0.0.1-blue) ![license](https://img.shields.io/badge/license-MIT-green)

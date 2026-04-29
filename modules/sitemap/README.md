@@ -1,4 +1,8 @@
+
+
 # @86d-app/sitemap
+
+📚 **Documentation:** [86d.app/docs/modules/sitemap](https://86d.app/docs/modules/sitemap)
 
 XML sitemap generation module for 86d. Auto-generates sitemaps from products, collections, pages, blog posts, and brands with configurable priorities and change frequencies.
 

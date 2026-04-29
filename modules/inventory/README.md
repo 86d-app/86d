@@ -19,6 +19,8 @@
 
 # Inventory Module
 
+📚 **Documentation:** [86d.app/docs/modules/inventory](https://86d.app/docs/modules/inventory)
+
 Stock tracking for products and variants. Manages on-hand quantity, reservations, backorder support, and low-stock alerts.
 
 ![version](https://img.shields.io/badge/version-0.0.1-blue) ![license](https://img.shields.io/badge/license-MIT-green)

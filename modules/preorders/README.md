@@ -19,6 +19,8 @@
 
 # Preorders Module
 
+📚 **Documentation:** [86d.app/docs/modules/preorders](https://86d.app/docs/modules/preorders)
+
 Preorder campaign management for upcoming, limited-edition, or out-of-stock products. Create time-bound campaigns with full payment or deposit options, track customer preorders through the fulfillment lifecycle, and notify customers when products are ready to ship.
 
 ## Installation

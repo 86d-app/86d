@@ -19,6 +19,8 @@
 
 # Returns Module
 
+📚 **Documentation:** [86d.app/docs/modules/returns](https://86d.app/docs/modules/returns)
+
 Manages customer return requests with a multi-step approval workflow. Supports line-item returns with reason and condition tracking, multiple refund methods, and return shipment tracking.
 
 **Flow:** requested -> approved -> received -> completed. Admin can reject at any non-terminal stage. Customers can cancel before completion.

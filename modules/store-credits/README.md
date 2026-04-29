@@ -19,6 +19,8 @@
 
 # Store Credits Module
 
+📚 **Documentation:** [86d.app/docs/modules/store-credits](https://86d.app/docs/modules/store-credits)
+
 Customer credit accounts that integrate with returns, referrals, and gift cards. Credits can be applied as payment during checkout.
 
 ## Installation

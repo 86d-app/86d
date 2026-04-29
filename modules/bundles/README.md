@@ -19,6 +19,8 @@
 
 # Bundles Module
 
+📚 **Documentation:** [86d.app/docs/modules/bundles](https://86d.app/docs/modules/bundles)
+
 Groups products into discounted bundles with support for fixed-price or percentage-off discounts, date-based availability windows, and configurable item limits.
 
 ## Installation

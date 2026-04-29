@@ -19,6 +19,8 @@
 
 # Referrals Module
 
+📚 **Documentation:** [86d.app/docs/modules/referrals](https://86d.app/docs/modules/referrals)
+
 Customer referral program with unique shareable codes, referral tracking, and configurable reward rules. Supports percentage discounts, fixed discounts, and store credit rewards for both referrers and referees.
 
 ## Installation

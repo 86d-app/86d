@@ -19,6 +19,8 @@
 
 # Products Module
 
+📚 **Documentation:** [86d.app/docs/modules/products](https://86d.app/docs/modules/products)
+
 Product catalog module with variants and hierarchical categories. Full CRUD for the admin panel and read-only browsing with search and filtering for the storefront.
 
 ## Installation

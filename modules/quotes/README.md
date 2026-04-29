@@ -1,4 +1,8 @@
+
+
 # @86d-app/quotes
+
+📚 **Documentation:** [86d.app/docs/modules/quotes](https://86d.app/docs/modules/quotes)
 
 B2B request-for-quote (RFQ) module for price negotiation. Customers create quotes with product line items, submit them for admin review, and negotiate pricing through counter-offers before converting accepted quotes into orders.
 

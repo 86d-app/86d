@@ -19,6 +19,8 @@
 
 # Backorders Module
 
+📚 **Documentation:** [86d.app/docs/modules/backorders](https://86d.app/docs/modules/backorders)
+
 Backorder management for out-of-stock products. Allows customers to place orders for unavailable items, with configurable per-product policies, capacity limits, and a full status lifecycle from request through delivery.
 
 ## Installation

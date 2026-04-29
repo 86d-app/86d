@@ -19,6 +19,8 @@
 
 # Tax Module
 
+📚 **Documentation:** [86d.app/docs/modules/tax](https://86d.app/docs/modules/tax)
+
 Tax calculation, nexus management, transaction auditing, and compliance reporting for the 86d commerce platform.
 
 ## Installation

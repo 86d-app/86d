@@ -1,4 +1,8 @@
+
+
 # @86d-app/gift-wrapping
+
+📚 **Documentation:** [86d.app/docs/modules/gift-wrapping](https://86d.app/docs/modules/gift-wrapping)
 
 Gift wrapping module for 86d commerce platform. Allows store owners to create wrapping options with custom pricing, and customers to add gift wrapping with personalized messages to individual order items during checkout.
 

@@ -1,4 +1,8 @@
+
+
 # @86d-app/recently-viewed
+
+📚 **Documentation:** [86d.app/docs/modules/recently-viewed](https://86d.app/docs/modules/recently-viewed)
 
 Recently viewed products tracking module for the 86d commerce platform. Records which products customers browse and surfaces them for rediscovery, improving engagement and conversion.
 

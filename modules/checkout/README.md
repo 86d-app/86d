@@ -19,6 +19,8 @@
 
 # Checkout Module
 
+📚 **Documentation:** [86d.app/docs/modules/checkout](https://86d.app/docs/modules/checkout)
+
 Checkout session management for the 86d commerce platform. Handles the cart-to-order conversion flow: session creation, address collection, discount application, and order completion.
 
 ![version](https://img.shields.io/badge/version-0.0.1-blue) ![license](https://img.shields.io/badge/license-MIT-green)

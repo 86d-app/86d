@@ -19,6 +19,8 @@
 
 # Appointments Module
 
+📚 **Documentation:** [86d.app/docs/modules/appointments](https://86d.app/docs/modules/appointments)
+
 Service-based booking module for commerce stores. Manage bookable services, staff members, weekly schedules, availability, and customer appointments. Designed for salons, consultants, fitness studios, clinics, and any service-based business.
 
 ## Installation

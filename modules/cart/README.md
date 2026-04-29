@@ -19,6 +19,8 @@
 
 # Cart Module
 
+📚 **Documentation:** [86d.app/docs/modules/cart](https://86d.app/docs/modules/cart)
+
 Shopping cart module for guest and authenticated customers. Supports adding, updating, and removing items with configurable expiration and per-cart item limits.
 
 ## Installation

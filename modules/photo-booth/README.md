@@ -17,6 +17,8 @@
 
 # Photo Booth Module
 
+📚 **Documentation:** [86d.app/docs/modules/photo-booth](https://86d.app/docs/modules/photo-booth)
+
 Event photo capture with session management, live photo streams, and email/SMS delivery for in-store or event activations.
 
 ## Installation

@@ -19,6 +19,8 @@
 
 # Pages Module
 
+📚 **Documentation:** [86d.app/docs/modules/pages](https://86d.app/docs/modules/pages)
+
 CMS-style static pages with a draft/published/archived workflow. Supports hierarchical page structure, SEO metadata, featured images, and optional inclusion in store navigation.
 
 ## Installation

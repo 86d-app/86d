@@ -19,6 +19,8 @@
 
 # Brands Module
 
+📚 **Documentation:** [86d.app/docs/modules/brands](https://86d.app/docs/modules/brands)
+
 Product brand management module. Organize products by manufacturer or brand with dedicated brand pages, featured brand listings, and full SEO support.
 
 ## Installation

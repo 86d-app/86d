@@ -19,6 +19,8 @@
 
 # Braintree Module
 
+📚 **Documentation:** [86d.app/docs/modules/braintree](https://86d.app/docs/modules/braintree)
+
 Braintree payment provider for 86d stores. Implements the `PaymentProvider` interface from `@86d-app/payments` using the Braintree REST API (no SDK dependency).
 
 ## Installation

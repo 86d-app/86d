@@ -17,6 +17,8 @@
 
 # Uber Direct Module
 
+📚 **Documentation:** [86d.app/docs/modules/uber-direct](https://86d.app/docs/modules/uber-direct)
+
 Uber Direct delivery integration for 86d. Request delivery quotes, create deliveries from quotes, track courier assignments, and view delivery statistics.
 
 ## Installation

@@ -17,6 +17,8 @@
 
 # Google Shopping Module
 
+📚 **Documentation:** [86d.app/docs/modules/google-shopping](https://86d.app/docs/modules/google-shopping)
+
 Integrates your 86d store with Google Merchant Center for product feed management, feed submission tracking, order handling, and feed diagnostics. Supports Google Shopping product data specifications including GTIN, MPN, brand, condition, and availability.
 
 ## Installation

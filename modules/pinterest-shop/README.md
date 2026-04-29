@@ -17,6 +17,8 @@
 
 # Pinterest Shop Module
 
+📚 **Documentation:** [86d.app/docs/modules/pinterest-shop](https://86d.app/docs/modules/pinterest-shop)
+
 Integrates your 86d store with Pinterest for catalog management, shopping pin creation, and pin performance analytics. Manage product catalogs synced to Pinterest and track engagement metrics like impressions, saves, and clicks.
 
 ## Installation

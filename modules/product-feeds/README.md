@@ -1,4 +1,8 @@
+
+
 # @86d-app/product-feeds
+
+📚 **Documentation:** [86d.app/docs/modules/product-feeds](https://86d.app/docs/modules/product-feeds)
 
 Product feed generation and management for shopping channels. Syndicate your product catalog to Google Shopping, Facebook/Meta, Microsoft Advertising, Pinterest, TikTok Shop, and custom channels.
 

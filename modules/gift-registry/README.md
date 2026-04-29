@@ -1,4 +1,8 @@
+
+
 # @86d-app/gift-registry
+
+📚 **Documentation:** [86d.app/docs/modules/gift-registry](https://86d.app/docs/modules/gift-registry)
 
 Gift registry module for 86d commerce platform. Allows customers to create and share gift registries for weddings, baby showers, birthdays, housewarmings, holidays, and more. Visitors can browse registries, view items, and purchase gifts.
 

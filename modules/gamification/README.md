@@ -17,6 +17,8 @@
 
 # Gamification Module
 
+📚 **Documentation:** [86d.app/docs/modules/gamification](https://86d.app/docs/modules/gamification)
+
 Add interactive games (spin-to-win wheels, scratch-off cards, slot machines) to your storefront with configurable prizes, play-rate limiting, and analytics.
 
 ## Installation

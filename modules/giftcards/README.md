@@ -19,6 +19,8 @@
 
 # Gift Cards Module
 
+📚 **Documentation:** [86d.app/docs/modules/giftcards](https://86d.app/docs/modules/giftcards)
+
 Full-featured gift card system for 86d commerce: purchasing, gifting, redemption, top-ups, balance management, bulk issuance, and analytics.
 
 ## Installation

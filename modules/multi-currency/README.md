@@ -1,4 +1,8 @@
+
+
 # @86d-app/multi-currency
+
+📚 **Documentation:** [86d.app/docs/modules/multi-currency](https://86d.app/docs/modules/multi-currency)
 
 Multi-currency support for 86d commerce stores. Manage currencies, exchange rates, price conversions, and per-product price overrides.
 

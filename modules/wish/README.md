@@ -17,6 +17,8 @@
 
 # Wish Module
 
+📚 **Documentation:** [86d.app/docs/modules/wish](https://86d.app/docs/modules/wish)
+
 Integrates your 86d store with Wish marketplace for product listing, order management, and shipment tracking. Supports product review status tracking, tag-based organization, and shipping deadline management.
 
 ## Installation

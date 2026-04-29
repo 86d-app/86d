@@ -19,6 +19,8 @@
 
 # Notifications Module
 
+📚 **Documentation:** [86d.app/docs/modules/notifications](https://86d.app/docs/modules/notifications)
+
 In-app and email notification system with reusable templates, batch sending, priority levels, and per-customer preference management.
 
 ## Installation

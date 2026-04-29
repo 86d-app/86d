@@ -17,6 +17,8 @@
 
 # Favor Module
 
+📚 **Documentation:** [86d.app/docs/modules/favor](https://86d.app/docs/modules/favor)
+
 Favor delivery integration for 86d. Manage deliveries with zip-code-based service areas, runner assignment tracking, and delivery statistics.
 
 ## Installation

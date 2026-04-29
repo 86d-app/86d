@@ -19,6 +19,8 @@
 
 # Price Lists Module
 
+📚 **Documentation:** [86d.app/docs/modules/price-lists](https://86d.app/docs/modules/price-lists)
+
 Tiered and group-specific pricing for products. Create multiple price lists with priority-based resolution, quantity tiers, currency filtering, and customer group targeting.
 
 ## Installation

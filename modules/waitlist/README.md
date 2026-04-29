@@ -19,6 +19,8 @@
 
 # Waitlist Module
 
+📚 **Documentation:** [86d.app/docs/modules/waitlist](https://86d.app/docs/modules/waitlist)
+
 Product waitlist for out-of-stock notifications. Customers can subscribe by email to be notified when products are back in stock, and admins can track demand and trigger notifications.
 
 ## Installation

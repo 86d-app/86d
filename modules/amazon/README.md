@@ -17,6 +17,8 @@
 
 # Amazon Module
 
+📚 **Documentation:** [86d.app/docs/modules/amazon](https://86d.app/docs/modules/amazon)
+
 Amazon Seller Central integration for managing product listings, order fulfillment, and inventory synchronization across FBA and FBM channels.
 
 ## Installation

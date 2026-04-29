@@ -17,6 +17,8 @@
 
 # Walmart Module
 
+📚 **Documentation:** [86d.app/docs/modules/walmart](https://86d.app/docs/modules/walmart)
+
 Integrates your 86d store with Walmart Marketplace for item management, feed submissions, order fulfillment, and inventory tracking. Supports both seller-fulfilled and Walmart Fulfillment Services (WFS) items.
 
 ## Installation
