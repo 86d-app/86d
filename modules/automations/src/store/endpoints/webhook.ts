@@ -28,9 +28,8 @@ export function createWebhookEndpoint(opts?: {
 			}),
 			requireRequest: true,
 		},
-		// biome-ignore lint/suspicious/noExplicitAny: endpoint handler needs raw request
-		async (ctx: any): Promise<Response> => {
-			const request = ctx.request as Request;
+		async (ctx): Promise<Response> => {
+			const request = ctx.request;
 
 			// Verify shared secret when configured
 			if (opts?.webhookSecret) {

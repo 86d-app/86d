@@ -122,8 +122,7 @@ function EditForm({
 			return;
 		}
 
-		// biome-ignore lint/suspicious/noExplicitAny: dynamic payload shape for module client
-		const payload: any = {
+		updateMutation.mutate({
 			params: { id: qrCode.id },
 			label: label.trim(),
 			targetUrl: targetUrl.trim(),
@@ -132,9 +131,7 @@ function EditForm({
 			size: sizeNum,
 			errorCorrection,
 			isActive,
-		};
-
-		updateMutation.mutate(payload);
+		});
 	};
 
 	return (

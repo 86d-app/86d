@@ -541,8 +541,8 @@ export function createProductController(
 			}
 
 			for (const cat of allCategories) {
-				// biome-ignore lint/style/noNonNullAssertion: categoryMap is populated from allCategories
-				const catWithChildren = categoryMap.get(cat.id)!;
+				const catWithChildren = categoryMap.get(cat.id);
+				if (!catWithChildren) continue;
 				if (cat.parentId) {
 					const parent = categoryMap.get(cat.parentId);
 					if (parent) {

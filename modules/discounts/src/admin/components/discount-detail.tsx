@@ -127,17 +127,14 @@ function CreateCodeForm({
 			return;
 		}
 
-		// biome-ignore lint/suspicious/noExplicitAny: dynamic payload shape for module client
-		const payload: any = {
+		const maxUsesNum = maxUses ? Number.parseInt(maxUses, 10) : Number.NaN;
+		createMutation.mutate({
 			params: { id: discountId },
 			code: trimmed,
-		};
-		if (maxUses) {
-			const n = Number.parseInt(maxUses, 10);
-			if (!Number.isNaN(n) && n > 0) payload.maximumUses = n;
-		}
-
-		createMutation.mutate(payload);
+			...(!Number.isNaN(maxUsesNum) && maxUsesNum > 0
+				? { maximumUses: maxUsesNum }
+				: {}),
+		});
 	};
 
 	return (
@@ -242,16 +239,13 @@ function BulkGenerateForm({
 			return;
 		}
 
-		// biome-ignore lint/suspicious/noExplicitAny: dynamic payload shape for module client
-		const payload: any = {
+		const mu = Number.parseInt(maxUses, 10);
+		generateMutation.mutate({
 			params: { id: discountId },
 			count: n,
-		};
-		if (prefix.trim()) payload.prefix = prefix.trim();
-		const mu = Number.parseInt(maxUses, 10);
-		if (!Number.isNaN(mu) && mu > 0) payload.maximumUses = mu;
-
-		generateMutation.mutate(payload);
+			...(prefix.trim() ? { prefix: prefix.trim() } : {}),
+			...(!Number.isNaN(mu) && mu > 0 ? { maximumUses: mu } : {}),
+		});
 	};
 
 	const handleExportCsv = () => {

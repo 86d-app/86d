@@ -21,6 +21,21 @@ import AnalyticsAdminTemplate from "./analytics-admin.mdx";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
+interface ChartPayloadEntry {
+	dataKey?: string;
+	name?: string;
+	value?: number | string;
+	color?: string;
+	payload?: Record<string, unknown>;
+}
+
+interface ChartTooltipProps {
+	active?: boolean;
+	payload?: ChartPayloadEntry[];
+	label?: string | number;
+	formatter?: (value: number | string | undefined) => string;
+}
+
 interface EventStats {
 	type: string;
 	count: number;
@@ -265,8 +280,12 @@ function ChartCard({
 	);
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: Recharts tooltip payload is untyped
-function ChartTooltipBase({ active, payload, label, formatter }: any) {
+function ChartTooltipBase({
+	active,
+	payload,
+	label,
+	formatter,
+}: ChartTooltipProps) {
 	if (!active || !payload?.length) return null;
 	return (
 		<div className="rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-lg dark:border-gray-700 dark:bg-gray-800">
@@ -275,8 +294,7 @@ function ChartTooltipBase({ active, payload, label, formatter }: any) {
 					{label}
 				</p>
 			)}
-			{/* biome-ignore lint/suspicious/noExplicitAny: Recharts payload entries are untyped */}
-			{payload.map((entry: any) => (
+			{payload.map((entry) => (
 				<div
 					key={entry.dataKey || entry.name}
 					className="flex items-center gap-2 text-xs"
@@ -376,7 +394,11 @@ function OverviewTab({
 									<Tooltip
 										content={
 											<ChartTooltipBase
-												formatter={(v: number) => v.toLocaleString()}
+												formatter={(v) =>
+													typeof v === "number"
+														? v.toLocaleString()
+														: String(v ?? "")
+												}
 											/>
 										}
 									/>
@@ -419,7 +441,11 @@ function OverviewTab({
 									<Tooltip
 										content={
 											<ChartTooltipBase
-												formatter={(v: number) => v.toLocaleString()}
+												formatter={(v) =>
+													typeof v === "number"
+														? v.toLocaleString()
+														: String(v ?? "")
+												}
 											/>
 										}
 									/>
@@ -501,7 +527,8 @@ function RevenueTab({
 		: null;
 
 	const currencyTooltipFormatter = useCallback(
-		(v: number) => formatCurrency(v),
+		(v: number | string | undefined) =>
+			formatCurrency(typeof v === "number" ? v : 0),
 		[],
 	);
 
@@ -692,16 +719,14 @@ function RevenueTab({
 	);
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: Recharts tooltip payload is untyped
-function RevenueTooltip({ active, payload, label }: any) {
+function RevenueTooltip({ active, payload, label }: ChartTooltipProps) {
 	if (!active || !payload?.length) return null;
 	return (
 		<div className="rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-lg dark:border-gray-700 dark:bg-gray-800">
 			<p className="mb-1 font-medium text-gray-900 text-xs dark:text-white">
 				{label}
 			</p>
-			{/* biome-ignore lint/suspicious/noExplicitAny: Recharts payload entries are untyped */}
-			{payload.map((entry: any) => (
+			{payload.map((entry) => (
 				<div key={entry.dataKey} className="flex items-center gap-2 text-xs">
 					<span
 						className="inline-block h-2 w-2 rounded-full"
@@ -712,7 +737,9 @@ function RevenueTooltip({ active, payload, label }: any) {
 					</span>
 					<span className="font-medium text-gray-900 dark:text-white">
 						{entry.dataKey === "revenue"
-							? formatCurrency(entry.value)
+							? formatCurrency(
+									typeof entry.value === "number" ? entry.value : 0,
+								)
 							: entry.value}
 					</span>
 				</div>
@@ -1137,17 +1164,15 @@ function TopProductsTab({
 	);
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: Recharts tooltip payload is untyped
-function TopProductsTooltip({ active, payload, label }: any) {
+function TopProductsTooltip({ active, payload, label }: ChartTooltipProps) {
 	if (!active || !payload?.length) return null;
 	const item = payload[0]?.payload;
 	return (
 		<div className="rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-lg dark:border-gray-700 dark:bg-gray-800">
 			<p className="mb-1 font-medium font-mono text-gray-900 text-xs dark:text-white">
-				{item?.fullId ?? label}
+				{(item?.fullId as string | undefined) ?? label}
 			</p>
-			{/* biome-ignore lint/suspicious/noExplicitAny: Recharts payload entries are untyped */}
-			{payload.map((entry: any) => (
+			{payload.map((entry) => (
 				<div key={entry.dataKey} className="flex items-center gap-2 text-xs">
 					<span
 						className="inline-block h-2 w-2 rounded-full"
@@ -1157,13 +1182,16 @@ function TopProductsTooltip({ active, payload, label }: any) {
 						{entry.name}:
 					</span>
 					<span className="font-medium text-gray-900 dark:text-white">
-						{entry.value.toLocaleString()}
+						{typeof entry.value === "number"
+							? entry.value.toLocaleString()
+							: (entry.value ?? "")}
 					</span>
 				</div>
 			))}
-			{item && item.views > 0 && (
+			{item && typeof item.views === "number" && item.views > 0 && (
 				<p className="mt-1 text-gray-400 text-xs">
-					Conversion: {((item.purchases / item.views) * 100).toFixed(1)}%
+					Conversion: {((Number(item.purchases) / item.views) * 100).toFixed(1)}
+					%
 				</p>
 			)}
 		</div>

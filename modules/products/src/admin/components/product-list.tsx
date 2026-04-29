@@ -578,8 +578,7 @@ export function ProductList() {
 
 	const limit = 20;
 
-	// biome-ignore lint/suspicious/noExplicitAny: casting untyped query result
-	const queryInput: any = {
+	const queryInput: Record<string, string> = {
 		page: String(page),
 		limit: String(limit),
 		sort: "createdAt",

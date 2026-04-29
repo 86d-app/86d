@@ -114,17 +114,14 @@ function CreateForm({
 			return;
 		}
 
-		// biome-ignore lint/suspicious/noExplicitAny: dynamic payload shape for module client
-		const payload: any = {
+		createMutation.mutate({
 			targetUrl: targetUrl.trim(),
 			targetType,
 			format,
 			size: sizeNum,
 			errorCorrection,
-		};
-		if (label.trim()) payload.label = label.trim();
-
-		createMutation.mutate(payload);
+			...(label.trim() ? { label: label.trim() } : {}),
+		});
 	};
 
 	const handleBatchSubmit = (e: React.FormEvent) => {
@@ -139,16 +136,13 @@ function CreateForm({
 			return;
 		}
 
-		// biome-ignore lint/suspicious/noExplicitAny: dynamic payload shape for module client
-		const payload: any = {
+		batchMutation.mutate({
 			urls,
 			targetType,
 			format,
 			size: Number.parseInt(size, 10) || 256,
 			errorCorrection,
-		};
-
-		batchMutation.mutate(payload);
+		});
 	};
 
 	return (
