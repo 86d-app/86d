@@ -1,3 +1,10 @@
-import type { MDXComponents } from "mdx/types";
+"use client";
 
-export default {} satisfies MDXComponents;
+import type { MDXComponents } from "mdx/types";
+import { AppointmentBooking } from "./appointment-booking";
+import { MyAppointments } from "./my-appointments";
+
+export default {
+	AppointmentBooking,
+	MyAppointments,
+} satisfies MDXComponents;
