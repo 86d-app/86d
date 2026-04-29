@@ -13,6 +13,9 @@ interface PaymentData {
 	amount: number;
 	currency: string;
 	clientSecret?: string;
+	paypalOrderId?: string;
+	braintreeClientToken?: string;
+	squarePayment?: boolean;
 }
 
 interface SessionData {
@@ -106,6 +109,16 @@ export const CheckoutPayment = observer(() => {
 		paymentMutation.isPending ||
 		checkoutState.isProcessing;
 
+	const paymentProvider = payment?.clientSecret
+		? "stripe"
+		: payment?.paypalOrderId
+			? "paypal"
+			: payment?.braintreeClientToken
+				? "braintree"
+				: payment?.squarePayment
+					? "square"
+					: null;
+
 	return (
 		<CheckoutPaymentTemplate
 			loading={loading}
@@ -113,6 +126,7 @@ export const CheckoutPayment = observer(() => {
 			payment={payment}
 			total={session ? formatPrice(session.total) : ""}
 			hasClientSecret={!!payment?.clientSecret}
+			paymentProvider={paymentProvider}
 			onRetry={handleRetry}
 			onBack={handleBack}
 		/>

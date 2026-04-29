@@ -34,13 +34,72 @@
             Redirecting to order review…
           </p>
         </div>
-      ) : props.hasClientSecret ? (
-        <div className="rounded-md border border-border bg-muted/30 p-4">
-          <p className="text-foreground text-sm">
-            Complete your payment using the provider's payment form below.
+      ) : props.paymentProvider === "stripe" ? (
+        <div className="space-y-4">
+          <div className="rounded-md border border-border bg-muted/20 p-4">
+            <div className="flex items-center justify-between">
+              <p className="font-medium text-foreground text-sm">Stripe payment</p>
+              <span className="rounded-full bg-amber-500/10 px-2 py-0.5 font-medium text-amber-700 text-xs dark:text-amber-400">
+                Awaiting card details
+              </span>
+            </div>
+            <p className="mt-1 text-muted-foreground text-sm">
+              Amount due: <span className="font-semibold text-foreground">{props.total}</span>
+            </p>
+          </div>
+          <p className="text-muted-foreground text-xs">
+            Your Stripe payment form is rendered by the store checkout page. If you are building a custom template, mount a Stripe Elements form here and confirm the payment intent.
           </p>
-          <p className="mt-2 text-muted-foreground text-xs">
-            Your payment provider's UI will appear here once integrated.
+        </div>
+      ) : props.paymentProvider === "paypal" ? (
+        <div className="space-y-4">
+          <div className="rounded-md border border-border bg-muted/20 p-4">
+            <div className="flex items-center justify-between">
+              <p className="font-medium text-foreground text-sm">PayPal payment</p>
+              <span className="rounded-full bg-amber-500/10 px-2 py-0.5 font-medium text-amber-700 text-xs dark:text-amber-400">
+                Awaiting approval
+              </span>
+            </div>
+            <p className="mt-1 text-muted-foreground text-sm">
+              Amount due: <span className="font-semibold text-foreground">{props.total}</span>
+            </p>
+          </div>
+          <p className="text-muted-foreground text-xs">
+            Your PayPal Buttons component is rendered by the store checkout page. If you are building a custom template, mount the PayPal Buttons SDK here and capture the order.
+          </p>
+        </div>
+      ) : props.paymentProvider === "braintree" ? (
+        <div className="space-y-4">
+          <div className="rounded-md border border-border bg-muted/20 p-4">
+            <div className="flex items-center justify-between">
+              <p className="font-medium text-foreground text-sm">Braintree payment</p>
+              <span className="rounded-full bg-amber-500/10 px-2 py-0.5 font-medium text-amber-700 text-xs dark:text-amber-400">
+                Awaiting card details
+              </span>
+            </div>
+            <p className="mt-1 text-muted-foreground text-sm">
+              Amount due: <span className="font-semibold text-foreground">{props.total}</span>
+            </p>
+          </div>
+          <p className="text-muted-foreground text-xs">
+            Your Braintree Drop-in UI is rendered by the store checkout page. If you are building a custom template, mount the Braintree Drop-in here and submit the nonce.
+          </p>
+        </div>
+      ) : props.paymentProvider === "square" ? (
+        <div className="space-y-4">
+          <div className="rounded-md border border-border bg-muted/20 p-4">
+            <div className="flex items-center justify-between">
+              <p className="font-medium text-foreground text-sm">Square payment</p>
+              <span className="rounded-full bg-amber-500/10 px-2 py-0.5 font-medium text-amber-700 text-xs dark:text-amber-400">
+                Awaiting card details
+              </span>
+            </div>
+            <p className="mt-1 text-muted-foreground text-sm">
+              Amount due: <span className="font-semibold text-foreground">{props.total}</span>
+            </p>
+          </div>
+          <p className="text-muted-foreground text-xs">
+            Your Square Web Payments form is rendered by the store checkout page. If you are building a custom template, mount the Square Web Payments SDK here.
           </p>
         </div>
       ) : (
