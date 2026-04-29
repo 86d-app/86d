@@ -25,7 +25,7 @@ import type { Awaitable } from "./types/helper";
  */
 export interface BaseAdapter {
 	[resource: string]: {
-		// biome-ignore lint/suspicious/noExplicitAny: adapter methods can have any parameter signature
+		// biome-ignore lint/suspicious/noExplicitAny: adapter methods have varying parameter signatures
 		[method: string]: (...args: any[]) => Awaitable<any>;
 	};
 }

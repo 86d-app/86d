@@ -71,8 +71,7 @@ export function sanitizeHtml(input: string): string {
  * as an HTML attribute.
  */
 export function isSafeUrl(url: string): boolean {
-	// biome-ignore lint/suspicious/noControlCharactersInRegex: intentionally stripping control chars to prevent URI obfuscation
-	const trimmed = url.replace(/[\s\u0000-\u001f]+/g, "").toLowerCase();
+	const trimmed = url.replace(/[\s\p{Cc}]+/gu, "").toLowerCase();
 	return (
 		!trimmed.startsWith("javascript:") &&
 		!trimmed.startsWith("data:") &&

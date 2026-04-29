@@ -292,7 +292,7 @@ export type ModuleOptions = Record<string, ModuleConfig>;
  * - Types extending `ModuleController` should only define serializable methods and fields (async methods encouraged).
  */
 export interface ModuleController {
-	// biome-ignore lint/suspicious/noExplicitAny: controller methods can have any parameter signature
+	// biome-ignore lint/suspicious/noExplicitAny: controller methods have varying parameter signatures — any[] is required for assignment compatibility
 	[method: string]: (...args: any[]) => Awaitable<unknown>;
 }
 
@@ -302,7 +302,7 @@ export type ModuleControllers = Record<string, ModuleController>;
  * Context provided to hook matchers in module hooks.
  */
 export type HookEndpointContext = Partial<
-	// biome-ignore lint/suspicious/noExplicitAny: better-call generic types require any
+	// biome-ignore lint/suspicious/noExplicitAny: better-call EndpointOptions constraint requires any
 	EndpointContext<string, any> & Omit<InputContext<string, any>, "method">
 > & {
 	path?: string;
@@ -795,7 +795,7 @@ export type Module = {
 	/**
 	 * Shape types to be inferred by consumers.
 	 */
-	// biome-ignore lint/suspicious/noExplicitAny: $Infer is a type-level inference helper that can hold any shape
+	// biome-ignore lint/suspicious/noExplicitAny: $Infer is a type-level inference marker that holds arbitrary shapes
 	$Infer?: Record<string, any>;
 
 	/**
