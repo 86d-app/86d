@@ -1,6 +1,6 @@
 {
   "lockfileVersion": 1,
-  "generatedAt": "2026-04-29T01:29:46.066Z",
+  "generatedAt": "2026-04-29T01:32:01.665Z",
   "modules": {
     "abandoned-carts": {
       "source": "local",
@@ -377,7 +377,7 @@
       "source": "local",
       "packageName": "@86d-app/payments",
       "version": "0.0.30",
-      "integrity": "sha256-d66fc69868b29cd340a5de022da6e350e7b53c9d2523c25aa0d70892eb43794b",
+      "integrity": "sha256-f528f76ed4afd615e8caf1bf56c8df0d246b3c35da6e687b81e4520dc95fd5e3",
       "localPath": "modules/payments"
     },
     "paypal": {

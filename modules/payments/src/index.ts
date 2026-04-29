@@ -43,6 +43,11 @@ export default function payments(options?: PaymentsOptions): Module {
 			store: storeEndpoints,
 			admin: adminEndpoints,
 		},
+		store: {
+			pages: [
+				{ path: "/account/payment-methods", component: "SavedPaymentMethods" },
+			],
+		},
 		admin: {
 			pages: [
 				{
