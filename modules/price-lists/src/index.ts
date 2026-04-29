@@ -46,6 +46,9 @@ export default function priceLists(options?: PriceListsOptions): Module {
 			store: storeEndpoints,
 			admin: adminEndpoints,
 		},
+		store: {
+			pages: [{ path: "/price-lists/:slug", component: "PriceListTable" }],
+		},
 		admin: {
 			pages: [
 				{
