@@ -1,6 +1,6 @@
 {
   "lockfileVersion": 1,
-  "generatedAt": "2026-04-29T04:12:13.638Z",
+  "generatedAt": "2026-04-29T05:29:23.451Z",
   "modules": {
     "abandoned-carts": {
       "source": "local",
@@ -391,7 +391,7 @@
       "source": "local",
       "packageName": "@86d-app/photo-booth",
       "version": "0.0.30",
-      "integrity": "sha256-074878a210918677a1aec18df8fd2bf2699a43f32ecf9117aab9203b30c68e74",
+      "integrity": "sha256-00613f35dae775ce4f27c4427fe0e07603ae7e88e84a4be110501d42973c7b3f",
       "localPath": "modules/photo-booth"
     },
     "pinterest-shop": {
