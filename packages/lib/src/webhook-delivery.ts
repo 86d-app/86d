@@ -23,15 +23,13 @@ interface WebhookPayload {
 	type: string;
 	source: string;
 	timestamp: string;
-	// biome-ignore lint/suspicious/noExplicitAny: webhook payload is arbitrary JSON
-	data: any;
+	data: unknown;
 }
 
 export function buildWebhookPayload(
 	type: string,
 	source: string,
-	// biome-ignore lint/suspicious/noExplicitAny: event payload varies per event type
-	data: any,
+	data: unknown,
 ): WebhookPayload {
 	return {
 		id: crypto.randomUUID(),

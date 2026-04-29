@@ -9,6 +9,7 @@
  */
 
 import type { EventBus, ModuleEvent } from "@86d-app/core";
+import type { Prisma } from "db";
 import {
 	buildWebhookPayload,
 	deliverWebhook,
@@ -18,7 +19,6 @@ import { logger } from "utils/logger";
 
 /**
  * Minimal DB interface for webhook queries.
- * Avoids importing the full Prisma client type.
  */
 interface WebhookDb {
 	webhook: {
@@ -32,8 +32,7 @@ interface WebhookDb {
 			data: {
 				webhookId: string;
 				eventType: string;
-				// biome-ignore lint/suspicious/noExplicitAny: JSON payload stored as-is
-				payload: any;
+				payload: Prisma.InputJsonValue | typeof Prisma.JsonNull;
 				status: string;
 				statusCode: number | null;
 				response: string | null;
@@ -90,7 +89,9 @@ export function registerWebhookHandlers(
 							data: {
 								webhookId: webhook.id,
 								eventType: event.type,
-								payload: payload as unknown as Record<string, unknown>,
+								payload: JSON.parse(
+									JSON.stringify(payload),
+								) as Prisma.InputJsonValue,
 								status: result.success ? "delivered" : "failed",
 								statusCode: result.statusCode,
 								response: result.response,

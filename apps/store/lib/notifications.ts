@@ -767,54 +767,75 @@ export function registerNotificationHandlers(
 ): () => void {
 	const mergedConfig = { ...DEFAULT_CONFIG, ...config };
 
-	// biome-ignore lint/suspicious/noExplicitAny: each handler has a specific ModuleEvent<T> type but we store them together
-	const handlers: Array<[string, any]> = [
-		[
-			"checkout.completed",
-			createCheckoutCompletedHandler(resend, mergedConfig),
-		],
-		["inventory.low", createInventoryLowHandler(resend, mergedConfig)],
-		["order.shipped", createOrderShippedHandler(resend, mergedConfig)],
-		["order.fulfilled", createOrderFulfilledHandler(resend, mergedConfig)],
-		["order.cancelled", createOrderCancelledHandler(resend, mergedConfig)],
-		["payment.refunded", createPaymentRefundedHandler(resend, mergedConfig)],
-		[
-			"shipment.delivered",
-			createShipmentDeliveredHandler(resend, mergedConfig),
-		],
-		["return.approved", createReturnApprovedHandler(resend, mergedConfig)],
-		["payment.failed", createPaymentFailedHandler(resend, mergedConfig)],
-		["inventory.back-in-stock", createBackInStockHandler(resend, mergedConfig)],
-		["review.requested", createReviewRequestedHandler(resend, mergedConfig)],
-		[
-			"subscription.created",
-			createSubscriptionCreatedHandler(resend, mergedConfig),
-		],
-		[
-			"subscription.renewed",
-			createSubscriptionRenewedHandler(resend, mergedConfig),
-		],
-		[
-			"subscription.cancelled",
-			createSubscriptionCancelledHandler(resend, mergedConfig),
-		],
-		["customer.created", createCustomerCreatedHandler(resend, mergedConfig)],
-	];
-
 	const registeredEvents: string[] = [];
 	const unsubs: Array<() => void> = [];
+	let totalHandlers = 0;
 
-	for (const [event, handler] of handlers) {
-		if (enabledEvents && !enabledEvents.has(event)) {
-			continue;
-		}
+	function register<T>(
+		event: string,
+		handler: (e: ModuleEvent<T>) => Promise<void>,
+	) {
+		totalHandlers += 1;
+		if (enabledEvents && !enabledEvents.has(event)) return;
 		unsubs.push(bus.on(event, handler));
 		registeredEvents.push(event);
 	}
 
+	register(
+		"checkout.completed",
+		createCheckoutCompletedHandler(resend, mergedConfig),
+	);
+	register("inventory.low", createInventoryLowHandler(resend, mergedConfig));
+	register("order.shipped", createOrderShippedHandler(resend, mergedConfig));
+	register(
+		"order.fulfilled",
+		createOrderFulfilledHandler(resend, mergedConfig),
+	);
+	register(
+		"order.cancelled",
+		createOrderCancelledHandler(resend, mergedConfig),
+	);
+	register(
+		"payment.refunded",
+		createPaymentRefundedHandler(resend, mergedConfig),
+	);
+	register(
+		"shipment.delivered",
+		createShipmentDeliveredHandler(resend, mergedConfig),
+	);
+	register(
+		"return.approved",
+		createReturnApprovedHandler(resend, mergedConfig),
+	);
+	register("payment.failed", createPaymentFailedHandler(resend, mergedConfig));
+	register(
+		"inventory.back-in-stock",
+		createBackInStockHandler(resend, mergedConfig),
+	);
+	register(
+		"review.requested",
+		createReviewRequestedHandler(resend, mergedConfig),
+	);
+	register(
+		"subscription.created",
+		createSubscriptionCreatedHandler(resend, mergedConfig),
+	);
+	register(
+		"subscription.renewed",
+		createSubscriptionRenewedHandler(resend, mergedConfig),
+	);
+	register(
+		"subscription.cancelled",
+		createSubscriptionCancelledHandler(resend, mergedConfig),
+	);
+	register(
+		"customer.created",
+		createCustomerCreatedHandler(resend, mergedConfig),
+	);
+
 	logger.info("Email notification handlers registered", {
 		events: registeredEvents,
-		skipped: enabledEvents ? handlers.length - registeredEvents.length : 0,
+		skipped: enabledEvents ? totalHandlers - registeredEvents.length : 0,
 	});
 
 	return () => {

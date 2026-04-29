@@ -13,8 +13,29 @@ import { db } from "db";
 import env from "env";
 import { cache } from "react";
 
-// biome-ignore lint/suspicious/noExplicitAny: ModuleData.data is JSONB — shape varies per entity
-type JsonData = Record<string, any>;
+type JsonData = Record<string, unknown>;
+
+function str(v: unknown, fallback = ""): string {
+	return typeof v === "string" ? v : fallback;
+}
+function num(v: unknown, fallback = 0): number {
+	return typeof v === "number" ? v : fallback;
+}
+function bool(v: unknown, fallback: boolean): boolean {
+	return typeof v === "boolean" ? v : fallback;
+}
+function strOrUndef(v: unknown): string | undefined {
+	return typeof v === "string" ? v : undefined;
+}
+function numOrUndef(v: unknown): number | undefined {
+	return typeof v === "number" ? v : undefined;
+}
+function dateStr(v: unknown, fallback: Date): string {
+	if (typeof v === "string" || typeof v === "number") {
+		return new Date(v).toISOString();
+	}
+	return fallback.toISOString();
+}
 
 // ── Module ID resolution ─────────────────────────────────────────────────────
 
@@ -70,32 +91,25 @@ function toProduct(row: {
 	const d = row.data;
 	return {
 		id: row.id,
-		name: d.name ?? "",
-		slug: d.slug ?? "",
-		description: d.description ?? undefined,
-		shortDescription: d.shortDescription ?? undefined,
-		price: typeof d.price === "number" ? d.price : 0,
-		compareAtPrice:
-			typeof d.compareAtPrice === "number" ? d.compareAtPrice : undefined,
-		sku: d.sku ?? undefined,
-		inventory: typeof d.inventory === "number" ? d.inventory : 0,
-		trackInventory: d.trackInventory ?? true,
-		allowBackorder: d.allowBackorder ?? false,
-		status: d.status ?? "draft",
-		categoryId: d.categoryId ?? undefined,
-		images: Array.isArray(d.images) ? d.images : [],
-		tags: Array.isArray(d.tags) ? d.tags : [],
-		isFeatured: d.isFeatured ?? false,
-		weight: typeof d.weight === "number" ? d.weight : undefined,
-		weightUnit: d.weightUnit ?? undefined,
-		createdAt: (d.createdAt
-			? new Date(d.createdAt)
-			: row.createdAt
-		).toISOString(),
-		updatedAt: (d.updatedAt
-			? new Date(d.updatedAt)
-			: row.updatedAt
-		).toISOString(),
+		name: str(d.name),
+		slug: str(d.slug),
+		description: strOrUndef(d.description),
+		shortDescription: strOrUndef(d.shortDescription),
+		price: num(d.price),
+		compareAtPrice: numOrUndef(d.compareAtPrice),
+		sku: strOrUndef(d.sku),
+		inventory: num(d.inventory),
+		trackInventory: bool(d.trackInventory, true),
+		allowBackorder: bool(d.allowBackorder, false),
+		status: str(d.status, "draft"),
+		categoryId: strOrUndef(d.categoryId),
+		images: Array.isArray(d.images) ? (d.images as string[]) : [],
+		tags: Array.isArray(d.tags) ? (d.tags as string[]) : [],
+		isFeatured: bool(d.isFeatured, false),
+		weight: numOrUndef(d.weight),
+		weightUnit: strOrUndef(d.weightUnit),
+		createdAt: dateStr(d.createdAt, row.createdAt),
+		updatedAt: dateStr(d.updatedAt, row.updatedAt),
 	};
 }
 
@@ -183,13 +197,13 @@ export const prefetchCategories = cache(
 				const d = r.data as JsonData;
 				return {
 					id: r.id,
-					name: d.name ?? "",
-					slug: d.slug ?? "",
-					description: d.description ?? undefined,
-					parentId: d.parentId ?? undefined,
-					image: d.image ?? undefined,
-					position: typeof d.position === "number" ? d.position : 0,
-					isVisible: d.isVisible ?? true,
+					name: str(d.name),
+					slug: str(d.slug),
+					description: strOrUndef(d.description),
+					parentId: strOrUndef(d.parentId),
+					image: strOrUndef(d.image),
+					position: num(d.position),
+					isVisible: bool(d.isVisible, true),
 				};
 			}),
 		};
@@ -258,23 +272,16 @@ export const prefetchProductBySlug = cache(
 			return {
 				id: v.id,
 				productId: row.id,
-				name: vd.name ?? "",
-				sku: vd.sku ?? undefined,
-				price: typeof vd.price === "number" ? vd.price : 0,
-				compareAtPrice:
-					typeof vd.compareAtPrice === "number" ? vd.compareAtPrice : undefined,
-				inventory: typeof vd.inventory === "number" ? vd.inventory : 0,
+				name: str(vd.name),
+				sku: strOrUndef(vd.sku),
+				price: num(vd.price),
+				compareAtPrice: numOrUndef(vd.compareAtPrice),
+				inventory: num(vd.inventory),
 				options: (vd.options as Record<string, string>) ?? {},
-				images: Array.isArray(vd.images) ? vd.images : [],
-				position: typeof vd.position === "number" ? vd.position : 0,
-				createdAt: (vd.createdAt
-					? new Date(vd.createdAt)
-					: v.createdAt
-				).toISOString(),
-				updatedAt: (vd.updatedAt
-					? new Date(vd.updatedAt)
-					: v.updatedAt
-				).toISOString(),
+				images: Array.isArray(vd.images) ? (vd.images as string[]) : [],
+				position: num(vd.position),
+				createdAt: dateStr(vd.createdAt, v.createdAt),
+				updatedAt: dateStr(vd.updatedAt, v.updatedAt),
 			};
 		});
 
