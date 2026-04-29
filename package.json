@@ -26,7 +26,7 @@
 		"generate:docs": "tsx scripts/generate-component-docs.ts",
 		"changeset": "changeset",
 		"version-packages": "changeset version",
-		"release": "turbo run build --filter=./packages/* --filter=./modules/* && changeset publish --provenance",
+		"release": "turbo run build --filter=./packages/* --filter=./modules/* && changeset publish",
 		"86d": "tsx packages/cli/src/index.ts",
 		"prisma": "cd packages/db && dotenv -e ../../.env -- bun run prisma",
 		"db:seed": "dotenv -- tsx scripts/seed.ts",
