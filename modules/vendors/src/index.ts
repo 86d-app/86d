@@ -58,6 +58,13 @@ export default function vendors(options?: VendorsOptions): Module {
 			store: storeEndpoints,
 			admin: adminEndpoints,
 		},
+		store: {
+			pages: [
+				{ path: "/vendors", component: "VendorDirectory" },
+				{ path: "/vendors/:slug", component: "VendorProfile" },
+				{ path: "/vendors/apply", component: "VendorApply" },
+			],
+		},
 		admin: {
 			pages: [
 				{
