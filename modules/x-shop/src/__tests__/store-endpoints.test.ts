@@ -13,7 +13,10 @@ import { describe, expect, it } from "vitest";
 
 // ── Simulate endpoint logic ────────────────────────────────────────────
 
-function simulateWebhook(body: { type: string; data: Record<string, unknown> }) {
+function simulateWebhook(body: {
+	type: string;
+	data: Record<string, unknown>;
+}) {
 	return { received: true, type: body.type };
 }
 

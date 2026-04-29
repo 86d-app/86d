@@ -32,8 +32,7 @@ async function simulateWebhook(
 			subtotal: (body.payload.subtotal as number) ?? 0,
 			shippingCost: (body.payload.shippingCost as number) ?? 0,
 			ebayFee: (body.payload.ebayFee as number) ?? 0,
-			paymentProcessingFee:
-				(body.payload.paymentProcessingFee as number) ?? 0,
+			paymentProcessingFee: (body.payload.paymentProcessingFee as number) ?? 0,
 			total: (body.payload.total as number) ?? 0,
 			buyerUsername: body.payload.buyerUsername as string | undefined,
 			buyerName: body.payload.buyerName as string | undefined,

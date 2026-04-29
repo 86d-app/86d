@@ -188,9 +188,9 @@ describe("verifyWebhookSignature", () => {
 
 	it("returns false for a wrong signature", () => {
 		const payload = '{"type":"test","payload":{}}';
-		expect(
-			verifyWebhookSignature(payload, "wrongsignature", "my-secret"),
-		).toBe(false);
+		expect(verifyWebhookSignature(payload, "wrongsignature", "my-secret")).toBe(
+			false,
+		);
 	});
 
 	it("returns false for an empty signature", () => {

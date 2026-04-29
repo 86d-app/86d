@@ -64,6 +64,13 @@ function useQuotesApi() {
 	};
 }
 
+function extractError(err: unknown): string {
+	if (err && typeof err === "object" && "message" in err) {
+		return String((err as { message: string }).message);
+	}
+	return "An unexpected error occurred";
+}
+
 function formatCurrency(cents: number, currency = "USD"): string {
 	return new Intl.NumberFormat("en-US", {
 		style: "currency",
@@ -197,6 +204,89 @@ export function QuoteDetail({ params }: { params?: Record<string, string> }) {
 	const id = params?.id ?? "";
 	const api = useQuotesApi();
 	const [comment, setComment] = useState("");
+	const [error, setError] = useState("");
+	const [showConvertForm, setShowConvertForm] = useState(false);
+	const [convertOrderId, setConvertOrderId] = useState("");
+
+	const approveMutation = api.approve.useMutation() as {
+		mutateAsync: (opts: {
+			params: { id: string };
+			body: Record<string, unknown>;
+		}) => Promise<unknown>;
+		isPending: boolean;
+	};
+	const rejectMutation = api.reject.useMutation() as {
+		mutateAsync: (opts: {
+			params: { id: string };
+			body: Record<string, unknown>;
+		}) => Promise<unknown>;
+		isPending: boolean;
+	};
+	const convertMutation = api.convert.useMutation() as {
+		mutateAsync: (opts: {
+			params: { id: string };
+			body: Record<string, unknown>;
+		}) => Promise<unknown>;
+		isPending: boolean;
+	};
+	const addCommentMutation = api.addComment.useMutation() as {
+		mutateAsync: (opts: {
+			params: { id: string };
+			body: Record<string, unknown>;
+		}) => Promise<unknown>;
+		isPending: boolean;
+	};
+
+	const handleApprove = async () => {
+		setError("");
+		try {
+			await approveMutation.mutateAsync({ params: { id }, body: {} });
+			window.location.reload();
+		} catch (err) {
+			setError(extractError(err));
+		}
+	};
+
+	const handleReject = async () => {
+		setError("");
+		try {
+			await rejectMutation.mutateAsync({ params: { id }, body: {} });
+			window.location.reload();
+		} catch (err) {
+			setError(extractError(err));
+		}
+	};
+
+	const handleConvert = async () => {
+		if (!convertOrderId.trim()) return;
+		setError("");
+		try {
+			await convertMutation.mutateAsync({
+				params: { id },
+				body: { orderId: convertOrderId.trim() },
+			});
+			setShowConvertForm(false);
+			setConvertOrderId("");
+			window.location.reload();
+		} catch (err) {
+			setError(extractError(err));
+		}
+	};
+
+	const handleSendComment = async () => {
+		if (!comment.trim()) return;
+		setError("");
+		try {
+			await addCommentMutation.mutateAsync({
+				params: { id },
+				body: { authorName: "Admin", message: comment.trim() },
+			});
+			setComment("");
+			window.location.reload();
+		} catch (err) {
+			setError(extractError(err));
+		}
+	};
 
 	const { data, isLoading } = api.detail.useQuery({ id }) as {
 		data:
@@ -273,6 +363,12 @@ export function QuoteDetail({ params }: { params?: Record<string, string> }) {
 				</a>
 			</div>
 
+			{error ? (
+				<div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-red-800 text-sm dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
+					{error}
+				</div>
+			) : null}
+
 			{/* Header */}
 			<div className="mb-6 flex flex-wrap items-start justify-between gap-4">
 				<div>
@@ -291,30 +387,67 @@ export function QuoteDetail({ params }: { params?: Record<string, string> }) {
 						{quote.expiresAt ? ` · Expires ${formatDate(quote.expiresAt)}` : ""}
 					</p>
 				</div>
-				<div className="flex gap-2">
-					{canApprove ? (
-						<button
-							type="button"
-							className="rounded-lg bg-green-600 px-3 py-1.5 font-medium text-sm text-white hover:bg-green-700"
-						>
-							Approve
-						</button>
-					) : null}
-					{canConvert ? (
-						<button
-							type="button"
-							className="rounded-lg bg-foreground px-3 py-1.5 font-medium text-background text-sm hover:opacity-90"
-						>
-							Convert to Order
-						</button>
-					) : null}
-					{canReject ? (
-						<button
-							type="button"
-							className="rounded-lg border border-border bg-card px-3 py-1.5 font-medium text-red-600 text-sm hover:bg-muted"
-						>
-							Reject
-						</button>
+				<div className="flex flex-col items-end gap-2">
+					<div className="flex gap-2">
+						{canApprove ? (
+							<button
+								type="button"
+								onClick={() => void handleApprove()}
+								disabled={approveMutation.isPending}
+								className="rounded-lg bg-green-600 px-3 py-1.5 font-medium text-sm text-white hover:bg-green-700 disabled:opacity-50"
+							>
+								{approveMutation.isPending ? "Approving..." : "Approve"}
+							</button>
+						) : null}
+						{canConvert ? (
+							<button
+								type="button"
+								onClick={() => setShowConvertForm((v) => !v)}
+								disabled={convertMutation.isPending}
+								className="rounded-lg bg-foreground px-3 py-1.5 font-medium text-background text-sm hover:opacity-90 disabled:opacity-50"
+							>
+								Convert to Order
+							</button>
+						) : null}
+						{canReject ? (
+							<button
+								type="button"
+								onClick={() => void handleReject()}
+								disabled={rejectMutation.isPending}
+								className="rounded-lg border border-border bg-card px-3 py-1.5 font-medium text-red-600 text-sm hover:bg-muted disabled:opacity-50"
+							>
+								{rejectMutation.isPending ? "Rejecting..." : "Reject"}
+							</button>
+						) : null}
+					</div>
+					{showConvertForm ? (
+						<div className="flex gap-2">
+							<input
+								type="text"
+								value={convertOrderId}
+								onChange={(e) => setConvertOrderId(e.target.value)}
+								placeholder="Order ID"
+								className="rounded-lg border border-border bg-background px-3 py-1.5 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+							/>
+							<button
+								type="button"
+								onClick={() => void handleConvert()}
+								disabled={!convertOrderId.trim() || convertMutation.isPending}
+								className="rounded-lg bg-foreground px-3 py-1.5 font-medium text-background text-sm hover:opacity-90 disabled:opacity-50"
+							>
+								{convertMutation.isPending ? "Converting..." : "Confirm"}
+							</button>
+							<button
+								type="button"
+								onClick={() => {
+									setShowConvertForm(false);
+									setConvertOrderId("");
+								}}
+								className="rounded-lg border border-border px-3 py-1.5 font-medium text-foreground text-sm hover:bg-muted"
+							>
+								Cancel
+							</button>
+						</div>
 					) : null}
 				</div>
 			</div>
@@ -452,15 +585,21 @@ export function QuoteDetail({ params }: { params?: Record<string, string> }) {
 									type="text"
 									value={comment}
 									onChange={(e) => setComment(e.target.value)}
+									onKeyDown={(e) => {
+										if (e.key === "Enter" && comment.trim()) {
+											void handleSendComment();
+										}
+									}}
 									placeholder="Add a comment..."
 									className="flex-1 rounded-lg border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
 								/>
 								<button
 									type="button"
-									disabled={!comment.trim()}
+									onClick={() => void handleSendComment()}
+									disabled={!comment.trim() || addCommentMutation.isPending}
 									className="rounded-lg bg-foreground px-3 py-1.5 font-medium text-background text-sm hover:opacity-90 disabled:opacity-50"
 								>
-									Send
+									{addCommentMutation.isPending ? "Sending..." : "Send"}
 								</button>
 							</div>
 						</div>
