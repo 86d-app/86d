@@ -53,6 +53,9 @@ export default function gamification(options?: GamificationOptions): Module {
 			store: storeEndpoints,
 			admin: adminEndpoints,
 		},
+		store: {
+			pages: [{ path: "/play/:gameId", component: "GameWidget" }],
+		},
 		admin: {
 			pages: [
 				{
