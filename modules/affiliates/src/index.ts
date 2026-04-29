@@ -53,6 +53,12 @@ export default function affiliates(options?: AffiliatesOptions): Module {
 			store: storeEndpoints,
 			admin: adminEndpoints,
 		},
+		store: {
+			pages: [
+				{ path: "/affiliate/apply", component: "AffiliateApply" },
+				{ path: "/affiliate/dashboard", component: "AffiliateDashboard" },
+			],
+		},
 		admin: {
 			pages: [
 				{
