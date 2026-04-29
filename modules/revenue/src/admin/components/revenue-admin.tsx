@@ -125,10 +125,27 @@ function OverviewTab({ preset }: { preset: DatePreset }) {
 	const api = useRevenueApi();
 	const range = presetToRange(preset);
 
-	const { data, isLoading } = api.getStats.useQuery(range) as {
+	const { data, isLoading, isError } = api.getStats.useQuery(range) as {
 		data: RevenueStats | undefined;
 		isLoading: boolean;
+		isError: boolean;
 	};
+
+	if (isError) {
+		return (
+			<div
+				className="rounded-lg border border-destructive/30 bg-destructive/5 p-6 text-center"
+				role="alert"
+			>
+				<p className="font-medium text-destructive text-sm">
+					Failed to load revenue stats
+				</p>
+				<p className="mt-1 text-muted-foreground text-xs">
+					Please try refreshing the page.
+				</p>
+			</div>
+		);
+	}
 
 	if (isLoading) {
 		return (
@@ -236,9 +253,10 @@ function TransactionsTab({ preset }: { preset: DatePreset }) {
 	if (statusFilter) query.status = statusFilter;
 	if (search) query.search = search;
 
-	const { data, isLoading } = api.listTransactions.useQuery(query) as {
+	const { data, isLoading, isError } = api.listTransactions.useQuery(query) as {
 		data: { transactions: RevenueTransaction[]; total: number } | undefined;
 		isLoading: boolean;
+		isError: boolean;
 	};
 
 	const transactions = data?.transactions ?? [];
@@ -261,6 +279,22 @@ function TransactionsTab({ preset }: { preset: DatePreset }) {
 		a.click();
 		URL.revokeObjectURL(url);
 	};
+
+	if (isError) {
+		return (
+			<div
+				className="rounded-lg border border-destructive/30 bg-destructive/5 p-6 text-center"
+				role="alert"
+			>
+				<p className="font-medium text-destructive text-sm">
+					Failed to load transactions
+				</p>
+				<p className="mt-1 text-muted-foreground text-xs">
+					Please try refreshing the page.
+				</p>
+			</div>
+		);
+	}
 
 	return (
 		<div className="space-y-4">

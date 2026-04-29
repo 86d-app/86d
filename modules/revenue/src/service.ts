@@ -44,6 +44,7 @@ export type RevenueIntent = {
 
 export type RevenuePaymentsController = {
 	listIntents(params?: {
+		customerId?: string | undefined;
 		take?: number | undefined;
 		skip?: number | undefined;
 	}): Promise<RevenueIntent[]>;

@@ -1,1 +1,5 @@
-export const storeEndpoints = {};
+import { listCustomerTransactions } from "./list-transactions";
+
+export const storeEndpoints = {
+	"/revenue/transactions": listCustomerTransactions,
+};
