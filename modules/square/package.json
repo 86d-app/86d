@@ -1,6 +1,6 @@
 {
 	"name": "@86d-app/square",
-	"version": "0.0.31",
+	"version": "0.0.32",
 	"description": "Square payment provider for 86d commerce platform",
 	"keywords": [
 		"commerce",

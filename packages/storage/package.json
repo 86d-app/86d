@@ -1,6 +1,6 @@
 {
 	"name": "@86d-app/storage",
-	"version": "0.0.31",
+	"version": "0.0.32",
 	"type": "module",
 	"scripts": {
 		"build": "tsc",
