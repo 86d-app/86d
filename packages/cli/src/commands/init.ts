@@ -106,17 +106,43 @@ export async function init(args: string[]) {
 			if (runSeed) {
 				const seedScript = join(root, "scripts/seed.ts");
 				if (existsSync(seedScript)) {
+					let adminEmail = "admin@example.com";
+					let adminPassword = "password123";
+
+					if (!yes && process.stdin.isTTY) {
+						console.log();
+						info("Set admin credentials (press Enter to use defaults)");
+						const inputEmail = await prompt(
+							`Admin email [admin@example.com]: `,
+						);
+						if (inputEmail.trim()) adminEmail = inputEmail.trim();
+						const inputPassword = await prompt(
+							`Admin password [password123]: `,
+						);
+						if (inputPassword.trim()) adminPassword = inputPassword.trim();
+					}
+
 					try {
 						execSync(`bun run ${seedScript}`, {
 							cwd: root,
 							stdio: "inherit",
-							env: { ...process.env, DATABASE_URL: dbUrl },
+							env: {
+								...process.env,
+								DATABASE_URL: dbUrl,
+								ADMIN_EMAIL: adminEmail,
+								ADMIN_PASSWORD: adminPassword,
+							},
 						});
 						success("Demo data seeded");
-						console.log();
-						console.log(`  ${c.dim("Admin credentials:")}`);
-						console.log(`    Email:    ${c.cyan("admin@example.com")}`);
-						console.log(`    Password: ${c.cyan("password123")}`);
+						if (
+							adminEmail !== "admin@example.com" ||
+							adminPassword !== "password123"
+						) {
+							console.log();
+							console.log(`  ${c.dim("Admin credentials:")}`);
+							console.log(`    Email:    ${c.cyan(adminEmail)}`);
+							console.log(`    Password: ${c.cyan("(as entered)")}`);
+						}
 					} catch {
 						warn("Seeding failed — retry with: bun run db:seed");
 					}
@@ -178,6 +204,21 @@ async function checkDbReachable(dbUrl: string): Promise<boolean> {
 	} catch {
 		return false;
 	}
+}
+
+/** Prompt user for a text value. Returns empty string in non-TTY. */
+async function prompt(question: string): Promise<string> {
+	if (!process.stdin.isTTY) return "";
+	return new Promise((resolve) => {
+		const rl = createInterface({
+			input: process.stdin,
+			output: process.stdout,
+		});
+		rl.question(`  ${question}`, (answer) => {
+			rl.close();
+			resolve(answer);
+		});
+	});
 }
 
 /** Prompt user for yes/no (defaults to yes on Enter). Skips in non-TTY. */

@@ -10,7 +10,7 @@
  *   DATABASE_URL=... bun run db:seed
  *
  * What it creates:
- *   - Admin user (admin@example.com / password123)
+ *   - Admin user (ADMIN_EMAIL / ADMIN_PASSWORD env vars, or admin@example.com / password123)
  *   - 16 luxury products with variants across 6 categories
  *   - 6 mirrored collections in both products + collections modules
  *   - 1 house brand, 3 customers, 1 demo order, and supporting module data
@@ -74,6 +74,8 @@ if (!DATABASE_URL) {
 }
 
 const STORE_ID = process.env.STORE_ID || "de005b9d-c517-4c65-896e-8edef5cf5a94";
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@example.com";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "password123";
 const now = new Date().toISOString();
 const ASSET_ROOT = resolve(process.cwd(), "scripts/seed-assets/luxury-house");
 const ASSET_KEY_PREFIX = `stores/${STORE_ID}/seed/luxury-house`;
@@ -406,7 +408,7 @@ async function insertModuleData(
 
 async function seedAdminUser(client: pg.PoolClient) {
 	console.log("  Creating admin user...");
-	const hashedPassword = hashPassword("password123");
+	const hashedPassword = hashPassword(ADMIN_PASSWORD);
 
 	const userResult = await client.query<{ id: string }>(
 		`INSERT INTO "User" (id, cuid, name, email, "emailVerified", role, "createdAt", "updatedAt")
@@ -417,7 +419,7 @@ async function seedAdminUser(client: pg.PoolClient) {
 			adminUserId,
 			cuid(),
 			"Admin User",
-			"admin@example.com",
+			ADMIN_EMAIL,
 			true,
 			"admin",
 			now,
@@ -1364,8 +1366,8 @@ async function main() {
 
 		console.log("\n✅ Seed complete!");
 		console.log("\n  Admin credentials:");
-		console.log("    Email:    admin@example.com");
-		console.log("    Password: password123");
+		console.log(`    Email:    ${ADMIN_EMAIL}`);
+		console.log(`    Password: ${ADMIN_PASSWORD === "password123" ? "password123" : "(as entered)"}`);
 		console.log(
 			`\n  ${summary.productCount} products, ${summary.categoryCount} categories, ${summary.collectionCount} collections`,
 		);
