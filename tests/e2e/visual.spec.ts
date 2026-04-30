@@ -81,6 +81,18 @@ test.describe("Storefront — Visual", () => {
 		await expect(page).toHaveScreenshot("blog.png", SCREENSHOT_OPTS);
 	});
 
+	test("blog post detail", async ({ page }) => {
+		await stableGoto(page, "/blog/inside-the-atelier");
+		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
+		await expect(page).toHaveScreenshot("blog-post.png", SCREENSHOT_OPTS);
+	});
+
+	test("product detail", async ({ page }) => {
+		await stableGoto(page, "/products/regent-penny-loafer");
+		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
+		await expect(page).toHaveScreenshot("product-detail.png", SCREENSHOT_OPTS);
+	});
+
 	test("gift cards page", async ({ page }) => {
 		await stableGoto(page, "/gift-cards");
 		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
