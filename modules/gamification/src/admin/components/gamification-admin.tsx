@@ -159,9 +159,20 @@ export function GamificationAdmin() {
 	);
 
 	const tableContent = isLoading ? (
-		<div className="py-16 text-center">
-			<div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-foreground" />
-			<p className="mt-4 text-muted-foreground text-sm">Loading games...</p>
+		<div className="animate-pulse px-5 py-3">
+			<div className="mb-3 h-8 w-full rounded bg-muted" />
+			{Array.from({ length: 5 }).map((_, i) => (
+				<div
+					key={i}
+					className="flex items-center gap-4 border-border border-t py-3"
+				>
+					<div className="h-4 w-36 rounded bg-muted" />
+					<div className="h-5 w-20 rounded-full bg-muted" />
+					<div className="h-5 w-16 rounded-full bg-muted" />
+					<div className="h-4 w-12 rounded bg-muted" />
+					<div className="ml-auto h-4 w-24 rounded bg-muted" />
+				</div>
+			))}
 		</div>
 	) : games.length === 0 ? (
 		<div className="px-5 py-8 text-center text-muted-foreground text-sm">

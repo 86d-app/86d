@@ -108,11 +108,19 @@ export function ComparisonAdmin() {
 	const loading = frequentLoading || listLoading;
 
 	const itemsContent = loading ? (
-		<div className="py-16 text-center">
-			<div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-foreground" />
-			<p className="mt-4 text-muted-foreground text-sm">
-				Loading comparison data...
-			</p>
+		<div className="animate-pulse px-5 py-3">
+			<div className="mb-3 h-8 w-full rounded bg-muted" />
+			{Array.from({ length: 5 }).map((_, i) => (
+				<div
+					key={i}
+					className="flex items-center gap-4 border-border border-t py-3"
+				>
+					<div className="h-4 w-40 rounded bg-muted" />
+					<div className="h-4 w-24 rounded bg-muted" />
+					<div className="h-4 w-16 rounded bg-muted" />
+					<div className="ml-auto h-4 w-28 rounded bg-muted" />
+				</div>
+			))}
 		</div>
 	) : items.length === 0 ? (
 		<div className="px-5 py-8 text-center text-muted-foreground text-sm">

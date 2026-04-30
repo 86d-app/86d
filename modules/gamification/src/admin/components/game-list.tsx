@@ -166,9 +166,16 @@ export function GameList() {
 	};
 
 	const gameListContent = gamesLoading ? (
-		<div className="py-16 text-center">
-			<div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-foreground" />
-			<p className="mt-4 text-muted-foreground text-sm">Loading games...</p>
+		<div className="animate-pulse divide-y divide-border">
+			{Array.from({ length: 4 }).map((_, i) => (
+				<div key={i} className="flex items-center justify-between px-5 py-3">
+					<div>
+						<div className="h-4 w-36 rounded bg-muted" />
+						<div className="mt-1.5 h-3 w-48 rounded bg-muted" />
+					</div>
+					<div className="h-5 w-16 rounded-full bg-muted" />
+				</div>
+			))}
 		</div>
 	) : games.length === 0 ? (
 		<div className="px-5 py-8 text-center text-muted-foreground text-sm">

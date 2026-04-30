@@ -208,8 +208,44 @@ function DetailPanel({
 
 	if (isLoading) {
 		return (
-			<div className="py-8 text-center">
-				<div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-muted border-t-foreground" />
+			<div className="animate-pulse space-y-5">
+				<div className="flex items-center justify-between">
+					<div className="h-4 w-24 rounded bg-muted" />
+					<div className="h-5 w-16 rounded-full bg-muted" />
+				</div>
+				<div className="rounded-lg border border-border bg-card p-5">
+					<div className="flex items-start justify-between">
+						<div>
+							<div className="h-6 w-28 rounded bg-muted" />
+							<div className="mt-1.5 h-4 w-40 rounded bg-muted" />
+						</div>
+						<div className="h-3 w-32 rounded bg-muted" />
+					</div>
+					<div className="mt-4 grid grid-cols-2 gap-4">
+						{Array.from({ length: 4 }).map((_, i) => (
+							<div key={i}>
+								<div className="h-3 w-16 rounded bg-muted" />
+								<div className="mt-1.5 h-4 w-28 rounded bg-muted" />
+							</div>
+						))}
+					</div>
+				</div>
+				<div className="rounded-lg border border-border bg-card">
+					<div className="border-border border-b px-5 py-3">
+						<div className="h-4 w-24 rounded bg-muted" />
+					</div>
+					<div className="divide-y divide-border">
+						{Array.from({ length: 3 }).map((_, i) => (
+							<div
+								key={i}
+								className="flex items-center justify-between px-5 py-3"
+							>
+								<div className="h-4 w-32 rounded bg-muted" />
+								<div className="h-3 w-20 rounded bg-muted" />
+							</div>
+						))}
+					</div>
+				</div>
 			</div>
 		);
 	}
