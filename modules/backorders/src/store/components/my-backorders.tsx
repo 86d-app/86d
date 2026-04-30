@@ -75,11 +75,19 @@ export function MyBackorders({ customerId }: { customerId: string }) {
 	};
 
 	const content = isLoading ? (
-		<div className="py-12 text-center">
-			<div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-muted border-t-foreground" />
-			<p className="mt-3 text-muted-foreground text-sm">
-				Loading your backorders...
-			</p>
+		<div className="divide-y divide-border">
+			{Array.from({ length: 3 }).map((_, i) => (
+				<div
+					key={`skel-${i}`}
+					className="flex items-center justify-between px-5 py-4"
+				>
+					<div className="flex-1 space-y-2">
+						<div className="h-4 w-1/2 animate-pulse rounded bg-muted" />
+						<div className="h-3 w-2/3 animate-pulse rounded bg-muted" />
+					</div>
+					<div className="h-7 w-16 animate-pulse rounded bg-muted" />
+				</div>
+			))}
 		</div>
 	) : backorders.length === 0 ? (
 		<p className="py-12 text-center text-muted-foreground text-sm">

@@ -51,11 +51,19 @@ export function WaitlistPage({ email }: { email: string }) {
 	};
 
 	const content = isLoading ? (
-		<div className="py-12 text-center">
-			<div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-muted border-t-foreground" />
-			<p className="mt-3 text-muted-foreground text-sm">
-				Loading your waitlist...
-			</p>
+		<div className="divide-y divide-border">
+			{Array.from({ length: 3 }).map((_, i) => (
+				<div
+					key={`skel-${i}`}
+					className="flex items-center justify-between px-5 py-3"
+				>
+					<div className="flex-1 space-y-1.5">
+						<div className="h-4 w-1/2 animate-pulse rounded bg-muted" />
+						<div className="h-3 w-1/3 animate-pulse rounded bg-muted" />
+					</div>
+					<div className="h-7 w-20 animate-pulse rounded bg-muted" />
+				</div>
+			))}
 		</div>
 	) : entries.length === 0 ? (
 		<p className="py-12 text-center text-muted-foreground text-sm">

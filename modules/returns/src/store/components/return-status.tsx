@@ -58,8 +58,11 @@ export function ReturnStatus({ id }: { id: string }) {
 
 	if (loading) {
 		const content = (
-			<div className="flex items-center justify-center py-8">
-				<div className="h-6 w-6 animate-spin rounded-full border-2 border-muted border-t-foreground" />
+			<div className="space-y-3 py-4">
+				<div className="h-5 w-1/3 animate-pulse rounded bg-muted" />
+				<div className="h-4 w-1/4 animate-pulse rounded bg-muted" />
+				<div className="h-3 w-2/3 animate-pulse rounded bg-muted" />
+				<div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
 			</div>
 		);
 		return <ReturnStatusTemplate content={content} />;

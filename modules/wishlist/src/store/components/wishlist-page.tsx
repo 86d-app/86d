@@ -74,11 +74,19 @@ export function WishlistPage({
 
 	if (loading) {
 		return (
-			<div className="py-16 text-center">
-				<div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-gray-900 dark:border-gray-600 dark:border-t-gray-100" />
-				<p className="mt-4 text-gray-500 text-sm dark:text-gray-400">
-					Loading wishlist...
-				</p>
+			<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+				{Array.from({ length: 3 }).map((_, i) => (
+					<div
+						key={`skel-${i}`}
+						className="overflow-hidden rounded-lg border border-border"
+					>
+						<div className="h-48 w-full animate-pulse bg-muted" />
+						<div className="space-y-2 p-4">
+							<div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
+							<div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
+						</div>
+					</div>
+				))}
 			</div>
 		);
 	}

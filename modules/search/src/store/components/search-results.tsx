@@ -47,9 +47,19 @@ export function SearchResults({
 
 	if (isLoading) {
 		return (
-			<div className="py-12 text-center">
-				<div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-muted border-t-foreground" />
-				<p className="mt-3 text-muted-foreground text-sm">Searching...</p>
+			<div className="space-y-3">
+				{Array.from({ length: 4 }).map((_, i) => (
+					<div
+						key={`skel-${i}`}
+						className="flex items-start gap-4 rounded-lg border border-border p-4"
+					>
+						<div className="h-16 w-16 flex-shrink-0 animate-pulse rounded-md bg-muted" />
+						<div className="flex-1 space-y-2 pt-0.5">
+							<div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
+							<div className="h-3 w-1/4 animate-pulse rounded bg-muted" />
+						</div>
+					</div>
+				))}
 			</div>
 		);
 	}
