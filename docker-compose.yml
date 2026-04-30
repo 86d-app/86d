@@ -14,6 +14,7 @@
 #
 # The store auto-runs migrations and seeds demo data on first boot.
 # Default admin: admin@example.com / password123
+# Customize admin credentials: ADMIN_EMAIL=you@example.com ADMIN_PASSWORD=secret docker compose up
 # ============================================================================
 
 services:
@@ -84,6 +85,8 @@ services:
       STORE_ID: "${STORE_ID:-de005b9d-c517-4c65-896e-8edef5cf5a94}"
       NODE_ENV: "${NODE_ENV:-production}"
       AUTO_SEED: "true"
+      ADMIN_EMAIL: "${ADMIN_EMAIL:-admin@example.com}"
+      ADMIN_PASSWORD: "${ADMIN_PASSWORD:-password123}"
       # Storage — MinIO bucket by default in Docker
       STORAGE_PROVIDER: "s3"
       STORAGE_PUBLIC_URL_MODE: "proxy"
