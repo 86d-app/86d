@@ -195,8 +195,13 @@ export function DiscountForm(props: {
 
 	const formContent =
 		isEdit && loadingDiscount ? (
-			<div className="py-12 text-center">
-				<div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-muted border-t-foreground" />
+			<div className="space-y-4">
+				{[1, 2, 3, 4].map((i) => (
+					<div key={i} className="space-y-1.5">
+						<div className="h-3 w-1/4 animate-pulse rounded bg-muted" />
+						<div className="h-9 w-full animate-pulse rounded-md bg-muted" />
+					</div>
+				))}
 			</div>
 		) : success ? (
 			<div className="space-y-4">
