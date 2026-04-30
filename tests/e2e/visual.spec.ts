@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures/test-fixtures";
 
 /**
  * Visual regression tests — screenshot comparison across viewports.
@@ -198,5 +198,48 @@ test.describe("Admin — Visual", () => {
 	test("admin login page", async ({ page }) => {
 		await stableGoto(page, "/admin");
 		await expect(page).toHaveScreenshot("admin.png", SCREENSHOT_OPTS);
+	});
+});
+
+// ─── Authenticated admin pages ───────────────────────────────────────────────
+
+test.describe("Admin — Authenticated Visual", () => {
+	test.beforeEach(async ({ admin }) => {
+		await admin.signIn();
+	});
+
+	test("admin dashboard", async ({ admin }) => {
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-dashboard.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin products page", async ({ admin }) => {
+		await admin.page.goto("/admin/products");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-products.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin orders page", async ({ admin }) => {
+		await admin.page.goto("/admin/orders");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-orders.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin customers page", async ({ admin }) => {
+		await admin.page.goto("/admin/customers");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-customers.png",
+			SCREENSHOT_OPTS,
+		);
 	});
 });
