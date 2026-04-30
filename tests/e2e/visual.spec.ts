@@ -122,6 +122,16 @@ test.describe("Auth — Visual", () => {
 	});
 });
 
+// ─── Cart page ──────────────────────────────────────────────────────────────
+
+test.describe("Cart — Visual", () => {
+	test("cart page (empty)", async ({ page }) => {
+		await stableGoto(page, "/cart");
+		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
+		await expect(page).toHaveScreenshot("cart-empty.png", SCREENSHOT_OPTS);
+	});
+});
+
 // ─── Checkout ───────────────────────────────────────────────────────────────
 
 test.describe("Checkout — Visual", () => {
@@ -130,6 +140,15 @@ test.describe("Checkout — Visual", () => {
 		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
 		await expect(page).toHaveScreenshot(
 			"checkout-empty.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("order confirmation page", async ({ page }) => {
+		await stableGoto(page, "/checkout/confirmation");
+		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
+		await expect(page).toHaveScreenshot(
+			"checkout-confirmation.png",
 			SCREENSHOT_OPTS,
 		);
 	});
