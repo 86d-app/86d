@@ -110,6 +110,57 @@ test.describe("Storefront — Accessibility (axe-core)", () => {
 			`Checkout page axe violations:\n${criticalOrSerious.map((v) => `  [${v.impact}] ${v.id}: ${v.description}\n    ${v.nodes[0]?.target}`).join("\n")}`,
 		).toHaveLength(0);
 	});
+
+	test("product detail page passes axe", async ({ page }) => {
+		await page.goto("/products/regent-penny-loafer");
+		await page.waitForLoadState("networkidle");
+
+		const results = await new AxeBuilder({ page })
+			.withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+			.analyze();
+
+		const criticalOrSerious = results.violations.filter((v) =>
+			["critical", "serious"].includes(v.impact ?? ""),
+		);
+		expect(
+			criticalOrSerious,
+			`Product detail page axe violations:\n${criticalOrSerious.map((v) => `  [${v.impact}] ${v.id}: ${v.description}\n    ${v.nodes[0]?.target}`).join("\n")}`,
+		).toHaveLength(0);
+	});
+
+	test("cart page passes axe", async ({ page }) => {
+		await page.goto("/cart");
+		await page.waitForLoadState("networkidle");
+
+		const results = await new AxeBuilder({ page })
+			.withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+			.analyze();
+
+		const criticalOrSerious = results.violations.filter((v) =>
+			["critical", "serious"].includes(v.impact ?? ""),
+		);
+		expect(
+			criticalOrSerious,
+			`Cart page axe violations:\n${criticalOrSerious.map((v) => `  [${v.impact}] ${v.id}: ${v.description}\n    ${v.nodes[0]?.target}`).join("\n")}`,
+		).toHaveLength(0);
+	});
+
+	test("blog post page passes axe", async ({ page }) => {
+		await page.goto("/blog/inside-the-atelier");
+		await page.waitForLoadState("networkidle");
+
+		const results = await new AxeBuilder({ page })
+			.withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+			.analyze();
+
+		const criticalOrSerious = results.violations.filter((v) =>
+			["critical", "serious"].includes(v.impact ?? ""),
+		);
+		expect(
+			criticalOrSerious,
+			`Blog post page axe violations:\n${criticalOrSerious.map((v) => `  [${v.impact}] ${v.id}: ${v.description}\n    ${v.nodes[0]?.target}`).join("\n")}`,
+		).toHaveLength(0);
+	});
 });
 
 test.describe("Storefront — Accessibility (structural)", () => {
