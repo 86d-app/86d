@@ -30,6 +30,20 @@ interface VendorStats {
 	suspendedVendors: number;
 }
 
+interface Payout {
+	id: string;
+	vendorId: string;
+	amount: number;
+	currency: string;
+	status: string;
+	method?: string;
+	reference?: string;
+	periodStart: string;
+	periodEnd: string;
+	notes?: string;
+	createdAt: string;
+}
+
 interface PayoutStats {
 	totalPaid: number;
 	totalPending: number;
@@ -38,40 +52,14 @@ interface PayoutStats {
 }
 
 // ---------------------------------------------------------------------------
-// API hook
-// ---------------------------------------------------------------------------
-
-function useVendorsApi() {
-	const client = useModuleClient();
-	return {
-		listVendors: client.module("vendors").admin["/admin/vendors"],
-		stats: client.module("vendors").admin["/admin/vendors/stats"],
-		getVendor: client.module("vendors").admin["/admin/vendors/:id"],
-		createVendor: client.module("vendors").admin["/admin/vendors/create"],
-		updateVendor: client.module("vendors").admin["/admin/vendors/:id/update"],
-		updateStatus: client.module("vendors").admin["/admin/vendors/:id/status"],
-		deleteVendor: client.module("vendors").admin["/admin/vendors/:id/delete"],
-		listProducts:
-			client.module("vendors").admin["/admin/vendors/:vendorId/products"],
-		assignProduct:
-			client.module("vendors").admin[
-				"/admin/vendors/:vendorId/products/assign"
-			],
-		vendorPayouts:
-			client.module("vendors").admin["/admin/vendors/:vendorId/payouts"],
-		createPayout:
-			client.module("vendors").admin["/admin/vendors/:vendorId/payouts/create"],
-		updatePayoutStatus:
-			client.module("vendors").admin["/admin/vendors/payouts/:id/status"],
-		payoutStats: client.module("vendors").admin["/admin/vendors/payouts/stats"],
-	};
-}
-
-// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-const STATUS_COLORS: Record<string, string> = {
+const inputCls =
+	"w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-1 disabled:opacity-50";
+const labelCls = "mb-1 block font-medium text-foreground text-sm";
+
+const VENDOR_STATUS_COLORS: Record<string, string> = {
 	pending:
 		"bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
 	active:
@@ -79,6 +67,19 @@ const STATUS_COLORS: Record<string, string> = {
 	suspended: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
 	closed: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400",
 };
+
+const PAYOUT_STATUS_COLORS: Record<string, string> = {
+	pending:
+		"bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
+	processing:
+		"bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+	completed:
+		"bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+	failed: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+};
+
+const SKELETON_IDS = ["a", "b", "c", "d"] as const;
+const PAYOUT_SKELETON_IDS = ["a", "b", "c"] as const;
 
 function formatDate(dateStr: string) {
 	return new Date(dateStr).toLocaleDateString(undefined, {
@@ -103,18 +104,275 @@ function extractError(err: unknown): string {
 }
 
 // ---------------------------------------------------------------------------
-// VendorAdmin — main vendor list + create
+// API hook
+// ---------------------------------------------------------------------------
+
+function useVendorsApi() {
+	const client = useModuleClient();
+	return {
+		listVendors: client.module("vendors").admin["/admin/vendors"],
+		stats: client.module("vendors").admin["/admin/vendors/stats"],
+		createVendor: client.module("vendors").admin["/admin/vendors/create"],
+		updateVendor: client.module("vendors").admin["/admin/vendors/:id/update"],
+		updateStatus: client.module("vendors").admin["/admin/vendors/:id/status"],
+		deleteVendor: client.module("vendors").admin["/admin/vendors/:id/delete"],
+		vendorPayouts:
+			client.module("vendors").admin["/admin/vendors/:vendorId/payouts"],
+		createPayout:
+			client.module("vendors").admin["/admin/vendors/:vendorId/payouts/create"],
+		updatePayoutStatus:
+			client.module("vendors").admin["/admin/vendors/payouts/:id/status"],
+		payoutStats: client.module("vendors").admin["/admin/vendors/payouts/stats"],
+	};
+}
+
+// ---------------------------------------------------------------------------
+// VendorSheet — create / edit vendor
+// ---------------------------------------------------------------------------
+
+interface VendorSheetProps {
+	vendor?: Vendor;
+	onSaved: () => void;
+	onCancel: () => void;
+}
+
+function VendorSheet({ vendor, onSaved, onCancel }: VendorSheetProps) {
+	const api = useVendorsApi();
+	const isEditing = !!vendor;
+
+	const [name, setName] = useState(vendor?.name ?? "");
+	const [slug, setSlug] = useState(vendor?.slug ?? "");
+	const [email, setEmail] = useState(vendor?.email ?? "");
+	const [phone, setPhone] = useState(vendor?.phone ?? "");
+	const [description, setDescription] = useState(vendor?.description ?? "");
+	const [website, setWebsite] = useState(vendor?.website ?? "");
+	const [commissionRate, setCommissionRate] = useState(
+		String(vendor?.commissionRate ?? 10),
+	);
+	const [error, setError] = useState("");
+
+	const createMutation = api.createVendor.useMutation({
+		onSuccess: () => {
+			void api.listVendors.invalidate();
+			void api.stats.invalidate();
+			onSaved();
+		},
+		onError: (err: Error) => setError(extractError(err)),
+	});
+
+	const updateMutation = api.updateVendor.useMutation({
+		onSuccess: () => {
+			void api.listVendors.invalidate();
+			onSaved();
+		},
+		onError: (err: Error) => setError(extractError(err)),
+	});
+
+	const isPending = createMutation.isPending || updateMutation.isPending;
+
+	function handleSubmit(e: React.FormEvent) {
+		e.preventDefault();
+		setError("");
+		if (!name.trim() || !email.trim()) {
+			setError("Name and email are required.");
+			return;
+		}
+
+		const autoSlug = name
+			.toLowerCase()
+			.replace(/[^a-z0-9]+/g, "-")
+			.replace(/^-|-$/g, "");
+
+		const body = {
+			name: name.trim(),
+			slug: slug.trim() || autoSlug,
+			email: email.trim(),
+			...(phone.trim() ? { phone: phone.trim() } : { phone: null }),
+			...(description.trim()
+				? { description: description.trim() }
+				: { description: null }),
+			...(website.trim() ? { website: website.trim() } : { website: null }),
+			commissionRate: Number.parseFloat(commissionRate) || 0,
+		};
+
+		if (isEditing) {
+			updateMutation.mutate({ params: { id: vendor.id }, body });
+		} else {
+			createMutation.mutate({ body });
+		}
+	}
+
+	return (
+		<div className="fixed inset-0 z-50 flex justify-end">
+			<button
+				type="button"
+				className="absolute inset-0 cursor-default bg-black/40"
+				aria-label="Close panel"
+				onClick={onCancel}
+			/>
+			<div className="relative flex h-full w-full max-w-md flex-col overflow-y-auto border-border border-l bg-background shadow-2xl">
+				<div className="flex shrink-0 items-center justify-between border-border border-b px-6 py-4">
+					<h2 className="font-semibold text-foreground text-lg">
+						{isEditing ? "Edit Vendor" : "New Vendor"}
+					</h2>
+					<button
+						type="button"
+						onClick={onCancel}
+						className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+					>
+						✕
+					</button>
+				</div>
+
+				<form
+					onSubmit={handleSubmit}
+					className="flex flex-1 flex-col gap-5 px-6 py-6"
+				>
+					{error ? (
+						<div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-destructive text-sm">
+							{error}
+						</div>
+					) : null}
+
+					<div className="space-y-4">
+						<div className="grid gap-4 sm:grid-cols-2">
+							<div>
+								<label htmlFor="vs-name" className={labelCls}>
+									Name <span className="text-destructive">*</span>
+								</label>
+								<input
+									id="vs-name"
+									className={inputCls}
+									value={name}
+									onChange={(e) => setName(e.target.value)}
+									placeholder="Acme Supplies"
+								/>
+							</div>
+							<div>
+								<label htmlFor="vs-slug" className={labelCls}>
+									Slug
+								</label>
+								<input
+									id="vs-slug"
+									className={inputCls}
+									value={slug}
+									onChange={(e) => setSlug(e.target.value)}
+									placeholder="acme-supplies"
+								/>
+							</div>
+						</div>
+
+						<div className="grid gap-4 sm:grid-cols-2">
+							<div>
+								<label htmlFor="vs-email" className={labelCls}>
+									Email <span className="text-destructive">*</span>
+								</label>
+								<input
+									id="vs-email"
+									type="email"
+									className={inputCls}
+									value={email}
+									onChange={(e) => setEmail(e.target.value)}
+									placeholder="vendor@example.com"
+								/>
+							</div>
+							<div>
+								<label htmlFor="vs-phone" className={labelCls}>
+									Phone
+								</label>
+								<input
+									id="vs-phone"
+									type="tel"
+									className={inputCls}
+									value={phone}
+									onChange={(e) => setPhone(e.target.value)}
+									placeholder="(555) 000-0000"
+								/>
+							</div>
+						</div>
+
+						<div>
+							<label htmlFor="vs-website" className={labelCls}>
+								Website
+							</label>
+							<input
+								id="vs-website"
+								type="url"
+								className={inputCls}
+								value={website}
+								onChange={(e) => setWebsite(e.target.value)}
+								placeholder="https://vendor.com"
+							/>
+						</div>
+
+						<div>
+							<label htmlFor="vs-description" className={labelCls}>
+								Description
+							</label>
+							<textarea
+								id="vs-description"
+								rows={3}
+								className={inputCls}
+								value={description}
+								onChange={(e) => setDescription(e.target.value)}
+								placeholder="Brief description of the vendor"
+							/>
+						</div>
+
+						<div>
+							<label htmlFor="vs-commission" className={labelCls}>
+								Commission rate (%)
+							</label>
+							<input
+								id="vs-commission"
+								type="number"
+								min="0"
+								max="100"
+								step="0.1"
+								className={inputCls}
+								value={commissionRate}
+								onChange={(e) => setCommissionRate(e.target.value)}
+							/>
+						</div>
+					</div>
+
+					<div className="mt-auto flex justify-end gap-2 border-border border-t pt-4">
+						<button
+							type="button"
+							onClick={onCancel}
+							className="rounded-lg border border-border px-4 py-2 text-foreground text-sm hover:bg-muted"
+						>
+							Cancel
+						</button>
+						<button
+							type="submit"
+							disabled={isPending}
+							className="rounded-lg bg-foreground px-4 py-2 font-medium text-background text-sm hover:opacity-90 disabled:opacity-50"
+						>
+							{isPending
+								? isEditing
+									? "Saving..."
+									: "Creating..."
+								: isEditing
+									? "Save Changes"
+									: "Create Vendor"}
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	);
+}
+
+// ---------------------------------------------------------------------------
+// VendorAdmin — main vendor list + create + edit + delete + status
 // ---------------------------------------------------------------------------
 
 export function VendorAdmin() {
 	const api = useVendorsApi();
 	const [statusFilter, setStatusFilter] = useState("");
 	const [showCreate, setShowCreate] = useState(false);
-	const [name, setName] = useState("");
-	const [slug, setSlug] = useState("");
-	const [email, setEmail] = useState("");
-	const [commissionRate, setCommissionRate] = useState(10);
-	const [error, setError] = useState("");
+	const [editVendor, setEditVendor] = useState<Vendor | null>(null);
 
 	const { data, isLoading } = api.listVendors.useQuery({
 		...(statusFilter ? { status: statusFilter } : {}),
@@ -126,48 +384,57 @@ export function VendorAdmin() {
 		data: { stats?: VendorStats } | undefined;
 	};
 
+	const deleteVendorMutation = api.deleteVendor.useMutation({
+		onSuccess: () => {
+			void api.listVendors.invalidate();
+			void api.stats.invalidate();
+		},
+	});
+
+	const updateStatusMutation = api.updateStatus.useMutation({
+		onSuccess: () => {
+			void api.listVendors.invalidate();
+			void api.stats.invalidate();
+		},
+	});
+
 	const vendors = data?.vendors ?? [];
 	const stats = statsData?.stats;
 
-	const createMutation = api.createVendor.useMutation() as {
-		mutateAsync: (opts: { body: Record<string, unknown> }) => Promise<unknown>;
-		isPending: boolean;
+	const handleDelete = (vendor: Vendor) => {
+		if (
+			!window.confirm(`Delete vendor "${vendor.name}"? This cannot be undone.`)
+		)
+			return;
+		deleteVendorMutation.mutate({ params: { id: vendor.id } });
 	};
 
-	const handleCreate = async (e: React.FormEvent) => {
-		e.preventDefault();
-		setError("");
-		if (!name.trim() || !email.trim()) {
-			setError("Name and email are required.");
-			return;
-		}
-		try {
-			await createMutation.mutateAsync({
-				body: {
-					name: name.trim(),
-					slug:
-						slug.trim() ||
-						name
-							.toLowerCase()
-							.replace(/[^a-z0-9]+/g, "-")
-							.replace(/^-|-$/g, ""),
-					email: email.trim(),
-					commissionRate,
-				},
-			});
-			setName("");
-			setSlug("");
-			setEmail("");
-			setCommissionRate(10);
-			setShowCreate(false);
-			window.location.reload();
-		} catch (err) {
-			setError(extractError(err));
-		}
+	const handleStatusChange = (vendor: Vendor, newStatus: string) => {
+		updateStatusMutation.mutate({
+			params: { id: vendor.id },
+			body: {
+				status: newStatus as "pending" | "active" | "suspended" | "closed",
+			},
+		});
 	};
 
 	return (
 		<div>
+			{/* Sheet overlays */}
+			{showCreate ? (
+				<VendorSheet
+					onSaved={() => setShowCreate(false)}
+					onCancel={() => setShowCreate(false)}
+				/>
+			) : null}
+			{editVendor ? (
+				<VendorSheet
+					vendor={editVendor}
+					onSaved={() => setEditVendor(null)}
+					onCancel={() => setEditVendor(null)}
+				/>
+			) : null}
+
 			<div className="mb-6 flex items-center justify-between">
 				<div>
 					<h1 className="font-bold text-2xl text-foreground">Vendors</h1>
@@ -177,124 +444,52 @@ export function VendorAdmin() {
 				</div>
 				<button
 					type="button"
-					onClick={() => setShowCreate(!showCreate)}
+					onClick={() => setShowCreate(true)}
 					className="rounded-lg bg-foreground px-4 py-2 font-medium text-background text-sm hover:opacity-90"
 				>
-					{showCreate ? "Cancel" : "Add Vendor"}
+					Add Vendor
 				</button>
 			</div>
 
 			{/* Stats */}
 			{stats ? (
 				<div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-					<div className="rounded-lg border border-border bg-card p-4">
-						<p className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
-							Total
-						</p>
-						<p className="mt-1 font-bold text-2xl text-foreground">
-							{stats.totalVendors}
-						</p>
-					</div>
-					<div className="rounded-lg border border-border bg-card p-4">
-						<p className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
-							Active
-						</p>
-						<p className="mt-1 font-bold text-2xl text-green-600">
-							{stats.activeVendors}
-						</p>
-					</div>
-					<div className="rounded-lg border border-border bg-card p-4">
-						<p className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
-							Pending
-						</p>
-						<p className="mt-1 font-bold text-2xl text-yellow-600">
-							{stats.pendingVendors}
-						</p>
-					</div>
-					<div className="rounded-lg border border-border bg-card p-4">
-						<p className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
-							Suspended
-						</p>
-						<p className="mt-1 font-bold text-2xl text-red-600">
-							{stats.suspendedVendors}
-						</p>
-					</div>
-				</div>
-			) : null}
-
-			{/* Create form */}
-			{showCreate ? (
-				<div className="mb-6 rounded-lg border border-border bg-card p-5">
-					<h2 className="mb-4 font-semibold text-foreground text-sm">
-						New Vendor
-					</h2>
-					{error ? (
-						<div className="mb-3 rounded-lg border border-red-200 bg-red-50 p-3 text-red-800 text-sm dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
-							{error}
-						</div>
-					) : null}
-					<form onSubmit={handleCreate} className="space-y-4">
-						<div className="grid gap-4 sm:grid-cols-2">
-							<label className="block">
-								<span className="mb-1 block font-medium text-sm">Name</span>
-								<input
-									type="text"
-									value={name}
-									onChange={(e) => setName(e.target.value)}
-									placeholder="Vendor name"
-									className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
-								/>
-							</label>
-							<label className="block">
-								<span className="mb-1 block font-medium text-sm">Slug</span>
-								<input
-									type="text"
-									value={slug}
-									onChange={(e) => setSlug(e.target.value)}
-									placeholder="vendor-slug"
-									className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
-								/>
-							</label>
-						</div>
-						<div className="grid gap-4 sm:grid-cols-2">
-							<label className="block">
-								<span className="mb-1 block font-medium text-sm">Email</span>
-								<input
-									type="email"
-									value={email}
-									onChange={(e) => setEmail(e.target.value)}
-									placeholder="vendor@example.com"
-									className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
-								/>
-							</label>
-							<label className="block">
-								<span className="mb-1 block font-medium text-sm">
-									Commission Rate (%)
-								</span>
-								<input
-									type="number"
-									value={commissionRate}
-									onChange={(e) =>
-										setCommissionRate(Number.parseFloat(e.target.value) || 0)
-									}
-									min={0}
-									max={100}
-									className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
-								/>
-							</label>
-						</div>
-						<button
-							type="submit"
-							disabled={createMutation.isPending}
-							className="rounded-lg bg-foreground px-4 py-2 font-medium text-background text-sm hover:opacity-90 disabled:opacity-50"
+					{[
+						{
+							label: "Total",
+							value: stats.totalVendors,
+							cls: "text-foreground",
+						},
+						{
+							label: "Active",
+							value: stats.activeVendors,
+							cls: "text-green-600",
+						},
+						{
+							label: "Pending",
+							value: stats.pendingVendors,
+							cls: "text-yellow-600",
+						},
+						{
+							label: "Suspended",
+							value: stats.suspendedVendors,
+							cls: "text-red-600",
+						},
+					].map(({ label, value, cls }) => (
+						<div
+							key={label}
+							className="rounded-lg border border-border bg-card p-4"
 						>
-							{createMutation.isPending ? "Creating..." : "Create Vendor"}
-						</button>
-					</form>
+							<p className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
+								{label}
+							</p>
+							<p className={`mt-1 font-bold text-2xl ${cls}`}>{value}</p>
+						</div>
+					))}
 				</div>
 			) : null}
 
-			{/* Filters */}
+			{/* Filter */}
 			<div className="mb-4">
 				<select
 					value={statusFilter}
@@ -312,16 +507,26 @@ export function VendorAdmin() {
 			{/* Vendor list */}
 			{isLoading ? (
 				<div className="space-y-3">
-					{Array.from({ length: 4 }).map((_, i) => (
+					{SKELETON_IDS.map((id) => (
 						<div
-							key={`skel-${i}`}
+							key={`vend-skel-${id}`}
 							className="h-20 animate-pulse rounded-lg border border-border bg-muted/30"
 						/>
 					))}
 				</div>
 			) : vendors.length === 0 ? (
-				<div className="rounded-lg border border-border bg-card p-8 text-center">
-					<p className="text-muted-foreground text-sm">No vendors found.</p>
+				<div className="rounded-lg border border-border bg-card p-10 text-center">
+					<p className="font-medium text-foreground text-sm">No vendors yet</p>
+					<p className="mt-1 text-muted-foreground text-xs">
+						Add a vendor to your marketplace
+					</p>
+					<button
+						type="button"
+						onClick={() => setShowCreate(true)}
+						className="mt-4 rounded-lg bg-foreground px-4 py-2 font-medium text-background text-sm hover:opacity-90"
+					>
+						Add Vendor
+					</button>
 				</div>
 			) : (
 				<div className="space-y-3">
@@ -337,7 +542,7 @@ export function VendorAdmin() {
 											{vendor.name}
 										</p>
 										<span
-											className={`inline-flex items-center rounded-full px-2 py-0.5 font-medium text-xs ${STATUS_COLORS[vendor.status] ?? "bg-muted text-muted-foreground"}`}
+											className={`inline-flex items-center rounded-full px-2 py-0.5 font-medium text-xs ${VENDOR_STATUS_COLORS[vendor.status] ?? "bg-muted text-muted-foreground"}`}
 										>
 											{vendor.status}
 										</span>
@@ -347,10 +552,42 @@ export function VendorAdmin() {
 										<span>Commission: {vendor.commissionRate}%</span>
 										{vendor.website ? <span>{vendor.website}</span> : null}
 									</div>
+									{vendor.description ? (
+										<p className="mt-1.5 text-muted-foreground text-xs">
+											{vendor.description}
+										</p>
+									) : null}
 								</div>
-								<span className="whitespace-nowrap text-muted-foreground text-xs">
-									{formatDate(vendor.createdAt)}
-								</span>
+								<div className="flex shrink-0 items-center gap-1">
+									{/* Status change dropdown */}
+									<select
+										value={vendor.status}
+										onChange={(e) => handleStatusChange(vendor, e.target.value)}
+										disabled={updateStatusMutation.isPending}
+										className="rounded border border-border bg-background px-2 py-1 text-xs"
+										aria-label="Change status"
+									>
+										<option value="pending">Pending</option>
+										<option value="active">Active</option>
+										<option value="suspended">Suspended</option>
+										<option value="closed">Closed</option>
+									</select>
+									<button
+										type="button"
+										onClick={() => setEditVendor(vendor)}
+										className="rounded px-2 py-1 text-xs hover:bg-muted"
+									>
+										Edit
+									</button>
+									<button
+										type="button"
+										onClick={() => handleDelete(vendor)}
+										disabled={deleteVendorMutation.isPending}
+										className="rounded px-2 py-1 text-red-600 text-xs hover:bg-red-50 disabled:opacity-50 dark:hover:bg-red-900/20"
+									>
+										Delete
+									</button>
+								</div>
 							</div>
 						</div>
 					))}
@@ -361,17 +598,98 @@ export function VendorAdmin() {
 }
 
 // ---------------------------------------------------------------------------
-// VendorPayouts — payout management
+// VendorPayouts — per-vendor payout management
 // ---------------------------------------------------------------------------
 
 export function VendorPayouts() {
 	const api = useVendorsApi();
+	const [selectedVendorId, setSelectedVendorId] = useState("");
+	const [showCreatePayout, setShowCreatePayout] = useState(false);
+	const [payoutAmount, setPayoutAmount] = useState("");
+	const [payoutCurrency, setPayoutCurrency] = useState("USD");
+	const [payoutMethod, setPayoutMethod] = useState("");
+	const [payoutReference, setPayoutReference] = useState("");
+	const [payoutPeriodStart, setPayoutPeriodStart] = useState("");
+	const [payoutPeriodEnd, setPayoutPeriodEnd] = useState("");
+	const [payoutNotes, setPayoutNotes] = useState("");
+	const [payoutError, setPayoutError] = useState("");
 
 	const { data: statsData } = api.payoutStats.useQuery({}) as {
 		data: { stats?: PayoutStats } | undefined;
 	};
 
+	const { data: vendorsData } = api.listVendors.useQuery({}) as {
+		data: { vendors?: Vendor[] } | undefined;
+	};
+
+	const { data: payoutsData, isLoading: loadingPayouts } =
+		api.vendorPayouts.useQuery(
+			selectedVendorId
+				? { vendorId: selectedVendorId }
+				: { vendorId: "__skip__" },
+			{ enabled: !!selectedVendorId },
+		) as {
+			data: { payouts?: Payout[]; total?: number } | undefined;
+			isLoading: boolean;
+		};
+
+	const createPayoutMutation = api.createPayout.useMutation({
+		onSuccess: () => {
+			void api.vendorPayouts.invalidate();
+			void api.payoutStats.invalidate();
+			setShowCreatePayout(false);
+			setPayoutAmount("");
+			setPayoutReference("");
+			setPayoutPeriodStart("");
+			setPayoutPeriodEnd("");
+			setPayoutNotes("");
+			setPayoutError("");
+		},
+		onError: (err: Error) => setPayoutError(extractError(err)),
+	});
+
+	const updatePayoutStatusMutation = api.updatePayoutStatus.useMutation({
+		onSuccess: () => {
+			void api.vendorPayouts.invalidate();
+			void api.payoutStats.invalidate();
+		},
+	});
+
 	const stats = statsData?.stats;
+	const vendors = vendorsData?.vendors ?? [];
+	const payouts = payoutsData?.payouts ?? [];
+
+	const handleCreatePayout = (e: React.FormEvent) => {
+		e.preventDefault();
+		setPayoutError("");
+		if (!selectedVendorId) {
+			setPayoutError("Select a vendor first.");
+			return;
+		}
+		const amount = Math.round(Number.parseFloat(payoutAmount) * 100);
+		if (Number.isNaN(amount) || amount <= 0) {
+			setPayoutError("Enter a valid amount.");
+			return;
+		}
+		if (!payoutPeriodStart || !payoutPeriodEnd) {
+			setPayoutError("Period start and end dates are required.");
+			return;
+		}
+		createPayoutMutation.mutate({
+			params: { vendorId: selectedVendorId },
+			body: {
+				amount,
+				currency: payoutCurrency,
+				periodStart: new Date(payoutPeriodStart),
+				periodEnd: new Date(payoutPeriodEnd),
+				...(payoutMethod.trim() ? { method: payoutMethod.trim() } : {}),
+				...(payoutReference.trim()
+					? { reference: payoutReference.trim() }
+					: {}),
+				...(payoutNotes.trim() ? { notes: payoutNotes.trim() } : {}),
+			},
+		});
+	};
 
 	return (
 		<div>
@@ -420,13 +738,248 @@ export function VendorPayouts() {
 				</div>
 			) : null}
 
-			<p className="text-muted-foreground text-sm">
-				To manage payouts for a specific vendor, go to the{" "}
-				<a href="/admin/vendors" className="underline hover:text-foreground">
-					Vendors
-				</a>{" "}
-				page and select a vendor.
-			</p>
+			{/* Vendor selector */}
+			<div className="mb-5 flex flex-wrap items-center gap-3">
+				<select
+					value={selectedVendorId}
+					onChange={(e) => {
+						setSelectedVendorId(e.target.value);
+						setShowCreatePayout(false);
+					}}
+					className="rounded-md border border-border bg-background px-3 py-1.5 text-sm"
+				>
+					<option value="">Select a vendor…</option>
+					{vendors.map((v) => (
+						<option key={v.id} value={v.id}>
+							{v.name}
+						</option>
+					))}
+				</select>
+				{selectedVendorId ? (
+					<button
+						type="button"
+						onClick={() => setShowCreatePayout(!showCreatePayout)}
+						className="rounded-lg bg-foreground px-3 py-1.5 font-medium text-background text-sm hover:opacity-90"
+					>
+						{showCreatePayout ? "Cancel" : "Create Payout"}
+					</button>
+				) : null}
+			</div>
+
+			{/* Create payout form */}
+			{showCreatePayout && selectedVendorId ? (
+				<div className="mb-6 rounded-lg border border-border bg-card p-5">
+					<h2 className="mb-4 font-semibold text-foreground text-sm">
+						New Payout
+					</h2>
+					{payoutError ? (
+						<div className="mb-3 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-destructive text-sm">
+							{payoutError}
+						</div>
+					) : null}
+					<form onSubmit={handleCreatePayout} className="space-y-4">
+						<div className="grid gap-4 sm:grid-cols-3">
+							<div>
+								<label htmlFor="po-amount" className={labelCls}>
+									Amount ($) <span className="text-destructive">*</span>
+								</label>
+								<input
+									id="po-amount"
+									type="number"
+									step="0.01"
+									min="0.01"
+									className={inputCls}
+									value={payoutAmount}
+									onChange={(e) => setPayoutAmount(e.target.value)}
+									placeholder="100.00"
+								/>
+							</div>
+							<div>
+								<label htmlFor="po-currency" className={labelCls}>
+									Currency
+								</label>
+								<input
+									id="po-currency"
+									className={inputCls}
+									value={payoutCurrency}
+									onChange={(e) =>
+										setPayoutCurrency(e.target.value.toUpperCase())
+									}
+									maxLength={3}
+									placeholder="USD"
+								/>
+							</div>
+							<div>
+								<label htmlFor="po-method" className={labelCls}>
+									Method
+								</label>
+								<input
+									id="po-method"
+									className={inputCls}
+									value={payoutMethod}
+									onChange={(e) => setPayoutMethod(e.target.value)}
+									placeholder="bank_transfer"
+								/>
+							</div>
+						</div>
+						<div className="grid gap-4 sm:grid-cols-2">
+							<div>
+								<label htmlFor="po-start" className={labelCls}>
+									Period start <span className="text-destructive">*</span>
+								</label>
+								<input
+									id="po-start"
+									type="date"
+									className={inputCls}
+									value={payoutPeriodStart}
+									onChange={(e) => setPayoutPeriodStart(e.target.value)}
+								/>
+							</div>
+							<div>
+								<label htmlFor="po-end" className={labelCls}>
+									Period end <span className="text-destructive">*</span>
+								</label>
+								<input
+									id="po-end"
+									type="date"
+									className={inputCls}
+									value={payoutPeriodEnd}
+									onChange={(e) => setPayoutPeriodEnd(e.target.value)}
+								/>
+							</div>
+						</div>
+						<div>
+							<label htmlFor="po-reference" className={labelCls}>
+								Reference
+							</label>
+							<input
+								id="po-reference"
+								className={inputCls}
+								value={payoutReference}
+								onChange={(e) => setPayoutReference(e.target.value)}
+								placeholder="Transaction ID or check number"
+							/>
+						</div>
+						<div>
+							<label htmlFor="po-notes" className={labelCls}>
+								Notes
+							</label>
+							<input
+								id="po-notes"
+								className={inputCls}
+								value={payoutNotes}
+								onChange={(e) => setPayoutNotes(e.target.value)}
+								placeholder="Optional notes"
+							/>
+						</div>
+						<button
+							type="submit"
+							disabled={createPayoutMutation.isPending}
+							className="rounded-lg bg-foreground px-4 py-2 font-medium text-background text-sm hover:opacity-90 disabled:opacity-50"
+						>
+							{createPayoutMutation.isPending ? "Creating..." : "Create Payout"}
+						</button>
+					</form>
+				</div>
+			) : null}
+
+			{/* Payout list */}
+			{!selectedVendorId ? (
+				<div className="rounded-lg border border-border bg-card p-8 text-center">
+					<p className="text-muted-foreground text-sm">
+						Select a vendor above to view their payouts.
+					</p>
+				</div>
+			) : loadingPayouts ? (
+				<div className="space-y-2">
+					{PAYOUT_SKELETON_IDS.map((id) => (
+						<div
+							key={`pay-skel-${id}`}
+							className="h-12 animate-pulse rounded-lg border border-border bg-muted/30"
+						/>
+					))}
+				</div>
+			) : payouts.length === 0 ? (
+				<div className="rounded-lg border border-border bg-card p-8 text-center">
+					<p className="text-muted-foreground text-sm">No payouts yet.</p>
+				</div>
+			) : (
+				<div className="overflow-x-auto rounded-md border border-border">
+					<table className="w-full text-left text-sm">
+						<thead>
+							<tr className="border-border border-b bg-muted">
+								<th className="px-4 py-2 font-medium text-muted-foreground">
+									Amount
+								</th>
+								<th className="px-4 py-2 font-medium text-muted-foreground">
+									Period
+								</th>
+								<th className="px-4 py-2 font-medium text-muted-foreground">
+									Method
+								</th>
+								<th className="px-4 py-2 font-medium text-muted-foreground">
+									Status
+								</th>
+								<th className="px-4 py-2 font-medium text-muted-foreground">
+									Date
+								</th>
+								<th className="px-4 py-2 font-medium text-muted-foreground">
+									Actions
+								</th>
+							</tr>
+						</thead>
+						<tbody className="divide-y divide-border">
+							{payouts.map((p) => (
+								<tr key={p.id} className="transition-colors hover:bg-muted/50">
+									<td className="px-4 py-2 font-medium text-foreground">
+										{formatCurrency(p.amount, p.currency)}
+									</td>
+									<td className="px-4 py-2 text-muted-foreground text-xs">
+										{formatDate(p.periodStart)} – {formatDate(p.periodEnd)}
+									</td>
+									<td className="px-4 py-2 text-muted-foreground text-xs">
+										{p.method ?? "—"}
+									</td>
+									<td className="px-4 py-2">
+										<span
+											className={`inline-flex items-center rounded-full px-2 py-0.5 font-medium text-xs ${PAYOUT_STATUS_COLORS[p.status] ?? "bg-muted text-muted-foreground"}`}
+										>
+											{p.status}
+										</span>
+									</td>
+									<td className="px-4 py-2 text-muted-foreground text-xs">
+										{formatDate(p.createdAt)}
+									</td>
+									<td className="px-4 py-2">
+										<select
+											value={p.status}
+											onChange={(e) =>
+												updatePayoutStatusMutation.mutate({
+													params: { id: p.id },
+													body: {
+														status: e.target.value as
+															| "pending"
+															| "processing"
+															| "completed"
+															| "failed",
+													},
+												})
+											}
+											disabled={updatePayoutStatusMutation.isPending}
+											className="rounded border border-border bg-background px-2 py-1 text-xs"
+										>
+											<option value="pending">Pending</option>
+											<option value="processing">Processing</option>
+											<option value="completed">Completed</option>
+											<option value="failed">Failed</option>
+										</select>
+									</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
+				</div>
+			)}
 		</div>
 	);
 }
