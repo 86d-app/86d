@@ -116,6 +116,17 @@ const ORDER_STYLES: Record<string, string> = {
 
 // ── API hook ─────────────────────────────────────────────────────────────────
 
+const inputCls =
+	"w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-1 disabled:opacity-50";
+const labelCls = "mb-1 block font-medium text-foreground text-sm";
+
+function extractError(err: unknown): string {
+	if (err && typeof err === "object" && "message" in err) {
+		return String((err as { message: string }).message);
+	}
+	return "An unexpected error occurred";
+}
+
 function useFacebookApi() {
 	const client = useModuleClient();
 	const mod = client.module("facebook-shop");
@@ -123,11 +134,315 @@ function useFacebookApi() {
 		settings: mod.admin["/admin/facebook-shop/settings"],
 		stats: mod.admin["/admin/facebook-shop/stats"],
 		listings: mod.admin["/admin/facebook-shop/listings"],
+		createListing: mod.admin["/admin/facebook-shop/listings/create"],
+		updateListing: mod.admin["/admin/facebook-shop/listings/:id/update"],
+		deleteListing: mod.admin["/admin/facebook-shop/listings/:id/delete"],
 		syncProducts: mod.admin["/admin/facebook-shop/products/sync"],
 		orders: mod.admin["/admin/facebook-shop/orders"],
+		updateOrderStatus: mod.admin["/admin/facebook-shop/orders/:id/status"],
 		syncOrders: mod.admin["/admin/facebook-shop/orders/sync"],
 		collections: mod.admin["/admin/facebook-shop/collections"],
+		createCollection: mod.admin["/admin/facebook-shop/collections/create"],
+		deleteCollection: mod.admin["/admin/facebook-shop/collections/:id/delete"],
 	};
+}
+
+// ── FbListingSheet ────────────────────────────────────────────────────────────
+
+interface FbListingSheetProps {
+	listing?: Listing;
+	onSaved: () => void;
+	onCancel: () => void;
+	api: ReturnType<typeof useFacebookApi>;
+}
+
+function FbListingSheet({
+	listing,
+	onSaved,
+	onCancel,
+	api,
+}: FbListingSheetProps) {
+	const isEditing = !!listing;
+	const [localProductId, setLocalProductId] = useState(
+		listing?.localProductId ?? "",
+	);
+	const [title, setTitle] = useState(listing?.title ?? "");
+	const [status, setStatus] = useState(listing?.status ?? "draft");
+	const [error, setError] = useState("");
+
+	const createMutation = api.createListing.useMutation({
+		onSuccess: () => {
+			void api.listings.invalidate();
+			onSaved();
+		},
+		onError: (err: Error) => setError(extractError(err)),
+	});
+
+	const updateMutation = api.updateListing.useMutation({
+		onSuccess: () => {
+			void api.listings.invalidate();
+			onSaved();
+		},
+		onError: (err: Error) => setError(extractError(err)),
+	});
+
+	const isPending = createMutation.isPending || updateMutation.isPending;
+
+	function handleSubmit(e: React.FormEvent) {
+		e.preventDefault();
+		setError("");
+		if (!localProductId.trim() || !title.trim()) {
+			setError("Product ID and title are required.");
+			return;
+		}
+		if (isEditing) {
+			updateMutation.mutate({
+				params: { id: listing.id },
+				body: {
+					localProductId: localProductId.trim(),
+					title: title.trim(),
+					status: status as
+						| "draft"
+						| "pending"
+						| "active"
+						| "rejected"
+						| "suspended",
+				},
+			});
+		} else {
+			createMutation.mutate({
+				body: {
+					localProductId: localProductId.trim(),
+					title: title.trim(),
+					status: status as
+						| "draft"
+						| "pending"
+						| "active"
+						| "rejected"
+						| "suspended",
+				},
+			});
+		}
+	}
+
+	return (
+		<div className="fixed inset-0 z-50 flex justify-end">
+			<button
+				type="button"
+				className="absolute inset-0 cursor-default bg-black/40"
+				aria-label="Close panel"
+				onClick={onCancel}
+			/>
+			<div className="relative flex h-full w-full max-w-md flex-col overflow-y-auto border-border border-l bg-background shadow-2xl">
+				<div className="flex shrink-0 items-center justify-between border-border border-b px-6 py-4">
+					<h2 className="font-semibold text-foreground text-lg">
+						{isEditing ? "Edit Listing" : "New Listing"}
+					</h2>
+					<button
+						type="button"
+						onClick={onCancel}
+						className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+					>
+						✕
+					</button>
+				</div>
+				<form
+					onSubmit={handleSubmit}
+					className="flex flex-1 flex-col gap-5 px-6 py-6"
+				>
+					{error ? (
+						<div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-destructive text-sm">
+							{error}
+						</div>
+					) : null}
+					<div className="space-y-4">
+						<div>
+							<label htmlFor="fls-productid" className={labelCls}>
+								Local product ID <span className="text-destructive">*</span>
+							</label>
+							<input
+								id="fls-productid"
+								className={inputCls}
+								value={localProductId}
+								onChange={(e) => setLocalProductId(e.target.value)}
+								placeholder="prod_123abc"
+							/>
+						</div>
+						<div>
+							<label htmlFor="fls-title" className={labelCls}>
+								Title <span className="text-destructive">*</span>
+							</label>
+							<input
+								id="fls-title"
+								className={inputCls}
+								value={title}
+								onChange={(e) => setTitle(e.target.value)}
+								placeholder="Product title on Facebook"
+							/>
+						</div>
+						<div>
+							<label htmlFor="fls-status" className={labelCls}>
+								Status
+							</label>
+							<select
+								id="fls-status"
+								className={inputCls}
+								value={status}
+								onChange={(e) => setStatus(e.target.value)}
+							>
+								<option value="draft">Draft</option>
+								<option value="pending">Pending</option>
+								<option value="active">Active</option>
+								<option value="rejected">Rejected</option>
+								<option value="suspended">Suspended</option>
+							</select>
+						</div>
+					</div>
+					<div className="mt-auto flex justify-end gap-2 border-border border-t pt-4">
+						<button
+							type="button"
+							onClick={onCancel}
+							className="rounded-lg border border-border px-4 py-2 text-foreground text-sm hover:bg-muted"
+						>
+							Cancel
+						</button>
+						<button
+							type="submit"
+							disabled={isPending}
+							className="rounded-lg bg-foreground px-4 py-2 font-medium text-background text-sm hover:opacity-90 disabled:opacity-50"
+						>
+							{isPending
+								? isEditing
+									? "Saving..."
+									: "Creating..."
+								: isEditing
+									? "Save Changes"
+									: "Create Listing"}
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	);
+}
+
+// ── FbCollectionSheet ─────────────────────────────────────────────────────────
+
+interface FbCollectionSheetProps {
+	onSaved: () => void;
+	onCancel: () => void;
+	api: ReturnType<typeof useFacebookApi>;
+}
+
+function FbCollectionSheet({ onSaved, onCancel, api }: FbCollectionSheetProps) {
+	const [name, setName] = useState("");
+	const [productIds, setProductIds] = useState("");
+	const [error, setError] = useState("");
+
+	const createMutation = api.createCollection.useMutation({
+		onSuccess: () => {
+			void api.collections.invalidate();
+			onSaved();
+		},
+		onError: (err: Error) => setError(extractError(err)),
+	});
+
+	function handleSubmit(e: React.FormEvent) {
+		e.preventDefault();
+		setError("");
+		if (!name.trim()) {
+			setError("Collection name is required.");
+			return;
+		}
+		const ids = productIds
+			.split(/[\n,]+/)
+			.map((s) => s.trim())
+			.filter(Boolean);
+		createMutation.mutate({
+			body: { name: name.trim(), productIds: ids },
+		});
+	}
+
+	return (
+		<div className="fixed inset-0 z-50 flex justify-end">
+			<button
+				type="button"
+				className="absolute inset-0 cursor-default bg-black/40"
+				aria-label="Close panel"
+				onClick={onCancel}
+			/>
+			<div className="relative flex h-full w-full max-w-md flex-col overflow-y-auto border-border border-l bg-background shadow-2xl">
+				<div className="flex shrink-0 items-center justify-between border-border border-b px-6 py-4">
+					<h2 className="font-semibold text-foreground text-lg">
+						New Collection
+					</h2>
+					<button
+						type="button"
+						onClick={onCancel}
+						className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+					>
+						✕
+					</button>
+				</div>
+				<form
+					onSubmit={handleSubmit}
+					className="flex flex-1 flex-col gap-5 px-6 py-6"
+				>
+					{error ? (
+						<div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-destructive text-sm">
+							{error}
+						</div>
+					) : null}
+					<div className="space-y-4">
+						<div>
+							<label htmlFor="fcs-name" className={labelCls}>
+								Name <span className="text-destructive">*</span>
+							</label>
+							<input
+								id="fcs-name"
+								className={inputCls}
+								value={name}
+								onChange={(e) => setName(e.target.value)}
+								placeholder="Summer Collection"
+							/>
+						</div>
+						<div>
+							<label htmlFor="fcs-products" className={labelCls}>
+								Product IDs{" "}
+								<span className="font-normal text-muted-foreground">
+									(one per line or comma-separated)
+								</span>
+							</label>
+							<textarea
+								id="fcs-products"
+								rows={4}
+								className={inputCls}
+								value={productIds}
+								onChange={(e) => setProductIds(e.target.value)}
+								placeholder={"prod_abc123\nprod_def456"}
+							/>
+						</div>
+					</div>
+					<div className="mt-auto flex justify-end gap-2 border-border border-t pt-4">
+						<button
+							type="button"
+							onClick={onCancel}
+							className="rounded-lg border border-border px-4 py-2 text-foreground text-sm hover:bg-muted"
+						>
+							Cancel
+						</button>
+						<button
+							type="submit"
+							disabled={createMutation.isPending}
+							className="rounded-lg bg-foreground px-4 py-2 font-medium text-background text-sm hover:opacity-90 disabled:opacity-50"
+						>
+							{createMutation.isPending ? "Creating..." : "Create Collection"}
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	);
 }
 
 // ── Sub-components ───────────────────────────────────────────────────────────
@@ -269,6 +584,9 @@ export function FacebookShopAdmin() {
 	const [activeTab, setActiveTab] = useState<
 		"listings" | "orders" | "collections"
 	>("listings");
+	const [showCreateListing, setShowCreateListing] = useState(false);
+	const [editListing, setEditListing] = useState<Listing | null>(null);
+	const [showCreateCollection, setShowCreateCollection] = useState(false);
 
 	const { data: settingsData, isLoading: settingsLoading } =
 		api.settings.useQuery({}) as {
@@ -317,6 +635,18 @@ export function FacebookShopAdmin() {
 		isPending: boolean;
 	};
 
+	const deleteListingMutation = api.deleteListing.useMutation({
+		onSuccess: () => void api.listings.invalidate(),
+	});
+
+	const updateOrderStatusMutation = api.updateOrderStatus.useMutation({
+		onSuccess: () => void api.orders.invalidate(),
+	});
+
+	const deleteCollectionMutation = api.deleteCollection.useMutation({
+		onSuccess: () => void api.collections.invalidate(),
+	});
+
 	const handleSync = () => {
 		syncMutation.mutate({});
 		setTimeout(() => refetchListings(), 2000);
@@ -346,6 +676,28 @@ export function FacebookShopAdmin() {
 
 	return (
 		<div className="space-y-8 p-1">
+			{showCreateListing ? (
+				<FbListingSheet
+					onSaved={() => setShowCreateListing(false)}
+					onCancel={() => setShowCreateListing(false)}
+					api={api}
+				/>
+			) : null}
+			{editListing ? (
+				<FbListingSheet
+					listing={editListing}
+					onSaved={() => setEditListing(null)}
+					onCancel={() => setEditListing(null)}
+					api={api}
+				/>
+			) : null}
+			{showCreateCollection ? (
+				<FbCollectionSheet
+					onSaved={() => setShowCreateCollection(false)}
+					onCancel={() => setShowCreateCollection(false)}
+					api={api}
+				/>
+			) : null}
 			<div>
 				<h2 className="font-semibold text-foreground text-lg">Facebook Shop</h2>
 				<p className="mt-1 text-muted-foreground text-sm">
@@ -445,6 +797,13 @@ export function FacebookShopAdmin() {
 							<option value="rejected">Rejected</option>
 							<option value="suspended">Suspended</option>
 						</select>
+						<button
+							type="button"
+							onClick={() => setShowCreateListing(true)}
+							className="rounded-md bg-foreground px-3.5 py-1.5 font-medium text-background text-sm transition-opacity hover:opacity-90"
+						>
+							Add Listing
+						</button>
 						<div className="flex-1" />
 						<button
 							type="button"
@@ -514,6 +873,9 @@ export function FacebookShopAdmin() {
 											<th className="px-5 py-2.5 font-medium text-muted-foreground">
 												Last Synced
 											</th>
+											<th className="px-5 py-2.5 font-medium text-muted-foreground">
+												Actions
+											</th>
 										</tr>
 									</thead>
 									<tbody className="divide-y divide-border">
@@ -540,6 +902,35 @@ export function FacebookShopAdmin() {
 													{listing.lastSyncedAt
 														? formatDate(listing.lastSyncedAt)
 														: "Never"}
+												</td>
+												<td className="px-5 py-3">
+													<div className="flex gap-1">
+														<button
+															type="button"
+															onClick={() => setEditListing(listing)}
+															className="rounded px-2 py-1 text-xs hover:bg-muted"
+														>
+															Edit
+														</button>
+														<button
+															type="button"
+															onClick={() => {
+																if (
+																	window.confirm(
+																		`Delete listing "${listing.title}"?`,
+																	)
+																) {
+																	deleteListingMutation.mutate({
+																		params: { id: listing.id },
+																	});
+																}
+															}}
+															disabled={deleteListingMutation.isPending}
+															className="rounded px-2 py-1 text-red-600 text-xs hover:bg-red-50 disabled:opacity-50 dark:hover:bg-red-900/20"
+														>
+															Delete
+														</button>
+													</div>
 												</td>
 											</tr>
 										))}
@@ -683,6 +1074,9 @@ export function FacebookShopAdmin() {
 											<th className="px-5 py-2.5 font-medium text-muted-foreground">
 												Date
 											</th>
+											<th className="px-5 py-2.5 font-medium text-muted-foreground">
+												Update Status
+											</th>
 										</tr>
 									</thead>
 									<tbody className="divide-y divide-border">
@@ -706,6 +1100,34 @@ export function FacebookShopAdmin() {
 												</td>
 												<td className="px-5 py-3 text-muted-foreground">
 													{formatDate(order.createdAt)}
+												</td>
+												<td className="px-5 py-3">
+													<select
+														value={order.status}
+														onChange={(e) =>
+															updateOrderStatusMutation.mutate({
+																params: { id: order.id },
+																body: {
+																	status: e.target.value as
+																		| "pending"
+																		| "confirmed"
+																		| "shipped"
+																		| "delivered"
+																		| "cancelled"
+																		| "refunded",
+																},
+															})
+														}
+														disabled={updateOrderStatusMutation.isPending}
+														className="rounded border border-border bg-background px-2 py-1 text-xs"
+													>
+														<option value="pending">Pending</option>
+														<option value="confirmed">Confirmed</option>
+														<option value="shipped">Shipped</option>
+														<option value="delivered">Delivered</option>
+														<option value="cancelled">Cancelled</option>
+														<option value="refunded">Refunded</option>
+													</select>
 												</td>
 											</tr>
 										))}
@@ -767,6 +1189,15 @@ export function FacebookShopAdmin() {
 
 			{activeTab === "collections" && (
 				<div>
+					<div className="mb-4 flex justify-end">
+						<button
+							type="button"
+							onClick={() => setShowCreateCollection(true)}
+							className="rounded-md bg-foreground px-3.5 py-1.5 font-medium text-background text-sm transition-opacity hover:opacity-90"
+						>
+							Create Collection
+						</button>
+					</div>
 					{collectionsLoading ? (
 						<div className="space-y-3">
 							{Array.from({ length: 3 }, (_, i) => (
@@ -801,15 +1232,35 @@ export function FacebookShopAdmin() {
 											{formatDate(collection.createdAt)}
 										</span>
 									</div>
-									<span
-										className={`rounded-full px-2 py-0.5 font-medium text-xs ${
-											collection.status === "active"
-												? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-												: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400"
-										}`}
-									>
-										{collection.status}
-									</span>
+									<div className="flex items-center gap-2">
+										<span
+											className={`rounded-full px-2 py-0.5 font-medium text-xs ${
+												collection.status === "active"
+													? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+													: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400"
+											}`}
+										>
+											{collection.status}
+										</span>
+										<button
+											type="button"
+											onClick={() => {
+												if (
+													window.confirm(
+														`Delete collection "${collection.name}"?`,
+													)
+												) {
+													deleteCollectionMutation.mutate({
+														params: { id: collection.id },
+													});
+												}
+											}}
+											disabled={deleteCollectionMutation.isPending}
+											className="rounded px-2 py-1 text-red-600 text-xs hover:bg-red-50 disabled:opacity-50 dark:hover:bg-red-900/20"
+										>
+											Delete
+										</button>
+									</div>
 								</div>
 							))}
 						</div>
