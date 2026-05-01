@@ -264,6 +264,7 @@ const moduleNames = [
 	"quotes",
 	"store-locator",
 	"returns",
+	"revenue",
 	"audit-log",
 	"vendors",
 	"gift-registry",
