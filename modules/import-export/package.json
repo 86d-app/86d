@@ -1,6 +1,6 @@
 {
 	"name": "@86d-app/import-export",
-	"version": "0.0.32",
+	"version": "0.0.33",
 	"description": "Bulk import and export for products, orders, customers, and inventory in 86d commerce platform",
 	"keywords": [
 		"commerce",

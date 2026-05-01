@@ -1,6 +1,6 @@
 {
 	"name": "@86d-app/google-shopping",
-	"version": "0.0.32",
+	"version": "0.0.33",
 	"description": "Google Shopping / Merchant Center integration for 86d commerce platform",
 	"keywords": [
 		"commerce",
