@@ -68,6 +68,15 @@ function extractError(error: Error | null, fallback: string): string {
 	return fallback;
 }
 
+function Skeleton({ className = "" }: { className?: string }) {
+	return (
+		<div
+			className={`animate-pulse rounded bg-muted ${className}`}
+			aria-hidden="true"
+		/>
+	);
+}
+
 function useSocialProofAdminApi() {
 	const client = useModuleClient();
 	return {
@@ -156,9 +165,27 @@ export function SocialProofAdmin() {
 	};
 
 	const eventsContent = loading ? (
-		<div className="py-16 text-center">
-			<div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-foreground" />
-			<p className="mt-4 text-muted-foreground text-sm">Loading...</p>
+		<div className="rounded-lg border border-border bg-card">
+			<div className="hidden md:block">
+				<table className="w-full text-left text-sm">
+					<tbody className="divide-y divide-border">
+						{Array.from({ length: 5 }, (_, i) => (
+							<tr key={`skeleton-${i}`}>
+								{Array.from({ length: 4 }, (_, j) => (
+									<td key={`skeleton-cell-${j}`} className="px-5 py-3">
+										<Skeleton className="h-4 rounded" />
+									</td>
+								))}
+							</tr>
+						))}
+					</tbody>
+				</table>
+			</div>
+			<div className="space-y-3 p-4 md:hidden">
+				{Array.from({ length: 3 }, (_, i) => (
+					<Skeleton key={`mobile-skeleton-${i}`} className="h-16 rounded-lg" />
+				))}
+			</div>
 		</div>
 	) : events.length === 0 ? (
 		<div className="px-5 py-8 text-center text-muted-foreground text-sm">
@@ -268,8 +295,19 @@ export function SocialProofAdmin() {
 	);
 
 	const badgesContent = loading ? (
-		<div className="py-8 text-center">
-			<div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-muted border-t-foreground" />
+		<div className="divide-y divide-border">
+			{Array.from({ length: 4 }, (_, i) => (
+				<div
+					key={`badge-skeleton-${i}`}
+					className="flex items-center gap-3 px-5 py-3"
+				>
+					<Skeleton className="h-8 w-8 rounded" />
+					<div className="flex-1 space-y-1.5">
+						<Skeleton className="h-3.5 w-32 rounded" />
+						<Skeleton className="h-3 w-48 rounded" />
+					</div>
+				</div>
+			))}
 		</div>
 	) : badges.length === 0 ? (
 		<div className="px-5 py-8 text-center text-muted-foreground text-sm">

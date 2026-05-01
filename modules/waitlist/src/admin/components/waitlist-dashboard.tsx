@@ -57,6 +57,15 @@ const STATUS_COLORS: Record<string, string> = {
 	cancelled: "bg-gray-100 text-gray-600 dark:bg-gray-800/50 dark:text-gray-400",
 };
 
+function Skeleton({ className = "" }: { className?: string }) {
+	return (
+		<div
+			className={`animate-pulse rounded bg-muted ${className}`}
+			aria-hidden="true"
+		/>
+	);
+}
+
 function useWaitlistAdminApi() {
 	const client = useModuleClient();
 	return {
@@ -143,11 +152,27 @@ export function WaitlistDashboard() {
 	);
 
 	const itemsContent = loading ? (
-		<div className="py-16 text-center">
-			<div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-foreground" />
-			<p className="mt-4 text-muted-foreground text-sm">
-				Loading waitlist data...
-			</p>
+		<div className="rounded-lg border border-border bg-card">
+			<div className="hidden md:block">
+				<table className="w-full text-left text-sm">
+					<tbody className="divide-y divide-border">
+						{Array.from({ length: 5 }, (_, i) => (
+							<tr key={`skeleton-${i}`}>
+								{Array.from({ length: 5 }, (_, j) => (
+									<td key={`skeleton-cell-${j}`} className="px-5 py-3">
+										<Skeleton className="h-4 rounded" />
+									</td>
+								))}
+							</tr>
+						))}
+					</tbody>
+				</table>
+			</div>
+			<div className="space-y-3 p-4 md:hidden">
+				{Array.from({ length: 3 }, (_, i) => (
+					<Skeleton key={`mobile-skeleton-${i}`} className="h-16 rounded-lg" />
+				))}
+			</div>
 		</div>
 	) : entries.length === 0 ? (
 		<div className="px-5 py-8 text-center text-muted-foreground text-sm">

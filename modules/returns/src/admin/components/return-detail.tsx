@@ -56,6 +56,15 @@ function formatPrice(cents: number, currency = "USD"): string {
 	}).format(cents / 100);
 }
 
+function Skeleton({ className = "" }: { className?: string }) {
+	return (
+		<div
+			className={`animate-pulse rounded bg-muted ${className}`}
+			aria-hidden="true"
+		/>
+	);
+}
+
 function useReturnsApi() {
 	const client = useModuleClient();
 	return {
@@ -120,8 +129,11 @@ export function ReturnDetail({ id }: { id: string }) {
 
 	if (loading || !ret) {
 		const content = (
-			<div className="flex items-center justify-center py-12">
-				<div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-foreground" />
+			<div className="space-y-4 p-1">
+				<Skeleton className="h-6 w-48" />
+				<Skeleton className="h-32 w-full rounded-lg" />
+				<Skeleton className="h-48 w-full rounded-lg" />
+				<Skeleton className="h-24 w-full rounded-lg" />
 			</div>
 		);
 		return <ReturnDetailTemplate content={content} />;

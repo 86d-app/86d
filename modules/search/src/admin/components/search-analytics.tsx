@@ -49,6 +49,15 @@ interface SearchSettings {
 	indexCount: number;
 }
 
+function Skeleton({ className = "" }: { className?: string }) {
+	return (
+		<div
+			className={`animate-pulse rounded bg-muted ${className}`}
+			aria-hidden="true"
+		/>
+	);
+}
+
 function useSearchAdminApi() {
 	const client = useModuleClient();
 	return {
@@ -185,11 +194,17 @@ export function SearchAnalytics() {
 
 	if (loading && !analytics) {
 		return (
-			<div className="py-16 text-center">
-				<div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-foreground" />
-				<p className="mt-4 text-muted-foreground text-sm">
-					Loading search analytics...
-				</p>
+			<div className="space-y-6">
+				<div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+					{Array.from({ length: 4 }, (_, i) => (
+						<Skeleton key={`stat-skeleton-${i}`} className="h-20 rounded-lg" />
+					))}
+				</div>
+				<Skeleton className="h-64 w-full rounded-lg" />
+				<div className="grid gap-6 sm:grid-cols-2">
+					<Skeleton className="h-48 rounded-lg" />
+					<Skeleton className="h-48 rounded-lg" />
+				</div>
 			</div>
 		);
 	}

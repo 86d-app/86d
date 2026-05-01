@@ -43,6 +43,15 @@ function extractError(err: unknown): string {
 	return "An error occurred";
 }
 
+function Skeleton({ className = "" }: { className?: string }) {
+	return (
+		<div
+			className={`animate-pulse rounded bg-muted ${className}`}
+			aria-hidden="true"
+		/>
+	);
+}
+
 function useStreamApi() {
 	const client = useModuleClient();
 	const api = client.module("photo-booth").admin;
@@ -113,9 +122,19 @@ export function PhotoStreamList() {
 	const selectedStream = streams.find((s) => s.id === selectedStreamId);
 
 	const streamListContent = streamsLoading ? (
-		<div className="py-16 text-center">
-			<div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-foreground" />
-			<p className="mt-4 text-muted-foreground text-sm">Loading streams...</p>
+		<div className="divide-y divide-border">
+			{Array.from({ length: 4 }, (_, i) => (
+				<div
+					key={`stream-skeleton-${i}`}
+					className="flex items-center justify-between px-5 py-3"
+				>
+					<div className="flex-1 space-y-1.5">
+						<Skeleton className="h-4 w-32 rounded" />
+						<Skeleton className="h-3 w-20 rounded" />
+					</div>
+					<Skeleton className="h-6 w-12 rounded-full" />
+				</div>
+			))}
 		</div>
 	) : streams.length === 0 ? (
 		<div className="px-5 py-8 text-center text-muted-foreground text-sm">
@@ -181,8 +200,13 @@ export function PhotoStreamList() {
 			</div>
 
 			{photosLoading ? (
-				<div className="py-8 text-center">
-					<div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-muted border-t-foreground" />
+				<div className="grid grid-cols-2 gap-3 p-3 sm:grid-cols-3">
+					{Array.from({ length: 6 }, (_, i) => (
+						<Skeleton
+							key={`photo-skeleton-${i}`}
+							className="aspect-square rounded-lg"
+						/>
+					))}
 				</div>
 			) : photos.length === 0 ? (
 				<div className="py-8 text-center text-muted-foreground text-sm">

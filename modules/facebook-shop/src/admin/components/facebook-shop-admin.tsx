@@ -459,11 +459,33 @@ export function FacebookShopAdmin() {
 					</div>
 
 					{listingsLoading ? (
-						<div className="py-16 text-center">
-							<div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-foreground" />
-							<p className="mt-4 text-muted-foreground text-sm">
-								Loading listings...
-							</p>
+						<div className="rounded-lg border border-border bg-card">
+							<div className="hidden md:block">
+								<table className="w-full text-left text-sm">
+									<tbody className="divide-y divide-border">
+										{Array.from({ length: 5 }, (_, i) => (
+											<tr key={`listing-skeleton-${i}`}>
+												{Array.from({ length: 4 }, (_, j) => (
+													<td
+														key={`listing-skeleton-cell-${j}`}
+														className="px-5 py-3"
+													>
+														<Skeleton className="h-4 rounded" />
+													</td>
+												))}
+											</tr>
+										))}
+									</tbody>
+								</table>
+							</div>
+							<div className="space-y-3 p-4 md:hidden">
+								{Array.from({ length: 3 }, (_, i) => (
+									<Skeleton
+										key={`listing-mobile-skeleton-${i}`}
+										className="h-16 rounded-lg"
+									/>
+								))}
+							</div>
 						</div>
 					) : listings.length === 0 ? (
 						<div className="rounded-lg border border-border bg-card px-5 py-12 text-center">
@@ -603,11 +625,33 @@ export function FacebookShopAdmin() {
 					</div>
 
 					{ordersLoading ? (
-						<div className="py-16 text-center">
-							<div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-foreground" />
-							<p className="mt-4 text-muted-foreground text-sm">
-								Loading orders...
-							</p>
+						<div className="rounded-lg border border-border bg-card">
+							<div className="hidden md:block">
+								<table className="w-full text-left text-sm">
+									<tbody className="divide-y divide-border">
+										{Array.from({ length: 5 }, (_, i) => (
+											<tr key={`order-skeleton-${i}`}>
+												{Array.from({ length: 5 }, (_, j) => (
+													<td
+														key={`order-skeleton-cell-${j}`}
+														className="px-5 py-3"
+													>
+														<Skeleton className="h-4 rounded" />
+													</td>
+												))}
+											</tr>
+										))}
+									</tbody>
+								</table>
+							</div>
+							<div className="space-y-3 p-4 md:hidden">
+								{Array.from({ length: 3 }, (_, i) => (
+									<Skeleton
+										key={`order-mobile-skeleton-${i}`}
+										className="h-16 rounded-lg"
+									/>
+								))}
+							</div>
 						</div>
 					) : orders.length === 0 ? (
 						<div className="rounded-lg border border-border bg-card px-5 py-12 text-center">
@@ -724,11 +768,13 @@ export function FacebookShopAdmin() {
 			{activeTab === "collections" && (
 				<div>
 					{collectionsLoading ? (
-						<div className="py-16 text-center">
-							<div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-foreground" />
-							<p className="mt-4 text-muted-foreground text-sm">
-								Loading collections...
-							</p>
+						<div className="space-y-3">
+							{Array.from({ length: 3 }, (_, i) => (
+								<Skeleton
+									key={`collection-skeleton-${i}`}
+									className="h-16 rounded-lg"
+								/>
+							))}
 						</div>
 					) : collections.length === 0 ? (
 						<div className="rounded-lg border border-border bg-card px-5 py-12 text-center">

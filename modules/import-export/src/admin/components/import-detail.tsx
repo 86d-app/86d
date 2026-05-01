@@ -47,6 +47,15 @@ function formatDate(iso: string): string {
 	}).format(new Date(iso));
 }
 
+function Skeleton({ className = "" }: { className?: string }) {
+	return (
+		<div
+			className={`animate-pulse rounded bg-muted ${className}`}
+			aria-hidden="true"
+		/>
+	);
+}
+
 function useImportExportApi() {
 	const client = useModuleClient();
 	return {
@@ -80,8 +89,10 @@ export function ImportDetail({
 
 	if (isLoading) {
 		return (
-			<div className="py-8 text-center">
-				<div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-muted border-t-foreground" />
+			<div className="space-y-4 p-1">
+				<Skeleton className="h-5 w-40" />
+				<Skeleton className="h-12 w-full rounded-lg" />
+				<Skeleton className="h-32 w-full rounded-lg" />
 			</div>
 		);
 	}

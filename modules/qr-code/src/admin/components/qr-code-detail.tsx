@@ -65,6 +65,15 @@ function extractError(error: Error | null, fallback: string): string {
 	return fallback;
 }
 
+function Skeleton({ className = "" }: { className?: string }) {
+	return (
+		<div
+			className={`animate-pulse rounded bg-muted ${className}`}
+			aria-hidden="true"
+		/>
+	);
+}
+
 function useQrCodeAdminApi() {
 	const client = useModuleClient();
 	return {
@@ -335,8 +344,14 @@ export function QrCodeDetail(props: {
 		return (
 			<QrCodeDetailTemplate
 				content={
-					<div className="py-12 text-center">
-						<div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-muted border-t-foreground" />
+					<div className="space-y-4 p-1">
+						<Skeleton className="h-6 w-48" />
+						<Skeleton className="h-48 w-full rounded-lg" />
+						<div className="grid gap-4 sm:grid-cols-2">
+							<Skeleton className="h-24 rounded-lg" />
+							<Skeleton className="h-24 rounded-lg" />
+						</div>
+						<Skeleton className="h-32 w-full rounded-lg" />
 					</div>
 				}
 			/>
@@ -494,8 +509,20 @@ export function QrCodeDetail(props: {
 				</div>
 
 				{scansLoading ? (
-					<div className="px-5 py-8 text-center">
-						<div className="mx-auto h-5 w-5 animate-spin rounded-full border-2 border-muted border-t-foreground" />
+					<div className="overflow-x-auto">
+						<table className="w-full text-sm">
+							<tbody className="divide-y divide-border">
+								{Array.from({ length: 5 }, (_, i) => (
+									<tr key={`scan-skeleton-${i}`}>
+										{Array.from({ length: 4 }, (_, j) => (
+											<td key={`scan-skeleton-cell-${j}`} className="px-5 py-3">
+												<Skeleton className="h-4 rounded" />
+											</td>
+										))}
+									</tr>
+								))}
+							</tbody>
+						</table>
 					</div>
 				) : scans.length === 0 ? (
 					<div className="px-5 py-8 text-center">
