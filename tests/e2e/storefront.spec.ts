@@ -1,4 +1,4 @@
-import { test, expect } from "./fixtures/test-fixtures";
+import { test, expect, ADMIN_EMAIL, ADMIN_PASSWORD } from "./fixtures/test-fixtures";
 
 test.describe("Storefront — Homepage", () => {
 	test("loads the homepage with hero section", async ({ storefront }) => {
@@ -349,5 +349,55 @@ test.describe("Storefront — Mobile", () => {
 			() => window.innerWidth,
 		);
 		expect(bodyWidth).toBeLessThanOrEqual(viewportWidth + 1);
+	});
+});
+
+test.describe("Storefront — Customer Account", () => {
+	test.beforeEach(async ({ storefront }) => {
+		/* Sign in using admin credentials (admin user has a customer account) */
+		await storefront.page.goto("/auth/signin");
+		await storefront.page.waitForLoadState("networkidle");
+		const form = storefront.page.locator("main form");
+		await form.locator('input[type="email"]').fill(ADMIN_EMAIL);
+		await form.locator('input[type="password"]').fill(ADMIN_PASSWORD);
+		await form.locator('button[type="submit"]').click();
+		await storefront.page.waitForURL(
+			(url) => !url.pathname.startsWith("/auth"),
+			{ timeout: 15_000 },
+		);
+	});
+
+	const accountPaths = [
+		{ name: "Account overview", path: "/account" },
+		{ name: "Order history", path: "/account/orders" },
+		{ name: "Profile", path: "/account/profile" },
+		{ name: "Addresses", path: "/account/addresses" },
+		{ name: "Wishlist", path: "/account/wishlist" },
+		{ name: "Subscriptions", path: "/account/subscriptions" },
+		{ name: "Downloads", path: "/account/downloads" },
+		{ name: "Loyalty", path: "/account/loyalty" },
+		{ name: "Returns", path: "/account/returns" },
+		{ name: "Reviews", path: "/account/reviews" },
+	];
+
+	for (const { name, path } of accountPaths) {
+		test(`${name} page loads without errors`, async ({ storefront }) => {
+			await storefront.page.goto(path);
+			await storefront.page.waitForLoadState("networkidle");
+			const heading = storefront.page.locator("h1, h2").first();
+			await expect(heading).toBeVisible({ timeout: 10_000 });
+		});
+	}
+
+	test("unauthenticated account access redirects to sign-in", async ({
+		page,
+	}) => {
+		/* Sign out first */
+		await page.goto("/signout");
+		await page.waitForLoadState("networkidle");
+		/* Try to access account — should redirect to sign-in */
+		await page.goto("/account");
+		await page.waitForURL(/\/auth\/signin/, { timeout: 10_000 });
+		expect(page.url()).toContain("/auth/signin");
 	});
 });
