@@ -242,4 +242,22 @@ test.describe("Admin — Authenticated Visual", () => {
 			SCREENSHOT_OPTS,
 		);
 	});
+
+	test("admin announcements list", async ({ admin }) => {
+		await admin.page.goto("/admin/announcements");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-announcements-list.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin announcements new form", async ({ admin }) => {
+		await admin.page.goto("/admin/announcements/new");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-announcements-new.png",
+			SCREENSHOT_OPTS,
+		);
+	});
 });
