@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { useAnnouncementsApi } from "./_hooks";
 
 interface AnnouncementData {
@@ -19,6 +20,7 @@ export function AnnouncementBanner({
 	audience?: "all" | "authenticated" | "guest";
 }) {
 	const api = useAnnouncementsApi();
+	const recordedRef = useRef<Set<string>>(new Set());
 
 	const { data, isLoading } = api.getActive.useQuery({
 		query: { audience },
@@ -34,9 +36,15 @@ export function AnnouncementBanner({
 		(a) => a.type === "banner",
 	);
 
-	if (isLoading || banners.length === 0) return null;
+	const banner = banners[0] ?? null;
 
-	const banner = banners[0];
+	useEffect(() => {
+		if (!banner || recordedRef.current.has(banner.id)) return;
+		recordedRef.current.add(banner.id);
+		impressionMutation.mutate({ params: { id: banner.id } });
+	}, [banner, impressionMutation]);
+
+	if (isLoading || !banner) return null;
 
 	const hasCustomBg = Boolean(banner.backgroundColor);
 	const wrapperStyle = hasCustomBg
@@ -48,7 +56,6 @@ export function AnnouncementBanner({
 
 	const handleClick = () => {
 		clickMutation.mutate({ params: { id: banner.id } });
-		impressionMutation.mutate({ params: { id: banner.id } });
 	};
 
 	return (
