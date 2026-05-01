@@ -1,50 +1,5 @@
-# Wrapping Option Details
+# Wrap Option Detail
 
-<div className="space-y-4">
-  {props.loading ? (
-    <div className="py-12 text-center text-muted-foreground">Loading option…</div>
-  ) : !props.option ? (
-    <div className="py-12 text-center text-muted-foreground">Option not found.</div>
-  ) : (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">{props.option.name}</h2>
-          {props.option.description && (
-            <p className="mt-1 text-muted-foreground">{props.option.description}</p>
-          )}
-        </div>
-        <span className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${props.option.active ? "text-green-700 bg-green-50 border-green-200" : "text-gray-700 bg-gray-50 border-gray-200"}`}>
-          {props.option.active ? "Active" : "Inactive"}
-        </span>
-      </div>
+View and edit a gift wrapping option.
 
-      {props.option.imageUrl && (
-        <div className="overflow-hidden rounded-lg border">
-          <img src={props.option.imageUrl} alt={props.option.name} className="h-48 w-full object-cover" />
-        </div>
-      )}
-
-      <div className="grid grid-cols-3 gap-4">
-        <div className="rounded-lg border p-4">
-          <div className="text-sm text-muted-foreground">Price</div>
-          <div className="text-xl font-bold">
-            {props.option.priceInCents === 0
-              ? "Free"
-              : `$${(props.option.priceInCents / 100).toFixed(2)}`}
-          </div>
-        </div>
-        <div className="rounded-lg border p-4">
-          <div className="text-sm text-muted-foreground">Sort Order</div>
-          <div className="text-xl font-bold">{props.option.sortOrder}</div>
-        </div>
-        <div className="rounded-lg border p-4">
-          <div className="text-sm text-muted-foreground">Created</div>
-          <div className="text-xl font-bold">
-            {new Date(props.option.createdAt).toLocaleDateString()}
-          </div>
-        </div>
-      </div>
-    </div>
-  )}
-</div>
+<props.children />
