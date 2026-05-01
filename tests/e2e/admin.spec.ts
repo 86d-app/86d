@@ -222,6 +222,8 @@ test.describe("Store Admin — Named Module Smoke", () => {
 	});
 
 	const moduleRoutes = [
+		{ heading: /Announcements/i, path: "/admin/announcements" },
+		{ heading: /New Announcement/i, path: "/admin/announcements/new" },
 		{ heading: /Bulk Pricing/i, path: "/admin/bulk-pricing" },
 		{ heading: /Wish/i, path: "/admin/wish" },
 		{ heading: /Kiosk Overview/i, path: "/admin/kiosk" },
