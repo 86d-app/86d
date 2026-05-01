@@ -3,6 +3,15 @@
 import { useModuleClient } from "@86d-app/core/client";
 import KioskAdminTemplate from "./kiosk-admin.mdx";
 
+function Skeleton({ className = "" }: { className?: string }) {
+	return (
+		<div
+			className={`animate-pulse rounded bg-muted ${className}`}
+			aria-hidden="true"
+		/>
+	);
+}
+
 function useKioskAdminApi() {
 	const client = useModuleClient();
 	return {
@@ -32,7 +41,17 @@ export function KioskAdmin() {
 	return (
 		<KioskAdminTemplate>
 			{loading ? (
-				<p className="text-muted-foreground text-sm">Loading stats...</p>
+				<div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+					{Array.from({ length: 4 }, (_, i) => (
+						<div
+							key={`sk-${i}`}
+							className="rounded-md border border-border p-4"
+						>
+							<Skeleton className="mb-2 h-3 w-14" />
+							<Skeleton className="h-7 w-20" />
+						</div>
+					))}
+				</div>
 			) : !stats ? (
 				<p className="text-muted-foreground text-sm">No data available.</p>
 			) : (

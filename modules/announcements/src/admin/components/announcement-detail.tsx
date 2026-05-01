@@ -14,6 +14,15 @@ function useAnnouncementsAdminApi() {
 	};
 }
 
+function Skeleton({ className = "" }: { className?: string }) {
+	return (
+		<div
+			className={`animate-pulse rounded bg-muted ${className}`}
+			aria-hidden="true"
+		/>
+	);
+}
+
 function extractError(err: unknown): string {
 	if (err && typeof err === "object" && "body" in err) {
 		const body = (err as { body: { message?: string } }).body;
@@ -78,7 +87,20 @@ export function AnnouncementDetail({ id }: { id: string }) {
 		}
 	}
 
-	if (announcementQuery.isLoading) return <p>Loading...</p>;
+	if (announcementQuery.isLoading)
+		return (
+			<div>
+				<Skeleton className="mb-4 h-7 w-1/2" />
+				<div className="space-y-3">
+					{Array.from({ length: 8 }, (_, i) => (
+						<div key={`sk-${i}`} className="flex gap-4">
+							<Skeleton className="h-4 w-24" />
+							<Skeleton className="h-4 w-40" />
+						</div>
+					))}
+				</div>
+			</div>
+		);
 	if (!announcement) return <p>Announcement not found</p>;
 
 	return (

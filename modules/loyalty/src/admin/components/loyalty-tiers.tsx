@@ -14,6 +14,15 @@ interface LoyaltyTier {
 	sortOrder: number;
 }
 
+function Skeleton({ className = "" }: { className?: string }) {
+	return (
+		<div
+			className={`animate-pulse rounded bg-muted ${className}`}
+			aria-hidden="true"
+		/>
+	);
+}
+
 function extractError(error: Error | null, fallback: string): string {
 	if (!error) return fallback;
 	const body = (
@@ -172,11 +181,17 @@ export function LoyaltyTiers() {
 
 	const tierRows =
 		loading && tiers.length === 0 ? (
-			<tr>
-				<td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
-					Loading...
-				</td>
-			</tr>
+			<>
+				{Array.from({ length: 5 }, (_, i) => (
+					<tr key={`sk-${i}`}>
+						{Array.from({ length: 5 }, (_, j) => (
+							<td key={`sk-cell-${j}`} className="px-4 py-3">
+								<Skeleton className="h-4" />
+							</td>
+						))}
+					</tr>
+				))}
+			</>
 		) : queryError ? (
 			<tr>
 				<td colSpan={5} className="px-4 py-8 text-center text-destructive">

@@ -15,6 +15,15 @@ function useAnnouncementsAdminApi() {
 	};
 }
 
+function Skeleton({ className = "" }: { className?: string }) {
+	return (
+		<div
+			className={`animate-pulse rounded bg-muted ${className}`}
+			aria-hidden="true"
+		/>
+	);
+}
+
 function extractError(err: unknown): string {
 	if (err && typeof err === "object" && "body" in err) {
 		const body = (err as { body: { message?: string } }).body;
@@ -97,8 +106,6 @@ export function AnnouncementList() {
 				</label>
 			</div>
 
-			{listQuery.isLoading && <p>Loading...</p>}
-
 			<table>
 				<thead>
 					<tr>
@@ -113,25 +120,35 @@ export function AnnouncementList() {
 					</tr>
 				</thead>
 				<tbody>
-					{announcements.map((a) => (
-						<tr key={a.id}>
-							<td>
-								<a href={`/admin/announcements/${a.id}`}>{a.title}</a>
-							</td>
-							<td>{a.type}</td>
-							<td>{a.position}</td>
-							<td>{a.targetAudience}</td>
-							<td>{a.isActive ? "Active" : "Inactive"}</td>
-							<td>{a.priority}</td>
-							<td>{a.impressions}</td>
-							<td>
-								<a href={`/admin/announcements/${a.id}/edit`}>Edit</a>
-								<button type="button" onClick={() => handleDelete(a.id)}>
-									Delete
-								</button>
-							</td>
-						</tr>
-					))}
+					{listQuery.isLoading
+						? Array.from({ length: 5 }, (_, i) => (
+								<tr key={`sk-${i}`}>
+									{Array.from({ length: 8 }, (_, j) => (
+										<td key={`sk-cell-${j}`} className="px-4 py-3">
+											<Skeleton className="h-4" />
+										</td>
+									))}
+								</tr>
+							))
+						: announcements.map((a) => (
+								<tr key={a.id}>
+									<td>
+										<a href={`/admin/announcements/${a.id}`}>{a.title}</a>
+									</td>
+									<td>{a.type}</td>
+									<td>{a.position}</td>
+									<td>{a.targetAudience}</td>
+									<td>{a.isActive ? "Active" : "Inactive"}</td>
+									<td>{a.priority}</td>
+									<td>{a.impressions}</td>
+									<td>
+										<a href={`/admin/announcements/${a.id}/edit`}>Edit</a>
+										<button type="button" onClick={() => handleDelete(a.id)}>
+											Delete
+										</button>
+									</td>
+								</tr>
+							))}
 				</tbody>
 			</table>
 

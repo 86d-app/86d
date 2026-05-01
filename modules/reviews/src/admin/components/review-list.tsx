@@ -31,6 +31,15 @@ const STATUS_FILTERS: { label: string; value: StatusFilter }[] = [
 
 const PAGE_SIZE = 20;
 
+function Skeleton({ className = "" }: { className?: string }) {
+	return (
+		<div
+			className={`animate-pulse rounded bg-muted ${className}`}
+			aria-hidden="true"
+		/>
+	);
+}
+
 function formatDate(iso: string): string {
 	return new Intl.DateTimeFormat("en-US", {
 		month: "short",
@@ -186,11 +195,17 @@ export function ReviewList() {
 
 	const tableBody =
 		loading && reviews.length === 0 ? (
-			<tr>
-				<td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
-					Loading...
-				</td>
-			</tr>
+			<>
+				{Array.from({ length: 5 }, (_, i) => (
+					<tr key={`sk-${i}`}>
+						{Array.from({ length: 7 }, (_, j) => (
+							<td key={`sk-cell-${j}`} className="px-4 py-3">
+								<Skeleton className="h-4" />
+							</td>
+						))}
+					</tr>
+				))}
+			</>
 		) : reviews.length === 0 ? (
 			<tr>
 				<td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">

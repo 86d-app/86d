@@ -79,6 +79,15 @@ const ACTION_STYLES: Record<string, string> = {
 	custom: "bg-gray-50 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
 };
 
+function Skeleton({ className = "" }: { className?: string }) {
+	return (
+		<div
+			className={`animate-pulse rounded bg-muted ${className}`}
+			aria-hidden="true"
+		/>
+	);
+}
+
 function ActionBadge({ action }: { action: string }) {
 	const style =
 		ACTION_STYLES[action] ??
@@ -160,11 +169,17 @@ export function AuditLogList() {
 
 	const tableBody =
 		loading && entries.length === 0 ? (
-			<tr>
-				<td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-					Loading...
-				</td>
-			</tr>
+			<>
+				{Array.from({ length: 5 }, (_, i) => (
+					<tr key={`sk-${i}`}>
+						{Array.from({ length: 6 }, (_, j) => (
+							<td key={`sk-cell-${j}`} className="px-4 py-3">
+								<Skeleton className="h-4" />
+							</td>
+						))}
+					</tr>
+				))}
+			</>
 		) : entries.length === 0 ? (
 			<tr>
 				<td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">

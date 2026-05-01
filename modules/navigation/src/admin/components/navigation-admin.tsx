@@ -41,6 +41,15 @@ const LOCATION_LABELS: Record<string, string> = {
 	custom: "Custom",
 };
 
+function Skeleton({ className = "" }: { className?: string }) {
+	return (
+		<div
+			className={`animate-pulse rounded bg-muted ${className}`}
+			aria-hidden="true"
+		/>
+	);
+}
+
 function useNavigationAdminApi() {
 	const client = useModuleClient();
 	return {
@@ -328,8 +337,12 @@ function MenuDetail({
 
 	if (!menu) {
 		return (
-			<div className="py-12 text-center text-muted-foreground text-sm">
-				Loading...
+			<div className="divide-y divide-border">
+				{Array.from({ length: 6 }, (_, i) => (
+					<div key={`sk-${i}`} className="px-4 py-2.5">
+						<Skeleton className="h-4 w-1/3" />
+					</div>
+				))}
 			</div>
 		);
 	}

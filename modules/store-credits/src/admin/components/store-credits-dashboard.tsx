@@ -34,6 +34,15 @@ const STATUS_FILTERS: { label: string; value: StatusFilter }[] = [
 
 const PAGE_SIZE = 25;
 
+function Skeleton({ className = "" }: { className?: string }) {
+	return (
+		<div
+			className={`animate-pulse rounded bg-muted ${className}`}
+			aria-hidden="true"
+		/>
+	);
+}
+
 function formatCurrency(amount: number, currency: string): string {
 	return new Intl.NumberFormat("en-US", {
 		style: "currency",
@@ -107,7 +116,8 @@ export function StoreCreditsDashboard() {
 		<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 			{[1, 2, 3, 4].map((i) => (
 				<div key={i} className="rounded-lg border border-border bg-card p-4">
-					<p className="text-muted-foreground text-sm">Loading...</p>
+					<Skeleton className="mb-2 h-3 w-2/3" />
+					<Skeleton className="h-7 w-1/2" />
 				</div>
 			))}
 		</div>
@@ -150,11 +160,17 @@ export function StoreCreditsDashboard() {
 
 	const tableBody =
 		accountsLoading && accounts.length === 0 ? (
-			<tr>
-				<td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-					Loading...
-				</td>
-			</tr>
+			<>
+				{Array.from({ length: 5 }, (_, i) => (
+					<tr key={`sk-${i}`}>
+						{Array.from({ length: 6 }, (_, j) => (
+							<td key={`sk-cell-${j}`} className="px-4 py-3">
+								<Skeleton className="h-4" />
+							</td>
+						))}
+					</tr>
+				))}
+			</>
 		) : accounts.length === 0 ? (
 			<tr>
 				<td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">

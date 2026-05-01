@@ -32,6 +32,15 @@ const STATUS_STYLES: Record<string, string> = {
 	draft: "bg-gray-50 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
 };
 
+function Skeleton({ className = "" }: { className?: string }) {
+	return (
+		<div
+			className={`animate-pulse rounded bg-muted ${className}`}
+			aria-hidden="true"
+		/>
+	);
+}
+
 function StatusBadge({ status }: { status: string }) {
 	const style =
 		STATUS_STYLES[status] ??
@@ -96,11 +105,17 @@ export function AutomationList() {
 
 	const tableBody =
 		loading && automations.length === 0 ? (
-			<tr>
-				<td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-					Loading...
-				</td>
-			</tr>
+			<>
+				{Array.from({ length: 5 }, (_, i) => (
+					<tr key={`sk-${i}`}>
+						{Array.from({ length: 6 }, (_, j) => (
+							<td key={`sk-cell-${j}`} className="px-4 py-3">
+								<Skeleton className="h-4" />
+							</td>
+						))}
+					</tr>
+				))}
+			</>
 		) : automations.length === 0 ? (
 			<tr>
 				<td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">

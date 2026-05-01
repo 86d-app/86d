@@ -27,6 +27,15 @@ interface Redirect {
 	updatedAt: string;
 }
 
+function Skeleton({ className = "" }: { className?: string }) {
+	return (
+		<div
+			className={`animate-pulse rounded bg-muted ${className}`}
+			aria-hidden="true"
+		/>
+	);
+}
+
 function useSeoAdminApi() {
 	const client = useModuleClient();
 	return {
@@ -491,9 +500,17 @@ function MetaTagsTab() {
 			</div>
 
 			{isLoading ? (
-				<p className="py-8 text-center text-muted-foreground text-sm">
-					Loading...
-				</p>
+				<div className="overflow-hidden rounded-lg border border-border bg-card">
+					<div className="divide-y divide-border">
+						{Array.from({ length: 5 }, (_, i) => (
+							<div key={`sk-${i}`} className="flex gap-4 px-4 py-3">
+								<Skeleton className="h-4 w-1/4" />
+								<Skeleton className="h-4 w-1/3" />
+								<Skeleton className="h-4 w-1/5" />
+							</div>
+						))}
+					</div>
+				</div>
 			) : metaTags.length === 0 ? (
 				<p className="py-8 text-center text-muted-foreground text-sm">
 					No meta tags configured yet.
@@ -655,9 +672,17 @@ function RedirectsTab() {
 			</div>
 
 			{isLoading ? (
-				<p className="py-8 text-center text-muted-foreground text-sm">
-					Loading...
-				</p>
+				<div className="overflow-hidden rounded-lg border border-border bg-card">
+					<div className="divide-y divide-border">
+						{Array.from({ length: 5 }, (_, i) => (
+							<div key={`sk-${i}`} className="flex gap-4 px-4 py-3">
+								<Skeleton className="h-4 w-1/4" />
+								<Skeleton className="h-4 w-1/3" />
+								<Skeleton className="h-4 w-1/5" />
+							</div>
+						))}
+					</div>
+				</div>
 			) : redirects.length === 0 ? (
 				<p className="py-8 text-center text-muted-foreground text-sm">
 					No redirects configured yet.

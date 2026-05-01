@@ -51,6 +51,15 @@ function useLoyaltyApi() {
 	};
 }
 
+function Skeleton({ className = "" }: { className?: string }) {
+	return (
+		<div
+			className={`animate-pulse rounded bg-muted ${className}`}
+			aria-hidden="true"
+		/>
+	);
+}
+
 function StatCard({ label, value }: { label: string; value: string | number }) {
 	return (
 		<div className="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
@@ -168,7 +177,17 @@ function CustomerLoyaltyModal({
 				</div>
 
 				{loading ? (
-					<p className="text-neutral-500">Loading...</p>
+					<div className="mb-4 grid grid-cols-3 gap-3">
+						{Array.from({ length: 3 }, (_, i) => (
+							<div
+								key={`sk-${i}`}
+								className="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900"
+							>
+								<Skeleton className="mb-2 h-3 w-16" />
+								<Skeleton className="h-6 w-12" />
+							</div>
+						))}
+					</div>
 				) : (
 					<>
 						<div className="mb-4 grid grid-cols-3 gap-3">
