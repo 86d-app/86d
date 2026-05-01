@@ -1,128 +1,23 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
+import { useState } from "react";
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 
 interface BulkPriceRule {
 	id: string;
-	productId: string;
-	minQuantity: number;
-	maxQuantity?: number;
-	discountType: "percentage" | "fixed";
-	discountValue: number;
-	isActive: boolean;
-	createdAt: string;
-}
-
-function useBulkPricingApi() {
-	const client = useModuleClient();
-	return {
-		list: client.module("bulk-pricing").admin["/admin/bulk-pricing/rules"],
-	};
-}
-
-export function BulkPricingList() {
-	const api = useBulkPricingApi();
-	const { data, isLoading } = api.list.useQuery({}) as {
-		data: { rules?: BulkPriceRule[] } | undefined;
-		isLoading: boolean;
-	};
-
-	const rules = data?.rules ?? [];
-
-	return (
-		<div>
-			<div className="mb-6 flex items-center justify-between">
-				<div>
-					<h1 className="font-bold text-2xl text-foreground">Bulk Pricing</h1>
-					<p className="mt-1 text-muted-foreground text-sm">
-						Configure volume-based pricing tiers for products
-					</p>
-				</div>
-			</div>
-
-			{isLoading ? (
-				<div className="space-y-3">
-					{Array.from({ length: 3 }).map((_, i) => (
-						<div
-							key={`skel-${i}`}
-							className="h-16 animate-pulse rounded-lg border border-border bg-muted/30"
-						/>
-					))}
-				</div>
-			) : rules.length === 0 ? (
-				<div className="rounded-lg border border-border bg-card p-8 text-center">
-					<p className="text-muted-foreground text-sm">
-						No bulk pricing rules configured. Create rules to offer volume
-						discounts on products.
-					</p>
-				</div>
-			) : (
-				<div className="rounded-lg border border-border bg-card">
-					<table className="w-full">
-						<thead>
-							<tr className="border-border border-b text-left">
-								<th className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">
-									Product
-								</th>
-								<th className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">
-									Quantity Range
-								</th>
-								<th className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">
-									Discount
-								</th>
-								<th className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">
-									Status
-								</th>
-							</tr>
-						</thead>
-						<tbody className="divide-y divide-border">
-							{rules.map((rule) => (
-								<tr key={rule.id} className="hover:bg-muted/50">
-									<td className="px-4 py-3 font-medium text-foreground text-sm">
-										{rule.productId.slice(0, 8)}...
-									</td>
-									<td className="px-4 py-3 text-muted-foreground text-sm">
-										{rule.minQuantity}
-										{rule.maxQuantity ? ` - ${rule.maxQuantity}` : "+"}
-									</td>
-									<td className="px-4 py-3 text-muted-foreground text-sm">
-										{rule.discountType === "percentage"
-											? `${rule.discountValue}%`
-											: `$${(rule.discountValue / 100).toFixed(2)}`}
-									</td>
-									<td className="px-4 py-3">
-										<span
-											className={`inline-flex items-center rounded-full px-2 py-0.5 font-medium text-xs ${
-												rule.isActive
-													? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-													: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-											}`}
-										>
-											{rule.isActive ? "Active" : "Inactive"}
-										</span>
-									</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
-				</div>
-			)}
-		</div>
-	);
-}
-
-interface PricingRuleDetail {
-	id: string;
 	name?: string;
 	description?: string;
-	scope?: string;
+	scope?: "product" | "variant" | "collection" | "global";
 	targetId?: string;
 	priority?: number;
 	active: boolean;
 	startsAt?: string;
 	endsAt?: string;
 	createdAt: string;
-	updatedAt?: string;
 }
 
 interface PricingTier {
@@ -135,43 +30,751 @@ interface PricingTier {
 	label?: string;
 }
 
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+const inputCls =
+	"w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-1 disabled:opacity-50";
+const labelCls = "mb-1 block font-medium text-foreground text-sm";
+const SKELETON_IDS = ["a", "b", "c"] as const;
+
+function formatDiscount(tier: PricingTier): string {
+	switch (tier.discountType) {
+		case "percentage":
+			return `${tier.discountValue}% off`;
+		case "fixed_amount":
+			return `$${(tier.discountValue / 100).toFixed(2)} off/unit`;
+		case "fixed_price":
+			return `$${(tier.discountValue / 100).toFixed(2)}/unit`;
+		default:
+			return String(tier.discountValue);
+	}
+}
+
+function extractError(err: unknown): string {
+	if (err && typeof err === "object" && "message" in err) {
+		return String((err as { message: string }).message);
+	}
+	return "An unexpected error occurred";
+}
+
+// ---------------------------------------------------------------------------
+// API hooks
+// ---------------------------------------------------------------------------
+
+function useBulkPricingApi() {
+	const client = useModuleClient();
+	return {
+		list: client.module("bulk-pricing").admin["/admin/bulk-pricing/rules"],
+		createRule:
+			client.module("bulk-pricing").admin["/admin/bulk-pricing/rules/create"],
+		updateRule:
+			client.module("bulk-pricing").admin[
+				"/admin/bulk-pricing/rules/:id/update"
+			],
+		deleteRule:
+			client.module("bulk-pricing").admin[
+				"/admin/bulk-pricing/rules/:id/delete"
+			],
+	};
+}
+
+function useBulkPricingDetailApi(ruleId: string) {
+	const client = useModuleClient();
+	return {
+		rule: client.module("bulk-pricing").admin["/admin/bulk-pricing/rules/:id"],
+		updateRule:
+			client.module("bulk-pricing").admin[
+				"/admin/bulk-pricing/rules/:id/update"
+			],
+		preview:
+			client.module("bulk-pricing").admin[
+				"/admin/bulk-pricing/rules/:id/preview"
+			],
+		listTiers: client.module("bulk-pricing").admin["/admin/bulk-pricing/tiers"],
+		createTier:
+			client.module("bulk-pricing").admin["/admin/bulk-pricing/tiers/create"],
+		updateTier:
+			client.module("bulk-pricing").admin[
+				"/admin/bulk-pricing/tiers/:id/update"
+			],
+		deleteTier:
+			client.module("bulk-pricing").admin[
+				"/admin/bulk-pricing/tiers/:id/delete"
+			],
+		ruleId,
+	};
+}
+
+// ---------------------------------------------------------------------------
+// RuleSheet — create / edit a bulk pricing rule
+// ---------------------------------------------------------------------------
+
+interface RuleSheetProps {
+	rule?: BulkPriceRule;
+	onSaved: () => void;
+	onCancel: () => void;
+}
+
+function RuleSheet({ rule, onSaved, onCancel }: RuleSheetProps) {
+	const api = useBulkPricingApi();
+	const isEditing = !!rule;
+
+	const [name, setName] = useState(rule?.name ?? "");
+	const [description, setDescription] = useState(rule?.description ?? "");
+	const [scope, setScope] = useState<
+		"product" | "variant" | "collection" | "global"
+	>(rule?.scope ?? "product");
+	const [targetId, setTargetId] = useState(rule?.targetId ?? "");
+	const [priority, setPriority] = useState(String(rule?.priority ?? 0));
+	const [active, setActive] = useState(rule?.active ?? true);
+	const [error, setError] = useState("");
+
+	const createMutation = api.createRule.useMutation({
+		onSuccess: () => {
+			void api.list.invalidate();
+			onSaved();
+		},
+		onError: (err: Error) => setError(extractError(err)),
+	});
+
+	const updateMutation = api.updateRule.useMutation({
+		onSuccess: () => {
+			void api.list.invalidate();
+			onSaved();
+		},
+		onError: (err: Error) => setError(extractError(err)),
+	});
+
+	const isPending = createMutation.isPending || updateMutation.isPending;
+
+	function handleSubmit(e: React.FormEvent) {
+		e.preventDefault();
+		setError("");
+
+		const body = {
+			name: name.trim() || undefined,
+			description: description.trim() || undefined,
+			scope,
+			targetId: targetId.trim() || undefined,
+			priority: Number.parseInt(priority, 10) || undefined,
+			active,
+		};
+
+		if (isEditing) {
+			updateMutation.mutate({ params: { id: rule.id }, body });
+		} else {
+			createMutation.mutate({ body: { ...body, scope } });
+		}
+	}
+
+	return (
+		<div className="fixed inset-0 z-50 flex justify-end">
+			<button
+				type="button"
+				className="absolute inset-0 cursor-default bg-black/40"
+				aria-label="Close panel"
+				onClick={onCancel}
+			/>
+			<div className="relative flex h-full w-full max-w-md flex-col overflow-y-auto border-border border-l bg-background shadow-2xl">
+				<div className="flex shrink-0 items-center justify-between border-border border-b px-6 py-4">
+					<h2 className="font-semibold text-foreground text-lg">
+						{isEditing ? "Edit Rule" : "New Pricing Rule"}
+					</h2>
+					<button
+						type="button"
+						onClick={onCancel}
+						className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+					>
+						✕
+					</button>
+				</div>
+				<form
+					onSubmit={handleSubmit}
+					className="flex flex-1 flex-col gap-5 px-6 py-6"
+				>
+					{error ? (
+						<div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-destructive text-sm">
+							{error}
+						</div>
+					) : null}
+					<div className="space-y-4">
+						<div>
+							<label htmlFor="bp-name" className={labelCls}>
+								Name
+							</label>
+							<input
+								id="bp-name"
+								className={inputCls}
+								value={name}
+								onChange={(e) => setName(e.target.value)}
+								placeholder="Volume Discount"
+							/>
+						</div>
+						<div>
+							<label htmlFor="bp-desc" className={labelCls}>
+								Description
+							</label>
+							<input
+								id="bp-desc"
+								className={inputCls}
+								value={description}
+								onChange={(e) => setDescription(e.target.value)}
+								placeholder="Optional description"
+							/>
+						</div>
+						<div>
+							<label htmlFor="bp-scope" className={labelCls}>
+								Scope
+							</label>
+							<select
+								id="bp-scope"
+								className={inputCls}
+								value={scope}
+								onChange={(e) =>
+									setScope(
+										e.target.value as
+											| "product"
+											| "variant"
+											| "collection"
+											| "global",
+									)
+								}
+							>
+								<option value="product">Product</option>
+								<option value="variant">Variant</option>
+								<option value="collection">Collection</option>
+								<option value="global">Global</option>
+							</select>
+						</div>
+						{scope !== "global" ? (
+							<div>
+								<label htmlFor="bp-target" className={labelCls}>
+									Target ID
+								</label>
+								<input
+									id="bp-target"
+									className={inputCls}
+									value={targetId}
+									onChange={(e) => setTargetId(e.target.value)}
+									placeholder="Product / variant / collection ID"
+								/>
+							</div>
+						) : null}
+						<div>
+							<label htmlFor="bp-priority" className={labelCls}>
+								Priority
+							</label>
+							<input
+								id="bp-priority"
+								type="number"
+								min="0"
+								className={inputCls}
+								value={priority}
+								onChange={(e) => setPriority(e.target.value)}
+							/>
+						</div>
+						<label className="flex cursor-pointer items-center gap-3">
+							<input
+								type="checkbox"
+								checked={active}
+								onChange={(e) => setActive(e.target.checked)}
+								className="h-4 w-4 rounded border-border accent-foreground"
+							/>
+							<span className="text-foreground text-sm">Active</span>
+						</label>
+					</div>
+					<div className="mt-auto flex justify-end gap-2 border-border border-t pt-4">
+						<button
+							type="button"
+							onClick={onCancel}
+							className="rounded-lg border border-border px-4 py-2 text-foreground text-sm hover:bg-muted"
+						>
+							Cancel
+						</button>
+						<button
+							type="submit"
+							disabled={isPending}
+							className="rounded-lg bg-foreground px-4 py-2 font-medium text-background text-sm hover:opacity-90 disabled:opacity-50"
+						>
+							{isPending
+								? isEditing
+									? "Saving..."
+									: "Creating..."
+								: isEditing
+									? "Save Changes"
+									: "Create Rule"}
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	);
+}
+
+// ---------------------------------------------------------------------------
+// TierSheet — create / edit a pricing tier
+// ---------------------------------------------------------------------------
+
+interface TierSheetProps {
+	ruleId: string;
+	tier?: PricingTier;
+	onSaved: () => void;
+	onCancel: () => void;
+	api: ReturnType<typeof useBulkPricingDetailApi>;
+}
+
+function TierSheet({ ruleId, tier, onSaved, onCancel, api }: TierSheetProps) {
+	const isEditing = !!tier;
+	const [minQty, setMinQty] = useState(String(tier?.minQuantity ?? 2));
+	const [maxQty, setMaxQty] = useState(
+		tier?.maxQuantity ? String(tier.maxQuantity) : "",
+	);
+	const [discountType, setDiscountType] = useState<
+		"percentage" | "fixed_amount" | "fixed_price"
+	>(tier?.discountType ?? "percentage");
+	const [discountValue, setDiscountValue] = useState(
+		tier
+			? String(
+					discountType === "percentage"
+						? tier.discountValue
+						: (tier.discountValue / 100).toFixed(2),
+				)
+			: "",
+	);
+	const [label, setLabel] = useState(tier?.label ?? "");
+	const [error, setError] = useState("");
+
+	const createMutation = api.createTier.useMutation({
+		onSuccess: () => {
+			void api.preview.invalidate();
+			void api.listTiers.invalidate();
+			onSaved();
+		},
+		onError: (err: Error) => setError(extractError(err)),
+	});
+
+	const updateMutation = api.updateTier.useMutation({
+		onSuccess: () => {
+			void api.preview.invalidate();
+			void api.listTiers.invalidate();
+			onSaved();
+		},
+		onError: (err: Error) => setError(extractError(err)),
+	});
+
+	const isPending = createMutation.isPending || updateMutation.isPending;
+
+	function handleSubmit(e: React.FormEvent) {
+		e.preventDefault();
+		setError("");
+
+		const min = Number.parseInt(minQty, 10);
+		if (Number.isNaN(min) || min < 1) {
+			setError("Min quantity must be at least 1.");
+			return;
+		}
+
+		const rawValue = Number.parseFloat(discountValue);
+		if (Number.isNaN(rawValue) || rawValue < 0) {
+			setError("Enter a valid discount value.");
+			return;
+		}
+
+		const finalValue =
+			discountType === "percentage" ? rawValue : Math.round(rawValue * 100);
+
+		if (isEditing) {
+			updateMutation.mutate({
+				params: { id: tier.id },
+				body: {
+					minQuantity: min,
+					maxQuantity: maxQty.trim() ? Number.parseInt(maxQty, 10) : undefined,
+					discountType,
+					discountValue: finalValue,
+					label: label.trim() || undefined,
+				},
+			});
+		} else {
+			createMutation.mutate({
+				body: {
+					ruleId,
+					minQuantity: min,
+					maxQuantity: maxQty.trim() ? Number.parseInt(maxQty, 10) : undefined,
+					discountType,
+					discountValue: finalValue,
+					label: label.trim() || undefined,
+				},
+			});
+		}
+	}
+
+	return (
+		<div className="fixed inset-0 z-50 flex justify-end">
+			<button
+				type="button"
+				className="absolute inset-0 cursor-default bg-black/40"
+				aria-label="Close panel"
+				onClick={onCancel}
+			/>
+			<div className="relative flex h-full w-full max-w-sm flex-col overflow-y-auto border-border border-l bg-background shadow-2xl">
+				<div className="flex shrink-0 items-center justify-between border-border border-b px-6 py-4">
+					<h2 className="font-semibold text-foreground text-lg">
+						{isEditing ? "Edit Tier" : "New Tier"}
+					</h2>
+					<button
+						type="button"
+						onClick={onCancel}
+						className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+					>
+						✕
+					</button>
+				</div>
+				<form
+					onSubmit={handleSubmit}
+					className="flex flex-1 flex-col gap-5 px-6 py-6"
+				>
+					{error ? (
+						<div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-destructive text-sm">
+							{error}
+						</div>
+					) : null}
+					<div className="space-y-4">
+						<div className="grid gap-3 sm:grid-cols-2">
+							<div>
+								<label htmlFor="bt-min" className={labelCls}>
+									Min quantity
+								</label>
+								<input
+									id="bt-min"
+									type="number"
+									min="1"
+									className={inputCls}
+									value={minQty}
+									onChange={(e) => setMinQty(e.target.value)}
+								/>
+							</div>
+							<div>
+								<label htmlFor="bt-max" className={labelCls}>
+									Max quantity{" "}
+									<span className="font-normal text-muted-foreground">
+										(optional)
+									</span>
+								</label>
+								<input
+									id="bt-max"
+									type="number"
+									min="1"
+									className={inputCls}
+									value={maxQty}
+									onChange={(e) => setMaxQty(e.target.value)}
+									placeholder="No limit"
+								/>
+							</div>
+						</div>
+						<div>
+							<label htmlFor="bt-type" className={labelCls}>
+								Discount type
+							</label>
+							<select
+								id="bt-type"
+								className={inputCls}
+								value={discountType}
+								onChange={(e) =>
+									setDiscountType(
+										e.target.value as
+											| "percentage"
+											| "fixed_amount"
+											| "fixed_price",
+									)
+								}
+							>
+								<option value="percentage">Percentage off</option>
+								<option value="fixed_amount">Fixed amount off per unit</option>
+								<option value="fixed_price">Fixed price per unit</option>
+							</select>
+						</div>
+						<div>
+							<label htmlFor="bt-value" className={labelCls}>
+								Discount value{" "}
+								<span className="font-normal text-muted-foreground">
+									({discountType === "percentage" ? "%" : "$"})
+								</span>
+							</label>
+							<input
+								id="bt-value"
+								type="number"
+								step={discountType === "percentage" ? "0.1" : "0.01"}
+								min="0"
+								className={inputCls}
+								value={discountValue}
+								onChange={(e) => setDiscountValue(e.target.value)}
+								placeholder={discountType === "percentage" ? "10" : "5.00"}
+							/>
+						</div>
+						<div>
+							<label htmlFor="bt-label" className={labelCls}>
+								Label
+							</label>
+							<input
+								id="bt-label"
+								className={inputCls}
+								value={label}
+								onChange={(e) => setLabel(e.target.value)}
+								placeholder="Buy 5+ save 10%"
+							/>
+						</div>
+					</div>
+					<div className="mt-auto flex justify-end gap-2 border-border border-t pt-4">
+						<button
+							type="button"
+							onClick={onCancel}
+							className="rounded-lg border border-border px-4 py-2 text-foreground text-sm hover:bg-muted"
+						>
+							Cancel
+						</button>
+						<button
+							type="submit"
+							disabled={isPending}
+							className="rounded-lg bg-foreground px-4 py-2 font-medium text-background text-sm hover:opacity-90 disabled:opacity-50"
+						>
+							{isPending
+								? isEditing
+									? "Saving..."
+									: "Adding..."
+								: isEditing
+									? "Save Changes"
+									: "Add Tier"}
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	);
+}
+
+// ---------------------------------------------------------------------------
+// BulkPricingList — rules with create/edit/delete
+// ---------------------------------------------------------------------------
+
+export function BulkPricingList() {
+	const api = useBulkPricingApi();
+	const [showCreate, setShowCreate] = useState(false);
+	const [editRule, setEditRule] = useState<BulkPriceRule | null>(null);
+
+	const { data, isLoading } = api.list.useQuery({}) as {
+		data: { rules?: BulkPriceRule[] } | undefined;
+		isLoading: boolean;
+	};
+
+	const deleteMutation = api.deleteRule.useMutation({
+		onSuccess: () => void api.list.invalidate(),
+	});
+
+	const rules = data?.rules ?? [];
+
+	return (
+		<div>
+			{showCreate ? (
+				<RuleSheet
+					onSaved={() => setShowCreate(false)}
+					onCancel={() => setShowCreate(false)}
+				/>
+			) : null}
+			{editRule ? (
+				<RuleSheet
+					rule={editRule}
+					onSaved={() => setEditRule(null)}
+					onCancel={() => setEditRule(null)}
+				/>
+			) : null}
+
+			<div className="mb-6 flex items-center justify-between">
+				<div>
+					<h1 className="font-bold text-2xl text-foreground">Bulk Pricing</h1>
+					<p className="mt-1 text-muted-foreground text-sm">
+						Configure volume-based pricing tiers for products
+					</p>
+				</div>
+				<button
+					type="button"
+					onClick={() => setShowCreate(true)}
+					className="rounded-lg bg-foreground px-4 py-2 font-medium text-background text-sm hover:opacity-90"
+				>
+					Add Rule
+				</button>
+			</div>
+
+			{isLoading ? (
+				<div className="space-y-3">
+					{SKELETON_IDS.map((id) => (
+						<div
+							key={`bp-skel-${id}`}
+							className="h-16 animate-pulse rounded-lg border border-border bg-muted/30"
+						/>
+					))}
+				</div>
+			) : rules.length === 0 ? (
+				<div className="rounded-lg border border-border bg-card p-10 text-center">
+					<p className="font-medium text-foreground text-sm">
+						No pricing rules yet
+					</p>
+					<p className="mt-1 text-muted-foreground text-xs">
+						Create a rule to offer volume discounts on products
+					</p>
+					<button
+						type="button"
+						onClick={() => setShowCreate(true)}
+						className="mt-4 rounded-lg bg-foreground px-4 py-2 font-medium text-background text-sm hover:opacity-90"
+					>
+						Add Rule
+					</button>
+				</div>
+			) : (
+				<div className="overflow-x-auto rounded-md border border-border">
+					<table className="w-full text-left text-sm">
+						<thead>
+							<tr className="border-border border-b bg-muted">
+								<th className="px-4 py-2 font-medium text-muted-foreground">
+									Name
+								</th>
+								<th className="px-4 py-2 font-medium text-muted-foreground">
+									Scope
+								</th>
+								<th className="px-4 py-2 font-medium text-muted-foreground">
+									Priority
+								</th>
+								<th className="px-4 py-2 font-medium text-muted-foreground">
+									Status
+								</th>
+								<th className="px-4 py-2 font-medium text-muted-foreground">
+									Actions
+								</th>
+							</tr>
+						</thead>
+						<tbody className="divide-y divide-border">
+							{rules.map((rule) => (
+								<tr
+									key={rule.id}
+									className="transition-colors hover:bg-muted/50"
+								>
+									<td className="px-4 py-2 font-medium text-foreground">
+										<a
+											href={`/admin/bulk-pricing/${rule.id}`}
+											className="hover:underline"
+										>
+											{rule.name ?? rule.id.slice(0, 8)}
+										</a>
+										{rule.description ? (
+											<span className="ml-2 font-normal text-muted-foreground text-xs">
+												{rule.description}
+											</span>
+										) : null}
+									</td>
+									<td className="px-4 py-2 text-muted-foreground text-xs capitalize">
+										{rule.scope ?? "—"}
+									</td>
+									<td className="px-4 py-2 text-muted-foreground text-xs">
+										{rule.priority ?? 0}
+									</td>
+									<td className="px-4 py-2">
+										<span
+											className={`inline-flex items-center rounded-full px-2 py-0.5 font-medium text-xs ${
+												rule.active
+													? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+													: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+											}`}
+										>
+											{rule.active ? "Active" : "Inactive"}
+										</span>
+									</td>
+									<td className="px-4 py-2">
+										<div className="flex gap-1">
+											<button
+												type="button"
+												onClick={() => setEditRule(rule)}
+												className="rounded px-2 py-1 text-xs hover:bg-muted"
+											>
+												Edit
+											</button>
+											<button
+												type="button"
+												onClick={() => {
+													if (
+														window.confirm(
+															`Delete rule "${rule.name ?? rule.id}"?`,
+														)
+													) {
+														deleteMutation.mutate({
+															params: { id: rule.id },
+														});
+													}
+												}}
+												disabled={deleteMutation.isPending}
+												className="rounded px-2 py-1 text-red-600 text-xs hover:bg-red-50 disabled:opacity-50 dark:hover:bg-red-900/20"
+											>
+												Delete
+											</button>
+										</div>
+									</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
+				</div>
+			)}
+		</div>
+	);
+}
+
+// ---------------------------------------------------------------------------
+// BulkPricingDetail — rule detail with tier CRUD
+// ---------------------------------------------------------------------------
+
 export function BulkPricingDetail({
 	params,
 }: {
 	params?: Record<string, string>;
 }) {
-	const id = params?.id ?? "";
-	const client = useModuleClient();
-	const ruleApi =
-		client.module("bulk-pricing").admin["/admin/bulk-pricing/rules/:id"];
-	const previewApi =
-		client.module("bulk-pricing").admin[
-			"/admin/bulk-pricing/rules/:id/preview"
-		];
+	const ruleId = params?.id ?? "";
+	const api = useBulkPricingDetailApi(ruleId);
+	const [showEditRule, setShowEditRule] = useState(false);
+	const [showCreateTier, setShowCreateTier] = useState(false);
+	const [editTier, setEditTier] = useState<PricingTier | null>(null);
 
-	const { data, isLoading } = ruleApi.useQuery({ id }) as {
-		data: { rule?: PricingRuleDetail } | undefined;
+	const { data: ruleData, isLoading } = api.rule.useQuery({ id: ruleId }) as {
+		data: { rule?: BulkPriceRule } | undefined;
 		isLoading: boolean;
 	};
 
-	const { data: previewData } = previewApi.useQuery({ id }) as {
+	const { data: tiersData } = api.preview.useQuery({ id: ruleId }) as {
 		data: { tiers?: PricingTier[] } | undefined;
 	};
 
-	const rule = data?.rule;
-	const tiers = previewData?.tiers ?? [];
+	const deleteTierMutation = api.deleteTier.useMutation({
+		onSuccess: () => {
+			void api.preview.invalidate();
+			void api.listTiers.invalidate();
+		},
+	});
+
+	const rule = ruleData?.rule;
+	const tiers = tiersData?.tiers ?? [];
+
+	const backLink = (
+		<a
+			href="/admin/bulk-pricing"
+			className="text-muted-foreground text-sm hover:text-foreground"
+		>
+			← Back to Bulk Pricing
+		</a>
+	);
 
 	if (isLoading) {
 		return (
 			<div>
-				<div className="mb-6">
-					<a
-						href="/admin/bulk-pricing"
-						className="text-muted-foreground text-sm hover:text-foreground"
-					>
-						&larr; Back to Bulk Pricing
-					</a>
-				</div>
+				<div className="mb-6">{backLink}</div>
 				<div className="space-y-4">
 					<div className="h-32 animate-pulse rounded-lg border border-border bg-muted/30" />
 					<div className="h-48 animate-pulse rounded-lg border border-border bg-muted/30" />
@@ -183,14 +786,7 @@ export function BulkPricingDetail({
 	if (!rule) {
 		return (
 			<div>
-				<div className="mb-6">
-					<a
-						href="/admin/bulk-pricing"
-						className="text-muted-foreground text-sm hover:text-foreground"
-					>
-						&larr; Back to Bulk Pricing
-					</a>
-				</div>
+				<div className="mb-6">{backLink}</div>
 				<div className="rounded-lg border border-border bg-card p-8 text-center">
 					<p className="text-muted-foreground text-sm">
 						Pricing rule not found.
@@ -200,29 +796,34 @@ export function BulkPricingDetail({
 		);
 	}
 
-	function formatDiscount(tier: PricingTier): string {
-		switch (tier.discountType) {
-			case "percentage":
-				return `${tier.discountValue}% off`;
-			case "fixed_amount":
-				return `$${(tier.discountValue / 100).toFixed(2)} off per unit`;
-			case "fixed_price":
-				return `$${(tier.discountValue / 100).toFixed(2)} per unit`;
-			default:
-				return `${tier.discountValue}`;
-		}
-	}
-
 	return (
 		<div>
-			<div className="mb-6">
-				<a
-					href="/admin/bulk-pricing"
-					className="text-muted-foreground text-sm hover:text-foreground"
-				>
-					&larr; Back to Bulk Pricing
-				</a>
-			</div>
+			{showEditRule ? (
+				<RuleSheet
+					rule={rule}
+					onSaved={() => setShowEditRule(false)}
+					onCancel={() => setShowEditRule(false)}
+				/>
+			) : null}
+			{showCreateTier ? (
+				<TierSheet
+					ruleId={ruleId}
+					onSaved={() => setShowCreateTier(false)}
+					onCancel={() => setShowCreateTier(false)}
+					api={api}
+				/>
+			) : null}
+			{editTier ? (
+				<TierSheet
+					ruleId={ruleId}
+					tier={editTier}
+					onSaved={() => setEditTier(null)}
+					onCancel={() => setEditTier(null)}
+					api={api}
+				/>
+			) : null}
+
+			<div className="mb-6">{backLink}</div>
 
 			{/* Header */}
 			<div className="mb-6 flex flex-wrap items-start justify-between gap-4">
@@ -247,20 +848,43 @@ export function BulkPricingDetail({
 						</p>
 					) : null}
 				</div>
+				<button
+					type="button"
+					onClick={() => setShowEditRule(true)}
+					className="rounded-lg border border-border px-3 py-1.5 text-foreground text-sm hover:bg-muted"
+				>
+					Edit Rule
+				</button>
 			</div>
 
 			<div className="grid gap-6 lg:grid-cols-3">
-				{/* Left column - tiers */}
+				{/* Tiers section */}
 				<div className="lg:col-span-2">
 					<div className="rounded-lg border border-border bg-card">
-						<div className="border-border border-b px-4 py-3">
+						<div className="flex items-center justify-between border-border border-b px-4 py-3">
 							<h2 className="font-semibold text-foreground text-sm">
 								Pricing Tiers ({tiers.length})
 							</h2>
+							<button
+								type="button"
+								onClick={() => setShowCreateTier(true)}
+								className="rounded-lg bg-foreground px-3 py-1 font-medium text-background text-xs hover:opacity-90"
+							>
+								Add Tier
+							</button>
 						</div>
 						{tiers.length === 0 ? (
-							<div className="p-4 text-center text-muted-foreground text-sm">
-								No tiers configured for this rule.
+							<div className="p-8 text-center">
+								<p className="text-muted-foreground text-sm">
+									No tiers configured.
+								</p>
+								<button
+									type="button"
+									onClick={() => setShowCreateTier(true)}
+									className="mt-3 rounded-lg bg-foreground px-3 py-1.5 font-medium text-background text-sm hover:opacity-90"
+								>
+									Add Tier
+								</button>
 							</div>
 						) : (
 							<table className="w-full">
@@ -275,11 +899,14 @@ export function BulkPricingDetail({
 										<th className="px-4 py-2 font-medium text-muted-foreground text-xs">
 											Label
 										</th>
+										<th className="px-4 py-2 font-medium text-muted-foreground text-xs">
+											Actions
+										</th>
 									</tr>
 								</thead>
 								<tbody className="divide-y divide-border">
 									{tiers.map((tier) => (
-										<tr key={tier.id}>
+										<tr key={tier.id} className="hover:bg-muted/30">
 											<td className="px-4 py-2.5 font-medium text-foreground text-sm tabular-nums">
 												{tier.minQuantity}
 												{tier.maxQuantity
@@ -292,6 +919,31 @@ export function BulkPricingDetail({
 											<td className="px-4 py-2.5 text-muted-foreground text-sm">
 												{tier.label ?? "—"}
 											</td>
+											<td className="px-4 py-2.5">
+												<div className="flex gap-1">
+													<button
+														type="button"
+														onClick={() => setEditTier(tier)}
+														className="rounded px-2 py-1 text-xs hover:bg-muted"
+													>
+														Edit
+													</button>
+													<button
+														type="button"
+														onClick={() => {
+															if (window.confirm("Delete this pricing tier?")) {
+																deleteTierMutation.mutate({
+																	params: { id: tier.id },
+																});
+															}
+														}}
+														disabled={deleteTierMutation.isPending}
+														className="rounded px-2 py-1 text-red-600 text-xs hover:bg-red-50 disabled:opacity-50 dark:hover:bg-red-900/20"
+													>
+														Delete
+													</button>
+												</div>
+											</td>
 										</tr>
 									))}
 								</tbody>
@@ -300,7 +952,7 @@ export function BulkPricingDetail({
 					</div>
 				</div>
 
-				{/* Right column - details */}
+				{/* Details */}
 				<div>
 					<div className="rounded-lg border border-border bg-card p-4">
 						<h3 className="mb-3 font-semibold text-foreground text-sm">
@@ -312,6 +964,14 @@ export function BulkPricingDetail({
 									<dt className="text-muted-foreground">Scope</dt>
 									<dd className="font-medium text-foreground capitalize">
 										{rule.scope}
+									</dd>
+								</div>
+							) : null}
+							{rule.targetId ? (
+								<div>
+									<dt className="text-muted-foreground">Target</dt>
+									<dd className="font-medium font-mono text-foreground text-xs">
+										{rule.targetId}
 									</dd>
 								</div>
 							) : null}
