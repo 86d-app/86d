@@ -130,6 +130,17 @@ const DROP_STYLES: Record<string, string> = {
 
 // ── API hook ─────────────────────────────────────────────────────────────────
 
+const inputCls =
+	"w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-1 disabled:opacity-50";
+const labelCls = "mb-1 block font-medium text-foreground text-sm";
+
+function extractError(err: unknown): string {
+	if (err && typeof err === "object" && "message" in err) {
+		return String((err as { message: string }).message);
+	}
+	return "An unexpected error occurred";
+}
+
 function useXShopApi() {
 	const client = useModuleClient();
 	const mod = client.module("x-shop");
@@ -137,9 +148,14 @@ function useXShopApi() {
 		settings: mod.admin["/admin/x-shop/settings"],
 		stats: mod.admin["/admin/x-shop/stats"],
 		listings: mod.admin["/admin/x-shop/listings"],
+		createListing: mod.admin["/admin/x-shop/listings/create"],
+		updateListing: mod.admin["/admin/x-shop/listings/:id/update"],
+		deleteListing: mod.admin["/admin/x-shop/listings/:id/delete"],
 		orders: mod.admin["/admin/x-shop/orders"],
+		updateOrderStatus: mod.admin["/admin/x-shop/orders/:id/status"],
 		drops: mod.admin["/admin/x-shop/drops"],
 		createDrop: mod.admin["/admin/x-shop/drops/create"],
+		cancelDrop: mod.admin["/admin/x-shop/drops/:id/cancel"],
 	};
 }
 
@@ -301,12 +317,189 @@ function Pagination({
 	);
 }
 
+// ── ListingSheet ─────────────────────────────────────────────────────────────
+
+interface ListingSheetProps {
+	listing?: Listing;
+	onSaved: () => void;
+	onCancel: () => void;
+}
+
+function ListingSheet({ listing, onSaved, onCancel }: ListingSheetProps) {
+	const api = useXShopApi();
+	const isEditing = !!listing;
+
+	const [localProductId, setLocalProductId] = useState(
+		listing?.localProductId ?? "",
+	);
+	const [title, setTitle] = useState(listing?.title ?? "");
+	const [status, setStatus] = useState(listing?.status ?? "draft");
+	const [error, setError] = useState("");
+
+	const createMutation = api.createListing.useMutation({
+		onSuccess: () => {
+			void api.listings.invalidate();
+			onSaved();
+		},
+		onError: (err: Error) => setError(extractError(err)),
+	});
+
+	const updateMutation = api.updateListing.useMutation({
+		onSuccess: () => {
+			void api.listings.invalidate();
+			onSaved();
+		},
+		onError: (err: Error) => setError(extractError(err)),
+	});
+
+	const isPending = createMutation.isPending || updateMutation.isPending;
+
+	function handleSubmit(e: React.FormEvent) {
+		e.preventDefault();
+		setError("");
+		if (!localProductId.trim() || !title.trim()) {
+			setError("Product ID and title are required.");
+			return;
+		}
+		if (isEditing) {
+			updateMutation.mutate({
+				params: { id: listing.id },
+				body: {
+					localProductId: localProductId.trim(),
+					title: title.trim(),
+					status: status as
+						| "draft"
+						| "pending"
+						| "active"
+						| "rejected"
+						| "suspended",
+				},
+			});
+		} else {
+			createMutation.mutate({
+				body: {
+					localProductId: localProductId.trim(),
+					title: title.trim(),
+					status: status as
+						| "draft"
+						| "pending"
+						| "active"
+						| "rejected"
+						| "suspended",
+				},
+			});
+		}
+	}
+
+	return (
+		<div className="fixed inset-0 z-50 flex justify-end">
+			<button
+				type="button"
+				className="absolute inset-0 cursor-default bg-black/40"
+				aria-label="Close panel"
+				onClick={onCancel}
+			/>
+			<div className="relative flex h-full w-full max-w-md flex-col overflow-y-auto border-border border-l bg-background shadow-2xl">
+				<div className="flex shrink-0 items-center justify-between border-border border-b px-6 py-4">
+					<h2 className="font-semibold text-foreground text-lg">
+						{isEditing ? "Edit Listing" : "New Listing"}
+					</h2>
+					<button
+						type="button"
+						onClick={onCancel}
+						className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+					>
+						✕
+					</button>
+				</div>
+				<form
+					onSubmit={handleSubmit}
+					className="flex flex-1 flex-col gap-5 px-6 py-6"
+				>
+					{error ? (
+						<div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-destructive text-sm">
+							{error}
+						</div>
+					) : null}
+					<div className="space-y-4">
+						<div>
+							<label htmlFor="ls-productid" className={labelCls}>
+								Local product ID <span className="text-destructive">*</span>
+							</label>
+							<input
+								id="ls-productid"
+								className={inputCls}
+								value={localProductId}
+								onChange={(e) => setLocalProductId(e.target.value)}
+								placeholder="prod_123abc"
+							/>
+						</div>
+						<div>
+							<label htmlFor="ls-title" className={labelCls}>
+								Title <span className="text-destructive">*</span>
+							</label>
+							<input
+								id="ls-title"
+								className={inputCls}
+								value={title}
+								onChange={(e) => setTitle(e.target.value)}
+								placeholder="Product title on X Commerce"
+							/>
+						</div>
+						<div>
+							<label htmlFor="ls-status" className={labelCls}>
+								Status
+							</label>
+							<select
+								id="ls-status"
+								className={inputCls}
+								value={status}
+								onChange={(e) => setStatus(e.target.value)}
+							>
+								<option value="draft">Draft</option>
+								<option value="pending">Pending</option>
+								<option value="active">Active</option>
+								<option value="rejected">Rejected</option>
+								<option value="suspended">Suspended</option>
+							</select>
+						</div>
+					</div>
+					<div className="mt-auto flex justify-end gap-2 border-border border-t pt-4">
+						<button
+							type="button"
+							onClick={onCancel}
+							className="rounded-lg border border-border px-4 py-2 text-foreground text-sm hover:bg-muted"
+						>
+							Cancel
+						</button>
+						<button
+							type="submit"
+							disabled={isPending}
+							className="rounded-lg bg-foreground px-4 py-2 font-medium text-background text-sm hover:opacity-90 disabled:opacity-50"
+						>
+							{isPending
+								? isEditing
+									? "Saving..."
+									: "Creating..."
+								: isEditing
+									? "Save Changes"
+									: "Create Listing"}
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	);
+}
+
 // ── Tab: Listings ────────────────────────────────────────────────────────────
 
 function ListingsTab() {
 	const api = useXShopApi();
 	const [page, setPage] = useState(1);
 	const [statusFilter, setStatusFilter] = useState("");
+	const [showCreate, setShowCreate] = useState(false);
+	const [editListing, setEditListing] = useState<Listing | null>(null);
 
 	const { data, isLoading } = api.listings.useQuery({
 		page: String(page),
@@ -317,11 +510,28 @@ function ListingsTab() {
 		isLoading: boolean;
 	};
 
+	const deleteMutation = api.deleteListing.useMutation({
+		onSuccess: () => void api.listings.invalidate(),
+	});
+
 	const listings = data?.listings ?? [];
 
 	return (
 		<div className="space-y-4">
-			<div className="flex items-center gap-2">
+			{showCreate ? (
+				<ListingSheet
+					onSaved={() => setShowCreate(false)}
+					onCancel={() => setShowCreate(false)}
+				/>
+			) : null}
+			{editListing ? (
+				<ListingSheet
+					listing={editListing}
+					onSaved={() => setEditListing(null)}
+					onCancel={() => setEditListing(null)}
+				/>
+			) : null}
+			<div className="flex items-center justify-between gap-2">
 				<select
 					value={statusFilter}
 					onChange={(e) => {
@@ -337,6 +547,13 @@ function ListingsTab() {
 					<option value="rejected">Rejected</option>
 					<option value="suspended">Suspended</option>
 				</select>
+				<button
+					type="button"
+					onClick={() => setShowCreate(true)}
+					className="rounded-lg bg-foreground px-3 py-1.5 font-medium text-background text-sm hover:opacity-90"
+				>
+					Add Listing
+				</button>
 			</div>
 
 			{isLoading ? (
@@ -395,6 +612,9 @@ function ListingsTab() {
 									<th className="px-5 py-2.5 font-medium text-muted-foreground">
 										Last Synced
 									</th>
+									<th className="px-5 py-2.5 font-medium text-muted-foreground">
+										Actions
+									</th>
 								</tr>
 							</thead>
 							<tbody className="divide-y divide-border">
@@ -421,6 +641,35 @@ function ListingsTab() {
 											{listing.lastSyncedAt
 												? formatDate(listing.lastSyncedAt)
 												: "Never"}
+										</td>
+										<td className="px-5 py-3">
+											<div className="flex gap-1">
+												<button
+													type="button"
+													onClick={() => setEditListing(listing)}
+													className="rounded px-2 py-1 text-xs hover:bg-muted"
+												>
+													Edit
+												</button>
+												<button
+													type="button"
+													onClick={() => {
+														if (
+															window.confirm(
+																`Delete listing "${listing.title}"?`,
+															)
+														) {
+															deleteMutation.mutate({
+																params: { id: listing.id },
+															});
+														}
+													}}
+													disabled={deleteMutation.isPending}
+													className="rounded px-2 py-1 text-red-600 text-xs hover:bg-red-50 disabled:opacity-50 dark:hover:bg-red-900/20"
+												>
+													Delete
+												</button>
+											</div>
 										</td>
 									</tr>
 								))}
@@ -480,6 +729,10 @@ function OrdersTab() {
 		data: { orders: ChannelOrder[]; total: number } | undefined;
 		isLoading: boolean;
 	};
+
+	const updateStatusMutation = api.updateOrderStatus.useMutation({
+		onSuccess: () => void api.orders.invalidate(),
+	});
 
 	const orders = data?.orders ?? [];
 
@@ -566,6 +819,9 @@ function OrdersTab() {
 									<th className="px-5 py-2.5 font-medium text-muted-foreground">
 										Date
 									</th>
+									<th className="px-5 py-2.5 font-medium text-muted-foreground">
+										Update Status
+									</th>
 								</tr>
 							</thead>
 							<tbody className="divide-y divide-border">
@@ -592,6 +848,34 @@ function OrdersTab() {
 										</td>
 										<td className="px-5 py-3 text-muted-foreground">
 											{formatDate(order.createdAt)}
+										</td>
+										<td className="px-5 py-3">
+											<select
+												value={order.status}
+												onChange={(e) =>
+													updateStatusMutation.mutate({
+														params: { id: order.id },
+														body: {
+															status: e.target.value as
+																| "pending"
+																| "confirmed"
+																| "shipped"
+																| "delivered"
+																| "cancelled"
+																| "refunded",
+														},
+													})
+												}
+												disabled={updateStatusMutation.isPending}
+												className="rounded border border-border bg-background px-2 py-1 text-xs"
+											>
+												<option value="pending">Pending</option>
+												<option value="confirmed">Confirmed</option>
+												<option value="shipped">Shipped</option>
+												<option value="delivered">Delivered</option>
+												<option value="cancelled">Cancelled</option>
+												<option value="refunded">Refunded</option>
+											</select>
 										</td>
 									</tr>
 								))}
@@ -628,12 +912,198 @@ function OrdersTab() {
 	);
 }
 
+// ── CreateDropSheet ──────────────────────────────────────────────────────────
+
+interface CreateDropSheetProps {
+	onSaved: () => void;
+	onCancel: () => void;
+}
+
+function CreateDropSheet({ onSaved, onCancel }: CreateDropSheetProps) {
+	const api = useXShopApi();
+	const [name, setName] = useState("");
+	const [description, setDescription] = useState("");
+	const [productIds, setProductIds] = useState("");
+	const [launchDate, setLaunchDate] = useState("");
+	const [endDate, setEndDate] = useState("");
+	const [tweetId, setTweetId] = useState("");
+	const [error, setError] = useState("");
+
+	const createMutation = api.createDrop.useMutation({
+		onSuccess: () => {
+			void api.drops.invalidate();
+			onSaved();
+		},
+		onError: (err: Error) => setError(extractError(err)),
+	});
+
+	function handleSubmit(e: React.FormEvent) {
+		e.preventDefault();
+		setError("");
+		if (!name.trim() || !launchDate) {
+			setError("Name and launch date are required.");
+			return;
+		}
+		const ids = productIds
+			.split(/[\n,]+/)
+			.map((s) => s.trim())
+			.filter(Boolean);
+		if (ids.length === 0) {
+			setError("Add at least one product ID.");
+			return;
+		}
+		createMutation.mutate({
+			body: {
+				name: name.trim(),
+				description: description.trim() || undefined,
+				productIds: ids,
+				launchDate: new Date(launchDate),
+				endDate: endDate ? new Date(endDate) : undefined,
+				tweetId: tweetId.trim() || undefined,
+			},
+		});
+	}
+
+	return (
+		<div className="fixed inset-0 z-50 flex justify-end">
+			<button
+				type="button"
+				className="absolute inset-0 cursor-default bg-black/40"
+				aria-label="Close panel"
+				onClick={onCancel}
+			/>
+			<div className="relative flex h-full w-full max-w-md flex-col overflow-y-auto border-border border-l bg-background shadow-2xl">
+				<div className="flex shrink-0 items-center justify-between border-border border-b px-6 py-4">
+					<h2 className="font-semibold text-foreground text-lg">
+						New Product Drop
+					</h2>
+					<button
+						type="button"
+						onClick={onCancel}
+						className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+					>
+						✕
+					</button>
+				</div>
+				<form
+					onSubmit={handleSubmit}
+					className="flex flex-1 flex-col gap-5 px-6 py-6"
+				>
+					{error ? (
+						<div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-destructive text-sm">
+							{error}
+						</div>
+					) : null}
+					<div className="space-y-4">
+						<div>
+							<label htmlFor="cd-name" className={labelCls}>
+								Name <span className="text-destructive">*</span>
+							</label>
+							<input
+								id="cd-name"
+								className={inputCls}
+								value={name}
+								onChange={(e) => setName(e.target.value)}
+								placeholder="Summer Sale Drop"
+							/>
+						</div>
+						<div>
+							<label htmlFor="cd-description" className={labelCls}>
+								Description
+							</label>
+							<input
+								id="cd-description"
+								className={inputCls}
+								value={description}
+								onChange={(e) => setDescription(e.target.value)}
+								placeholder="Limited time summer collection"
+							/>
+						</div>
+						<div>
+							<label htmlFor="cd-products" className={labelCls}>
+								Product IDs{" "}
+								<span className="font-normal text-muted-foreground">
+									(one per line or comma-separated)
+								</span>
+								<span className="text-destructive"> *</span>
+							</label>
+							<textarea
+								id="cd-products"
+								rows={4}
+								className={inputCls}
+								value={productIds}
+								onChange={(e) => setProductIds(e.target.value)}
+								placeholder="prod_abc123&#10;prod_def456"
+							/>
+						</div>
+						<div className="grid gap-4 sm:grid-cols-2">
+							<div>
+								<label htmlFor="cd-launch" className={labelCls}>
+									Launch date <span className="text-destructive">*</span>
+								</label>
+								<input
+									id="cd-launch"
+									type="datetime-local"
+									className={inputCls}
+									value={launchDate}
+									onChange={(e) => setLaunchDate(e.target.value)}
+								/>
+							</div>
+							<div>
+								<label htmlFor="cd-end" className={labelCls}>
+									End date
+								</label>
+								<input
+									id="cd-end"
+									type="datetime-local"
+									className={inputCls}
+									value={endDate}
+									onChange={(e) => setEndDate(e.target.value)}
+								/>
+							</div>
+						</div>
+						<div>
+							<label htmlFor="cd-tweet" className={labelCls}>
+								Tweet ID
+							</label>
+							<input
+								id="cd-tweet"
+								className={inputCls}
+								value={tweetId}
+								onChange={(e) => setTweetId(e.target.value)}
+								placeholder="1234567890123456789"
+							/>
+						</div>
+					</div>
+					<div className="mt-auto flex justify-end gap-2 border-border border-t pt-4">
+						<button
+							type="button"
+							onClick={onCancel}
+							className="rounded-lg border border-border px-4 py-2 text-foreground text-sm hover:bg-muted"
+						>
+							Cancel
+						</button>
+						<button
+							type="submit"
+							disabled={createMutation.isPending}
+							className="rounded-lg bg-foreground px-4 py-2 font-medium text-background text-sm hover:opacity-90 disabled:opacity-50"
+						>
+							{createMutation.isPending ? "Creating..." : "Create Drop"}
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	);
+}
+
 // ── Tab: Drops ───────────────────────────────────────────────────────────────
 
 function DropsTab() {
 	const api = useXShopApi();
 	const [page, setPage] = useState(1);
 	const [statusFilter, setStatusFilter] = useState("");
+	const [showCreate, setShowCreate] = useState(false);
 
 	const { data, isLoading } = api.drops.useQuery({
 		page: String(page),
@@ -644,11 +1114,21 @@ function DropsTab() {
 		isLoading: boolean;
 	};
 
+	const cancelMutation = api.cancelDrop.useMutation({
+		onSuccess: () => void api.drops.invalidate(),
+	});
+
 	const drops = data?.drops ?? [];
 
 	return (
 		<div className="space-y-4">
-			<div className="flex flex-wrap items-center gap-2">
+			{showCreate ? (
+				<CreateDropSheet
+					onSaved={() => setShowCreate(false)}
+					onCancel={() => setShowCreate(false)}
+				/>
+			) : null}
+			<div className="flex flex-wrap items-center justify-between gap-2">
 				<select
 					value={statusFilter}
 					onChange={(e) => {
@@ -663,6 +1143,13 @@ function DropsTab() {
 					<option value="ended">Ended</option>
 					<option value="cancelled">Cancelled</option>
 				</select>
+				<button
+					type="button"
+					onClick={() => setShowCreate(true)}
+					className="rounded-lg bg-foreground px-3 py-1.5 font-medium text-background text-sm hover:opacity-90"
+				>
+					Create Drop
+				</button>
 			</div>
 
 			{isLoading ? (
@@ -726,6 +1213,9 @@ function DropsTab() {
 									<th className="px-5 py-2.5 font-medium text-muted-foreground">
 										Launch
 									</th>
+									<th className="px-5 py-2.5 font-medium text-muted-foreground">
+										Actions
+									</th>
 								</tr>
 							</thead>
 							<tbody className="divide-y divide-border">
@@ -752,6 +1242,24 @@ function DropsTab() {
 										</td>
 										<td className="px-5 py-3 text-muted-foreground">
 											{formatDate(drop.launchDate)}
+										</td>
+										<td className="px-5 py-3">
+											{drop.status === "scheduled" || drop.status === "live" ? (
+												<button
+													type="button"
+													onClick={() => {
+														if (window.confirm(`Cancel drop "${drop.name}"?`)) {
+															cancelMutation.mutate({
+																params: { id: drop.id },
+															});
+														}
+													}}
+													disabled={cancelMutation.isPending}
+													className="rounded px-2 py-1 text-red-600 text-xs hover:bg-red-50 disabled:opacity-50 dark:hover:bg-red-900/20"
+												>
+													Cancel
+												</button>
+											) : null}
 										</td>
 									</tr>
 								))}
