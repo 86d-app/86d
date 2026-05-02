@@ -1,6 +1,6 @@
 {
 	"name": "@86d-app/revenue",
-	"version": "0.0.34",
+	"version": "0.0.35",
 	"description": "Revenue and transaction reporting for 86d commerce platform",
 	"keywords": [
 		"commerce",
