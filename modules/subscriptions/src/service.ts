@@ -1,5 +1,19 @@
 import type { ModuleController } from "@86d-app/core";
 
+/**
+ * Minimal interface for payment intent verification.
+ * Subscriptions access the payments controller through the runtime context —
+ * no direct module import, just a structural contract.
+ */
+export type PaymentProcessController = {
+	getIntent(id: string): Promise<{
+		id: string;
+		status: string;
+		amount: number;
+		currency: string;
+	} | null>;
+};
+
 export type SubscriptionInterval = "day" | "week" | "month" | "year";
 export type SubscriptionStatus =
 	| "active"
@@ -34,6 +48,8 @@ export type Subscription = {
 	trialEnd?: Date | undefined;
 	cancelledAt?: Date | undefined;
 	cancelAtPeriodEnd: boolean;
+	/** Payment intent ID associated with the most recent payment for this subscription */
+	paymentIntentId?: string | undefined;
 	createdAt: Date;
 	updatedAt: Date;
 };
@@ -77,6 +93,7 @@ export type SubscriptionController = ModuleController & {
 		planId: string;
 		email: string;
 		customerId?: string | undefined;
+		paymentIntentId?: string | undefined;
 	}): Promise<Subscription>;
 
 	getSubscription(id: string): Promise<Subscription | null>;

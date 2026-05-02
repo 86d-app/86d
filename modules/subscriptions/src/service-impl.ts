@@ -142,6 +142,9 @@ export function createSubscriptionController(
 				trialStart,
 				trialEnd,
 				cancelAtPeriodEnd: false,
+				...(params.paymentIntentId
+					? { paymentIntentId: params.paymentIntentId }
+					: {}),
 				createdAt: now,
 				updatedAt: now,
 			};
