@@ -1,5 +1,5 @@
 import { createMockDataService } from "@86d-app/core/test-utils";
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createAutomationsController } from "../service-impl";
 
 /**
@@ -23,6 +23,10 @@ describe("automations endpoint security", () => {
 	beforeEach(() => {
 		mockData = createMockDataService();
 		controller = createAutomationsController(mockData);
+	});
+
+	afterEach(() => {
+		vi.restoreAllMocks();
 	});
 
 	// ── helpers ───────────────────────────────────────────────────────────
@@ -344,7 +348,7 @@ describe("automations endpoint security", () => {
 			expect(exec.status).toBe("failed");
 			expect(exec.results[0].status).toBe("failed");
 			expect(exec.results[0].error).toContain(
-				"send_notification requires title and message",
+				"send_notification requires title and body/message",
 			);
 		});
 

@@ -1,5 +1,5 @@
 import { createMockDataService } from "@86d-app/core/test-utils";
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createAutomationsController } from "../service-impl";
 
 describe("automations controllers — edge cases", () => {
@@ -9,6 +9,10 @@ describe("automations controllers — edge cases", () => {
 	beforeEach(() => {
 		mockData = createMockDataService();
 		controller = createAutomationsController(mockData);
+	});
+
+	afterEach(() => {
+		vi.restoreAllMocks();
 	});
 
 	function logAction() {
@@ -318,7 +322,7 @@ describe("automations controllers — edge cases", () => {
 			});
 			expect(exec.status).toBe("failed");
 			expect(exec.error).toContain(
-				"send_notification requires title and message",
+				"send_notification requires title and body/message",
 			);
 		});
 
@@ -328,7 +332,7 @@ describe("automations controllers — edge cases", () => {
 			});
 			expect(exec.status).toBe("failed");
 			expect(exec.error).toContain(
-				"send_notification requires title and message",
+				"send_notification requires title and body/message",
 			);
 		});
 
@@ -387,13 +391,7 @@ describe("automations controllers — edge cases", () => {
 	describe("execution status outcomes", () => {
 		it("completed when all actions succeed", async () => {
 			const a = await createActive({
-				actions: [
-					logAction(),
-					{
-						type: "send_notification",
-						config: { title: "T", message: "M" },
-					},
-				],
+				actions: [logAction(), logAction()],
 			});
 			const exec = await controller.execute(a.id, {});
 			expect(exec.status).toBe("completed");
@@ -401,10 +399,16 @@ describe("automations controllers — edge cases", () => {
 		});
 
 		it("failed when any action fails in a multi-action automation", async () => {
+			vi.stubGlobal(
+				"fetch",
+				vi
+					.fn()
+					.mockResolvedValue({ ok: true, status: 200, json: async () => ({}) }),
+			);
 			const a = await createActive({
 				actions: [
 					logAction(),
-					{ type: "send_email", config: {} }, // missing required fields
+					{ type: "send_email", config: {} }, // missing required fields — fails at validation
 					{
 						type: "webhook",
 						config: { url: "https://example.com" },

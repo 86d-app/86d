@@ -38,6 +38,18 @@ export interface AutomationsOptions extends ModuleConfig {
 	 * (not recommended in production).
 	 */
 	webhookSecret?: string;
+
+	/**
+	 * Resend API key for send_email automation actions.
+	 * When omitted, send_email actions fail gracefully with a config error.
+	 */
+	resendApiKey?: string | undefined;
+
+	/**
+	 * Default "from" address for send_email actions.
+	 * Defaults to "automations@example.com" when not set.
+	 */
+	resendFrom?: string | undefined;
 }
 
 /**
@@ -54,6 +66,9 @@ export default function automations(options?: AutomationsOptions): Module {
 		id: "automations",
 		version: "0.0.1",
 		schema: automationsSchema,
+		requires: {
+			notifications: { optional: true },
+		},
 		exports: {
 			read: [
 				"automationTriggerEvent",
@@ -73,7 +88,14 @@ export default function automations(options?: AutomationsOptions): Module {
 		},
 
 		init: async (ctx: ModuleContext) => {
-			const controller = createAutomationsController(ctx.data);
+			const controller = createAutomationsController(
+				ctx.data,
+				{
+					resendApiKey: options?.resendApiKey,
+					resendFrom: options?.resendFrom,
+				},
+				ctx.controllers,
+			);
 			return {
 				controllers: { automations: controller },
 			};

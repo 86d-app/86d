@@ -8,6 +8,20 @@ import type {
 	AutomationsController,
 } from "./service";
 
+type NotificationsControllerMin = {
+	create: (params: {
+		customerId: string;
+		title: string;
+		body: string;
+		metadata?: Record<string, unknown> | undefined;
+	}) => Promise<unknown>;
+};
+
+export type ActionExecutorOptions = {
+	resendApiKey?: string | undefined;
+	resendFrom?: string | undefined;
+};
+
 function evaluateCondition(
 	condition: AutomationCondition,
 	payload: Record<string, unknown>,
@@ -60,38 +74,93 @@ function evaluateConditions(
 	return conditions.every((c) => evaluateCondition(c, payload));
 }
 
-function executeAction(
+async function executeAction(
 	action: AutomationAction,
-	_payload: Record<string, unknown>,
-): AutomationActionResult & { actionIndex: number } {
-	// Actions are evaluated but actual side-effects (email, webhook, etc.)
-	// would be dispatched through the event system in production.
-	// Here we validate config and return success for well-formed actions.
+	payload: Record<string, unknown>,
+	options: ActionExecutorOptions,
+	controllers: Record<string, unknown>,
+): Promise<AutomationActionResult & { actionIndex: number }> {
 	switch (action.type) {
 		case "send_notification": {
-			const { title, message } = action.config as {
+			const {
+				title,
+				message,
+				body,
+				customerId: configCustomerId,
+			} = action.config as {
 				title?: string;
 				message?: string;
+				body?: string;
+				customerId?: string;
 			};
-			if (!title || !message) {
+			const notifBody = body ?? message;
+			if (!title || !notifBody) {
 				return {
 					actionIndex: 0,
 					type: action.type,
 					status: "failed",
-					error: "send_notification requires title and message",
+					error: "send_notification requires title and body/message",
 				};
 			}
-			return {
-				actionIndex: 0,
-				type: action.type,
-				status: "success",
-				output: { title, message },
-			};
+			const notificationsCtrl = controllers.notifications as
+				| NotificationsControllerMin
+				| undefined;
+			if (!notificationsCtrl) {
+				return {
+					actionIndex: 0,
+					type: action.type,
+					status: "failed",
+					error:
+						"send_notification requires the notifications module to be installed",
+				};
+			}
+			const customerId = (configCustomerId ?? payload.customerId) as
+				| string
+				| undefined;
+			if (!customerId) {
+				return {
+					actionIndex: 0,
+					type: action.type,
+					status: "failed",
+					error: "send_notification requires customerId in config or payload",
+				};
+			}
+			try {
+				await notificationsCtrl.create({
+					customerId,
+					title,
+					body: notifBody,
+					metadata: { automationPayload: payload },
+				});
+				return {
+					actionIndex: 0,
+					type: action.type,
+					status: "success",
+					output: { title, body: notifBody, customerId },
+				};
+			} catch (e) {
+				return {
+					actionIndex: 0,
+					type: action.type,
+					status: "failed",
+					error:
+						e instanceof Error ? e.message : "Failed to create notification",
+				};
+			}
 		}
 		case "send_email": {
-			const { to, subject } = action.config as {
+			const {
+				to,
+				subject,
+				body: textBody,
+				html,
+				from,
+			} = action.config as {
 				to?: string;
 				subject?: string;
+				body?: string;
+				html?: string;
+				from?: string;
 			};
 			if (!to || !subject) {
 				return {
@@ -101,15 +170,72 @@ function executeAction(
 					error: "send_email requires to and subject",
 				};
 			}
-			return {
-				actionIndex: 0,
-				type: action.type,
-				status: "success",
-				output: { to, subject },
-			};
+			if (!options.resendApiKey) {
+				return {
+					actionIndex: 0,
+					type: action.type,
+					status: "failed",
+					error: "send_email requires resendApiKey option",
+				};
+			}
+			const fromAddress =
+				from ?? options.resendFrom ?? "automations@example.com";
+			try {
+				const res = await fetch("https://api.resend.com/emails", {
+					method: "POST",
+					headers: {
+						Authorization: `Bearer ${options.resendApiKey}`,
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({
+						from: fromAddress,
+						to,
+						subject,
+						...(html ? { html } : {}),
+						...(textBody ? { text: textBody } : {}),
+					}),
+				});
+				if (!res.ok) {
+					const errBody = (await res
+						.json()
+						.catch(() => ({ message: `HTTP ${res.status}` }))) as {
+						message?: string;
+					};
+					return {
+						actionIndex: 0,
+						type: action.type,
+						status: "failed",
+						error: `Resend error: ${errBody.message ?? `HTTP ${res.status}`}`,
+					};
+				}
+				const data = (await res.json()) as { id: string };
+				return {
+					actionIndex: 0,
+					type: action.type,
+					status: "success",
+					output: { to, subject, messageId: data.id },
+				};
+			} catch (e) {
+				return {
+					actionIndex: 0,
+					type: action.type,
+					status: "failed",
+					error: e instanceof Error ? e.message : "Failed to send email",
+				};
+			}
 		}
 		case "webhook": {
-			const { url } = action.config as { url?: string };
+			const {
+				url,
+				method = "POST",
+				headers: customHeaders,
+				secret,
+			} = action.config as {
+				url?: string;
+				method?: string;
+				headers?: Record<string, string>;
+				secret?: string;
+			};
 			if (!url) {
 				return {
 					actionIndex: 0,
@@ -118,12 +244,41 @@ function executeAction(
 					error: "webhook requires url",
 				};
 			}
-			return {
-				actionIndex: 0,
-				type: action.type,
-				status: "success",
-				output: { url },
-			};
+			try {
+				const reqHeaders: Record<string, string> = {
+					"Content-Type": "application/json",
+					...customHeaders,
+				};
+				if (secret) {
+					reqHeaders["X-Webhook-Secret"] = secret;
+				}
+				const res = await fetch(url, {
+					method,
+					headers: reqHeaders,
+					...(method !== "GET" ? { body: JSON.stringify(payload) } : {}),
+				});
+				if (!res.ok) {
+					return {
+						actionIndex: 0,
+						type: action.type,
+						status: "failed",
+						error: `Webhook returned HTTP ${res.status}`,
+					};
+				}
+				return {
+					actionIndex: 0,
+					type: action.type,
+					status: "success",
+					output: { url, statusCode: res.status },
+				};
+			} catch (e) {
+				return {
+					actionIndex: 0,
+					type: action.type,
+					status: "failed",
+					error: e instanceof Error ? e.message : "Webhook request failed",
+				};
+			}
 		}
 		case "update_field": {
 			const { entity, field, value } = action.config as {
@@ -183,6 +338,8 @@ function executeAction(
 
 export function createAutomationsController(
 	data: ModuleDataService,
+	options: ActionExecutorOptions = {},
+	controllers: Record<string, unknown> = {},
 ): AutomationsController {
 	return {
 		async create(params) {
@@ -258,7 +415,6 @@ export function createAutomationsController(
 		},
 
 		async delete(id) {
-			// Cascade: delete executions first
 			const executions = await data.findMany("automationExecution", {
 				where: { automationId: id },
 			});
@@ -325,7 +481,6 @@ export function createAutomationsController(
 			const execId = crypto.randomUUID();
 			const now = new Date();
 
-			// Check conditions
 			const conditionsMet = evaluateConditions(
 				automation.conditions,
 				triggerPayload,
@@ -350,13 +505,17 @@ export function createAutomationsController(
 				return skipped;
 			}
 
-			// Run actions
 			const results: AutomationActionResult[] = [];
 			let hasFailure = false;
 
 			for (let i = 0; i < automation.actions.length; i++) {
 				const action = automation.actions[i];
-				const result = executeAction(action, triggerPayload);
+				const result = await executeAction(
+					action,
+					triggerPayload,
+					options,
+					controllers,
+				);
 				result.actionIndex = i;
 				results.push(result);
 				if (result.status === "failed") {
@@ -387,7 +546,6 @@ export function createAutomationsController(
 				execution as Record<string, unknown>,
 			);
 
-			// Update automation run stats
 			const updatedAutomation: Automation = {
 				...automation,
 				runCount: automation.runCount + 1,

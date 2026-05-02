@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { getBaseUrl } from "../url";
+import { ensureHttpsUrl, getBaseUrl, httpsUrlHostLabel } from "../url";
 
 describe("getBaseUrl", () => {
 	const originalEnv = { ...process.env };
@@ -50,5 +50,37 @@ describe("getBaseUrl", () => {
 
 	it("defaults to port 3000 when nothing is set", () => {
 		expect(getBaseUrl()).toBe("http://localhost:3000");
+	});
+});
+
+describe("ensureHttpsUrl", () => {
+	it("returns null for nullish or blank", () => {
+		expect(ensureHttpsUrl(null)).toBeNull();
+		expect(ensureHttpsUrl(undefined)).toBeNull();
+		expect(ensureHttpsUrl("")).toBeNull();
+		expect(ensureHttpsUrl("   ")).toBeNull();
+	});
+
+	it("prefixes https for bare hostnames", () => {
+		expect(ensureHttpsUrl("86d-production.up.railway.app")).toBe(
+			"https://86d-production.up.railway.app",
+		);
+	});
+
+	it("leaves explicit schemes unchanged", () => {
+		expect(ensureHttpsUrl("https://example.com")).toBe("https://example.com");
+		expect(ensureHttpsUrl("http://example.com")).toBe("http://example.com");
+	});
+});
+
+describe("httpsUrlHostLabel", () => {
+	it("returns host for absolute URLs", () => {
+		expect(httpsUrlHostLabel("https://store.up.railway.app/path")).toBe(
+			"store.up.railway.app",
+		);
+	});
+
+	it("strips scheme when URL parsing fails", () => {
+		expect(httpsUrlHostLabel("https://not a url")).toMatch(/not a url/);
 	});
 });

@@ -1,5 +1,5 @@
 import { createMockDataService } from "@86d-app/core/test-utils";
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createAutomationsController } from "../service-impl";
 
 describe("createAutomationsController", () => {
@@ -9,6 +9,10 @@ describe("createAutomationsController", () => {
 	beforeEach(() => {
 		mockData = createMockDataService();
 		controller = createAutomationsController(mockData);
+	});
+
+	afterEach(() => {
+		vi.restoreAllMocks();
 	});
 
 	// ── Create ───────────────────────────────────────────────────────────
@@ -261,7 +265,6 @@ describe("createAutomationsController", () => {
 				status: "active",
 				priority: 5,
 			});
-			// Give it some runs
 			await controller.execute(original.id, {});
 
 			const copy = await controller.duplicate(original.id);
@@ -345,15 +348,18 @@ describe("createAutomationsController", () => {
 		});
 
 		it("executes multiple actions in order", async () => {
+			vi.stubGlobal(
+				"fetch",
+				vi
+					.fn()
+					.mockResolvedValue({ ok: true, status: 200, json: async () => ({}) }),
+			);
+
 			const automation = await controller.create({
 				name: "Multi-action",
 				triggerEvent: "test.event",
 				actions: [
 					{ type: "log", config: {} },
-					{
-						type: "send_notification",
-						config: { title: "Alert", message: "Test" },
-					},
 					{
 						type: "webhook",
 						config: { url: "https://hooks.example.com/test" },
@@ -364,10 +370,9 @@ describe("createAutomationsController", () => {
 
 			const execution = await controller.execute(automation.id, {});
 			expect(execution.status).toBe("completed");
-			expect(execution.results).toHaveLength(3);
+			expect(execution.results).toHaveLength(2);
 			expect(execution.results[0].actionIndex).toBe(0);
 			expect(execution.results[1].actionIndex).toBe(1);
-			expect(execution.results[2].actionIndex).toBe(2);
 		});
 
 		it("increments runCount on automation", async () => {
@@ -462,7 +467,6 @@ describe("createAutomationsController", () => {
 		});
 
 		it("exists - does not match", async () => {
-			// Field is missing from payload
 			const automation = await controller.create({
 				name: "Test exists miss",
 				triggerEvent: "test.event",
@@ -675,7 +679,6 @@ describe("createAutomationsController", () => {
 			});
 			const oldExec = await controller.execute(automation.id, {});
 
-			// Backdate the old execution
 			const oldDate = new Date();
 			oldDate.setDate(oldDate.getDate() - 60);
 			await mockData.upsert("automationExecution", oldExec.id, {
@@ -683,7 +686,6 @@ describe("createAutomationsController", () => {
 				startedAt: oldDate,
 			} as Record<string, unknown>);
 
-			// Create a recent execution
 			await controller.execute(automation.id, {});
 
 			const cutoff = new Date();
@@ -704,27 +706,96 @@ describe("createAutomationsController", () => {
 		});
 	});
 
-	// ── Action type validation ───────────────────────────────────────────
+	// ── Action types ─────────────────────────────────────────────────────
 
 	describe("action types", () => {
-		it("send_notification succeeds with valid config", async () => {
+		// send_notification
+
+		it("send_notification fails without notifications controller", async () => {
 			const automation = await controller.create({
 				name: "Notify",
 				triggerEvent: "test.event",
 				actions: [
 					{
 						type: "send_notification",
-						config: { title: "Alert", message: "Something happened" },
+						config: {
+							title: "Alert",
+							message: "Something happened",
+							customerId: "cust_1",
+						},
 					},
 				],
 				status: "active",
 			});
 			const exec = await controller.execute(automation.id, {});
-			expect(exec.results[0].status).toBe("success");
-			expect(exec.results[0].output).toEqual({
-				title: "Alert",
-				message: "Something happened",
+			expect(exec.results[0].status).toBe("failed");
+			expect(exec.results[0].error).toContain("notifications module");
+		});
+
+		it("send_notification succeeds with notifications controller", async () => {
+			const mockCreate = vi.fn().mockResolvedValue({ id: "notif_1" });
+			const ctrlWithNotifications = createAutomationsController(
+				mockData,
+				{},
+				{ notifications: { create: mockCreate } },
+			);
+
+			const automation = await ctrlWithNotifications.create({
+				name: "Notify",
+				triggerEvent: "test.event",
+				actions: [
+					{
+						type: "send_notification",
+						config: {
+							title: "Alert",
+							message: "Something happened",
+							customerId: "cust_1",
+						},
+					},
+				],
+				status: "active",
 			});
+			const exec = await ctrlWithNotifications.execute(automation.id, {});
+			expect(exec.results[0].status).toBe("success");
+			expect(exec.results[0].output).toMatchObject({
+				title: "Alert",
+				customerId: "cust_1",
+			});
+			expect(mockCreate).toHaveBeenCalledWith(
+				expect.objectContaining({
+					customerId: "cust_1",
+					title: "Alert",
+					body: "Something happened",
+				}),
+			);
+		});
+
+		it("send_notification uses customerId from payload when not in config", async () => {
+			const mockCreate = vi.fn().mockResolvedValue({ id: "notif_1" });
+			const ctrlWithNotifications = createAutomationsController(
+				mockData,
+				{},
+				{ notifications: { create: mockCreate } },
+			);
+
+			const automation = await ctrlWithNotifications.create({
+				name: "Notify",
+				triggerEvent: "test.event",
+				actions: [
+					{
+						type: "send_notification",
+						config: { title: "Alert", message: "Test" },
+					},
+				],
+				status: "active",
+			});
+			const exec = await ctrlWithNotifications.execute(automation.id, {
+				customerId: "cust_from_payload",
+			});
+			expect(exec.results[0].status).toBe("success");
+			expect(mockCreate).toHaveBeenCalledWith(
+				expect.objectContaining({ customerId: "cust_from_payload" }),
+			);
 		});
 
 		it("send_notification fails without required config", async () => {
@@ -736,9 +807,132 @@ describe("createAutomationsController", () => {
 			});
 			const exec = await controller.execute(automation.id, {});
 			expect(exec.results[0].status).toBe("failed");
+			expect(exec.results[0].error).toContain(
+				"send_notification requires title and body/message",
+			);
 		});
 
-		it("webhook succeeds with url", async () => {
+		// send_email
+
+		it("send_email fails without required config", async () => {
+			const automation = await controller.create({
+				name: "Bad email",
+				triggerEvent: "test.event",
+				actions: [{ type: "send_email", config: {} }],
+				status: "active",
+			});
+			const exec = await controller.execute(automation.id, {});
+			expect(exec.results[0].status).toBe("failed");
+			expect(exec.results[0].error).toContain(
+				"send_email requires to and subject",
+			);
+		});
+
+		it("send_email fails when resendApiKey not configured", async () => {
+			const automation = await controller.create({
+				name: "Email no key",
+				triggerEvent: "test.event",
+				actions: [
+					{
+						type: "send_email",
+						config: { to: "user@example.com", subject: "Hello" },
+					},
+				],
+				status: "active",
+			});
+			const exec = await controller.execute(automation.id, {});
+			expect(exec.results[0].status).toBe("failed");
+			expect(exec.results[0].error).toContain("resendApiKey");
+		});
+
+		it("send_email makes real Resend API call when configured", async () => {
+			const mockFetch = vi.fn().mockResolvedValue({
+				ok: true,
+				status: 200,
+				json: async () => ({ id: "email_abc123" }),
+			});
+			vi.stubGlobal("fetch", mockFetch);
+
+			const ctrlWithEmail = createAutomationsController(mockData, {
+				resendApiKey: "re_test_key",
+				resendFrom: "noreply@store.com",
+			});
+
+			const automation = await ctrlWithEmail.create({
+				name: "Welcome email",
+				triggerEvent: "order.placed",
+				actions: [
+					{
+						type: "send_email",
+						config: {
+							to: "customer@example.com",
+							subject: "Your order is confirmed",
+							body: "Thanks for your order!",
+						},
+					},
+				],
+				status: "active",
+			});
+
+			const exec = await ctrlWithEmail.execute(automation.id, {});
+			expect(exec.results[0].status).toBe("success");
+			expect(exec.results[0].output).toMatchObject({
+				to: "customer@example.com",
+				subject: "Your order is confirmed",
+				messageId: "email_abc123",
+			});
+			expect(mockFetch).toHaveBeenCalledWith(
+				"https://api.resend.com/emails",
+				expect.objectContaining({
+					method: "POST",
+					headers: expect.objectContaining({
+						Authorization: "Bearer re_test_key",
+					}),
+				}),
+			);
+		});
+
+		it("send_email marks failed when Resend returns error", async () => {
+			vi.stubGlobal(
+				"fetch",
+				vi.fn().mockResolvedValue({
+					ok: false,
+					status: 422,
+					json: async () => ({ message: "Invalid email address" }),
+				}),
+			);
+
+			const ctrlWithEmail = createAutomationsController(mockData, {
+				resendApiKey: "re_test_key",
+			});
+
+			const automation = await ctrlWithEmail.create({
+				name: "Bad email",
+				triggerEvent: "test.event",
+				actions: [
+					{
+						type: "send_email",
+						config: { to: "bad", subject: "Test" },
+					},
+				],
+				status: "active",
+			});
+
+			const exec = await ctrlWithEmail.execute(automation.id, {});
+			expect(exec.results[0].status).toBe("failed");
+			expect(exec.results[0].error).toContain("Invalid email address");
+		});
+
+		// webhook
+
+		it("webhook makes real HTTP POST with payload", async () => {
+			const mockFetch = vi.fn().mockResolvedValue({
+				ok: true,
+				status: 200,
+				json: async () => ({}),
+			});
+			vi.stubGlobal("fetch", mockFetch);
+
 			const automation = await controller.create({
 				name: "Hook",
 				triggerEvent: "test.event",
@@ -750,8 +944,105 @@ describe("createAutomationsController", () => {
 				],
 				status: "active",
 			});
-			const exec = await controller.execute(automation.id, {});
+			const exec = await controller.execute(automation.id, {
+				orderId: "ord_1",
+			});
 			expect(exec.results[0].status).toBe("success");
+			expect(exec.results[0].output).toMatchObject({
+				url: "https://hooks.example.com/test",
+				statusCode: 200,
+			});
+			expect(mockFetch).toHaveBeenCalledWith(
+				"https://hooks.example.com/test",
+				expect.objectContaining({
+					method: "POST",
+					headers: expect.objectContaining({
+						"Content-Type": "application/json",
+					}),
+					body: JSON.stringify({ orderId: "ord_1" }),
+				}),
+			);
+		});
+
+		it("webhook fails when server returns non-OK status", async () => {
+			vi.stubGlobal(
+				"fetch",
+				vi.fn().mockResolvedValue({
+					ok: false,
+					status: 500,
+					json: async () => ({}),
+				}),
+			);
+
+			const automation = await controller.create({
+				name: "Failing hook",
+				triggerEvent: "test.event",
+				actions: [
+					{
+						type: "webhook",
+						config: { url: "https://hooks.example.com/fail" },
+					},
+				],
+				status: "active",
+			});
+			const exec = await controller.execute(automation.id, {});
+			expect(exec.results[0].status).toBe("failed");
+			expect(exec.results[0].error).toContain("HTTP 500");
+		});
+
+		it("webhook fails when network error occurs", async () => {
+			vi.stubGlobal(
+				"fetch",
+				vi.fn().mockRejectedValue(new Error("Network unreachable")),
+			);
+
+			const automation = await controller.create({
+				name: "Network fail hook",
+				triggerEvent: "test.event",
+				actions: [
+					{
+						type: "webhook",
+						config: { url: "https://hooks.example.com/timeout" },
+					},
+				],
+				status: "active",
+			});
+			const exec = await controller.execute(automation.id, {});
+			expect(exec.results[0].status).toBe("failed");
+			expect(exec.results[0].error).toContain("Network unreachable");
+		});
+
+		it("webhook sends X-Webhook-Secret header when secret configured", async () => {
+			const mockFetch = vi.fn().mockResolvedValue({
+				ok: true,
+				status: 200,
+				json: async () => ({}),
+			});
+			vi.stubGlobal("fetch", mockFetch);
+
+			const automation = await controller.create({
+				name: "Secure hook",
+				triggerEvent: "test.event",
+				actions: [
+					{
+						type: "webhook",
+						config: {
+							url: "https://hooks.example.com/secure",
+							secret: "mysecret",
+						},
+					},
+				],
+				status: "active",
+			});
+			await controller.execute(automation.id, {});
+			expect(mockFetch).toHaveBeenCalledWith(
+				expect.any(String),
+				expect.objectContaining({
+					headers: expect.objectContaining({
+						"X-Webhook-Secret": "mysecret",
+					}),
+				}),
+			);
 		});
 
 		it("webhook fails without url", async () => {
