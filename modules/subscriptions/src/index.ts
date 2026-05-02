@@ -52,6 +52,14 @@ export default function subscriptions(options?: SubscriptionsOptions): Module {
 				},
 			],
 		},
+		store: {
+			pages: [
+				{
+					path: "/subscriptions",
+					component: "SubscriptionPlans",
+				},
+			],
+		},
 		options,
 	};
 }
