@@ -14,25 +14,17 @@ interface TierInfo {
 	sortOrder: number;
 }
 
-export function TierProgress({
-	customerId,
-}: {
-	customerId?: string | undefined;
-}) {
+export function TierProgress() {
 	const api = useLoyaltyApi();
 
-	const { data: balanceData, isLoading: loadingBalance } = customerId
-		? (api.getBalance.useQuery({ customerId }) as {
-				data:
-					| {
-							balance: number;
-							tier: string;
-							lifetimeEarned: number;
-					  }
-					| undefined;
-				isLoading: boolean;
-			})
-		: { data: undefined, isLoading: false };
+	const { data: balanceData, isLoading: loadingBalance } =
+		api.getBalance.useQuery({}) as {
+			data:
+				| { balance: number; tier: string; lifetimeEarned: number }
+				| { error: string; status: number }
+				| undefined;
+			isLoading: boolean;
+		};
 
 	const { data: tiersData, isLoading: loadingTiers } = api.getTiers.useQuery(
 		{},
@@ -41,7 +33,11 @@ export function TierProgress({
 		isLoading: boolean;
 	};
 
-	if (!customerId) {
+	const isUnauthenticated =
+		!loadingBalance &&
+		(balanceData as { status?: number } | undefined)?.status === 401;
+
+	if (isUnauthenticated) {
 		return (
 			<div className="rounded-xl border border-gray-200 bg-white p-6 text-center dark:border-gray-800 dark:bg-gray-900">
 				<p className="text-gray-500 text-sm dark:text-gray-400">
@@ -63,14 +59,20 @@ export function TierProgress({
 		);
 	}
 
-	if (!balanceData || !tiersData) return null;
+	const successBalance = balanceData as
+		| { balance: number; tier: string; lifetimeEarned: number }
+		| undefined;
+
+	if (!successBalance || !tiersData) return null;
 
 	const tiers = [...tiersData.tiers].sort((a, b) => a.minPoints - b.minPoints);
-	const currentTierIndex = tiers.findIndex((t) => t.slug === balanceData.tier);
+	const currentTierIndex = tiers.findIndex(
+		(t) => t.slug === successBalance.tier,
+	);
 	const currentTier = tiers[currentTierIndex];
 	const nextTier = tiers[currentTierIndex + 1];
 
-	const currentColor = getTierColor(balanceData.tier);
+	const currentColor = getTierColor(successBalance.tier);
 
 	let progressPercent = 100;
 	let pointsToNext = 0;
@@ -78,12 +80,15 @@ export function TierProgress({
 
 	if (nextTier && currentTier) {
 		const range = nextTier.minPoints - currentTier.minPoints;
-		const progress = balanceData.lifetimeEarned - currentTier.minPoints;
+		const progress = successBalance.lifetimeEarned - currentTier.minPoints;
 		progressPercent = Math.min(
 			100,
 			Math.max(0, Math.round((progress / range) * 100)),
 		);
-		pointsToNext = Math.max(0, nextTier.minPoints - balanceData.lifetimeEarned);
+		pointsToNext = Math.max(
+			0,
+			nextTier.minPoints - successBalance.lifetimeEarned,
+		);
 		progressLabel = `${formatPoints(pointsToNext)} pts to ${nextTier.name}`;
 	}
 
@@ -91,10 +96,10 @@ export function TierProgress({
 		<div className="mt-4 flex justify-between">
 			{tiers.map((tier) => {
 				const color = getTierColor(tier.slug);
-				const isActive = tier.slug === balanceData.tier;
+				const isActive = tier.slug === successBalance.tier;
 				const isPast =
 					tiers.indexOf(tier) <
-					tiers.findIndex((t) => t.slug === balanceData.tier);
+					tiers.findIndex((t) => t.slug === successBalance.tier);
 				return (
 					<div key={tier.id} className="flex flex-col items-center gap-1">
 						<div
@@ -125,7 +130,7 @@ export function TierProgress({
 
 	return (
 		<TierProgressTemplate
-			tierName={currentTier?.name ?? balanceData.tier}
+			tierName={currentTier?.name ?? successBalance.tier}
 			tierBg={currentColor.bg}
 			tierText={currentColor.text}
 			progressPercent={progressPercent}

@@ -36,32 +36,29 @@ const TYPE_LABELS: Record<TransactionType, { label: string; color: string }> = {
 	},
 };
 
-export function PointsHistory({
-	customerId,
-	limit = 10,
-}: {
-	customerId?: string | undefined;
-	limit?: number | undefined;
-}) {
+export function PointsHistory({ limit = 10 }: { limit?: number | undefined }) {
 	const api = useLoyaltyApi();
 	const [filter, setFilter] = useState<TransactionType | "all">("all");
 
-	const queryParams: Record<string, string | number> = {
-		customerId: customerId ?? "",
-		take: limit,
-	};
+	const queryParams: Record<string, string | number> = { take: limit };
 	if (filter !== "all") {
 		queryParams.type = filter;
 	}
 
-	const { data, isLoading: loading } = customerId
-		? (api.listTransactions.useQuery(queryParams) as {
-				data: { transactions: Transaction[]; total: number } | undefined;
-				isLoading: boolean;
-			})
-		: { data: undefined, isLoading: false };
+	const { data, isLoading: loading } = api.listTransactions.useQuery(
+		queryParams,
+	) as {
+		data:
+			| { transactions: Transaction[]; total: number }
+			| { error: string; status: number }
+			| undefined;
+		isLoading: boolean;
+	};
 
-	if (!customerId) {
+	const isUnauthenticated =
+		!loading && (data as { status?: number } | undefined)?.status === 401;
+
+	if (isUnauthenticated) {
 		return (
 			<div className="rounded-xl border border-gray-200 bg-white p-6 text-center dark:border-gray-800 dark:bg-gray-900">
 				<p className="text-gray-500 text-sm dark:text-gray-400">
@@ -86,7 +83,10 @@ export function PointsHistory({
 		);
 	}
 
-	const transactions = data?.transactions ?? [];
+	const successData = data as
+		| { transactions: Transaction[]; total: number }
+		| undefined;
+	const transactions = successData?.transactions ?? [];
 
 	const filters = (
 		<div className="flex gap-1">
