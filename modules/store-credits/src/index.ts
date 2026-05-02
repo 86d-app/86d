@@ -139,7 +139,14 @@ export default function storeCredits(options?: StoreCreditsOptions): Module {
 				},
 			],
 		},
-
+		store: {
+			pages: [
+				{
+					path: "/account/store-credits",
+					component: "StoreCreditTransactions",
+				},
+			],
+		},
 		options,
 	};
 }

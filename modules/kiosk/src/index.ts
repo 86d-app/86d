@@ -68,6 +68,14 @@ export default function kiosk(options?: KioskOptions): Module {
 				},
 			],
 		},
+		store: {
+			pages: [
+				{
+					path: "/kiosk",
+					component: "KioskTerminal",
+				},
+			],
+		},
 		options,
 	};
 }

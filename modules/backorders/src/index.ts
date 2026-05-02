@@ -62,6 +62,14 @@ export default function backorders(options?: BackordersOptions): Module {
 				},
 			],
 		},
+		store: {
+			pages: [
+				{
+					path: "/account/backorders",
+					component: "MyBackorders",
+				},
+			],
+		},
 		options,
 	};
 }

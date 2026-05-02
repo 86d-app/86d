@@ -59,6 +59,14 @@ export default function newsletter(options?: NewsletterOptions): Module {
 				},
 			],
 		},
+		store: {
+			pages: [
+				{
+					path: "/newsletter/unsubscribe",
+					component: "NewsletterUnsubscribe",
+				},
+			],
+		},
 		options,
 	};
 }
