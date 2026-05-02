@@ -75,6 +75,8 @@ export function createReturnController(
 					orderItemId: itemParams.orderItemId,
 					productName: itemParams.productName,
 					sku: itemParams.sku,
+					productId: itemParams.productId,
+					variantId: itemParams.variantId,
 					quantity: itemParams.quantity,
 					unitPrice: itemParams.unitPrice,
 					reason: itemParams.reason,

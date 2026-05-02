@@ -18,6 +18,8 @@ export const submitReturn = createStoreEndpoint(
 						orderItemId: z.string().max(200),
 						productName: z.string().max(500).transform(sanitizeText),
 						sku: z.string().max(200).optional(),
+						productId: z.string().max(200).optional(),
+						variantId: z.string().max(200).optional(),
 						quantity: z.number().int().min(1),
 						unitPrice: z.number().min(0),
 						reason: z.enum([

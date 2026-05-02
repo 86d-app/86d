@@ -1,5 +1,15 @@
 import type { ModuleController } from "@86d-app/core";
 
+/** Subset of the inventory controller used for restocking returned items. */
+export type InventoryRestockController = {
+	adjustStock(params: {
+		productId: string;
+		variantId?: string | undefined;
+		locationId?: string | undefined;
+		delta: number;
+	}): Promise<unknown>;
+};
+
 export type ReturnStatus =
 	| "requested"
 	| "approved"
@@ -47,6 +57,8 @@ export type ReturnItem = {
 	orderItemId: string;
 	productName: string;
 	sku?: string | undefined;
+	productId?: string | undefined;
+	variantId?: string | undefined;
 	quantity: number;
 	unitPrice: number;
 	reason: ItemReturnReason;
@@ -69,6 +81,8 @@ export type CreateReturnItemParams = {
 	orderItemId: string;
 	productName: string;
 	sku?: string | undefined;
+	productId?: string | undefined;
+	variantId?: string | undefined;
 	quantity: number;
 	unitPrice: number;
 	reason: ItemReturnReason;
