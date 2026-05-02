@@ -22,12 +22,11 @@ const STATUS_LABELS: Record<string, string> = {
 	cancelled: "Cancelled",
 };
 
-export function WaitlistPage({ email }: { email: string }) {
+export function WaitlistPage() {
 	const api = useWaitlistApi();
 	const [error, setError] = useState("");
 
 	const { data, isLoading } = api.myWaitlist.useQuery({
-		email,
 		take: "50",
 	}) as {
 		data: { entries: WaitlistEntry[] } | undefined;
@@ -47,7 +46,7 @@ export function WaitlistPage({ email }: { email: string }) {
 
 	const handleLeave = (productId: string) => {
 		setError("");
-		leaveMutation.mutate({ email, productId });
+		leaveMutation.mutate({ productId });
 	};
 
 	const content = isLoading ? (
