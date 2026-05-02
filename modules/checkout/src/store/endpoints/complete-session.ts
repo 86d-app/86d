@@ -1,6 +1,7 @@
 import { createStoreEndpoint, z } from "@86d-app/core";
 import type {
 	CheckoutController,
+	DiscountController,
 	GiftCardCheckController,
 	InventoryCheckController,
 	OrderCreateController,
@@ -183,6 +184,34 @@ export const completeSession = createStoreEndpoint(
 					total: adjustedTotal,
 					currency: existing.currency,
 				});
+			}
+		}
+
+		// Increment discount usage now that payment is confirmed and the order exists.
+		// This is the canonical point to record redemption — not at apply time (cart
+		// abandonment would waste a use) but at completion time when money is collected.
+		// applyCode() is best-effort: if the code has since expired or hit its limit,
+		// we log the warning but still allow the order through (the amount was already
+		// locked in the cart).
+		if (existing.discountCode) {
+			const discountController = ctx.context.controllers.discount as unknown as
+				| DiscountController
+				| undefined;
+
+			if (discountController) {
+				const result = await discountController.applyCode({
+					code: existing.discountCode,
+					subtotal: existing.subtotal,
+					productIds: lineItems.map((i) => i.productId).filter(Boolean),
+				});
+				if (!result.valid) {
+					// Log but don't block — discount was validated at apply time
+					void ctx.context.events?.emit("discount.apply_failed_at_complete", {
+						code: existing.discountCode,
+						sessionId: existing.id,
+						reason: result.error,
+					});
+				}
 			}
 		}
 
