@@ -1,6 +1,7 @@
 import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
 import type {
 	CheckoutController,
+	CurrencyConversionController,
 	PriceListResolutionController,
 	TaxCalculateController,
 } from "../../service";
@@ -96,11 +97,12 @@ export const createSession = createStoreEndpoint(
 
 		// Apply price list overrides when the price-lists module is active.
 		// resolvePrices() returns only products covered by an active price list;
-		// items absent from the map keep their base price.
+		// items absent from the map keep their base price (or get currency-converted below).
 		const priceListCtrl = ctx.context.controllers.priceLists as unknown as
 			| PriceListResolutionController
 			| undefined;
 
+		const priceListCoveredIds = new Set<string>();
 		if (priceListCtrl) {
 			const productIds = [
 				...new Set(ctx.body.lineItems.map((i) => i.productId)),
@@ -113,10 +115,38 @@ export const createSession = createStoreEndpoint(
 					const override = resolved[item.productId];
 					if (override) {
 						item.price = override.price;
+						priceListCoveredIds.add(item.productId);
 					}
 				}
 			} catch {
 				// Best-effort: price list lookup failure falls back to base prices
+			}
+		}
+
+		// Apply currency conversion for items not already priced by a price list.
+		// When a non-default currency is requested, convert base prices via exchange
+		// rates (or price overrides set in the multi-currency module).
+		if (ctx.body.currency) {
+			const currencyCtrl = ctx.context.controllers.multiCurrency as unknown as
+				| CurrencyConversionController
+				| undefined;
+
+			if (currencyCtrl) {
+				for (const item of ctx.body.lineItems) {
+					if (priceListCoveredIds.has(item.productId)) continue;
+					try {
+						const converted = await currencyCtrl.getProductPrice({
+							productId: item.productId,
+							basePriceInCents: item.price,
+							currencyCode: ctx.body.currency,
+						});
+						if (converted) {
+							item.price = converted.amount;
+						}
+					} catch {
+						// Best-effort: conversion failure keeps base price
+					}
+				}
 			}
 		}
 

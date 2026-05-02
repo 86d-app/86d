@@ -17,6 +17,19 @@ export type PriceListResolutionController = {
 };
 
 /**
+ * Minimal interface for currency conversion.
+ * Checkout accesses the multi-currency controller to convert base prices
+ * when the session uses a non-default currency.
+ */
+export type CurrencyConversionController = {
+	getProductPrice(params: {
+		productId: string;
+		basePriceInCents: number;
+		currencyCode: string;
+	}): Promise<{ amount: number } | null>;
+};
+
+/**
  * Minimal interface for discount validation.
  * Checkout accesses the discount controller through the runtime context —
  * no direct module import, just a structural contract.
