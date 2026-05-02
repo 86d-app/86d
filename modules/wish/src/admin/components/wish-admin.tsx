@@ -94,8 +94,7 @@ function useWishAdminApi() {
 		stats: client.module("wish").admin["/admin/wish/stats"],
 		listProducts: client.module("wish").admin["/admin/wish/products"],
 		listOrders: client.module("wish").admin["/admin/wish/orders"],
-		pendingShipments:
-			client.module("wish").admin["/admin/wish/orders/pending"],
+		pendingShipments: client.module("wish").admin["/admin/wish/orders/pending"],
 		createProduct: client.module("wish").admin["/admin/wish/products/create"],
 		disableProduct:
 			client.module("wish").admin["/admin/wish/products/:id/disable"],
