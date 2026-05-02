@@ -95,6 +95,23 @@ export type InventoryCheckController = {
 };
 
 /**
+ * Minimal interface for store credit balance checks and debits.
+ * Checkout accesses the store-credits controller through the runtime context —
+ * no direct module import, just a structural contract.
+ */
+export type StoreCreditCheckController = {
+	getBalance(customerId: string): Promise<number>;
+	debit(params: {
+		customerId: string;
+		amount: number;
+		reason: string;
+		description: string;
+		referenceType?: string | undefined;
+		referenceId?: string | undefined;
+	}): Promise<{ id: string; amount: number; balanceAfter: number }>;
+};
+
+/**
  * Minimal interface for gift card balance checks.
  * Checkout accesses the gift card controller through the runtime context —
  * no direct module import, just a structural contract.
@@ -171,6 +188,7 @@ export type OrderCreateController = {
 		shippingAmount?: number | undefined;
 		discountAmount?: number | undefined;
 		giftCardAmount?: number | undefined;
+		storeCreditAmount?: number | undefined;
 		total: number;
 		metadata?: Record<string, unknown> | undefined;
 		items: Array<{
@@ -292,6 +310,7 @@ export type CheckoutSession = {
 	shippingAmount: number;
 	discountAmount: number;
 	giftCardAmount: number;
+	storeCreditAmount: number;
 	total: number;
 	currency: string;
 	discountCode?: string | undefined;
@@ -338,6 +357,7 @@ export type CheckoutController = ModuleController & {
 		shippingAmount?: number | undefined;
 		discountAmount?: number | undefined;
 		giftCardAmount?: number | undefined;
+		storeCreditAmount?: number | undefined;
 		total: number;
 		lineItems: CheckoutLineItem[];
 		shippingAddress?: CheckoutAddress | undefined;
@@ -392,6 +412,15 @@ export type CheckoutController = ModuleController & {
 
 	/** Remove applied gift card */
 	removeGiftCard(id: string): Promise<CheckoutSession | null>;
+
+	/** Apply store credit for the current customer and update storeCreditAmount */
+	applyStoreCredit(
+		id: string,
+		params: { storeCreditAmount: number },
+	): Promise<CheckoutSession | null>;
+
+	/** Remove applied store credit */
+	removeStoreCredit(id: string): Promise<CheckoutSession | null>;
 
 	/**
 	 * Validate the session has all required fields and transition to "processing".

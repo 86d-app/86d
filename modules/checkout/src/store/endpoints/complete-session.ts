@@ -6,6 +6,7 @@ import type {
 	InventoryCheckController,
 	OrderCreateController,
 	PaymentProcessController,
+	StoreCreditCheckController,
 } from "../../service";
 
 export const completeSession = createStoreEndpoint(
@@ -101,14 +102,47 @@ export const completeSession = createStoreEndpoint(
 			}
 		}
 
-		// Recalculate total if the actual gift card amount differs from expected
+		// Debit store credits BEFORE creating the order so the balance is consumed
+		// before the order record is written.
+		let actualStoreCreditAmount = existing.storeCreditAmount;
+		if (existing.customerId && existing.storeCreditAmount > 0) {
+			const storeCreditsController = ctx.context.controllers
+				.storeCredits as unknown as StoreCreditCheckController | undefined;
+
+			if (storeCreditsController) {
+				try {
+					const debitResult = await storeCreditsController.debit({
+						customerId: existing.customerId,
+						amount: existing.storeCreditAmount,
+						reason: "order_payment",
+						description: `Store credit applied to checkout ${existing.id}`,
+						referenceType: "checkout_session",
+						referenceId: existing.id,
+					});
+					actualStoreCreditAmount = debitResult.amount;
+				} catch {
+					return {
+						error:
+							"Store credit could not be applied. Your balance may be insufficient or your account may be frozen.",
+						status: 422,
+					};
+				}
+			}
+		}
+
+		// Recalculate total if the actual gift card or store credit amounts differ from expected
 		const adjustedTotal =
-			actualGiftCardAmount !== existing.giftCardAmount
-				? existing.subtotal +
-					existing.taxAmount +
-					existing.shippingAmount -
-					existing.discountAmount -
-					actualGiftCardAmount
+			actualGiftCardAmount !== existing.giftCardAmount ||
+			actualStoreCreditAmount !== existing.storeCreditAmount
+				? Math.max(
+						0,
+						existing.subtotal +
+							existing.taxAmount +
+							existing.shippingAmount -
+							existing.discountAmount -
+							actualGiftCardAmount -
+							actualStoreCreditAmount,
+					)
 				: existing.total;
 
 		// Create a real order in the orders module if available
@@ -131,6 +165,7 @@ export const completeSession = createStoreEndpoint(
 				shippingAmount: existing.shippingAmount,
 				discountAmount: existing.discountAmount,
 				giftCardAmount: actualGiftCardAmount,
+				storeCreditAmount: actualStoreCreditAmount,
 				total: adjustedTotal,
 				metadata: {
 					checkoutSessionId: existing.id,
@@ -270,6 +305,7 @@ export const completeSession = createStoreEndpoint(
 				shippingAmount: session.shippingAmount,
 				discountAmount: session.discountAmount,
 				giftCardAmount: actualGiftCardAmount,
+				storeCreditAmount: actualStoreCreditAmount,
 				total: adjustedTotal,
 				currency: session.currency,
 				shippingAddress: session.shippingAddress,

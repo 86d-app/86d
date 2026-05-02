@@ -23,6 +23,7 @@ function calculateTotal(session: {
 	shippingAmount: number;
 	discountAmount: number;
 	giftCardAmount: number;
+	storeCreditAmount: number;
 }): number {
 	return Math.max(
 		0,
@@ -30,7 +31,8 @@ function calculateTotal(session: {
 			session.taxAmount +
 			session.shippingAmount -
 			session.discountAmount -
-			session.giftCardAmount,
+			session.giftCardAmount -
+			session.storeCreditAmount,
 	);
 }
 
@@ -54,6 +56,7 @@ export function createCheckoutController(
 				shippingAmount: params.shippingAmount ?? 0,
 				discountAmount: params.discountAmount ?? 0,
 				giftCardAmount: params.giftCardAmount ?? 0,
+				storeCreditAmount: params.storeCreditAmount ?? 0,
 				total: params.total,
 				currency: params.currency ?? "USD",
 				shippingAddress: params.shippingAddress,
@@ -250,6 +253,63 @@ export function createCheckoutController(
 				total: calculateTotal({
 					...existing,
 					giftCardAmount: 0,
+				}),
+				updatedAt: new Date(),
+			};
+
+			await data.upsert("checkoutSession", id, toRecord(updated));
+			return updated;
+		},
+
+		async applyStoreCredit(
+			id: string,
+			params: { storeCreditAmount: number },
+		): Promise<CheckoutSession | null> {
+			const existing = (await data.get(
+				"checkoutSession",
+				id,
+			)) as CheckoutSession | null;
+			if (
+				!existing ||
+				existing.status === "completed" ||
+				existing.status === "expired"
+			) {
+				return null;
+			}
+
+			const updated: CheckoutSession = {
+				...existing,
+				storeCreditAmount: params.storeCreditAmount,
+				total: calculateTotal({
+					...existing,
+					storeCreditAmount: params.storeCreditAmount,
+				}),
+				updatedAt: new Date(),
+			};
+
+			await data.upsert("checkoutSession", id, toRecord(updated));
+			return updated;
+		},
+
+		async removeStoreCredit(id: string): Promise<CheckoutSession | null> {
+			const existing = (await data.get(
+				"checkoutSession",
+				id,
+			)) as CheckoutSession | null;
+			if (
+				!existing ||
+				existing.status === "completed" ||
+				existing.status === "expired"
+			) {
+				return null;
+			}
+
+			const updated: CheckoutSession = {
+				...existing,
+				storeCreditAmount: 0,
+				total: calculateTotal({
+					...existing,
+					storeCreditAmount: 0,
 				}),
 				updatedAt: new Date(),
 			};
