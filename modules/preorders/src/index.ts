@@ -69,6 +69,14 @@ export default function preorders(options?: PreordersOptions): Module {
 				},
 			],
 		},
+		store: {
+			pages: [
+				{
+					path: "/account/preorders",
+					component: "MyPreorders",
+				},
+			],
+		},
 		options,
 	};
 }

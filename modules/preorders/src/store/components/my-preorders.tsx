@@ -43,12 +43,11 @@ const STATUS_COLORS: Record<string, string> = {
 		"bg-red-50 text-red-700 border-red-200 dark:bg-red-950/50 dark:text-red-400 dark:border-red-800",
 };
 
-export function MyPreorders({ customerId }: { customerId: string }) {
+export function MyPreorders() {
 	const api = usePreordersApi();
 	const [error, setError] = useState("");
 
 	const { data, isLoading } = api.myPreorders.useQuery({
-		customerId,
 		take: "50",
 	}) as {
 		data: { items: PreorderItem[]; total: number } | undefined;
