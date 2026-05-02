@@ -360,7 +360,100 @@ describe("store endpoints — appointments", () => {
 		});
 	});
 
-	// ── 6. POST /appointments/:id/cancel — cancel appointment ──
+	// ── 6. GET /appointments/me — list customer's appointments ──
+
+	describe("list my appointments (store)", () => {
+		it("returns appointments for a specific customer", async () => {
+			const svc = await seedService({ duration: 30 });
+			const staff = await seedStaff();
+			const customerId = "cust_alice";
+
+			await controller.createAppointment({
+				serviceId: svc.id,
+				staffId: staff.id,
+				customerName: "Alice",
+				customerEmail: "alice@example.com",
+				customerId,
+				startsAt: new Date("2026-04-07T10:00:00Z"),
+			});
+			await controller.createAppointment({
+				serviceId: svc.id,
+				staffId: staff.id,
+				customerName: "Alice",
+				customerEmail: "alice@example.com",
+				customerId,
+				startsAt: new Date("2026-04-08T10:00:00Z"),
+			});
+			// Another customer's appointment
+			await seedAppointment(svc.id, staff.id, {
+				customerId: "cust_bob",
+				startsAt: new Date("2026-04-09T10:00:00Z"),
+			});
+
+			const aliceAppts = await controller.listAppointments({ customerId });
+			expect(aliceAppts).toHaveLength(2);
+			for (const a of aliceAppts) {
+				expect(a.customerId).toBe(customerId);
+			}
+		});
+
+		it("returns empty when customer has no appointments", async () => {
+			const appts = await controller.listAppointments({
+				customerId: "cust_nobody",
+			});
+			expect(appts).toHaveLength(0);
+		});
+
+		it("filters by status", async () => {
+			const svc = await seedService({ duration: 30 });
+			const staff = await seedStaff();
+			const customerId = "cust_filter";
+
+			const a1 = await controller.createAppointment({
+				serviceId: svc.id,
+				staffId: staff.id,
+				customerName: "Filter",
+				customerEmail: "filter@example.com",
+				customerId,
+				startsAt: new Date("2026-04-07T10:00:00Z"),
+			});
+			await controller.cancelAppointment(a1.id);
+
+			await controller.createAppointment({
+				serviceId: svc.id,
+				staffId: staff.id,
+				customerName: "Filter",
+				customerEmail: "filter@example.com",
+				customerId,
+				startsAt: new Date("2026-04-08T10:00:00Z"),
+			});
+
+			const cancelled = await controller.listAppointments({
+				customerId,
+				status: "cancelled",
+			});
+			expect(cancelled).toHaveLength(1);
+			expect(cancelled[0].status).toBe("cancelled");
+
+			const pending = await controller.listAppointments({
+				customerId,
+				status: "pending",
+			});
+			expect(pending).toHaveLength(1);
+			expect(pending[0].status).toBe("pending");
+		});
+
+		it("does not return other customers' appointments", async () => {
+			const svc = await seedService({ duration: 30 });
+			const staff = await seedStaff();
+			await seedAppointment(svc.id, staff.id, { customerId: "cust_other" });
+
+			const mine = await controller.listAppointments({ customerId: "cust_me" });
+			expect(mine).toHaveLength(0);
+		});
+	});
+
+	// ── 7. POST /appointments/:id/cancel — cancel appointment ──
 
 	describe("cancel appointment (store)", () => {
 		it("sets a pending appointment to cancelled", async () => {
