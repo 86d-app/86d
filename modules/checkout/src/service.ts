@@ -1,6 +1,22 @@
 import type { ModuleController } from "@86d-app/core";
 
 /**
+ * Minimal interface for price list resolution.
+ * Checkout accesses the price-lists controller through the runtime context.
+ * Resolves active price list prices for a batch of products, optionally
+ * scoped to a customer group and currency.
+ */
+export type PriceListResolutionController = {
+	resolvePrices(
+		productIds: string[],
+		params?: {
+			customerGroupId?: string | undefined;
+			currency?: string | undefined;
+		},
+	): Promise<Record<string, { price: number; compareAtPrice: number | null }>>;
+};
+
+/**
  * Minimal interface for discount validation.
  * Checkout accesses the discount controller through the runtime context —
  * no direct module import, just a structural contract.

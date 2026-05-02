@@ -1,5 +1,9 @@
 import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
-import type { CheckoutController, TaxCalculateController } from "../../service";
+import type {
+	CheckoutController,
+	PriceListResolutionController,
+	TaxCalculateController,
+} from "../../service";
 import { recalculateTax } from "./recalculate-tax";
 
 const addressSchema = z.object({
@@ -87,6 +91,32 @@ export const createSession = createStoreEndpoint(
 					trustedPrice = product.price;
 				}
 				item.price = trustedPrice;
+			}
+		}
+
+		// Apply price list overrides when the price-lists module is active.
+		// resolvePrices() returns only products covered by an active price list;
+		// items absent from the map keep their base price.
+		const priceListCtrl = ctx.context.controllers.priceLists as unknown as
+			| PriceListResolutionController
+			| undefined;
+
+		if (priceListCtrl) {
+			const productIds = [
+				...new Set(ctx.body.lineItems.map((i) => i.productId)),
+			];
+			try {
+				const resolved = await priceListCtrl.resolvePrices(productIds, {
+					currency: ctx.body.currency,
+				});
+				for (const item of ctx.body.lineItems) {
+					const override = resolved[item.productId];
+					if (override) {
+						item.price = override.price;
+					}
+				}
+			} catch {
+				// Best-effort: price list lookup failure falls back to base prices
 			}
 		}
 
