@@ -137,7 +137,9 @@ export default function SubscriptionsPage() {
 							</svg>
 						</div>
 					</div>
-					<p className="font-medium text-foreground text-sm">No subscriptions</p>
+					<p className="font-medium text-foreground text-sm">
+						No subscriptions
+					</p>
 					<p className="mt-1 text-muted-foreground text-sm">
 						You don&apos;t have any active subscriptions.
 					</p>

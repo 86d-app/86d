@@ -223,6 +223,76 @@ const NAV_ITEMS: AccountNavItem[] = [
 			</svg>
 		),
 	},
+	{
+		label: "Pre-orders",
+		href: "/account/preorders",
+		icon: (
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="16"
+				height="16"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				strokeWidth="1.5"
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				aria-hidden="true"
+			>
+				<path d="M12 2v4" />
+				<path d="M12 18v4" />
+				<path d="M4.93 4.93l2.83 2.83" />
+				<path d="M16.24 16.24l2.83 2.83" />
+				<path d="M2 12h4" />
+				<path d="M18 12h4" />
+				<path d="M4.93 19.07l2.83-2.83" />
+				<path d="M16.24 7.76l2.83-2.83" />
+			</svg>
+		),
+	},
+	{
+		label: "Backorders",
+		href: "/account/backorders",
+		icon: (
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="16"
+				height="16"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				strokeWidth="1.5"
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				aria-hidden="true"
+			>
+				<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+				<path d="M3 3v5h5" />
+				<path d="M12 7v5l4 2" />
+			</svg>
+		),
+	},
+	{
+		label: "Store Credit",
+		href: "/account/store-credits",
+		icon: (
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="16"
+				height="16"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				strokeWidth="1.5"
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				aria-hidden="true"
+			>
+				<rect width="20" height="14" x="2" y="5" rx="2" />
+				<line x1="2" y1="10" x2="22" y2="10" />
+			</svg>
+		),
+	},
 ];
 
 function NavItem({

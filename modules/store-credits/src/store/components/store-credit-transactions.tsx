@@ -18,11 +18,7 @@ type Transaction = {
  * Displays a list of store credit transactions for a customer.
  * Shows credits and debits with amounts, reasons, and dates.
  */
-export function StoreCreditTransactions({
-	limit,
-}: {
-	limit?: number;
-}) {
+export function StoreCreditTransactions({ limit }: { limit?: number }) {
 	const api = useStoreCreditApi();
 
 	const { data, isLoading, error } = api.transactions.useQuery({
