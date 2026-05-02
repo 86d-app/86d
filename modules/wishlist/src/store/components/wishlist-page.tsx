@@ -16,11 +16,7 @@ interface WishlistItem {
 	addedAt: string;
 }
 
-export function WishlistPage({
-	customerId,
-}: {
-	customerId?: string | undefined;
-}) {
+export function WishlistPage() {
 	const api = useWishlistApi();
 	const [removingId, setRemovingId] = useState<string | null>(null);
 	const [error, setError] = useState("");
@@ -30,16 +26,22 @@ export function WishlistPage({
 		isLoading: loading,
 		isError: queryError,
 		refetch,
-	} = customerId
-		? (api.listWishlist.useQuery({}) as {
-				data: { items: WishlistItem[]; total: number } | undefined;
-				isLoading: boolean;
-				isError: boolean;
-				refetch: () => void;
-			})
-		: { data: undefined, isLoading: false, isError: false, refetch: () => {} };
+	} = api.listWishlist.useQuery({}) as {
+		data:
+			| { items: WishlistItem[]; total: number }
+			| { error: string; status: number }
+			| undefined;
+		isLoading: boolean;
+		isError: boolean;
+		refetch: () => void;
+	};
 
-	const items = data?.items ?? [];
+	const isUnauthenticated =
+		!loading && (data as { status?: number } | undefined)?.status === 401;
+	const successData = data as
+		| { items: WishlistItem[]; total: number }
+		| undefined;
+	const items = successData?.items ?? [];
 
 	const removeMutation = api.removeFromWishlist.useMutation({
 		onSettled: () => {
@@ -58,7 +60,7 @@ export function WishlistPage({
 		removeMutation.mutate({ params: { id } });
 	};
 
-	if (!customerId) {
+	if (isUnauthenticated) {
 		return (
 			<div className="py-16 text-center">
 				<HeartIcon filled={false} large />

@@ -83,6 +83,19 @@ export default function invoices(options?: InvoicesOptions): Module {
 			],
 		},
 
+		store: {
+			pages: [
+				{
+					path: "/account/invoices",
+					component: "InvoiceHistory",
+				},
+				{
+					path: "/account/invoices/:id",
+					component: "InvoiceTracker",
+				},
+			],
+		},
+
 		options,
 	};
 }

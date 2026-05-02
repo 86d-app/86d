@@ -45,6 +45,14 @@ export default function comparisons(options?: ComparisonsOptions): Module {
 				},
 			],
 		},
+		store: {
+			pages: [
+				{
+					path: "/compare",
+					component: "ComparisonTable",
+				},
+			],
+		},
 		options,
 	};
 }

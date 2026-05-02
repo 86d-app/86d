@@ -67,6 +67,18 @@ export default function photoBooth(options?: PhotoBoothOptions): Module {
 				},
 			],
 		},
+		store: {
+			pages: [
+				{
+					path: "/photo-booth",
+					component: "PhotoGallery",
+				},
+				{
+					path: "/photo-booth/stream",
+					component: "PhotoStream",
+				},
+			],
+		},
 		options,
 	};
 }

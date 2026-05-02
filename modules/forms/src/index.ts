@@ -82,6 +82,18 @@ export default function forms(options?: FormsOptions): Module {
 				},
 			],
 		},
+		store: {
+			pages: [
+				{
+					path: "/forms",
+					component: "FormList",
+				},
+				{
+					path: "/forms/:slug",
+					component: "FormEmbed",
+				},
+			],
+		},
 		options,
 	};
 }

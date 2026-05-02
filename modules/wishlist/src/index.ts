@@ -58,6 +58,14 @@ export default function wishlist(options?: WishlistOptions): Module {
 				},
 			],
 		},
+		store: {
+			pages: [
+				{
+					path: "/account/wishlist",
+					component: "WishlistPage",
+				},
+			],
+		},
 		options,
 	};
 }

@@ -75,6 +75,14 @@ export default function faq(options?: FaqOptions): Module {
 				},
 			],
 		},
+		store: {
+			pages: [
+				{
+					path: "/faq",
+					component: "FaqAccordion",
+				},
+			],
+		},
 		options,
 	};
 }
