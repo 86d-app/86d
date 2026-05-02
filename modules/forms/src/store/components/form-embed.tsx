@@ -17,7 +17,11 @@ interface FormData {
 	honeypotEnabled: boolean;
 }
 
-export function FormEmbed({ slug }: { slug: string }) {
+export function FormEmbed(props: {
+	slug?: string | undefined;
+	params?: Record<string, string> | undefined;
+}) {
+	const slug = props.slug ?? props.params?.slug ?? "";
 	const api = useFormsApi();
 	const [values, setValues] = useState<Record<string, string | boolean>>({});
 	const [submitted, setSubmitted] = useState(false);

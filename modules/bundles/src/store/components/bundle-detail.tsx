@@ -22,7 +22,11 @@ interface Bundle {
 	items: BundleItem[];
 }
 
-export function BundleDetail({ slug }: { slug: string }) {
+export function BundleDetail(props: {
+	slug?: string | undefined;
+	params?: Record<string, string> | undefined;
+}) {
+	const slug = props.slug ?? props.params?.slug ?? "";
 	const api = useBundleApi();
 	const { data, isLoading } = api.get.useQuery({
 		params: { slug },

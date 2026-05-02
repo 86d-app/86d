@@ -43,7 +43,11 @@ function useRegistryPageApi() {
 	};
 }
 
-export function RegistryPage({ slug }: { slug: string }) {
+export function RegistryPage(props: {
+	slug?: string | undefined;
+	params?: Record<string, string> | undefined;
+}) {
+	const slug = props.slug ?? props.params?.slug ?? "";
 	const api = useRegistryPageApi();
 
 	const { data, isLoading: loading } = api.get.useQuery({ slug }) as {

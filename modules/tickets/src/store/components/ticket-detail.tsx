@@ -78,13 +78,13 @@ function MessageBubble({ message }: { message: TicketMessage }) {
 	);
 }
 
-export function TicketDetail({
-	ticketId,
-	onBack,
-}: {
-	ticketId: string;
+export function TicketDetail(props: {
+	ticketId?: string | undefined;
 	onBack?: (() => void) | undefined;
+	params?: Record<string, string> | undefined;
 }) {
+	const ticketId = props.ticketId ?? props.params?.id ?? "";
+	const { onBack } = props;
 	const api = useTicketsApi();
 
 	const { data, isLoading, isError, error } = api.getTicket.useQuery({

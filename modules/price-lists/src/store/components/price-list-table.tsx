@@ -22,7 +22,11 @@ interface PriceEntry {
 	maxQuantity?: number | undefined;
 }
 
-export function PriceListTable({ slug }: { slug: string }) {
+export function PriceListTable(props: {
+	slug?: string | undefined;
+	params?: Record<string, string> | undefined;
+}) {
+	const slug = props.slug ?? props.params?.slug ?? "";
 	const api = usePriceListsStoreApi();
 
 	const query = api.getPriceList.useQuery({ params: { slug } }) as {

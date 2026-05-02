@@ -12,7 +12,11 @@ interface QrCodeData {
 	isActive: boolean;
 }
 
-export function QrRedirect({ qrCodeId }: { qrCodeId: string }) {
+export function QrRedirect(props: {
+	qrCodeId?: string | undefined;
+	params?: Record<string, string> | undefined;
+}) {
+	const qrCodeId = props.qrCodeId ?? props.params?.id ?? "";
 	const api = useQrCodeStoreApi();
 	const scannedRef = useRef(false);
 

@@ -29,7 +29,11 @@ interface PlanData {
 	features?: string[];
 }
 
-export function PlanDetail({ slug }: { slug?: string | undefined }) {
+export function PlanDetail(props: {
+	slug?: string | undefined;
+	params?: Record<string, string> | undefined;
+}) {
+	const slug = props.slug ?? props.params?.slug;
 	const api = useMembershipsApi();
 	const [subscribing, setSubscribing] = useState(false);
 	const [subscribeResult, setSubscribeResult] = useState<

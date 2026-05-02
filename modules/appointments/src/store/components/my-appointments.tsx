@@ -29,7 +29,11 @@ interface Appointment {
 
 // ── MyAppointments ───────────────────────────────────────────────────────────
 
-export function MyAppointments({ appointmentId }: { appointmentId?: string }) {
+export function MyAppointments(props: {
+	appointmentId?: string | undefined;
+	params?: Record<string, string> | undefined;
+}) {
+	const appointmentId = props.appointmentId ?? props.params?.id;
 	const api = useAppointmentsStoreApi();
 
 	const [cancelError, setCancelError] = useState<string | null>(null);

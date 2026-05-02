@@ -90,7 +90,7 @@ export default function invoices(options?: InvoicesOptions): Module {
 					component: "InvoiceHistory",
 				},
 				{
-					path: "/account/invoices/:id",
+					path: "/invoices/track",
 					component: "InvoiceTracker",
 				},
 			],

@@ -27,7 +27,11 @@ const PRODUCT_SKELETON_KEYS = [
 	"skel-6",
 ];
 
-export function FlashSaleDetail({ slug }: { slug: string }) {
+export function FlashSaleDetail(props: {
+	slug?: string | undefined;
+	params?: Record<string, string> | undefined;
+}) {
+	const slug = props.slug ?? props.params?.slug ?? "";
 	const api = useFlashSalesApi();
 
 	const { data, isLoading } = api.getSale.useQuery({ slug }) as {

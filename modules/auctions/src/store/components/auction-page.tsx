@@ -34,7 +34,11 @@ function useAuctionPageApi() {
 	};
 }
 
-export function AuctionPage({ auctionId }: { auctionId: string }) {
+export function AuctionPage(props: {
+	auctionId?: string | undefined;
+	params?: Record<string, string> | undefined;
+}) {
+	const auctionId = props.auctionId ?? props.params?.id ?? "";
 	const api = useAuctionPageApi();
 
 	const { data: auctionData, isLoading: loading } = api.detail.useQuery({

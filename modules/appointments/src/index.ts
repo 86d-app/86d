@@ -98,19 +98,11 @@ export default function appointments(options?: AppointmentsOptions): Module {
 			pages: [
 				{
 					path: "/appointments",
-					component: "ServiceListing",
+					component: "AppointmentBooking",
 				},
 				{
-					path: "/appointments/services/:slug",
-					component: "ServiceDetail",
-				},
-				{
-					path: "/appointments/book",
-					component: "BookingForm",
-				},
-				{
-					path: "/appointments/:id",
-					component: "AppointmentConfirmation",
+					path: "/account/appointments/:id",
+					component: "MyAppointments",
 				},
 			],
 		},

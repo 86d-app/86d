@@ -86,13 +86,13 @@ function CommentBubble({ comment }: { comment: QuoteComment }) {
 	);
 }
 
-export function QuoteDetail({
-	quoteId,
-	onBack,
-}: {
-	quoteId: string;
+export function QuoteDetail(props: {
+	quoteId?: string | undefined;
 	onBack?: (() => void) | undefined;
+	params?: Record<string, string> | undefined;
 }) {
+	const quoteId = props.quoteId ?? props.params?.id ?? "";
+	const { onBack } = props;
 	const api = useQuotesApi();
 	const [commentText, setCommentText] = useState("");
 	const [actionError, setActionError] = useState("");

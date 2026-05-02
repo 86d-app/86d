@@ -24,7 +24,11 @@ interface VendorProduct {
 	status: string;
 }
 
-export function VendorProfile({ slug }: { slug: string }) {
+export function VendorProfile(props: {
+	slug?: string | undefined;
+	params?: Record<string, string> | undefined;
+}) {
+	const slug = props.slug ?? props.params?.slug ?? "";
 	const api = useVendorsStoreApi();
 
 	const { data: vendorData, isLoading: vendorLoading } = api.getVendor.useQuery(

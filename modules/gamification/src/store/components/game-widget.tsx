@@ -32,7 +32,11 @@ interface CanPlayResult {
 	nextPlayAt?: string | undefined;
 }
 
-export function GameWidget({ gameId }: { gameId: string }) {
+export function GameWidget(props: {
+	gameId?: string | undefined;
+	params?: Record<string, string> | undefined;
+}) {
+	const gameId = props.gameId ?? props.params?.gameId ?? "";
 	const api = useGamificationStoreApi();
 
 	const [email, setEmail] = useState("");

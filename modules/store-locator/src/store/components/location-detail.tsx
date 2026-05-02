@@ -37,7 +37,11 @@ interface HoursData {
 	hours?: DayHours;
 }
 
-export function LocationDetail({ slug }: { slug: string }) {
+export function LocationDetail(props: {
+	slug?: string | undefined;
+	params?: Record<string, string> | undefined;
+}) {
+	const slug = props.slug ?? props.params?.slug ?? "";
 	const api = useStoreLocatorApi();
 
 	const { data, isLoading } = api.getLocation.useQuery({
