@@ -166,17 +166,15 @@ export function PriceRuleAdmin() {
 
 	const tableBody =
 		loading && rules.length === 0 ? (
-			<>
-				{Array.from({ length: 5 }, (_, i) => (
-					<tr key={`sk-${i}`}>
-						{Array.from({ length: 7 }, (_, j) => (
-							<td key={`sk-cell-${j}`} className="px-4 py-3">
-								<Skeleton className="h-4" />
-							</td>
-						))}
-					</tr>
-				))}
-			</>
+			Array.from({ length: 5 }, (_, i) => (
+				<tr key={`sk-${i}`}>
+					{Array.from({ length: 7 }, (_, j) => (
+						<td key={`sk-cell-${j}`} className="px-4 py-3">
+							<Skeleton className="h-4" />
+						</td>
+					))}
+				</tr>
+			))
 		) : rules.length === 0 ? (
 			<tr>
 				<td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">

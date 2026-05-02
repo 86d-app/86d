@@ -101,6 +101,10 @@ export default function appointments(options?: AppointmentsOptions): Module {
 					component: "AppointmentBooking",
 				},
 				{
+					path: "/account/appointments",
+					component: "MyAppointments",
+				},
+				{
 					path: "/account/appointments/:id",
 					component: "MyAppointments",
 				},

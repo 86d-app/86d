@@ -11,6 +11,7 @@ export function useAppointmentsStoreApi() {
 		getAvailability:
 			client.module("appointments").store["/appointments/availability"],
 		book: client.module("appointments").store["/appointments/book"],
+		listMyAppointments: client.module("appointments").store["/appointments/me"],
 		getAppointment: client.module("appointments").store["/appointments/:id"],
 		cancel: client.module("appointments").store["/appointments/:id/cancel"],
 	};

@@ -39,7 +39,21 @@ export function MyAppointments(props: {
 	const [cancelError, setCancelError] = useState<string | null>(null);
 	const [cancelledId, setCancelledId] = useState<string | null>(null);
 
-	const query = api.getAppointment.useQuery(
+	// List mode: fetch all customer appointments when no specific ID given
+	const listQuery = api.listMyAppointments.useQuery(
+		{},
+		{ enabled: !appointmentId },
+	) as {
+		data:
+			| { appointments: Appointment[] }
+			| { error: string; status: number }
+			| undefined;
+		isLoading: boolean;
+		error: Error | null;
+	};
+
+	// Detail mode: fetch a specific appointment by ID
+	const detailQuery = api.getAppointment.useQuery(
 		{ params: { id: appointmentId ?? "" } },
 		{ enabled: Boolean(appointmentId) },
 	) as {
@@ -56,10 +70,20 @@ export function MyAppointments(props: {
 		isPending: boolean;
 	};
 
-	const appointment = query.data?.appointment ?? null;
+	const appointment = detailQuery.data?.appointment ?? null;
 	const isCancellable =
 		appointment &&
 		(appointment.status === "pending" || appointment.status === "confirmed");
+
+	const listData = listQuery.data as
+		| { appointments: Appointment[] }
+		| undefined;
+	const appointments = listData?.appointments ?? [];
+
+	const isUnauthenticated =
+		!appointmentId &&
+		!listQuery.isLoading &&
+		(listQuery.data as { status?: number } | undefined)?.status === 401;
 
 	async function handleCancel() {
 		if (!appointment) return;
@@ -84,23 +108,31 @@ export function MyAppointments(props: {
 
 	return (
 		<MyAppointmentsTemplate
-			isLoading={query.isLoading}
+			// Detail mode
+			appointmentId={appointmentId}
+			isLoading={appointmentId ? detailQuery.isLoading : listQuery.isLoading}
 			appointment={appointment}
 			fetchError={
-				query.error
-					? extractError(query.error, "Failed to load appointment")
-					: (query.data?.error ?? null)
+				appointmentId
+					? detailQuery.error
+						? extractError(detailQuery.error, "Failed to load appointment")
+						: (detailQuery.data?.error ?? null)
+					: listQuery.error
+						? extractError(listQuery.error, "Failed to load appointments")
+						: null
 			}
 			isCancellable={Boolean(isCancellable) && !isCancelled}
 			isCancelling={cancelMutation.isPending}
 			cancelError={cancelError}
 			isCancelled={isCancelled}
 			onCancel={handleCancel}
+			// List mode
+			appointments={appointments}
+			isUnauthenticated={isUnauthenticated}
 			formatDateTime={formatDateTime}
 			formatCurrency={formatCurrency}
 			statusColors={STATUS_COLORS}
 			statusLabels={STATUS_LABELS}
-			appointmentId={appointmentId}
 		/>
 	);
 }
