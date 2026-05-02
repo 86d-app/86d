@@ -4,16 +4,24 @@ import { describe, expect, it } from "vitest";
 import { adminEndpoints } from "../admin/endpoints";
 
 describe("wish admin hook contract", () => {
-	it("binds the landing page to a registered admin endpoint", () => {
+	it("binds all required endpoints in the admin component", () => {
 		const source = readFileSync(
 			join(process.cwd(), "src/admin/components/wish-admin.tsx"),
 			"utf-8",
 		);
-		const hookMatch = source.match(
-			/client\.module\("wish"\)\.admin\["([^"]+)"\]/,
-		);
-
-		expect(hookMatch?.[1]).toBe("/admin/wish/products");
-		expect(adminEndpoints["/admin/wish/products"]).toBeDefined();
+		const requiredEndpoints = [
+			"/admin/wish/stats",
+			"/admin/wish/products",
+			"/admin/wish/orders",
+			"/admin/wish/orders/pending",
+			"/admin/wish/products/:id/disable",
+			"/admin/wish/orders/:id/ship",
+		];
+		for (const endpoint of requiredEndpoints) {
+			expect(source).toContain(`"${endpoint}"`);
+			expect(
+				adminEndpoints[endpoint as keyof typeof adminEndpoints],
+			).toBeDefined();
+		}
 	});
 });
