@@ -2,7 +2,12 @@
 
 import { useStoreContext } from "@86d-app/core/client";
 import { memo } from "react";
-import { normalizeCartQueryData, useCartMutation, useTrack } from "./_hooks";
+import {
+	normalizeCartQueryData,
+	useCartMutation,
+	useProductLabels,
+	useTrack,
+} from "./_hooks";
 import type { Product } from "./_types";
 import { formatPrice, imageUrl } from "./_utils";
 import ProductCardTemplate from "./product-card.mdx";
@@ -55,6 +60,7 @@ export const ProductCard = memo(function ProductCard({
 		},
 	});
 
+	const labels = useProductLabels(product.id);
 	const image = imageUrl(product.images[0]);
 	const hasDiscount =
 		product.compareAtPrice != null && product.compareAtPrice > product.price;
@@ -78,6 +84,7 @@ export const ProductCard = memo(function ProductCard({
 		<ProductCardTemplate
 			product={product}
 			image={image}
+			labels={labels}
 			showAddToCart={showAddToCart && product.inventory > 0}
 			hasDiscount={hasDiscount}
 			discountPct={discountPct}

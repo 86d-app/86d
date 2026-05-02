@@ -36,6 +36,22 @@ import Link from "next/link";
         −{props.discountPct}%
       </span>
     )}
+    {props.labels && props.labels.length > 0 && !props.hasDiscount && (
+      <div className="absolute top-2.5 left-2.5 flex flex-col gap-1">
+        {props.labels.slice(0, 2).map((label) => (
+          <span
+            key={label.id}
+            className="rounded-full px-2 py-0.5 font-medium text-xs"
+            style={{
+              backgroundColor: label.backgroundColor ?? "var(--foreground)",
+              color: label.color ?? "var(--background)",
+            }}
+          >
+            {label.displayText}
+          </span>
+        ))}
+      </div>
+    )}
     {props.product.inventory === 0 && (
       <span className="absolute top-2.5 right-2.5 rounded-full bg-background/80 px-2 py-0.5 text-muted-foreground text-xs backdrop-blur-sm">
         Sold out

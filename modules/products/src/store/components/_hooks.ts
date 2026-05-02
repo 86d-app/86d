@@ -93,6 +93,31 @@ export function useInventoryApi() {
 	};
 }
 
+export function useProductLabels(productId: string) {
+	const client = useModuleClient();
+	const getProductLabels =
+		client.module("product-labels").store[
+			"/product-labels/products/:productId"
+		];
+
+	const { data } = getProductLabels.useQuery({ productId }) as {
+		data:
+			| {
+					labels: Array<{
+						id: string;
+						displayText: string;
+						type: string;
+						color?: string;
+						backgroundColor?: string;
+						icon?: string;
+					}>;
+			  }
+			| undefined;
+	};
+
+	return data?.labels ?? [];
+}
+
 export function useAnalyticsApi() {
 	const client = useModuleClient();
 	return {
