@@ -53,6 +53,14 @@ export default function brands(options?: BrandsOptions): Module {
 				},
 			],
 		},
+		store: {
+			pages: [
+				{
+					path: "/brands",
+					component: "BrandList",
+				},
+			],
+		},
 		options,
 	};
 }

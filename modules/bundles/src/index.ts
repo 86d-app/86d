@@ -58,6 +58,18 @@ export default function bundles(options?: BundleOptions): Module {
 				},
 			],
 		},
+		store: {
+			pages: [
+				{
+					path: "/bundles",
+					component: "BundleList",
+				},
+				{
+					path: "/bundles/:slug",
+					component: "BundleDetail",
+				},
+			],
+		},
 		options,
 	};
 }
