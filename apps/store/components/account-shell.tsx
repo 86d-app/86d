@@ -362,6 +362,47 @@ const NAV_ITEMS: AccountNavItem[] = [
 			</svg>
 		),
 	},
+	{
+		label: "Payment Methods",
+		href: "/account/payment-methods",
+		icon: (
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="16"
+				height="16"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				strokeWidth="1.5"
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				aria-hidden="true"
+			>
+				<rect width="20" height="14" x="2" y="5" rx="2" />
+				<line x1="2" y1="10" x2="22" y2="10" />
+			</svg>
+		),
+	},
+	{
+		label: "Transactions",
+		href: "/account/transactions",
+		icon: (
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="16"
+				height="16"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				strokeWidth="1.5"
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				aria-hidden="true"
+			>
+				<path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+			</svg>
+		),
+	},
 ];
 
 function NavItem({
