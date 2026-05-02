@@ -11,6 +11,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 interface Subscription {
 	id: string;
 	planId: string;
+	planName?: string | undefined;
 	email: string;
 	customerId?: string | undefined;
 	status: string;
@@ -20,13 +21,6 @@ interface Subscription {
 	cancelledAt?: string | undefined;
 	trialEnd?: string | undefined;
 	createdAt: string;
-}
-
-interface Customer {
-	id: string;
-	email: string;
-	firstName?: string | undefined;
-	lastName?: string | undefined;
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -44,13 +38,6 @@ function formatDate(iso: string): string {
 export default function SubscriptionsPage() {
 	const client = useModuleClient();
 
-	const customerApi = client.module("customers").store["/customers/me"];
-	const { data: customerData } = customerApi.useQuery() as {
-		data: { customer: Customer } | undefined;
-	};
-
-	const email = customerData?.customer?.email;
-
 	const subsApi = client.module("subscriptions").store["/subscriptions/me"];
 	const cancelApi =
 		client.module("subscriptions").store["/subscriptions/me/cancel"];
@@ -60,9 +47,7 @@ export default function SubscriptionsPage() {
 		isLoading,
 		isError,
 		refetch,
-	} = subsApi.useQuery(email ? { email } : undefined, {
-		enabled: !!email,
-	}) as {
+	} = subsApi.useQuery() as {
 		data: { subscriptions: Subscription[] } | undefined;
 		isLoading: boolean;
 		isError: boolean;
@@ -124,7 +109,7 @@ export default function SubscriptionsPage() {
 						Try again
 					</button>
 				</div>
-			) : isLoading || !email ? (
+			) : isLoading ? (
 				<div className="flex flex-col gap-3">
 					{[1, 2].map((n) => (
 						<Skeleton key={n} className="h-28 rounded-xl" />
@@ -152,9 +137,7 @@ export default function SubscriptionsPage() {
 							</svg>
 						</div>
 					</div>
-					<p className="font-medium text-foreground text-sm">
-						No subscriptions
-					</p>
+					<p className="font-medium text-foreground text-sm">No subscriptions</p>
 					<p className="mt-1 text-muted-foreground text-sm">
 						You don&apos;t have any active subscriptions.
 					</p>
@@ -170,7 +153,7 @@ export default function SubscriptionsPage() {
 									<div className="min-w-0 flex-1">
 										<div className="mb-1 flex items-center gap-2">
 											<p className="font-medium text-foreground text-sm">
-												{sub.planId}
+												{sub.planName ?? sub.planId}
 											</p>
 											<StatusBadge status={sub.status} />
 										</div>
