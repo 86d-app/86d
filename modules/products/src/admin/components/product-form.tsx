@@ -1,6 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
+import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -191,9 +192,12 @@ function ImageUpload({
 					{images.map((url, i) => (
 						<div key={url} className="group relative">
 							<div className="aspect-square overflow-hidden rounded-md border border-border bg-muted">
-								<img
+								<Image
 									src={url}
 									alt={`Upload ${i + 1}`}
+									width={400}
+									height={400}
+									unoptimized
 									className="h-full w-full object-cover"
 								/>
 							</div>

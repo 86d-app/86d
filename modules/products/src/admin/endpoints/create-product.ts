@@ -1,4 +1,5 @@
 import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
+import type { Product } from "../../controllers";
 
 export const createProduct = createAdminEndpoint(
 	"/admin/products/create",
@@ -46,7 +47,35 @@ export const createProduct = createAdminEndpoint(
 			};
 		}
 
-		const product = await controllers.product.create(ctx);
+		const product = (await controllers.product.create(ctx)) as Product;
+
+		// Sync inventory to the inventory module when it is installed and a count
+		// was provided. This keeps centralized tracking (low-stock alerts,
+		// back-in-stock, reservations) consistent with the products module.
+		if (body.inventory !== undefined) {
+			const inventoryCtrl = ctx.context.controllers.inventory as unknown as
+				| {
+						setStock(p: {
+							productId: string;
+							quantity: number;
+							productName?: string;
+							allowBackorder?: boolean;
+						}): Promise<unknown>;
+				  }
+				| undefined;
+			if (inventoryCtrl) {
+				try {
+					await inventoryCtrl.setStock({
+						productId: product.id,
+						quantity: body.inventory,
+						productName: product.name,
+						allowBackorder: body.allowBackorder ?? false,
+					});
+				} catch {
+					// Best-effort: inventory sync failure never blocks product creation
+				}
+			}
+		}
 
 		return { product, status: 201 };
 	},

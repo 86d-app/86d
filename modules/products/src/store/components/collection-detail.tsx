@@ -1,6 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
+import Image from "next/image";
 import Link from "next/link";
 import type { CollectionCardData, Product } from "./_types";
 import CollectionDetailTemplate from "./collection-detail.mdx";
@@ -127,9 +128,12 @@ export function CollectionDetail(props: CollectionDetailProps) {
 
 	const heroImage = collection.image ? (
 		<div className="mb-6 aspect-[3/1] overflow-hidden rounded-lg">
-			<img
+			<Image
 				src={collection.image}
 				alt={collection.name}
+				width={1200}
+				height={400}
+				unoptimized
 				className="h-full w-full object-cover"
 			/>
 		</div>

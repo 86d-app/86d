@@ -1,6 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
+import Image from "next/image";
 import { useRef, useState } from "react";
 import CollectionsAdminTemplate from "./collections-admin.mdx";
 
@@ -446,9 +447,12 @@ export function CollectionsAdmin() {
 								>
 									<div className="flex items-center gap-3">
 										{product.images[0] ? (
-											<img
+											<Image
 												src={product.images[0]}
 												alt={product.name}
+												width={32}
+												height={32}
+												unoptimized
 												className="h-8 w-8 rounded object-cover"
 											/>
 										) : (
@@ -565,9 +569,12 @@ export function CollectionsAdmin() {
 									<td className="px-4 py-3">
 										<div className="flex items-center gap-3">
 											{col.image ? (
-												<img
+												<Image
 													src={col.image}
 													alt={col.name}
+													width={32}
+													height={32}
+													unoptimized
 													className="h-8 w-8 rounded object-cover"
 												/>
 											) : (
@@ -694,9 +701,12 @@ function CollectionImageField({
 			{image ? (
 				<div className="flex items-start gap-3">
 					<div className="h-20 w-20 overflow-hidden rounded-md border border-border bg-muted">
-						<img
+						<Image
 							src={image}
 							alt="Collection"
+							width={80}
+							height={80}
+							unoptimized
 							className="h-full w-full object-cover"
 						/>
 					</div>

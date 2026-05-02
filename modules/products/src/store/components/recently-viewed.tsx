@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useAnalyticsApi } from "./_hooks";
 import { formatPrice } from "./_utils";
@@ -59,9 +60,12 @@ export function RecentlyViewedProducts({
 					>
 						<div className="aspect-[3/4] overflow-hidden rounded-lg bg-muted">
 							{item.image ? (
-								<img
+								<Image
 									src={item.image}
 									alt={item.name}
+									width={300}
+									height={400}
+									unoptimized
 									className="h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-[1.03]"
 								/>
 							) : (

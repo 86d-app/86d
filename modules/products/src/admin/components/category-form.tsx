@@ -1,6 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
+import Image from "next/image";
 import { useCallback, useRef, useState } from "react";
 import CategoryFormTemplate from "./category-form.mdx";
 
@@ -412,9 +413,12 @@ function CategoryImageField({
 			{image ? (
 				<div className="flex items-start gap-3">
 					<div className="h-20 w-20 overflow-hidden rounded-md border border-border bg-muted">
-						<img
+						<Image
 							src={image}
 							alt="Category"
+							width={80}
+							height={80}
+							unoptimized
 							className="h-full w-full object-cover"
 						/>
 					</div>

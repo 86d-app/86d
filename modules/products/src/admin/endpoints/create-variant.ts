@@ -1,4 +1,5 @@
 import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
+import type { Product, ProductVariant } from "../../controllers";
 
 export const createVariant = createAdminEndpoint(
 	"/admin/products/:productId/variants",
@@ -27,10 +28,10 @@ export const createVariant = createAdminEndpoint(
 		const controllers = ctx.context.controllers;
 
 		// Check if product exists
-		const existingProduct = await controllers.product.getById({
+		const existingProduct = (await controllers.product.getById({
 			...ctx,
 			params: { id: params.productId },
-		});
+		})) as Product | null;
 		if (!existingProduct) {
 			return {
 				error: "Product not found",
@@ -38,7 +39,35 @@ export const createVariant = createAdminEndpoint(
 			};
 		}
 
-		const variant = await controllers.variant.create(ctx);
+		const variant = (await controllers.variant.create(ctx)) as ProductVariant;
+
+		// Sync variant inventory to the inventory module (best-effort).
+		if (ctx.body.inventory !== undefined) {
+			const inventoryCtrl = ctx.context.controllers.inventory as unknown as
+				| {
+						setStock(p: {
+							productId: string;
+							variantId: string;
+							quantity: number;
+							productName?: string;
+							variantName?: string;
+						}): Promise<unknown>;
+				  }
+				| undefined;
+			if (inventoryCtrl) {
+				try {
+					await inventoryCtrl.setStock({
+						productId: params.productId,
+						variantId: variant.id,
+						quantity: ctx.body.inventory,
+						productName: existingProduct.name,
+						variantName: variant.name,
+					});
+				} catch {
+					// Best-effort: inventory sync failure never blocks variant creation
+				}
+			}
+		}
 
 		return { variant, status: 201 };
 	},

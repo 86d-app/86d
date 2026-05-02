@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRecommendationsApi } from "./_hooks";
 import { formatPrice } from "./_utils";
@@ -73,11 +74,13 @@ export function RecommendedProducts({
 				>
 					{r.productImage ? (
 						<div className="aspect-[3/4] overflow-hidden rounded-lg bg-muted">
-							<img
+							<Image
 								src={r.productImage}
 								alt={r.productName}
+								width={300}
+								height={400}
+								unoptimized
 								className="h-full w-full object-cover transition-transform group-hover:scale-105"
-								loading="lazy"
 							/>
 						</div>
 					) : (

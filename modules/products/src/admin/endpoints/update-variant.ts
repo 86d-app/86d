@@ -1,4 +1,5 @@
 import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
+import type { Product, ProductVariant } from "../../controllers";
 
 export const updateVariant = createAdminEndpoint(
 	"/admin/variants/:id/update",
@@ -23,10 +24,13 @@ export const updateVariant = createAdminEndpoint(
 		}),
 	},
 	async (ctx) => {
+		const { body } = ctx;
 		const controllers = ctx.context.controllers;
 
 		// Check if variant exists
-		const existingVariant = await controllers.variant.getById(ctx);
+		const existingVariant = (await controllers.variant.getById(
+			ctx,
+		)) as ProductVariant | null;
 		if (!existingVariant) {
 			return {
 				error: "Variant not found",
@@ -34,7 +38,42 @@ export const updateVariant = createAdminEndpoint(
 			};
 		}
 
-		const variant = await controllers.variant.update(ctx);
+		const variant = (await controllers.variant.update(
+			ctx,
+		)) as ProductVariant | null;
+
+		// Sync updated inventory count to the inventory module (best-effort).
+		if (body.inventory !== undefined && variant) {
+			const inventoryCtrl = ctx.context.controllers.inventory as unknown as
+				| {
+						setStock(p: {
+							productId: string;
+							variantId: string;
+							quantity: number;
+							productName?: string;
+							variantName?: string;
+						}): Promise<unknown>;
+				  }
+				| undefined;
+			if (inventoryCtrl) {
+				try {
+					// Fetch parent product name for the snapshot (best-effort)
+					const parentProduct = (await controllers.product.getById({
+						...ctx,
+						params: { id: existingVariant.productId },
+					})) as Product | null;
+					await inventoryCtrl.setStock({
+						productId: existingVariant.productId,
+						variantId: existingVariant.id,
+						quantity: body.inventory,
+						...(parentProduct?.name ? { productName: parentProduct.name } : {}),
+						variantName: variant.name,
+					});
+				} catch {
+					// Best-effort: inventory sync failure never blocks variant update
+				}
+			}
+		}
 
 		return { variant };
 	},

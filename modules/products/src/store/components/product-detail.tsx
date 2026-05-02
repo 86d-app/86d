@@ -1,6 +1,7 @@
 "use client";
 
 import { useStoreContext } from "@86d-app/core/client";
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -271,9 +272,12 @@ export function ProductDetail(props: ProductDetailProps) {
 		<div className="space-y-2.5">
 			<div className="aspect-square overflow-hidden rounded-lg bg-muted">
 				{product.images[selectedImage] ? (
-					<img
+					<Image
 						src={imageUrl(product.images[selectedImage])}
 						alt={product.name}
+						width={800}
+						height={800}
+						unoptimized
 						className="h-full w-full object-cover object-center"
 					/>
 				) : (
@@ -310,9 +314,12 @@ export function ProductDetail(props: ProductDetailProps) {
 									: "opacity-50 hover:opacity-80"
 							}`}
 						>
-							<img
+							<Image
 								src={imageUrl(img)}
 								alt={`${product.name} view ${i + 1}`}
+								width={56}
+								height={56}
+								unoptimized
 								className="h-full w-full object-cover"
 							/>
 						</button>

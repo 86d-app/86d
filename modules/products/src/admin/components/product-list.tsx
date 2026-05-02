@@ -1,6 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
+import Image from "next/image";
 import { useCallback, useRef, useState } from "react";
 import ProductListTemplate from "./product-list.mdx";
 
@@ -1010,9 +1011,12 @@ export function ProductList() {
 										<td className="px-4 py-3">
 											<div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-md border border-border bg-muted">
 												{product.images[0] ? (
-													<img
+													<Image
 														src={product.images[0]}
 														alt={product.name}
+														width={40}
+														height={40}
+														unoptimized
 														className="h-full w-full object-cover object-center"
 													/>
 												) : (

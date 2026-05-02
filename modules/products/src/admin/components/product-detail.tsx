@@ -1,6 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
+import Image from "next/image";
 import { useState } from "react";
 import ProductDetailTemplate from "./product-detail.mdx";
 
@@ -491,9 +492,12 @@ export function ProductDetail(props: ProductDetailProps) {
 						{product.images.length > 0 ? (
 							<div className="space-y-3">
 								<div className="aspect-square overflow-hidden rounded-lg border border-border bg-muted">
-									<img
+									<Image
 										src={product.images[selectedImage]}
 										alt={product.name}
+										width={800}
+										height={800}
+										unoptimized
 										className="h-full w-full object-cover object-center"
 									/>
 								</div>
@@ -510,9 +514,12 @@ export function ProductDetail(props: ProductDetailProps) {
 														: "border-border hover:border-muted-foreground"
 												}`}
 											>
-												<img
+												<Image
 													src={img}
 													alt={`${product.name} view ${i + 1}`}
+													width={64}
+													height={64}
+													unoptimized
 													className="h-full w-full object-cover"
 												/>
 											</button>
