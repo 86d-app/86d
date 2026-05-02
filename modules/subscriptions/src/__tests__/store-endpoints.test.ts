@@ -8,14 +8,43 @@ import { createSubscriptionController } from "../service-impl";
  *
  * Tests verify:
  *
- * 1. subscribe — auth, plan existence, plan active check, trial handling
- * 2. get-my-subscriptions — auth, scoped to customer
- * 3. cancel — auth, ownership, immediate vs. end-of-period cancellation
+ * 1. list-plans — returns only active plans, no auth required
+ * 2. subscribe — auth, plan existence, plan active check, trial handling
+ * 3. get-my-subscriptions — auth, scoped to customer, enriched with plan name
+ * 4. cancel — auth, ownership, immediate vs. end-of-period cancellation
  */
 
 type DataService = ReturnType<typeof createMockDataService>;
 
 // ── Simulate endpoint logic ─────────────────────────────────────────────
+
+async function simulateListPlans(controller: SubscriptionController) {
+	const plans = await controller.listPlans({ activeOnly: true });
+	return { plans };
+}
+
+async function simulateGetMySubscriptions(
+	controller: SubscriptionController,
+	session: { userId: string; email: string } | null,
+) {
+	if (!session) return { error: "Unauthorized", status: 401 };
+	const subscriptions = await controller.listSubscriptions({
+		email: session.email,
+	});
+	const planIds = [...new Set(subscriptions.map((s) => s.planId))];
+	const planMap = new Map<string, string>();
+	await Promise.all(
+		planIds.map(async (planId) => {
+			const plan = await controller.getPlan(planId);
+			if (plan) planMap.set(planId, plan.name);
+		}),
+	);
+	const enriched = subscriptions.map((s) => ({
+		...s,
+		planName: planMap.get(s.planId),
+	}));
+	return { subscriptions: enriched };
+}
 
 async function simulateSubscribe(
 	controller: SubscriptionController,
@@ -34,17 +63,6 @@ async function simulateSubscribe(
 		email: session.email,
 	});
 	return { subscription };
-}
-
-async function simulateGetMySubscriptions(
-	controller: SubscriptionController,
-	session: { userId: string; email: string } | null,
-) {
-	if (!session) return { error: "Unauthorized", status: 401 };
-	const subscriptions = await controller.listSubscriptions({
-		email: session.email,
-	});
-	return { subscriptions };
 }
 
 async function simulateCancel(
@@ -75,6 +93,65 @@ beforeEach(() => {
 });
 
 const session = { userId: "cust_1", email: "cust@example.com" };
+
+describe("list-plans (GET /subscriptions/plans)", () => {
+	it("returns empty list when no plans exist", async () => {
+		const result = await simulateListPlans(controller);
+		expect(result.plans).toHaveLength(0);
+	});
+
+	it("returns only active plans", async () => {
+		await controller.createPlan({
+			name: "Active Monthly",
+			price: 999,
+			interval: "month",
+			isActive: true,
+		});
+		await controller.createPlan({
+			name: "Retired Yearly",
+			price: 4999,
+			interval: "year",
+			isActive: false,
+		});
+
+		const result = await simulateListPlans(controller);
+		expect(result.plans).toHaveLength(1);
+		expect(result.plans[0].name).toBe("Active Monthly");
+	});
+
+	it("returns plan fields needed for display", async () => {
+		await controller.createPlan({
+			name: "Pro Plan",
+			description: "Full access",
+			price: 1999,
+			currency: "USD",
+			interval: "month",
+			intervalCount: 1,
+			trialDays: 7,
+		});
+
+		const result = await simulateListPlans(controller);
+		const plan = result.plans[0];
+		expect(plan).toMatchObject({
+			name: "Pro Plan",
+			description: "Full access",
+			price: 1999,
+			currency: "USD",
+			interval: "month",
+			intervalCount: 1,
+			trialDays: 7,
+			isActive: true,
+		});
+		expect(plan.id).toBeDefined();
+	});
+
+	it("does not require authentication", async () => {
+		// Public endpoint — no session required
+		await controller.createPlan({ name: "Free", price: 0, interval: "month" });
+		const result = await simulateListPlans(controller);
+		expect(result.plans).toHaveLength(1);
+	});
+});
 
 describe("subscribe (POST /subscriptions/subscribe)", () => {
 	it("requires authentication", async () => {
@@ -182,6 +259,24 @@ describe("get-my-subscriptions (GET /subscriptions/me)", () => {
 		if ("subscriptions" in result) {
 			expect(result.subscriptions).toHaveLength(1);
 			expect(result.subscriptions[0].email).toBe("cust@example.com");
+		}
+	});
+
+	it("enriches subscriptions with plan name", async () => {
+		const plan = await controller.createPlan({
+			name: "Enterprise",
+			price: 9999,
+			interval: "month",
+		});
+		await controller.subscribe({
+			planId: plan.id,
+			customerId: "cust_1",
+			email: "cust@example.com",
+		});
+
+		const result = await simulateGetMySubscriptions(controller, session);
+		if ("subscriptions" in result) {
+			expect(result.subscriptions[0].planName).toBe("Enterprise");
 		}
 	});
 

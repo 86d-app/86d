@@ -6,6 +6,7 @@ import SubscriptionCardTemplate from "./subscription-card.mdx";
 interface Subscription {
 	id: string;
 	planId: string;
+	planName?: string | undefined;
 	email: string;
 	status: string;
 	currentPeriodStart: string;
@@ -33,7 +34,7 @@ export function SubscriptionCard({
 
 	return (
 		<SubscriptionCardTemplate
-			planIdPreview={subscription.planId.slice(0, 8)}
+			planName={subscription.planName ?? subscription.planId.slice(0, 8)}
 			statusStyle={statusStyle}
 			statusLabel={subscription.status.replace(/_/g, " ")}
 			periodStartFormatted={formatDate(subscription.currentPeriodStart)}

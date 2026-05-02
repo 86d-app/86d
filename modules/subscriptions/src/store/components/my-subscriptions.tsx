@@ -9,6 +9,7 @@ import { SubscriptionCard } from "./subscription-card";
 interface Subscription {
 	id: string;
 	planId: string;
+	planName?: string | undefined;
 	email: string;
 	status: string;
 	currentPeriodStart: string;
@@ -21,10 +22,8 @@ interface Subscription {
 }
 
 export function MySubscriptions({
-	email,
 	title = "My Subscriptions",
 }: {
-	email: string;
 	title?: string | undefined;
 }) {
 	const api = useSubscriptionsApi();
@@ -34,9 +33,7 @@ export function MySubscriptions({
 		data: subsData,
 		isLoading,
 		refetch,
-	} = api.getMySubscriptions.useQuery({
-		email,
-	}) as {
+	} = api.getMySubscriptions.useQuery() as {
 		data: { subscriptions: Subscription[] } | undefined;
 		isLoading: boolean;
 		refetch: () => void;

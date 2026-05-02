@@ -33,18 +33,13 @@ interface Subscription {
 }
 
 export function SubscriptionPlans({
-	email,
-	customerId,
 	title = "Subscription Plans",
 	onSubscribed,
 }: {
-	email?: string | undefined;
-	customerId?: string | undefined;
 	title?: string | undefined;
 	onSubscribed?: ((sub: Subscription) => void) | undefined;
 }) {
 	const api = useSubscriptionsApi();
-	const [emailInput, setEmailInput] = useState(email ?? "");
 	const [error, setError] = useState("");
 	const [success, setSuccess] = useState<Subscription | null>(null);
 
@@ -65,19 +60,10 @@ export function SubscriptionPlans({
 
 	const handleSubscribe = useCallback(
 		(planId: string) => {
-			const subEmail = email ?? emailInput.trim();
-			if (!subEmail) {
-				setError("Please enter your email address.");
-				return;
-			}
 			setError("");
-			subscribeMutation.mutate({
-				planId,
-				email: subEmail,
-				...(customerId ? { customerId } : {}),
-			});
+			subscribeMutation.mutate({ planId });
 		},
-		[email, emailInput, customerId, subscribeMutation],
+		[subscribeMutation],
 	);
 
 	const plans = (plansData?.plans ?? []).filter((p) => p.isActive);
@@ -101,7 +87,7 @@ export function SubscriptionPlans({
 	const successContent = success ? (
 		<div className="rounded-xl border border-emerald-200 bg-emerald-50 p-6 text-center dark:border-emerald-800 dark:bg-emerald-950/30">
 			<p className="font-semibold text-emerald-800 dark:text-emerald-200">
-				You're subscribed!
+				You&apos;re subscribed!
 			</p>
 			<p className="mt-1 text-emerald-700 text-sm dark:text-emerald-300">
 				{success.status === "trialing"
@@ -111,33 +97,13 @@ export function SubscriptionPlans({
 		</div>
 	) : null;
 
-	const emailInputContent = !email ? (
-		<div className="mb-6">
-			<label
-				htmlFor="sub-email"
-				className="mb-1 block font-medium text-foreground text-sm"
-			>
-				Email <span className="text-destructive">*</span>
-			</label>
-			<input
-				id="sub-email"
-				type="email"
-				required
-				value={emailInput}
-				onChange={(e) => setEmailInput(e.target.value)}
-				placeholder="you@example.com"
-				className="w-full max-w-sm rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-1"
-			/>
-		</div>
-	) : null;
-
 	return (
 		<SubscriptionPlansTemplate
 			title={title}
 			error={error}
 			empty={plans.length === 0}
 			successContent={successContent}
-			emailInput={emailInputContent}
+			emailInput={null}
 		>
 			{plans.map((plan) => (
 				<PlanCard
