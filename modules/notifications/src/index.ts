@@ -462,6 +462,18 @@ export default function notifications(options?: NotificationsOptions): Module {
 				},
 			],
 		},
+		store: {
+			pages: [
+				{
+					path: "/notifications",
+					component: "NotificationInbox",
+				},
+				{
+					path: "/notifications/preferences",
+					component: "NotificationPreferences",
+				},
+			],
+		},
 		options,
 	};
 }

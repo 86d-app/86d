@@ -51,6 +51,14 @@ export default function waitlist(options?: WaitlistOptions): Module {
 				},
 			],
 		},
+		store: {
+			pages: [
+				{
+					path: "/waitlist",
+					component: "WaitlistPage",
+				},
+			],
+		},
 		options,
 	};
 }

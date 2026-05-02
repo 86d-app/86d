@@ -94,6 +94,18 @@ export default function storeLocator(options?: StoreLocatorOptions): Module {
 				},
 			],
 		},
+		store: {
+			pages: [
+				{
+					path: "/stores",
+					component: "LocationList",
+				},
+				{
+					path: "/stores/:slug",
+					component: "LocationDetail",
+				},
+			],
+		},
 		options,
 	};
 }
