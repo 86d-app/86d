@@ -45,18 +45,18 @@ function extractError(err: unknown, fallback = "Something went wrong"): string {
 
 export interface KioskTerminalProps {
 	/** Station ID this terminal is registered as */
-	stationId: string;
+	stationId?: string | undefined;
 	/** ISO 4217 currency code (default: "USD") */
 	currency?: string;
 	/** Idle timeout in seconds before auto-reset (default: 120) */
 	idleTimeout?: number;
+	params?: Record<string, string> | undefined;
 }
 
-export function KioskTerminal({
-	stationId,
-	currency = "USD",
-	idleTimeout = 120,
-}: KioskTerminalProps) {
+export function KioskTerminal(props: KioskTerminalProps) {
+	const stationId = props.stationId ?? props.params?.stationId ?? "";
+	const currency = props.currency ?? "USD";
+	const idleTimeout = props.idleTimeout ?? 120;
 	const api = useKioskStoreApi();
 
 	const [session, setSession] = useState<KioskSession | null>(null);

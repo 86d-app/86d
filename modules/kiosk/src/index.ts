@@ -71,7 +71,7 @@ export default function kiosk(options?: KioskOptions): Module {
 		store: {
 			pages: [
 				{
-					path: "/kiosk",
+					path: "/kiosk/:stationId",
 					component: "KioskTerminal",
 				},
 			],
