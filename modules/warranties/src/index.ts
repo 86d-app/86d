@@ -84,10 +84,6 @@ export default function warranties(options?: WarrantiesOptions): Module {
 					path: "/account/warranties",
 					component: "WarrantyStatus",
 				},
-				{
-					path: "/account/warranties/claim",
-					component: "ClaimForm",
-				},
 			],
 		},
 
