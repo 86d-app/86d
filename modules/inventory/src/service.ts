@@ -5,6 +5,10 @@ export type InventoryItem = {
 	productId: string;
 	variantId?: string | undefined;
 	locationId?: string | undefined;
+	/** Product name snapshot — set at write time to avoid cross-module lookups */
+	productName?: string | undefined;
+	/** Variant name snapshot (e.g. "Blue / L") */
+	variantName?: string | undefined;
 	/** Total units on hand */
 	quantity: number;
 	/** Units reserved for pending orders */
@@ -57,6 +61,8 @@ export type InventoryController = ModuleController & {
 		quantity: number;
 		lowStockThreshold?: number | undefined;
 		allowBackorder?: boolean | undefined;
+		productName?: string | undefined;
+		variantName?: string | undefined;
 	}): Promise<InventoryItem>;
 
 	/**

@@ -144,6 +144,9 @@ export function createInventoryController(
 				productId: params.productId,
 				variantId: params.variantId,
 				locationId: params.locationId,
+				// Prefer newly provided name snapshots; fall back to stored values
+				productName: params.productName ?? existing?.productName,
+				variantName: params.variantName ?? existing?.variantName,
 				quantity: params.quantity,
 				reserved,
 				lowStockThreshold: params.lowStockThreshold,

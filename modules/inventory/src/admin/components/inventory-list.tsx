@@ -9,6 +9,8 @@ interface InventoryItem {
 	productId: string;
 	variantId?: string | null;
 	locationId?: string | null;
+	productName?: string | null;
+	variantName?: string | null;
 	quantity: number;
 	reserved: number;
 	available: number;
@@ -530,11 +532,20 @@ export function InventoryList() {
 	) : (
 		items.map((item) => (
 			<tr key={item.id} className="transition-colors hover:bg-muted/30">
-				<td className="max-w-[180px] truncate px-4 py-3 font-medium font-mono text-foreground text-sm">
-					{item.productId}
+				<td className="max-w-[200px] truncate px-4 py-3 font-medium text-foreground text-sm">
+					<span className="block truncate">
+						{item.productName ?? item.productId}
+					</span>
+					{item.productName && (
+						<span className="block truncate font-mono text-muted-foreground text-xs">
+							{item.productId}
+						</span>
+					)}
 				</td>
 				<td className="hidden px-4 py-3 text-muted-foreground text-sm sm:table-cell">
-					{item.variantId && <span className="mr-2">{item.variantId}</span>}
+					{(item.variantName ?? item.variantId) && (
+						<span className="mr-2">{item.variantName ?? item.variantId}</span>
+					)}
 					{item.locationId && (
 						<span className="text-xs">{item.locationId}</span>
 					)}

@@ -12,6 +12,8 @@ export const setStock = createAdminEndpoint(
 			quantity: z.number().int().min(0),
 			lowStockThreshold: z.number().int().min(0).optional(),
 			allowBackorder: z.boolean().optional(),
+			productName: z.string().max(500).optional(),
+			variantName: z.string().max(200).optional(),
 		}),
 	},
 	async (ctx) => {
@@ -23,6 +25,8 @@ export const setStock = createAdminEndpoint(
 			quantity: ctx.body.quantity,
 			lowStockThreshold: ctx.body.lowStockThreshold,
 			allowBackorder: ctx.body.allowBackorder,
+			productName: ctx.body.productName,
+			variantName: ctx.body.variantName,
 		});
 		return { item };
 	},
