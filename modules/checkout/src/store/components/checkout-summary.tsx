@@ -14,12 +14,13 @@ interface SummarySession {
 	shippingAmount: number;
 	discountAmount: number;
 	giftCardAmount: number;
+	storeCreditAmount: number;
 	total: number;
 	discountCode?: string | null;
 	giftCardCode?: string | null;
 }
 
-/** Sidebar showing line items, totals, and promo/gift card entry. */
+/** Sidebar showing line items, totals, and promo/gift card/store credit entry. */
 export const CheckoutSummary = observer(() => {
 	const api = useCheckoutApi();
 	const sessionId = checkoutState.sessionId;
@@ -40,6 +41,7 @@ export const CheckoutSummary = observer(() => {
 	const [promoError, setPromoError] = useState("");
 	const [giftCode, setGiftCode] = useState("");
 	const [giftError, setGiftError] = useState("");
+	const [storeCreditError, setStoreCreditError] = useState("");
 
 	const applyDiscountMutation = api.applyDiscount.useMutation({
 		onSuccess: () => {
@@ -68,6 +70,20 @@ export const CheckoutSummary = observer(() => {
 	});
 
 	const removeGiftCardMutation = api.removeGiftCard.useMutation({
+		onSuccess: () => void api.getSession.invalidate(),
+	});
+
+	const applyStoreCreditMutation = api.applyStoreCredit.useMutation({
+		onSuccess: () => {
+			setStoreCreditError("");
+			void api.getSession.invalidate();
+		},
+		onError: () => {
+			setStoreCreditError("No store credit balance available.");
+		},
+	});
+
+	const removeStoreCreditMutation = api.removeStoreCredit.useMutation({
 		onSuccess: () => void api.getSession.invalidate(),
 	});
 
@@ -103,6 +119,17 @@ export const CheckoutSummary = observer(() => {
 		removeGiftCardMutation.mutate({ params: { id: sessionId } });
 	};
 
+	const handleApplyStoreCredit = () => {
+		if (!sessionId) return;
+		setStoreCreditError("");
+		applyStoreCreditMutation.mutate({ params: { id: sessionId } });
+	};
+
+	const handleRemoveStoreCredit = () => {
+		if (!sessionId) return;
+		removeStoreCreditMutation.mutate({ params: { id: sessionId } });
+	};
+
 	if (!session) return null;
 
 	return (
@@ -125,6 +152,11 @@ export const CheckoutSummary = observer(() => {
 				session.giftCardAmount > 0 ? formatPrice(session.giftCardAmount) : null
 			}
 			giftCardCode={session.giftCardCode ?? null}
+			storeCreditAmount={
+				session.storeCreditAmount > 0
+					? formatPrice(session.storeCreditAmount)
+					: null
+			}
 			total={formatPrice(session.total)}
 			promoCode={promoCode}
 			promoError={promoError}
@@ -132,12 +164,19 @@ export const CheckoutSummary = observer(() => {
 			giftCode={giftCode}
 			giftError={giftError}
 			giftLoading={applyGiftCardMutation.isPending}
+			storeCreditError={storeCreditError}
+			storeCreditLoading={
+				applyStoreCreditMutation.isPending ||
+				removeStoreCreditMutation.isPending
+			}
 			onPromoCodeChange={setPromoCode}
 			onApplyPromo={handleApplyPromo}
 			onRemovePromo={handleRemovePromo}
 			onGiftCodeChange={setGiftCode}
 			onApplyGiftCard={handleApplyGiftCard}
 			onRemoveGiftCard={handleRemoveGiftCard}
+			onApplyStoreCredit={handleApplyStoreCredit}
+			onRemoveStoreCredit={handleRemoveStoreCredit}
 		/>
 	);
 });

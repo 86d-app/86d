@@ -25,6 +25,12 @@ export function useCheckoutApi() {
 			client.module("checkout").store[
 				"/checkout/sessions/:id/gift-card/remove"
 			],
+		applyStoreCredit:
+			client.module("checkout").store["/checkout/sessions/:id/store-credit"],
+		removeStoreCredit:
+			client.module("checkout").store[
+				"/checkout/sessions/:id/store-credit/remove"
+			],
 		createPayment:
 			client.module("checkout").store["/checkout/sessions/:id/payment"],
 		getPayment:
