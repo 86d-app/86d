@@ -55,8 +55,54 @@ function useCustomersAdminApi() {
 		addTags: client.module("customers").admin["/admin/customers/:id/tags"],
 		removeTags:
 			client.module("customers").admin["/admin/customers/:id/tags/remove"],
+		createAddress:
+			client.module("customers").admin["/admin/customers/:id/addresses/create"],
+		updateAddress:
+			client.module("customers").admin[
+				"/admin/customers/:id/addresses/:addressId/update"
+			],
+		deleteAddress:
+			client.module("customers").admin[
+				"/admin/customers/:id/addresses/:addressId/delete"
+			],
+		setDefaultAddress:
+			client.module("customers").admin[
+				"/admin/customers/:id/addresses/:addressId/set-default"
+			],
 	};
 }
+
+// ─── Address Form State ───────────────────────────────────────────────────────
+
+interface AddressFormValues {
+	type: "billing" | "shipping";
+	firstName: string;
+	lastName: string;
+	company: string;
+	line1: string;
+	line2: string;
+	city: string;
+	state: string;
+	postalCode: string;
+	country: string;
+	phone: string;
+	isDefault: boolean;
+}
+
+const emptyAddressForm: AddressFormValues = {
+	type: "shipping",
+	firstName: "",
+	lastName: "",
+	company: "",
+	line1: "",
+	line2: "",
+	city: "",
+	state: "",
+	postalCode: "",
+	country: "US",
+	phone: "",
+	isDefault: false,
+};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -103,6 +149,10 @@ export function CustomerDetail(props: CustomerDetailProps) {
 		phone: "",
 	});
 	const [newTag, setNewTag] = useState("");
+	const [addressEditId, setAddressEditId] = useState<string | null>(null);
+	const [addressFormOpen, setAddressFormOpen] = useState(false);
+	const [addressForm, setAddressForm] =
+		useState<AddressFormValues>(emptyAddressForm);
 
 	const { data: customerData, isLoading: loading } = api.getCustomer.useQuery(
 		{ params: { id: customerId ?? "" } },
@@ -136,6 +186,32 @@ export function CustomerDetail(props: CustomerDetailProps) {
 		onSuccess: () => {
 			void api.getCustomer.invalidate();
 		},
+	});
+
+	const createAddressMutation = api.createAddress.useMutation({
+		onSuccess: () => {
+			setAddressFormOpen(false);
+			setAddressEditId(null);
+			setAddressForm(emptyAddressForm);
+			void api.getCustomer.invalidate();
+		},
+	});
+
+	const updateAddressMutation = api.updateAddress.useMutation({
+		onSuccess: () => {
+			setAddressFormOpen(false);
+			setAddressEditId(null);
+			setAddressForm(emptyAddressForm);
+			void api.getCustomer.invalidate();
+		},
+	});
+
+	const deleteAddressMutation = api.deleteAddress.useMutation({
+		onSuccess: () => void api.getCustomer.invalidate(),
+	});
+
+	const setDefaultAddressMutation = api.setDefaultAddress.useMutation({
+		onSuccess: () => void api.getCustomer.invalidate(),
 	});
 
 	const customer = customerData?.customer ?? null;
@@ -181,6 +257,53 @@ export function CustomerDetail(props: CustomerDetailProps) {
 	const handleRemoveTag = (tag: string) => {
 		if (!customerId) return;
 		removeTagMutation.mutate({ params: { id: customerId }, tags: [tag] });
+	};
+
+	const openAddAddress = () => {
+		setAddressEditId(null);
+		setAddressForm(emptyAddressForm);
+		setAddressFormOpen(true);
+	};
+
+	const openEditAddress = (addr: CustomerAddress) => {
+		setAddressEditId(addr.id);
+		setAddressForm({
+			type: addr.type,
+			firstName: addr.firstName,
+			lastName: addr.lastName,
+			company: addr.company ?? "",
+			line1: addr.line1,
+			line2: addr.line2 ?? "",
+			city: addr.city,
+			state: addr.state,
+			postalCode: addr.postalCode,
+			country: addr.country,
+			phone: addr.phone ?? "",
+			isDefault: addr.isDefault,
+		});
+		setAddressFormOpen(true);
+	};
+
+	const handleAddressSubmit = (e: React.FormEvent) => {
+		e.preventDefault();
+		if (!customerId) return;
+		const payload = {
+			...addressForm,
+			company: addressForm.company || undefined,
+			line2: addressForm.line2 || undefined,
+			phone: addressForm.phone || undefined,
+		};
+		if (addressEditId) {
+			updateAddressMutation.mutate({
+				params: { customerId, addressId: addressEditId },
+				...payload,
+			});
+		} else {
+			createAddressMutation.mutate({
+				params: { customerId },
+				...payload,
+			});
+		}
 	};
 
 	if (!customerId) {
@@ -422,11 +545,299 @@ export function CustomerDetail(props: CustomerDetailProps) {
 
 					{/* Addresses */}
 					<div className="rounded-lg border border-border bg-card p-5">
-						<h2 className="mb-4 font-semibold text-foreground text-sm">
-							Addresses ({addresses.length})
-						</h2>
-						{addresses.length === 0 ? (
-							<p className="text-center text-muted-foreground text-sm">
+						<div className="mb-4 flex items-center justify-between">
+							<h2 className="font-semibold text-foreground text-sm">
+								Addresses ({addresses.length})
+							</h2>
+							<button
+								type="button"
+								onClick={openAddAddress}
+								className="rounded-md border border-border px-3 py-1.5 font-medium text-foreground text-xs transition-colors hover:bg-muted"
+							>
+								+ Add address
+							</button>
+						</div>
+
+						{/* Address form (create / edit) */}
+						{addressFormOpen && (
+							<form
+								onSubmit={(e) => void handleAddressSubmit(e)}
+								className="mb-4 space-y-3 rounded-md border border-border bg-muted/30 p-4"
+							>
+								<p className="font-semibold text-foreground text-sm">
+									{addressEditId ? "Edit address" : "Add address"}
+								</p>
+								<div className="grid gap-3 sm:grid-cols-2">
+									<div>
+										<label
+											htmlFor="addr-type"
+											className="mb-1 block font-medium text-foreground text-xs"
+										>
+											Type
+										</label>
+										<select
+											id="addr-type"
+											value={addressForm.type}
+											onChange={(e) =>
+												setAddressForm((f) => ({
+													...f,
+													type: e.target.value as "billing" | "shipping",
+												}))
+											}
+											className="w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+										>
+											<option value="shipping">Shipping</option>
+											<option value="billing">Billing</option>
+										</select>
+									</div>
+									<div className="flex items-end">
+										<label
+											htmlFor="addr-default"
+											className="flex cursor-pointer items-center gap-2 text-foreground text-sm"
+										>
+											<input
+												id="addr-default"
+												type="checkbox"
+												checked={addressForm.isDefault}
+												onChange={(e) =>
+													setAddressForm((f) => ({
+														...f,
+														isDefault: e.target.checked,
+													}))
+												}
+												className="rounded"
+											/>
+											Set as default
+										</label>
+									</div>
+								</div>
+								<div className="grid gap-3 sm:grid-cols-2">
+									{(
+										[
+											["firstName", "First name"],
+											["lastName", "Last name"],
+										] as const
+									).map(([field, label]) => (
+										<div key={field}>
+											<label
+												htmlFor={`addr-${field}`}
+												className="mb-1 block font-medium text-foreground text-xs"
+											>
+												{label}
+											</label>
+											<input
+												id={`addr-${field}`}
+												type="text"
+												value={addressForm[field]}
+												onChange={(e) =>
+													setAddressForm((f) => ({
+														...f,
+														[field]: e.target.value,
+													}))
+												}
+												required
+												className="w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+											/>
+										</div>
+									))}
+								</div>
+								<div>
+									<label
+										htmlFor="addr-company"
+										className="mb-1 block font-medium text-foreground text-xs"
+									>
+										Company (optional)
+									</label>
+									<input
+										id="addr-company"
+										type="text"
+										value={addressForm.company}
+										onChange={(e) =>
+											setAddressForm((f) => ({
+												...f,
+												company: e.target.value,
+											}))
+										}
+										className="w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+									/>
+								</div>
+								<div>
+									<label
+										htmlFor="addr-line1"
+										className="mb-1 block font-medium text-foreground text-xs"
+									>
+										Address line 1
+									</label>
+									<input
+										id="addr-line1"
+										type="text"
+										value={addressForm.line1}
+										onChange={(e) =>
+											setAddressForm((f) => ({ ...f, line1: e.target.value }))
+										}
+										required
+										className="w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+									/>
+								</div>
+								<div>
+									<label
+										htmlFor="addr-line2"
+										className="mb-1 block font-medium text-foreground text-xs"
+									>
+										Address line 2 (optional)
+									</label>
+									<input
+										id="addr-line2"
+										type="text"
+										value={addressForm.line2}
+										onChange={(e) =>
+											setAddressForm((f) => ({ ...f, line2: e.target.value }))
+										}
+										className="w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+									/>
+								</div>
+								<div className="grid gap-3 sm:grid-cols-3">
+									<div>
+										<label
+											htmlFor="addr-city"
+											className="mb-1 block font-medium text-foreground text-xs"
+										>
+											City
+										</label>
+										<input
+											id="addr-city"
+											type="text"
+											value={addressForm.city}
+											onChange={(e) =>
+												setAddressForm((f) => ({
+													...f,
+													city: e.target.value,
+												}))
+											}
+											required
+											className="w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+										/>
+									</div>
+									<div>
+										<label
+											htmlFor="addr-state"
+											className="mb-1 block font-medium text-foreground text-xs"
+										>
+											State / Province
+										</label>
+										<input
+											id="addr-state"
+											type="text"
+											value={addressForm.state}
+											onChange={(e) =>
+												setAddressForm((f) => ({
+													...f,
+													state: e.target.value,
+												}))
+											}
+											required
+											className="w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+										/>
+									</div>
+									<div>
+										<label
+											htmlFor="addr-postal"
+											className="mb-1 block font-medium text-foreground text-xs"
+										>
+											Postal code
+										</label>
+										<input
+											id="addr-postal"
+											type="text"
+											value={addressForm.postalCode}
+											onChange={(e) =>
+												setAddressForm((f) => ({
+													...f,
+													postalCode: e.target.value,
+												}))
+											}
+											required
+											className="w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+										/>
+									</div>
+								</div>
+								<div className="grid gap-3 sm:grid-cols-2">
+									<div>
+										<label
+											htmlFor="addr-country"
+											className="mb-1 block font-medium text-foreground text-xs"
+										>
+											Country (2-letter code)
+										</label>
+										<input
+											id="addr-country"
+											type="text"
+											value={addressForm.country}
+											onChange={(e) =>
+												setAddressForm((f) => ({
+													...f,
+													country: e.target.value.toUpperCase().slice(0, 2),
+												}))
+											}
+											required
+											maxLength={2}
+											className="w-full rounded-md border border-border bg-background px-2.5 py-1.5 font-mono text-foreground text-sm uppercase focus:outline-none focus:ring-1 focus:ring-ring"
+										/>
+									</div>
+									<div>
+										<label
+											htmlFor="addr-phone"
+											className="mb-1 block font-medium text-foreground text-xs"
+										>
+											Phone (optional)
+										</label>
+										<input
+											id="addr-phone"
+											type="tel"
+											value={addressForm.phone}
+											onChange={(e) =>
+												setAddressForm((f) => ({
+													...f,
+													phone: e.target.value,
+												}))
+											}
+											className="w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+										/>
+									</div>
+								</div>
+								<div className="flex gap-2">
+									<button
+										type="submit"
+										disabled={
+											createAddressMutation.isPending ||
+											updateAddressMutation.isPending
+										}
+										className="rounded-md bg-foreground px-4 py-1.5 font-medium text-background text-sm hover:opacity-90 disabled:opacity-50"
+									>
+										{createAddressMutation.isPending ||
+										updateAddressMutation.isPending
+											? "Saving…"
+											: addressEditId
+												? "Save changes"
+												: "Add address"}
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											setAddressFormOpen(false);
+											setAddressEditId(null);
+											setAddressForm(emptyAddressForm);
+										}}
+										className="rounded-md border border-border px-4 py-1.5 font-medium text-foreground text-sm hover:bg-muted"
+									>
+										Cancel
+									</button>
+								</div>
+							</form>
+						)}
+
+						{addresses.length === 0 && !addressFormOpen ? (
+							<p className="py-4 text-center text-muted-foreground text-sm">
 								No addresses on file
 							</p>
 						) : (
@@ -438,7 +849,32 @@ export function CustomerDetail(props: CustomerDetailProps) {
 										</h3>
 										<div className="space-y-2">
 											{shippingAddresses.map((addr) => (
-												<AddressCard key={addr.id} address={addr} />
+												<AddressCard
+													key={addr.id}
+													address={addr}
+													customerId={customerId ?? ""}
+													onEdit={() => openEditAddress(addr)}
+													onDelete={() => {
+														if (window.confirm("Delete this address?")) {
+															deleteAddressMutation.mutate({
+																params: {
+																	customerId: customerId ?? "",
+																	addressId: addr.id,
+																},
+															});
+														}
+													}}
+													onSetDefault={() => {
+														setDefaultAddressMutation.mutate({
+															params: {
+																customerId: customerId ?? "",
+																addressId: addr.id,
+															},
+														});
+													}}
+													isDeleting={deleteAddressMutation.isPending}
+													isSettingDefault={setDefaultAddressMutation.isPending}
+												/>
 											))}
 										</div>
 									</div>
@@ -450,7 +886,32 @@ export function CustomerDetail(props: CustomerDetailProps) {
 										</h3>
 										<div className="space-y-2">
 											{billingAddresses.map((addr) => (
-												<AddressCard key={addr.id} address={addr} />
+												<AddressCard
+													key={addr.id}
+													address={addr}
+													customerId={customerId ?? ""}
+													onEdit={() => openEditAddress(addr)}
+													onDelete={() => {
+														if (window.confirm("Delete this address?")) {
+															deleteAddressMutation.mutate({
+																params: {
+																	customerId: customerId ?? "",
+																	addressId: addr.id,
+																},
+															});
+														}
+													}}
+													onSetDefault={() => {
+														setDefaultAddressMutation.mutate({
+															params: {
+																customerId: customerId ?? "",
+																addressId: addr.id,
+															},
+														});
+													}}
+													isDeleting={deleteAddressMutation.isPending}
+													isSettingDefault={setDefaultAddressMutation.isPending}
+												/>
 											))}
 										</div>
 									</div>
@@ -586,11 +1047,28 @@ export function CustomerDetail(props: CustomerDetailProps) {
 
 // ─── AddressCard ──────────────────────────────────────────────────────────────
 
-function AddressCard({ address }: { address: CustomerAddress }) {
+interface AddressCardProps {
+	address: CustomerAddress;
+	customerId: string;
+	onEdit: () => void;
+	onDelete: () => void;
+	onSetDefault: () => void;
+	isDeleting: boolean;
+	isSettingDefault: boolean;
+}
+
+function AddressCard({
+	address,
+	onEdit,
+	onDelete,
+	onSetDefault,
+	isDeleting,
+	isSettingDefault,
+}: AddressCardProps) {
 	return (
 		<div className="rounded-md border border-border bg-muted/30 p-3">
-			<div className="flex items-start justify-between">
-				<div className="text-foreground text-sm">
+			<div className="flex items-start justify-between gap-3">
+				<div className="min-w-0 flex-1 text-foreground text-sm">
 					<p className="font-medium">
 						{address.firstName} {address.lastName}
 					</p>
@@ -606,11 +1084,39 @@ function AddressCard({ address }: { address: CustomerAddress }) {
 						</p>
 					)}
 				</div>
-				{address.isDefault && (
-					<span className="rounded-full bg-foreground/10 px-2 py-0.5 font-medium text-foreground text-xs">
-						Default
-					</span>
-				)}
+				<div className="flex shrink-0 flex-col items-end gap-1.5">
+					{address.isDefault ? (
+						<span className="rounded-full bg-foreground/10 px-2 py-0.5 font-medium text-foreground text-xs">
+							Default
+						</span>
+					) : (
+						<button
+							type="button"
+							onClick={onSetDefault}
+							disabled={isSettingDefault}
+							className="rounded px-2 py-0.5 text-muted-foreground text-xs transition-colors hover:text-foreground disabled:opacity-50"
+						>
+							Set default
+						</button>
+					)}
+					<div className="flex gap-1">
+						<button
+							type="button"
+							onClick={onEdit}
+							className="rounded px-2 py-0.5 font-medium text-foreground text-xs transition-colors hover:bg-muted"
+						>
+							Edit
+						</button>
+						<button
+							type="button"
+							onClick={onDelete}
+							disabled={isDeleting}
+							className="rounded px-2 py-0.5 font-medium text-destructive text-xs transition-colors hover:bg-destructive/10 disabled:opacity-50"
+						>
+							Delete
+						</button>
+					</div>
+				</div>
 			</div>
 		</div>
 	);
