@@ -120,4 +120,15 @@ export type CartController = ModuleController & {
 		recoverySent: number;
 		recovered: number;
 	}>;
+
+	/**
+	 * Merge items from a guest cart into a customer cart.
+	 * Guest items are added to the customer cart (quantities stack for duplicates).
+	 * The guest cart is cleared after a successful merge.
+	 * Returns the number of items merged.
+	 */
+	mergeGuestCart(params: {
+		guestId: string;
+		customerId: string;
+	}): Promise<{ merged: number; customerCartId: string }>;
 };

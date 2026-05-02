@@ -209,6 +209,88 @@ export function createCartControllers(data: ModuleDataService): CartController {
 			return updated;
 		},
 
+		async mergeGuestCart(params) {
+			const { guestId, customerId } = params;
+
+			// Guest cart ID matches the guestId (same key scheme as getOrCreateCart)
+			const guestCart = (await data.get("cart", guestId)) as Cart | null;
+			if (!guestCart || guestCart.status !== "active") {
+				return { merged: 0, customerCartId: customerId };
+			}
+
+			const guestItems = (await data.findMany("cartItem", {
+				where: { cartId: guestId },
+			})) as CartItem[];
+
+			if (guestItems.length === 0) {
+				return { merged: 0, customerCartId: customerId };
+			}
+
+			// Ensure customer cart exists
+			const customerCart = (await data.get("cart", customerId)) as Cart | null;
+			if (!customerCart) {
+				const now = new Date();
+				await data.upsert("cart", customerId, {
+					id: customerId,
+					customerId,
+					status: "active",
+					expiresAt: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
+					metadata: {},
+					createdAt: now,
+					updatedAt: now,
+				} as Record<string, unknown>);
+			}
+
+			let merged = 0;
+			for (const guestItem of guestItems) {
+				// Rekey the item to the customer cart
+				const customerItemId = guestItem.variantId
+					? `${customerId}_${guestItem.productId}_${guestItem.variantId}`
+					: `${customerId}_${guestItem.productId}`;
+
+				const existing = (await data.get(
+					"cartItem",
+					customerItemId,
+				)) as CartItem | null;
+
+				const now = new Date();
+				const MAX_ITEM_QUANTITY = 999;
+				const newItem: CartItem = existing
+					? {
+							...existing,
+							quantity: Math.min(
+								existing.quantity + guestItem.quantity,
+								MAX_ITEM_QUANTITY,
+							),
+							updatedAt: now,
+						}
+					: {
+							...guestItem,
+							id: customerItemId,
+							cartId: customerId,
+							updatedAt: now,
+						};
+
+				await data.upsert(
+					"cartItem",
+					customerItemId,
+					newItem as Record<string, unknown>,
+				);
+				// Remove the guest item
+				await data.delete("cartItem", guestItem.id);
+				merged++;
+			}
+
+			// Mark guest cart as converted
+			await data.upsert("cart", guestId, {
+				...guestCart,
+				status: "converted",
+				updatedAt: new Date(),
+			} as Record<string, unknown>);
+
+			return { merged, customerCartId: customerId };
+		},
+
 		async getRecoveryStats() {
 			const allCarts = (await data.findMany("cart", {})) as Cart[];
 

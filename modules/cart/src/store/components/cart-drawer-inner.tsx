@@ -1,6 +1,7 @@
 "use client";
 
 import { observer } from "@86d-app/core/state";
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect } from "react";
 import { cartState } from "../../state";
@@ -134,9 +135,12 @@ export const CartDrawerInner = observer(() => {
 							className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-md bg-muted"
 						>
 							{image ? (
-								<img
+								<Image
 									src={image}
 									alt={item.product.name}
+									width={64}
+									height={64}
+									unoptimized
 									className="h-full w-full object-cover object-center"
 								/>
 							) : (
