@@ -8,6 +8,7 @@
 			"types": "./src/index.ts",
 			"default": "./src/index.ts"
 		},
+		"./abandoned-cart": "./src/templates/abandoned-cart.tsx",
 		"./back-in-stock": "./src/templates/back-in-stock.tsx",
 		"./contact": "./src/templates/contact.tsx",
 		"./delivery-confirmation": "./src/templates/delivery-confirmation.tsx",

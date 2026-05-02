@@ -8,6 +8,7 @@
  */
 
 import type { EventBus, ModuleEvent } from "@86d-app/core";
+import AbandonedCartEmail from "emails/abandoned-cart";
 import BackInStockEmail from "emails/back-in-stock";
 import DeliveryConfirmationEmail from "emails/delivery-confirmation";
 import LowStockAlertEmail from "emails/low-stock-alert";
@@ -206,6 +207,14 @@ export interface CustomerCreatedPayload {
 	email: string;
 	firstName: string;
 	lastName: string;
+}
+
+export interface CartAbandonedPayload {
+	cartId: string;
+	email?: string | null | undefined;
+	cartTotal: number;
+	currency?: string | null | undefined;
+	itemCount: number;
 }
 
 // ── Configuration ────────────────────────────────────────────────────
@@ -750,6 +759,42 @@ function createCustomerCreatedHandler(
 	};
 }
 
+function createCartAbandonedHandler(
+	resend: EmailClient,
+	config: NotificationConfig,
+) {
+	return async (event: ModuleEvent<CartAbandonedPayload>) => {
+		const p = event.payload;
+		if (!p.email) {
+			logger.warn("cart.abandoned: no email address, skipping notification", {
+				cartId: p.cartId,
+			});
+			return;
+		}
+
+		const storeUrl = config.adminUrl?.replace(/\/admin\/?$/, "") ?? "";
+		const cartUrl = storeUrl ? `${storeUrl}/cart` : "/cart";
+
+		await resend.emails.send({
+			from: config.fromAddress,
+			to: [p.email],
+			subject: `You left something in your cart — ${config.storeName}`,
+			react: AbandonedCartEmail({
+				cartTotal: p.cartTotal,
+				currency: p.currency ?? "USD",
+				itemCount: p.itemCount,
+				cartUrl,
+				storeName: config.storeName,
+			}),
+		});
+
+		logger.info("Abandoned cart email sent", {
+			cartId: p.cartId,
+			to: p.email,
+		});
+	};
+}
+
 // ── Registration ─────────────────────────────────────────────────────
 
 /**
@@ -832,6 +877,7 @@ export function registerNotificationHandlers(
 		"customer.created",
 		createCustomerCreatedHandler(resend, mergedConfig),
 	);
+	register("cart.abandoned", createCartAbandonedHandler(resend, mergedConfig));
 
 	logger.info("Email notification handlers registered", {
 		events: registeredEvents,

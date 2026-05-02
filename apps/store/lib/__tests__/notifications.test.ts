@@ -95,7 +95,7 @@ const CONFIG = {
 // ── Registration ─────────────────────────────────────────────────────
 
 describe("registerNotificationHandlers", () => {
-	it("registers handlers for all 15 event types", () => {
+	it("registers handlers for all 16 event types", () => {
 		const bus = createMockBus();
 		const resend = createMockResend();
 
@@ -117,7 +117,8 @@ describe("registerNotificationHandlers", () => {
 		expect(events).toContain("subscription.renewed");
 		expect(events).toContain("subscription.cancelled");
 		expect(events).toContain("customer.created");
-		expect(bus.on).toHaveBeenCalledTimes(15);
+		expect(events).toContain("cart.abandoned");
+		expect(bus.on).toHaveBeenCalledTimes(16);
 	});
 
 	it("returns unsubscribe function", () => {
