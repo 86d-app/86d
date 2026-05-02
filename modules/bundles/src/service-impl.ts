@@ -135,6 +135,9 @@ export function createBundleController(
 				variantId: params.variantId,
 				quantity: params.quantity,
 				sortOrder: params.sortOrder,
+				productName: params.productName,
+				productSlug: params.productSlug,
+				productImageUrl: params.productImageUrl,
 				createdAt: now,
 			};
 

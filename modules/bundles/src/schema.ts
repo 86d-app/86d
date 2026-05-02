@@ -52,6 +52,12 @@ export const bundleSchema = {
 			quantity: { type: "number", required: true },
 			/** Sort order within the bundle */
 			sortOrder: { type: "number", required: false },
+			/** Snapshot of product name at the time item was added */
+			productName: { type: "string", required: false },
+			/** Snapshot of product slug for building links */
+			productSlug: { type: "string", required: false },
+			/** Snapshot of product image URL */
+			productImageUrl: { type: "string", required: false },
 			createdAt: {
 				type: "date",
 				required: true,

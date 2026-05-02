@@ -29,6 +29,9 @@ interface BundleItem {
 	variantId?: string;
 	quantity: number;
 	sortOrder?: number;
+	productName?: string | undefined;
+	productSlug?: string | undefined;
+	productImageUrl?: string | undefined;
 	createdAt: string;
 }
 
@@ -253,6 +256,8 @@ function DetailPanel({
 }) {
 	const api = useBundleAdminApi();
 	const [productId, setProductId] = useState("");
+	const [productName, setProductName] = useState("");
+	const [productSlug, setProductSlug] = useState("");
 	const [itemQty, setItemQty] = useState("1");
 	const [error, setError] = useState("");
 
@@ -269,6 +274,8 @@ function DetailPanel({
 	const addMutation = api.addItem.useMutation({
 		onSettled: () => {
 			setProductId("");
+			setProductName("");
+			setProductSlug("");
 			setItemQty("1");
 			void api.get.invalidate();
 		},
@@ -304,6 +311,8 @@ function DetailPanel({
 			params: { id: bundleId },
 			productId: productId.trim(),
 			quantity: Number.parseInt(itemQty, 10) || 1,
+			...(productName.trim() ? { productName: productName.trim() } : {}),
+			...(productSlug.trim() ? { productSlug: productSlug.trim() } : {}),
 		});
 	};
 
@@ -497,7 +506,10 @@ function DetailPanel({
 							>
 								<div>
 									<p className="font-medium text-foreground text-sm">
-										{item.productId}
+										{item.productName ?? item.productId}
+									</p>
+									<p className="font-mono text-muted-foreground text-xs">
+										{item.productId.slice(0, 12)}…
 									</p>
 									{item.variantId && (
 										<p className="text-muted-foreground text-xs">
@@ -527,39 +539,67 @@ function DetailPanel({
 				)}
 
 				<div className="border-border border-t px-5 py-3">
-					<form onSubmit={handleAddItem} className="flex items-end gap-3">
-						<label className="flex-1">
-							<span className="mb-1 block text-muted-foreground text-xs">
-								Product ID
-							</span>
-							<input
-								type="text"
-								value={productId}
-								onChange={(e) => setProductId(e.target.value)}
-								className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-								placeholder="prod_..."
-								required
-							/>
-						</label>
-						<label className="w-20">
-							<span className="mb-1 block text-muted-foreground text-xs">
-								Qty
-							</span>
-							<input
-								type="number"
-								min="1"
-								value={itemQty}
-								onChange={(e) => setItemQty(e.target.value)}
-								className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-							/>
-						</label>
-						<button
-							type="submit"
-							disabled={addMutation.isPending}
-							className="rounded-md bg-foreground px-3 py-1.5 font-medium text-background text-sm hover:opacity-90 disabled:opacity-50"
-						>
-							{addMutation.isPending ? "Adding..." : "Add"}
-						</button>
+					<form onSubmit={handleAddItem} className="flex flex-col gap-2">
+						<div className="flex items-end gap-3">
+							<label className="flex-1">
+								<span className="mb-1 block text-muted-foreground text-xs">
+									Product ID *
+								</span>
+								<input
+									type="text"
+									value={productId}
+									onChange={(e) => setProductId(e.target.value)}
+									className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+									placeholder="UUID from products table"
+									required
+								/>
+							</label>
+							<label className="w-20">
+								<span className="mb-1 block text-muted-foreground text-xs">
+									Qty
+								</span>
+								<input
+									type="number"
+									min="1"
+									value={itemQty}
+									onChange={(e) => setItemQty(e.target.value)}
+									className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+								/>
+							</label>
+						</div>
+						<div className="flex items-end gap-3">
+							<label className="flex-1">
+								<span className="mb-1 block text-muted-foreground text-xs">
+									Product name (for store display)
+								</span>
+								<input
+									type="text"
+									value={productName}
+									onChange={(e) => setProductName(e.target.value)}
+									className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+									placeholder="e.g. Organic Cotton T-Shirt"
+								/>
+							</label>
+							<label className="flex-1">
+								<span className="mb-1 block text-muted-foreground text-xs">
+									Product slug (for store links)
+								</span>
+								<input
+									type="text"
+									value={productSlug}
+									onChange={(e) => setProductSlug(e.target.value)}
+									className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+									placeholder="e.g. organic-cotton-t-shirt"
+								/>
+							</label>
+							<button
+								type="submit"
+								disabled={addMutation.isPending}
+								className="rounded-md bg-foreground px-3 py-1.5 font-medium text-background text-sm hover:opacity-90 disabled:opacity-50"
+							>
+								{addMutation.isPending ? "Adding..." : "Add Item"}
+							</button>
+						</div>
 					</form>
 				</div>
 			</div>

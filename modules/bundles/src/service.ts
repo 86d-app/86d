@@ -25,6 +25,12 @@ export type BundleItem = {
 	variantId?: string | undefined;
 	quantity: number;
 	sortOrder?: number | undefined;
+	/** Snapshot of the product name at the time the item was added */
+	productName?: string | undefined;
+	/** Snapshot of the product slug for building links */
+	productSlug?: string | undefined;
+	/** Snapshot of the product image URL */
+	productImageUrl?: string | undefined;
 	createdAt: Date;
 };
 
@@ -48,6 +54,9 @@ export type AddBundleItemParams = {
 	variantId?: string | undefined;
 	quantity: number;
 	sortOrder?: number | undefined;
+	productName?: string | undefined;
+	productSlug?: string | undefined;
+	productImageUrl?: string | undefined;
 };
 
 export type BundleWithItems = Bundle & {

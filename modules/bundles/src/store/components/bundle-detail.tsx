@@ -9,6 +9,9 @@ interface BundleItem {
 	productId: string;
 	variantId?: string;
 	quantity: number;
+	productName?: string | undefined;
+	productSlug?: string | undefined;
+	productImageUrl?: string | undefined;
 }
 
 interface Bundle {

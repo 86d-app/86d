@@ -13,6 +13,9 @@ export const addBundleItem = createAdminEndpoint(
 			variantId: z.string().max(200).optional(),
 			quantity: z.number().int().min(1).max(999),
 			sortOrder: z.number().int().optional(),
+			productName: z.string().max(500).optional(),
+			productSlug: z.string().max(500).optional(),
+			productImageUrl: z.string().max(2000).optional(),
 		}),
 	},
 	async (ctx) => {
@@ -30,6 +33,9 @@ export const addBundleItem = createAdminEndpoint(
 			variantId: ctx.body.variantId,
 			quantity: ctx.body.quantity,
 			sortOrder: ctx.body.sortOrder,
+			productName: ctx.body.productName,
+			productSlug: ctx.body.productSlug,
+			productImageUrl: ctx.body.productImageUrl,
 		});
 
 		return { item };
