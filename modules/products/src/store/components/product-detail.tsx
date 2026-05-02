@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import {
 	normalizeCartQueryData,
 	useCartMutation,
+	useProductLabels,
 	useProductsApi,
 	useReviewsApi,
 	useTrack,
@@ -52,6 +53,7 @@ export function ProductDetail(props: ProductDetailProps) {
 	};
 
 	const product = data?.product ?? null;
+	const labels = useProductLabels(product?.id);
 
 	const { data: reviewsSummaryData } = reviewsApi.listProductReviews.useQuery(
 		product
@@ -338,6 +340,24 @@ export function ProductDetail(props: ProductDetailProps) {
 		</Link>
 	) : null;
 
+	const labelsBlock =
+		labels.length > 0 ? (
+			<div className="flex flex-wrap gap-1.5">
+				{labels.map((label) => (
+					<span
+						key={label.id}
+						className="rounded-full px-2.5 py-0.5 font-medium text-xs"
+						style={{
+							backgroundColor: label.backgroundColor ?? "var(--foreground)",
+							color: label.color ?? "var(--background)",
+						}}
+					>
+						{label.displayText}
+					</span>
+				))}
+			</div>
+		) : null;
+
 	const reviewSummaryLink =
 		reviewSummary && reviewSummary.count > 0 ? (
 			<a
@@ -527,6 +547,7 @@ export function ProductDetail(props: ProductDetailProps) {
 			breadcrumbs={breadcrumbs}
 			imageGallery={imageGallery}
 			categoryLink={categoryLink}
+			labelsBlock={labelsBlock}
 			name={product.name}
 			reviewSummaryLink={reviewSummaryLink}
 			priceBlock={priceBlock}

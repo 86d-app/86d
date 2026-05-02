@@ -93,14 +93,17 @@ export function useInventoryApi() {
 	};
 }
 
-export function useProductLabels(productId: string) {
+export function useProductLabels(productId: string | undefined) {
 	const client = useModuleClient();
 	const getProductLabels =
 		client.module("product-labels").store[
 			"/product-labels/products/:productId"
 		];
 
-	const { data } = getProductLabels.useQuery({ productId }) as {
+	const { data } = getProductLabels.useQuery(
+		{ productId: productId ?? "" },
+		{ enabled: !!productId },
+	) as {
 		data:
 			| {
 					labels: Array<{
