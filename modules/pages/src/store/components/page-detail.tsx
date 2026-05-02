@@ -16,7 +16,11 @@ interface PageData {
 	updatedAt: string;
 }
 
-export function PageDetail({ slug }: { slug: string }) {
+export function PageDetail(props: {
+	slug?: string | undefined;
+	params?: Record<string, string> | undefined;
+}) {
+	const slug = props.slug ?? props.params?.slug ?? "";
 	const api = usePagesApi();
 
 	const { data, isLoading } = api.getPage.useQuery({
