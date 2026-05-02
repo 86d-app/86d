@@ -19,16 +19,13 @@ type Transaction = {
  * Shows credits and debits with amounts, reasons, and dates.
  */
 export function StoreCreditTransactions({
-	customerId,
 	limit,
 }: {
-	customerId: string;
 	limit?: number;
 }) {
 	const api = useStoreCreditApi();
 
 	const { data, isLoading, error } = api.transactions.useQuery({
-		customerId,
 		...(limit ? { take: limit } : {}),
 	});
 

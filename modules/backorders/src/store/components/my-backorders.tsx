@@ -46,12 +46,11 @@ function isCancellable(status: string): boolean {
 	return status === "pending" || status === "confirmed";
 }
 
-export function MyBackorders({ customerId }: { customerId: string }) {
+export function MyBackorders() {
 	const api = useBackordersApi();
 	const [error, setError] = useState("");
 
 	const { data, isLoading } = api.myBackorders.useQuery({
-		customerId,
 		take: "50",
 	}) as {
 		data: { backorders: BackorderEntry[] } | undefined;

@@ -10,11 +10,9 @@ import StoreCreditApplyTemplate from "./store-credit-apply.mdx";
  * Shows current balance and lets the customer choose how much to apply.
  */
 export function StoreCreditApply({
-	customerId,
 	orderTotal,
 	onApplied,
 }: {
-	customerId: string;
 	orderTotal?: number;
 	onApplied?: (amountApplied: number, remainingBalance: number) => void;
 }) {
@@ -26,7 +24,7 @@ export function StoreCreditApply({
 	} | null>(null);
 
 	const { data: balanceData, isLoading: balanceLoading } = api.balance.useQuery(
-		{ customerId },
+		{},
 	);
 
 	const balanceResult = balanceData as Record<string, unknown> | undefined;
@@ -57,7 +55,6 @@ export function StoreCreditApply({
 		setError("");
 		setApplied(null);
 		applyMutation.mutate({
-			customerId,
 			amount: maxApplicable,
 		});
 	};
