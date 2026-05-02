@@ -72,6 +72,7 @@ function useTicketsApi() {
 		updateTicket: client.module("tickets").admin["/admin/tickets/:id/update"],
 		closeTicket: client.module("tickets").admin["/admin/tickets/:id/close"],
 		reopenTicket: client.module("tickets").admin["/admin/tickets/:id/reopen"],
+		deleteTicket: client.module("tickets").admin["/admin/tickets/:id/delete"],
 		adminReply: client.module("tickets").admin["/admin/tickets/:id/reply"],
 		listMessages: client.module("tickets").admin["/admin/tickets/:id/messages"],
 		stats: client.module("tickets").admin["/admin/tickets/stats"],
@@ -367,6 +368,10 @@ export function TicketDetail({ params }: { params: { id: string } }) {
 		mutateAsync: (opts: { params: { id: string } }) => Promise<unknown>;
 		isPending: boolean;
 	};
+	const deleteTicketMutation = api.deleteTicket.useMutation() as {
+		mutateAsync: (opts: { params: { id: string } }) => Promise<unknown>;
+		isPending: boolean;
+	};
 	const updateMutation = api.updateTicket.useMutation() as {
 		mutateAsync: (opts: {
 			params: { id: string };
@@ -415,6 +420,22 @@ export function TicketDetail({ params }: { params: { id: string } }) {
 		try {
 			await reopenMutation.mutateAsync({ params: { id: params.id } });
 			window.location.reload();
+		} catch {
+			// silently handled
+		}
+	};
+
+	const handleDelete = async () => {
+		if (
+			!window.confirm(
+				"Permanently delete this ticket and all its messages? This cannot be undone.",
+			)
+		) {
+			return;
+		}
+		try {
+			await deleteTicketMutation.mutateAsync({ params: { id: params.id } });
+			window.location.assign("/admin/tickets");
 		} catch {
 			// silently handled
 		}
@@ -523,6 +544,14 @@ export function TicketDetail({ params }: { params: { id: string } }) {
 								Close
 							</button>
 						)}
+						<button
+							type="button"
+							onClick={() => void handleDelete()}
+							disabled={deleteTicketMutation.isPending}
+							className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 font-medium text-red-600 text-sm hover:bg-red-100 disabled:opacity-50 dark:border-red-800 dark:bg-red-900/20 dark:hover:bg-red-900/40"
+						>
+							{deleteTicketMutation.isPending ? "Deleting…" : "Delete"}
+						</button>
 					</div>
 				</div>
 			</div>

@@ -138,6 +138,9 @@ export type TicketController = ModuleController & {
 	/** Reopen a closed/resolved ticket */
 	reopenTicket(id: string): Promise<Ticket>;
 
+	/** Permanently delete a ticket and its messages */
+	deleteTicket(id: string): Promise<boolean>;
+
 	/** Add a message to a ticket */
 	addMessage(params: {
 		ticketId: string;

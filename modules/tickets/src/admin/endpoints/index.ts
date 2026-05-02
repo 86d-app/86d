@@ -2,6 +2,7 @@ import { adminReply } from "./admin-reply";
 import { closeTicket } from "./close-ticket";
 import { createCategory } from "./create-category";
 import { deleteCategory } from "./delete-category";
+import { deleteTicket } from "./delete-ticket";
 import { getTicket } from "./get-ticket";
 import { listCategories } from "./list-categories";
 import { listMessages } from "./list-messages";
@@ -20,6 +21,7 @@ export const adminEndpoints = {
 	"/admin/tickets/categories/:id/delete": deleteCategory,
 	"/admin/tickets/:id": getTicket,
 	"/admin/tickets/:id/update": updateTicket,
+	"/admin/tickets/:id/delete": deleteTicket,
 	"/admin/tickets/:id/close": closeTicket,
 	"/admin/tickets/:id/reopen": reopenTicket,
 	"/admin/tickets/:id/reply": adminReply,

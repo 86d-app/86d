@@ -247,6 +247,13 @@ export function createTicketControllers(
 			return updated;
 		},
 
+		async deleteTicket(id: string) {
+			const existing = (await data.get("ticket", id)) as Ticket | null;
+			if (!existing) return false;
+			await data.delete("ticket", id);
+			return true;
+		},
+
 		async addMessage(params) {
 			const id = crypto.randomUUID();
 			const now = new Date();
