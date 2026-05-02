@@ -51,16 +51,31 @@ interface QuoteHistory {
 	createdAt: string;
 }
 
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+const inputCls =
+	"w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-1 disabled:opacity-50";
+const labelCls = "mb-1 block font-medium text-foreground text-sm";
+
 function useQuotesApi() {
 	const client = useModuleClient();
 	return {
 		list: client.module("quotes").admin["/admin/quotes"],
+		create: client.module("quotes").admin["/admin/quotes/create"],
 		detail: client.module("quotes").admin["/admin/quotes/:id"],
+		deleteQuote: client.module("quotes").admin["/admin/quotes/:id/delete"],
 		approve: client.module("quotes").admin["/admin/quotes/:id/approve"],
 		reject: client.module("quotes").admin["/admin/quotes/:id/reject"],
 		convert: client.module("quotes").admin["/admin/quotes/:id/convert"],
 		expire: client.module("quotes").admin["/admin/quotes/:id/expire"],
 		addComment: client.module("quotes").admin["/admin/quotes/:id/comments/add"],
+		addItem: client.module("quotes").admin["/admin/quotes/:id/items"],
+		updateItem:
+			client.module("quotes").admin["/admin/quotes/:id/items/:itemId"],
+		removeItem:
+			client.module("quotes").admin["/admin/quotes/:id/items/:itemId/remove"],
 	};
 }
 
@@ -105,8 +120,488 @@ const STATUS_COLORS: Record<string, string> = {
 	sent: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
 };
 
+// ---------------------------------------------------------------------------
+// QuoteSheet — create quote
+// ---------------------------------------------------------------------------
+
+interface QuoteSheetProps {
+	onSaved: (id: string) => void;
+	onCancel: () => void;
+}
+
+function QuoteSheet({ onSaved, onCancel }: QuoteSheetProps) {
+	const api = useQuotesApi();
+	const [customerEmail, setCustomerEmail] = useState("");
+	const [customerName, setCustomerName] = useState("");
+	const [companyName, setCompanyName] = useState("");
+	const [notes, setNotes] = useState("");
+	const [error, setError] = useState("");
+
+	const createMutation = api.create.useMutation({
+		onSuccess: (data: { quote?: { id: string } }) => {
+			void api.list.invalidate();
+			onSaved(data.quote?.id ?? "");
+		},
+		onError: (err: Error) => setError(extractError(err)),
+	});
+
+	function handleSubmit(e: React.FormEvent) {
+		e.preventDefault();
+		setError("");
+		if (!customerEmail.trim() || !customerName.trim()) {
+			setError("Customer email and name are required.");
+			return;
+		}
+		const body: Record<string, string> = {
+			customerEmail: customerEmail.trim(),
+			customerName: customerName.trim(),
+		};
+		if (companyName.trim()) body.companyName = companyName.trim();
+		if (notes.trim()) body.notes = notes.trim();
+		createMutation.mutate({ body });
+	}
+
+	return (
+		<div className="fixed inset-0 z-50 flex justify-end">
+			<button
+				type="button"
+				className="absolute inset-0 cursor-default bg-black/40"
+				aria-label="Close panel"
+				onClick={onCancel}
+			/>
+			<div className="relative flex h-full w-full max-w-md flex-col overflow-y-auto border-border border-l bg-background shadow-2xl">
+				<div className="flex shrink-0 items-center justify-between border-border border-b px-6 py-4">
+					<h2 className="font-semibold text-foreground text-lg">New Quote</h2>
+					<button
+						type="button"
+						onClick={onCancel}
+						className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+					>
+						✕
+					</button>
+				</div>
+
+				<form
+					onSubmit={handleSubmit}
+					className="flex flex-1 flex-col gap-5 px-6 py-6"
+				>
+					{error ? (
+						<div className="rounded-lg border border-red-200 bg-red-50 p-3 text-red-800 text-sm dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
+							{error}
+						</div>
+					) : null}
+
+					<div>
+						<label htmlFor="qs-email" className={labelCls}>
+							Customer email <span className="text-red-500">*</span>
+						</label>
+						<input
+							id="qs-email"
+							type="email"
+							value={customerEmail}
+							onChange={(e) => setCustomerEmail(e.target.value)}
+							className={inputCls}
+							placeholder="customer@example.com"
+							required
+						/>
+					</div>
+
+					<div>
+						<label htmlFor="qs-name" className={labelCls}>
+							Customer name <span className="text-red-500">*</span>
+						</label>
+						<input
+							id="qs-name"
+							type="text"
+							value={customerName}
+							onChange={(e) => setCustomerName(e.target.value)}
+							className={inputCls}
+							placeholder="Jane Smith"
+							required
+						/>
+					</div>
+
+					<div>
+						<label htmlFor="qs-company" className={labelCls}>
+							Company (optional)
+						</label>
+						<input
+							id="qs-company"
+							type="text"
+							value={companyName}
+							onChange={(e) => setCompanyName(e.target.value)}
+							className={inputCls}
+							placeholder="Acme Inc."
+						/>
+					</div>
+
+					<div>
+						<label htmlFor="qs-notes" className={labelCls}>
+							Notes (optional)
+						</label>
+						<textarea
+							id="qs-notes"
+							value={notes}
+							onChange={(e) => setNotes(e.target.value)}
+							className={inputCls}
+							rows={3}
+							placeholder="Internal notes or customer instructions…"
+						/>
+					</div>
+
+					<div className="mt-auto flex gap-3 pt-4">
+						<button
+							type="submit"
+							disabled={createMutation.isPending}
+							className="flex-1 rounded-lg bg-foreground px-4 py-2 font-medium text-background text-sm hover:opacity-90 disabled:opacity-50"
+						>
+							{createMutation.isPending ? "Creating…" : "Create Quote"}
+						</button>
+						<button
+							type="button"
+							onClick={onCancel}
+							className="rounded-lg border border-border px-4 py-2 font-medium text-foreground text-sm hover:bg-muted"
+						>
+							Cancel
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	);
+}
+
+// ---------------------------------------------------------------------------
+// AddItemForm — inline form to add an item to a draft quote
+// ---------------------------------------------------------------------------
+
+interface AddItemFormProps {
+	quoteId: string;
+	onSaved: () => void;
+	onCancel: () => void;
+}
+
+function AddItemForm({ quoteId, onSaved, onCancel }: AddItemFormProps) {
+	const api = useQuotesApi();
+	const [productName, setProductName] = useState("");
+	const [productId, setProductId] = useState("");
+	const [sku, setSku] = useState("");
+	const [quantity, setQuantity] = useState("1");
+	const [unitPrice, setUnitPrice] = useState("");
+	const [notes, setNotes] = useState("");
+	const [error, setError] = useState("");
+
+	const addItemMutation = api.addItem.useMutation({
+		onSuccess: () => {
+			void api.detail.invalidate({ id: quoteId });
+			onSaved();
+		},
+		onError: (err: Error) => setError(extractError(err)),
+	});
+
+	function handleSubmit(e: React.FormEvent) {
+		e.preventDefault();
+		setError("");
+		if (!productName.trim()) {
+			setError("Product name is required.");
+			return;
+		}
+		const unitPriceCents = Math.round(
+			Number.parseFloat(unitPrice || "0") * 100,
+		);
+		if (unitPriceCents < 0 || Number.isNaN(unitPriceCents)) {
+			setError("Unit price must be a valid number.");
+			return;
+		}
+		const qty = Number.parseInt(quantity, 10);
+		if (!qty || qty < 1) {
+			setError("Quantity must be at least 1.");
+			return;
+		}
+		const body: Record<string, unknown> = {
+			productId: productId.trim() || crypto.randomUUID(),
+			productName: productName.trim(),
+			quantity: qty,
+			unitPrice: unitPriceCents,
+		};
+		if (sku.trim()) body.sku = sku.trim();
+		if (notes.trim()) body.notes = notes.trim();
+		addItemMutation.mutate({ params: { id: quoteId }, body });
+	}
+
+	return (
+		<form
+			onSubmit={handleSubmit}
+			className="mt-3 rounded-lg border border-border bg-muted/30 p-4"
+		>
+			{error ? (
+				<div className="mb-3 rounded border border-red-200 bg-red-50 p-2 text-red-800 text-xs dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
+					{error}
+				</div>
+			) : null}
+			<div className="grid gap-3 sm:grid-cols-2">
+				<div className="sm:col-span-2">
+					<label htmlFor="ai-name" className={labelCls}>
+						Product name <span className="text-red-500">*</span>
+					</label>
+					<input
+						id="ai-name"
+						type="text"
+						value={productName}
+						onChange={(e) => setProductName(e.target.value)}
+						className={inputCls}
+						placeholder="Widget Pro"
+						required
+					/>
+				</div>
+				<div>
+					<label htmlFor="ai-sku" className={labelCls}>
+						SKU
+					</label>
+					<input
+						id="ai-sku"
+						type="text"
+						value={sku}
+						onChange={(e) => setSku(e.target.value)}
+						className={inputCls}
+						placeholder="WGT-001"
+					/>
+				</div>
+				<div>
+					<label htmlFor="ai-productId" className={labelCls}>
+						Product ID
+					</label>
+					<input
+						id="ai-productId"
+						type="text"
+						value={productId}
+						onChange={(e) => setProductId(e.target.value)}
+						className={inputCls}
+						placeholder="(auto-generated)"
+					/>
+				</div>
+				<div>
+					<label htmlFor="ai-qty" className={labelCls}>
+						Quantity <span className="text-red-500">*</span>
+					</label>
+					<input
+						id="ai-qty"
+						type="number"
+						min="1"
+						step="1"
+						value={quantity}
+						onChange={(e) => setQuantity(e.target.value)}
+						className={inputCls}
+						required
+					/>
+				</div>
+				<div>
+					<label htmlFor="ai-price" className={labelCls}>
+						Unit price (USD)
+					</label>
+					<input
+						id="ai-price"
+						type="number"
+						min="0"
+						step="0.01"
+						value={unitPrice}
+						onChange={(e) => setUnitPrice(e.target.value)}
+						className={inputCls}
+						placeholder="0.00"
+					/>
+				</div>
+				<div className="sm:col-span-2">
+					<label htmlFor="ai-notes" className={labelCls}>
+						Notes
+					</label>
+					<input
+						id="ai-notes"
+						type="text"
+						value={notes}
+						onChange={(e) => setNotes(e.target.value)}
+						className={inputCls}
+						placeholder="Optional item notes"
+					/>
+				</div>
+			</div>
+			<div className="mt-3 flex gap-2">
+				<button
+					type="submit"
+					disabled={addItemMutation.isPending}
+					className="rounded-lg bg-foreground px-3 py-1.5 font-medium text-background text-sm hover:opacity-90 disabled:opacity-50"
+				>
+					{addItemMutation.isPending ? "Adding…" : "Add Item"}
+				</button>
+				<button
+					type="button"
+					onClick={onCancel}
+					className="rounded-lg border border-border px-3 py-1.5 font-medium text-foreground text-sm hover:bg-muted"
+				>
+					Cancel
+				</button>
+			</div>
+		</form>
+	);
+}
+
+// ---------------------------------------------------------------------------
+// EditItemRow — inline edit for a single item
+// ---------------------------------------------------------------------------
+
+interface EditItemRowProps {
+	quoteId: string;
+	item: QuoteItem;
+	currency: string;
+	onSaved: () => void;
+	onCancel: () => void;
+}
+
+function EditItemRow({
+	quoteId,
+	item,
+	currency,
+	onSaved,
+	onCancel,
+}: EditItemRowProps) {
+	const api = useQuotesApi();
+	const [quantity, setQuantity] = useState(String(item.quantity));
+	const [unitPrice, setUnitPrice] = useState(
+		String((item.unitPrice / 100).toFixed(2)),
+	);
+	const [notes, setNotes] = useState(item.notes ?? "");
+	const [error, setError] = useState("");
+
+	const updateMutation = api.updateItem.useMutation({
+		onSuccess: () => {
+			void api.detail.invalidate({ id: quoteId });
+			onSaved();
+		},
+		onError: (err: Error) => setError(extractError(err)),
+	});
+
+	function handleSave() {
+		setError("");
+		const qty = Number.parseInt(quantity, 10);
+		if (!qty || qty < 1) {
+			setError("Quantity must be at least 1.");
+			return;
+		}
+		const unitPriceCents = Math.round(
+			Number.parseFloat(unitPrice || "0") * 100,
+		);
+		if (unitPriceCents < 0 || Number.isNaN(unitPriceCents)) {
+			setError("Unit price must be a valid number.");
+			return;
+		}
+		const body: Record<string, unknown> = {
+			quantity: qty,
+			unitPrice: unitPriceCents,
+		};
+		if (notes.trim() !== (item.notes ?? "")) body.notes = notes.trim();
+		updateMutation.mutate({
+			params: { id: quoteId, itemId: item.id },
+			body,
+		});
+	}
+
+	return (
+		<tr>
+			<td colSpan={4} className="px-4 py-3">
+				{error ? (
+					<div className="mb-2 rounded border border-red-200 bg-red-50 p-2 text-red-800 text-xs dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
+						{error}
+					</div>
+				) : null}
+				<div className="grid gap-2 sm:grid-cols-4">
+					<div className="sm:col-span-2">
+						<p className="mb-1 font-medium text-foreground text-sm">
+							{item.productName ?? "Product"}
+						</p>
+						{item.sku ? (
+							<p className="text-muted-foreground text-xs">SKU: {item.sku}</p>
+						) : null}
+					</div>
+					<div>
+						<label
+							htmlFor={`ei-qty-${item.id}`}
+							className="mb-1 block text-muted-foreground text-xs"
+						>
+							Qty
+						</label>
+						<input
+							id={`ei-qty-${item.id}`}
+							type="number"
+							min="1"
+							step="1"
+							value={quantity}
+							onChange={(e) => setQuantity(e.target.value)}
+							className="w-full rounded border border-input bg-background px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+						/>
+					</div>
+					<div>
+						<label
+							htmlFor={`ei-price-${item.id}`}
+							className="mb-1 block text-muted-foreground text-xs"
+						>
+							Unit price ({currency})
+						</label>
+						<input
+							id={`ei-price-${item.id}`}
+							type="number"
+							min="0"
+							step="0.01"
+							value={unitPrice}
+							onChange={(e) => setUnitPrice(e.target.value)}
+							className="w-full rounded border border-input bg-background px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+						/>
+					</div>
+				</div>
+				<div className="mt-2">
+					<label
+						htmlFor={`ei-notes-${item.id}`}
+						className="mb-1 block text-muted-foreground text-xs"
+					>
+						Notes
+					</label>
+					<input
+						id={`ei-notes-${item.id}`}
+						type="text"
+						value={notes}
+						onChange={(e) => setNotes(e.target.value)}
+						className="w-full rounded border border-input bg-background px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+						placeholder="Optional notes"
+					/>
+				</div>
+				<div className="mt-2 flex gap-2">
+					<button
+						type="button"
+						onClick={handleSave}
+						disabled={updateMutation.isPending}
+						className="rounded bg-foreground px-3 py-1 font-medium text-background text-xs hover:opacity-90 disabled:opacity-50"
+					>
+						{updateMutation.isPending ? "Saving…" : "Save"}
+					</button>
+					<button
+						type="button"
+						onClick={onCancel}
+						className="rounded border border-border px-3 py-1 font-medium text-foreground text-xs hover:bg-muted"
+					>
+						Cancel
+					</button>
+				</div>
+			</td>
+		</tr>
+	);
+}
+
+// ---------------------------------------------------------------------------
+// QuoteList
+// ---------------------------------------------------------------------------
+
 export function QuoteList() {
 	const api = useQuotesApi();
+	const [showCreate, setShowCreate] = useState(false);
+
 	const { data, isLoading } = api.list.useQuery({}) as {
 		data: { quotes?: Quote[] } | undefined;
 		isLoading: boolean;
@@ -123,6 +618,13 @@ export function QuoteList() {
 						Manage price quotes and proposals for customers
 					</p>
 				</div>
+				<button
+					type="button"
+					onClick={() => setShowCreate(true)}
+					className="rounded-lg bg-foreground px-4 py-2 font-medium text-background text-sm hover:opacity-90"
+				>
+					Create Quote
+				</button>
 			</div>
 
 			{isLoading ? (
@@ -137,9 +639,16 @@ export function QuoteList() {
 			) : quotes.length === 0 ? (
 				<div className="rounded-lg border border-border bg-card p-8 text-center">
 					<p className="text-muted-foreground text-sm">
-						No quotes created yet. Create quotes to send custom pricing
-						proposals to customers.
+						No quotes yet. Create a quote to send custom pricing proposals to
+						customers.
 					</p>
+					<button
+						type="button"
+						onClick={() => setShowCreate(true)}
+						className="mt-4 rounded-lg bg-foreground px-4 py-2 font-medium text-background text-sm hover:opacity-90"
+					>
+						Create Quote
+					</button>
 				</div>
 			) : (
 				<div className="rounded-lg border border-border bg-card">
@@ -168,11 +677,11 @@ export function QuoteList() {
 											href={`/admin/quotes/${quote.id}`}
 											className="font-medium text-foreground text-sm hover:underline"
 										>
-											#{quote.quoteNumber}
+											#{quote.quoteNumber ?? quote.id.slice(0, 8)}
 										</a>
 										<p className="text-muted-foreground text-xs">
-											{quote.itemCount} item
-											{quote.itemCount !== 1 ? "s" : ""}
+											{quote.itemCount ?? 0} item
+											{(quote.itemCount ?? 0) !== 1 ? "s" : ""}
 										</p>
 									</td>
 									<td className="px-4 py-3">
@@ -196,9 +705,23 @@ export function QuoteList() {
 					</table>
 				</div>
 			)}
+
+			{showCreate ? (
+				<QuoteSheet
+					onSaved={(id) => {
+						setShowCreate(false);
+						if (id) window.location.assign(`/admin/quotes/${id}`);
+					}}
+					onCancel={() => setShowCreate(false)}
+				/>
+			) : null}
 		</div>
 	);
 }
+
+// ---------------------------------------------------------------------------
+// QuoteDetail
+// ---------------------------------------------------------------------------
 
 export function QuoteDetail({ params }: { params?: Record<string, string> }) {
 	const id = params?.id ?? "";
@@ -207,85 +730,79 @@ export function QuoteDetail({ params }: { params?: Record<string, string> }) {
 	const [error, setError] = useState("");
 	const [showConvertForm, setShowConvertForm] = useState(false);
 	const [convertOrderId, setConvertOrderId] = useState("");
+	const [showAddItem, setShowAddItem] = useState(false);
+	const [editingItemId, setEditingItemId] = useState<string | null>(null);
 
-	const approveMutation = api.approve.useMutation() as {
-		mutateAsync: (opts: {
+	const approveMutation = api.approve.useMutation({
+		onSuccess: () => {
+			void api.detail.invalidate({ id });
+		},
+		onError: (err: Error) => setError(extractError(err)),
+	}) as {
+		mutate: (o: {
 			params: { id: string };
 			body: Record<string, unknown>;
-		}) => Promise<unknown>;
-		isPending: boolean;
-	};
-	const rejectMutation = api.reject.useMutation() as {
-		mutateAsync: (opts: {
-			params: { id: string };
-			body: Record<string, unknown>;
-		}) => Promise<unknown>;
-		isPending: boolean;
-	};
-	const convertMutation = api.convert.useMutation() as {
-		mutateAsync: (opts: {
-			params: { id: string };
-			body: Record<string, unknown>;
-		}) => Promise<unknown>;
-		isPending: boolean;
-	};
-	const addCommentMutation = api.addComment.useMutation() as {
-		mutateAsync: (opts: {
-			params: { id: string };
-			body: Record<string, unknown>;
-		}) => Promise<unknown>;
+		}) => void;
 		isPending: boolean;
 	};
 
-	const handleApprove = async () => {
-		setError("");
-		try {
-			await approveMutation.mutateAsync({ params: { id }, body: {} });
-			window.location.reload();
-		} catch (err) {
-			setError(extractError(err));
-		}
+	const rejectMutation = api.reject.useMutation({
+		onSuccess: () => {
+			void api.detail.invalidate({ id });
+		},
+		onError: (err: Error) => setError(extractError(err)),
+	}) as {
+		mutate: (o: {
+			params: { id: string };
+			body: Record<string, unknown>;
+		}) => void;
+		isPending: boolean;
 	};
 
-	const handleReject = async () => {
-		setError("");
-		try {
-			await rejectMutation.mutateAsync({ params: { id }, body: {} });
-			window.location.reload();
-		} catch (err) {
-			setError(extractError(err));
-		}
-	};
-
-	const handleConvert = async () => {
-		if (!convertOrderId.trim()) return;
-		setError("");
-		try {
-			await convertMutation.mutateAsync({
-				params: { id },
-				body: { orderId: convertOrderId.trim() },
-			});
+	const convertMutation = api.convert.useMutation({
+		onSuccess: () => {
+			void api.detail.invalidate({ id });
 			setShowConvertForm(false);
 			setConvertOrderId("");
-			window.location.reload();
-		} catch (err) {
-			setError(extractError(err));
-		}
+		},
+		onError: (err: Error) => setError(extractError(err)),
+	}) as {
+		mutate: (o: {
+			params: { id: string };
+			body: Record<string, unknown>;
+		}) => void;
+		isPending: boolean;
 	};
 
-	const handleSendComment = async () => {
-		if (!comment.trim()) return;
-		setError("");
-		try {
-			await addCommentMutation.mutateAsync({
-				params: { id },
-				body: { authorName: "Admin", message: comment.trim() },
-			});
+	const addCommentMutation = api.addComment.useMutation({
+		onSuccess: () => {
+			void api.detail.invalidate({ id });
 			setComment("");
-			window.location.reload();
-		} catch (err) {
-			setError(extractError(err));
-		}
+		},
+		onError: (err: Error) => setError(extractError(err)),
+	}) as {
+		mutate: (o: {
+			params: { id: string };
+			body: Record<string, unknown>;
+		}) => void;
+		isPending: boolean;
+	};
+
+	const deleteMutation = api.deleteQuote.useMutation({
+		onSuccess: () => {
+			window.location.assign("/admin/quotes");
+		},
+		onError: (err: Error) => setError(extractError(err)),
+	}) as { mutate: (o: { params: { id: string } }) => void; isPending: boolean };
+
+	const removeItemMutation = api.removeItem.useMutation({
+		onSuccess: () => {
+			void api.detail.invalidate({ id });
+		},
+		onError: (err: Error) => setError(extractError(err)),
+	}) as {
+		mutate: (o: { params: { id: string; itemId: string } }) => void;
+		isPending: boolean;
 	};
 
 	const { data, isLoading } = api.detail.useQuery({ id }) as {
@@ -346,11 +863,15 @@ export function QuoteDetail({ params }: { params?: Record<string, string> }) {
 		);
 	}
 
+	const isDraft = quote.status === "draft";
 	const canApprove = ["submitted", "under_review"].includes(quote.status);
 	const canReject = ["submitted", "under_review", "countered"].includes(
 		quote.status,
 	);
 	const canConvert = quote.status === "accepted";
+	const isTerminal = ["rejected", "expired", "converted"].includes(
+		quote.status,
+	);
 
 	return (
 		<div>
@@ -388,15 +909,17 @@ export function QuoteDetail({ params }: { params?: Record<string, string> }) {
 					</p>
 				</div>
 				<div className="flex flex-col items-end gap-2">
-					<div className="flex gap-2">
+					<div className="flex flex-wrap gap-2">
 						{canApprove ? (
 							<button
 								type="button"
-								onClick={() => void handleApprove()}
+								onClick={() =>
+									approveMutation.mutate({ params: { id }, body: {} })
+								}
 								disabled={approveMutation.isPending}
 								className="rounded-lg bg-green-600 px-3 py-1.5 font-medium text-sm text-white hover:bg-green-700 disabled:opacity-50"
 							>
-								{approveMutation.isPending ? "Approving..." : "Approve"}
+								{approveMutation.isPending ? "Approving…" : "Approve"}
 							</button>
 						) : null}
 						{canConvert ? (
@@ -412,11 +935,31 @@ export function QuoteDetail({ params }: { params?: Record<string, string> }) {
 						{canReject ? (
 							<button
 								type="button"
-								onClick={() => void handleReject()}
+								onClick={() =>
+									rejectMutation.mutate({ params: { id }, body: {} })
+								}
 								disabled={rejectMutation.isPending}
 								className="rounded-lg border border-border bg-card px-3 py-1.5 font-medium text-red-600 text-sm hover:bg-muted disabled:opacity-50"
 							>
-								{rejectMutation.isPending ? "Rejecting..." : "Reject"}
+								{rejectMutation.isPending ? "Rejecting…" : "Reject"}
+							</button>
+						) : null}
+						{isTerminal ? (
+							<button
+								type="button"
+								onClick={() => {
+									if (
+										window.confirm(
+											"Permanently delete this quote? This cannot be undone.",
+										)
+									) {
+										deleteMutation.mutate({ params: { id } });
+									}
+								}}
+								disabled={deleteMutation.isPending}
+								className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 font-medium text-red-600 text-sm hover:bg-red-100 disabled:opacity-50 dark:border-red-800 dark:bg-red-900/20 dark:hover:bg-red-900/40"
+							>
+								{deleteMutation.isPending ? "Deleting…" : "Delete"}
 							</button>
 						) : null}
 					</div>
@@ -431,11 +974,16 @@ export function QuoteDetail({ params }: { params?: Record<string, string> }) {
 							/>
 							<button
 								type="button"
-								onClick={() => void handleConvert()}
+								onClick={() =>
+									convertMutation.mutate({
+										params: { id },
+										body: { orderId: convertOrderId.trim() },
+									})
+								}
 								disabled={!convertOrderId.trim() || convertMutation.isPending}
 								className="rounded-lg bg-foreground px-3 py-1.5 font-medium text-background text-sm hover:opacity-90 disabled:opacity-50"
 							>
-								{convertMutation.isPending ? "Converting..." : "Confirm"}
+								{convertMutation.isPending ? "Converting…" : "Confirm"}
 							</button>
 							<button
 								type="button"
@@ -457,16 +1005,48 @@ export function QuoteDetail({ params }: { params?: Record<string, string> }) {
 				<div className="space-y-6 lg:col-span-2">
 					{/* Items table */}
 					<div className="rounded-lg border border-border bg-card">
-						<div className="border-border border-b px-4 py-3">
+						<div className="flex items-center justify-between border-border border-b px-4 py-3">
 							<h2 className="font-semibold text-foreground text-sm">
 								Items ({items.length})
 							</h2>
+							{isDraft ? (
+								<button
+									type="button"
+									onClick={() => {
+										setShowAddItem((v) => !v);
+										setEditingItemId(null);
+									}}
+									className="rounded-md border border-border px-2.5 py-1 text-foreground text-xs hover:bg-muted"
+								>
+									{showAddItem ? "Cancel" : "+ Add Item"}
+								</button>
+							) : null}
 						</div>
-						{items.length === 0 ? (
+
+						{showAddItem && isDraft ? (
+							<div className="px-4 pb-2">
+								<AddItemForm
+									quoteId={id}
+									onSaved={() => setShowAddItem(false)}
+									onCancel={() => setShowAddItem(false)}
+								/>
+							</div>
+						) : null}
+
+						{items.length === 0 && !showAddItem ? (
 							<div className="p-4 text-center text-muted-foreground text-sm">
 								No items in this quote.
+								{isDraft ? (
+									<button
+										type="button"
+										onClick={() => setShowAddItem(true)}
+										className="ml-1 underline hover:no-underline"
+									>
+										Add one.
+									</button>
+								) : null}
 							</div>
-						) : (
+						) : items.length > 0 ? (
 							<table className="w-full">
 								<thead>
 									<tr className="border-border border-b text-left">
@@ -482,41 +1062,89 @@ export function QuoteDetail({ params }: { params?: Record<string, string> }) {
 										<th className="px-4 py-2 text-right font-medium text-muted-foreground text-xs">
 											Offered
 										</th>
+										{isDraft ? (
+											<th className="px-4 py-2 font-medium text-muted-foreground text-xs" />
+										) : null}
 									</tr>
 								</thead>
 								<tbody className="divide-y divide-border">
-									{items.map((item) => (
-										<tr key={item.id}>
-											<td className="px-4 py-2.5">
-												<p className="font-medium text-foreground text-sm">
-													{item.productName ?? "Product"}
-												</p>
-												{item.sku ? (
-													<p className="text-muted-foreground text-xs">
-														SKU: {item.sku}
+									{items.map((item) =>
+										editingItemId === item.id ? (
+											<EditItemRow
+												key={item.id}
+												quoteId={id}
+												item={item}
+												currency={quote.currency}
+												onSaved={() => setEditingItemId(null)}
+												onCancel={() => setEditingItemId(null)}
+											/>
+										) : (
+											<tr key={item.id}>
+												<td className="px-4 py-2.5">
+													<p className="font-medium text-foreground text-sm">
+														{item.productName ?? "Product"}
 													</p>
+													{item.sku ? (
+														<p className="text-muted-foreground text-xs">
+															SKU: {item.sku}
+														</p>
+													) : null}
+												</td>
+												<td className="px-4 py-2.5 text-muted-foreground text-sm">
+													{item.quantity}
+												</td>
+												<td className="px-4 py-2.5 text-right text-muted-foreground text-sm tabular-nums">
+													{formatCurrency(item.unitPrice, quote.currency)}
+												</td>
+												<td className="px-4 py-2.5 text-right font-medium text-foreground text-sm tabular-nums">
+													{formatCurrency(
+														item.offeredPrice ?? item.unitPrice,
+														quote.currency,
+													)}
+												</td>
+												{isDraft ? (
+													<td className="px-4 py-2.5">
+														<div className="flex gap-2">
+															<button
+																type="button"
+																onClick={() => {
+																	setEditingItemId(item.id);
+																	setShowAddItem(false);
+																}}
+																className="text-muted-foreground text-xs hover:text-foreground"
+															>
+																Edit
+															</button>
+															<button
+																type="button"
+																onClick={() => {
+																	if (
+																		window.confirm(
+																			"Remove this item from the quote?",
+																		)
+																	) {
+																		removeItemMutation.mutate({
+																			params: { id, itemId: item.id },
+																		});
+																	}
+																}}
+																disabled={removeItemMutation.isPending}
+																className="text-red-500 text-xs hover:text-red-700 disabled:opacity-50"
+															>
+																Remove
+															</button>
+														</div>
+													</td>
 												) : null}
-											</td>
-											<td className="px-4 py-2.5 text-muted-foreground text-sm">
-												{item.quantity}
-											</td>
-											<td className="px-4 py-2.5 text-right text-muted-foreground text-sm tabular-nums">
-												{formatCurrency(item.unitPrice, quote.currency)}
-											</td>
-											<td className="px-4 py-2.5 text-right font-medium text-foreground text-sm tabular-nums">
-												{formatCurrency(
-													item.offeredPrice ?? item.unitPrice,
-													quote.currency,
-												)}
-											</td>
-										</tr>
-									))}
+											</tr>
+										),
+									)}
 								</tbody>
 								<tfoot className="border-border border-t">
 									{quote.discount ? (
 										<tr>
 											<td
-												colSpan={3}
+												colSpan={isDraft ? 4 : 3}
 												className="px-4 py-2 text-right text-muted-foreground text-sm"
 											>
 												Discount
@@ -528,7 +1156,7 @@ export function QuoteDetail({ params }: { params?: Record<string, string> }) {
 									) : null}
 									<tr>
 										<td
-											colSpan={3}
+											colSpan={isDraft ? 4 : 3}
 											className="px-4 py-2 text-right font-semibold text-foreground text-sm"
 										>
 											Total
@@ -539,7 +1167,7 @@ export function QuoteDetail({ params }: { params?: Record<string, string> }) {
 									</tr>
 								</tfoot>
 							</table>
-						)}
+						) : null}
 					</div>
 
 					{/* Comments */}
@@ -587,19 +1215,30 @@ export function QuoteDetail({ params }: { params?: Record<string, string> }) {
 									onChange={(e) => setComment(e.target.value)}
 									onKeyDown={(e) => {
 										if (e.key === "Enter" && comment.trim()) {
-											void handleSendComment();
+											addCommentMutation.mutate({
+												params: { id },
+												body: { authorName: "Admin", message: comment.trim() },
+											});
 										}
 									}}
-									placeholder="Add a comment..."
+									placeholder="Add a comment…"
 									className="flex-1 rounded-lg border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
 								/>
 								<button
 									type="button"
-									onClick={() => void handleSendComment()}
+									onClick={() =>
+										addCommentMutation.mutate({
+											params: { id },
+											body: {
+												authorName: "Admin",
+												message: comment.trim(),
+											},
+										})
+									}
 									disabled={!comment.trim() || addCommentMutation.isPending}
 									className="rounded-lg bg-foreground px-3 py-1.5 font-medium text-background text-sm hover:opacity-90 disabled:opacity-50"
 								>
-									{addCommentMutation.isPending ? "Sending..." : "Send"}
+									{addCommentMutation.isPending ? "Sending…" : "Send"}
 								</button>
 							</div>
 						</div>

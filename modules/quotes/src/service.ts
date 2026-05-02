@@ -174,6 +174,9 @@ export type QuoteController = ModuleController & {
 
 	expireQuote(id: string): Promise<Quote | null>;
 
+	// Admin delete
+	deleteQuote(id: string): Promise<boolean>;
+
 	// History
 	getHistory(quoteId: string): Promise<QuoteHistory[]>;
 

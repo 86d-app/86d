@@ -506,6 +506,15 @@ export function createQuoteController(
 			return updated as unknown as Quote;
 		},
 
+		// ── Admin delete ──
+
+		async deleteQuote(id) {
+			const quote = (await data.get("quote", id)) as Quote | null;
+			if (!quote) return false;
+			await data.delete("quote", id);
+			return true;
+		},
+
 		// ── History ──
 
 		async getHistory(quoteId) {
