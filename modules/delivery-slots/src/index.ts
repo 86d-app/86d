@@ -70,6 +70,13 @@ export default function deliverySlots(options?: DeliverySlotsOptions): Module {
 					icon: "CalendarOff",
 					group: "Fulfillment",
 				},
+				{
+					path: "/admin/delivery-slots/bookings",
+					component: "BookingList",
+					label: "Bookings",
+					icon: "CalendarCheck",
+					group: "Fulfillment",
+				},
 			],
 		},
 
