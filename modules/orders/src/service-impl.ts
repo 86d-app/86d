@@ -225,6 +225,28 @@ export function createOrderController(
 			};
 		},
 
+		async hasCustomerPurchasedProduct(
+			customerId: string,
+			productId: string,
+		): Promise<boolean> {
+			// Find all order items for this product, then check if any belong to the customer
+			const items = (await data.findMany("orderItem", {
+				where: { productId },
+			})) as OrderItem[];
+
+			if (items.length === 0) return false;
+
+			const checkedOrderIds = new Set<string>();
+			for (const item of items) {
+				if (checkedOrderIds.has(item.orderId)) continue;
+				checkedOrderIds.add(item.orderId);
+				const order = (await data.get("order", item.orderId)) as Order | null;
+				if (order?.customerId === customerId) return true;
+			}
+
+			return false;
+		},
+
 		async list(params): Promise<{ orders: Order[]; total: number }> {
 			const { limit = 20, offset = 0, search, status, paymentStatus } = params;
 

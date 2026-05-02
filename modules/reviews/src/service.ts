@@ -1,5 +1,17 @@
 import type { ModuleController } from "@86d-app/core";
 
+/**
+ * Minimal interface for checking purchase history.
+ * Reviews accesses the orders controller through the runtime context —
+ * no direct module import, just a structural contract.
+ */
+export type OrderPurchaseController = {
+	hasCustomerPurchasedProduct(
+		customerId: string,
+		productId: string,
+	): Promise<boolean>;
+};
+
 export type ReviewStatus = "pending" | "approved" | "rejected";
 export type ReportStatus = "pending" | "resolved" | "dismissed";
 export type ReviewSortBy =

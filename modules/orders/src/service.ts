@@ -350,6 +350,15 @@ export type OrderController = ModuleController & {
 	): Promise<{ orders: Order[]; total: number }>;
 
 	/**
+	 * Check if a customer has ever purchased a specific product.
+	 * Used for verified-purchase review gating.
+	 */
+	hasCustomerPurchasedProduct(
+		customerId: string,
+		productId: string,
+	): Promise<boolean>;
+
+	/**
 	 * List all orders (admin)
 	 */
 	list(params: {
