@@ -43,7 +43,9 @@ export default function wish(options?: WishOptions): Module {
 			],
 		},
 		init: async (ctx: ModuleContext) => {
-			const controller = createWishController(ctx.data);
+			const controller = createWishController(ctx.data, ctx.events, {
+				accessToken: options?.accessToken,
+			});
 			return { controllers: { wish: controller } };
 		},
 		endpoints: {

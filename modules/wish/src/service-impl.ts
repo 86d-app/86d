@@ -1,4 +1,5 @@
-import type { ModuleDataService } from "@86d-app/core";
+import type { ModuleDataService, ScopedEventEmitter } from "@86d-app/core";
+import { WishProvider } from "./provider";
 import type {
 	ChannelStats,
 	WishController,
@@ -6,7 +7,15 @@ import type {
 	WishProduct,
 } from "./service";
 
-export function createWishController(data: ModuleDataService): WishController {
+export function createWishController(
+	data: ModuleDataService,
+	events?: ScopedEventEmitter | undefined,
+	options?: { accessToken?: string | undefined },
+): WishController {
+	const provider = options?.accessToken
+		? new WishProvider({ accessToken: options.accessToken })
+		: null;
+
 	return {
 		async createProduct(params) {
 			const now = new Date();
@@ -29,6 +38,27 @@ export function createWishController(data: ModuleDataService): WishController {
 				createdAt: now,
 				updatedAt: now,
 			};
+
+			if (provider) {
+				try {
+					const wishProduct = await provider.createProduct({
+						parentSku: params.parentSku,
+						name: params.title,
+						basePrice: params.price,
+						shipping: params.shippingPrice,
+						inventory: params.quantity,
+						tags: params.tags,
+					});
+					product.wishProductId = wishProduct.id;
+					product.lastSyncedAt = now;
+					events?.emit("wish.product.synced", {
+						localId: id,
+						wishProductId: wishProduct.id,
+					});
+				} catch (err) {
+					product.error = err instanceof Error ? err.message : String(err);
+				}
+			}
 
 			await data.upsert("wishProduct", id, product as Record<string, unknown>);
 			return product;
@@ -63,6 +93,30 @@ export function createWishController(data: ModuleDataService): WishController {
 				updatedAt: now,
 			};
 
+			if (provider && updated.wishProductId) {
+				try {
+					await provider.updateProduct(updated.wishProductId, {
+						...(params.title !== undefined ? { name: params.title } : {}),
+						...(params.price !== undefined ? { basePrice: params.price } : {}),
+						...(params.shippingPrice !== undefined
+							? { shipping: params.shippingPrice }
+							: {}),
+						...(params.quantity !== undefined
+							? { inventory: params.quantity }
+							: {}),
+						...(params.tags !== undefined ? { tags: params.tags } : {}),
+					});
+					updated.lastSyncedAt = now;
+					updated.error = undefined;
+					events?.emit("wish.product.synced", {
+						localId: id,
+						wishProductId: updated.wishProductId,
+					});
+				} catch (err) {
+					updated.error = err instanceof Error ? err.message : String(err);
+				}
+			}
+
 			await data.upsert("wishProduct", id, updated as Record<string, unknown>);
 			return updated;
 		},
@@ -79,6 +133,20 @@ export function createWishController(data: ModuleDataService): WishController {
 				status: "disabled",
 				updatedAt: now,
 			};
+
+			if (provider && product.wishProductId) {
+				try {
+					await provider.disableProduct(product.wishProductId);
+					updated.lastSyncedAt = now;
+					updated.error = undefined;
+					events?.emit("wish.product.disabled", {
+						localId: id,
+						wishProductId: product.wishProductId,
+					});
+				} catch (err) {
+					updated.error = err instanceof Error ? err.message : String(err);
+				}
+			}
 
 			await data.upsert("wishProduct", id, updated as Record<string, unknown>);
 			return updated;
@@ -134,6 +202,10 @@ export function createWishController(data: ModuleDataService): WishController {
 			};
 
 			await data.upsert("wishOrder", id, order as Record<string, unknown>);
+			events?.emit("wish.order.received", {
+				orderId: id,
+				wishOrderId: params.wishOrderId,
+			});
 			return order;
 		},
 
@@ -157,6 +229,27 @@ export function createWishController(data: ModuleDataService): WishController {
 				carrier,
 				updatedAt: now,
 			};
+
+			if (provider) {
+				try {
+					await provider.shipOrder({
+						orderId: order.wishOrderId,
+						trackingNumber,
+						carrier,
+					});
+					events?.emit("wish.order.shipped", {
+						orderId: id,
+						wishOrderId: order.wishOrderId,
+						trackingNumber,
+					});
+				} catch (err) {
+					// Store locally even if Wish API call fails — operator can retry
+					console.error(
+						`Wish ship order API error for ${order.wishOrderId}:`,
+						err,
+					);
+				}
+			}
 
 			await data.upsert("wishOrder", id, updated as Record<string, unknown>);
 			return updated;
