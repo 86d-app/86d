@@ -61,6 +61,9 @@ export default function savedAddresses(
 				},
 			],
 		},
+		store: {
+			pages: [{ path: "/account/addresses", component: "AddressBook" }],
+		},
 		options,
 	};
 }
