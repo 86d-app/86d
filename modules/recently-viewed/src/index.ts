@@ -47,6 +47,9 @@ export default function recentlyViewed(
 				},
 			],
 		},
+		store: {
+			pages: [{ path: "/recently-viewed", component: "RecentlyViewedGrid" }],
+		},
 		options,
 	};
 }
