@@ -10,7 +10,10 @@ import { useState } from "react";
 interface Backorder {
 	id: string;
 	productId: string;
+	productName: string;
+	variantLabel?: string;
 	customerId: string;
+	customerEmail: string;
 	quantity: number;
 	status: string;
 	reason?: string;
@@ -272,11 +275,16 @@ export function BackorderList() {
 						<tbody className="divide-y divide-border">
 							{backorders.map((bo) => (
 								<tr key={bo.id} className="transition-colors hover:bg-muted/50">
-									<td className="px-4 py-2 font-mono text-foreground text-xs">
-										{bo.productId.slice(0, 8)}...
+									<td className="px-4 py-2 text-foreground text-xs">
+										{bo.productName}
+										{bo.variantLabel ? (
+											<span className="ml-1 text-muted-foreground">
+												· {bo.variantLabel}
+											</span>
+										) : null}
 									</td>
-									<td className="px-4 py-2 font-mono text-foreground text-xs">
-										{bo.customerId.slice(0, 8)}...
+									<td className="px-4 py-2 text-foreground text-xs">
+										{bo.customerEmail}
 									</td>
 									<td className="px-4 py-2 text-foreground">{bo.quantity}</td>
 									<td className="px-4 py-2">
