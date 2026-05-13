@@ -74,6 +74,8 @@ interface InventoryItem {
 	id: string;
 	productId: string;
 	variantId?: string;
+	productName?: string;
+	variantName?: string;
 	quantity: number;
 	reserved: number;
 	available: number;
@@ -517,8 +519,12 @@ export default function AdminDashboard() {
 										className="flex items-center justify-between px-5 py-3"
 									>
 										<p className="truncate text-foreground text-sm">
-											{item.productId.slice(0, 8)}
-											{item.variantId ? ` / ${item.variantId.slice(0, 8)}` : ""}
+											{item.productName ?? item.productId.slice(0, 8)}
+											{item.variantName
+												? ` · ${item.variantName}`
+												: item.variantId
+													? ` / ${item.variantId.slice(0, 8)}`
+													: ""}
 										</p>
 										<span
 											className={`font-medium text-sm ${item.available <= 0 ? "text-status-danger" : "text-status-warning"}`}
