@@ -9,13 +9,18 @@ import { useState } from "react";
 
 interface Appointment {
 	id: string;
-	customerId: string;
+	customerId?: string;
+	customerName: string;
+	customerEmail: string;
+	customerPhone?: string;
 	serviceId: string;
 	staffId?: string;
 	status: string;
 	startsAt: string;
 	endsAt: string;
 	notes?: string;
+	price: number;
+	currency: string;
 	createdAt: string;
 	updatedAt: string;
 }
@@ -284,12 +289,15 @@ export function AppointmentList() {
 										</span>
 									</div>
 									<div className="mt-1.5 flex flex-wrap items-center gap-3 text-muted-foreground text-xs">
-										<span>Customer: {appt.customerId.slice(0, 8)}...</span>
-										<span>Service: {appt.serviceId.slice(0, 8)}...</span>
-										{appt.staffId ? (
-											<span>Staff: {appt.staffId.slice(0, 8)}...</span>
+										<span>{appt.customerName}</span>
+										<span className="text-muted-foreground/50">·</span>
+										<span>{appt.customerEmail}</span>
+										{appt.notes ? (
+											<>
+												<span className="text-muted-foreground/50">·</span>
+												<span>{appt.notes}</span>
+											</>
 										) : null}
-										{appt.notes ? <span>{appt.notes}</span> : null}
 									</div>
 								</div>
 								<span className="whitespace-nowrap text-muted-foreground text-xs">
@@ -404,19 +412,30 @@ export function AppointmentDetail({ params }: { params: { id: string } }) {
 						</div>
 						<div className="flex justify-between">
 							<dt className="text-muted-foreground">Customer</dt>
-							<dd className="font-mono text-foreground text-xs">
-								{appointment.customerId}
+							<dd className="text-foreground text-xs">
+								{appointment.customerName}{" "}
+								<span className="text-muted-foreground">
+									({appointment.customerEmail})
+								</span>
 							</dd>
 						</div>
+						{appointment.customerPhone ? (
+							<div className="flex justify-between">
+								<dt className="text-muted-foreground">Phone</dt>
+								<dd className="text-foreground text-xs">
+									{appointment.customerPhone}
+								</dd>
+							</div>
+						) : null}
 						<div className="flex justify-between">
-							<dt className="text-muted-foreground">Service</dt>
+							<dt className="text-muted-foreground">Service ID</dt>
 							<dd className="font-mono text-foreground text-xs">
 								{appointment.serviceId}
 							</dd>
 						</div>
 						{appointment.staffId ? (
 							<div className="flex justify-between">
-								<dt className="text-muted-foreground">Staff</dt>
+								<dt className="text-muted-foreground">Staff ID</dt>
 								<dd className="font-mono text-foreground text-xs">
 									{appointment.staffId}
 								</dd>
