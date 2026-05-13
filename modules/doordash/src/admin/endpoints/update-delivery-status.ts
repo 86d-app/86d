@@ -22,6 +22,7 @@ export const updateDeliveryStatusEndpoint = createAdminEndpoint(
 			ctx.params.id,
 			ctx.body.status as DeliveryStatus,
 		);
+		if (!delivery) return { error: "Delivery not found", status: 404 };
 		return { delivery };
 	},
 );

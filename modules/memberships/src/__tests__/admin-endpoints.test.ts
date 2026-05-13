@@ -411,41 +411,42 @@ describe("admin POST /memberships/plans/:planId/gate", () => {
 	it("returns 404 when plan not found", async () => {
 		const result = (await call(gateProductHandler, {
 			params: { planId: "missing" },
-			body: { productId: "prod_1" },
+			body: { productIds: ["prod_1"] },
 		})) as { error: string; status: number };
 		expect(result.error).toBe("Plan not found");
 		expect(result.status).toBe(404);
 	});
 
-	it("gates product and returns gated record", async () => {
-		const gated = makeGatedProduct({ planId: "plan_1", productId: "prod_2" });
+	it("gates product and returns gated count", async () => {
 		const ctrl = makeController({
 			getPlan: vi.fn().mockResolvedValue(makePlan({ id: "plan_1" })),
-			gateProduct: vi.fn().mockResolvedValue(gated),
+			gateProduct: vi.fn().mockResolvedValue(makeGatedProduct()),
 		});
 		const result = (await call(gateProductHandler, {
 			params: { planId: "plan_1" },
-			body: { productId: "prod_2" },
+			body: { productIds: ["prod_2"] },
 			controller: ctrl,
-		})) as { gated: MembershipProduct };
-		expect(result.gated.productId).toBe("prod_2");
-		expect(result.gated.planId).toBe("plan_1");
+		})) as { gated: number };
+		expect(result.gated).toBe(1);
+		expect(ctrl.gateProduct).toHaveBeenCalledWith(
+			expect.objectContaining({ planId: "plan_1", productId: "prod_2" }),
+		);
 	});
 });
 
 // ── ungateProduct ─────────────────────────────────────────────────────────────
 
 describe("admin POST /memberships/plans/:planId/ungate", () => {
-	it("ungates product and returns result", async () => {
+	it("ungates product and returns count", async () => {
 		const ctrl = makeController({
 			ungateProduct: vi.fn().mockResolvedValue(true),
 		});
 		const result = (await call(ungateProductHandler, {
 			params: { planId: "plan_1" },
-			body: { productId: "prod_1" },
+			body: { productIds: ["prod_1"] },
 			controller: ctrl,
-		})) as { ungated: boolean };
-		expect(result.ungated).toBe(true);
+		})) as { ungated: number };
+		expect(result.ungated).toBe(1);
 	});
 });
 

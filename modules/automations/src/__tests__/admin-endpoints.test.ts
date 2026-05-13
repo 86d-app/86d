@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
 import { activateAutomation } from "../admin/endpoints/activate-automation";
-import { automationStats } from "../admin/endpoints/stats";
 import { createAutomation } from "../admin/endpoints/create-automation";
 import { deleteAutomation } from "../admin/endpoints/delete-automation";
 import { duplicateAutomation } from "../admin/endpoints/duplicate-automation";
@@ -11,6 +10,7 @@ import { listAutomations } from "../admin/endpoints/list-automations";
 import { listExecutions } from "../admin/endpoints/list-executions";
 import { pauseAutomation } from "../admin/endpoints/pause-automation";
 import { purgeExecutions } from "../admin/endpoints/purge-executions";
+import { automationStats } from "../admin/endpoints/stats";
 import { updateAutomation } from "../admin/endpoints/update-automation";
 import type {
 	Automation,
@@ -53,7 +53,7 @@ function makeExecution(
 		automationId: "auto_1",
 		triggerEvent: "customer.created",
 		triggerPayload: {},
-		status: "success",
+		status: "completed",
 		results: [],
 		startedAt: now,
 		...overrides,
@@ -75,9 +75,7 @@ function makeController(
 		execute: vi.fn().mockResolvedValue(makeExecution()),
 		evaluateEvent: vi.fn().mockResolvedValue([]),
 		getExecution: vi.fn().mockResolvedValue(null),
-		listExecutions: vi
-			.fn()
-			.mockResolvedValue({ executions: [], total: 0 }),
+		listExecutions: vi.fn().mockResolvedValue({ executions: [], total: 0 }),
 		getStats: vi.fn().mockResolvedValue({
 			totalAutomations: 0,
 			activeAutomations: 0,
@@ -193,7 +191,9 @@ describe("admin POST /automations/:id/update", () => {
 
 describe("admin DELETE /automations/:id", () => {
 	it("deletes automation and returns success", async () => {
-		const ctrl = makeController({ delete: vi.fn().mockResolvedValue(undefined) });
+		const ctrl = makeController({
+			delete: vi.fn().mockResolvedValue(undefined),
+		});
 		const result = (await call(deleteHandler, {
 			params: { id: "auto_1" },
 			controller: ctrl,
@@ -293,7 +293,9 @@ describe("admin GET /automations/executions/:id", () => {
 
 	it("returns execution when found", async () => {
 		const exec = makeExecution({ id: "exec_1" });
-		const ctrl = makeController({ getExecution: vi.fn().mockResolvedValue(exec) });
+		const ctrl = makeController({
+			getExecution: vi.fn().mockResolvedValue(exec),
+		});
 		const result = (await call(getExecutionHandler, {
 			params: { id: "exec_1" },
 			controller: ctrl,
@@ -304,7 +306,9 @@ describe("admin GET /automations/executions/:id", () => {
 
 describe("admin POST /automations/executions/purge", () => {
 	it("purges old executions and returns count", async () => {
-		const ctrl = makeController({ purgeExecutions: vi.fn().mockResolvedValue(15) });
+		const ctrl = makeController({
+			purgeExecutions: vi.fn().mockResolvedValue(15),
+		});
 		const result = (await call(purgeHandler, {
 			body: { olderThanDays: 30 },
 			controller: ctrl,
@@ -329,7 +333,9 @@ describe("admin GET /automations/stats", () => {
 				topAutomations: [{ id: "a1", name: "Welcome", runCount: 150 }],
 			}),
 		});
-		const result = (await call(statsHandler, { controller: ctrl })) as AutomationStats;
+		const result = (await call(statsHandler, {
+			controller: ctrl,
+		})) as AutomationStats;
 		expect(result.totalAutomations).toBe(12);
 	});
 });

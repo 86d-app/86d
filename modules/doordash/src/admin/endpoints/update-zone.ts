@@ -29,6 +29,7 @@ export const updateZoneEndpoint = createAdminEndpoint(
 			deliveryFee: ctx.body.deliveryFee,
 			estimatedMinutes: ctx.body.estimatedMinutes,
 		});
+		if (!zone) return { error: "Zone not found", status: 404 };
 		return { zone };
 	},
 );
