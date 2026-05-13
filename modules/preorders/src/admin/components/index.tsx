@@ -32,6 +32,7 @@ interface PreorderItem {
 	id: string;
 	campaignId: string;
 	customerId: string;
+	customerEmail: string;
 	quantity: number;
 	status: string;
 	orderId?: string;
@@ -751,7 +752,7 @@ export function CampaignDetail({ params }: { params: { id: string } }) {
 									className="transition-colors hover:bg-muted/50"
 								>
 									<td className="px-4 py-2 font-mono text-foreground text-xs">
-										{item.customerId.slice(0, 8)}...
+										{item.customerEmail}
 									</td>
 									<td className="px-4 py-2 text-foreground">{item.quantity}</td>
 									<td className="px-4 py-2">

@@ -388,9 +388,7 @@ export function CheckoutList() {
 									<td className="hidden px-4 py-3 text-sm sm:table-cell">
 										{session.guestEmail ?? (
 											<span className="text-muted-foreground">
-												{session.customerId
-													? `${session.customerId.slice(0, 8)}...`
-													: "Guest"}
+												{session.customerId ? "Registered customer" : "Guest"}
 											</span>
 										)}
 									</td>

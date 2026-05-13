@@ -218,9 +218,7 @@ export function CheckoutDetail({
 					<p className="text-muted-foreground text-xs">Customer</p>
 					<p className="mt-1 font-medium text-foreground text-sm">
 						{session.guestEmail ??
-							(session.customerId
-								? `Customer ${session.customerId.slice(0, 8)}...`
-								: "Guest")}
+							(session.customerId ? "Registered customer" : "Guest")}
 					</p>
 				</div>
 				<div className="rounded-lg border border-border p-4">

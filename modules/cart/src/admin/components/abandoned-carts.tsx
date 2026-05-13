@@ -444,9 +444,7 @@ export function AbandonedCarts() {
 									</td>
 									<td className="px-4 py-2 text-foreground text-sm">
 										{cart.customerId ? (
-											<span title={cart.customerId}>
-												{cart.customerId.slice(0, 8)}...
-											</span>
+											<span title={cart.customerId}>Registered customer</span>
 										) : cart.guestId ? (
 											<span className="text-muted-foreground">Guest</span>
 										) : (
