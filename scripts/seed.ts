@@ -342,6 +342,9 @@ const seededModuleNames = [
 	"appointments",
 	"memberships",
 	"warranties",
+	"auctions",
+	"store-credits",
+	"preorders",
 ];
 
 for (const name of moduleNames) {
@@ -1968,6 +1971,211 @@ async function seedWarranties(client: pg.PoolClient) {
 	});
 }
 
+async function seedAuctions(client: pg.PoolClient) {
+	console.log("  Creating auctions and bids...");
+
+	const auctionId = uuid("auction:observatory-chronograph:steel-slate");
+	const startsAt = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
+	const endsAt = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString();
+
+	await insertModuleData(client, "auctions", "auction", auctionId, {
+		id: auctionId,
+		title: "Observatory Chronograph — Steel / Slate Strap",
+		description:
+			"A single archive specimen from the Atelier's private collection. Unworn, complete with original box and papers. Available for the first time through live auction.",
+		productId: productIds["observatory-chronograph"],
+		productName: "Observatory Chronograph",
+		type: "english",
+		status: "active",
+		startingPrice: 300000,
+		reservePrice: 340000,
+		buyNowPrice: 420000,
+		bidIncrement: 5000,
+		currentBid: 325000,
+		bidCount: 3,
+		highestBidderId: customerIds["eleanor-vale"],
+		antiSnipingEnabled: true,
+		antiSnipingMinutes: 5,
+		startsAt,
+		endsAt,
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	// Bids in chronological order
+	const bid1 = uuid("bid:auction-obs:marcus:1");
+	const bid2 = uuid("bid:auction-obs:eleanor:1");
+	const bid3 = uuid("bid:auction-obs:marcus:2");
+	const bid4 = uuid("bid:auction-obs:eleanor:2");
+
+	const bids = [
+		{
+			id: bid1,
+			customerId: customerIds["marcus-chen"],
+			customerName: "Marcus Chen",
+			amount: 300000,
+			isWinning: false,
+			isAutoBid: false,
+		},
+		{
+			id: bid2,
+			customerId: customerIds["eleanor-vale"],
+			customerName: "Eleanor Vale",
+			amount: 305000,
+			isWinning: false,
+			isAutoBid: false,
+		},
+		{
+			id: bid3,
+			customerId: customerIds["marcus-chen"],
+			customerName: "Marcus Chen",
+			amount: 310000,
+			isWinning: false,
+			isAutoBid: false,
+		},
+		{
+			id: bid4,
+			customerId: customerIds["eleanor-vale"],
+			customerName: "Eleanor Vale",
+			amount: 325000,
+			isWinning: true,
+			isAutoBid: false,
+		},
+	];
+
+	for (const bid of bids) {
+		await insertModuleData(client, "auctions", "bid", bid.id, {
+			...bid,
+			auctionId,
+			createdAt: now,
+		});
+	}
+}
+
+async function seedStoreCredits(client: pg.PoolClient) {
+	console.log("  Creating store credit accounts...");
+
+	const accounts = [
+		{
+			customerKey: "eleanor-vale",
+			email: "eleanor@example.com",
+			balance: 7500,
+			lifetimeCredited: 12500,
+			lifetimeDebited: 5000,
+		},
+		{
+			customerKey: "marcus-chen",
+			email: "marcus@example.com",
+			balance: 12500,
+			lifetimeCredited: 12500,
+			lifetimeDebited: 0,
+		},
+	];
+
+	for (const entry of accounts) {
+		const accountId = uuid(`store-credit-account:${entry.customerKey}`);
+		await insertModuleData(client, "store-credits", "creditAccount", accountId, {
+			id: accountId,
+			customerId: customerIds[entry.customerKey],
+			customerEmail: entry.email,
+			balance: entry.balance,
+			lifetimeCredited: entry.lifetimeCredited,
+			lifetimeDebited: entry.lifetimeDebited,
+			currency: "USD",
+			status: "active",
+			createdAt: now,
+			updatedAt: now,
+		});
+
+		// Initial credit transaction
+		const txId = uuid(`store-credit-tx:${entry.customerKey}:initial`);
+		await insertModuleData(client, "store-credits", "creditTransaction", txId, {
+			id: txId,
+			accountId,
+			type: "credit",
+			amount: entry.lifetimeCredited,
+			balanceAfter: entry.lifetimeCredited,
+			reason: "promotional",
+			description: "Welcome credit — Atelier loyalty reward",
+			createdAt: now,
+		});
+
+		// Debit transaction for Eleanor only
+		if (entry.lifetimeDebited > 0) {
+			const debitId = uuid(`store-credit-tx:${entry.customerKey}:debit-1`);
+			const orderId = uuid("order:demo");
+			await insertModuleData(client, "store-credits", "creditTransaction", debitId, {
+				id: debitId,
+				accountId,
+				type: "debit",
+				amount: entry.lifetimeDebited,
+				balanceAfter: entry.balance,
+				reason: "order_payment",
+				description: "Applied to order AT-1001",
+				referenceType: "order",
+				referenceId: orderId,
+				createdAt: now,
+			});
+		}
+	}
+}
+
+async function seedPreorders(client: pg.PoolClient) {
+	console.log("  Creating preorder campaigns...");
+
+	const campaignId = uuid("preorder-campaign:cashmere-fringe-scarf");
+	const campaignStart = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+	const campaignEnd = new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString();
+	const estimatedShip = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString();
+
+	const cashmereScarf = productByKey["cashmere-fringe-scarf"];
+
+	await insertModuleData(client, "preorders", "preorderCampaign", campaignId, {
+		id: campaignId,
+		productId: productIds["cashmere-fringe-scarf"],
+		productName: cashmereScarf?.name ?? "Cashmere Fringe Scarf",
+		status: "active",
+		paymentType: "full",
+		price: cashmereScarf?.price ?? 28500,
+		maxQuantity: 30,
+		currentQuantity: 2,
+		startDate: campaignStart,
+		endDate: campaignEnd,
+		estimatedShipDate: estimatedShip,
+		message:
+			"Reserve your Autumn edition Cashmere Fringe Scarf before it arrives. Limited to 30 pieces worldwide.",
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	const preorderItems = [
+		{
+			customerKey: "eleanor-vale",
+			email: "eleanor@example.com",
+		},
+		{
+			customerKey: "sofia-alvarez",
+			email: "sofia@example.com",
+		},
+	];
+
+	for (const entry of preorderItems) {
+		const itemId = uuid(`preorder-item:${entry.customerKey}:cashmere-fringe-scarf`);
+		await insertModuleData(client, "preorders", "preorderItem", itemId, {
+			id: itemId,
+			campaignId,
+			customerId: customerIds[entry.customerKey],
+			customerEmail: entry.email,
+			quantity: 1,
+			status: "confirmed",
+			depositPaid: cashmereScarf?.price ?? 28500,
+			totalPrice: cashmereScarf?.price ?? 28500,
+			createdAt: now,
+			updatedAt: now,
+		});
+	}
+}
+
 async function main() {
 	console.log("🌱 Seeding 86d luxury demo database...\n");
 	console.log(`  Store ID: ${STORE_ID}`);
@@ -2020,6 +2228,9 @@ async function main() {
 		await seedAppointments(client);
 		await seedMemberships(client);
 		await seedWarranties(client);
+		await seedAuctions(client);
+		await seedStoreCredits(client);
+		await seedPreorders(client);
 
 		await client.query("COMMIT");
 
