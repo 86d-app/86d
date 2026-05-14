@@ -1,10 +1,22 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import AbandonedCartEmail from "../templates/abandoned-cart";
+import BackInStockEmail from "../templates/back-in-stock";
 import { BaseEmail } from "../templates/base";
+import ContactEmail from "../templates/contact";
+import DeliveryConfirmationEmail from "../templates/delivery-confirmation";
 import LowStockAlertEmail from "../templates/low-stock-alert";
+import OrderCancelledEmail from "../templates/order-cancelled";
+import OrderCompletedEmail from "../templates/order-completed";
 import OrderConfirmationEmail from "../templates/order-confirmation";
+import PaymentFailedEmail from "../templates/payment-failed";
 import RefundProcessedEmail from "../templates/refund-processed";
+import ReturnApprovedEmail from "../templates/return-approved";
+import ReviewRequestEmail from "../templates/review-request";
 import ShippingNotificationEmail from "../templates/shipping-notification";
+import SubscriptionCancelEmail from "../templates/subscription-cancel";
+import SubscriptionCompleteEmail from "../templates/subscription-complete";
+import SubscriptionUpdateEmail from "../templates/subscription-update";
 import WelcomeEmail from "../templates/welcome";
 
 function render(element: React.ReactElement): string {
@@ -344,5 +356,295 @@ describe("LowStockAlertEmail", () => {
 		);
 		expect(html).toContain("Manage Inventory");
 		expect(html).toContain("https://admin.example.com/inventory");
+	});
+});
+
+describe("AbandonedCartEmail", () => {
+	it("renders cart total and item count", () => {
+		const html = render(
+			<AbandonedCartEmail
+				cartTotal={79.99}
+				currency="USD"
+				itemCount={2}
+				cartUrl="https://store.example.com/cart"
+				storeName="Test Store"
+			/>,
+		);
+		expect(html).toContain("2 items");
+		expect(html).toContain("https://store.example.com/cart");
+	});
+
+	it("uses greeting with customer name when provided", () => {
+		const html = render(
+			<AbandonedCartEmail
+				customerName="Jane"
+				cartTotal={50}
+				currency="USD"
+				itemCount={1}
+				cartUrl="https://store.example.com/cart"
+			/>,
+		);
+		expect(html).toContain("Hi Jane");
+		expect(html).toContain("1 item");
+	});
+
+	it("uses generic greeting without customer name", () => {
+		const html = render(
+			<AbandonedCartEmail
+				cartTotal={50}
+				currency="USD"
+				itemCount={3}
+				cartUrl="https://store.example.com/cart"
+			/>,
+		);
+		expect(html).toContain("Hi,");
+	});
+});
+
+describe("BackInStockEmail", () => {
+	it("renders product name", () => {
+		const html = render(
+			<BackInStockEmail productName="Leather Wallet" storeName="My Shop" />,
+		);
+		expect(html).toContain("Leather Wallet");
+	});
+
+	it("renders with default store name", () => {
+		const html = render(<BackInStockEmail productName="Widget" />);
+		expect(html).toContain("Widget");
+	});
+});
+
+describe("ContactEmail", () => {
+	it("renders contact fields", () => {
+		const html = render(
+			<ContactEmail
+				name="John Doe"
+				email="john@example.com"
+				subject="Product inquiry"
+				message="I have a question."
+				storeName="Test Store"
+			/>,
+		);
+		expect(html).toContain("John Doe");
+		expect(html).toContain("Product inquiry");
+		expect(html).toContain("I have a question.");
+	});
+});
+
+describe("DeliveryConfirmationEmail", () => {
+	it("renders order number and customer name", () => {
+		const html = render(
+			<DeliveryConfirmationEmail
+				orderNumber="ORD-123"
+				customerName="Jane Smith"
+				storeName="Test Store"
+			/>,
+		);
+		expect(html).toContain("ORD-123");
+		expect(html).toContain("Jane Smith");
+	});
+
+	it("shows delivery date when provided", () => {
+		const html = render(
+			<DeliveryConfirmationEmail
+				orderNumber="ORD-456"
+				customerName="John"
+				deliveredAt="March 5, 2026"
+			/>,
+		);
+		expect(html).toContain("March 5, 2026");
+	});
+
+	it("shows review link when reviewUrl provided", () => {
+		const html = render(
+			<DeliveryConfirmationEmail
+				orderNumber="ORD-789"
+				customerName="Jane"
+				reviewUrl="https://store.example.com/review"
+			/>,
+		);
+		expect(html).toContain("https://store.example.com/review");
+	});
+});
+
+describe("OrderCancelledEmail", () => {
+	it("renders order number and customer name", () => {
+		const html = render(
+			<OrderCancelledEmail
+				orderNumber="ORD-M2KQ4X"
+				customerName="Jane Smith"
+				storeName="Test Store"
+			/>,
+		);
+		expect(html).toContain("ORD-M2KQ4X");
+		expect(html).toContain("Jane Smith");
+	});
+
+	it("shows cancellation reason when provided", () => {
+		const html = render(
+			<OrderCancelledEmail
+				orderNumber="ORD-001"
+				customerName="John"
+				reason="Out of stock"
+			/>,
+		);
+		expect(html).toContain("Out of stock");
+	});
+});
+
+describe("OrderCompletedEmail", () => {
+	it("renders order number and customer name", () => {
+		const html = render(
+			<OrderCompletedEmail
+				orderNumber="ORD-M2KQ4X"
+				customerName="Jane Smith"
+				storeName="Test Store"
+			/>,
+		);
+		expect(html).toContain("ORD-M2KQ4X");
+		expect(html).toContain("Jane Smith");
+	});
+});
+
+describe("PaymentFailedEmail", () => {
+	it("renders customer name", () => {
+		const html = render(
+			<PaymentFailedEmail customerName="Jane Smith" storeName="Test Store" />,
+		);
+		expect(html).toContain("Jane Smith");
+	});
+
+	it("shows order number and amount when provided", () => {
+		const html = render(
+			<PaymentFailedEmail
+				customerName="Jane"
+				orderNumber="ORD-001"
+				amount={137.17}
+				currency="USD"
+				reason="Card declined"
+			/>,
+		);
+		expect(html).toContain("ORD-001");
+		expect(html).toContain("Card declined");
+	});
+
+	it("shows retry link when retryUrl provided", () => {
+		const html = render(
+			<PaymentFailedEmail
+				customerName="Jane"
+				retryUrl="https://store.example.com/checkout"
+			/>,
+		);
+		expect(html).toContain("https://store.example.com/checkout");
+	});
+});
+
+describe("ReturnApprovedEmail", () => {
+	it("renders return ID and order number", () => {
+		const html = render(
+			<ReturnApprovedEmail
+				orderNumber="ORD-M2KQ4X"
+				customerName="Jane Smith"
+				returnId="RET-7K3QP2"
+				storeName="Test Store"
+			/>,
+		);
+		expect(html).toContain("ORD-M2KQ4X");
+		expect(html).toContain("RET-7K3QP2");
+		expect(html).toContain("Jane Smith");
+	});
+
+	it("shows returned items when provided", () => {
+		const html = render(
+			<ReturnApprovedEmail
+				orderNumber="ORD-001"
+				customerName="John"
+				returnId="RET-001"
+				items={["Cotton T-Shirt", "Leather Belt"]}
+			/>,
+		);
+		expect(html).toContain("Cotton T-Shirt");
+		expect(html).toContain("Leather Belt");
+	});
+
+	it("shows instructions when provided", () => {
+		const html = render(
+			<ReturnApprovedEmail
+				orderNumber="ORD-001"
+				customerName="John"
+				returnId="RET-001"
+				instructions="Ship to 123 Warehouse Ave."
+			/>,
+		);
+		expect(html).toContain("Ship to 123 Warehouse Ave.");
+	});
+});
+
+describe("ReviewRequestEmail", () => {
+	it("renders order number and customer name", () => {
+		const html = render(
+			<ReviewRequestEmail
+				orderNumber="ORD-M2KQ4X"
+				customerName="Jane Smith"
+				items={[{ name: "Leather Wallet" }]}
+				storeName="Test Store"
+			/>,
+		);
+		expect(html).toContain("ORD-M2KQ4X");
+		expect(html).toContain("Jane Smith");
+		expect(html).toContain("Leather Wallet");
+	});
+
+	it("renders review link when reviewUrl provided for item", () => {
+		const html = render(
+			<ReviewRequestEmail
+				orderNumber="ORD-001"
+				customerName="Jane"
+				items={[
+					{
+						name: "Widget",
+						reviewUrl: "https://store.example.com/products/widget#review",
+					},
+				]}
+			/>,
+		);
+		expect(html).toContain("https://store.example.com/products/widget#review");
+	});
+});
+
+describe("SubscriptionCancelEmail", () => {
+	it("renders with store name", () => {
+		const html = render(<SubscriptionCancelEmail storeName="My Store" />);
+		expect(html).toContain("My Store");
+	});
+
+	it("renders with default content", () => {
+		const html = render(<SubscriptionCancelEmail />);
+		expect(html).toBeTruthy();
+	});
+});
+
+describe("SubscriptionCompleteEmail", () => {
+	it("renders with store name", () => {
+		const html = render(<SubscriptionCompleteEmail storeName="My Store" />);
+		expect(html).toContain("My Store");
+	});
+
+	it("renders with default content", () => {
+		const html = render(<SubscriptionCompleteEmail />);
+		expect(html).toBeTruthy();
+	});
+});
+
+describe("SubscriptionUpdateEmail", () => {
+	it("renders with store name", () => {
+		const html = render(<SubscriptionUpdateEmail storeName="My Store" />);
+		expect(html).toContain("My Store");
+	});
+
+	it("renders with default content", () => {
+		const html = render(<SubscriptionUpdateEmail />);
+		expect(html).toBeTruthy();
 	});
 });
