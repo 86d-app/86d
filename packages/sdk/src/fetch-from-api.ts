@@ -60,10 +60,12 @@ const configSchema = z.object({
 	modules: z.array(z.string()).optional(),
 	moduleOptions: z.record(z.string(), z.unknown()).optional(),
 	notificationSettings: notificationSettingsSchema,
-	variables: z.object({
-		light: themeVariablesSchema,
-		dark: themeVariablesSchema,
-	}),
+	variables: z
+		.object({
+			light: themeVariablesSchema.partial(),
+			dark: themeVariablesSchema.partial(),
+		})
+		.optional(),
 });
 
 /**
