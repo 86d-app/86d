@@ -151,13 +151,13 @@ Components follow a two-file pattern: `.tsx` (logic) + `.mdx` (presentation). Nu
 The platform is working toward production-ready status. Key areas for future agents to continue:
 
 ### High priority
-1. **E2E test coverage with visual snapshots** — Generate and commit Playwright visual baselines. Tests should cover: guest shopping flow (browse → cart → checkout), business owner admin flow (dashboard → manage products → configure modules). All 75 modules should be exercised.
-2. **Module component customization** — Make it easy to override module components from templates. Currently there's no mechanism for templates to extend module TSX/MDX.
-3. **External template sourcing** — Templates should be fetchable from GitHub repos during deployment, similar to how modules use the registry.
+1. **E2E test coverage with visual snapshots** — Generate and commit Playwright visual baselines. Tests should cover: guest shopping flow (browse → cart → checkout), business owner admin flow (dashboard → manage products → configure modules). All 100 modules should be exercised.
+2. **Module component customization** — ✅ Implemented. Templates override module MDX/TSX components via `templates/<name>/components/index.tsx`. Exported component names replace the matching module defaults at render time. The generate-modules script wires this up — `...templateOverrides` is spread last in `generated/components.ts`.
+3. **External template sourcing** — ✅ Implemented via CLI: `86d template add github:owner/repo`.
 
 ### Medium priority
-4. **86d API integration** — When `86D_API_KEY` is set, the store communicates with 86d.app for config, modules, billing. The SSO auth flow is wired but the API doesn't exist yet.
-5. **Module data seeding** — Each module should have its own seed data function that creates realistic demo content.
+4. **86d API integration** — ✅ Config API implemented at `GET /api/v1/stores/{storeId}` in the private dashboard (returns enabled modules, settings, notification config). SSO is wired via the auth package. Billing API not yet implemented.
+5. **Module data seeding** — 31 of 100 modules now have realistic seed data. Add more as needed: the pattern is `insertModuleData(client, moduleName, entityType, id, data)` in `scripts/seed.ts`.
 6. **Admin experience** — More polished admin dashboard, better module management UI, settings pages for all modules.
 
 ### Ongoing

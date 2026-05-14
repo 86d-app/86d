@@ -10,6 +10,10 @@ const generatedHooks = readFileSync(
 	resolve(import.meta.dirname, "../../generated/hooks.ts"),
 	"utf8",
 );
+const generatedComponents = readFileSync(
+	resolve(import.meta.dirname, "../../generated/components.ts"),
+	"utf8",
+);
 
 function countOccurrences(source: string, needle: string): number {
 	return source.split(needle).length - 1;
@@ -46,5 +50,31 @@ describe("generated routing", () => {
 			countOccurrences(generatedApi, 'pattern: "/admin/collections"'),
 		).toBe(1);
 		expect(countOccurrences(generatedApi, 'pattern: "/admin/returns"')).toBe(1);
+	});
+});
+
+describe("generated components", () => {
+	it("imports and spreads template component overrides last so they take precedence", () => {
+		expect(generatedComponents).toContain(
+			'import templateOverrides from "template/components"',
+		);
+		expect(generatedComponents).toContain("...templateOverrides,");
+		const overrideSpreadIndex = generatedComponents.lastIndexOf(
+			"...templateOverrides,",
+		);
+		const lastModuleSpreadIndex = generatedComponents.lastIndexOf(
+			"...moduleComponents",
+		);
+		expect(overrideSpreadIndex).toBeGreaterThan(lastModuleSpreadIndex);
+	});
+
+	it("exports the combined components object", () => {
+		expect(generatedComponents).toContain("export { components }");
+	});
+
+	it("includes the core module list", () => {
+		expect(generatedComponents).toContain('"@86d-app/products"');
+		expect(generatedComponents).toContain('"@86d-app/cart"');
+		expect(generatedComponents).toContain('"@86d-app/orders"');
 	});
 });
