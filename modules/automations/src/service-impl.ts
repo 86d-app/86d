@@ -79,6 +79,7 @@ async function executeAction(
 	payload: Record<string, unknown>,
 	options: ActionExecutorOptions,
 	controllers: Record<string, unknown>,
+	data: ModuleDataService,
 ): Promise<AutomationActionResult & { actionIndex: number }> {
 	switch (action.type) {
 		case "send_notification": {
@@ -281,8 +282,14 @@ async function executeAction(
 			}
 		}
 		case "update_field": {
-			const { entity, field, value } = action.config as {
+			const {
+				entity,
+				entityId: configEntityId,
+				field,
+				value,
+			} = action.config as {
 				entity?: string;
+				entityId?: string;
 				field?: string;
 				value?: unknown;
 			};
@@ -294,15 +301,56 @@ async function executeAction(
 					error: "update_field requires entity and field",
 				};
 			}
-			return {
-				actionIndex: 0,
-				type: action.type,
-				status: "success",
-				output: { entity, field, value },
-			};
+			// Resolve entity ID from config or from event payload
+			const entityId =
+				configEntityId ??
+				(typeof payload[`${entity}Id`] === "string"
+					? (payload[`${entity}Id`] as string)
+					: undefined);
+			if (!entityId) {
+				return {
+					actionIndex: 0,
+					type: action.type,
+					status: "failed",
+					error: `update_field: no entityId found in config or payload for entity "${entity}"`,
+				};
+			}
+			try {
+				const existing = await data.get(entity, entityId);
+				if (!existing) {
+					return {
+						actionIndex: 0,
+						type: action.type,
+						status: "failed",
+						error: `update_field: ${entity} "${entityId}" not found`,
+					};
+				}
+				const updated = {
+					...(existing as Record<string, unknown>),
+					[field]: value,
+					updatedAt: new Date(),
+				};
+				await data.upsert(entity, entityId, updated);
+				return {
+					actionIndex: 0,
+					type: action.type,
+					status: "success",
+					output: { entity, entityId, field, value },
+				};
+			} catch (e) {
+				return {
+					actionIndex: 0,
+					type: action.type,
+					status: "failed",
+					error: e instanceof Error ? e.message : "update_field failed",
+				};
+			}
 		}
 		case "create_record": {
-			const { entity } = action.config as { entity?: string };
+			const { entity, record } = action.config as {
+				entity?: string;
+				record?: Record<string, unknown>;
+			};
 			if (!entity) {
 				return {
 					actionIndex: 0,
@@ -311,12 +359,30 @@ async function executeAction(
 					error: "create_record requires entity",
 				};
 			}
-			return {
-				actionIndex: 0,
-				type: action.type,
-				status: "success",
-				output: { entity },
-			};
+			try {
+				const id = crypto.randomUUID();
+				const now = new Date();
+				const newRecord = {
+					id,
+					...(record ?? {}),
+					createdAt: now,
+					updatedAt: now,
+				};
+				await data.upsert(entity, id, newRecord);
+				return {
+					actionIndex: 0,
+					type: action.type,
+					status: "success",
+					output: { entity, id },
+				};
+			} catch (e) {
+				return {
+					actionIndex: 0,
+					type: action.type,
+					status: "failed",
+					error: e instanceof Error ? e.message : "create_record failed",
+				};
+			}
 		}
 		case "log": {
 			return {
@@ -515,6 +581,7 @@ export function createAutomationsController(
 					triggerPayload,
 					options,
 					controllers,
+					data,
 				);
 				result.actionIndex = i;
 				results.push(result);

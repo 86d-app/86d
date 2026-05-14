@@ -1056,15 +1056,24 @@ describe("createAutomationsController", () => {
 			expect(exec.results[0].status).toBe("failed");
 		});
 
-		it("update_field succeeds with entity and field", async () => {
+		it("update_field updates a field on an existing entity", async () => {
+			// Seed an order record into the mock data store
+			const orderId = "order-to-update";
+			await mockData.upsert("order", orderId, {
+				id: orderId,
+				status: "pending",
+				createdAt: new Date(),
+			});
+
 			const automation = await controller.create({
-				name: "Update",
+				name: "Update Order Status",
 				triggerEvent: "test.event",
 				actions: [
 					{
 						type: "update_field",
 						config: {
 							entity: "order",
+							entityId: orderId,
 							field: "status",
 							value: "processing",
 						},
@@ -1074,6 +1083,59 @@ describe("createAutomationsController", () => {
 			});
 			const exec = await controller.execute(automation.id, {});
 			expect(exec.results[0].status).toBe("success");
+			expect(exec.results[0].output).toMatchObject({
+				entity: "order",
+				entityId: orderId,
+				field: "status",
+				value: "processing",
+			});
+
+			// Verify the field was actually updated in the data store
+			const updated = await mockData.get("order", orderId);
+			expect((updated as Record<string, unknown>).status).toBe("processing");
+		});
+
+		it("update_field resolves entityId from payload when not in config", async () => {
+			const orderId = "order-from-payload";
+			await mockData.upsert("order", orderId, {
+				id: orderId,
+				status: "pending",
+				createdAt: new Date(),
+			});
+
+			const automation = await controller.create({
+				name: "Update via Payload",
+				triggerEvent: "order.created",
+				actions: [
+					{
+						type: "update_field",
+						config: { entity: "order", field: "status", value: "confirmed" },
+					},
+				],
+				status: "active",
+			});
+			const exec = await controller.execute(automation.id, { orderId });
+			expect(exec.results[0].status).toBe("success");
+			const updated = await mockData.get("order", orderId);
+			expect((updated as Record<string, unknown>).status).toBe("confirmed");
+		});
+
+		it("update_field fails when entityId is not resolvable", async () => {
+			const automation = await controller.create({
+				name: "Update Missing",
+				triggerEvent: "test.event",
+				actions: [
+					{
+						type: "update_field",
+						config: { entity: "order", field: "status", value: "processing" },
+					},
+				],
+				status: "active",
+			});
+			// No entityId in config or payload
+			const exec = await controller.execute(automation.id, {});
+			expect(exec.results[0].status).toBe("failed");
+			expect(exec.results[0].error).toContain("no entityId");
 		});
 
 		it("create_record succeeds with entity", async () => {
