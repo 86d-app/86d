@@ -22,7 +22,7 @@ describe("env", () => {
 		const mod = await import("../index");
 		const env = mod.default;
 
-		expect(env["86D_API_URL"]).toBe("https://dashboard.86d.app/api");
+		expect(env["86D_API_URL"]).toBe("https://api.86d.app");
 	});
 
 	it("leaves optional fields as undefined when not set", async () => {
