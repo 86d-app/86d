@@ -338,6 +338,10 @@ const seededModuleNames = [
 	"flash-sales",
 	"bundles",
 	"subscriptions",
+	"gift-cards",
+	"appointments",
+	"memberships",
+	"warranties",
 ];
 
 for (const name of moduleNames) {
@@ -1542,6 +1546,428 @@ async function seedDeliverySlots(client: pg.PoolClient) {
 	}
 }
 
+async function seedGiftCards(client: pg.PoolClient) {
+	console.log("  Creating gift cards...");
+
+	const orderId = uuid("order:demo");
+
+	const cards = [
+		{
+			key: "gc:eleanor-250",
+			code: "GIFT-VALE-8801-ATRL",
+			initialBalance: 25000,
+			currentBalance: 25000,
+			currency: "USD",
+			status: "active",
+			recipientEmail: "eleanor@example.com",
+			recipientName: "Eleanor Vale",
+			customerId: customerIds["eleanor-vale"],
+			purchasedByCustomerId: customerIds["marcus-chen"],
+			senderName: "Marcus Chen",
+			senderEmail: "marcus@example.com",
+			message: "Enjoy the new collection.",
+			deliveryMethod: "email",
+			delivered: true,
+			deliveredAt: now,
+		},
+		{
+			key: "gc:marcus-200",
+			code: "GIFT-CHEN-2024-ATLR",
+			initialBalance: 20000,
+			currentBalance: 10000,
+			currency: "USD",
+			status: "active",
+			recipientEmail: "marcus@example.com",
+			recipientName: "Marcus Chen",
+			customerId: customerIds["marcus-chen"],
+			deliveryMethod: "email",
+			delivered: true,
+			deliveredAt: now,
+		},
+		{
+			key: "gc:sofia-50",
+			code: "GIFT-ALVZ-5050-ATRL",
+			initialBalance: 5000,
+			currentBalance: 0,
+			currency: "USD",
+			status: "depleted",
+			recipientEmail: "sofia@example.com",
+			recipientName: "Sofia Alvarez",
+			customerId: customerIds["sofia-alvarez"],
+			deliveryMethod: "email",
+			delivered: true,
+			deliveredAt: now,
+		},
+	];
+
+	const cardIds: Record<string, string> = {};
+	for (const card of cards) {
+		const cardId = uuid(card.key);
+		cardIds[card.key] = cardId;
+		const { key: _key, ...cardData } = card;
+		await insertModuleData(client, "gift-cards", "giftCard", cardId, {
+			id: cardId,
+			...cardData,
+			createdAt: now,
+			updatedAt: now,
+		});
+	}
+
+	// Transaction: Marcus's card — $100 redemption on the demo order
+	const txId1 = uuid("gc-tx:marcus-200:debit-1");
+	await insertModuleData(client, "gift-cards", "giftCardTransaction", txId1, {
+		id: txId1,
+		giftCardId: cardIds["gc:marcus-200"],
+		type: "debit",
+		amount: 10000,
+		balanceAfter: 10000,
+		orderId,
+		customerId: customerIds["marcus-chen"],
+		note: "Applied to order AT-1001",
+		createdAt: now,
+	});
+
+	// Transaction: Sofia's card — fully depleted
+	const txId2 = uuid("gc-tx:sofia-50:debit-1");
+	await insertModuleData(client, "gift-cards", "giftCardTransaction", txId2, {
+		id: txId2,
+		giftCardId: cardIds["gc:sofia-50"],
+		type: "debit",
+		amount: 5000,
+		balanceAfter: 0,
+		customerId: customerIds["sofia-alvarez"],
+		createdAt: now,
+	});
+}
+
+async function seedAppointments(client: pg.PoolClient) {
+	console.log("  Creating appointment services and bookings...");
+
+	const personalShoppingId = uuid("appointment-service:personal-shopping");
+	const alterationsId = uuid("appointment-service:alterations");
+	const claireId = uuid("appointment-staff:claire-dubois");
+	const antoineId = uuid("appointment-staff:antoine-moreau");
+
+	await insertModuleData(client, "appointments", "service", personalShoppingId, {
+		id: personalShoppingId,
+		name: "Personal Shopping",
+		slug: "personal-shopping",
+		description:
+			"A private session with our in-house stylist. We curate a selection based on your style profile before you arrive.",
+		duration: 60,
+		price: 0,
+		currency: "USD",
+		status: "active",
+		maxCapacity: 1,
+		sortOrder: 0,
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	await insertModuleData(client, "appointments", "service", alterationsId, {
+		id: alterationsId,
+		name: "Alterations Consultation",
+		slug: "alterations-consultation",
+		description:
+			"Meet with our master tailor to discuss bespoke adjustments and fit corrections for any garment.",
+		duration: 45,
+		price: 0,
+		currency: "USD",
+		status: "active",
+		maxCapacity: 1,
+		sortOrder: 1,
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	await insertModuleData(client, "appointments", "staff", claireId, {
+		id: claireId,
+		name: "Claire Dubois",
+		email: "claire@86d-atelier.com",
+		bio: "Senior stylist with 12 years at the Atelier. Specialises in wardrobe curation and occasion dressing.",
+		status: "active",
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	await insertModuleData(client, "appointments", "staff", antoineId, {
+		id: antoineId,
+		name: "Antoine Moreau",
+		email: "antoine@86d-atelier.com",
+		bio: "Master tailor trained in Paris. Handles bespoke alterations, monogramming, and custom commissions.",
+		status: "active",
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	// Claire handles personal shopping; Antoine handles alterations
+	await insertModuleData(client, "appointments", "staffService", uuid("staff-svc:claire:ps"), {
+		id: uuid("staff-svc:claire:ps"),
+		staffId: claireId,
+		serviceId: personalShoppingId,
+		createdAt: now,
+	});
+	await insertModuleData(client, "appointments", "staffService", uuid("staff-svc:antoine:alt"), {
+		id: uuid("staff-svc:antoine:alt"),
+		staffId: antoineId,
+		serviceId: alterationsId,
+		createdAt: now,
+	});
+
+	// Weekly schedule: Mon–Fri 10:00–18:00 for Claire
+	const weekdays = [1, 2, 3, 4, 5];
+	for (const day of weekdays) {
+		const schedId = uuid(`schedule:claire:${day}`);
+		await insertModuleData(client, "appointments", "schedule", schedId, {
+			id: schedId,
+			staffId: claireId,
+			dayOfWeek: day,
+			startTime: "10:00",
+			endTime: "18:00",
+			createdAt: now,
+		});
+	}
+
+	// Tue–Sat 11:00–19:00 for Antoine
+	const antoineDays = [2, 3, 4, 5, 6];
+	for (const day of antoineDays) {
+		const schedId = uuid(`schedule:antoine:${day}`);
+		await insertModuleData(client, "appointments", "schedule", schedId, {
+			id: schedId,
+			staffId: antoineId,
+			dayOfWeek: day,
+			startTime: "11:00",
+			endTime: "19:00",
+			createdAt: now,
+		});
+	}
+
+	// Upcoming confirmed appointment: Eleanor with Claire (personal shopping)
+	const eleanorApptId = uuid("appointment:eleanor:personal-shopping");
+	const eleanorStart = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
+	const eleanorEnd = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000 + 60 * 60 * 1000).toISOString();
+	await insertModuleData(client, "appointments", "appointment", eleanorApptId, {
+		id: eleanorApptId,
+		serviceId: personalShoppingId,
+		staffId: claireId,
+		customerId: customerIds["eleanor-vale"],
+		customerName: "Eleanor Vale",
+		customerEmail: "eleanor@example.com",
+		startsAt: eleanorStart,
+		endsAt: eleanorEnd,
+		status: "confirmed",
+		price: 0,
+		currency: "USD",
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	// Upcoming confirmed appointment: Marcus with Antoine (alterations)
+	const marcusApptId = uuid("appointment:marcus:alterations");
+	const marcusStart = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString();
+	const marcusEnd = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000 + 45 * 60 * 1000).toISOString();
+	await insertModuleData(client, "appointments", "appointment", marcusApptId, {
+		id: marcusApptId,
+		serviceId: alterationsId,
+		staffId: antoineId,
+		customerId: customerIds["marcus-chen"],
+		customerName: "Marcus Chen",
+		customerEmail: "marcus@example.com",
+		startsAt: marcusStart,
+		endsAt: marcusEnd,
+		status: "confirmed",
+		price: 0,
+		currency: "USD",
+		createdAt: now,
+		updatedAt: now,
+	});
+}
+
+async function seedMemberships(client: pg.PoolClient) {
+	console.log("  Creating membership plans and members...");
+
+	const clubPlanId = uuid("membership-plan:atelier-club");
+	const maisonPlanId = uuid("membership-plan:atelier-maison");
+
+	await insertModuleData(client, "memberships", "membershipPlan", clubPlanId, {
+		id: clubPlanId,
+		name: "Atelier Club",
+		slug: "atelier-club",
+		description:
+			"Monthly membership for the discerning shopper. Priority access, complimentary alterations, and exclusive member events.",
+		price: 9900,
+		billingInterval: "month",
+		trialDays: 0,
+		features: ["10% off all purchases", "Free standard shipping", "Early access to new arrivals"],
+		isActive: true,
+		maxMembers: null,
+		sortOrder: 0,
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	await insertModuleData(client, "memberships", "membershipPlan", maisonPlanId, {
+		id: maisonPlanId,
+		name: "Atelier Maison",
+		slug: "atelier-maison",
+		description:
+			"Annual membership for our most valued clients. Includes all Club benefits plus a personal stylist, bespoke services, and invitations to private previews.",
+		price: 79900,
+		billingInterval: "year",
+		trialDays: 0,
+		features: [
+			"20% off all purchases",
+			"Free express shipping",
+			"Priority personal stylist access",
+			"Exclusive Maison preview events",
+			"Complimentary monogramming",
+		],
+		isActive: true,
+		maxMembers: 50,
+		sortOrder: 1,
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	// Benefits
+	const clubBenefits = [
+		{ type: "discount", value: "10", description: "10% off all full-price items" },
+		{ type: "shipping", value: "free_standard", description: "Free standard shipping on all orders" },
+		{ type: "access", value: "early_access", description: "48-hour early access to new arrivals" },
+	];
+	for (const [i, benefit] of clubBenefits.entries()) {
+		const benefitId = uuid(`membership-benefit:club:${i}`);
+		await insertModuleData(client, "memberships", "membershipBenefit", benefitId, {
+			id: benefitId,
+			planId: clubPlanId,
+			...benefit,
+			isActive: true,
+			createdAt: now,
+		});
+	}
+
+	const maisonBenefits = [
+		{ type: "discount", value: "20", description: "20% off all full-price items" },
+		{ type: "shipping", value: "free_express", description: "Free express shipping on all orders" },
+		{ type: "stylist", value: "personal_stylist", description: "Access to personal stylist consultations" },
+		{ type: "access", value: "maison_events", description: "Invitations to Maison private previews" },
+		{ type: "service", value: "monogramming", description: "Complimentary monogramming on all orders" },
+	];
+	for (const [i, benefit] of maisonBenefits.entries()) {
+		const benefitId = uuid(`membership-benefit:maison:${i}`);
+		await insertModuleData(client, "memberships", "membershipBenefit", benefitId, {
+			id: benefitId,
+			planId: maisonPlanId,
+			...benefit,
+			isActive: true,
+			createdAt: now,
+		});
+	}
+
+	// Members: Eleanor → Maison, Marcus → Club
+	const membershipStart = new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString();
+	const membershipEnd = new Date(Date.now() + 320 * 24 * 60 * 60 * 1000).toISOString();
+	const clubEnd = new Date(Date.now() + 16 * 24 * 60 * 60 * 1000).toISOString();
+
+	const eleanorMembershipId = uuid("membership:eleanor:maison");
+	await insertModuleData(client, "memberships", "membership", eleanorMembershipId, {
+		id: eleanorMembershipId,
+		customerId: customerIds["eleanor-vale"],
+		planId: maisonPlanId,
+		status: "active",
+		startDate: membershipStart,
+		endDate: membershipEnd,
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	const marcusMembershipId = uuid("membership:marcus:club");
+	await insertModuleData(client, "memberships", "membership", marcusMembershipId, {
+		id: marcusMembershipId,
+		customerId: customerIds["marcus-chen"],
+		planId: clubPlanId,
+		status: "active",
+		startDate: membershipStart,
+		endDate: clubEnd,
+		createdAt: now,
+		updatedAt: now,
+	});
+}
+
+async function seedWarranties(client: pg.PoolClient) {
+	console.log("  Creating warranty plans and registrations...");
+
+	const manufacturerPlanId = uuid("warranty-plan:manufacturer-12");
+	const extendedPlanId = uuid("warranty-plan:atelier-protection-24");
+
+	await insertModuleData(client, "warranties", "warrantyPlan", manufacturerPlanId, {
+		id: manufacturerPlanId,
+		name: "Manufacturer Warranty",
+		description: "Standard manufacturer coverage included with every Atelier purchase.",
+		type: "manufacturer",
+		durationMonths: 12,
+		price: 0,
+		coverageDetails:
+			"Covers manufacturing defects in materials and workmanship. Does not cover normal wear or accidental damage.",
+		exclusions: "Wear and tear, accidental damage, water damage, unauthorised repairs.",
+		isActive: true,
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	await insertModuleData(client, "warranties", "warrantyPlan", extendedPlanId, {
+		id: extendedPlanId,
+		name: "Atelier Protection Plan",
+		description: "Extended 24-month protection covering accidental damage and wear on fine leather goods and timepieces.",
+		type: "extended",
+		durationMonths: 24,
+		price: 4999,
+		coverageDetails:
+			"All manufacturer warranty coverage plus accidental damage, stitching failures, hardware defects, and complimentary annual conditioning service.",
+		exclusions: "Loss or theft, intentional damage, alterations by third parties.",
+		isActive: true,
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	const orderId = uuid("order:demo");
+	const purchaseDate = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
+	const manufacturerExpiry = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000 + 365 * 24 * 60 * 60 * 1000).toISOString();
+	const extendedExpiry = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000 + 2 * 365 * 24 * 60 * 60 * 1000).toISOString();
+
+	// Manufacturer warranty on the Grand Tour Passport Folio from the demo order
+	const folioWarrantyId = uuid("warranty-reg:marcus:folio:manufacturer");
+	await insertModuleData(client, "warranties", "warrantyRegistration", folioWarrantyId, {
+		id: folioWarrantyId,
+		warrantyPlanId: manufacturerPlanId,
+		orderId,
+		customerId: customerIds["marcus-chen"],
+		productId: productIds["grand-tour-passport-folio"],
+		productName: "Grand Tour Passport Folio",
+		purchaseDate,
+		expiresAt: manufacturerExpiry,
+		status: "active",
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	// Extended protection on the Silk Twill Wrap from the demo order
+	const wrapWarrantyId = uuid("warranty-reg:marcus:silk-wrap:extended");
+	await insertModuleData(client, "warranties", "warrantyRegistration", wrapWarrantyId, {
+		id: wrapWarrantyId,
+		warrantyPlanId: extendedPlanId,
+		orderId,
+		customerId: customerIds["marcus-chen"],
+		productId: productIds["silk-twill-wrap"],
+		productName: "Silk Twill Wrap",
+		purchaseDate,
+		expiresAt: extendedExpiry,
+		status: "active",
+		createdAt: now,
+		updatedAt: now,
+	});
+}
+
 async function main() {
 	console.log("🌱 Seeding 86d luxury demo database...\n");
 	console.log(`  Store ID: ${STORE_ID}`);
@@ -1590,6 +2016,10 @@ async function main() {
 		await seedFlashSales(client);
 		await seedBundles(client);
 		await seedSubscriptions(client);
+		await seedGiftCards(client);
+		await seedAppointments(client);
+		await seedMemberships(client);
+		await seedWarranties(client);
 
 		await client.query("COMMIT");
 
