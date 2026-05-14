@@ -7,6 +7,7 @@ import StoreCreditsDashboardTemplate from "./store-credits-dashboard.mdx";
 interface CreditAccount {
 	id: string;
 	customerId: string;
+	customerEmail?: string;
 	balance: number;
 	lifetimeCredited: number;
 	lifetimeDebited: number;
@@ -181,10 +182,8 @@ export function StoreCreditsDashboard() {
 					key={account.id}
 					className="border-border border-b last:border-0 hover:bg-muted/20"
 				>
-					<td className="px-4 py-3">
-						<code className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground text-xs">
-							{account.customerId}
-						</code>
+					<td className="px-4 py-3 text-foreground text-sm">
+						{account.customerEmail ?? `${account.customerId.slice(0, 8)}…`}
 					</td>
 					<td className="px-4 py-3 font-medium text-foreground">
 						{formatCurrency(account.balance, account.currency)}

@@ -10,6 +10,7 @@ export type RewardType =
 export type ReferralCode = {
 	id: string;
 	customerId: string;
+	customerEmail?: string | undefined;
 	code: string;
 	active: boolean;
 	usageCount: number;
@@ -22,6 +23,7 @@ export type Referral = {
 	id: string;
 	referrerCodeId: string;
 	referrerCustomerId: string;
+	referrerEmail?: string | undefined;
 	refereeCustomerId: string;
 	refereeEmail: string;
 	status: ReferralStatus;
@@ -56,6 +58,7 @@ export type ReferralController = ModuleController & {
 	// ── Codes ──────────────────────────────────────────────
 	createCode(params: {
 		customerId: string;
+		customerEmail?: string | undefined;
 		maxUses?: number | undefined;
 		expiresAt?: Date | undefined;
 	}): Promise<ReferralCode>;

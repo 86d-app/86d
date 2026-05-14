@@ -5,6 +5,7 @@ export const referralsSchema = {
 		fields: {
 			id: { type: "string", required: true },
 			customerId: { type: "string", required: true },
+			customerEmail: { type: "string", required: false },
 			code: { type: "string", required: true },
 			active: { type: "boolean", required: true, defaultValue: true },
 			usageCount: { type: "number", required: true, defaultValue: 0 },
@@ -22,6 +23,7 @@ export const referralsSchema = {
 			id: { type: "string", required: true },
 			referrerCodeId: { type: "string", required: true },
 			referrerCustomerId: { type: "string", required: true },
+			referrerEmail: { type: "string", required: false },
 			refereeCustomerId: { type: "string", required: true },
 			refereeEmail: { type: "string", required: true },
 			status: {

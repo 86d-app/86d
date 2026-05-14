@@ -65,6 +65,7 @@ export type WarrantyClaim = {
 	id: string;
 	warrantyRegistrationId: string;
 	customerId: string;
+	customerEmail?: string | undefined;
 	issueType: ClaimIssueType;
 	issueDescription: string;
 	status: ClaimStatus;
@@ -113,6 +114,7 @@ export type RegisterWarrantyParams = {
 export type SubmitClaimParams = {
 	warrantyRegistrationId: string;
 	customerId: string;
+	customerEmail?: string | undefined;
 	issueType: ClaimIssueType;
 	issueDescription: string;
 };

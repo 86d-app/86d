@@ -28,6 +28,7 @@ export const submitClaim = createStoreEndpoint(
 		const claim = await controller.submitClaim({
 			warrantyRegistrationId: ctx.body.warrantyRegistrationId,
 			customerId: userId,
+			customerEmail: ctx.context.session?.user.email,
 			issueType: ctx.body.issueType,
 			issueDescription: ctx.body.issueDescription,
 		});

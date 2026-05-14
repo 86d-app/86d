@@ -12,6 +12,10 @@ export const storeCreditsSchema = {
 				required: true,
 				unique: true,
 			},
+			customerEmail: {
+				type: "string",
+				required: false,
+			},
 			balance: {
 				type: "number",
 				required: true,

@@ -29,7 +29,7 @@ export const applyCodeEndpoint = createStoreEndpoint(
 		const referral = await controller.createReferral({
 			referralCodeId: codeRecord.id,
 			refereeCustomerId: customerId,
-			refereeEmail: "",
+			refereeEmail: ctx.context.session?.user.email ?? "",
 		});
 
 		if (!referral)

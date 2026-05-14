@@ -5,6 +5,7 @@ export const wishlistSchema = {
 		fields: {
 			id: { type: "string", required: true },
 			customerId: { type: "string", required: true },
+			customerEmail: { type: "string", required: false },
 			productId: { type: "string", required: true },
 			productName: { type: "string", required: true },
 			productImage: { type: "string", required: false },

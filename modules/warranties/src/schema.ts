@@ -80,6 +80,7 @@ export const warrantiesSchema = {
 				},
 			},
 			customerId: { type: "string", required: true },
+			customerEmail: { type: "string", required: false },
 			issueType: {
 				type: [
 					"defect",

@@ -16,6 +16,7 @@ export type AccountStatus = "active" | "frozen" | "closed";
 export type CreditAccount = {
 	id: string;
 	customerId: string;
+	customerEmail?: string | undefined;
 	balance: number;
 	lifetimeCredited: number;
 	lifetimeDebited: number;
@@ -68,7 +69,10 @@ export type CreditSummary = {
 
 export type StoreCreditController = ModuleController & {
 	// ── Account operations ────────────────────────────────────────────
-	getOrCreateAccount(customerId: string): Promise<CreditAccount>;
+	getOrCreateAccount(
+		customerId: string,
+		customerEmail?: string,
+	): Promise<CreditAccount>;
 	getAccount(customerId: string): Promise<CreditAccount | null>;
 	getAccountById(id: string): Promise<CreditAccount | null>;
 	freezeAccount(customerId: string): Promise<CreditAccount>;

@@ -16,7 +16,10 @@ export const getBalance = createStoreEndpoint(
 		const controller = ctx.context.controllers[
 			"store-credits"
 		] as StoreCreditController;
-		const account = await controller.getOrCreateAccount(session.user.id);
+		const account = await controller.getOrCreateAccount(
+			session.user.id,
+			session.user.email,
+		);
 		return {
 			balance: account.balance,
 			currency: account.currency,

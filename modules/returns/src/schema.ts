@@ -20,6 +20,10 @@ export const returnsSchema = {
 				type: "string",
 				required: true,
 			},
+			customerEmail: {
+				type: "string",
+				required: false,
+			},
 			status: {
 				type: [
 					"requested",

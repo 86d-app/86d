@@ -3,6 +3,7 @@ import type { ModuleController } from "@86d-app/core";
 export type WishlistItem = {
 	id: string;
 	customerId: string;
+	customerEmail?: string | undefined;
 	productId: string;
 	productName: string;
 	productImage?: string | undefined;
@@ -27,6 +28,7 @@ export type WishlistSummary = {
 export type WishlistController = ModuleController & {
 	addItem(params: {
 		customerId: string;
+		customerEmail?: string | undefined;
 		productId: string;
 		productName: string;
 		productImage?: string | undefined;

@@ -8,6 +8,7 @@ interface ClaimListItem {
 	id: string;
 	warrantyRegistrationId: string;
 	customerId: string;
+	customerEmail?: string;
 	issueType: string;
 	status: string;
 	submittedAt: string;

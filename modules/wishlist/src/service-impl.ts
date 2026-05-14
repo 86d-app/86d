@@ -39,6 +39,7 @@ export function createWishlistController(
 			const item: WishlistItem = {
 				id,
 				customerId: params.customerId,
+				customerEmail: params.customerEmail,
 				productId: params.productId,
 				productName: params.productName,
 				productImage: params.productImage,

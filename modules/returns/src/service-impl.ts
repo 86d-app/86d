@@ -49,6 +49,7 @@ export function createReturnController(
 				id,
 				orderId: params.orderId,
 				customerId: params.customerId,
+				customerEmail: params.customerEmail,
 				status: "requested",
 				refundMethod: params.refundMethod ?? "original_payment",
 				refundAmount,

@@ -62,6 +62,7 @@ export const submitReturn = createStoreEndpoint(
 		const returnRequest = await controller.create({
 			orderId: ctx.body.orderId,
 			customerId: userId,
+			customerEmail: ctx.context.session?.user?.email,
 			reason: ctx.body.reason,
 			refundMethod: ctx.body.refundMethod,
 			customerNotes: ctx.body.customerNotes,

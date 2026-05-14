@@ -11,18 +11,31 @@ export function createStoreCreditController(
 	return {
 		// ── Account operations ────────────────────────────────────────
 
-		async getOrCreateAccount(customerId) {
+		async getOrCreateAccount(customerId, customerEmail) {
 			const existing = await data.findMany("creditAccount", {
 				where: { customerId },
 				take: 1,
 			});
 			const accounts = existing as unknown as CreditAccount[];
-			if (accounts.length > 0) return accounts[0];
+			if (accounts.length > 0) {
+				const account = accounts[0];
+				if (customerEmail && !account.customerEmail) {
+					const updated = { ...account, customerEmail };
+					await data.upsert(
+						"creditAccount",
+						account.id,
+						updated as Record<string, unknown>,
+					);
+					return updated;
+				}
+				return account;
+			}
 
 			const id = crypto.randomUUID();
 			const account: CreditAccount = {
 				id,
 				customerId,
+				customerEmail,
 				balance: 0,
 				lifetimeCredited: 0,
 				lifetimeDebited: 0,

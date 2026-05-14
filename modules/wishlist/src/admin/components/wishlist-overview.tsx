@@ -7,6 +7,7 @@ import WishlistOverviewTemplate from "./wishlist-overview.mdx";
 interface WishlistItem {
 	id: string;
 	customerId: string;
+	customerEmail?: string;
 	productId: string;
 	productName: string;
 	productImage?: string;
@@ -137,7 +138,7 @@ export function WishlistOverview() {
 								Product
 							</th>
 							<th className="px-5 py-2.5 font-medium text-muted-foreground">
-								Customer ID
+								Customer
 							</th>
 							<th className="px-5 py-2.5 font-medium text-muted-foreground">
 								Added
@@ -158,8 +159,8 @@ export function WishlistOverview() {
 										</span>
 									)}
 								</td>
-								<td className="px-5 py-3 font-mono text-muted-foreground text-xs">
-									{item.customerId.slice(0, 8)}...
+								<td className="px-5 py-3 text-muted-foreground text-sm">
+									{item.customerEmail ?? item.customerId.slice(0, 8) + "…"}
 								</td>
 								<td className="px-5 py-3 text-muted-foreground">
 									{formatDate(item.addedAt)}
@@ -206,8 +207,8 @@ export function WishlistOverview() {
 								<p className="font-medium text-foreground text-sm">
 									{item.productName}
 								</p>
-								<p className="mt-0.5 font-mono text-muted-foreground text-xs">
-									Customer: {item.customerId.slice(0, 8)}...
+								<p className="mt-0.5 text-muted-foreground text-xs">
+									{item.customerEmail ?? item.customerId.slice(0, 8) + "…"}
 								</p>
 								<p className="mt-0.5 text-muted-foreground text-xs">
 									{formatDate(item.addedAt)}

@@ -15,7 +15,10 @@ export const getMyCodeEndpoint = createStoreEndpoint(
 
 		// Auto-create a code for the customer if they don't have one
 		if (!code) {
-			code = await controller.createCode({ customerId });
+			code = await controller.createCode({
+				customerId,
+				customerEmail: ctx.context.session?.user.email,
+			});
 		}
 
 		return { code };

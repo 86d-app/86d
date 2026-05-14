@@ -246,6 +246,7 @@ export function createWarrantyController(
 				id,
 				warrantyRegistrationId: params.warrantyRegistrationId,
 				customerId: params.customerId,
+				customerEmail: params.customerEmail,
 				issueType: params.issueType,
 				issueDescription: params.issueDescription,
 				status: "submitted",

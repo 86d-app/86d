@@ -8,6 +8,7 @@ interface ReturnListItem {
 	id: string;
 	orderId: string;
 	customerId: string;
+	customerEmail?: string;
 	status: string;
 	refundMethod: string;
 	refundAmount: number;
@@ -110,7 +111,7 @@ export function ReturnsList() {
 								Return ID
 							</th>
 							<th className="hidden px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide sm:table-cell">
-								Order
+								Customer
 							</th>
 							<th className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide">
 								Status
@@ -162,10 +163,8 @@ export function ReturnsList() {
 											{ret.id.slice(0, 8)}
 										</span>
 									</td>
-									<td className="hidden px-4 py-3 text-sm sm:table-cell">
-										<span className="font-mono text-muted-foreground">
-											{ret.orderId.slice(0, 8)}
-										</span>
+									<td className="hidden px-4 py-3 text-muted-foreground text-sm sm:table-cell">
+										{ret.customerEmail ?? ret.customerId.slice(0, 8) + "…"}
 									</td>
 									<td className="px-4 py-3">
 										<span

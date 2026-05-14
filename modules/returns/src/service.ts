@@ -36,6 +36,7 @@ export type ReturnRequest = {
 	id: string;
 	orderId: string;
 	customerId: string;
+	customerEmail?: string | undefined;
 	status: ReturnStatus;
 	refundMethod: RefundMethod;
 	refundAmount: number;
@@ -70,6 +71,7 @@ export type ReturnItem = {
 export type CreateReturnParams = {
 	orderId: string;
 	customerId: string;
+	customerEmail?: string | undefined;
 	reason: string;
 	refundMethod?: RefundMethod | undefined;
 	customerNotes?: string | undefined;

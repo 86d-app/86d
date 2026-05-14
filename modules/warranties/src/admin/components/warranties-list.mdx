@@ -55,7 +55,7 @@ Manage warranty claims from customers.
       <table className="w-full text-left text-sm">
         <thead className="border-border border-b bg-muted/50">
           <tr>
-            <th className="px-4 py-2.5 font-medium text-muted-foreground text-xs">Claim ID</th>
+            <th className="px-4 py-2.5 font-medium text-muted-foreground text-xs">Customer</th>
             <th className="px-4 py-2.5 font-medium text-muted-foreground text-xs">Issue Type</th>
             <th className="px-4 py-2.5 font-medium text-muted-foreground text-xs">Status</th>
             <th className="px-4 py-2.5 font-medium text-muted-foreground text-xs">Submitted</th>
@@ -65,7 +65,7 @@ Manage warranty claims from customers.
         <tbody className="divide-y divide-border">
           {props.claims.map((claim) => (
             <tr key={claim.id} className="hover:bg-muted/30">
-              <td className="px-4 py-3 font-mono text-foreground text-xs">{claim.id.slice(0, 8)}…</td>
+              <td className="px-4 py-3 text-foreground text-sm">{claim.customerEmail ?? claim.customerId.slice(0, 8) + "…"}</td>
               <td className="px-4 py-3 text-foreground text-sm capitalize">{claim.issueType.replace(/_/g, " ")}</td>
               <td className="px-4 py-3">
                 <span className={`inline-flex rounded-full px-2 py-0.5 font-medium text-xs ${props.statusColors[claim.status] ?? "bg-muted text-muted-foreground"}`}>

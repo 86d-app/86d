@@ -157,7 +157,7 @@ export function ComparisonAdmin() {
 								</td>
 								<td className="px-5 py-3 font-mono text-muted-foreground text-xs">
 									{item.customerId
-										? `${item.customerId.slice(0, 8)}...`
+										? "Registered customer"
 										: item.sessionId
 											? `session:${item.sessionId.slice(0, 6)}`
 											: "anonymous"}

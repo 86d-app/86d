@@ -25,6 +25,7 @@ export const addToWishlist = createStoreEndpoint(
 		try {
 			const item = await controller.addItem({
 				customerId,
+				customerEmail: ctx.context.session?.user.email,
 				productId: ctx.body.productId,
 				productName: ctx.body.productName,
 				productImage: ctx.body.productImage,

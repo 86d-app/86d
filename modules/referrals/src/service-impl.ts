@@ -28,6 +28,7 @@ export function createReferralController(
 			const code: ReferralCode = {
 				id,
 				customerId: params.customerId,
+				customerEmail: params.customerEmail,
 				code: generateCode(),
 				active: true,
 				usageCount: 0,
@@ -104,6 +105,7 @@ export function createReferralController(
 				id,
 				referrerCodeId: params.referralCodeId,
 				referrerCustomerId: code.customerId,
+				referrerEmail: code.customerEmail,
 				refereeCustomerId: params.refereeCustomerId,
 				refereeEmail: params.refereeEmail,
 				status: "pending",
