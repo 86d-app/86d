@@ -355,6 +355,11 @@ const seededModuleNames = [
 	"backorders",
 	"gift-registry",
 	"bulk-pricing",
+	"gift-wrapping",
+	"invoices",
+	"gamification",
+	"multi-currency",
+	"waitlist",
 ];
 
 for (const name of moduleNames) {
@@ -2722,6 +2727,294 @@ async function seedBulkPricing(client: pg.PoolClient) {
 	}
 }
 
+async function seedGiftWrapping(client: pg.PoolClient) {
+	console.log("  Creating gift wrapping options...");
+
+	const options = [
+		{
+			key: "classic",
+			name: "Classic Tissue Wrap",
+			description: "Our house tissue paper with a satin ribbon. Complimentary with every order.",
+			priceInCents: 0,
+			sortOrder: 0,
+		},
+		{
+			key: "signature-box",
+			name: "Atelier Signature Box",
+			description: "Rigid gift box in Atelier ivory, sealed with wax and a grosgrain ribbon.",
+			priceInCents: 1500,
+			sortOrder: 1,
+		},
+		{
+			key: "black-lacquer",
+			name: "Atelier Black Lacquer",
+			description: "Matte-black lacquer box with gold foil monogram, velvet interior, and a hand-tied bow.",
+			priceInCents: 2500,
+			sortOrder: 2,
+		},
+	];
+
+	const optionIds: Record<string, string> = {};
+	for (const opt of options) {
+		const optId = uuid(`wrap-option:${opt.key}`);
+		optionIds[opt.key] = optId;
+		const { key: _key, ...optData } = opt;
+		await insertModuleData(client, "gift-wrapping", "wrapOption", optId, {
+			id: optId,
+			...optData,
+			active: true,
+			createdAt: now,
+			updatedAt: now,
+		});
+	}
+
+	// Wrap selection on the demo order (Passport Folio in Signature Box)
+	const orderId = uuid("order:demo");
+	const orderItemId = uuid("order-item:demo:grand-tour-passport-folio");
+	const selectionId = uuid("wrap-selection:demo-order:folio");
+	await insertModuleData(client, "gift-wrapping", "wrapSelection", selectionId, {
+		id: selectionId,
+		orderId,
+		orderItemId,
+		wrapOptionId: optionIds["signature-box"],
+		wrapOptionName: "Atelier Signature Box",
+		priceInCents: 1500,
+		recipientName: "Eleanor Vale",
+		giftMessage: "With love — Marcus.",
+		customerId: customerIds["marcus-chen"],
+		createdAt: now,
+	});
+}
+
+async function seedInvoices(client: pg.PoolClient) {
+	console.log("  Creating invoices...");
+
+	const invoiceId = uuid("invoice:demo-order");
+	const orderId = uuid("order:demo");
+	const issuedAt = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
+	const dueDate = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
+	const silkWrap = productByKey["silk-twill-wrap"];
+	const folio = productByKey["grand-tour-passport-folio"];
+	const subtotal = (silkWrap?.price ?? 28500) + (folio?.price ?? 89500);
+	const taxAmount = 8303;
+	const total = subtotal + taxAmount;
+
+	await insertModuleData(client, "invoices", "invoice", invoiceId, {
+		id: invoiceId,
+		invoiceNumber: "INV-2026-0001",
+		orderId,
+		customerId: customerIds["marcus-chen"],
+		customerName: "Marcus Chen",
+		status: "paid",
+		paymentTerms: "due_on_receipt",
+		issuedAt,
+		dueDate,
+		subtotal,
+		taxAmount,
+		shippingAmount: 0,
+		discountAmount: 0,
+		total,
+		amountPaid: total,
+		amountDue: 0,
+		currency: "USD",
+		notes: "Thank you for your order.",
+		createdAt: issuedAt,
+		updatedAt: now,
+	});
+
+	// Invoice line items
+	const invoiceItems = [
+		{ productKey: "grand-tour-passport-folio", quantity: 1 },
+		{ productKey: "silk-twill-wrap", quantity: 1 },
+	];
+
+	for (const [i, item] of invoiceItems.entries()) {
+		const product = productByKey[item.productKey];
+		if (!product) continue;
+		const lineId = uuid(`invoice-line:demo:${i}`);
+		await insertModuleData(client, "invoices", "invoiceLine", lineId, {
+			id: lineId,
+			invoiceId,
+			productId: productIds[item.productKey],
+			description: product.name,
+			quantity: item.quantity,
+			unitPrice: product.price,
+			total: product.price * item.quantity,
+			createdAt: issuedAt,
+		});
+	}
+}
+
+async function seedGamification(client: pg.PoolClient) {
+	console.log("  Creating gamification game...");
+
+	const gameId = uuid("game:atelier-spin");
+
+	await insertModuleData(client, "gamification", "game", gameId, {
+		id: gameId,
+		name: "Atelier Lucky Draw",
+		description: "Spin for a chance to win an exclusive Atelier reward.",
+		type: "wheel",
+		isActive: true,
+		requireEmail: true,
+		requireNewsletterOptIn: false,
+		maxPlaysPerUser: 1,
+		cooldownMinutes: 10080,
+		totalPlays: 2,
+		totalWins: 2,
+		settings: {
+			wheelColors: ["#1a1a1a", "#e8ddd0", "#8b7355", "#c5b99a"],
+			spinDuration: 4000,
+		},
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	const prizes = [
+		{
+			key: "5pct-off",
+			name: "5% Off Your Next Order",
+			type: "discount-percent",
+			value: "5",
+			probability: 0.4,
+			maxWins: -1,
+			currentWins: 1,
+		},
+		{
+			key: "free-shipping",
+			name: "Free Express Shipping",
+			type: "free-shipping",
+			value: "express",
+			probability: 0.35,
+			maxWins: -1,
+			currentWins: 1,
+		},
+		{
+			key: "15pct-off",
+			name: "15% Off Your Next Order",
+			type: "discount-percent",
+			value: "15",
+			probability: 0.15,
+			maxWins: 50,
+			currentWins: 0,
+		},
+		{
+			key: "no-prize",
+			name: "Better luck next time",
+			type: "no-prize",
+			value: "0",
+			probability: 0.1,
+			maxWins: -1,
+			currentWins: 0,
+		},
+	];
+
+	const prizeIds: Record<string, string> = {};
+	for (const prize of prizes) {
+		const prizeId = uuid(`prize:atelier-spin:${prize.key}`);
+		prizeIds[prize.key] = prizeId;
+		const { key: _key, ...prizeData } = prize;
+		await insertModuleData(client, "gamification", "prize", prizeId, {
+			id: prizeId,
+			gameId,
+			...prizeData,
+			discountCode: prize.type.startsWith("discount") ? `ATELIER${prize.value}` : undefined,
+			isActive: true,
+			createdAt: now,
+		});
+	}
+
+	// 2 plays: Eleanor won 5% (redeemed), Sofia won free shipping
+	const plays = [
+		{
+			key: "eleanor",
+			customerKey: "eleanor-vale",
+			email: "eleanor@example.com",
+			prizeKey: "5pct-off",
+			isRedeemed: true,
+			redeemedAt: now,
+		},
+		{
+			key: "sofia",
+			customerKey: "sofia-alvarez",
+			email: "sofia@example.com",
+			prizeKey: "free-shipping",
+			isRedeemed: false,
+		},
+	];
+
+	for (const play of plays) {
+		const playId = uuid(`play:atelier-spin:${play.key}`);
+		const prize = prizes.find((p) => p.key === play.prizeKey);
+		await insertModuleData(client, "gamification", "play", playId, {
+			id: playId,
+			gameId,
+			email: play.email,
+			customerId: customerIds[play.customerKey],
+			result: "win",
+			prizeId: prizeIds[play.prizeKey],
+			prizeName: prize?.name,
+			prizeValue: prize?.value,
+			isRedeemed: play.isRedeemed,
+			...(play.redeemedAt ? { redeemedAt: play.redeemedAt } : {}),
+			createdAt: now,
+		});
+	}
+}
+
+async function seedMultiCurrency(client: pg.PoolClient) {
+	console.log("  Creating currency configurations...");
+
+	const currencies = [
+		{ code: "USD", name: "US Dollar", symbol: "$", exchangeRate: 1, isBase: true, sortOrder: 0 },
+		{ code: "EUR", name: "Euro", symbol: "€", exchangeRate: 0.92, isBase: false, sortOrder: 1, symbolPosition: "after" as const },
+		{ code: "GBP", name: "British Pound", symbol: "£", exchangeRate: 0.79, isBase: false, sortOrder: 2 },
+		{ code: "JPY", name: "Japanese Yen", symbol: "¥", exchangeRate: 149.5, isBase: false, sortOrder: 3, decimalPlaces: 0 },
+	];
+
+	for (const currency of currencies) {
+		const currencyId = uuid(`currency:${currency.code}`);
+		await insertModuleData(client, "multi-currency", "currency", currencyId, {
+			id: currencyId,
+			decimalPlaces: currency.decimalPlaces ?? 2,
+			isActive: true,
+			symbolPosition: currency.symbolPosition ?? "before",
+			thousandsSeparator: ",",
+			decimalSeparator: ".",
+			roundingMode: "round",
+			...currency,
+			createdAt: now,
+			updatedAt: now,
+		});
+	}
+}
+
+async function seedWaitlist(client: pg.PoolClient) {
+	console.log("  Creating waitlist entries...");
+
+	const chronograph = productByKey["observatory-chronograph"];
+
+	const entries = [
+		{ customerKey: "marcus-chen", email: "marcus@example.com", variant: "rose-cocoa" },
+		{ customerKey: "sofia-alvarez", email: "sofia@example.com", variant: "rose-cocoa" },
+	];
+
+	for (const entry of entries) {
+		const entryId = uuid(`waitlist:${entry.customerKey}:observatory-chronograph:${entry.variant}`);
+		await insertModuleData(client, "waitlist", "waitlistEntry", entryId, {
+			id: entryId,
+			productId: productIds["observatory-chronograph"],
+			productName: chronograph?.name ?? "Observatory Chronograph",
+			variantId: uuid(`variant:observatory-chronograph:${entry.variant}`),
+			variantLabel: "Rose / Cocoa Strap",
+			email: entry.email,
+			customerId: customerIds[entry.customerKey],
+			status: "waiting",
+			createdAt: now,
+		});
+	}
+}
+
 async function main() {
 	console.log("🌱 Seeding 86d luxury demo database...\n");
 	console.log(`  Store ID: ${STORE_ID}`);
@@ -2787,6 +3080,11 @@ async function main() {
 		await seedBackorders(client);
 		await seedGiftRegistry(client);
 		await seedBulkPricing(client);
+		await seedGiftWrapping(client);
+		await seedInvoices(client);
+		await seedGamification(client);
+		await seedMultiCurrency(client);
+		await seedWaitlist(client);
 
 		await client.query("COMMIT");
 
