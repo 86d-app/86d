@@ -345,6 +345,11 @@ const seededModuleNames = [
 	"auctions",
 	"store-credits",
 	"preorders",
+	"referrals",
+	"affiliates",
+	"customer-groups",
+	"abandoned-carts",
+	"digital-downloads",
 ];
 
 for (const name of moduleNames) {
@@ -2176,6 +2181,303 @@ async function seedPreorders(client: pg.PoolClient) {
 	}
 }
 
+async function seedReferrals(client: pg.PoolClient) {
+	console.log("  Creating referral codes and referrals...");
+
+	// Reward rule
+	const ruleId = uuid("referral-rule:default");
+	await insertModuleData(client, "referrals", "rewardRule", ruleId, {
+		id: ruleId,
+		name: "Atelier Friend Referral",
+		referrerRewardType: "store_credit",
+		referrerRewardValue: 2500,
+		refereeRewardType: "store_credit",
+		refereeRewardValue: 1500,
+		minOrderAmount: 10000,
+		active: true,
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	// Referral codes for each customer
+	const refCodes = [
+		{ customerKey: "eleanor-vale", email: "eleanor@example.com", code: "ELEANOR-ATELIER" },
+		{ customerKey: "marcus-chen", email: "marcus@example.com", code: "MARCUS-ATELIER" },
+		{ customerKey: "sofia-alvarez", email: "sofia@example.com", code: "SOFIA-ATELIER" },
+	];
+
+	const codeIds: Record<string, string> = {};
+	for (const entry of refCodes) {
+		const codeId = uuid(`referral-code:${entry.customerKey}`);
+		codeIds[entry.customerKey] = codeId;
+		await insertModuleData(client, "referrals", "referralCode", codeId, {
+			id: codeId,
+			customerId: customerIds[entry.customerKey],
+			customerEmail: entry.email,
+			code: entry.code,
+			active: true,
+			usageCount: entry.customerKey === "eleanor-vale" ? 1 : 0,
+			maxUses: 0,
+			createdAt: now,
+		});
+	}
+
+	// Completed referral: Eleanor referred Sofia
+	const referralId = uuid("referral:eleanor:sofia");
+	await insertModuleData(client, "referrals", "referral", referralId, {
+		id: referralId,
+		referrerCodeId: codeIds["eleanor-vale"],
+		referrerCustomerId: customerIds["eleanor-vale"],
+		referrerEmail: "eleanor@example.com",
+		refereeCustomerId: customerIds["sofia-alvarez"],
+		refereeEmail: "sofia@example.com",
+		status: "completed",
+		referrerRewarded: true,
+		refereeRewarded: true,
+		completedAt: now,
+		createdAt: now,
+	});
+}
+
+async function seedAffiliates(client: pg.PoolClient) {
+	console.log("  Creating affiliates and links...");
+
+	const affiliates = [
+		{
+			key: "the-sartorial-edit",
+			name: "The Sartorial Edit",
+			email: "collab@thesartorialedit.com",
+			website: "https://thesartorialedit.com",
+			code: "SARTORIAL20",
+			commissionRate: 12,
+			status: "active",
+			totalClicks: 842,
+			totalConversions: 14,
+			totalRevenue: 1240000,
+			totalCommission: 148800,
+			totalPaid: 100000,
+		},
+		{
+			key: "curated-luxury-guide",
+			name: "Curated Luxury Guide",
+			email: "partnerships@curatedluxuryguide.com",
+			website: "https://curatedluxuryguide.com",
+			code: "CLG15",
+			commissionRate: 10,
+			status: "active",
+			totalClicks: 376,
+			totalConversions: 7,
+			totalRevenue: 645000,
+			totalCommission: 64500,
+			totalPaid: 64500,
+		},
+	];
+
+	for (const aff of affiliates) {
+		const affId = uuid(`affiliate:${aff.key}`);
+		const { key: _key, ...affData } = aff;
+		await insertModuleData(client, "affiliates", "affiliate", affId, {
+			id: affId,
+			...affData,
+			createdAt: now,
+			updatedAt: now,
+		});
+
+		// One affiliate link per affiliate (homepage)
+		const linkId = uuid(`affiliate-link:${aff.key}:home`);
+		await insertModuleData(client, "affiliates", "affiliateLink", linkId, {
+			id: linkId,
+			affiliateId: affId,
+			targetUrl: "/",
+			slug: `${aff.code.toLowerCase()}-home`,
+			clicks: aff.totalClicks,
+			conversions: aff.totalConversions,
+			revenue: aff.totalRevenue,
+			active: true,
+			createdAt: now,
+		});
+
+		// One conversion (latest order)
+		const orderId = uuid("order:demo");
+		const convId = uuid(`affiliate-conversion:${aff.key}:1`);
+		await insertModuleData(client, "affiliates", "affiliateConversion", convId, {
+			id: convId,
+			affiliateId: affId,
+			linkId,
+			orderId,
+			orderAmount: 157000,
+			commissionRate: aff.commissionRate,
+			commissionAmount: Math.round(157000 * aff.commissionRate) / 100,
+			status: "approved",
+			paidAt: now,
+			createdAt: now,
+		});
+	}
+}
+
+async function seedCustomerGroups(client: pg.PoolClient) {
+	console.log("  Creating customer groups...");
+
+	const groups = [
+		{
+			key: "vip",
+			name: "VIP",
+			slug: "vip",
+			description: "Top-tier clients with lifetime spend over $10,000 or by direct invitation.",
+			type: "manual",
+			priority: 10,
+		},
+		{
+			key: "maison-members",
+			name: "Maison Members",
+			slug: "maison-members",
+			description: "Active Atelier Maison annual membership holders.",
+			type: "manual",
+			priority: 5,
+		},
+		{
+			key: "new-arrivals",
+			name: "New Customers",
+			slug: "new-customers",
+			description: "Customers who have joined in the past 90 days.",
+			type: "automatic",
+			priority: 1,
+		},
+	];
+
+	const groupIds: Record<string, string> = {};
+	for (const group of groups) {
+		const groupId = uuid(`customer-group:${group.key}`);
+		groupIds[group.key] = groupId;
+		const { key: _key, ...groupData } = group;
+		await insertModuleData(client, "customer-groups", "customerGroup", groupId, {
+			id: groupId,
+			...groupData,
+			isActive: true,
+			metadata: {},
+			createdAt: now,
+			updatedAt: now,
+		});
+	}
+
+	// Memberships: Eleanor → VIP + Maison Members, Marcus → Maison Members, Sofia → New Customers
+	const memberships = [
+		{ customerKey: "eleanor-vale", groupKey: "vip" },
+		{ customerKey: "eleanor-vale", groupKey: "maison-members" },
+		{ customerKey: "marcus-chen", groupKey: "maison-members" },
+		{ customerKey: "sofia-alvarez", groupKey: "new-arrivals" },
+	];
+
+	for (const entry of memberships) {
+		const membershipId = uuid(`group-membership:${entry.customerKey}:${entry.groupKey}`);
+		await insertModuleData(client, "customer-groups", "groupMembership", membershipId, {
+			id: membershipId,
+			groupId: groupIds[entry.groupKey],
+			customerId: customerIds[entry.customerKey],
+			joinedAt: now,
+			metadata: {},
+		});
+	}
+}
+
+async function seedAbandonedCarts(client: pg.PoolClient) {
+	console.log("  Creating abandoned carts...");
+
+	const softScarf = productByKey["cashmere-fringe-scarf"];
+	const loafer = productByKey["regent-penny-loafer"];
+
+	const cartItems = (product: typeof softScarf, variantKey: string) =>
+		product
+			? [
+					{
+						productId: productIds[product.slug],
+						productName: product.name,
+						variantId: uuid(`variant:${variantKey}`),
+						variantLabel: "Truffle",
+						quantity: 1,
+						price: product.price,
+						imageUrl: null,
+					},
+				]
+			: [];
+
+	// Active abandoned cart (Marcus left a loafer in his cart)
+	const cart1Id = uuid("abandoned-cart:marcus:loafer");
+	await insertModuleData(client, "abandoned-carts", "abandonedCart", cart1Id, {
+		id: cart1Id,
+		cartId: uuid("cart:marcus:session-1"),
+		customerId: customerIds["marcus-chen"],
+		email: "marcus@example.com",
+		items: cartItems(loafer, "regent-penny-loafer:onx-42"),
+		cartTotal: loafer?.price ?? 49500,
+		currency: "USD",
+		status: "active",
+		recoveryToken: uuid("recovery-token:marcus:loafer").replace(/-/g, ""),
+		attemptCount: 1,
+		lastActivityAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+		abandonedAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+		metadata: {},
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	// Recovered abandoned cart (Sofia recovered her scarf cart)
+	const cart2Id = uuid("abandoned-cart:sofia:scarf");
+	await insertModuleData(client, "abandoned-carts", "abandonedCart", cart2Id, {
+		id: cart2Id,
+		cartId: uuid("cart:sofia:session-2"),
+		customerId: customerIds["sofia-alvarez"],
+		email: "sofia@example.com",
+		items: cartItems(softScarf, "cashmere-fringe-scarf:trf"),
+		cartTotal: softScarf?.price ?? 28500,
+		currency: "USD",
+		status: "recovered",
+		recoveryToken: uuid("recovery-token:sofia:scarf").replace(/-/g, ""),
+		attemptCount: 2,
+		lastActivityAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+		abandonedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+		recoveredAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+		recoveredOrderId: uuid("order:demo"),
+		metadata: {},
+		createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+		updatedAt: now,
+	});
+}
+
+async function seedDigitalDownloads(client: pg.PoolClient) {
+	console.log("  Creating digital downloads...");
+
+	// Downloadable leather care guide linked to the Grand Tour Passport Folio
+	const fileId = uuid("download-file:leather-care-guide");
+	await insertModuleData(client, "digital-downloads", "downloadableFile", fileId, {
+		id: fileId,
+		productId: productIds["grand-tour-passport-folio"],
+		name: "Atelier Leather Care Guide",
+		url: "/downloads/86d-atelier-leather-care-guide.pdf",
+		fileSize: 2048000,
+		mimeType: "application/pdf",
+		isActive: true,
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	// Download token for Marcus (purchased via demo order)
+	const tokenId = uuid("download-token:marcus:leather-care-guide");
+	const orderId = uuid("order:demo");
+	await insertModuleData(client, "digital-downloads", "downloadToken", tokenId, {
+		id: tokenId,
+		token: uuid("token:marcus:leather-care-guide").replace(/-/g, ""),
+		fileId,
+		orderId,
+		email: "marcus@example.com",
+		maxDownloads: 5,
+		downloadCount: 1,
+		expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+		createdAt: now,
+		updatedAt: now,
+	});
+}
+
 async function main() {
 	console.log("🌱 Seeding 86d luxury demo database...\n");
 	console.log(`  Store ID: ${STORE_ID}`);
@@ -2231,6 +2533,11 @@ async function main() {
 		await seedAuctions(client);
 		await seedStoreCredits(client);
 		await seedPreorders(client);
+		await seedReferrals(client);
+		await seedAffiliates(client);
+		await seedCustomerGroups(client);
+		await seedAbandonedCarts(client);
+		await seedDigitalDownloads(client);
 
 		await client.query("COMMIT");
 
