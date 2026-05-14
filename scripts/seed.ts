@@ -333,6 +333,9 @@ const seededModuleNames = [
 	"store-locator",
 	"store-pickup",
 	"delivery-slots",
+	"wishlist",
+	"loyalty",
+	"flash-sales",
 ];
 
 for (const name of moduleNames) {
@@ -1272,6 +1275,138 @@ async function seedSitemap(client: pg.PoolClient) {
 	});
 }
 
+async function seedWishlist(client: pg.PoolClient) {
+	console.log("  Creating wishlist items...");
+
+	const wishlists: Array<{
+		customerKey: string;
+		email: string;
+		productKey: string;
+		note?: string;
+	}> = [
+		{
+			customerKey: "eleanor-vale",
+			email: "eleanor@example.com",
+			productKey: "regent-penny-loafer",
+			note: "Perfect for Paris.",
+		},
+		{
+			customerKey: "eleanor-vale",
+			email: "eleanor@example.com",
+			productKey: "montclair-chelsea-boot",
+		},
+		{
+			customerKey: "marcus-chen",
+			email: "marcus@example.com",
+			productKey: "sable-slingback-pump",
+		},
+		{
+			customerKey: "sofia-alvarez",
+			email: "sofia@example.com",
+			productKey: "regent-penny-loafer",
+		},
+	];
+
+	for (const entry of wishlists) {
+		const product = productByKey[entry.productKey];
+		if (!product) continue;
+		const itemId = uuid(`wishlist:${entry.customerKey}:${entry.productKey}`);
+		await insertModuleData(client, "wishlist", "wishlistItem", itemId, {
+			id: itemId,
+			customerId: customerIds[entry.customerKey],
+			customerEmail: entry.email,
+			productId: productIds[entry.productKey],
+			productName: product.name,
+			...(entry.note ? { note: entry.note } : {}),
+			addedAt: now,
+		});
+	}
+}
+
+async function seedLoyalty(client: pg.PoolClient) {
+	console.log("  Creating loyalty accounts...");
+
+	const accounts = [
+		{
+			customerKey: "eleanor-vale",
+			tier: "gold" as const,
+			lifetimeEarned: 2450,
+			lifetimeRedeemed: 200,
+		},
+		{
+			customerKey: "marcus-chen",
+			tier: "silver" as const,
+			lifetimeEarned: 890,
+			lifetimeRedeemed: 0,
+		},
+		{
+			customerKey: "sofia-alvarez",
+			tier: "bronze" as const,
+			lifetimeEarned: 165,
+			lifetimeRedeemed: 0,
+		},
+	];
+
+	for (const entry of accounts) {
+		const accountId = uuid(`loyalty-account:${entry.customerKey}`);
+		await insertModuleData(client, "loyalty", "loyaltyAccount", accountId, {
+			id: accountId,
+			customerId: customerIds[entry.customerKey],
+			balance: entry.lifetimeEarned - entry.lifetimeRedeemed,
+			lifetimeEarned: entry.lifetimeEarned,
+			lifetimeRedeemed: entry.lifetimeRedeemed,
+			tier: entry.tier,
+			status: "active",
+			createdAt: now,
+			updatedAt: now,
+		});
+	}
+}
+
+async function seedFlashSales(client: pg.PoolClient) {
+	console.log("  Creating flash sale...");
+
+	const saleStartsAt = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+	const saleEndsAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+	const saleId = uuid("flash-sale:weekend-edit");
+	await insertModuleData(client, "flash-sales", "flashSale", saleId, {
+		id: saleId,
+		name: "Atelier Weekend Edit",
+		slug: "weekend-edit",
+		description: "Selected house pieces at exclusive prices, this weekend only.",
+		status: "active",
+		startsAt: saleStartsAt,
+		endsAt: saleEndsAt,
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	const saleProducts: Array<{ productKey: string; discountPct: number; order: number }> = [
+		{ productKey: "regent-penny-loafer", discountPct: 20, order: 0 },
+		{ productKey: "montclair-chelsea-boot", discountPct: 15, order: 1 },
+	];
+
+	for (const { productKey, discountPct, order } of saleProducts) {
+		const product = productByKey[productKey];
+		if (!product) continue;
+		const saleProductId = uuid(`flash-sale-product:weekend-edit:${productKey}`);
+		const originalPrice = product.price;
+		const salePrice = Math.round(originalPrice * (1 - discountPct / 100));
+		await insertModuleData(client, "flash-sales", "flashSaleProduct", saleProductId, {
+			id: saleProductId,
+			flashSaleId: saleId,
+			productId: productIds[productKey],
+			salePrice,
+			originalPrice,
+			stockLimit: 20,
+			stockSold: 0,
+			sortOrder: order,
+			createdAt: now,
+		});
+	}
+}
+
 async function seedStoreLocator(client: pg.PoolClient) {
 	console.log("  Creating store locations...");
 	for (const location of storeLocations) {
@@ -1362,6 +1497,9 @@ async function main() {
 		await seedStoreLocator(client);
 		await seedStorePickup(client);
 		await seedDeliverySlots(client);
+		await seedWishlist(client);
+		await seedLoyalty(client);
+		await seedFlashSales(client);
 
 		await client.query("COMMIT");
 
