@@ -336,6 +336,7 @@ const seededModuleNames = [
 	"wishlist",
 	"loyalty",
 	"flash-sales",
+	"bundles",
 ];
 
 for (const name of moduleNames) {
@@ -1407,6 +1408,48 @@ async function seedFlashSales(client: pg.PoolClient) {
 	}
 }
 
+async function seedBundles(client: pg.PoolClient) {
+	console.log("  Creating product bundles...");
+
+	const bundleId = uuid("bundle:atelier-weekend");
+	await insertModuleData(client, "bundles", "bundle", bundleId, {
+		id: bundleId,
+		name: "Weekend Atelier Bundle",
+		slug: "weekend-atelier",
+		description:
+			"Our most versatile pairing — the Regent Penny Loafer and Montclair Chelsea Boot. Two house signatures, dressed together.",
+		status: "active",
+		discountType: "percentage",
+		discountValue: 12,
+		minQuantity: 2,
+		sortOrder: 0,
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	const bundleProducts: Array<{ productKey: string; quantity: number; sortOrder: number }> = [
+		{ productKey: "regent-penny-loafer", quantity: 1, sortOrder: 0 },
+		{ productKey: "montclair-chelsea-boot", quantity: 1, sortOrder: 1 },
+	];
+
+	for (const { productKey, quantity, sortOrder } of bundleProducts) {
+		const product = productByKey[productKey];
+		if (!product) continue;
+		const itemId = uuid(`bundle-item:atelier-weekend:${productKey}`);
+		await insertModuleData(client, "bundles", "bundleItem", itemId, {
+			id: itemId,
+			bundleId,
+			productId: productIds[productKey],
+			quantity,
+			sortOrder,
+			productName: product.name,
+			productSlug: product.slug,
+			createdAt: now,
+			updatedAt: now,
+		});
+	}
+}
+
 async function seedStoreLocator(client: pg.PoolClient) {
 	console.log("  Creating store locations...");
 	for (const location of storeLocations) {
@@ -1500,6 +1543,7 @@ async function main() {
 		await seedWishlist(client);
 		await seedLoyalty(client);
 		await seedFlashSales(client);
+		await seedBundles(client);
 
 		await client.query("COMMIT");
 
