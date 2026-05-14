@@ -157,7 +157,7 @@ The platform is working toward production-ready status. Key areas for future age
 
 ### Medium priority
 4. **86d API integration** — ✅ Config API implemented at `GET /api/v1/stores/{storeId}` in the private dashboard (returns enabled modules, settings, notification config). SSO is wired via the auth package. Billing API not yet implemented.
-5. **Module data seeding** — 53 of 100 modules now have realistic seed data. Add more as needed: the pattern is `insertModuleData(client, moduleName, entityType, id, data)` in `scripts/seed.ts`.
+5. **Module data seeding** — ✅ All 100 of 100 modules now have realistic seed data. The pattern is `insertModuleData(client, moduleName, entityType, id, data)` in `scripts/seed.ts`.
 6. **Admin experience** — More polished admin dashboard, better module management UI, settings pages for all modules.
 
 ### Ongoing
