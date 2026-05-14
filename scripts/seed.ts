@@ -350,6 +350,11 @@ const seededModuleNames = [
 	"customer-groups",
 	"abandoned-carts",
 	"digital-downloads",
+	"quotes",
+	"returns",
+	"backorders",
+	"gift-registry",
+	"bulk-pricing",
 ];
 
 for (const name of moduleNames) {
@@ -2478,6 +2483,245 @@ async function seedDigitalDownloads(client: pg.PoolClient) {
 	});
 }
 
+async function seedQuotes(client: pg.PoolClient) {
+	console.log("  Creating quotes...");
+
+	const quoteId = uuid("quote:marcus:chronographs-corp");
+	const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+	const chronograph = productByKey["observatory-chronograph"];
+
+	await insertModuleData(client, "quotes", "quote", quoteId, {
+		id: quoteId,
+		customerId: customerIds["marcus-chen"],
+		customerEmail: "marcus@example.com",
+		customerName: "Marcus Chen",
+		companyName: "Chen Capital Partners",
+		status: "under_review",
+		notes: "Corporate gifting — 3 pieces for senior partners. Would like engraving options.",
+		adminNotes: "High-value account. Follow up with bespoke engraving quote.",
+		subtotal: (chronograph?.price ?? 345000) * 3,
+		discount: 25000,
+		total: (chronograph?.price ?? 345000) * 3 - 25000,
+		expiresAt,
+		metadata: {},
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	// Quote items
+	const qItemId = uuid("quote-item:marcus:chronograph:1");
+	await insertModuleData(client, "quotes", "quoteItem", qItemId, {
+		id: qItemId,
+		quoteId,
+		productId: productIds["observatory-chronograph"],
+		productName: chronograph?.name ?? "Observatory Chronograph",
+		sku: "AT-OBS-SSL",
+		quantity: 3,
+		unitPrice: chronograph?.price ?? 345000,
+		offeredPrice: (chronograph?.price ?? 345000) * 3 - 25000,
+		notes: "Steel / Slate Strap preferred",
+		createdAt: now,
+		updatedAt: now,
+	});
+}
+
+async function seedReturns(client: pg.PoolClient) {
+	console.log("  Creating return requests...");
+
+	const orderId = uuid("order:demo");
+	const returnId = uuid("return:marcus:silk-twill-wrap");
+	const silkWrap = productByKey["silk-twill-wrap"];
+
+	await insertModuleData(client, "returns", "returnRequest", returnId, {
+		id: returnId,
+		orderId,
+		customerId: customerIds["marcus-chen"],
+		customerEmail: "marcus@example.com",
+		status: "approved",
+		refundMethod: "store_credit",
+		refundAmount: silkWrap?.price ?? 28500,
+		currency: "USD",
+		reason: "Colour not as expected",
+		customerNotes: "The Camargue colourway appeared darker in person than online.",
+		adminNotes: "Approved. Store credit issued.",
+		createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+		updatedAt: now,
+	});
+
+	// Return item
+	const returnItemId = uuid("return-item:marcus:silk-twill-wrap:1");
+	await insertModuleData(client, "returns", "returnItem", returnItemId, {
+		id: returnItemId,
+		returnRequestId: returnId,
+		orderItemId: uuid(`order-item:demo:silk-twill-wrap`),
+		productName: silkWrap?.name ?? "Silk Twill Wrap",
+		sku: "AT-STW-CMR",
+		quantity: 1,
+		unitPrice: silkWrap?.price ?? 28500,
+		returnedQuantity: 1,
+		reason: "Colour not as expected",
+		condition: "like_new",
+		createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+	});
+}
+
+async function seedBackorders(client: pg.PoolClient) {
+	console.log("  Creating backorders...");
+
+	const loafer = productByKey["regent-penny-loafer"];
+	const estimatedDate = new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString();
+
+	// Backorder policy for the loafer
+	const policyId = uuid("backorder-policy:regent-penny-loafer");
+	await insertModuleData(client, "backorders", "backorderPolicy", policyId, {
+		id: policyId,
+		productId: productIds["regent-penny-loafer"],
+		enabled: true,
+		maxQuantityPerOrder: 2,
+		maxTotalBackorders: 20,
+		estimatedLeadDays: 21,
+		autoConfirm: true,
+		message: "This style is currently on backorder. Estimated delivery in 3 weeks.",
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	// 2 backordered items
+	const backorderCustomers = [
+		{ customerKey: "eleanor-vale", email: "eleanor@example.com", variantKey: "regent-penny-loafer:wnl-40" },
+		{ customerKey: "sofia-alvarez", email: "sofia@example.com", variantKey: "regent-penny-loafer:onx-38" },
+	];
+
+	for (const entry of backorderCustomers) {
+		const backorderId = uuid(`backorder:${entry.customerKey}:loafer`);
+		await insertModuleData(client, "backorders", "backorder", backorderId, {
+			id: backorderId,
+			productId: productIds["regent-penny-loafer"],
+			productName: loafer?.name ?? "Regent Penny Loafer",
+			variantId: uuid(`variant:${entry.variantKey}`),
+			variantLabel: entry.variantKey.split(":")[1]?.toUpperCase(),
+			customerId: customerIds[entry.customerKey],
+			customerEmail: entry.email,
+			quantity: 1,
+			status: "confirmed",
+			estimatedAvailableAt: estimatedDate,
+			createdAt: now,
+			updatedAt: now,
+		});
+	}
+}
+
+async function seedGiftRegistry(client: pg.PoolClient) {
+	console.log("  Creating gift registries...");
+
+	const registryId = uuid("gift-registry:eleanor:wedding");
+	const eventDate = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString();
+
+	await insertModuleData(client, "gift-registry", "registry", registryId, {
+		id: registryId,
+		customerId: customerIds["eleanor-vale"],
+		customerName: "Eleanor Vale",
+		title: "Eleanor & James — Spring Wedding",
+		description: "We are so grateful for your presence. These are a few pieces we love from the Atelier.",
+		type: "wedding",
+		slug: "eleanor-james-wedding-2026",
+		visibility: "public",
+		status: "active",
+		eventDate,
+		thankYouMessage: "Thank you for thinking of us — every gift means the world.",
+		itemCount: 3,
+		purchasedCount: 1,
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	// 3 registry items
+	const items = [
+		{
+			key: "loafer",
+			productKey: "regent-penny-loafer",
+			priority: "must_have" as const,
+			note: "Perfect for the honeymoon.",
+			quantityDesired: 1,
+			quantityReceived: 1,
+		},
+		{
+			key: "handbag",
+			productKey: "palais-top-handle",
+			priority: "must_have" as const,
+			note: null,
+			quantityDesired: 1,
+			quantityReceived: 0,
+		},
+		{
+			key: "watch",
+			productKey: "meridian-automatic-38",
+			priority: "dream" as const,
+			note: "A dream piece for a milestone occasion.",
+			quantityDesired: 1,
+			quantityReceived: 0,
+		},
+	];
+
+	for (const item of items) {
+		const product = productByKey[item.productKey];
+		if (!product) continue;
+		const itemId = uuid(`registry-item:eleanor-wedding:${item.key}`);
+		await insertModuleData(client, "gift-registry", "registryItem", itemId, {
+			id: itemId,
+			registryId,
+			productId: productIds[item.productKey],
+			productName: product.name,
+			priceInCents: product.price,
+			quantityDesired: item.quantityDesired,
+			quantityReceived: item.quantityReceived,
+			priority: item.priority,
+			...(item.note ? { note: item.note } : {}),
+			createdAt: now,
+			updatedAt: now,
+		});
+	}
+}
+
+async function seedBulkPricing(client: pg.PoolClient) {
+	console.log("  Creating bulk pricing rules...");
+
+	const ruleId = uuid("bulk-pricing-rule:footwear-volume");
+
+	await insertModuleData(client, "bulk-pricing", "pricingRule", ruleId, {
+		id: ruleId,
+		name: "Footwear Volume Discount",
+		description: "Volume discounts on all Atelier footwear styles for wholesale and corporate accounts.",
+		scope: "collection",
+		targetId: collectionIds["footwear"],
+		priority: 10,
+		active: true,
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	const tiers = [
+		{ min: 3, max: 5, type: "percentage", value: 5, label: "Buy 3–5 pairs, save 5%" },
+		{ min: 6, max: 11, type: "percentage", value: 10, label: "Buy 6–11 pairs, save 10%" },
+		{ min: 12, max: null, type: "percentage", value: 15, label: "Buy 12+ pairs, save 15%" },
+	];
+
+	for (const [i, tier] of tiers.entries()) {
+		const tierId = uuid(`bulk-pricing-tier:footwear:${i}`);
+		await insertModuleData(client, "bulk-pricing", "pricingTier", tierId, {
+			id: tierId,
+			ruleId,
+			minQuantity: tier.min,
+			maxQuantity: tier.max,
+			discountType: tier.type,
+			discountValue: tier.value,
+			label: tier.label,
+			createdAt: now,
+			updatedAt: now,
+		});
+	}
+}
+
 async function main() {
 	console.log("🌱 Seeding 86d luxury demo database...\n");
 	console.log(`  Store ID: ${STORE_ID}`);
@@ -2538,6 +2782,11 @@ async function main() {
 		await seedCustomerGroups(client);
 		await seedAbandonedCarts(client);
 		await seedDigitalDownloads(client);
+		await seedQuotes(client);
+		await seedReturns(client);
+		await seedBackorders(client);
+		await seedGiftRegistry(client);
+		await seedBulkPricing(client);
 
 		await client.query("COMMIT");
 
