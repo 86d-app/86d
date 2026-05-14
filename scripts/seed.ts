@@ -337,6 +337,7 @@ const seededModuleNames = [
 	"loyalty",
 	"flash-sales",
 	"bundles",
+	"subscriptions",
 ];
 
 for (const name of moduleNames) {
@@ -1408,6 +1409,50 @@ async function seedFlashSales(client: pg.PoolClient) {
 	}
 }
 
+async function seedSubscriptions(client: pg.PoolClient) {
+	console.log("  Creating subscription plans and subscribers...");
+
+	const planId = uuid("subscription-plan:atelier-privilege");
+	await insertModuleData(client, "subscriptions", "subscriptionPlan", planId, {
+		id: planId,
+		name: "Atelier Privilege",
+		description:
+			"Early access to new arrivals, exclusive member pricing, and complimentary alterations on every order.",
+		price: 15000,
+		currency: "USD",
+		interval: "month",
+		intervalCount: 1,
+		trialDays: 14,
+		isActive: true,
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	const periodStart = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString();
+	const periodEnd = new Date(Date.now() + 22 * 24 * 60 * 60 * 1000).toISOString();
+
+	const subscribers = [
+		{ customerKey: "eleanor-vale", email: "eleanor@example.com" },
+		{ customerKey: "marcus-chen", email: "marcus@example.com" },
+	];
+
+	for (const { customerKey, email } of subscribers) {
+		const subId = uuid(`subscription:${customerKey}:atelier-privilege`);
+		await insertModuleData(client, "subscriptions", "subscription", subId, {
+			id: subId,
+			planId,
+			customerId: customerIds[customerKey],
+			email,
+			status: "active",
+			currentPeriodStart: periodStart,
+			currentPeriodEnd: periodEnd,
+			cancelAtPeriodEnd: false,
+			createdAt: now,
+			updatedAt: now,
+		});
+	}
+}
+
 async function seedBundles(client: pg.PoolClient) {
 	console.log("  Creating product bundles...");
 
@@ -1544,6 +1589,7 @@ async function main() {
 		await seedLoyalty(client);
 		await seedFlashSales(client);
 		await seedBundles(client);
+		await seedSubscriptions(client);
 
 		await client.query("COMMIT");
 
