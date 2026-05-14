@@ -388,6 +388,27 @@ const seededModuleNames = [
 	"kiosk",
 	"photo-booth",
 	"revenue",
+	// batch 7 — channel/marketplace modules
+	"amazon",
+	"ebay",
+	"etsy",
+	"tiktok-shop",
+	"google-shopping",
+	"facebook-shop",
+	"instagram-shop",
+	"walmart",
+	"x-shop",
+	"pinterest-shop",
+	"doordash",
+	"uber-direct",
+	"uber-eats",
+	"favor",
+	"toast",
+	"wish",
+	"stripe",
+	"paypal",
+	"square",
+	"braintree",
 ];
 
 for (const name of moduleNames) {
@@ -4189,6 +4210,783 @@ async function seedKiosk(client: pg.PoolClient) {
 	});
 }
 
+async function seedAmazon(client: pg.PoolClient) {
+	console.log("  Creating Amazon channel records...");
+	const now = new Date().toISOString();
+
+	const listings = [
+		{ productKey: "grand-tour-passport-folio", asin: "B0C1234GTF", sku: "GTF-001", price: 44500, quantity: 12 },
+		{ productKey: "regent-penny-loafer", asin: "B0C5678RPL", sku: "RPL-37-BLACK", price: 89500, quantity: 8 },
+	];
+	for (const listing of listings) {
+		const id = uuid(`amazon-listing:${listing.productKey}`);
+		await insertModuleData(client, "amazon", "listing", id, {
+			id,
+			localProductId: productIds[listing.productKey as keyof typeof productIds],
+			asin: listing.asin,
+			sku: listing.sku,
+			title: productByKey[listing.productKey]?.name ?? listing.productKey,
+			status: "active",
+			fulfillmentChannel: "FBM",
+			price: listing.price,
+			quantity: listing.quantity,
+			condition: "new",
+			buyBoxOwned: listing.productKey === "grand-tour-passport-folio",
+			lastSyncedAt: now,
+			metadata: {},
+			createdAt: now,
+			updatedAt: now,
+		});
+	}
+
+	const orderId = uuid("amazon-order:112-3456789-1234567");
+	await insertModuleData(client, "amazon", "amazonOrder", orderId, {
+		id: orderId,
+		amazonOrderId: "112-3456789-1234567",
+		status: "shipped",
+		fulfillmentChannel: "FBM",
+		items: [{ sku: "GTF-001", quantity: 1, price: 44500 }],
+		orderTotal: 44500,
+		shippingTotal: 0,
+		marketplaceFee: 6675,
+		netProceeds: 37825,
+		buyerName: "A. Richardson",
+		shippingAddress: { city: "New York", state: "NY", postalCode: "10001", country: "US" },
+		shipDate: now,
+		trackingNumber: "1Z999AA10123400001",
+		carrier: "UPS",
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	const syncId = uuid("amazon-inventory-sync:2026-05");
+	await insertModuleData(client, "amazon", "inventorySync", syncId, {
+		id: syncId,
+		status: "completed",
+		itemCount: 2,
+		syncedAt: now,
+		createdAt: now,
+		updatedAt: now,
+	});
+}
+
+async function seedEbay(client: pg.PoolClient) {
+	console.log("  Creating eBay channel records...");
+	const now = new Date().toISOString();
+
+	const listings = [
+		{ productKey: "silk-twill-wrap", externalId: "123456789012", price: 36500 },
+		{ productKey: "cashmere-fringe-scarf", externalId: "234567890123", price: 49500 },
+	];
+	for (const listing of listings) {
+		const id = uuid(`ebay-listing:${listing.productKey}`);
+		await insertModuleData(client, "ebay", "listing", id, {
+			id,
+			localProductId: productIds[listing.productKey as keyof typeof productIds],
+			externalListingId: listing.externalId,
+			title: productByKey[listing.productKey]?.name ?? listing.productKey,
+			status: "active",
+			price: listing.price,
+			quantity: 5,
+			condition: "new",
+			listingType: "FixedPriceItem",
+			lastSyncedAt: now,
+			createdAt: now,
+			updatedAt: now,
+		});
+	}
+
+	const ebayOrderId = uuid("ebay-order:12-34567-89012");
+	await insertModuleData(client, "ebay", "ebayOrder", ebayOrderId, {
+		id: ebayOrderId,
+		externalOrderId: "12-34567-89012",
+		status: "shipped",
+		items: [{ listingId: "123456789012", quantity: 1, price: 36500 }],
+		subtotal: 36500,
+		shippingTotal: 0,
+		ebayFee: 3650,
+		netProceeds: 32850,
+		buyerUsername: "style_collector_99",
+		shippingAddress: { city: "Chicago", state: "IL", postalCode: "60601", country: "US" },
+		createdAt: now,
+		updatedAt: now,
+	});
+}
+
+async function seedEtsy(client: pg.PoolClient) {
+	console.log("  Creating Etsy channel records...");
+	const now = new Date().toISOString();
+
+	const listings = [
+		{ productKey: "cashmere-fringe-scarf", externalId: "1234567890", price: 49500 },
+		{ productKey: "silk-twill-wrap", externalId: "2345678901", price: 36500 },
+	];
+	for (const listing of listings) {
+		const id = uuid(`etsy-listing:${listing.productKey}`);
+		await insertModuleData(client, "etsy", "listing", id, {
+			id,
+			localProductId: productIds[listing.productKey as keyof typeof productIds],
+			externalListingId: listing.externalId,
+			title: productByKey[listing.productKey]?.name ?? listing.productKey,
+			status: "active",
+			price: listing.price,
+			quantity: 4,
+			tags: ["luxury", "handcrafted", "gift"],
+			lastSyncedAt: now,
+			createdAt: now,
+			updatedAt: now,
+		});
+	}
+
+	const etsyOrderId = uuid("etsy-order:3456789012");
+	await insertModuleData(client, "etsy", "etsyOrder", etsyOrderId, {
+		id: etsyOrderId,
+		externalOrderId: "3456789012",
+		status: "completed",
+		items: [{ listingId: "1234567890", quantity: 1, price: 49500 }],
+		subtotal: 49500,
+		shippingTotal: 0,
+		etsyFee: 2970,
+		netProceeds: 46530,
+		buyerName: "H. Dupont",
+		shippingAddress: { city: "Paris", country: "FR" },
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	const etsyReviewId = uuid("etsy-review:3456789012");
+	await insertModuleData(client, "etsy", "etsyReview", etsyReviewId, {
+		id: etsyReviewId,
+		orderId: etsyOrderId,
+		rating: 5,
+		comment: "Exquisite quality — the cashmere is incredibly soft. Beautifully packaged, arrived promptly.",
+		buyerName: "H. Dupont",
+		createdAt: now,
+	});
+}
+
+async function seedTiktokShop(client: pg.PoolClient) {
+	console.log("  Creating TikTok Shop channel records...");
+	const now = new Date().toISOString();
+
+	const listings = [
+		{ productKey: "regent-penny-loafer", externalId: "tts_listing_001", price: 89500 },
+		{ productKey: "silk-twill-wrap", externalId: "tts_listing_002", price: 36500 },
+	];
+	for (const listing of listings) {
+		const id = uuid(`tiktok-listing:${listing.productKey}`);
+		await insertModuleData(client, "tiktok-shop", "listing", id, {
+			id,
+			localProductId: productIds[listing.productKey as keyof typeof productIds],
+			externalProductId: listing.externalId,
+			title: productByKey[listing.productKey]?.name ?? listing.productKey,
+			status: "active",
+			price: listing.price,
+			quantity: 6,
+			lastSyncedAt: now,
+			createdAt: now,
+			updatedAt: now,
+		});
+	}
+
+	const channelOrderId = uuid("tiktok-order:TTS20260513001");
+	await insertModuleData(client, "tiktok-shop", "channelOrder", channelOrderId, {
+		id: channelOrderId,
+		externalOrderId: "TTS20260513001",
+		status: "completed",
+		items: [{ externalProductId: "tts_listing_002", quantity: 1, price: 36500 }],
+		subtotal: 36500,
+		platformFee: 1825,
+		netProceeds: 34675,
+		buyerUsername: "luxe_finds_daily",
+		shippingAddress: { city: "Los Angeles", state: "CA", country: "US" },
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	const catalogSyncId = uuid("tiktok-catalog-sync:2026-05");
+	await insertModuleData(client, "tiktok-shop", "catalogSync", catalogSyncId, {
+		id: catalogSyncId,
+		status: "completed",
+		itemCount: 2,
+		syncedAt: now,
+		createdAt: now,
+		updatedAt: now,
+	});
+}
+
+async function seedGoogleShopping(client: pg.PoolClient) {
+	console.log("  Creating Google Shopping channel records...");
+	const now = new Date().toISOString();
+
+	const feedId = uuid("google-shopping-feed:us");
+	await insertModuleData(client, "google-shopping", "productFeed", feedId, {
+		id: feedId,
+		name: "US Merchant Feed",
+		merchantId: "123456789",
+		country: "US",
+		currency: "USD",
+		status: "active",
+		itemCount: 5,
+		lastSubmittedAt: now,
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	const feedItems = [
+		{ productKey: "observatory-chronograph" },
+		{ productKey: "regent-penny-loafer" },
+		{ productKey: "grand-tour-passport-folio" },
+		{ productKey: "silk-twill-wrap" },
+		{ productKey: "cashmere-fringe-scarf" },
+	];
+	for (const item of feedItems) {
+		const product = productByKey[item.productKey];
+		const itemId = uuid(`google-shopping-item:${item.productKey}`);
+		await insertModuleData(client, "google-shopping", "channelOrder", itemId, {
+			id: itemId,
+			feedId,
+			localProductId: productIds[item.productKey as keyof typeof productIds],
+			offerId: product?.sku ?? item.productKey,
+			title: product?.name ?? item.productKey,
+			price: product?.price ?? 0,
+			currency: "USD",
+			availability: "in_stock",
+			status: "approved",
+			lastSyncedAt: now,
+			createdAt: now,
+			updatedAt: now,
+		});
+	}
+
+	const submissionId = uuid("google-shopping-submission:2026-05");
+	await insertModuleData(client, "google-shopping", "feedSubmission", submissionId, {
+		id: submissionId,
+		feedId,
+		status: "success",
+		itemsSubmitted: 5,
+		itemsSucceeded: 5,
+		itemsFailed: 0,
+		submittedAt: now,
+		createdAt: now,
+	});
+}
+
+async function seedFacebookShop(client: pg.PoolClient) {
+	console.log("  Creating Facebook Shop channel records...");
+	const now = new Date().toISOString();
+
+	const catalogId = uuid("fb-catalog:atelier");
+	await insertModuleData(client, "facebook-shop", "catalogSync", catalogId, {
+		id: catalogId,
+		catalogId: "fb_catalog_atelier_001",
+		status: "active",
+		itemCount: 5,
+		lastSyncedAt: now,
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	const collectionId = uuid("fb-collection:accessories");
+	await insertModuleData(client, "facebook-shop", "collection", collectionId, {
+		id: collectionId,
+		name: "Accessories",
+		externalCollectionId: "fb_col_accessories_001",
+		productIds: [productIds["silk-twill-wrap"], productIds["cashmere-fringe-scarf"], productIds["grand-tour-passport-folio"]],
+		isActive: true,
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	const fbListings = [
+		{ productKey: "regent-penny-loafer" },
+		{ productKey: "observatory-chronograph" },
+	];
+	for (const listing of fbListings) {
+		const id = uuid(`fb-listing:${listing.productKey}`);
+		await insertModuleData(client, "facebook-shop", "listing", id, {
+			id,
+			localProductId: productIds[listing.productKey as keyof typeof productIds],
+			externalProductId: `fb_${listing.productKey.replace(/-/g, "_")}`,
+			title: productByKey[listing.productKey]?.name ?? listing.productKey,
+			status: "active",
+			price: productByKey[listing.productKey]?.price ?? 0,
+			lastSyncedAt: now,
+			createdAt: now,
+			updatedAt: now,
+		});
+	}
+
+	const channelOrderId = uuid("fb-order:FB20260513001");
+	await insertModuleData(client, "facebook-shop", "channelOrder", channelOrderId, {
+		id: channelOrderId,
+		externalOrderId: "FB20260513001",
+		status: "completed",
+		items: [{ externalProductId: "fb_regent_penny_loafer", quantity: 1, price: 89500 }],
+		subtotal: 89500,
+		platformFee: 2685,
+		netProceeds: 86815,
+		buyerName: "R. Laurent",
+		shippingAddress: { city: "Miami", state: "FL", country: "US" },
+		createdAt: now,
+		updatedAt: now,
+	});
+}
+
+async function seedInstagramShop(client: pg.PoolClient) {
+	console.log("  Creating Instagram Shop channel records...");
+	const now = new Date().toISOString();
+
+	const catalogSyncId = uuid("ig-catalog-sync:atelier");
+	await insertModuleData(client, "instagram-shop", "catalogSync", catalogSyncId, {
+		id: catalogSyncId,
+		catalogId: "ig_catalog_atelier_001",
+		status: "active",
+		itemCount: 5,
+		lastSyncedAt: now,
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	const igListings = [
+		{ productKey: "silk-twill-wrap" },
+		{ productKey: "cashmere-fringe-scarf" },
+	];
+	for (const listing of igListings) {
+		const id = uuid(`ig-listing:${listing.productKey}`);
+		await insertModuleData(client, "instagram-shop", "listing", id, {
+			id,
+			localProductId: productIds[listing.productKey as keyof typeof productIds],
+			externalProductId: `ig_${listing.productKey.replace(/-/g, "_")}`,
+			title: productByKey[listing.productKey]?.name ?? listing.productKey,
+			status: "active",
+			price: productByKey[listing.productKey]?.price ?? 0,
+			lastSyncedAt: now,
+			createdAt: now,
+			updatedAt: now,
+		});
+	}
+
+	const channelOrderId = uuid("ig-order:IG20260513001");
+	await insertModuleData(client, "instagram-shop", "channelOrder", channelOrderId, {
+		id: channelOrderId,
+		externalOrderId: "IG20260513001",
+		status: "completed",
+		items: [{ externalProductId: "ig_silk_twill_wrap", quantity: 1, price: 36500 }],
+		subtotal: 36500,
+		platformFee: 1825,
+		netProceeds: 34675,
+		buyerName: "V. Moreau",
+		shippingAddress: { city: "Toronto", country: "CA" },
+		createdAt: now,
+		updatedAt: now,
+	});
+}
+
+async function seedWalmart(client: pg.PoolClient) {
+	console.log("  Creating Walmart channel records...");
+	const now = new Date().toISOString();
+
+	const items = [
+		{ productKey: "grand-tour-passport-folio", externalId: "WM_GTF_001", price: 44500 },
+		{ productKey: "cashmere-fringe-scarf", externalId: "WM_CFS_001", price: 49500 },
+	];
+	for (const item of items) {
+		const id = uuid(`walmart-item:${item.productKey}`);
+		await insertModuleData(client, "walmart", "item", id, {
+			id,
+			localProductId: productIds[item.productKey as keyof typeof productIds],
+			externalItemId: item.externalId,
+			title: productByKey[item.productKey]?.name ?? item.productKey,
+			status: "published",
+			price: item.price,
+			quantity: 10,
+			condition: "New",
+			lastSyncedAt: now,
+			createdAt: now,
+			updatedAt: now,
+		});
+	}
+
+	const walmartOrderId = uuid("walmart-order:WM20260513001");
+	await insertModuleData(client, "walmart", "walmartOrder", walmartOrderId, {
+		id: walmartOrderId,
+		externalOrderId: "WM20260513001",
+		status: "delivered",
+		items: [{ externalItemId: "WM_CFS_001", quantity: 1, price: 49500 }],
+		subtotal: 49500,
+		shippingTotal: 0,
+		walmartFee: 7425,
+		netProceeds: 42075,
+		customerName: "B. Hoffman",
+		shippingAddress: { city: "Dallas", state: "TX", country: "US" },
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	const feedSubmissionId = uuid("walmart-feed-submission:2026-05");
+	await insertModuleData(client, "walmart", "feedSubmission", feedSubmissionId, {
+		id: feedSubmissionId,
+		feedId: "WM_FEED_20260513",
+		status: "processed",
+		itemsSubmitted: 2,
+		itemsSucceeded: 2,
+		itemsFailed: 0,
+		submittedAt: now,
+		createdAt: now,
+	});
+}
+
+async function seedXShop(client: pg.PoolClient) {
+	console.log("  Creating X Shop channel records...");
+	const now = new Date().toISOString();
+
+	const xListings = [
+		{ productKey: "observatory-chronograph" },
+		{ productKey: "regent-penny-loafer" },
+	];
+	for (const listing of xListings) {
+		const id = uuid(`x-listing:${listing.productKey}`);
+		await insertModuleData(client, "x-shop", "listing", id, {
+			id,
+			localProductId: productIds[listing.productKey as keyof typeof productIds],
+			externalProductId: `x_${listing.productKey.replace(/-/g, "_")}`,
+			title: productByKey[listing.productKey]?.name ?? listing.productKey,
+			status: "active",
+			price: productByKey[listing.productKey]?.price ?? 0,
+			lastSyncedAt: now,
+			createdAt: now,
+			updatedAt: now,
+		});
+	}
+
+	const productDropId = uuid("x-shop-drop:atelier-spring-2026");
+	await insertModuleData(client, "x-shop", "productDrop", productDropId, {
+		id: productDropId,
+		name: "Atelier Spring 2026 Drop",
+		productIds: [productIds["observatory-chronograph"], productIds["regent-penny-loafer"]],
+		dropAt: "2026-03-21T12:00:00.000Z",
+		status: "completed",
+		tweetId: "1234567890123456789",
+		impressions: 48200,
+		clicks: 1243,
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	const channelOrderId = uuid("x-shop-order:XS20260513001");
+	await insertModuleData(client, "x-shop", "channelOrder", channelOrderId, {
+		id: channelOrderId,
+		externalOrderId: "XS20260513001",
+		status: "completed",
+		items: [{ externalProductId: "x_regent_penny_loafer", quantity: 1, price: 89500 }],
+		subtotal: 89500,
+		platformFee: 2685,
+		netProceeds: 86815,
+		buyerHandle: "@style_maven_nyc",
+		shippingAddress: { city: "New York", state: "NY", country: "US" },
+		createdAt: now,
+		updatedAt: now,
+	});
+}
+
+async function seedPinterestShop(client: pg.PoolClient) {
+	console.log("  Creating Pinterest Shop channel records...");
+	const now = new Date().toISOString();
+
+	const catalogSyncId = uuid("pinterest-catalog-sync:atelier");
+	await insertModuleData(client, "pinterest-shop", "catalogSync", catalogSyncId, {
+		id: catalogSyncId,
+		catalogId: "pin_catalog_atelier_001",
+		status: "active",
+		itemCount: 5,
+		lastSyncedAt: now,
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	const catalogItems = [
+		{ productKey: "silk-twill-wrap" },
+		{ productKey: "cashmere-fringe-scarf" },
+	];
+	for (const item of catalogItems) {
+		const id = uuid(`pinterest-item:${item.productKey}`);
+		await insertModuleData(client, "pinterest-shop", "catalogItem", id, {
+			id,
+			localProductId: productIds[item.productKey as keyof typeof productIds],
+			externalItemId: `pin_${item.productKey.replace(/-/g, "_")}`,
+			title: productByKey[item.productKey]?.name ?? item.productKey,
+			price: productByKey[item.productKey]?.price ?? 0,
+			currency: "USD",
+			availability: "in_stock",
+			status: "active",
+			lastSyncedAt: now,
+			createdAt: now,
+			updatedAt: now,
+		});
+	}
+
+	const pins = [
+		{ productKey: "silk-twill-wrap", pinId: "PIN_1234567890", repins: 342 },
+		{ productKey: "cashmere-fringe-scarf", pinId: "PIN_2345678901", repins: 218 },
+	];
+	for (const pin of pins) {
+		const id = uuid(`shopping-pin:${pin.productKey}`);
+		await insertModuleData(client, "pinterest-shop", "shoppingPin", id, {
+			id,
+			catalogItemId: uuid(`pinterest-item:${pin.productKey}`),
+			externalPinId: pin.pinId,
+			boardId: "PIN_BOARD_LUXURY_STYLE",
+			impressions: 12400,
+			repins: pin.repins,
+			clicks: Math.round(pin.repins * 1.8),
+			isActive: true,
+			createdAt: now,
+			updatedAt: now,
+		});
+	}
+}
+
+async function seedDoordash(client: pg.PoolClient) {
+	console.log("  Creating DoorDash delivery records...");
+	const now = new Date().toISOString();
+	const orderId = uuid("order:demo");
+
+	const zoneId = uuid("doordash-zone:london-w11");
+	await insertModuleData(client, "doordash", "deliveryZone", zoneId, {
+		id: zoneId,
+		name: "Kensington & Chelsea",
+		isActive: true,
+		radius: 3.0,
+		centerLat: 51.5142,
+		centerLng: -0.1973,
+		minOrderAmount: 5000,
+		deliveryFee: 799,
+		estimatedMinutes: 45,
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	const quoteId = uuid("doordash-quote:demo-order");
+	await insertModuleData(client, "doordash", "quote", quoteId, {
+		id: quoteId,
+		externalDeliveryId: "D_EXT_20260513_001",
+		fee: 799,
+		currency: "USD",
+		estimatedPickupTime: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+		estimatedDropoffTime: new Date(Date.now() + 45 * 60 * 1000).toISOString(),
+		expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+		createdAt: now,
+	});
+
+	const deliveryId = uuid("doordash-delivery:demo-order");
+	await insertModuleData(client, "doordash", "delivery", deliveryId, {
+		id: deliveryId,
+		orderId,
+		externalDeliveryId: "D_EXT_20260513_001",
+		status: "delivered",
+		pickupAddress: { street: "47 Kensington Park Gardens", city: "London", postalCode: "W11 2PN", country: "GB" },
+		dropoffAddress: { street: "12 Sloane Square", city: "London", postalCode: "SW1W 8EG", country: "GB" },
+		fee: 799,
+		tip: 200,
+		trackingUrl: "https://doordash.com/track/D_EXT_20260513_001",
+		driverName: "James P.",
+		metadata: {},
+		createdAt: now,
+		updatedAt: now,
+	});
+}
+
+async function seedUberDirect(client: pg.PoolClient) {
+	console.log("  Creating Uber Direct delivery records...");
+	const now = new Date().toISOString();
+
+	const serviceAreaId = uuid("uber-direct-area:london-central");
+	await insertModuleData(client, "uber-direct", "serviceArea", serviceAreaId, {
+		id: serviceAreaId,
+		name: "London Central",
+		isActive: true,
+		polygon: [{ lat: 51.51, lng: -0.13 }, { lat: 51.52, lng: -0.20 }, { lat: 51.50, lng: -0.20 }, { lat: 51.50, lng: -0.13 }],
+		minOrderAmount: 5000,
+		deliveryFee: 899,
+		estimatedMinutes: 40,
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	const quoteId = uuid("uber-direct-quote:sample");
+	await insertModuleData(client, "uber-direct", "quote", quoteId, {
+		id: quoteId,
+		externalQuoteId: "UBERD_QUOTE_001",
+		fee: 899,
+		currency: "USD",
+		estimatedPickupTime: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+		estimatedDropoffTime: new Date(Date.now() + 40 * 60 * 1000).toISOString(),
+		expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+		createdAt: now,
+	});
+
+	const deliveryId = uuid("uber-direct-delivery:sample");
+	await insertModuleData(client, "uber-direct", "delivery", deliveryId, {
+		id: deliveryId,
+		orderId: uuid("order:demo"),
+		externalDeliveryId: "UBERD_DELIV_001",
+		status: "delivered",
+		pickupAddress: { street: "47 Kensington Park Gardens", city: "London", postalCode: "W11 2PN" },
+		dropoffAddress: { street: "30 Beauchamp Place", city: "London", postalCode: "SW3 1NJ" },
+		fee: 899,
+		tip: 150,
+		trackingUrl: "https://m.uber.com/track/UBERD_DELIV_001",
+		driverName: "Amara S.",
+		metadata: {},
+		createdAt: now,
+		updatedAt: now,
+	});
+}
+
+async function seedUberEats(client: pg.PoolClient) {
+	console.log("  Creating Uber Eats order records...");
+	const now = new Date().toISOString();
+
+	const menuSyncId = uuid("uber-eats-menu-sync:2026-05");
+	await insertModuleData(client, "uber-eats", "menuSync", menuSyncId, {
+		id: menuSyncId,
+		status: "completed",
+		itemCount: 5,
+		completedAt: now,
+		startedAt: now,
+		createdAt: now,
+	});
+
+	const uberOrderId = uuid("uber-eats-order:UE20260513001");
+	await insertModuleData(client, "uber-eats", "uberOrder", uberOrderId, {
+		id: uberOrderId,
+		externalOrderId: "UE20260513001",
+		status: "completed",
+		items: [{ name: "Regent Penny Loafer", quantity: 1, price: 89500 }],
+		subtotal: 89500,
+		deliveryFee: 799,
+		tax: 7697,
+		total: 97996,
+		customerName: "T. Nakamura",
+		customerPhone: "+44 7700 900123",
+		orderType: "delivery",
+		createdAt: now,
+		updatedAt: now,
+	});
+}
+
+async function seedFavor(client: pg.PoolClient) {
+	console.log("  Creating Favor delivery records...");
+	const now = new Date().toISOString();
+
+	const serviceAreaId = uuid("favor-area:london-kensington");
+	await insertModuleData(client, "favor", "serviceArea", serviceAreaId, {
+		id: serviceAreaId,
+		name: "Kensington",
+		isActive: true,
+		radius: 2.0,
+		centerLat: 51.5004,
+		centerLng: -0.1774,
+		minOrderAmount: 3000,
+		deliveryFee: 699,
+		estimatedMinutes: 60,
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	const deliveryId = uuid("favor-delivery:sample");
+	await insertModuleData(client, "favor", "delivery", deliveryId, {
+		id: deliveryId,
+		orderId: uuid("order:demo"),
+		externalDeliveryId: "FAVOR_DEL_001",
+		status: "delivered",
+		pickupAddress: { street: "47 Kensington Park Gardens", city: "London", postalCode: "W11 2PN" },
+		dropoffAddress: { street: "5 Ladbroke Grove", city: "London", postalCode: "W11 3BD" },
+		fee: 699,
+		tip: 100,
+		runnerName: "Oliver M.",
+		metadata: {},
+		createdAt: now,
+		updatedAt: now,
+	});
+}
+
+async function seedToast(client: pg.PoolClient) {
+	console.log("  Creating Toast POS sync records...");
+	const now = new Date().toISOString();
+
+	const syncRecord = uuid("toast-sync:products-bulk");
+	await insertModuleData(client, "toast", "syncRecord", syncRecord, {
+		id: syncRecord,
+		entityType: "product",
+		entityId: uuid("toast-bulk-sync"),
+		externalId: "TOAST_MENU_20260513",
+		direction: "export",
+		status: "completed",
+		syncedAt: now,
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	const mappings = [
+		{ productKey: "regent-penny-loafer", externalMenuItemId: "TOAST_ITEM_001" },
+		{ productKey: "grand-tour-passport-folio", externalMenuItemId: "TOAST_ITEM_002" },
+	];
+	for (const mapping of mappings) {
+		const mappingId = uuid(`toast-menu-mapping:${mapping.productKey}`);
+		await insertModuleData(client, "toast", "menuMapping", mappingId, {
+			id: mappingId,
+			localProductId: productIds[mapping.productKey as keyof typeof productIds],
+			externalMenuItemId: mapping.externalMenuItemId,
+			isActive: true,
+			lastSyncedAt: now,
+			createdAt: now,
+			updatedAt: now,
+		});
+	}
+}
+
+async function seedWish(client: pg.PoolClient) {
+	console.log("  Creating Wish channel records...");
+	const now = new Date().toISOString();
+
+	const wishProducts = [
+		{ productKey: "cashmere-fringe-scarf", externalId: "WISH_CFS_001" },
+		{ productKey: "silk-twill-wrap", externalId: "WISH_STW_001" },
+	];
+	for (const product of wishProducts) {
+		const id = uuid(`wish-product:${product.productKey}`);
+		await insertModuleData(client, "wish", "wishProduct", id, {
+			id,
+			localProductId: productIds[product.productKey as keyof typeof productIds],
+			externalProductId: product.externalId,
+			title: productByKey[product.productKey]?.name ?? product.productKey,
+			price: productByKey[product.productKey]?.price ?? 0,
+			status: "active",
+			lastSyncedAt: now,
+			createdAt: now,
+			updatedAt: now,
+		});
+	}
+
+	const wishOrderId = uuid("wish-order:WISH20260513001");
+	await insertModuleData(client, "wish", "wishOrder", wishOrderId, {
+		id: wishOrderId,
+		externalOrderId: "WISH20260513001",
+		status: "shipped",
+		items: [{ externalProductId: "WISH_CFS_001", quantity: 1, price: 49500 }],
+		subtotal: 49500,
+		platformFee: 9900,
+		netProceeds: 39600,
+		buyerName: "K. Fischer",
+		shippingAddress: { city: "Berlin", country: "DE" },
+		trackingNumber: "UPS1Z999AA10123400099",
+		createdAt: now,
+		updatedAt: now,
+	});
+}
+
 async function seedPhotoBooth(client: pg.PoolClient) {
 	console.log("  Creating photo booth records...");
 	const now = new Date().toISOString();
@@ -4325,6 +5123,22 @@ async function main() {
 		await seedQrCodes(client);
 		await seedKiosk(client);
 		await seedPhotoBooth(client);
+		await seedAmazon(client);
+		await seedEbay(client);
+		await seedEtsy(client);
+		await seedTiktokShop(client);
+		await seedGoogleShopping(client);
+		await seedFacebookShop(client);
+		await seedInstagramShop(client);
+		await seedWalmart(client);
+		await seedXShop(client);
+		await seedPinterestShop(client);
+		await seedDoordash(client);
+		await seedUberDirect(client);
+		await seedUberEats(client);
+		await seedFavor(client);
+		await seedToast(client);
+		await seedWish(client);
 
 		await client.query("COMMIT");
 
