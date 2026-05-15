@@ -12,10 +12,13 @@ export const listServiceAreas = createAdminEndpoint(
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers.favor as FavorController;
-		const areas = await controller.listServiceAreas({
-			take: ctx.query.take ?? 50,
-			skip: ctx.query.skip ?? 0,
-		});
-		return { areas, total: areas.length };
+		const take = ctx.query.take ?? 50;
+		const skip = ctx.query.skip ?? 0;
+
+		// Fetch all for accurate total, then slice for page
+		const all = await controller.listServiceAreas({});
+		const total = all.length;
+		const areas = all.slice(skip, skip + take);
+		return { areas, total };
 	},
 );
