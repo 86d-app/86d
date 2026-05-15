@@ -1,0 +1,357 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+// ── Hoisted mocks ─────────────────────────────────────────────────────────────
+
+const mockGetSession = vi.hoisted(() => vi.fn());
+vi.mock("auth/actions", () => ({ getSession: mockGetSession }));
+
+const mockVerifyStoreAdminAccess = vi.hoisted(() => vi.fn());
+vi.mock("auth/store-access", () => ({
+	verifyStoreAdminAccess: mockVerifyStoreAdminAccess,
+}));
+
+const mockRateLimiterCheck = vi.hoisted(() => vi.fn());
+vi.mock("utils/rate-limit", () => ({
+	createRateLimiter: () => ({ check: mockRateLimiterCheck }),
+}));
+
+const mockLoggerWarn = vi.hoisted(() => vi.fn());
+const mockLoggerError = vi.hoisted(() => vi.fn());
+vi.mock("utils/logger", () => ({
+	logger: { warn: mockLoggerWarn, error: mockLoggerError },
+}));
+
+const mockEnsureBooted = vi.hoisted(() => vi.fn());
+vi.mock("~/lib/api-registry", () => ({ ensureBooted: mockEnsureBooted }));
+
+const mockCreateApiRouter = vi.hoisted(() => vi.fn());
+const mockGetModuleIdForPath = vi.hoisted(() => vi.fn());
+vi.mock("../../../../generated/api", () => ({
+	createApiRouter: mockCreateApiRouter,
+	getModuleIdForPath: mockGetModuleIdForPath,
+}));
+
+// ── Import after mocks ────────────────────────────────────────────────────────
+
+import type { NextRequest } from "next/server";
+import { GET, POST } from "../route";
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function makeRequest(
+	_path: string,
+	_method = "GET",
+	extraHeaders: Record<string, string> = {},
+) {
+	return {
+		headers: {
+			get: (name: string) => {
+				const h: Record<string, string> = {
+					"x-forwarded-for": "10.0.0.1",
+					...extraHeaders,
+				};
+				return h[name.toLowerCase()] ?? null;
+			},
+		},
+	} as unknown as NextRequest;
+}
+
+function makeCtx(pathSegments: string[]) {
+	return { params: Promise.resolve({ path: pathSegments }) };
+}
+
+const mockSession = {
+	user: { id: "user_admin", email: "admin@example.com", role: "admin" },
+};
+
+function makeHandlerResponse(status: number, body: unknown) {
+	return new Response(JSON.stringify(body), {
+		status,
+		headers: { "Content-Type": "application/json" },
+	});
+}
+
+// ── Setup ─────────────────────────────────────────────────────────────────────
+
+beforeEach(() => {
+	vi.clearAllMocks();
+
+	// Default: rate limit allows all requests
+	mockRateLimiterCheck.mockReturnValue({
+		allowed: true,
+		resetAt: Date.now() + 60_000,
+	});
+
+	// Default: authenticated as admin
+	mockGetSession.mockResolvedValue(mockSession);
+	mockVerifyStoreAdminAccess.mockReturnValue({
+		hasAccess: true,
+		role: "admin",
+	});
+
+	// Default: registry boots successfully
+	mockEnsureBooted.mockResolvedValue({
+		createRequestContext: vi.fn().mockReturnValue({}),
+	});
+
+	// Default: no specific module for path
+	mockGetModuleIdForPath.mockReturnValue(undefined);
+
+	// Default: router handler returns 200
+	mockCreateApiRouter.mockReturnValue({
+		handler: vi.fn().mockResolvedValue(makeHandlerResponse(200, { ok: true })),
+	});
+});
+
+// ── Tests ─────────────────────────────────────────────────────────────────────
+
+describe("GET|POST /api/[...path]", () => {
+	describe("admin route — authentication", () => {
+		it("returns 401 when admin route is accessed without a session", async () => {
+			mockGetSession.mockResolvedValue(null);
+
+			const res = await GET(
+				makeRequest("/admin/products"),
+				makeCtx(["admin", "products"]),
+			);
+			const json = await res.json();
+
+			expect(res.status).toBe(401);
+			expect(json.error.code).toBe("UNAUTHORIZED");
+		});
+
+		it("returns 403 when user lacks admin role on admin route", async () => {
+			mockVerifyStoreAdminAccess.mockReturnValue({
+				hasAccess: false,
+				role: "user",
+			});
+
+			const res = await GET(
+				makeRequest("/admin/products"),
+				makeCtx(["admin", "products"]),
+			);
+			const json = await res.json();
+
+			expect(res.status).toBe(403);
+			expect(json.error.code).toBe("FORBIDDEN");
+		});
+
+		it("logs a warning when admin access is denied", async () => {
+			mockVerifyStoreAdminAccess.mockReturnValue({ hasAccess: false });
+
+			await GET(makeRequest("/admin/orders"), makeCtx(["admin", "orders"]));
+
+			expect(mockLoggerWarn).toHaveBeenCalledWith(
+				"Store admin access denied",
+				expect.objectContaining({
+					userId: "user_admin",
+					path: "/admin/orders",
+				}),
+			);
+		});
+
+		it("allows admin access when session exists and user has admin role", async () => {
+			const res = await GET(
+				makeRequest("/admin/products"),
+				makeCtx(["admin", "products"]),
+			);
+
+			expect(res.status).toBe(200);
+		});
+	});
+
+	describe("admin route — rate limiting", () => {
+		it("returns 429 when admin rate limit is exceeded", async () => {
+			const resetAt = Date.now() + 30_000;
+			mockRateLimiterCheck.mockReturnValue({ allowed: false, resetAt });
+
+			const res = await GET(
+				makeRequest("/admin/products"),
+				makeCtx(["admin", "products"]),
+			);
+			const json = await res.json();
+
+			expect(res.status).toBe(429);
+			expect(json.error.code).toBe("TOO_MANY_REQUESTS");
+		});
+
+		it("includes Retry-After and X-RateLimit-Reset headers on 429", async () => {
+			const resetAt = Date.now() + 60_000;
+			mockRateLimiterCheck.mockReturnValue({ allowed: false, resetAt });
+
+			const res = await GET(
+				makeRequest("/admin/products"),
+				makeCtx(["admin", "products"]),
+			);
+
+			expect(res.headers.get("Retry-After")).toBeTruthy();
+			expect(res.headers.get("X-RateLimit-Reset")).toBeTruthy();
+		});
+	});
+
+	describe("public route — rate limiting", () => {
+		it("returns 429 when public rate limit is exceeded", async () => {
+			const resetAt = Date.now() + 60_000;
+			mockRateLimiterCheck.mockReturnValue({ allowed: false, resetAt });
+
+			const res = await GET(makeRequest("/products"), makeCtx(["products"]));
+			const json = await res.json();
+
+			expect(res.status).toBe(429);
+			expect(json.error.code).toBe("TOO_MANY_REQUESTS");
+		});
+
+		it("logs a warning when public rate limit is exceeded", async () => {
+			mockRateLimiterCheck.mockReturnValue({
+				allowed: false,
+				resetAt: Date.now() + 60_000,
+			});
+
+			await GET(makeRequest("/products"), makeCtx(["products"]));
+
+			expect(mockLoggerWarn).toHaveBeenCalledWith(
+				"Public rate limit exceeded",
+				expect.objectContaining({ path: "/products" }),
+			);
+		});
+
+		it("uses x-forwarded-for IP for rate limiting on public routes", async () => {
+			await GET(
+				makeRequest("/products", "GET", { "x-forwarded-for": "203.0.113.5" }),
+				makeCtx(["products"]),
+			);
+
+			expect(mockRateLimiterCheck).toHaveBeenCalledWith(
+				expect.stringContaining("203.0.113.5"),
+			);
+		});
+
+		it("falls back to x-real-ip when x-forwarded-for is absent", async () => {
+			const req = {
+				headers: {
+					get: (name: string) => (name === "x-real-ip" ? "198.51.100.1" : null),
+				},
+			} as unknown as NextRequest;
+
+			await GET(req, makeCtx(["products"]));
+
+			expect(mockRateLimiterCheck).toHaveBeenCalledWith(
+				expect.stringContaining("198.51.100.1"),
+			);
+		});
+	});
+
+	describe("error response normalization", () => {
+		it("normalizes module string errors to { error: { code, message } } shape", async () => {
+			mockCreateApiRouter.mockReturnValue({
+				handler: vi
+					.fn()
+					.mockResolvedValue(
+						makeHandlerResponse(400, { error: "Invalid quantity" }),
+					),
+			});
+
+			const res = await GET(makeRequest("/products"), makeCtx(["products"]));
+			const json = await res.json();
+
+			expect(res.status).toBe(400);
+			expect(json.error.code).toBe("BAD_REQUEST");
+			expect(json.error.message).toBe("Invalid quantity");
+		});
+
+		it("passes through already-structured errors unchanged", async () => {
+			mockCreateApiRouter.mockReturnValue({
+				handler: vi.fn().mockResolvedValue(
+					makeHandlerResponse(404, {
+						error: { code: "NOT_FOUND", message: "Product not found" },
+					}),
+				),
+			});
+
+			const res = await GET(makeRequest("/products"), makeCtx(["products"]));
+			const json = await res.json();
+
+			expect(json.error.code).toBe("NOT_FOUND");
+			expect(json.error.message).toBe("Product not found");
+		});
+
+		it("handles non-JSON error responses gracefully", async () => {
+			mockCreateApiRouter.mockReturnValue({
+				handler: vi.fn().mockResolvedValue(
+					new Response("Internal Server Error", {
+						status: 500,
+						headers: { "Content-Type": "text/plain" },
+					}),
+				),
+			});
+
+			const res = await GET(makeRequest("/products"), makeCtx(["products"]));
+			const json = await res.json();
+
+			expect(res.status).toBe(500);
+			expect(json.error.code).toBe("INTERNAL_SERVER_ERROR");
+		});
+
+		it("returns 500 with structured error when router throws", async () => {
+			mockCreateApiRouter.mockReturnValue({
+				handler: vi.fn().mockRejectedValue(new Error("Registry unavailable")),
+			});
+
+			const res = await GET(makeRequest("/products"), makeCtx(["products"]));
+			const json = await res.json();
+
+			expect(res.status).toBe(500);
+			expect(json.error.code).toBe("INTERNAL_SERVER_ERROR");
+		});
+
+		it("logs errors when the router handler throws", async () => {
+			mockCreateApiRouter.mockReturnValue({
+				handler: vi.fn().mockRejectedValue(new Error("DB connection lost")),
+			});
+
+			await GET(makeRequest("/products"), makeCtx(["products"]));
+
+			expect(mockLoggerError).toHaveBeenCalledWith(
+				"API route unhandled error",
+				expect.objectContaining({
+					path: "/products",
+					error: "DB connection lost",
+				}),
+			);
+		});
+	});
+
+	describe("HTTP method routing", () => {
+		it("handles POST requests through the same handler", async () => {
+			const res = await POST(makeRequest("/products"), makeCtx(["products"]));
+
+			expect(res.status).toBe(200);
+		});
+	});
+
+	describe("status code mapping", () => {
+		it.each([
+			[400, "BAD_REQUEST"],
+			[401, "UNAUTHORIZED"],
+			[403, "FORBIDDEN"],
+			[404, "NOT_FOUND"],
+			[409, "CONFLICT"],
+			[422, "UNPROCESSABLE_ENTITY"],
+			[429, "TOO_MANY_REQUESTS"],
+			[503, "INTERNAL_SERVER_ERROR"],
+		])("maps HTTP %i to error code %s", async (httpStatus, expectedCode) => {
+			mockCreateApiRouter.mockReturnValue({
+				handler: vi
+					.fn()
+					.mockResolvedValue(
+						makeHandlerResponse(httpStatus, { error: "some error" }),
+					),
+			});
+
+			const res = await GET(makeRequest("/products"), makeCtx(["products"]));
+			const json = await res.json();
+
+			expect(json.error.code).toBe(expectedCode);
+		});
+	});
+});
