@@ -73,6 +73,16 @@ export default function cart(options?: CartOptions): Module {
 				},
 			],
 		},
+
+		store: {
+			pages: [
+				{
+					path: "/cart",
+					component: "CartPage",
+				},
+			],
+		},
+
 		options,
 	};
 }

@@ -118,6 +118,23 @@ export default function orders(options?: OrdersOptions): Module {
 			],
 		},
 
+		store: {
+			pages: [
+				{
+					path: "/account/orders",
+					component: "OrderHistory",
+				},
+				{
+					path: "/account/orders/:id",
+					component: "OrderDetail",
+				},
+				{
+					path: "/account/orders/returns",
+					component: "OrderReturns",
+				},
+			],
+		},
+
 		options,
 	};
 }

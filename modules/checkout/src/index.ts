@@ -98,6 +98,15 @@ export default function checkout(options?: CheckoutOptions): Module {
 			],
 		},
 
+		store: {
+			pages: [
+				{
+					path: "/checkout",
+					component: "CheckoutForm",
+				},
+			],
+		},
+
 		options,
 	};
 }
