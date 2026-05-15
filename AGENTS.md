@@ -156,7 +156,7 @@ The platform is working toward production-ready status. Key areas for future age
 3. **External template sourcing** — ✅ Implemented via CLI: `86d template add github:owner/repo`.
 
 ### Medium priority
-4. **86d API integration** — ✅ Config API implemented at `GET /api/v1/stores/{storeId}` in the private dashboard (returns enabled modules, settings, notification config). SSO is wired via the auth package. Billing API not yet implemented.
+4. **86d API integration** — ✅ Config API implemented at `GET /api/v1/stores/{storeId}` in the private dashboard (returns enabled modules, settings, notification config, and billing info). SSO is wired via the auth package. Billing info (plan slug, status, isActive, periodEnd) included when the business has an active subscription.
 5. **Module data seeding** — ✅ All 100 of 100 modules now have realistic seed data. The pattern is `insertModuleData(client, moduleName, entityType, id, data)` in `scripts/seed.ts`.
 6. **Admin experience** — More polished admin dashboard, better module management UI, settings pages for all modules.
 
