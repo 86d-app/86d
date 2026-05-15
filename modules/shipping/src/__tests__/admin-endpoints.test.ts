@@ -142,6 +142,7 @@ function makeController(
 		updateShipmentStatus: vi.fn().mockResolvedValue(null),
 		deleteShipment: vi.fn().mockResolvedValue(false),
 		getTrackingUrl: vi.fn().mockResolvedValue(null),
+		findShipmentByTrackingNumber: vi.fn().mockResolvedValue(null),
 		getLiveRates: vi.fn().mockResolvedValue([]),
 		purchaseLabel: vi.fn().mockResolvedValue(makeShipment()),
 		...overrides,

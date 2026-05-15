@@ -455,6 +455,15 @@ export function createShippingController(
 			return (await data.findMany("shipment", { where })) as Shipment[];
 		},
 
+		async findShipmentByTrackingNumber(
+			trackingNumber: string,
+		): Promise<Shipment | null> {
+			const results = (await data.findMany("shipment", {
+				where: { trackingNumber },
+			})) as Shipment[];
+			return results[0] ?? null;
+		},
+
 		async updateShipment(id, params): Promise<Shipment | null> {
 			const existing = (await data.get("shipment", id)) as Shipment | null;
 			if (!existing) return null;

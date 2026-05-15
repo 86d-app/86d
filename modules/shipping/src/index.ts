@@ -29,6 +29,9 @@ export interface ShippingOptions extends ModuleConfig {
 	easypostApiKey?: string | undefined;
 	/** Use EasyPost test mode (default: true) */
 	easypostTestMode?: boolean | undefined;
+	/** EasyPost webhook signing secret — enables signature verification on
+	 *  incoming tracker webhook events */
+	easypostWebhookSecret?: string | undefined;
 }
 
 export default function shipping(options?: ShippingOptions): Module {
@@ -37,6 +40,7 @@ export default function shipping(options?: ShippingOptions): Module {
 	const settingsEndpoint = createGetSettingsEndpoint({
 		easypostApiKey: options?.easypostApiKey,
 		easypostTestMode: options?.easypostTestMode,
+		easypostWebhookSecret: options?.easypostWebhookSecret,
 	});
 
 	return {
@@ -70,7 +74,11 @@ export default function shipping(options?: ShippingOptions): Module {
 			return { controllers: { shipping: controller } };
 		},
 		endpoints: {
-			store: hasEasyPost ? createStoreEndpointsWithRates() : storeEndpoints,
+			store: hasEasyPost
+				? createStoreEndpointsWithRates({
+						webhookSecret: options?.easypostWebhookSecret,
+					})
+				: storeEndpoints,
 			admin: createAdminEndpointsWithSettings(settingsEndpoint),
 		},
 		admin: {

@@ -9,6 +9,7 @@ function maskKey(key: string): string {
 interface SettingsOptions {
 	easypostApiKey?: string | undefined;
 	easypostTestMode?: boolean | undefined;
+	easypostWebhookSecret?: string | undefined;
 }
 
 export function createGetSettingsEndpoint(options: SettingsOptions) {
@@ -38,6 +39,8 @@ export function createGetSettingsEndpoint(options: SettingsOptions) {
 				}
 			}
 
+			const webhookSecret = options.easypostWebhookSecret ?? "";
+
 			return {
 				status,
 				error,
@@ -45,6 +48,9 @@ export function createGetSettingsEndpoint(options: SettingsOptions) {
 				configured: hasCredentials,
 				testMode: options.easypostTestMode ?? true,
 				apiKeyMasked: hasCredentials ? maskKey(apiKey) : null,
+				webhookConfigured: webhookSecret.length > 0,
+				webhookSecretMasked:
+					webhookSecret.length > 0 ? maskKey(webhookSecret) : null,
 			};
 		},
 	);

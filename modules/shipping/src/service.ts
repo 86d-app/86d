@@ -264,6 +264,10 @@ export type ShippingController = ModuleController & {
 		status?: ShipmentStatus | undefined;
 	}): Promise<Shipment[]>;
 
+	findShipmentByTrackingNumber(
+		trackingNumber: string,
+	): Promise<Shipment | null>;
+
 	updateShipment(
 		id: string,
 		params: {
