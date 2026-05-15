@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import LoyaltyOverviewTemplate from "./loyalty-overview.mdx";
 
 interface LoyaltyAccount {
@@ -93,6 +93,232 @@ function StatusBadge({ status }: { status: LoyaltyAccount["status"] }) {
 	);
 }
 
+function extractError(error: Error | null, fallback: string): string {
+	if (!error) return fallback;
+	const body = (
+		error as Error & { body?: { error?: string | { message?: string } } }
+	).body;
+	if (typeof body?.error === "string") return body.error;
+	if (typeof body?.error?.message === "string") return body.error.message;
+	return fallback;
+}
+
+// ── Account actions (adjust, suspend, reactivate) ──────────────────────────
+
+interface AccountActionsProps {
+	account: LoyaltyAccount;
+	onUpdated: () => void;
+}
+
+function AccountActions({ account, onUpdated }: AccountActionsProps) {
+	const client = useModuleClient();
+	const admin = client.module("loyalty").admin;
+
+	const [open, setOpen] = useState(false);
+	const [showAdjustForm, setShowAdjustForm] = useState(false);
+	const [adjustPoints, setAdjustPoints] = useState("");
+	const [adjustDesc, setAdjustDesc] = useState("");
+	const [adjustError, setAdjustError] = useState("");
+	const [submitting, setSubmitting] = useState(false);
+	const menuRef = useRef<HTMLDivElement>(null);
+
+	const adjustMutation = admin[
+		"/admin/loyalty/accounts/:customerId/adjust"
+	].useMutation({
+		onSuccess: () => {
+			setShowAdjustForm(false);
+			setAdjustPoints("");
+			setAdjustDesc("");
+			setAdjustError("");
+			onUpdated();
+		},
+		onError: (err: Error) => {
+			setAdjustError(extractError(err, "Failed to adjust points"));
+		},
+		onSettled: () => setSubmitting(false),
+	});
+
+	const suspendMutation = admin[
+		"/admin/loyalty/accounts/:customerId/suspend"
+	].useMutation({
+		onSuccess: onUpdated,
+	});
+
+	const reactivateMutation = admin[
+		"/admin/loyalty/accounts/:customerId/reactivate"
+	].useMutation({
+		onSuccess: onUpdated,
+	});
+
+	// Close dropdown when clicking outside
+	useEffect(() => {
+		if (!open) return;
+		function handler(e: MouseEvent) {
+			if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+				setOpen(false);
+			}
+		}
+		document.addEventListener("mousedown", handler);
+		return () => document.removeEventListener("mousedown", handler);
+	}, [open]);
+
+	function handleAdjustSubmit(e: React.FormEvent) {
+		e.preventDefault();
+		const pts = Number.parseInt(adjustPoints, 10);
+		if (!Number.isInteger(pts) || pts === 0) {
+			setAdjustError("Enter a non-zero integer (negative to deduct).");
+			return;
+		}
+		if (!adjustDesc.trim()) {
+			setAdjustError("Description is required.");
+			return;
+		}
+		setAdjustError("");
+		setSubmitting(true);
+		adjustMutation.mutate({
+			params: { customerId: account.customerId },
+			body: { points: pts, description: adjustDesc.trim() },
+		});
+	}
+
+	return (
+		<div className="flex items-center justify-end gap-1">
+			{/* Adjust Points button */}
+			<button
+				type="button"
+				onClick={() => {
+					setShowAdjustForm((v) => !v);
+					setOpen(false);
+				}}
+				className="rounded px-2 py-1 font-medium text-foreground text-xs hover:bg-muted"
+				aria-label="Adjust points"
+			>
+				Adjust Points
+			</button>
+
+			{/* Status action dropdown */}
+			{account.status !== "closed" && (
+				<div className="relative" ref={menuRef}>
+					<button
+						type="button"
+						onClick={() => setOpen((v) => !v)}
+						className="rounded px-1.5 py-1 text-muted-foreground text-xs hover:bg-muted"
+						aria-label="More actions"
+					>
+						···
+					</button>
+					{open && (
+						<div className="absolute top-full right-0 z-10 mt-1 w-36 rounded-md border border-border bg-popover py-1 shadow-md">
+							{account.status === "active" && (
+								<button
+									type="button"
+									disabled={suspendMutation.isPending}
+									className="w-full px-3 py-1.5 text-left text-amber-700 text-xs hover:bg-muted disabled:opacity-50 dark:text-amber-400"
+									onClick={() => {
+										setOpen(false);
+										suspendMutation.mutate({
+											params: { customerId: account.customerId },
+											body: {},
+										});
+									}}
+								>
+									Suspend
+								</button>
+							)}
+							{account.status === "suspended" && (
+								<button
+									type="button"
+									disabled={reactivateMutation.isPending}
+									className="w-full px-3 py-1.5 text-left text-emerald-700 text-xs hover:bg-muted disabled:opacity-50 dark:text-emerald-400"
+									onClick={() => {
+										setOpen(false);
+										reactivateMutation.mutate({
+											params: { customerId: account.customerId },
+											body: {},
+										});
+									}}
+								>
+									Reactivate
+								</button>
+							)}
+						</div>
+					)}
+				</div>
+			)}
+
+			{/* Inline adjust form — shown below the row via a portal-like overlay */}
+			{showAdjustForm && (
+				<div className="fixed inset-0 z-20 flex items-center justify-center bg-black/40">
+					<form
+						onSubmit={handleAdjustSubmit}
+						className="w-80 rounded-lg border border-border bg-background p-5 shadow-lg"
+					>
+						<h3 className="mb-4 font-semibold text-foreground text-sm">
+							Adjust Points
+						</h3>
+						<p className="mb-3 text-muted-foreground text-xs">
+							Customer:{" "}
+							<code className="rounded bg-muted px-1">
+								{account.customerId}
+							</code>
+						</p>
+						<label
+							htmlFor="adjust-pts"
+							className="mb-1 block font-medium text-foreground text-xs"
+						>
+							Points (positive to add, negative to deduct)
+						</label>
+						<input
+							id="adjust-pts"
+							type="number"
+							value={adjustPoints}
+							onChange={(e) => setAdjustPoints(e.target.value)}
+							placeholder="e.g. 100 or -50"
+							className="mb-3 w-full rounded-md border border-border bg-background px-3 py-1.5 text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+						/>
+						<label
+							htmlFor="adjust-desc"
+							className="mb-1 block font-medium text-foreground text-xs"
+						>
+							Reason
+						</label>
+						<input
+							id="adjust-desc"
+							type="text"
+							value={adjustDesc}
+							onChange={(e) => setAdjustDesc(e.target.value)}
+							placeholder="e.g. Goodwill gesture"
+							className="mb-3 w-full rounded-md border border-border bg-background px-3 py-1.5 text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+						/>
+						{adjustError && (
+							<p className="mb-2 text-destructive text-xs">{adjustError}</p>
+						)}
+						<div className="flex justify-end gap-2">
+							<button
+								type="button"
+								onClick={() => {
+									setShowAdjustForm(false);
+									setAdjustError("");
+								}}
+								className="rounded-md px-3 py-1.5 text-muted-foreground text-sm hover:bg-muted"
+							>
+								Cancel
+							</button>
+							<button
+								type="submit"
+								disabled={submitting}
+								className="rounded-md bg-primary px-3 py-1.5 text-primary-foreground text-sm hover:bg-primary/90 disabled:opacity-50"
+							>
+								{submitting ? "Saving…" : "Apply"}
+							</button>
+						</div>
+					</form>
+				</div>
+			)}
+		</div>
+	);
+}
+
 function useLoyaltyApi() {
 	const client = useModuleClient();
 	return {
@@ -106,6 +332,7 @@ export function LoyaltyOverview() {
 	const [tierFilter, setTierFilter] = useState<TierFilter>("all");
 	const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 	const [skip, setSkip] = useState(0);
+	const [refreshKey, setRefreshKey] = useState(0);
 
 	const queryInput: Record<string, string> = {
 		take: String(PAGE_SIZE),
@@ -114,17 +341,24 @@ export function LoyaltyOverview() {
 	if (tierFilter !== "all") queryInput.tier = tierFilter;
 	if (statusFilter !== "all") queryInput.status = statusFilter;
 
-	const { data: accountsData, isLoading: accountsLoading } =
-		api.listAccounts.useQuery(queryInput) as {
-			data: { accounts: LoyaltyAccount[]; total: number } | undefined;
-			isLoading: boolean;
-		};
+	const {
+		data: accountsData,
+		isLoading: accountsLoading,
+		refetch,
+	} = api.listAccounts.useQuery({ ...queryInput, _r: String(refreshKey) }) as {
+		data: { accounts: LoyaltyAccount[]; total: number } | undefined;
+		isLoading: boolean;
+		refetch: () => void;
+	};
 
-	const { data: summaryData, isLoading: summaryLoading } = api.summary.useQuery(
-		{},
-	) as {
+	const {
+		data: summaryData,
+		isLoading: summaryLoading,
+		refetch: refetchSummary,
+	} = api.summary.useQuery({ _r: String(refreshKey) }) as {
 		data: LoyaltySummary | undefined;
 		isLoading: boolean;
+		refetch: () => void;
 	};
 
 	const accounts = accountsData?.accounts ?? [];
@@ -138,6 +372,12 @@ export function LoyaltyOverview() {
 	const handleStatusChange = (filter: StatusFilter) => {
 		setStatusFilter(filter);
 		setSkip(0);
+	};
+
+	const handleAccountUpdated = () => {
+		setRefreshKey((k) => k + 1);
+		refetch();
+		refetchSummary();
 	};
 
 	const hasPrev = skip > 0;
@@ -238,12 +478,10 @@ export function LoyaltyOverview() {
 						<StatusBadge status={account.status} />
 					</td>
 					<td className="px-4 py-3 text-right">
-						<a
-							href={`/admin/loyalty/accounts/${account.customerId}`}
-							className="rounded px-2 py-1 font-medium text-foreground text-xs hover:bg-muted"
-						>
-							Manage
-						</a>
+						<AccountActions
+							account={account}
+							onUpdated={handleAccountUpdated}
+						/>
 					</td>
 				</tr>
 			))

@@ -261,6 +261,16 @@ function DetailPanel({
 		},
 	});
 
+	const updateStatusMutation = api.update.useMutation({
+		onSettled: () => {
+			void api.get.invalidate();
+			void api.list.invalidate();
+		},
+		onError: (err: Error) => {
+			setError(extractError(err, "Failed to update gift card status."));
+		},
+	});
+
 	const handleCredit = (e: React.FormEvent) => {
 		e.preventDefault();
 		setError("");
@@ -442,13 +452,45 @@ function DetailPanel({
 					</div>
 				</form>
 			) : (
-				<button
-					type="button"
-					onClick={() => setShowCredit(true)}
-					className="rounded-md border border-border px-3 py-1.5 text-foreground text-sm hover:bg-muted"
-				>
-					+ Add Credit
-				</button>
+				<div className="flex gap-2">
+					<button
+						type="button"
+						onClick={() => setShowCredit(true)}
+						className="rounded-md border border-border px-3 py-1.5 text-foreground text-sm hover:bg-muted"
+					>
+						+ Add Credit
+					</button>
+					{card.status === "active" && (
+						<button
+							type="button"
+							disabled={updateStatusMutation.isPending}
+							onClick={() =>
+								updateStatusMutation.mutate({
+									params: { id: card.id },
+									body: { status: "disabled" },
+								})
+							}
+							className="rounded-md border border-border px-3 py-1.5 text-amber-700 text-sm hover:bg-muted disabled:opacity-50 dark:text-amber-400"
+						>
+							Disable
+						</button>
+					)}
+					{card.status === "disabled" && (
+						<button
+							type="button"
+							disabled={updateStatusMutation.isPending}
+							onClick={() =>
+								updateStatusMutation.mutate({
+									params: { id: card.id },
+									body: { status: "active" },
+								})
+							}
+							className="rounded-md border border-border px-3 py-1.5 text-emerald-700 text-sm hover:bg-muted disabled:opacity-50 dark:text-emerald-400"
+						>
+							Enable
+						</button>
+					)}
+				</div>
 			)}
 
 			<div className="rounded-lg border border-border bg-card">
@@ -526,6 +568,13 @@ export function GiftCardOverview() {
 		},
 		onError: (err: Error) => {
 			setError(extractError(err, "Failed to delete gift card."));
+		},
+	});
+
+	const toggleStatusMutation = api.update.useMutation({
+		onSettled: () => void api.list.invalidate(),
+		onError: (err: Error) => {
+			setError(extractError(err, "Failed to update gift card status."));
 		},
 	});
 
@@ -627,13 +676,36 @@ export function GiftCardOverview() {
 												</button>
 											</span>
 										) : (
-											<button
-												type="button"
-												onClick={() => setDeleteConfirm(card.id)}
-												className="text-muted-foreground text-xs hover:text-destructive"
-											>
-												Delete
-											</button>
+											<span className="flex items-center gap-2">
+												{(card.status === "active" ||
+													card.status === "disabled") && (
+													<button
+														type="button"
+														disabled={toggleStatusMutation.isPending}
+														onClick={() =>
+															toggleStatusMutation.mutate({
+																params: { id: card.id },
+																body: {
+																	status:
+																		card.status === "active"
+																			? "disabled"
+																			: "active",
+																},
+															})
+														}
+														className={`text-xs disabled:opacity-50 ${card.status === "active" ? "text-amber-600 hover:text-amber-800 dark:text-amber-400" : "text-emerald-600 hover:text-emerald-800 dark:text-emerald-400"}`}
+													>
+														{card.status === "active" ? "Disable" : "Enable"}
+													</button>
+												)}
+												<button
+													type="button"
+													onClick={() => setDeleteConfirm(card.id)}
+													className="text-muted-foreground text-xs hover:text-destructive"
+												>
+													Delete
+												</button>
+											</span>
 										)}
 									</td>
 								</tr>
