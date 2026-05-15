@@ -3,6 +3,7 @@
  * Used by the catch-all API route and the store-markdown route.
  */
 
+import type { Primitive } from "@86d-app/core";
 import { ModuleRegistry } from "@86d-app/runtime/registry";
 import { UniversalDataService } from "@86d-app/runtime/universal-data-service";
 import { getStoreConfig } from "@86d-app/sdk";
@@ -11,6 +12,28 @@ import env from "env";
 import { logger } from "utils/logger";
 import { modules } from "../generated/api";
 import { resolveTemplatePath } from "./template-path";
+
+function isPrimitive(v: unknown): v is Primitive {
+	return (
+		v === null ||
+		v === undefined ||
+		typeof v === "string" ||
+		typeof v === "number" ||
+		typeof v === "boolean" ||
+		typeof v === "symbol" ||
+		typeof v === "bigint"
+	);
+}
+
+function toPrimitiveRecord(
+	obj: Record<string, unknown>,
+): Record<string, Primitive> {
+	const result: Record<string, Primitive> = {};
+	for (const [k, v] of Object.entries(obj)) {
+		if (isPrimitive(v)) result[k] = v;
+	}
+	return result;
+}
 
 let registry: ModuleRegistry | null = null;
 let bootPromise: Promise<void> | null = null;
@@ -22,47 +45,71 @@ function getRegistry(): ModuleRegistry {
 		throw new Error("STORE_ID not configured");
 	}
 	if (!registry) {
-		registry = new ModuleRegistry(modules, storeId, {
-			resolveStoreId: async (id) => {
-				await getStoreConfig({
-					storeId: id,
-					templatePath: resolveTemplatePath(),
-					fallbackToTemplateOnError: true,
-				});
-				return id;
-			},
-			upsertModuleRecord: async (params) => {
-				const record = await db.module.upsert({
-					where: {
-						storeId_name: {
-							storeId: params.storeId,
-							name: params.moduleId,
+		// Mutable options object shared with the registry. The resolveStoreId
+		// callback merges in platform-configured options before modules init,
+		// allowing dashboard settings to flow into running module instances.
+		const platformOptions: Record<string, Record<string, Primitive>> = {};
+
+		registry = new ModuleRegistry(
+			modules,
+			storeId,
+			{
+				resolveStoreId: async (id) => {
+					const config = await getStoreConfig({
+						storeId: id,
+						templatePath: resolveTemplatePath(),
+						fallbackToTemplateOnError: true,
+					});
+					// Merge platform-configured module options in-place so the registry
+					// picks them up before module init() callbacks run.
+					if (
+						config.moduleOptions &&
+						typeof config.moduleOptions === "object"
+					) {
+						for (const [modId, opts] of Object.entries(config.moduleOptions)) {
+							if (opts && typeof opts === "object" && !Array.isArray(opts)) {
+								platformOptions[modId] = toPrimitiveRecord(
+									opts as Record<string, unknown>,
+								);
+							}
+						}
+					}
+					return id;
+				},
+				upsertModuleRecord: async (params) => {
+					const record = await db.module.upsert({
+						where: {
+							storeId_name: {
+								storeId: params.storeId,
+								name: params.moduleId,
+							},
 						},
-					},
-					create: {
-						name: params.moduleId,
-						version: params.version,
+						create: {
+							name: params.moduleId,
+							version: params.version,
+							storeId: params.storeId,
+							// Write factory defaults on first creation only. User-configured
+							// settings (saved via the dashboard) must not be overwritten on
+							// subsequent boots — only the version is updated on UPDATE.
+							settings: params.options
+								? JSON.stringify(params.options)
+								: Prisma.JsonNull,
+						},
+						update: {
+							version: params.version,
+						},
+					});
+					return record.id;
+				},
+				createDataService: (params) =>
+					new UniversalDataService({
+						db,
 						storeId: params.storeId,
-						// Write factory defaults on first creation only. User-configured
-						// settings (saved via the dashboard) must not be overwritten on
-						// subsequent boots — only the version is updated on UPDATE.
-						settings: params.options
-							? JSON.stringify(params.options)
-							: Prisma.JsonNull,
-					},
-					update: {
-						version: params.version,
-					},
-				});
-				return record.id;
+						moduleId: params.moduleDbId,
+					}),
 			},
-			createDataService: (params) =>
-				new UniversalDataService({
-					db,
-					storeId: params.storeId,
-					moduleId: params.moduleDbId,
-				}),
-		});
+			platformOptions,
+		);
 	}
 	return registry;
 }
