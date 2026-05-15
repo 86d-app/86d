@@ -1,5 +1,5 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
-import { adminEndpoints } from "./admin/endpoints";
+import { createAdminEndpoints } from "./admin/endpoints";
 import { favorSchema } from "./schema";
 import { createFavorController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints";
@@ -43,7 +43,11 @@ export default function favor(options?: FavorOptions): Module {
 		},
 		endpoints: {
 			store: storeEndpoints,
-			admin: adminEndpoints,
+			admin: createAdminEndpoints({
+				apiKey: options?.apiKey,
+				merchantId: options?.merchantId,
+				sandbox: options?.sandbox !== "false",
+			}),
 		},
 		admin: {
 			pages: [

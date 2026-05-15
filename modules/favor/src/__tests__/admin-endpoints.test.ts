@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createServiceArea } from "../admin/endpoints/create-service-area";
+import { createGetSettingsEndpoint } from "../admin/endpoints/get-settings";
 import { listDeliveries } from "../admin/endpoints/list-deliveries";
 import { listServiceAreas } from "../admin/endpoints/list-service-areas";
 import { getFavorStats } from "../admin/endpoints/stats";
@@ -115,6 +116,12 @@ const createServiceAreaHandler = extractHandler(createServiceArea);
 const listServiceAreasHandler = extractHandler(listServiceAreas);
 const statsHandler = extractHandler(getFavorStats);
 const updateDeliveryStatusHandler = extractHandler(updateDeliveryStatus);
+
+function callSettings(
+	handler: (ctx: Record<string, unknown>) => Promise<unknown>,
+) {
+	return handler({ query: {}, params: {}, body: {}, context: {} });
+}
 
 // ── GET /admin/favor/deliveries ───────────────────────────────────────────────
 
@@ -293,5 +300,85 @@ describe("admin GET /favor/stats", () => {
 		})) as { stats: FavorDeliveryStats };
 		expect(result.stats.totalDeliveries).toBe(10);
 		expect(result.stats.totalCompleted).toBe(8);
+	});
+});
+
+// ── GET /admin/favor/settings ─────────────────────────────────────────────────
+
+describe("admin GET /favor/settings", () => {
+	it("returns not_configured when no credentials", async () => {
+		const ep = createGetSettingsEndpoint({});
+		const handler = extractHandler(ep);
+		const result = (await callSettings(handler)) as {
+			status: string;
+			configured: boolean;
+			apiKeyMasked: string | null;
+			merchantIdMasked: string | null;
+			sandbox: boolean;
+		};
+		expect(result.status).toBe("not_configured");
+		expect(result.configured).toBe(false);
+		expect(result.apiKeyMasked).toBeNull();
+		expect(result.merchantIdMasked).toBeNull();
+		expect(result.sandbox).toBe(true);
+	});
+
+	it("returns not_configured when only apiKey provided", async () => {
+		const ep = createGetSettingsEndpoint({ apiKey: "sk_test_abc123" });
+		const handler = extractHandler(ep);
+		const result = (await callSettings(handler)) as { status: string };
+		expect(result.status).toBe("not_configured");
+	});
+
+	it("returns configured when apiKey and merchantId provided", async () => {
+		const ep = createGetSettingsEndpoint({
+			apiKey: "sk_test_abc123xyz",
+			merchantId: "merchant_99",
+		});
+		const handler = extractHandler(ep);
+		const result = (await callSettings(handler)) as {
+			status: string;
+			configured: boolean;
+			apiKeyMasked: string | null;
+			merchantIdMasked: string | null;
+			sandbox: boolean;
+		};
+		expect(result.status).toBe("configured");
+		expect(result.configured).toBe(true);
+		expect(result.apiKeyMasked).toMatch(/\*/);
+		expect(result.merchantIdMasked).toMatch(/\*/);
+		expect(result.sandbox).toBe(true);
+	});
+
+	it("reflects sandbox: false when passed", async () => {
+		const ep = createGetSettingsEndpoint({
+			apiKey: "sk_live_abc123xyz",
+			merchantId: "merchant_99",
+			sandbox: false,
+		});
+		const handler = extractHandler(ep);
+		const result = (await callSettings(handler)) as { sandbox: boolean };
+		expect(result.sandbox).toBe(false);
+	});
+
+	it("masks apiKey preserving first 8 chars", async () => {
+		const ep = createGetSettingsEndpoint({
+			apiKey: "sk_test_abc123xyz",
+			merchantId: "merchant_99",
+		});
+		const handler = extractHandler(ep);
+		const result = (await callSettings(handler)) as { apiKeyMasked: string };
+		expect(result.apiKeyMasked?.startsWith("sk_test_")).toBe(true);
+		expect(result.apiKeyMasked).toContain("*");
+	});
+
+	it("masks short apiKey entirely", async () => {
+		const ep = createGetSettingsEndpoint({
+			apiKey: "abc",
+			merchantId: "merchant_99",
+		});
+		const handler = extractHandler(ep);
+		const result = (await callSettings(handler)) as { apiKeyMasked: string };
+		expect(result.apiKeyMasked).toBe("****");
 	});
 });
