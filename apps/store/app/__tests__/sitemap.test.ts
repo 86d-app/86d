@@ -65,10 +65,16 @@ describe("sitemap()", () => {
 
 		const entries = await sitemap();
 
-		expect(entries.some((e) => e.url === `${BASE}/products/blue-sneaker`)).toBe(true);
-		expect(entries.some((e) => e.url === `${BASE}/products/red-hat`)).toBe(true);
+		expect(entries.some((e) => e.url === `${BASE}/products/blue-sneaker`)).toBe(
+			true,
+		);
+		expect(entries.some((e) => e.url === `${BASE}/products/red-hat`)).toBe(
+			true,
+		);
 
-		const product = entries.find((e) => e.url === `${BASE}/products/blue-sneaker`);
+		const product = entries.find(
+			(e) => e.url === `${BASE}/products/blue-sneaker`,
+		);
 		expect(product?.changeFrequency).toBe("weekly");
 		expect(product?.priority).toBe(0.8);
 		expect(product?.lastModified).toBe(updatedAt);
@@ -83,7 +89,9 @@ describe("sitemap()", () => {
 		mocks.fetchBlogPostSlugsForSitemap.mockResolvedValue([]);
 
 		const entries = await sitemap();
-		const col = entries.find((e) => e.url === `${BASE}/collections/summer-sale`);
+		const col = entries.find(
+			(e) => e.url === `${BASE}/collections/summer-sale`,
+		);
 
 		expect(col).toBeDefined();
 		expect(col?.priority).toBe(0.7);
@@ -107,7 +115,9 @@ describe("sitemap()", () => {
 
 	it("degrades gracefully when DB fetch throws — returns only static pages", async () => {
 		mocks.fetchProductSlugsForSitemap.mockRejectedValue(new Error("DB down"));
-		mocks.fetchCollectionSlugsForSitemap.mockRejectedValue(new Error("DB down"));
+		mocks.fetchCollectionSlugsForSitemap.mockRejectedValue(
+			new Error("DB down"),
+		);
 		mocks.fetchBlogPostSlugsForSitemap.mockRejectedValue(new Error("DB down"));
 
 		const entries = await sitemap();
@@ -152,6 +162,8 @@ describe("sitemap()", () => {
 		mocks.fetchBlogPostSlugsForSitemap.mockResolvedValue([]);
 
 		const entries = await sitemap();
-		expect(entries.every((e) => e.url.startsWith("https://custom-store.com"))).toBe(true);
+		expect(
+			entries.every((e) => e.url.startsWith("https://custom-store.com")),
+		).toBe(true);
 	});
 });
