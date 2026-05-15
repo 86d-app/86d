@@ -22,12 +22,12 @@ export const listQrCodesEndpoint = createAdminEndpoint(
 		const limit = ctx.query.limit ?? 50;
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
-		const qrCodes = await controller.list({
+		const all = await controller.list({
 			targetType: ctx.query.targetType as QrCodeTargetType | undefined,
 			isActive: ctx.query.isActive,
-			take: limit,
-			skip,
 		});
-		return { qrCodes, total: qrCodes.length };
+		const total = all.length;
+		const qrCodes = all.slice(skip, skip + limit);
+		return { qrCodes, total };
 	},
 );

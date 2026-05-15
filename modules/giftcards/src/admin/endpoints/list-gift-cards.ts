@@ -14,12 +14,14 @@ export const listGiftCards = createAdminEndpoint(
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers.giftCards as GiftCardController;
-		const cards = await controller.list({
+		const take = ctx.query.take ?? 50;
+		const skip = ctx.query.skip ?? 0;
+		const all = await controller.list({
 			status: ctx.query.status,
 			customerId: ctx.query.customerId,
-			take: ctx.query.take ?? 50,
-			skip: ctx.query.skip ?? 0,
 		});
-		return { cards, total: cards.length };
+		const total = all.length;
+		const cards = all.slice(skip, skip + take);
+		return { cards, total };
 	},
 );

@@ -20,22 +20,23 @@ export const listCarts = createAdminEndpoint(
 
 		const page = query.page ? Number.parseInt(query.page, 10) : 1;
 		const limit = query.limit ? Number.parseInt(query.limit, 10) : 20;
+		const skip = (page - 1) * limit;
 
 		const where: Record<string, unknown> = {};
 		if (query.customerId) where.customerId = query.customerId;
 		if (query.status) where.status = query.status;
 
-		const carts = (await context.data.findMany("cart", {
+		const all = (await context.data.findMany("cart", {
 			where,
-			take: limit,
-			skip: (page - 1) * limit,
 		})) as Cart[];
+		const total = all.length;
+		const carts = all.slice(skip, skip + limit);
 
 		return {
 			carts,
 			page,
 			limit,
-			total: carts.length,
+			total,
 		};
 	},
 );

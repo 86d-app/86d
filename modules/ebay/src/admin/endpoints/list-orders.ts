@@ -25,11 +25,11 @@ export const listOrdersEndpoint = createAdminEndpoint(
 		const limit = ctx.query.limit ?? 50;
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
-		const orders = await controller.listOrders({
+		const all = await controller.listOrders({
 			status: ctx.query.status as EbayOrderStatus | undefined,
-			take: limit,
-			skip,
 		});
-		return { orders, total: orders.length };
+		const total = all.length;
+		const orders = all.slice(skip, skip + limit);
+		return { orders, total };
 	},
 );

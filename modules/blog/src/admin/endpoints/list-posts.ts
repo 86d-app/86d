@@ -25,15 +25,15 @@ export const adminListPostsEndpoint = createAdminEndpoint(
 		const limit = ctx.query.limit ?? 50;
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
-		const posts = await controller.listPosts({
+		const all = await controller.listPosts({
 			status: ctx.query.status as PostStatus | undefined,
 			category: ctx.query.category,
 			tag: ctx.query.tag,
 			featured: ctx.query.featured,
 			search: ctx.query.search,
-			take: limit,
-			skip,
 		});
-		return { posts, total: posts.length };
+		const total = all.length;
+		const posts = all.slice(skip, skip + limit);
+		return { posts, total };
 	},
 );

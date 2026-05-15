@@ -20,11 +20,11 @@ export const listTemplatesEndpoint = createAdminEndpoint(
 		const limit = ctx.query.limit ?? 50;
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
-		const templates = await controller.listTemplates({
+		const all = await controller.listTemplates({
 			active: ctx.query.active,
-			take: limit,
-			skip,
 		});
-		return { templates, total: templates.length };
+		const total = all.length;
+		const templates = all.slice(skip, skip + limit);
+		return { templates, total };
 	},
 );

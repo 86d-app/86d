@@ -18,11 +18,11 @@ export const listDeliveriesEndpoint = createAdminEndpoint(
 		const limit = ctx.query.limit ?? 50;
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
-		const deliveries = await controller.listDeliveries({
+		const all = await controller.listDeliveries({
 			status: ctx.query.status as DeliveryStatus | undefined,
-			take: limit,
-			skip,
 		});
-		return { deliveries, total: deliveries.length };
+		const total = all.length;
+		const deliveries = all.slice(skip, skip + limit);
+		return { deliveries, total };
 	},
 );

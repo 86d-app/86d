@@ -19,11 +19,11 @@ export const listMenuMappingsEndpoint = createAdminEndpoint(
 		const limit = ctx.query.limit ?? 50;
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
-		const mappings = await controller.listMenuMappings({
+		const all = await controller.listMenuMappings({
 			isActive: ctx.query.isActive,
-			take: limit,
-			skip,
 		});
-		return { mappings, total: mappings.length };
+		const total = all.length;
+		const mappings = all.slice(skip, skip + limit);
+		return { mappings, total };
 	},
 );

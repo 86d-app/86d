@@ -14,11 +14,13 @@ export const listQuotes = createAdminEndpoint(
 	async (ctx) => {
 		const controller = ctx.context.controllers
 			.uberDirect as UberDirectController;
-		const quotes = await controller.listQuotes({
+		const take = ctx.query.take ?? 50;
+		const skip = ctx.query.skip ?? 0;
+		const all = await controller.listQuotes({
 			status: ctx.query.status,
-			take: ctx.query.take ?? 50,
-			skip: ctx.query.skip ?? 0,
 		});
-		return { quotes, total: quotes.length };
+		const total = all.length;
+		const quotes = all.slice(skip, skip + take);
+		return { quotes, total };
 	},
 );

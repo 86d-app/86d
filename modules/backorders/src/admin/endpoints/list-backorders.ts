@@ -25,13 +25,15 @@ export const listBackorders = createAdminEndpoint(
 	async (ctx) => {
 		const controller = ctx.context.controllers
 			.backorders as BackordersController;
-		const backorders = await controller.listBackorders({
+		const take = ctx.query.take ?? 50;
+		const skip = ctx.query.skip ?? 0;
+		const all = await controller.listBackorders({
 			productId: ctx.query.productId,
 			customerId: ctx.query.customerId,
 			status: ctx.query.status,
-			take: ctx.query.take ?? 50,
-			skip: ctx.query.skip ?? 0,
 		});
-		return { backorders, total: backorders.length };
+		const total = all.length;
+		const backorders = all.slice(skip, skip + take);
+		return { backorders, total };
 	},
 );

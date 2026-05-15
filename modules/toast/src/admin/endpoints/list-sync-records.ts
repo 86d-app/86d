@@ -21,12 +21,12 @@ export const listSyncRecordsEndpoint = createAdminEndpoint(
 		const limit = ctx.query.limit ?? 50;
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
-		const records = await controller.listSyncRecords({
+		const all = await controller.listSyncRecords({
 			entityType: ctx.query.entityType as SyncEntityType | undefined,
 			status: ctx.query.status as SyncStatus | undefined,
-			take: limit,
-			skip,
 		});
-		return { records, total: records.length };
+		const total = all.length;
+		const records = all.slice(skip, skip + limit);
+		return { records, total };
 	},
 );

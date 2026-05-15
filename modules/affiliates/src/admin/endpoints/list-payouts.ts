@@ -20,12 +20,12 @@ export const listPayoutsEndpoint = createAdminEndpoint(
 		const limit = ctx.query.limit ?? 50;
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
-		const payouts = await controller.listPayouts({
+		const all = await controller.listPayouts({
 			affiliateId: ctx.query.affiliateId,
 			status: ctx.query.status as PayoutStatus | undefined,
-			take: limit,
-			skip,
 		});
-		return { payouts, total: payouts.length };
+		const total = all.length;
+		const payouts = all.slice(skip, skip + limit);
+		return { payouts, total };
 	},
 );

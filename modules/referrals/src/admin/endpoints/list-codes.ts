@@ -19,11 +19,11 @@ export const listCodesEndpoint = createAdminEndpoint(
 		const limit = ctx.query.limit ?? 50;
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
-		const codes = await controller.listCodes({
+		const all = await controller.listCodes({
 			active: ctx.query.active,
-			take: limit,
-			skip,
 		});
-		return { codes, total: codes.length };
+		const total = all.length;
+		const codes = all.slice(skip, skip + limit);
+		return { codes, total };
 	},
 );

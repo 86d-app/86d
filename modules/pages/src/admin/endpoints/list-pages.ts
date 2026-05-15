@@ -16,11 +16,11 @@ export const adminListPagesEndpoint = createAdminEndpoint(
 		const limit = ctx.query.limit ?? 50;
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
-		const pages = await controller.listPages({
+		const all = await controller.listPages({
 			status: ctx.query.status,
-			take: limit,
-			skip,
 		});
-		return { pages, total: pages.length };
+		const total = all.length;
+		const pages = all.slice(skip, skip + limit);
+		return { pages, total };
 	},
 );

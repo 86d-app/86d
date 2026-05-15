@@ -19,11 +19,11 @@ export const listZonesEndpoint = createAdminEndpoint(
 		const limit = ctx.query.limit ?? 50;
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
-		const zones = await controller.listZones({
+		const all = await controller.listZones({
 			isActive: ctx.query.isActive,
-			take: limit,
-			skip,
 		});
-		return { zones, total: zones.length };
+		const total = all.length;
+		const zones = all.slice(skip, skip + limit);
+		return { zones, total };
 	},
 );

@@ -20,14 +20,14 @@ export const adminListAssetsEndpoint = createAdminEndpoint(
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
 
-		const assets = await controller.listAssets({
+		const all = await controller.listAssets({
 			folder: ctx.query.folder,
 			mimeType: ctx.query.mimeType,
 			tag: ctx.query.tag,
 			search: ctx.query.search,
-			take: limit,
-			skip,
 		});
-		return { assets, total: assets.length };
+		const total = all.length;
+		const assets = all.slice(skip, skip + limit);
+		return { assets, total };
 	},
 );

@@ -14,12 +14,14 @@ export const listAccounts = createAdminEndpoint(
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers.loyalty as LoyaltyController;
-		const accounts = await controller.listAccounts({
+		const take = ctx.query.take ?? 50;
+		const skip = ctx.query.skip ?? 0;
+		const all = await controller.listAccounts({
 			tier: ctx.query.tier,
 			status: ctx.query.status,
-			take: ctx.query.take ?? 50,
-			skip: ctx.query.skip ?? 0,
 		});
-		return { accounts, total: accounts.length };
+		const total = all.length;
+		const accounts = all.slice(skip, skip + take);
+		return { accounts, total };
 	},
 );

@@ -16,12 +16,14 @@ export const listCampaignsAdmin = createAdminEndpoint(
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers.preorders as PreordersController;
-		const campaigns = await controller.listCampaigns({
+		const take = ctx.query.take ?? 50;
+		const skip = ctx.query.skip ?? 0;
+		const all = await controller.listCampaigns({
 			status: ctx.query.status,
 			productId: ctx.query.productId,
-			take: ctx.query.take ?? 50,
-			skip: ctx.query.skip ?? 0,
 		});
-		return { campaigns, total: campaigns.length };
+		const total = all.length;
+		const campaigns = all.slice(skip, skip + take);
+		return { campaigns, total };
 	},
 );

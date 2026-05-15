@@ -213,13 +213,12 @@ describe("admin GET /import-export/imports", () => {
 		})) as { jobs: ImportJob[]; total: number };
 		expect(result.jobs).toHaveLength(1);
 		expect(result.total).toBe(1);
+		// After the fix, take/skip are applied in-memory; controller receives only filters
 		expect(ctrl.listImports).toHaveBeenCalledWith(
-			expect.objectContaining({
-				type: "orders",
-				status: "completed",
-				take: 50,
-				skip: 0,
-			}),
+			expect.objectContaining({ type: "orders", status: "completed" }),
+		);
+		expect(ctrl.listImports).toHaveBeenCalledWith(
+			expect.not.objectContaining({ take: expect.anything() }),
 		);
 	});
 });
@@ -440,13 +439,12 @@ describe("admin GET /import-export/exports", () => {
 		})) as { jobs: ExportJob[]; total: number };
 		expect(result.jobs).toHaveLength(1);
 		expect(result.total).toBe(1);
+		// After the fix, take/skip are applied in-memory; controller receives only filters
 		expect(ctrl.listExports).toHaveBeenCalledWith(
-			expect.objectContaining({
-				type: "inventory",
-				status: "processing",
-				take: 50,
-				skip: 0,
-			}),
+			expect.objectContaining({ type: "inventory", status: "processing" }),
+		);
+		expect(ctrl.listExports).toHaveBeenCalledWith(
+			expect.not.objectContaining({ take: expect.anything() }),
 		);
 	});
 });

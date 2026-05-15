@@ -21,16 +21,16 @@ export const listEventsEndpoint = createAdminEndpoint(
 		const limit = ctx.query.limit ?? 100;
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
-		const events = await controller.listEvents({
+		const all = await controller.listEvents({
 			type: ctx.query.type,
 			productId: ctx.query.productId,
 			customerId: ctx.query.customerId,
 			sessionId: ctx.query.sessionId,
 			since: ctx.query.since ? new Date(ctx.query.since) : undefined,
 			until: ctx.query.until ? new Date(ctx.query.until) : undefined,
-			take: limit,
-			skip,
 		});
-		return { events, total: events.length };
+		const total = all.length;
+		const events = all.slice(skip, skip + limit);
+		return { events, total };
 	},
 );

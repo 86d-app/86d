@@ -322,9 +322,10 @@ describe("admin GET /photo-booth/streams/:id/photos", () => {
 		})) as { photos: Photo[]; total: number };
 		expect(result.photos).toHaveLength(1);
 		expect(result.total).toBe(1);
+		// After the fix, take/skip are applied in-memory; controller receives only the stream id
 		expect(ctrl.getStreamPhotos).toHaveBeenCalledWith(
 			"stream_1",
-			expect.objectContaining({ take: 50, skip: 0 }),
+			expect.not.objectContaining({ take: expect.anything() }),
 		);
 	});
 });

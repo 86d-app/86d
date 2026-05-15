@@ -24,13 +24,15 @@ export const listItems = createAdminEndpoint(
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers.preorders as PreordersController;
-		const items = await controller.listPreorderItems({
+		const take = ctx.query.take ?? 50;
+		const skip = ctx.query.skip ?? 0;
+		const all = await controller.listPreorderItems({
 			campaignId: ctx.query.campaignId,
 			customerId: ctx.query.customerId,
 			status: ctx.query.status,
-			take: ctx.query.take ?? 50,
-			skip: ctx.query.skip ?? 0,
 		});
-		return { items, total: items.length };
+		const total = all.length;
+		const items = all.slice(skip, skip + take);
+		return { items, total };
 	},
 );

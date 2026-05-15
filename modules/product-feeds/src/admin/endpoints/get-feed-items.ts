@@ -16,17 +16,19 @@ export const getFeedItems = createAdminEndpoint(
 		const controller = ctx.context.controllers
 			.productFeeds as ProductFeedsController;
 
-		const items = await controller.getFeedItems(ctx.params.id, {
+		const take = ctx.query.take ?? 50;
+		const skip = ctx.query.skip ?? 0;
+		const all = await controller.getFeedItems(ctx.params.id, {
 			status: ctx.query.status as
 				| "valid"
 				| "warning"
 				| "error"
 				| "excluded"
 				| undefined,
-			take: ctx.query.take ?? 50,
-			skip: ctx.query.skip ?? 0,
 		});
+		const total = all.length;
+		const items = all.slice(skip, skip + take);
 
-		return { items, total: items.length };
+		return { items, total };
 	},
 );

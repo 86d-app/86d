@@ -18,11 +18,11 @@ export const listProductsEndpoint = createAdminEndpoint(
 		const limit = ctx.query.limit ?? 50;
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
-		const products = await controller.listProducts({
+		const all = await controller.listProducts({
 			status: ctx.query.status as WishProductStatus | undefined,
-			take: limit,
-			skip,
 		});
-		return { products, total: products.length };
+		const total = all.length;
+		const products = all.slice(skip, skip + limit);
+		return { products, total };
 	},
 );

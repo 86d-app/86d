@@ -15,7 +15,9 @@ export const listMetaEndpoint = createAdminEndpoint(
 		const limit = ctx.query.limit ?? 50;
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
-		const metaTags = await controller.listMetaTags({ take: limit, skip });
-		return { metaTags, total: metaTags.length };
+		const all = await controller.listMetaTags({});
+		const total = all.length;
+		const metaTags = all.slice(skip, skip + limit);
+		return { metaTags, total };
 	},
 );

@@ -18,13 +18,15 @@ export const listSubscriptions = createAdminEndpoint(
 	async (ctx) => {
 		const controller = ctx.context.controllers
 			.subscriptions as SubscriptionController;
-		const subscriptions = await controller.listSubscriptions({
+		const take = ctx.query.take ?? 50;
+		const skip = ctx.query.skip ?? 0;
+		const all = await controller.listSubscriptions({
 			email: ctx.query.email,
 			planId: ctx.query.planId,
 			status: ctx.query.status,
-			take: ctx.query.take ?? 50,
-			skip: ctx.query.skip ?? 0,
 		});
-		return { subscriptions, total: subscriptions.length };
+		const total = all.length;
+		const subscriptions = all.slice(skip, skip + take);
+		return { subscriptions, total };
 	},
 );

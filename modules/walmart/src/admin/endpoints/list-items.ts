@@ -23,12 +23,12 @@ export const listItemsEndpoint = createAdminEndpoint(
 		const limit = ctx.query.limit ?? 50;
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
-		const items = await controller.listItems({
+		const all = await controller.listItems({
 			status: ctx.query.status as ItemStatus | undefined,
 			fulfillmentType: ctx.query.fulfillmentType as FulfillmentType | undefined,
-			take: limit,
-			skip,
 		});
-		return { items, total: items.length };
+		const total = all.length;
+		const items = all.slice(skip, skip + limit);
+		return { items, total };
 	},
 );

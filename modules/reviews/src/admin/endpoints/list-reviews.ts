@@ -14,12 +14,14 @@ export const listReviews = createAdminEndpoint(
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers.reviews as ReviewController;
-		const reviews = await controller.listReviews({
+		const take = ctx.query.take ?? 50;
+		const skip = ctx.query.skip ?? 0;
+		const all = await controller.listReviews({
 			status: ctx.query.status as ReviewStatus | undefined,
 			productId: ctx.query.productId,
-			take: ctx.query.take ?? 50,
-			skip: ctx.query.skip ?? 0,
 		});
-		return { reviews, total: reviews.length };
+		const total = all.length;
+		const reviews = all.slice(skip, skip + take);
+		return { reviews, total };
 	},
 );

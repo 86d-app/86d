@@ -19,11 +19,11 @@ export const listStationsEndpoint = createAdminEndpoint(
 		const limit = ctx.query.limit ?? 50;
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
-		const stations = await controller.listStations({
+		const all = await controller.listStations({
 			isActive: ctx.query.isActive,
-			take: limit,
-			skip,
 		});
-		return { stations, total: stations.length };
+		const total = all.length;
+		const stations = all.slice(skip, skip + limit);
+		return { stations, total };
 	},
 );

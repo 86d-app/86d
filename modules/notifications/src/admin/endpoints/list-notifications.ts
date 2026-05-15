@@ -37,14 +37,14 @@ export const listNotificationsEndpoint = createAdminEndpoint(
 		const limit = ctx.query.limit ?? 50;
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
-		const notifications = await controller.list({
+		const all = await controller.list({
 			customerId: ctx.query.customerId,
 			type: ctx.query.type as NotificationType | undefined,
 			priority: ctx.query.priority as NotificationPriority | undefined,
 			read: ctx.query.read,
-			take: limit,
-			skip,
 		});
-		return { notifications, total: notifications.length };
+		const total = all.length;
+		const notifications = all.slice(skip, skip + limit);
+		return { notifications, total };
 	},
 );

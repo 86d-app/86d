@@ -15,7 +15,9 @@ export const listFeeds = createAdminEndpoint(
 	async (ctx) => {
 		const controller = ctx.context.controllers
 			.productFeeds as ProductFeedsController;
-		const feeds = await controller.listFeeds({
+		const take = ctx.query.take ?? 50;
+		const skip = ctx.query.skip ?? 0;
+		const all = await controller.listFeeds({
 			status: ctx.query.status as
 				| "active"
 				| "paused"
@@ -30,9 +32,9 @@ export const listFeeds = createAdminEndpoint(
 				| "tiktok"
 				| "custom"
 				| undefined,
-			take: ctx.query.take ?? 50,
-			skip: ctx.query.skip ?? 0,
 		});
-		return { feeds, total: feeds.length };
+		const total = all.length;
+		const feeds = all.slice(skip, skip + take);
+		return { feeds, total };
 	},
 );

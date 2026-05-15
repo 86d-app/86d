@@ -16,10 +16,9 @@ export const listStreamsEndpoint = createAdminEndpoint(
 		const limit = ctx.query.limit ?? 50;
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
-		const streams = await controller.listStreams({
-			take: limit,
-			skip,
-		});
-		return { streams, total: streams.length };
+		const all = await controller.listStreams({});
+		const total = all.length;
+		const streams = all.slice(skip, skip + limit);
+		return { streams, total };
 	},
 );

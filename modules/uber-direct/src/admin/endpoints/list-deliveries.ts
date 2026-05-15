@@ -15,12 +15,14 @@ export const listDeliveries = createAdminEndpoint(
 	async (ctx) => {
 		const controller = ctx.context.controllers
 			.uberDirect as UberDirectController;
-		const deliveries = await controller.listDeliveries({
+		const take = ctx.query.take ?? 50;
+		const skip = ctx.query.skip ?? 0;
+		const all = await controller.listDeliveries({
 			status: ctx.query.status,
 			orderId: ctx.query.orderId,
-			take: ctx.query.take ?? 50,
-			skip: ctx.query.skip ?? 0,
 		});
-		return { deliveries, total: deliveries.length };
+		const total = all.length;
+		const deliveries = all.slice(skip, skip + take);
+		return { deliveries, total };
 	},
 );

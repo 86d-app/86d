@@ -18,13 +18,13 @@ export const listReferralsEndpoint = createAdminEndpoint(
 		const limit = ctx.query.limit ?? 50;
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
-		const referrals = await controller.listReferrals({
+		const all = await controller.listReferrals({
 			referrerCustomerId: ctx.query.referrerCustomerId,
 			refereeCustomerId: ctx.query.refereeCustomerId,
 			status: ctx.query.status as ReferralStatus | undefined,
-			take: limit,
-			skip,
 		});
-		return { referrals, total: referrals.length };
+		const total = all.length;
+		const referrals = all.slice(skip, skip + limit);
+		return { referrals, total };
 	},
 );

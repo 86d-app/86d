@@ -19,11 +19,11 @@ export const listRedirectsEndpoint = createAdminEndpoint(
 		const limit = ctx.query.limit ?? 50;
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
-		const redirects = await controller.listRedirects({
+		const all = await controller.listRedirects({
 			active: ctx.query.active,
-			take: limit,
-			skip,
 		});
-		return { redirects, total: redirects.length };
+		const total = all.length;
+		const redirects = all.slice(skip, skip + limit);
+		return { redirects, total };
 	},
 );

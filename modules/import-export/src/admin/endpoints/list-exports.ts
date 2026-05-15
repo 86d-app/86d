@@ -15,7 +15,9 @@ export const listExports = createAdminEndpoint(
 	async (ctx) => {
 		const controller = ctx.context.controllers
 			.importExport as ImportExportController;
-		const jobs = await controller.listExports({
+		const take = ctx.query.take ?? 50;
+		const skip = ctx.query.skip ?? 0;
+		const all = await controller.listExports({
 			type: ctx.query.type as
 				| "products"
 				| "customers"
@@ -28,9 +30,9 @@ export const listExports = createAdminEndpoint(
 				| "completed"
 				| "failed"
 				| undefined,
-			take: ctx.query.take ?? 50,
-			skip: ctx.query.skip ?? 0,
 		});
-		return { jobs, total: jobs.length };
+		const total = all.length;
+		const jobs = all.slice(skip, skip + take);
+		return { jobs, total };
 	},
 );

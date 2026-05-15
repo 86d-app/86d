@@ -18,12 +18,12 @@ export const listConversionsEndpoint = createAdminEndpoint(
 		const limit = ctx.query.limit ?? 50;
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
-		const conversions = await controller.listConversions({
+		const all = await controller.listConversions({
 			affiliateId: ctx.query.affiliateId,
 			status: ctx.query.status as ConversionStatus | undefined,
-			take: limit,
-			skip,
 		});
-		return { conversions, total: conversions.length };
+		const total = all.length;
+		const conversions = all.slice(skip, skip + limit);
+		return { conversions, total };
 	},
 );

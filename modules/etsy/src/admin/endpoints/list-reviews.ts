@@ -15,10 +15,9 @@ export const listReviewsEndpoint = createAdminEndpoint(
 		const limit = ctx.query.limit ?? 50;
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
-		const reviews = await controller.listReviews({
-			take: limit,
-			skip,
-		});
-		return { reviews, total: reviews.length };
+		const all = await controller.listReviews({});
+		const total = all.length;
+		const reviews = all.slice(skip, skip + limit);
+		return { reviews, total };
 	},
 );

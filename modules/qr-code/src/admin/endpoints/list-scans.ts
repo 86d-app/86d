@@ -16,10 +16,9 @@ export const listScansEndpoint = createAdminEndpoint(
 		const limit = ctx.query.limit ?? 50;
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
-		const scans = await controller.listScans(ctx.params.id, {
-			take: limit,
-			skip,
-		});
-		return { scans, total: scans.length };
+		const all = await controller.listScans(ctx.params.id, {});
+		const total = all.length;
+		const scans = all.slice(skip, skip + limit);
+		return { scans, total };
 	},
 );

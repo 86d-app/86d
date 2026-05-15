@@ -17,11 +17,11 @@ export const listCampaignsEndpoint = createAdminEndpoint(
 		const limit = ctx.query.limit ?? 50;
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
-		const campaigns = await controller.listCampaigns({
+		const all = await controller.listCampaigns({
 			status: ctx.query.status as CampaignStatus | undefined,
-			take: limit,
-			skip,
 		});
-		return { campaigns, total: campaigns.length };
+		const total = all.length;
+		const campaigns = all.slice(skip, skip + limit);
+		return { campaigns, total };
 	},
 );

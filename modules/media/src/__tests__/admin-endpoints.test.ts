@@ -166,15 +166,27 @@ describe("admin GET /admin/media", () => {
 		);
 	});
 
-	it("calculates skip from page and limit", async () => {
-		const ctrl = makeController();
-		await call(listAssetsHandler, {
+	it("slices results to the requested page without passing pagination to controller", async () => {
+		const allAssets = Array.from({ length: 25 }, (_, i) =>
+			makeAsset({ id: `a${i + 1}` }),
+		);
+		const ctrl = makeController({
+			listAssets: vi.fn().mockResolvedValue(allAssets),
+		});
+		const result = (await call(listAssetsHandler, {
 			query: { page: 3, limit: 10 },
 			controller: ctrl,
-		});
+		})) as { assets: Asset[]; total: number };
+		// Controller called without take/skip — pagination is done in-memory
 		expect(ctrl.listAssets).toHaveBeenCalledWith(
-			expect.objectContaining({ skip: 20, take: 10 }),
+			expect.not.objectContaining({ skip: expect.anything() }),
 		);
+		expect(ctrl.listAssets).toHaveBeenCalledWith(
+			expect.not.objectContaining({ take: expect.anything() }),
+		);
+		// Page 3, limit 10 → items 20-24 (5 items), total = 25
+		expect(result.assets).toHaveLength(5);
+		expect(result.total).toBe(25);
 	});
 });
 

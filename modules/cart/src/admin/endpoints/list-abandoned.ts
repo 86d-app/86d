@@ -21,19 +21,18 @@ export const listAbandonedCarts = createAdminEndpoint(
 
 		const page = query.page ? Number.parseInt(query.page, 10) : 1;
 		const limit = query.limit ? Number.parseInt(query.limit, 10) : 20;
+		const skip = (page - 1) * limit;
 		const thresholdHours = query.thresholdHours
 			? Number.parseInt(query.thresholdHours, 10)
 			: 1;
 
-		const carts = await controller.getAbandonedCarts({
+		const allCarts = await controller.getAbandonedCarts({
 			thresholdHours,
-			take: limit,
-			skip: (page - 1) * limit,
 		});
 
 		// Enrich each cart with items and subtotal
-		const enriched = await Promise.all(
-			carts.map(async (cart) => {
+		const allEnriched = await Promise.all(
+			allCarts.map(async (cart) => {
 				const items = (await context.data.findMany("cartItem", {
 					where: { cartId: cart.id },
 				})) as CartItem[];
@@ -59,11 +58,14 @@ export const listAbandonedCarts = createAdminEndpoint(
 			}),
 		);
 
+		const total = allEnriched.length;
+		const carts = allEnriched.slice(skip, skip + limit);
+
 		return {
-			carts: enriched,
+			carts,
 			page,
 			limit,
-			total: enriched.length,
+			total,
 		};
 	},
 );

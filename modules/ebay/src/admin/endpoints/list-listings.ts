@@ -17,12 +17,12 @@ export const listListingsEndpoint = createAdminEndpoint(
 		const limit = ctx.query.limit ?? 50;
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
-		const listings = await controller.listListings({
+		const all = await controller.listListings({
 			status: ctx.query.status as ListingStatus | undefined,
 			listingType: ctx.query.listingType as ListingType | undefined,
-			take: limit,
-			skip,
 		});
-		return { listings, total: listings.length };
+		const total = all.length;
+		const listings = all.slice(skip, skip + limit);
+		return { listings, total };
 	},
 );

@@ -17,10 +17,9 @@ export const streamPhotosEndpoint = createAdminEndpoint(
 		const limit = ctx.query.limit ?? 50;
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
-		const photos = await controller.getStreamPhotos(ctx.params.id, {
-			take: limit,
-			skip,
-		});
-		return { photos, total: photos.length };
+		const all = await controller.getStreamPhotos(ctx.params.id, {});
+		const total = all.length;
+		const photos = all.slice(skip, skip + limit);
+		return { photos, total };
 	},
 );

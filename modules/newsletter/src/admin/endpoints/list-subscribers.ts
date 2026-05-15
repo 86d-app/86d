@@ -18,12 +18,12 @@ export const listSubscribersEndpoint = createAdminEndpoint(
 		const limit = ctx.query.limit ?? 50;
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
-		const subscribers = await controller.listSubscribers({
+		const all = await controller.listSubscribers({
 			status: ctx.query.status as SubscriberStatus | undefined,
 			tag: ctx.query.tag,
-			take: limit,
-			skip,
 		});
-		return { subscribers, total: subscribers.length };
+		const total = all.length;
+		const subscribers = all.slice(skip, skip + limit);
+		return { subscribers, total };
 	},
 );

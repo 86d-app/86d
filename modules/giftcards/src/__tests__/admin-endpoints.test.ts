@@ -174,11 +174,15 @@ describe("admin GET /gift-cards", () => {
 		);
 	});
 
-	it("uses default take=50 and skip=0 when not provided", async () => {
+	it("calls controller without pagination params (endpoint slices in-memory)", async () => {
 		const ctrl = makeController();
 		await call(listHandler, { controller: ctrl });
+		// After the fix, take/skip are applied in-memory; controller receives only filters
 		expect(ctrl.list).toHaveBeenCalledWith(
-			expect.objectContaining({ take: 50, skip: 0 }),
+			expect.not.objectContaining({ take: expect.anything() }),
+		);
+		expect(ctrl.list).toHaveBeenCalledWith(
+			expect.not.objectContaining({ skip: expect.anything() }),
 		);
 	});
 });

@@ -14,12 +14,14 @@ export const listPayouts = createAdminEndpoint(
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers.tipping as TippingController;
-		const payouts = await controller.listPayouts({
+		const take = ctx.query.take ?? 50;
+		const skip = ctx.query.skip ?? 0;
+		const all = await controller.listPayouts({
 			recipientId: ctx.query.recipientId,
 			status: ctx.query.status,
-			take: ctx.query.take ?? 50,
-			skip: ctx.query.skip ?? 0,
 		});
-		return { payouts, total: payouts.length };
+		const total = all.length;
+		const payouts = all.slice(skip, skip + take);
+		return { payouts, total };
 	},
 );

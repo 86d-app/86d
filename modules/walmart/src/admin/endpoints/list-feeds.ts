@@ -19,12 +19,12 @@ export const listFeedsEndpoint = createAdminEndpoint(
 		const limit = ctx.query.limit ?? 50;
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
-		const feeds = await controller.listFeeds({
+		const all = await controller.listFeeds({
 			feedType: ctx.query.feedType as FeedType | undefined,
 			status: ctx.query.status as FeedStatus | undefined,
-			take: limit,
-			skip,
 		});
-		return { feeds, total: feeds.length };
+		const total = all.length;
+		const feeds = all.slice(skip, skip + limit);
+		return { feeds, total };
 	},
 );

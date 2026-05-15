@@ -17,10 +17,9 @@ export const listSubmissionsEndpoint = createAdminEndpoint(
 		const limit = ctx.query.limit ?? 50;
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
-		const submissions = await controller.listSubmissions({
-			take: limit,
-			skip,
-		});
-		return { submissions, total: submissions.length };
+		const all = await controller.listSubmissions({});
+		const total = all.length;
+		const submissions = all.slice(skip, skip + limit);
+		return { submissions, total };
 	},
 );

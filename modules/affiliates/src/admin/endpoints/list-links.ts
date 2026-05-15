@@ -21,12 +21,12 @@ export const listLinksEndpoint = createAdminEndpoint(
 		const limit = ctx.query.limit ?? 50;
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
-		const links = await controller.listLinks({
+		const all = await controller.listLinks({
 			affiliateId: ctx.query.affiliateId,
 			active: ctx.query.active,
-			take: limit,
-			skip,
 		});
-		return { links, total: links.length };
+		const total = all.length;
+		const links = all.slice(skip, skip + limit);
+		return { links, total };
 	},
 );

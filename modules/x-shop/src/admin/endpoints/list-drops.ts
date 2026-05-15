@@ -16,11 +16,11 @@ export const listDropsEndpoint = createAdminEndpoint(
 		const limit = ctx.query.limit ?? 20;
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
-		const drops = await controller.listDrops({
+		const all = await controller.listDrops({
 			status: ctx.query.status,
-			take: limit,
-			skip,
 		});
-		return { drops, total: drops.length };
+		const total = all.length;
+		const drops = all.slice(skip, skip + limit);
+		return { drops, total };
 	},
 );

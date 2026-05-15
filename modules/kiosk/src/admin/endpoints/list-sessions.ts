@@ -19,12 +19,12 @@ export const listSessionsEndpoint = createAdminEndpoint(
 		const limit = ctx.query.limit ?? 50;
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
-		const sessions = await controller.listSessions({
+		const all = await controller.listSessions({
 			stationId: ctx.query.stationId,
 			status: ctx.query.status as SessionStatus | undefined,
-			take: limit,
-			skip,
 		});
-		return { sessions, total: sessions.length };
+		const total = all.length;
+		const sessions = all.slice(skip, skip + limit);
+		return { sessions, total };
 	},
 );

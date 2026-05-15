@@ -17,13 +17,15 @@ export const listTokens = createAdminEndpoint(
 		const controller = ctx.context.controllers[
 			"digital-downloads"
 		] as DigitalDownloadsController;
-		const tokens = await controller.listTokens({
+		const take = ctx.query.take ?? 50;
+		const skip = ctx.query.skip ?? 0;
+		const all = await controller.listTokens({
 			fileId: ctx.query.fileId,
 			orderId: ctx.query.orderId,
 			email: ctx.query.email,
-			take: ctx.query.take ?? 50,
-			skip: ctx.query.skip ?? 0,
 		});
-		return { tokens, total: tokens.length };
+		const total = all.length;
+		const tokens = all.slice(skip, skip + take);
+		return { tokens, total };
 	},
 );
