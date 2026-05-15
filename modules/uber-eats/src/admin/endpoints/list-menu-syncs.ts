@@ -17,7 +17,11 @@ export const listMenuSyncsEndpoint = createAdminEndpoint(
 		const limit = ctx.query.limit ?? 50;
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
-		const syncs = await controller.listMenuSyncs({ take: limit, skip });
-		return { syncs, total: syncs.length };
+
+		// Fetch all for accurate total count, then slice for page
+		const all = await controller.listMenuSyncs({});
+		const total = all.length;
+		const syncs = all.slice(skip, skip + limit);
+		return { syncs, total };
 	},
 );

@@ -22,12 +22,14 @@ export const listCatalogItemsEndpoint = createAdminEndpoint(
 		const limit = ctx.query.limit ?? 50;
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
-		const items = await controller.listCatalogItems({
+
+		// Fetch all matching for accurate total count, then slice for page
+		const all = await controller.listCatalogItems({
 			status: ctx.query.status as CatalogItemStatus | undefined,
 			availability: ctx.query.availability as Availability | undefined,
-			take: limit,
-			skip,
 		});
-		return { items, total: items.length };
+		const total = all.length;
+		const items = all.slice(skip, skip + limit);
+		return { items, total };
 	},
 );

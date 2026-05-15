@@ -16,10 +16,11 @@ export const listSyncsEndpoint = createAdminEndpoint(
 		const limit = ctx.query.limit ?? 50;
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
-		const syncs = await controller.listSyncs({
-			take: limit,
-			skip,
-		});
-		return { syncs, total: syncs.length };
+
+		// Fetch all for accurate total count, then slice for page
+		const all = await controller.listSyncs({});
+		const total = all.length;
+		const syncs = all.slice(skip, skip + limit);
+		return { syncs, total };
 	},
 );

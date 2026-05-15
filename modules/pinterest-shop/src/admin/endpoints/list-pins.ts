@@ -16,10 +16,11 @@ export const listPinsEndpoint = createAdminEndpoint(
 		const limit = ctx.query.limit ?? 50;
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
-		const pins = await controller.listPins({
-			take: limit,
-			skip,
-		});
-		return { pins, total: pins.length };
+
+		// Fetch all for accurate total count, then slice for page
+		const all = await controller.listPins({});
+		const total = all.length;
+		const pins = all.slice(skip, skip + limit);
+		return { pins, total };
 	},
 );
