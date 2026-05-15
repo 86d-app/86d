@@ -1,3 +1,4 @@
+import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -41,8 +42,8 @@ const { POST } = await import("../route");
 function makeRequest(
 	body: unknown,
 	headers: Record<string, string> = {},
-): Request {
-	return new Request("http://localhost/api/contact", {
+): NextRequest {
+	return new NextRequest("http://localhost/api/contact", {
 		method: "POST",
 		headers: { "Content-Type": "application/json", ...headers },
 		body: JSON.stringify(body),
@@ -85,7 +86,7 @@ describe("POST /api/contact", () => {
 	describe("invalid JSON", () => {
 		it("returns 400 for malformed JSON body", async () => {
 			const response = await POST(
-				new Request("http://localhost/api/contact", {
+				new NextRequest("http://localhost/api/contact", {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
 					body: "not-json{",
