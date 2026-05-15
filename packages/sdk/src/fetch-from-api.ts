@@ -50,6 +50,24 @@ const notificationSettingsSchema = z
 	})
 	.optional();
 
+const billingInfoSchema = z
+	.object({
+		plan: z.string(),
+		status: z.enum([
+			"active",
+			"trialing",
+			"past_due",
+			"canceled",
+			"incomplete",
+			"incomplete_expired",
+			"unpaid",
+			"paused",
+		]),
+		isActive: z.boolean(),
+		periodEnd: z.string().optional(),
+	})
+	.optional();
+
 const configSchema = z.object({
 	$schema: z.string().optional(),
 	theme: z.string(),
@@ -60,6 +78,7 @@ const configSchema = z.object({
 	modules: z.array(z.string()).optional(),
 	moduleOptions: z.record(z.string(), z.unknown()).optional(),
 	notificationSettings: notificationSettingsSchema,
+	billing: billingInfoSchema,
 	variables: z
 		.object({
 			light: themeVariablesSchema.partial(),

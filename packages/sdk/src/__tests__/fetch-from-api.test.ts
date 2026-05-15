@@ -181,4 +181,105 @@ describe("fetchFromApi", () => {
 			DEFAULT_CONFIG.variables.light.foreground,
 		);
 	});
+
+	it("includes billing when API response contains billing info", async () => {
+		const responseWithBilling = {
+			...createValidApiResponse(),
+			billing: {
+				plan: "pro",
+				status: "active",
+				isActive: true,
+				periodEnd: "2026-06-14T00:00:00.000Z",
+			},
+		};
+
+		globalThis.fetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: () => Promise.resolve(responseWithBilling),
+		});
+
+		const config = await fetchFromApi("abc-123", "https://api.86d.app");
+
+		expect(config.billing).toEqual({
+			plan: "pro",
+			status: "active",
+			isActive: true,
+			periodEnd: "2026-06-14T00:00:00.000Z",
+		});
+	});
+
+	it("omits billing when API response does not include it", async () => {
+		globalThis.fetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: () => Promise.resolve(createValidApiResponse()),
+		});
+
+		const config = await fetchFromApi("abc-123", "https://api.86d.app");
+
+		expect(config.billing).toBeUndefined();
+	});
+
+	it("accepts billing without periodEnd", async () => {
+		const responseWithBilling = {
+			...createValidApiResponse(),
+			billing: {
+				plan: "starter",
+				status: "trialing",
+				isActive: true,
+			},
+		};
+
+		globalThis.fetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: () => Promise.resolve(responseWithBilling),
+		});
+
+		const config = await fetchFromApi("abc-123", "https://api.86d.app");
+
+		expect(config.billing?.plan).toBe("starter");
+		expect(config.billing?.status).toBe("trialing");
+		expect(config.billing?.isActive).toBe(true);
+		expect(config.billing?.periodEnd).toBeUndefined();
+	});
+
+	it("accepts billing with past_due status", async () => {
+		const responseWithBilling = {
+			...createValidApiResponse(),
+			billing: {
+				plan: "pro",
+				status: "past_due",
+				isActive: false,
+			},
+		};
+
+		globalThis.fetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: () => Promise.resolve(responseWithBilling),
+		});
+
+		const config = await fetchFromApi("abc-123", "https://api.86d.app");
+
+		expect(config.billing?.status).toBe("past_due");
+		expect(config.billing?.isActive).toBe(false);
+	});
+
+	it("throws on invalid billing status in response", async () => {
+		const responseWithInvalidBilling = {
+			...createValidApiResponse(),
+			billing: {
+				plan: "pro",
+				status: "unknown_status",
+				isActive: true,
+			},
+		};
+
+		globalThis.fetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: () => Promise.resolve(responseWithInvalidBilling),
+		});
+
+		await expect(
+			fetchFromApi("abc-123", "https://api.86d.app"),
+		).rejects.toThrow("Invalid store config from 86d API");
+	});
 });

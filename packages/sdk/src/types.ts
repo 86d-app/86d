@@ -44,6 +44,21 @@ export interface NotificationSettings {
 	events?: Record<string, boolean>;
 }
 
+export interface BillingInfo {
+	plan: string;
+	status:
+		| "active"
+		| "trialing"
+		| "past_due"
+		| "canceled"
+		| "incomplete"
+		| "incomplete_expired"
+		| "unpaid"
+		| "paused";
+	isActive: boolean;
+	periodEnd?: string;
+}
+
 export interface Config {
 	$schema?: string;
 	theme: string;
@@ -54,6 +69,7 @@ export interface Config {
 	modules?: string[];
 	moduleOptions?: Record<string, unknown>;
 	notificationSettings?: NotificationSettings;
+	billing?: BillingInfo;
 	variables: {
 		light: ThemeVariables;
 		dark: ThemeVariables;
