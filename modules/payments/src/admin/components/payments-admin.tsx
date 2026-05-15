@@ -240,18 +240,18 @@ function IntentsTab() {
 	const pageSize = 20;
 
 	const queryInput: Record<string, string> = {
-		page: String(page),
-		limit: String(pageSize),
+		take: String(pageSize),
+		skip: String((page - 1) * pageSize),
 	};
 	if (statusFilter) queryInput.status = statusFilter;
 
 	const { data, isLoading: loading } = api.listIntents.useQuery(queryInput) as {
-		data: { intents: PaymentIntent[] } | undefined;
+		data: { intents: PaymentIntent[]; total: number } | undefined;
 		isLoading: boolean;
 	};
 
 	const intents = data?.intents ?? [];
-	const total = intents.length;
+	const total = data?.total ?? intents.length;
 	const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
 	const handleRefundSuccess = () => {

@@ -21,12 +21,14 @@ export const listGamesEndpoint = createAdminEndpoint(
 		const limit = ctx.query.limit ?? 50;
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
-		const games = await controller.listGames({
+
+		// Fetch all matching for accurate total count, then slice for page
+		const all = await controller.listGames({
 			type: ctx.query.type as GameType | undefined,
 			isActive: ctx.query.isActive,
-			take: limit,
-			skip,
 		});
-		return { games, total: games.length };
+		const total = all.length;
+		const games = all.slice(skip, skip + limit);
+		return { games, total };
 	},
 );

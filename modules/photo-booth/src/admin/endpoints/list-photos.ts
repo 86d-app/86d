@@ -17,11 +17,13 @@ export const listPhotosEndpoint = createAdminEndpoint(
 		const limit = ctx.query.limit ?? 50;
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
-		const photos = await controller.listPhotos({
+
+		// Fetch all matching for accurate total count, then slice for page
+		const all = await controller.listPhotos({
 			sessionId: ctx.query.sessionId,
-			take: limit,
-			skip,
 		});
-		return { photos, total: photos.length };
+		const total = all.length;
+		const photos = all.slice(skip, skip + limit);
+		return { photos, total };
 	},
 );

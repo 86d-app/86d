@@ -17,13 +17,17 @@ export const listWaitlist = createAdminEndpoint(
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers.waitlist as WaitlistController;
-		const entries = await controller.listAll({
+		const take = ctx.query.take ?? 50;
+		const skip = ctx.query.skip ?? 0;
+
+		// Fetch all matching for accurate total count, then slice for page
+		const all = await controller.listAll({
 			productId: ctx.query.productId,
 			email: ctx.query.email,
 			status: ctx.query.status,
-			take: ctx.query.take ?? 50,
-			skip: ctx.query.skip ?? 0,
 		});
-		return { entries, total: entries.length };
+		const total = all.length;
+		const entries = all.slice(skip, skip + take);
+		return { entries, total };
 	},
 );

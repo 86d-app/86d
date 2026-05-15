@@ -24,13 +24,17 @@ export const listIntents = createAdminEndpoint(
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers.payments as PaymentController;
-		const intents = await controller.listIntents({
+		const take = ctx.query.take ?? 20;
+		const skip = ctx.query.skip ?? 0;
+
+		// Fetch all matching for accurate total count, then slice for page
+		const all = await controller.listIntents({
 			customerId: ctx.query.customerId,
 			status: ctx.query.status as PaymentIntentStatus | undefined,
 			orderId: ctx.query.orderId,
-			take: ctx.query.take ?? 20,
-			skip: ctx.query.skip ?? 0,
 		});
-		return { intents, total: intents.length };
+		const total = all.length;
+		const intents = all.slice(skip, skip + take);
+		return { intents, total };
 	},
 );

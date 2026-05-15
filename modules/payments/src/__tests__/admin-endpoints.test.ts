@@ -104,7 +104,7 @@ describe("admin GET /payments", () => {
 		expect(result.total).toBe(0);
 	});
 
-	it("returns intents from controller with default pagination", async () => {
+	it("returns intents from controller with pagination", async () => {
 		const intents = [makeIntent({ status: "succeeded" })];
 		const ctrl = makeController({
 			listIntents: vi.fn().mockResolvedValue(intents),
@@ -114,8 +114,9 @@ describe("admin GET /payments", () => {
 		})) as { intents: PaymentIntent[]; total: number };
 		expect(result.intents).toHaveLength(1);
 		expect(result.total).toBe(1);
+		// Endpoint fetches all (no take/skip) then slices for accurate total
 		expect(ctrl.listIntents).toHaveBeenCalledWith(
-			expect.objectContaining({ take: 20, skip: 0 }),
+			expect.not.objectContaining({ take: expect.anything() }),
 		);
 	});
 });

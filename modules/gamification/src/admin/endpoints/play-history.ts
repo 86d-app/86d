@@ -19,13 +19,15 @@ export const playHistoryEndpoint = createAdminEndpoint(
 		const limit = ctx.query.limit ?? 50;
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
-		const plays = await controller.getPlayHistory({
+
+		// Fetch all matching for accurate total count, then slice for page
+		const all = await controller.getPlayHistory({
 			gameId: ctx.params.id,
 			email: ctx.query.email,
 			customerId: ctx.query.customerId,
-			take: limit,
-			skip,
 		});
-		return { plays, total: plays.length };
+		const total = all.length;
+		const plays = all.slice(skip, skip + limit);
+		return { plays, total };
 	},
 );

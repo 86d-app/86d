@@ -36,13 +36,15 @@ export const listSharesEndpoint = createAdminEndpoint(
 		const limit = ctx.query.limit ?? 50;
 		const page = ctx.query.page ?? 1;
 		const skip = (page - 1) * limit;
-		const shares = await controller.listShares({
+
+		// Fetch all matching for accurate total count, then slice for page
+		const all = await controller.listShares({
 			targetType: ctx.query.targetType as TargetType | undefined,
 			network: ctx.query.network as Network | undefined,
 			targetId: ctx.query.targetId,
-			take: limit,
-			skip,
 		});
-		return { shares, total: shares.length };
+		const total = all.length;
+		const shares = all.slice(skip, skip + limit);
+		return { shares, total };
 	},
 );
