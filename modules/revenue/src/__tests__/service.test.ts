@@ -211,6 +211,54 @@ describe("filterAndPageTransactions", () => {
 		expect(result.transactions[0].orderId).toBe("ord_abc123");
 	});
 
+	it("filters by transaction ID search", () => {
+		const intents: RevenueIntent[] = [
+			makeIntent({ id: "txn_alpha_001" }),
+			makeIntent({ id: "txn_beta_999" }),
+		];
+		const result = filterAndPageTransactions(intents, {
+			from: null,
+			to: null,
+			search: "alpha",
+			page: 1,
+			limit: 20,
+		});
+		expect(result.total).toBe(1);
+		expect(result.transactions[0].id).toBe("txn_alpha_001");
+	});
+
+	it("filters by providerIntentId search", () => {
+		const intents: RevenueIntent[] = [
+			makeIntent({ providerIntentId: "pi_stripe_abc" }),
+			makeIntent({ providerIntentId: "pi_stripe_xyz" }),
+		];
+		const result = filterAndPageTransactions(intents, {
+			from: null,
+			to: null,
+			search: "stripe_abc",
+			page: 1,
+			limit: 20,
+		});
+		expect(result.total).toBe(1);
+		expect(result.transactions[0].providerIntentId).toBe("pi_stripe_abc");
+	});
+
+	it("filters by customerId search", () => {
+		const intents: RevenueIntent[] = [
+			makeIntent({ customerId: "cust_alice" }),
+			makeIntent({ customerId: "cust_bob" }),
+		];
+		const result = filterAndPageTransactions(intents, {
+			from: null,
+			to: null,
+			search: "cust_alice",
+			page: 1,
+			limit: 20,
+		});
+		expect(result.total).toBe(1);
+		expect(result.transactions[0].customerId).toBe("cust_alice");
+	});
+
 	it("sorts newest first", () => {
 		const intents: RevenueIntent[] = [
 			makeIntent({ createdAt: new Date("2024-01-01"), amount: 111 }),
