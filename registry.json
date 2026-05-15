@@ -6,67 +6,67 @@
 		"abandoned-carts": {
 			"name": "@86d-app/abandoned-carts",
 			"description": "Abandoned cart tracking and recovery for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "sales",
 			"path": "modules/abandoned-carts",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-f832468d03af5d27f0bffef592af3d539dfef2f398ada9ff49b60cf4666e3d2f"
+			"integrity": "sha256-6798d945db5556ef3641a32bf4d5ecade0dac0ef09718a50224b5503963c995a"
 		},
 		"affiliates": {
 			"name": "@86d-app/affiliates",
 			"description": "Affiliate marketing program module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "customers",
 			"path": "modules/affiliates",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-c8f91e9d71fcd9414841576fe8562193d0a0cd5e5d7a11534f1b9ce170c0098b"
+			"integrity": "sha256-dc63edcc3f0772a2455705fe77dbfb80614b11126e4d44a03542105157a79332"
 		},
 		"amazon": {
 			"name": "@86d-app/amazon",
 			"description": "Amazon Marketplace integration for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "sales",
 			"path": "modules/amazon",
 			"requires": [],
 			"hasStoreComponents": false,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-887f94461971c607da35eafa55069169665afd308d344828efc0a106713e306b"
+			"integrity": "sha256-da3bad602ddcc179efaf38b9752769702672660461b9171ab42931021dd43030"
 		},
 		"analytics": {
 			"name": "@86d-app/analytics",
 			"description": "Event tracking and analytics module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "system",
 			"path": "modules/analytics",
 			"requires": [],
 			"hasStoreComponents": false,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-460620b0bad846fa07dda306fd2220c36e65329a8ef9aad3fdda140ae511c137"
+			"integrity": "sha256-1983dfa83a1018bb176d711911f76edfaa14319a88536194c7aea6a74478a2fa"
 		},
 		"announcements": {
 			"name": "@86d-app/announcements",
 			"description": "Site-wide announcement bars, promotional banners, and notification banners for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "content",
 			"path": "modules/announcements",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-349e19894a028bec3d33c0b26affb1aec68486b1087715ff3e65d22f811a11ed"
+			"integrity": "sha256-56d379ebfabef8f1225d7171949c408496b3d295a5d0db8a37f35505a9de13aa"
 		},
 		"appointments": {
 			"name": "@86d-app/appointments",
 			"description": "Appointments — service-based booking with staff scheduling, time slots, and customer appointment management",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "sales",
 			"path": "modules/appointments",
 			"requires": [
@@ -75,48 +75,48 @@
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-42a9d7cd41577bd15001cf2d9e85ab99057d7f9630a0d5e3833c28c89ee1f911"
+			"integrity": "sha256-33530a7bc7461cd7bd57c9f67fe63610f2349ab7cb0c24c5c6475e052be8b820"
 		},
 		"auctions": {
 			"name": "@86d-app/auctions",
 			"description": "Time-limited product auctions with bidding, reserve prices, and buy-it-now for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "sales",
 			"path": "modules/auctions",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-4582eeae3461943e8042a29f496d6b6308ddad05fcce92b6f74d9a056ddbfefc"
+			"integrity": "sha256-134799d752bd9baeb7d8333862666cc5df9bad9a2ffae7bc17455f0446b1a1a9"
 		},
 		"audit-log": {
 			"name": "@86d-app/audit-log",
 			"description": "Audit logging for admin actions and system events in 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "system",
 			"path": "modules/audit-log",
 			"requires": [],
 			"hasStoreComponents": false,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-606afa0a4c41123058d689b65d04b9bf46e4ea59e1ef937c9a7fc00073b2a563"
+			"integrity": "sha256-45a82bd45268d81ef07ba5b0ce1341bcbd5377f623fc17b11f5c4e2ab1e16c64"
 		},
 		"automations": {
 			"name": "@86d-app/automations",
 			"description": "Event-driven workflow automation module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "system",
 			"path": "modules/automations",
 			"requires": [],
 			"hasStoreComponents": false,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-eeb9d3003f2935daffa4f9a03fd9ba2bce3260b906415ab29aaf778ba8b358d9"
+			"integrity": "sha256-93d0afc5332594c130db79554403adeaac863b05514b28df34c0fe7816fd80db"
 		},
 		"backorders": {
 			"name": "@86d-app/backorders",
 			"description": "Backorder management module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "fulfillment",
 			"path": "modules/backorders",
 			"requires": [
@@ -125,48 +125,48 @@
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-7993b2cbc7c4f588020e5586b5ac6fc8cdb110d4e128a09e52ba239f71601f4d"
+			"integrity": "sha256-0586cd580bebefde71b9b7b75d17f4d0da9eb7b22f11988dd1106bc32a284e1d"
 		},
 		"blog": {
 			"name": "@86d-app/blog",
 			"description": "Blog content management module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "content",
 			"path": "modules/blog",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-f211889a5e9d20bcafcf2f9b71860a76a56a38df52cd4b43cf11c19dd5c25b5d"
+			"integrity": "sha256-d60942e4195f82f3a1a19bde795eb6c673f659ee87b03d4d294e3b3757e7b142"
 		},
 		"braintree": {
 			"name": "@86d-app/braintree",
 			"description": "Braintree payment provider for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "finance",
 			"path": "modules/braintree",
 			"requires": [],
 			"hasStoreComponents": false,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-923637ff1da0e676cccdbeef70856a38a8a52d66d61183da0a133b4b643e3cb7"
+			"integrity": "sha256-ffb55f78943bf42564341903b54d3082cae3e2140ed43d815bb01750a20eabd8"
 		},
 		"brands": {
 			"name": "@86d-app/brands",
 			"description": "Product brand management — organize products by manufacturer or brand with brand pages",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "catalog",
 			"path": "modules/brands",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-84dffd27aa02de51af09b6f027a4c5c52344f800f49fca86ca67d54439d7aa0c"
+			"integrity": "sha256-e46f7535edbbf07c41556d6f5b8ff6124a0157bbfcf6a6dfff255cb57de788ee"
 		},
 		"bulk-pricing": {
 			"name": "@86d-app/bulk-pricing",
 			"description": "Quantity-based tiered pricing — set volume discounts for products so customers pay less when buying in bulk",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "catalog",
 			"path": "modules/bulk-pricing",
 			"requires": [
@@ -175,96 +175,96 @@
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-116370163d94a7d013b14b44bcda888e79c1e6dbda2252013001e81b64a1ea98"
+			"integrity": "sha256-c5f3d72883de7b6676f66b88f7e38bcfad0de464f54c66b6549076ba7e400957"
 		},
 		"bundles": {
 			"name": "@86d-app/bundles",
 			"description": "Product bundles with configurable discounts for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "catalog",
 			"path": "modules/bundles",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-53db4be3063fd182b47f372547ec08e80f85708ad231c9f5756f0a543dbd521f"
+			"integrity": "sha256-9b9958fef25a82236971777d798bf79c4348450a8284ca687b5330b723dc0238"
 		},
 		"cart": {
 			"name": "@86d-app/cart",
 			"description": "Shopping cart module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "sales",
 			"path": "modules/cart",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-c1b08e0040473c56248b59e13ba882ac2b6b3e6695b92eff8c535e00704a2a0c"
+			"integrity": "sha256-a674a5026f548c2a96b02447c5c74acb6dd22217f0e210258dce080983b1d9c1"
 		},
 		"checkout": {
 			"name": "@86d-app/checkout",
 			"description": "Checkout flow module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "sales",
 			"path": "modules/checkout",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-3a610625d7f43cbeb0f8231cdb5d07f42dc94fbcbf8186450d8c6459086afa37"
+			"integrity": "sha256-6878828fbb01d1681371736e27586b0d35d1d85ba05bce34f5b7d87b0537045e"
 		},
 		"collections": {
 			"name": "@86d-app/collections",
 			"description": "Curated product collections for merchandising — manual and automatic groupings",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "catalog",
 			"path": "modules/collections",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-ff5a7a148f2fc9c46662f2206f6caf5b754275f2c931e1e92d06f27058733a46"
+			"integrity": "sha256-356cd742aac42e5cc8e3d47e2ee844c56d9b353886ff6747b49f1eab2f8eddfd"
 		},
 		"comparisons": {
 			"name": "@86d-app/comparisons",
 			"description": "Product comparison module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "marketing",
 			"path": "modules/comparisons",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-9b8638344042a0ff7d7e7ec77e6b09daf449ad98f9661dadeae0445bdade103e"
+			"integrity": "sha256-c865baa9c92a6731c9f6f12203b975b6c1017bf7cb58fcacbc78585afd18e6b7"
 		},
 		"customer-groups": {
 			"name": "@86d-app/customer-groups",
 			"description": "Customer groups and segmentation module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "customers",
 			"path": "modules/customer-groups",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-11f40a673ad2189169c0edb3f36c3527aa076d6cca0aa7ad18e35f60b8c7a1a5"
+			"integrity": "sha256-175eba4f7761ab93875501ebd49753a88efc08c0c79a251a178e09dc6d0729c5"
 		},
 		"customers": {
 			"name": "@86d-app/customers",
 			"description": "Customer management module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "customers",
 			"path": "modules/customers",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-593f7fdcd517aa265c72785c8a8514428613092e8dbe912b2be7a69d721a8b79"
+			"integrity": "sha256-688d50e34b6fb1125ce693dfca51359a7010bb997095bfb3837b25a142b16731"
 		},
 		"delivery-slots": {
 			"name": "@86d-app/delivery-slots",
 			"description": "Delivery slots — define delivery time windows by day of week with capacity limits, surcharges, and blackout dates",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "fulfillment",
 			"path": "modules/delivery-slots",
 			"requires": [
@@ -273,108 +273,108 @@
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-7da6a7fed49b1eaeaaf5dc32c7c1b76d29d3b65be1d04bfca6b1d99761552e63"
+			"integrity": "sha256-a9f57be7ad941e3b4f6a4d81a9a0118bb1a3feef021403ddbbf85c6790a55e90"
 		},
 		"digital-downloads": {
 			"name": "@86d-app/digital-downloads",
 			"description": "Digital file delivery module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "sales",
 			"path": "modules/digital-downloads",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-2130d6d8306be28cb8cba6b0f6f2dc22dc2a782ff536f58079a8c508d473ee35"
+			"integrity": "sha256-f7ce5f618c0356a599679bda1de3b63a98f4309b9f65455bbdcfb2ecf4786d54"
 		},
 		"discounts": {
 			"name": "@86d-app/discounts",
 			"description": "Discount codes and promotions module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "marketing",
 			"path": "modules/discounts",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-6f4a1fa226e2f389d6d10bc9ab18b7af4380a8ce332287b756819b472b00bd39"
+			"integrity": "sha256-ecefa7153db747d3471211de204ae0a11e6e8da2dc53d979f560ec636ef5ffc8"
 		},
 		"doordash": {
 			"name": "@86d-app/doordash",
 			"description": "DoorDash Drive delivery integration module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "fulfillment",
 			"path": "modules/doordash",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-c26e3138db2a914d01387de6bcdf4b8065a1481365ac7159f5de5f8e42c0073d"
+			"integrity": "sha256-69738eb16141fc64eb4f92eb7a5d7eb6de80179855bc8d81a6951cffe1fea28f"
 		},
 		"ebay": {
 			"name": "@86d-app/ebay",
 			"description": "eBay marketplace integration for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "sales",
 			"path": "modules/ebay",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-cf9cee5da5c7afe43b0205b5060fbdb4b9fc1fe7dc0976c47a68fb6db766be71"
+			"integrity": "sha256-23fd9c03bedf9ee144efc5ab07ad982d6349343d356c3caa50b65b95eb7917a3"
 		},
 		"etsy": {
 			"name": "@86d-app/etsy",
 			"description": "Etsy Marketplace integration for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "sales",
 			"path": "modules/etsy",
 			"requires": [],
 			"hasStoreComponents": false,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-e9aada992dda945fbfe97d63047fe984550cd27d734736fa0e8743f9b13c515d"
+			"integrity": "sha256-a371815f9bac0c619d9d5c583ae452a1b0149295878657548bc90595ce686803"
 		},
 		"facebook-shop": {
 			"name": "@86d-app/facebook-shop",
 			"description": "Facebook/Meta Commerce sales channel module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "sales",
 			"path": "modules/facebook-shop",
 			"requires": [],
 			"hasStoreComponents": false,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-c33fb5e9b8ac85901115b2016d93da13933f0335040d248c4468b5167a386a77"
+			"integrity": "sha256-914688ec19e057ec72b0a893dc46362119f17d69acea82d02fc0d0ab8fe7e93a"
 		},
 		"faq": {
 			"name": "@86d-app/faq",
 			"description": "FAQ and knowledge base module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "content",
 			"path": "modules/faq",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-4d62c89766c9619ac1e246554bc1d0954b0d67ed543f8547d7ed10956cae9b8b"
+			"integrity": "sha256-7c24b5aed5318051eca0fb59c4a6daffc797852a1d22bb72f8d3a8c681db5dd0"
 		},
 		"favor": {
 			"name": "@86d-app/favor",
 			"description": "Favor delivery service integration for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "fulfillment",
 			"path": "modules/favor",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-a66296b8b0f434e32ebd736b344b7576ad5d80c084775d19344a2c3e7edebb82"
+			"integrity": "sha256-532300a3c5332e52a0ca19d1812e218a1416c951a503ee8e3819cc644e7beb33"
 		},
 		"flash-sales": {
 			"name": "@86d-app/flash-sales",
 			"description": "Flash sales — time-limited promotional events with countdown timers, per-product sale pricing, and stock limits",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "sales",
 			"path": "modules/flash-sales",
 			"requires": [
@@ -383,60 +383,60 @@
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-9cc8dae3fe0652bf29003461861f57ec689e116fe13c11b6edbcf77f71b90002"
+			"integrity": "sha256-18175be02ef8c5330cc69414d3dd9f848213785ced2eb1a257b1ad1c4eae30f6"
 		},
 		"forms": {
 			"name": "@86d-app/forms",
 			"description": "Custom forms module for 86d commerce platform — contact forms, surveys, inquiries",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "content",
 			"path": "modules/forms",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-e470a7475ba25c75c622f4dc268482c43c8c6c3f4417ca79593be631ed2a9eea"
+			"integrity": "sha256-a5be800066fee53aa32f9e31864523237031603dcc6d8a6899f2e031c3e2ff24"
 		},
 		"fulfillment": {
 			"name": "@86d-app/fulfillment",
 			"description": "Order fulfillment management for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "fulfillment",
 			"path": "modules/fulfillment",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-765ea582dbc9a2205dcaede7c121f04f4d57be6e44f079d43623187970eda164"
+			"integrity": "sha256-2d1bb2f31c613e41e0bda2b1a436378a0d2181e9e7d19630f00ee20675d2d49b"
 		},
 		"gamification": {
 			"name": "@86d-app/gamification",
 			"description": "Gamified promotions module for 86d commerce platform — spin the wheel, scratch cards, slot machine",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "marketing",
 			"path": "modules/gamification",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-6fb292b7dd2a41219a0331f9b94e5f30dcbc807c391534ae074cf0c152acac95"
+			"integrity": "sha256-13cc8bff6b8dec2255df093df4369c403ae8fcb7c0385c1453f5b1263f6425b5"
 		},
 		"gift-registry": {
 			"name": "@86d-app/gift-registry",
 			"description": "",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "sales",
 			"path": "modules/gift-registry",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-59c37aa134e9f5a89976519e7ed167886f06df88ab19c29de5b0a9fd0bd589ff"
+			"integrity": "sha256-af17468cee476db29a5598e3bb2ac9a56b5306521e12ca4a8e59cb5f9842e880"
 		},
 		"gift-wrapping": {
 			"name": "@86d-app/gift-wrapping",
 			"description": "Gift wrapping — add-on wrapping options for order items with custom messages and recipient names",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "sales",
 			"path": "modules/gift-wrapping",
 			"requires": [
@@ -445,72 +445,72 @@
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-2dbd6d5c7920e1f7a9b83cbdbb1e001e2c1b4903f10befb05f71940d8f4f5cf6"
+			"integrity": "sha256-bf9f7edb9ac44b395739937602c1aa038456e6ba9b8bb67a475b31497155bece"
 		},
 		"giftcards": {
 			"name": "@86d-app/giftcards",
 			"description": "Gift card issuance, balance management, and payment integration for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "sales",
 			"path": "modules/giftcards",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-ca01bd2e08c3ea4932f3f5eec0037a55cfbae9334d38d59e4b486684a030c5b1"
+			"integrity": "sha256-edcd34bc428479824aa6710446f287a661b5f52e75beb78a086efb609b09fa82"
 		},
 		"google-shopping": {
 			"name": "@86d-app/google-shopping",
 			"description": "Google Shopping / Merchant Center integration for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "sales",
 			"path": "modules/google-shopping",
 			"requires": [],
 			"hasStoreComponents": false,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-b0ba624fa753140ba0d4274c695c0a572aefdebb9dad7105d97927e6d5811ee1"
+			"integrity": "sha256-58c8d0046b4c071e90fe0f16f4dc2e09c3a83bac6409298ede445bf6701023a7"
 		},
 		"import-export": {
 			"name": "@86d-app/import-export",
 			"description": "Bulk import and export for products, orders, customers, and inventory in 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "system",
 			"path": "modules/import-export",
 			"requires": [],
 			"hasStoreComponents": false,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-2a7fb9c36c2de3ecf61a37808c4cadff971a1dda7b45d1cbeb759a9d10e4990a"
+			"integrity": "sha256-3f48864cfd4aede500755b09295fec81da207c40332a3a11eb5b3bee59a5f131"
 		},
 		"instagram-shop": {
 			"name": "@86d-app/instagram-shop",
 			"description": "Instagram Shopping sales channel module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "sales",
 			"path": "modules/instagram-shop",
 			"requires": [],
 			"hasStoreComponents": false,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-f9ab6a34b9a63e4c06501571f8d0f2dca55144138e91ca677bb9acfb4a50d7dd"
+			"integrity": "sha256-e0c5b6242eaf901fcec29a13389eb9d3e10cf258917cb1fe4d4bc661fec43c4b"
 		},
 		"inventory": {
 			"name": "@86d-app/inventory",
 			"description": "Inventory and stock tracking module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "fulfillment",
 			"path": "modules/inventory",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-f3847ed49d1773151cf866d22976dfd0d96e0c419ea3a4ba120fcd7ceae0f4d5"
+			"integrity": "sha256-c3409cfc4a2acaea1b4ec611c1b57b8346eaa0ce936b0e3e57f4000d059f296f"
 		},
 		"invoices": {
 			"name": "@86d-app/invoices",
 			"description": "Invoices — invoice lifecycle management with payment terms, partial payments, credit notes, and configurable numbering",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "sales",
 			"path": "modules/invoices",
 			"requires": [
@@ -519,24 +519,24 @@
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-de068a4d5068091ff64e01816d72798d8ae5f0afe14f8489628d4dfbd5ca80eb"
+			"integrity": "sha256-00dcc3a15eaacc8def5cac542e18b2592809cefc033b7e24060e2cc19e1b4abe"
 		},
 		"kiosk": {
 			"name": "@86d-app/kiosk",
 			"description": "Self-service ordering kiosk module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "sales",
 			"path": "modules/kiosk",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-856362550c3177f40714f6adcb57380a8189e3e0ad22d29cb0d2abefe4021c35"
+			"integrity": "sha256-756e9ba207f8b92c3e2de681ae4c9e9340cfe54cb0862ab92d734c0e32365e94"
 		},
 		"loyalty": {
 			"name": "@86d-app/loyalty",
 			"description": "Customer loyalty and rewards points module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "customers",
 			"path": "modules/loyalty",
 			"requires": [
@@ -545,24 +545,24 @@
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-e486b3d3318c18ad70fc1d37b3119639bca63c185f54580eae14f4b6dfde1752"
+			"integrity": "sha256-811d7fe5ee4e1f9af061c525d5ddddacb2956e21b825c9ed447fe8786e4edfe8"
 		},
 		"media": {
 			"name": "@86d-app/media",
 			"description": "Media and asset management module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "content",
 			"path": "modules/media",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-436cacb347c94df26abeacff4b8e8c4072036094d6b7c346d5608d4b8342df66"
+			"integrity": "sha256-610818481a6c7dc81fd21a46a260dac3bdbae3f3ac2b3297f54ebef6a3a6f308"
 		},
 		"memberships": {
 			"name": "@86d-app/memberships",
 			"description": "Paid membership plans — recurring subscriptions with exclusive benefits, gated products, and member pricing",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "customers",
 			"path": "modules/memberships",
 			"requires": [
@@ -571,144 +571,144 @@
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-d8464a3a2c7ed9c8d60c485dce192290325b47ad9551d06f2bcecb51f8a21748"
+			"integrity": "sha256-7bfc1fc8d1507c6a7f0ad8b8c123f8eef7f95955a884be17b04f17e5b3da8f60"
 		},
 		"multi-currency": {
 			"name": "@86d-app/multi-currency",
 			"description": "Multi-currency support module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "finance",
 			"path": "modules/multi-currency",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-5399bac8207355303000c3775ed5c76dca8a62f8a22b6a30a21c31ecfc39a513"
+			"integrity": "sha256-ea9bc246befd669e9ccd9f9fdc3b83515291afde28e0f9ded7666add0d209aba"
 		},
 		"navigation": {
 			"name": "@86d-app/navigation",
 			"description": "Store navigation and menu management module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "content",
 			"path": "modules/navigation",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-38c72990cb3761b16ed8d6881da1bb692948155f5c43d20588c81211644dd628"
+			"integrity": "sha256-b4339329e1be6878bb1bfddaea89515cca77e36ce0d0998fc58425b57ccb7505"
 		},
 		"newsletter": {
 			"name": "@86d-app/newsletter",
 			"description": "Newsletter subscription management module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "marketing",
 			"path": "modules/newsletter",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-fff5c5e80981e4e9fc9422ea00ffb6b45099f6d60abba9b59f6d81d385587735"
+			"integrity": "sha256-eff66b40bab120ca0d51eb594f553c6d398911d49f5c96b31881f7945d033eca"
 		},
 		"notifications": {
 			"name": "@86d-app/notifications",
 			"description": "In-app notification management module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "support",
 			"path": "modules/notifications",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-36ab2ced99fa6581491df2a8fbc3b4e40e5e0e6bf06ca1ec11c40286e3026e59"
+			"integrity": "sha256-97b9fed73e9a4ddaf9a8f717f8cd58d626c4b9a84261378b801477b64ca61dbc"
 		},
 		"order-notes": {
 			"name": "@86d-app/order-notes",
 			"description": "Order notes and comments module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "sales",
 			"path": "modules/order-notes",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-12c057db439c5bff2d36a7274ce3af35a54a3b04b0e7cc7b1ac5bf9f571e6c81"
+			"integrity": "sha256-3b2f24252d06ff9ebbeaa2911807d9d8fa14813b6c91a6226c1484b687132201"
 		},
 		"orders": {
 			"name": "@86d-app/orders",
 			"description": "Order management module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "sales",
 			"path": "modules/orders",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-77783436a0e245639d58ebfdcce721a2027fe6b3ac1f65f02561786d11639d69"
+			"integrity": "sha256-326cd3e1859b24f9f9459813456315bfe9c6690701131c3bccb6f98b70a3537e"
 		},
 		"pages": {
 			"name": "@86d-app/pages",
 			"description": "Custom content pages module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "content",
 			"path": "modules/pages",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-aeb9a1da95a086b05dc6b6d6a0b54c9099a5c85235fad08114b53a18dd390f6a"
+			"integrity": "sha256-b8fa68131725215a7fbfcb748a34641715d6da76534c7f2be88c97792b4ba28e"
 		},
 		"payments": {
 			"name": "@86d-app/payments",
 			"description": "Payment processing abstraction for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "sales",
 			"path": "modules/payments",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-864fd3cbb63116f9c315a04168cab345eb6cc6c823b5f4e770b260a415f7ae5d"
+			"integrity": "sha256-251cc1c6f7c7545688dee2c75ce32f5f165175679d8e50d8bed4965e1eccb0ad"
 		},
 		"paypal": {
 			"name": "@86d-app/paypal",
 			"description": "PayPal payment provider for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "finance",
 			"path": "modules/paypal",
 			"requires": [],
 			"hasStoreComponents": false,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-25ff831edb0f8d0a345d7140725a563a6a90af43fe8bac46413e57ca078a837a"
+			"integrity": "sha256-edd72c5413b51be27ecfadb26ec0238df992a2923d742cd181860dfdd7e18b0c"
 		},
 		"photo-booth": {
 			"name": "@86d-app/photo-booth",
 			"description": "Photo booth module for 86d commerce platform — capture, stream, and share photos at events",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "marketing",
 			"path": "modules/photo-booth",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-88a9517c46b3b7a2006d4f475851d28d8a3c6346ce48a97771ee63280802169a"
+			"integrity": "sha256-93dd0c7f755073fb9c1a1184a789a441ce353f83b0b8ec550883731da804001c"
 		},
 		"pinterest-shop": {
 			"name": "@86d-app/pinterest-shop",
 			"description": "Pinterest shopping integration for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "sales",
 			"path": "modules/pinterest-shop",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-283af2ab25af70e947c671ae1aaf44bfab6fcd3c59f17e435d285263a26222bb"
+			"integrity": "sha256-38b8320c7708a04468ccb0264c75474bfa72098d05d1e311a4abf4d7753abdcd"
 		},
 		"preorders": {
 			"name": "@86d-app/preorders",
 			"description": "Preorder campaign management module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "fulfillment",
 			"path": "modules/preorders",
 			"requires": [
@@ -717,12 +717,12 @@
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-4b881694fb047e915ab25f4f0f32c6c83b5fef72dc3b92255c052cd7af0fcd07"
+			"integrity": "sha256-6f64d5b5ec01d2a55f5b5ab2038b80b431c1743647fcea4005b4d6873c021137"
 		},
 		"price-lists": {
 			"name": "@86d-app/price-lists",
 			"description": "Price list management — B2B/wholesale pricing, volume tiers, customer-group-specific pricing, and scheduled price overrides",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "catalog",
 			"path": "modules/price-lists",
 			"requires": [
@@ -731,300 +731,300 @@
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-16ab851acec935eafee1e0c3f9f1d56155c955bfa99e2feacfe1d3db0fa8d682"
+			"integrity": "sha256-fc7dc74ee76bd4caff40dd1ecf6738072a01e31c03c7c06d1157e6dc3f8d8010"
 		},
 		"product-feeds": {
 			"name": "@86d-app/product-feeds",
 			"description": "Product feed generation for Google Shopping, Facebook/Meta catalog, and custom channels in 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "marketing",
 			"path": "modules/product-feeds",
 			"requires": [],
 			"hasStoreComponents": false,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-2e1dff0c2326ac3cbd81f5e1e308457bb5c6879ce821ad175e32202943fd85cf"
+			"integrity": "sha256-4eaa06dfaed09ccad5ea287baa57cb4821856260792473f903a7580d16492a24"
 		},
 		"product-labels": {
 			"name": "@86d-app/product-labels",
 			"description": "Product labels and badges module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "catalog",
 			"path": "modules/product-labels",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-70e13efa8a949f630d55556e7a61b8c84f89f2e92380f867a6a3854422fea5d8"
+			"integrity": "sha256-91094ccf0f4c55df387c8036dc97a9e2cdad4bb38a3afd0c5eec278a542b3c94"
 		},
 		"product-qa": {
 			"name": "@86d-app/product-qa",
 			"description": "Product questions and answers module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "marketing",
 			"path": "modules/product-qa",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-104db9f1fe54b99c8f02f97033e1065ea0ea3510e9a4f3ee239a9af3a183da2e"
+			"integrity": "sha256-e5636dc026dc25166af854b68dd38d7443f9a5432e9be39a1e86fd50ee84f829"
 		},
 		"products": {
 			"name": "@86d-app/products",
 			"description": "Product catalog module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "catalog",
 			"path": "modules/products",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-f675dff0a58b1f1986dcfa6278cd5826b15bbdc2316802a385dc7fd7b872d2c4"
+			"integrity": "sha256-a085f6379ede358ad7f9690ca8e98063d3197ba392caba9ecf40a1ba116da8d9"
 		},
 		"qr-code": {
 			"name": "@86d-app/qr-code",
 			"description": "QR code generation and management module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "marketing",
 			"path": "modules/qr-code",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-b953a2fc78edb8999ef6c71c740d09c5d07273dbdcaf1ca48b8351d97b777f6b"
+			"integrity": "sha256-1e0ccf7b8b76ce32fbb48c6533719e42025e609a4a04406393c763bc0461ac5e"
 		},
 		"quotes": {
 			"name": "@86d-app/quotes",
 			"description": "",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "sales",
 			"path": "modules/quotes",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-4b17702561501e6523e80d43339e6aef537bad6ea1e3d2f73a15c4f567d9a821"
+			"integrity": "sha256-56511976c6ca3256e5656dc2ce3dcdfbd288fff1266ca86539e724f86170fbfc"
 		},
 		"recently-viewed": {
 			"name": "@86d-app/recently-viewed",
 			"description": "Recently viewed products tracking module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "marketing",
 			"path": "modules/recently-viewed",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-37e2d770802ddbe0a9d7425dd2523118e6479ab3e6e028162365b1835d2de536"
+			"integrity": "sha256-3e0a5ac51f0daa495e8fa517c1af733015de9d7757dd35dd901fdf07780df028"
 		},
 		"recommendations": {
 			"name": "@86d-app/recommendations",
 			"description": "Product recommendation engine for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "marketing",
 			"path": "modules/recommendations",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-30ccc435720696ae5a22c059a50570e8fcc04063a04731ca788591f397407700"
+			"integrity": "sha256-d1e4f47cedba0c6fac6b4020e6649dfa4ac97a889e2095bfd69a2bd636558f5e"
 		},
 		"redirects": {
 			"name": "@86d-app/redirects",
 			"description": "URL redirect management — 301/302/307/308 redirects for SEO and URL migration",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "content",
 			"path": "modules/redirects",
 			"requires": [],
 			"hasStoreComponents": false,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-dde6190bba3c9b08cf56a5450a45470401e0816b884f8e40c195f07ec1341ec0"
+			"integrity": "sha256-dfecd79899117877bbe32d8a62810f9758fbeac4e07329b9014d1275ddd33270"
 		},
 		"referrals": {
 			"name": "@86d-app/referrals",
 			"description": "Customer referral program module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "customers",
 			"path": "modules/referrals",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-4e4d0ddd249ae89357ddab3c357a1340d801a611e3598e776e2c239e28823f7b"
+			"integrity": "sha256-f17192b1fd7302d23783e0faa337908156d69bcd7821911a77a580b0825bc296"
 		},
 		"returns": {
 			"name": "@86d-app/returns",
 			"description": "Return request management for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "sales",
 			"path": "modules/returns",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-c5a70255e360748f9266969566ad4335327bbcc128ac76b2556e79a87c560a27"
+			"integrity": "sha256-f41d96061242d75ac6d488261aed1964a4583070fb33bd29619b7d2b6785e81f"
 		},
 		"revenue": {
 			"name": "@86d-app/revenue",
 			"description": "Revenue and transaction reporting for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "finance",
 			"path": "modules/revenue",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-907d5c67215a6327288fde464d1f521c98e6439043e99f8a78b4337e8af040e6"
+			"integrity": "sha256-f90a1910f853b1af44226b22586db95564d62d4873b993dc638bbb37bfa531bb"
 		},
 		"reviews": {
 			"name": "@86d-app/reviews",
 			"description": "Product reviews and ratings module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "marketing",
 			"path": "modules/reviews",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-1c53e6f6c4250ce1486339790963e07ea509bad16cf1de4ff2702f5c6e65799c"
+			"integrity": "sha256-5c113419cbca2f1004c3ba33500b0edd16465cd8990629c2a8c5e829a6fb69a7"
 		},
 		"saved-addresses": {
 			"name": "@86d-app/saved-addresses",
 			"description": "Customer address book module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "customers",
 			"path": "modules/saved-addresses",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-91ffcb6a98f4bbe39597077ee0d29f67cf8e425f406d9746a261f195fbae0e01"
+			"integrity": "sha256-01a55572b707e2513c368467ada848d489ce63468de674ab39519f51eeeb59e6"
 		},
 		"search": {
 			"name": "@86d-app/search",
 			"description": "Unified search, autocomplete, and search analytics module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "system",
 			"path": "modules/search",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-ad0e3f3ecdeb3421738783d55f0fc9bdac7b82987fb98ced90369a3400952139"
+			"integrity": "sha256-0886f72516f997f209326ad679375210732ad9404cf4e8518d687c57a67e0c1c"
 		},
 		"seo": {
 			"name": "@86d-app/seo",
 			"description": "SEO management module for 86d commerce platform — meta tags, redirects, and sitemaps",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "content",
 			"path": "modules/seo",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-e10b8f7804d640edd60d059b6b661b7359eb397bfec3f2e0d00497f15aece3a9"
+			"integrity": "sha256-251237c92d0e6a0d151de105e6a4e889df24f0bc958fec2a414b5919feea9f6e"
 		},
 		"settings": {
 			"name": "@86d-app/settings",
 			"description": "Store settings and configuration module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "system",
 			"path": "modules/settings",
 			"requires": [],
 			"hasStoreComponents": false,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-d86284ea55af4213eefaf1338c61b70a09f84c0d50139fd5eca03dd6ff42ff07"
+			"integrity": "sha256-cbd4976ea44a040824c9567891721a9aee251681c57689d9bc5d2d1b37e79846"
 		},
 		"shipping": {
 			"name": "@86d-app/shipping",
 			"description": "Shipping zones and rates module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "fulfillment",
 			"path": "modules/shipping",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-eb525a5e81c8dd569aef69a5e54fc7cc6f00fab18e779d7162250f01f9ef44d0"
+			"integrity": "sha256-b7d8c0b06fefdfec3a345347b337f4c6fc73443a49c1a0eef5875f72b9d7fc2e"
 		},
 		"sitemap": {
 			"name": "@86d-app/sitemap",
 			"description": "XML sitemap generation — auto-generate sitemaps from products, collections, pages, and blog posts",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "content",
 			"path": "modules/sitemap",
 			"requires": [],
 			"hasStoreComponents": false,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-16b0097353a42f9eebdf44435233e1cf5c2a0a15e447796911cc13ce43d1c166"
+			"integrity": "sha256-9f6931cf00085db94ab092687cf1d0eb2269a5ef043c8172de6ca12cba578395"
 		},
 		"social-proof": {
 			"name": "@86d-app/social-proof",
 			"description": "Social proof and trust signals module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "marketing",
 			"path": "modules/social-proof",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-cd160a1cb11716fac55d54f74809e1172b80f4cc93d124ec509d48c272ff1e86"
+			"integrity": "sha256-d393f90c8bfaaf2e53ae8f28fd4a230b1922c36a515061107cc2bcb08a26da6c"
 		},
 		"social-sharing": {
 			"name": "@86d-app/social-sharing",
 			"description": "Social sharing and share tracking module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "marketing",
 			"path": "modules/social-sharing",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-2f6c5b0df571d1501284fcf5ee2a8e8c117b462234211507ae57978a6e06e7a4"
+			"integrity": "sha256-9c44f695680b1461640fbb1332e0035da863ccefa92c690bb8d59e9d1c1e105d"
 		},
 		"square": {
 			"name": "@86d-app/square",
 			"description": "Square payment provider for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "finance",
 			"path": "modules/square",
 			"requires": [],
 			"hasStoreComponents": false,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-c712a0aef75f32dc8e33ce495c4a01d9f55fb963504af1827a886ee3fdcb0623"
+			"integrity": "sha256-97c2cb9917d85f45b48ce874bd75e4054cf4f53b88a69ffeb963229a6d6cd34d"
 		},
 		"store-credits": {
 			"name": "@86d-app/store-credits",
 			"description": "Store credit accounts and transactions for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "customers",
 			"path": "modules/store-credits",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-c88812c752ac6c66d449e59bf51c40c9cf32ad75c891b140d1af2f8474333878"
+			"integrity": "sha256-e37fb077e9b4c8c917fe789eae3a69fd5636d5598f7f1061093253b06ac0b37c"
 		},
 		"store-locator": {
 			"name": "@86d-app/store-locator",
 			"description": "Physical store location management and proximity search for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "content",
 			"path": "modules/store-locator",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-6eb9fa61648024f5ca1ebf20a5503ee02eb6a39d108d44f04282456084d1dab5"
+			"integrity": "sha256-745a337df0ef9553fbbf743a92d6382709de0c31377f7a4b72582a1d259d32e7"
 		},
 		"store-pickup": {
 			"name": "@86d-app/store-pickup",
 			"description": "Store pickup (BOPIS) — let customers buy online and pick up in store with location management and time windows",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "fulfillment",
 			"path": "modules/store-pickup",
 			"requires": [
@@ -1033,120 +1033,120 @@
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-f24e34725710c36a7787cd84821c0178786fc5022de5e90cddea9865fa00501b"
+			"integrity": "sha256-de1e4483782f9fae5ab768ce8712ea4bfc6559093ef10ec61b58037867794222"
 		},
 		"stripe": {
 			"name": "@86d-app/stripe",
 			"description": "Stripe payment provider for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "finance",
 			"path": "modules/stripe",
 			"requires": [],
 			"hasStoreComponents": false,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-ba62997b88dc069b6e16fa28d0ed767f71fe4401f0f1401768915e392a2378b9"
+			"integrity": "sha256-ffc420588a4e7ba82dfd610046bd853758bd8ffb53d0f473252632abea57935c"
 		},
 		"subscriptions": {
 			"name": "@86d-app/subscriptions",
 			"description": "Subscription plans and recurring billing module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "sales",
 			"path": "modules/subscriptions",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-1b8acee87a7be17c2fb3677315de192a28d869cb012f185bf06ec329628683d8"
+			"integrity": "sha256-b63bac9f3c9d3407bd018ee4fc1b955163516eee6ca4d2ff4fdd5e56e53724bb"
 		},
 		"tax": {
 			"name": "@86d-app/tax",
 			"description": "Tax calculation and management module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "finance",
 			"path": "modules/tax",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-a16d8f2be44900321458b8b95ca0d70f34a84c2e9e284bcb486b65f5cede0086"
+			"integrity": "sha256-5b1c01b4eba0839a055ad378e9bc294add8e21e3f1f5b4889bb4c2fb0c3e983f"
 		},
 		"tickets": {
 			"name": "@86d-app/tickets",
 			"description": "Customer support tickets module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "support",
 			"path": "modules/tickets",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-dc54291e0c41efa89253d9baf0c400fc26005eed41b535632acae6edbb540f4a"
+			"integrity": "sha256-86421fdaf5d5ecf7385c335f75c9fcb679775c7344f0e046f22f47b3d81c3f03"
 		},
 		"tiktok-shop": {
 			"name": "@86d-app/tiktok-shop",
 			"description": "TikTok Shop sales channel module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "sales",
 			"path": "modules/tiktok-shop",
 			"requires": [],
 			"hasStoreComponents": false,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-bf2a4af4c6d985de0e5cb86864b370240c2c637c22ba8ca53b6674cfc2245751"
+			"integrity": "sha256-50baab541b74c6377ce332fbc76932caff25a1686eec27b5df515768118277b7"
 		},
 		"tipping": {
 			"name": "@86d-app/tipping",
 			"description": "Configurable tipping system for orders, delivery, and services on 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "sales",
 			"path": "modules/tipping",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-d991d36985c75690d8556ac6773384e888284148972b78e9b69420960ee7380e"
+			"integrity": "sha256-2d612d65920caa94f0e1d25be5cf40b0df444dc6cd4ed980b4b0b0bb3a7d8ac0"
 		},
 		"toast": {
 			"name": "@86d-app/toast",
 			"description": "Toast POS integration module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "sales",
 			"path": "modules/toast",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-0447e540ae7ea8208a7879ce3c429d867b4f8ba06bc320857fd7859e358ddce4"
+			"integrity": "sha256-affe40f931e9b6595b394d84b5b39b9fee9aea228e9c5aeca2cb95c48c538a62"
 		},
 		"uber-direct": {
 			"name": "@86d-app/uber-direct",
 			"description": "Uber Direct on-demand delivery integration for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "fulfillment",
 			"path": "modules/uber-direct",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-162835a19a1f088fe377ee1f58fbea6f46032d1082db1e549786c69fce711d2b"
+			"integrity": "sha256-0e4e0f330a1b057ec7108149e077373a45717a59f787e9f0c94f3fb44c5ce747"
 		},
 		"uber-eats": {
 			"name": "@86d-app/uber-eats",
 			"description": "Uber Eats marketplace integration module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "sales",
 			"path": "modules/uber-eats",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-6f9027d04161a6aec60c8201fa28e20d229645c3b2c1f86d1b45b81918abe8dc"
+			"integrity": "sha256-a772b776efdc6159caa15e3ce4d702f4ab3e3c2be6fd56e6a191132c52b68832"
 		},
 		"vendors": {
 			"name": "@86d-app/vendors",
 			"description": "Multi-vendor marketplace — vendor profiles, product assignments, commission tracking, and payout management",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "catalog",
 			"path": "modules/vendors",
 			"requires": [
@@ -1155,12 +1155,12 @@
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-9c54afd22ee5f6367af261fb83b19250dfc245add1b2337285bdf56c4a620231"
+			"integrity": "sha256-3ab9301dd78ba5ea38b39f0365eea5309f168f4a26a256c89b3613ba47a95324"
 		},
 		"waitlist": {
 			"name": "@86d-app/waitlist",
 			"description": "Back-in-stock waitlist and notification module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "marketing",
 			"path": "modules/waitlist",
 			"requires": [
@@ -1169,67 +1169,67 @@
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-4be88f685828513f1411dc25a9fbe7f35c4eb5113d786704fb954c8742138d20"
+			"integrity": "sha256-53aad1848ca528dceae47782b786f02a6d92244c5e8fdf0af2be3e0d1d413e54"
 		},
 		"walmart": {
 			"name": "@86d-app/walmart",
 			"description": "Walmart marketplace integration for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "sales",
 			"path": "modules/walmart",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-68d8549422e4b15daf0b702501a1a799bf9af47cd4940e6affb6f8d483678858"
+			"integrity": "sha256-5c054d96359ccc5c8a6057e1430213a3c9a0136f91a65bdd925052e95daad549"
 		},
 		"warranties": {
 			"name": "@86d-app/warranties",
 			"description": "Product warranty plans, registrations, and claims for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "sales",
 			"path": "modules/warranties",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-77c3e849dcc9f2638d3e5f8f82c9a775809cfbc44d9d7fd773856268ac75789a"
+			"integrity": "sha256-580298973b31e6e42a32fca371ff84a0939e4fab6f3b6d710b73b8cb62644b4b"
 		},
 		"wish": {
 			"name": "@86d-app/wish",
 			"description": "Wish marketplace integration for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "sales",
 			"path": "modules/wish",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-2a3158705cf1c7b35af111bef290c2191c52bc62324a0ff0f563201345b88bed"
+			"integrity": "sha256-dcd58bf4a533dfff640e23d68026e3b55e0dc4b476ca1a1d7bc4fde37f14156e"
 		},
 		"wishlist": {
 			"name": "@86d-app/wishlist",
 			"description": "Customer wishlist and favorites module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "marketing",
 			"path": "modules/wishlist",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": true,
-			"integrity": "sha256-a743cd94b61e888e4cc42faa7d746fba3925869d642005075a4e51ccb905c4bf"
+			"integrity": "sha256-adaba79b02040b5c23f6d09f5810eebac356d67055013e321d197b2422582211"
 		},
 		"x-shop": {
 			"name": "@86d-app/x-shop",
 			"description": "X/Twitter Shopping sales channel module for 86d commerce platform",
-			"version": "0.0.37",
+			"version": "0.0.38",
 			"category": "sales",
 			"path": "modules/x-shop",
 			"requires": [],
 			"hasStoreComponents": true,
 			"hasAdminComponents": true,
 			"hasStorePages": false,
-			"integrity": "sha256-c6e11dbe1d757e29556ea5ed4320a3c79cb87bc3926e2ddaa0fee4cc5f604856"
+			"integrity": "sha256-a7d7be761a14802ad03586e0e042023bea2f0ee17a1d400253dc4ce77eac2f2a"
 		}
 	},
 	"templates": {
