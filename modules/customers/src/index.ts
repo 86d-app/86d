@@ -89,6 +89,15 @@ export default function customers(options?: CustomersOptions): Module {
 			],
 		},
 
+		store: {
+			pages: [
+				{
+					path: "/account",
+					component: "AccountProfile",
+				},
+			],
+		},
+
 		options,
 	};
 }
