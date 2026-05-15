@@ -85,6 +85,19 @@ export default function returns(options?: ReturnsOptions): Module {
 			],
 		},
 
+		store: {
+			pages: [
+				{
+					path: "/account/returns",
+					component: "ReturnForm",
+				},
+				{
+					path: "/account/returns/:id",
+					component: "ReturnStatus",
+				},
+			],
+		},
+
 		options,
 	};
 }
