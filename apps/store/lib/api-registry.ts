@@ -43,15 +43,15 @@ function getRegistry(): ModuleRegistry {
 						name: params.moduleId,
 						version: params.version,
 						storeId: params.storeId,
+						// Write factory defaults on first creation only. User-configured
+						// settings (saved via the dashboard) must not be overwritten on
+						// subsequent boots — only the version is updated on UPDATE.
 						settings: params.options
 							? JSON.stringify(params.options)
 							: Prisma.JsonNull,
 					},
 					update: {
 						version: params.version,
-						settings: params.options
-							? JSON.stringify(params.options)
-							: Prisma.JsonNull,
 					},
 				});
 				return record.id;
