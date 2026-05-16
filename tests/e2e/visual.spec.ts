@@ -584,6 +584,344 @@ test.describe("Admin — Authenticated Visual", () => {
 			SCREENSHOT_OPTS,
 		);
 	});
+
+	// ─── Catalog (backfill) ──────────────────────────────────────────────────
+
+	test("admin categories list", async ({ admin }) => {
+		await admin.page.goto("/admin/categories");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-categories-list.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin bundles list", async ({ admin }) => {
+		await admin.page.goto("/admin/bundles");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-bundles-list.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin price lists", async ({ admin }) => {
+		await admin.page.goto("/admin/price-lists");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-price-lists.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin product labels", async ({ admin }) => {
+		await admin.page.goto("/admin/product-labels");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-product-labels.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin product Q&A", async ({ admin }) => {
+		await admin.page.goto("/admin/product-qa");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-product-qa.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin comparisons", async ({ admin }) => {
+		await admin.page.goto("/admin/comparisons");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-comparisons.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	// ─── Sales (backfill) ────────────────────────────────────────────────────
+
+	test("admin carts list", async ({ admin }) => {
+		await admin.page.goto("/admin/carts");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-carts-list.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin abandoned carts list", async ({ admin }) => {
+		await admin.page.goto("/admin/abandoned-carts");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-abandoned-carts-list.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin payments list", async ({ admin }) => {
+		await admin.page.goto("/admin/payments");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-payments-list.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin invoices list", async ({ admin }) => {
+		await admin.page.goto("/admin/invoices");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-invoices-list.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin flash sales list", async ({ admin }) => {
+		await admin.page.goto("/admin/flash-sales");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-flash-sales-list.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin auctions list", async ({ admin }) => {
+		await admin.page.goto("/admin/auctions");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-auctions-list.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin quotes list", async ({ admin }) => {
+		await admin.page.goto("/admin/quotes");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-quotes-list.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	// ─── Fulfillment (backfill) ──────────────────────────────────────────────
+
+	test("admin appointments list", async ({ admin }) => {
+		await admin.page.goto("/admin/appointments");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-appointments-list.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin gift wrapping settings", async ({ admin }) => {
+		await admin.page.goto("/admin/gift-wrapping");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-gift-wrapping.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin gift registry list", async ({ admin }) => {
+		await admin.page.goto("/admin/gift-registry");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-gift-registry-list.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin warranties list", async ({ admin }) => {
+		await admin.page.goto("/admin/warranties");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-warranties-list.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin fulfillment overview", async ({ admin }) => {
+		await admin.page.goto("/admin/fulfillment");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-fulfillment-overview.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin store pickup queue", async ({ admin }) => {
+		await admin.page.goto("/admin/store-pickup");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-store-pickup.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin delivery slots list", async ({ admin }) => {
+		await admin.page.goto("/admin/delivery-slots");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-delivery-slots.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	// ─── Marketing (backfill) ────────────────────────────────────────────────
+
+	test("admin social proof list", async ({ admin }) => {
+		await admin.page.goto("/admin/social-proof");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-social-proof-list.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin recommendations settings", async ({ admin }) => {
+		await admin.page.goto("/admin/recommendations");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-recommendations.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin social sharing settings", async ({ admin }) => {
+		await admin.page.goto("/admin/social-sharing");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-social-sharing.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	// ─── Content (backfill) ──────────────────────────────────────────────────
+
+	test("admin cms pages list", async ({ admin }) => {
+		await admin.page.goto("/admin/pages");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-pages-list.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin redirects list", async ({ admin }) => {
+		await admin.page.goto("/admin/redirects");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-redirects-list.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin sitemap settings", async ({ admin }) => {
+		await admin.page.goto("/admin/sitemap");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-sitemap-settings.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin product feeds list", async ({ admin }) => {
+		await admin.page.goto("/admin/product-feeds");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-product-feeds-list.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	// ─── Finance (backfill) ──────────────────────────────────────────────────
+
+	test("admin paypal settings", async ({ admin }) => {
+		await admin.page.goto("/admin/paypal");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-paypal-settings.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin square settings", async ({ admin }) => {
+		await admin.page.goto("/admin/square");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-square-settings.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin braintree settings", async ({ admin }) => {
+		await admin.page.goto("/admin/braintree");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-braintree-settings.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin currencies list", async ({ admin }) => {
+		await admin.page.goto("/admin/currencies");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-currencies-list.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin audit log", async ({ admin }) => {
+		await admin.page.goto("/admin/audit-log");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-audit-log.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin search settings", async ({ admin }) => {
+		await admin.page.goto("/admin/search");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-search-settings.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	// ─── System (backfill) ───────────────────────────────────────────────────
+
+	test("admin import export", async ({ admin }) => {
+		await admin.page.goto("/admin/import-export");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-import-export.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin store settings", async ({ admin }) => {
+		await admin.page.goto("/admin/settings");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-settings-general.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin store-locator list", async ({ admin }) => {
+		await admin.page.goto("/admin/store-locator");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-store-locator-list.png",
+			SCREENSHOT_OPTS,
+		);
+	});
 });
 
 // ─── Account section (authenticated shopper) ─────────────────────────────────
