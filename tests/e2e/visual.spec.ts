@@ -390,6 +390,200 @@ test.describe("Admin — Authenticated Visual", () => {
 			SCREENSHOT_OPTS,
 		);
 	});
+
+	// ─── Sales & Scheduling ──────────────────────────────────────────────────
+
+	test("admin subscriptions list", async ({ admin }) => {
+		await admin.page.goto("/admin/subscriptions");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-subscriptions-list.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin returns list", async ({ admin }) => {
+		await admin.page.goto("/admin/returns");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-returns-list.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	// ─── Customers & Programs ────────────────────────────────────────────────
+
+	test("admin vendors list", async ({ admin }) => {
+		await admin.page.goto("/admin/vendors");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-vendors-list.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin memberships list", async ({ admin }) => {
+		await admin.page.goto("/admin/memberships");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-memberships-list.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin store credits list", async ({ admin }) => {
+		await admin.page.goto("/admin/store-credits");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-store-credits-list.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin customer groups list", async ({ admin }) => {
+		await admin.page.goto("/admin/customer-groups");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-customer-groups-list.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin referrals list", async ({ admin }) => {
+		await admin.page.goto("/admin/referrals");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-referrals-list.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	// ─── Fulfillment ─────────────────────────────────────────────────────────
+
+	test("admin preorders list", async ({ admin }) => {
+		await admin.page.goto("/admin/preorders");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-preorders-list.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin backorders list", async ({ admin }) => {
+		await admin.page.goto("/admin/backorders");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-backorders-list.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	// ─── Marketing & Engagement ──────────────────────────────────────────────
+
+	test("admin newsletter list", async ({ admin }) => {
+		await admin.page.goto("/admin/newsletter");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-newsletter-list.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin waitlist list", async ({ admin }) => {
+		await admin.page.goto("/admin/waitlist");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-waitlist-list.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	// ─── Content & Site ──────────────────────────────────────────────────────
+
+	test("admin forms list", async ({ admin }) => {
+		await admin.page.goto("/admin/forms");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-forms-list.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin faq list", async ({ admin }) => {
+		await admin.page.goto("/admin/faq");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-faq-list.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin navigation list", async ({ admin }) => {
+		await admin.page.goto("/admin/navigation");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-navigation-list.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin media library", async ({ admin }) => {
+		await admin.page.goto("/admin/media");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-media-library.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin seo settings", async ({ admin }) => {
+		await admin.page.goto("/admin/seo");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-seo-settings.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	// ─── Finance & System ────────────────────────────────────────────────────
+
+	test("admin revenue overview", async ({ admin }) => {
+		await admin.page.goto("/admin/revenue");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-revenue-overview.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin analytics overview", async ({ admin }) => {
+		await admin.page.goto("/admin/analytics");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-analytics-overview.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin automations list", async ({ admin }) => {
+		await admin.page.goto("/admin/automations");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-automations-list.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	// ─── Support ─────────────────────────────────────────────────────────────
+
+	test("admin tickets list", async ({ admin }) => {
+		await admin.page.goto("/admin/tickets");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-tickets-list.png",
+			SCREENSHOT_OPTS,
+		);
+	});
 });
 
 // ─── Account section (authenticated shopper) ─────────────────────────────────
@@ -398,6 +592,7 @@ test.describe("Account — Visual", () => {
 	test.beforeEach(async ({ admin }) => {
 		// Sign in as the seeded admin user — same session works for the storefront account section
 		await admin.signIn();
+	});
 
 	test("account home page", async ({ admin }) => {
 		await admin.page.goto("/account");
