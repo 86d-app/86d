@@ -7,6 +7,7 @@ import { CheckoutPayment } from "./checkout-payment";
 import { CheckoutReview } from "./checkout-review";
 import { CheckoutShipping } from "./checkout-shipping";
 import { CheckoutSummary } from "./checkout-summary";
+import { OrderConfirmation } from "./order-confirmation";
 
 export default {
 	CheckoutForm,
@@ -15,4 +16,5 @@ export default {
 	CheckoutPayment,
 	CheckoutReview,
 	CheckoutSummary,
+	OrderConfirmation,
 } satisfies MDXComponents;

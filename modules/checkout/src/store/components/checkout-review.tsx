@@ -37,15 +37,16 @@ export const CheckoutReview = observer(() => {
 	};
 
 	const [error, setError] = useState("");
-	const [orderPlaced, setOrderPlaced] = useState(false);
-	const [orderId, setOrderId] = useState<string | null>(null);
 
 	const completeMutation = api.completeSession.useMutation({
 		onSuccess: (result) => {
 			const s = (result as { session: { orderId?: string } }).session;
-			setOrderPlaced(true);
-			setOrderId(s.orderId ?? null);
 			checkoutState.reset();
+			const orderId = s.orderId;
+			const dest = orderId
+				? `/checkout/confirmation?order=${encodeURIComponent(orderId)}`
+				: "/checkout/confirmation";
+			window.location.href = dest;
 		},
 		onError: () => {
 			setError("Failed to place order. Please try again.");
@@ -75,24 +76,6 @@ export const CheckoutReview = observer(() => {
 		if (!addr) return null;
 		return `${addr.firstName} ${addr.lastName}, ${addr.line1}${addr.line2 ? ` ${addr.line2}` : ""}, ${addr.city}, ${addr.state} ${addr.postalCode}, ${addr.country}`;
 	};
-
-	if (orderPlaced) {
-		return (
-			<CheckoutReviewTemplate
-				orderPlaced
-				orderId={orderId}
-				session={null}
-				lineItems={[]}
-				formattedItems={[]}
-				shippingAddress={null}
-				error=""
-				loading={false}
-				onPlaceOrder={handlePlaceOrder}
-				onBack={handleBack}
-				formatPrice={formatPrice}
-			/>
-		);
-	}
 
 	return (
 		<CheckoutReviewTemplate

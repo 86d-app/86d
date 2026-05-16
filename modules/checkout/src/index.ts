@@ -104,6 +104,10 @@ export default function checkout(options?: CheckoutOptions): Module {
 					path: "/checkout",
 					component: "CheckoutForm",
 				},
+				{
+					path: "/checkout/confirmation",
+					component: "OrderConfirmation",
+				},
 			],
 		},
 
