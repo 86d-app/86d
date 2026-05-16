@@ -8,9 +8,10 @@ import { createAuditLogController } from "../service-impl";
  *
  * These tests verify the business logic in endpoints:
  *
- * 1. log: creates an audit entry
- * 2. list: retrieves paginated audit entries
- * 3. list-for-resource: retrieves entries for a specific resource
+ * 1. log: creates an audit entry (admin)
+ * 2. list: retrieves paginated audit entries (admin)
+ * 3. list-for-resource: retrieves entries for a specific resource (admin)
+ * 4. my-activity: returns the authenticated user's own activity; 401 without auth
  */
 
 type DataService = ReturnType<typeof createMockDataService>;
@@ -40,6 +41,19 @@ async function simulateListForResource(
 	const controller = createAuditLogController(data);
 	const entries = await controller.listForResource(resource, resourceId);
 	return { entries };
+}
+
+async function simulateMyActivity(
+	data: DataService,
+	query: { take?: number; skip?: number } = {},
+	opts: { userId?: string } = {},
+) {
+	if (!opts.userId) {
+		return { error: "Unauthorized", status: 401 };
+	}
+	const controller = createAuditLogController(data);
+	const entries = await controller.listForActor(opts.userId, query);
+	return { entries, total: entries.length };
 }
 
 // ── Tests ───────────────────────────────────────────────────────────
@@ -133,5 +147,92 @@ describe("store endpoint: list for resource", () => {
 
 		expect(result.entries).toHaveLength(1);
 		expect(result.entries[0].resource).toBe("product");
+	});
+});
+
+describe("store endpoint: my-activity", () => {
+	let data: DataService;
+
+	beforeEach(() => {
+		data = createMockDataService();
+	});
+
+	it("returns 401 without authentication", async () => {
+		const result = await simulateMyActivity(data);
+
+		expect(result).toEqual({ error: "Unauthorized", status: 401 });
+	});
+
+	it("returns only entries for the authenticated user", async () => {
+		const ctrl = createAuditLogController(data);
+		await ctrl.log({
+			action: "login",
+			resource: "product",
+			resourceId: "prod_1",
+			actorId: "user_1",
+			description: "Viewed product",
+		});
+		await ctrl.log({
+			action: "login",
+			resource: "product",
+			resourceId: "prod_2",
+			actorId: "user_2",
+			description: "Viewed product by another user",
+		});
+
+		const result = await simulateMyActivity(data, {}, { userId: "user_1" });
+
+		expect("entries" in result).toBe(true);
+		if ("entries" in result) {
+			expect(result.entries).toHaveLength(1);
+			expect(result.entries[0].actorId).toBe("user_1");
+		}
+	});
+
+	it("returns empty when user has no activity", async () => {
+		const result = await simulateMyActivity(
+			data,
+			{},
+			{ userId: "user_no_activity" },
+		);
+
+		expect("entries" in result).toBe(true);
+		if ("entries" in result) {
+			expect(result.entries).toHaveLength(0);
+			expect(result.total).toBe(0);
+		}
+	});
+
+	it("respects take and skip for pagination", async () => {
+		const ctrl = createAuditLogController(data);
+		for (let i = 0; i < 5; i++) {
+			await ctrl.log({
+				action: "login",
+				resource: "product",
+				resourceId: `prod_${i}`,
+				actorId: "user_paginate",
+				description: `Entry ${i}`,
+			});
+		}
+
+		const page1 = await simulateMyActivity(
+			data,
+			{ take: 2, skip: 0 },
+			{ userId: "user_paginate" },
+		);
+		const page2 = await simulateMyActivity(
+			data,
+			{ take: 2, skip: 2 },
+			{ userId: "user_paginate" },
+		);
+
+		expect("entries" in page1 && "entries" in page2).toBe(true);
+		if ("entries" in page1 && "entries" in page2) {
+			expect(page1.entries).toHaveLength(2);
+			expect(page2.entries).toHaveLength(2);
+			const ids1 = page1.entries.map((e) => e.id);
+			const ids2 = page2.entries.map((e) => e.id);
+			expect(ids1.some((id) => ids2.includes(id))).toBe(false);
+		}
 	});
 });
