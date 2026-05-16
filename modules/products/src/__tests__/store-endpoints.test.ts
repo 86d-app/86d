@@ -485,6 +485,448 @@ describe("store endpoint: get collection", () => {
 	});
 });
 
+describe("store endpoint: list products", () => {
+	let data: DataService;
+
+	beforeEach(() => {
+		data = createMockDataService();
+	});
+
+	it("returns all active products with pagination", async () => {
+		for (let i = 1; i <= 5; i++) {
+			await data.upsert(
+				"product",
+				`prod_${i}`,
+				makeProduct({
+					id: `prod_${i}`,
+					name: `Widget ${i}`,
+					slug: `widget-${i}`,
+					status: "active",
+				}),
+			);
+		}
+		const ctx = makeControllerCtx(data, { query: { page: "1", limit: "3" } });
+		const result = (await controllers.product.list(ctx)) as {
+			products: unknown[];
+			total: number;
+			page: number;
+			limit: number;
+		};
+		expect(result.products).toHaveLength(3);
+		expect(result.total).toBe(5);
+		expect(result.page).toBe(1);
+		expect(result.limit).toBe(3);
+	});
+
+	it("filters by featured=true", async () => {
+		await data.upsert(
+			"product",
+			"featured_1",
+			makeProduct({
+				id: "featured_1",
+				name: "Featured",
+				slug: "featured",
+				isFeatured: true,
+			}),
+		);
+		await data.upsert(
+			"product",
+			"normal_1",
+			makeProduct({
+				id: "normal_1",
+				name: "Normal",
+				slug: "normal",
+				isFeatured: false,
+			}),
+		);
+
+		const ctx = makeControllerCtx(data, { query: { featured: "true" } });
+		const result = (await controllers.product.list(ctx)) as {
+			products: unknown[];
+			total: number;
+		};
+		expect(result.total).toBe(1);
+	});
+
+	it("filters by price range", async () => {
+		await data.upsert(
+			"product",
+			"cheap",
+			makeProduct({ id: "cheap", name: "Cheap", slug: "cheap", price: 500 }),
+		);
+		await data.upsert(
+			"product",
+			"mid",
+			makeProduct({ id: "mid", name: "Mid", slug: "mid", price: 2000 }),
+		);
+		await data.upsert(
+			"product",
+			"expensive",
+			makeProduct({
+				id: "expensive",
+				name: "Expensive",
+				slug: "expensive",
+				price: 9999,
+			}),
+		);
+
+		const ctx = makeControllerCtx(data, {
+			query: { minPrice: "1000", maxPrice: "5000" },
+		});
+		const result = (await controllers.product.list(ctx)) as {
+			products: unknown[];
+			total: number;
+		};
+		expect(result.total).toBe(1);
+	});
+
+	it("filters by search term", async () => {
+		await data.upsert(
+			"product",
+			"match",
+			makeProduct({
+				id: "match",
+				name: "Blue Widget",
+				slug: "blue-widget",
+				tags: ["blue"],
+			}),
+		);
+		await data.upsert(
+			"product",
+			"nomatch",
+			makeProduct({
+				id: "nomatch",
+				name: "Red Gadget",
+				slug: "red-gadget",
+				tags: ["red"],
+			}),
+		);
+
+		const ctx = makeControllerCtx(data, { query: { search: "blue" } });
+		const result = (await controllers.product.list(ctx)) as {
+			products: unknown[];
+			total: number;
+		};
+		expect(result.total).toBe(1);
+	});
+
+	it("filters by tag", async () => {
+		await data.upsert(
+			"product",
+			"tagged",
+			makeProduct({
+				id: "tagged",
+				name: "Tagged",
+				slug: "tagged",
+				tags: ["sale"],
+			}),
+		);
+		await data.upsert(
+			"product",
+			"untagged",
+			makeProduct({
+				id: "untagged",
+				name: "Untagged",
+				slug: "untagged",
+				tags: [],
+			}),
+		);
+
+		const ctx = makeControllerCtx(data, { query: { tag: "sale" } });
+		const result = (await controllers.product.list(ctx)) as {
+			products: unknown[];
+			total: number;
+		};
+		expect(result.total).toBe(1);
+	});
+
+	it("returns empty list when no products exist", async () => {
+		const ctx = makeControllerCtx(data, {});
+		const result = (await controllers.product.list(ctx)) as {
+			products: unknown[];
+			total: number;
+		};
+		expect(result.products).toHaveLength(0);
+		expect(result.total).toBe(0);
+	});
+});
+
+describe("store endpoint: get featured products", () => {
+	let data: DataService;
+
+	beforeEach(() => {
+		data = createMockDataService();
+	});
+
+	it("returns only featured active products", async () => {
+		await data.upsert(
+			"product",
+			"f1",
+			makeProduct({ id: "f1", slug: "f1", isFeatured: true, status: "active" }),
+		);
+		await data.upsert(
+			"product",
+			"f2",
+			makeProduct({
+				id: "f2",
+				slug: "f2",
+				isFeatured: false,
+				status: "active",
+			}),
+		);
+		await data.upsert(
+			"product",
+			"f3",
+			makeProduct({ id: "f3", slug: "f3", isFeatured: true, status: "draft" }),
+		);
+
+		const ctx = makeControllerCtx(data, {});
+		const products = (await controllers.product.getFeatured(ctx)) as unknown[];
+		expect(products).toHaveLength(1);
+		expect((products[0] as { id: string }).id).toBe("f1");
+	});
+
+	it("respects limit query parameter", async () => {
+		for (let i = 1; i <= 10; i++) {
+			await data.upsert(
+				"product",
+				`fp${i}`,
+				makeProduct({
+					id: `fp${i}`,
+					slug: `fp${i}`,
+					isFeatured: true,
+					status: "active",
+				}),
+			);
+		}
+
+		const ctx = makeControllerCtx(data, { query: { limit: "3" } });
+		const products = (await controllers.product.getFeatured(ctx)) as unknown[];
+		expect(products).toHaveLength(3);
+	});
+
+	it("returns empty array when no featured products exist", async () => {
+		await data.upsert(
+			"product",
+			"nfp",
+			makeProduct({ id: "nfp", slug: "nfp", isFeatured: false }),
+		);
+		const ctx = makeControllerCtx(data, {});
+		const products = (await controllers.product.getFeatured(ctx)) as unknown[];
+		expect(products).toHaveLength(0);
+	});
+});
+
+describe("store endpoint: get related products", () => {
+	let data: DataService;
+
+	beforeEach(() => {
+		data = createMockDataService();
+	});
+
+	it("returns 0 products for nonexistent product", async () => {
+		const ctx = makeControllerCtx(data, { params: { id: "nonexistent" } });
+		const result = (await controllers.product.getRelated(ctx)) as {
+			products: unknown[];
+		};
+		expect(result.products).toHaveLength(0);
+	});
+
+	it("prefers products in the same category", async () => {
+		await data.upsert(
+			"product",
+			"p_main",
+			makeProduct({
+				id: "p_main",
+				slug: "p-main",
+				categoryId: "cat_1",
+				tags: [],
+			}),
+		);
+		await data.upsert(
+			"product",
+			"p_same_cat",
+			makeProduct({
+				id: "p_same_cat",
+				slug: "p-same-cat",
+				categoryId: "cat_1",
+				tags: [],
+			}),
+		);
+		await data.upsert(
+			"product",
+			"p_diff_cat",
+			makeProduct({
+				id: "p_diff_cat",
+				slug: "p-diff-cat",
+				categoryId: "cat_2",
+				tags: [],
+			}),
+		);
+
+		const ctx = makeControllerCtx(data, { params: { id: "p_main" } });
+		const result = (await controllers.product.getRelated(ctx)) as {
+			products: Array<{ id: string }>;
+		};
+
+		// Same-category product should score higher and appear first
+		expect(result.products[0].id).toBe("p_same_cat");
+	});
+
+	it("excludes the source product from related results", async () => {
+		await data.upsert(
+			"product",
+			"p_a",
+			makeProduct({ id: "p_a", slug: "p-a", tags: ["blue"] }),
+		);
+		await data.upsert(
+			"product",
+			"p_b",
+			makeProduct({ id: "p_b", slug: "p-b", tags: ["blue"] }),
+		);
+
+		const ctx = makeControllerCtx(data, { params: { id: "p_a" } });
+		const result = (await controllers.product.getRelated(ctx)) as {
+			products: Array<{ id: string }>;
+		};
+		expect(result.products.every((p) => p.id !== "p_a")).toBe(true);
+	});
+
+	it("respects limit query parameter", async () => {
+		for (let i = 1; i <= 8; i++) {
+			await data.upsert(
+				"product",
+				`rp${i}`,
+				makeProduct({ id: `rp${i}`, slug: `rp${i}`, categoryId: "cat_1" }),
+			);
+		}
+
+		const ctx = makeControllerCtx(data, {
+			params: { id: "rp1" },
+			query: { limit: "2" },
+		});
+		const result = (await controllers.product.getRelated(ctx)) as {
+			products: unknown[];
+		};
+		expect(result.products).toHaveLength(2);
+	});
+});
+
+describe("store endpoint: search products", () => {
+	let data: DataService;
+
+	beforeEach(() => {
+		data = createMockDataService();
+	});
+
+	it("returns products matching the search term by name", async () => {
+		await data.upsert(
+			"product",
+			"sp1",
+			makeProduct({
+				id: "sp1",
+				slug: "sp1",
+				name: "Blue Widget",
+				status: "active",
+				tags: [],
+			}),
+		);
+		await data.upsert(
+			"product",
+			"sp2",
+			makeProduct({
+				id: "sp2",
+				slug: "sp2",
+				name: "Red Gadget",
+				status: "active",
+				tags: [],
+			}),
+		);
+
+		const ctx = makeControllerCtx(data, { query: { q: "widget" } });
+		const results = (await controllers.product.search(ctx)) as unknown[];
+		expect(results).toHaveLength(1);
+		expect((results[0] as { id: string }).id).toBe("sp1");
+	});
+
+	it("searches by tag", async () => {
+		await data.upsert(
+			"product",
+			"tagged",
+			makeProduct({
+				id: "tagged",
+				slug: "tagged",
+				name: "Generic",
+				status: "active",
+				tags: ["summer"],
+			}),
+		);
+		await data.upsert(
+			"product",
+			"untagged",
+			makeProduct({
+				id: "untagged",
+				slug: "untagged",
+				name: "Generic",
+				status: "active",
+				tags: [],
+			}),
+		);
+
+		const ctx = makeControllerCtx(data, { query: { q: "summer" } });
+		const results = (await controllers.product.search(ctx)) as unknown[];
+		expect(results).toHaveLength(1);
+	});
+
+	it("only returns active products", async () => {
+		await data.upsert(
+			"product",
+			"active_p",
+			makeProduct({
+				id: "active_p",
+				slug: "active-p",
+				name: "Active Widget",
+				status: "active",
+				tags: [],
+			}),
+		);
+		await data.upsert(
+			"product",
+			"draft_p",
+			makeProduct({
+				id: "draft_p",
+				slug: "draft-p",
+				name: "Draft Widget",
+				status: "draft",
+				tags: [],
+			}),
+		);
+
+		const ctx = makeControllerCtx(data, { query: { q: "widget" } });
+		const results = (await controllers.product.search(ctx)) as unknown[];
+		expect(results).toHaveLength(1);
+		expect((results[0] as { id: string }).id).toBe("active_p");
+	});
+
+	it("returns empty array when no products match", async () => {
+		await data.upsert(
+			"product",
+			"no_match",
+			makeProduct({
+				id: "no_match",
+				slug: "no-match",
+				name: "Unrelated",
+				status: "active",
+				tags: [],
+			}),
+		);
+
+		const ctx = makeControllerCtx(data, { query: { q: "xyznotfound" } });
+		const results = (await controllers.product.search(ctx)) as unknown[];
+		expect(results).toHaveLength(0);
+	});
+});
+
 describe("store endpoint: admin create product slug uniqueness", () => {
 	let data: DataService;
 
