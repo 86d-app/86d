@@ -316,12 +316,13 @@ async function simulateCompleteSession(
 	}
 
 	const orderId = `ORD-${Date.now().toString(36).toUpperCase()}`;
+	const orderNumber = orderId;
 	const session = await controller.complete(sessionId, orderId);
 	if (!session) {
 		return { error: "Cannot complete this checkout session", status: 422 };
 	}
 
-	return { session, orderId };
+	return { session, orderId, orderNumber };
 }
 
 /**
@@ -906,8 +907,31 @@ describe("checkout store endpoints", () => {
 			});
 
 			expect("orderId" in result).toBe(true);
-			const res = result as { session: CheckoutSession; orderId: string };
+			const res = result as {
+				session: CheckoutSession;
+				orderId: string;
+				orderNumber: string;
+			};
 			expect(res.session.status).toBe("completed");
+		});
+
+		it("returns orderNumber alongside orderId", async () => {
+			const session = await createTestSession(controller, {
+				customerId: "cust-1",
+			});
+			await controller.setPaymentIntent(session.id, "pi_123", "succeeded");
+
+			const result = await simulateCompleteSession(data, session.id, {
+				userId: "cust-1",
+			});
+
+			expect("orderNumber" in result).toBe(true);
+			const res = result as {
+				orderId: string;
+				orderNumber: string;
+			};
+			expect(typeof res.orderNumber).toBe("string");
+			expect(res.orderNumber.length).toBeGreaterThan(0);
 		});
 
 		it("bypasses payment check for zero-total sessions", async () => {

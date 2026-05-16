@@ -10,6 +10,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 
 interface OrderSummary {
 	orderId: string;
+	orderNumber?: string;
 	email?: string;
 	items: Array<{
 		name: string;
@@ -39,6 +40,7 @@ interface OrderSummary {
 /** Shape returned by GET /api/orders/me/:id or POST /api/orders/confirm */
 interface OrderApiResponse {
 	id: string;
+	orderNumber?: string;
 	guestEmail?: string;
 	subtotal: number;
 	taxAmount: number;
@@ -78,6 +80,7 @@ function orderToSummary(o: OrderApiResponse): OrderSummary {
 	);
 	return {
 		orderId: o.id,
+		...(o.orderNumber ? { orderNumber: o.orderNumber } : {}),
 		...(o.guestEmail ? { email: o.guestEmail } : {}),
 		items: (o.items ?? []).map(
 			(item: { name: string; quantity: number; price: number }) => ({
@@ -114,6 +117,7 @@ function ConfirmationContent() {
 	const searchParams = useSearchParams();
 	const orderId = searchParams.get("order");
 	const guestEmail = searchParams.get("email");
+	const urlOrderNumber = searchParams.get("num");
 	const { track } = useAnalytics();
 	const tracked = useRef(false);
 	const [summary, setSummary] = useState<OrderSummary | null>(null);
@@ -186,6 +190,7 @@ function ConfirmationContent() {
 
 	const currency = summary?.currency ?? "USD";
 	const addr = summary?.shippingAddress;
+	const displayOrderNumber = summary?.orderNumber ?? urlOrderNumber ?? orderId;
 
 	return (
 		<div className="mx-auto max-w-2xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
@@ -228,9 +233,9 @@ function ConfirmationContent() {
 						</>
 					)}
 				</p>
-				{orderId && (
+				{displayOrderNumber && (
 					<p className="mt-2 font-mono text-muted-foreground text-xs">
-						Order {orderId}
+						Order {displayOrderNumber}
 					</p>
 				)}
 			</div>

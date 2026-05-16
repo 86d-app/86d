@@ -92,6 +92,7 @@ interface PaymentResult {
 interface OrderCompleteResult {
 	session?: CheckoutSessionData;
 	orderId?: string;
+	orderNumber?: string;
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────
@@ -1079,11 +1080,13 @@ const CheckoutPage = observer(function CheckoutPage() {
 
 			// Store order summary for the confirmation page
 			const orderId = completeResult?.orderId ?? co.sessionId;
+			const orderNumber = completeResult?.orderNumber ?? orderId;
 			try {
 				sessionStorage.setItem(
 					"checkout_confirmation",
 					JSON.stringify({
 						orderId,
+						orderNumber,
 						email,
 						items: (cart?.items ?? []).map((item) => ({
 							name: item.product.name,
@@ -1114,7 +1117,7 @@ const CheckoutPage = observer(function CheckoutPage() {
 			const confirmUrl = email
 				? `/checkout/confirmation?order=${encodeURIComponent(orderId)}&email=${encodeURIComponent(email)}`
 				: `/checkout/confirmation?order=${encodeURIComponent(orderId)}`;
-			window.location.href = confirmUrl;
+			window.location.href = `${confirmUrl}&num=${encodeURIComponent(orderNumber)}`;
 		} catch (err) {
 			// Mutation errors are surfaced by their individual onError callbacks.
 			// If setError hasn't been called yet (e.g. non-mutation failure), show a generic message.

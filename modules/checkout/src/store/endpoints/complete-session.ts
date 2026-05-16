@@ -312,6 +312,6 @@ export const completeSession = createStoreEndpoint(
 			});
 		}
 
-		return { session, orderId };
+		return { session, orderId, orderNumber: orderNumber ?? orderId };
 	},
 );
