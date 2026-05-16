@@ -409,3 +409,64 @@ test.describe("Storefront — Customer Account", () => {
 		expect(page.url()).toContain("/auth/signin");
 	});
 });
+
+// ─── Module storefront pages ─────────────────────────────────────────────────
+
+test.describe("Storefront — Module Pages", () => {
+	const modulePaths = [
+		{ name: "Brands", path: "/brands" },
+		{ name: "Bundles", path: "/bundles" },
+		{ name: "FAQ", path: "/faq" },
+		{ name: "Flash Sales", path: "/flash-sales" },
+		{ name: "Forms listing", path: "/forms" },
+		{ name: "Auctions", path: "/auctions" },
+		{ name: "Gift Registry", path: "/gift-registry" },
+		{ name: "Memberships", path: "/memberships" },
+		{ name: "Vendors", path: "/vendors" },
+		{ name: "Vendor apply", path: "/vendors/apply" },
+		{ name: "Waitlist", path: "/waitlist" },
+		{ name: "Recently Viewed", path: "/recently-viewed" },
+		{ name: "Referrals", path: "/referrals" },
+		{ name: "Affiliate apply", path: "/affiliate/apply" },
+		{ name: "Appointments", path: "/appointments" },
+		{ name: "Delivery Slots", path: "/delivery-slots" },
+		{ name: "Store Pickup", path: "/store-pickup" },
+		{ name: "Store Locator", path: "/stores" },
+		{ name: "Photo Booth", path: "/photo-booth" },
+		{ name: "Compare", path: "/compare" },
+		{ name: "Quotes", path: "/quotes" },
+		{ name: "Quote Request", path: "/quotes/request" },
+		{ name: "Support Tickets", path: "/support/tickets" },
+		{ name: "New Ticket", path: "/support/tickets/new" },
+		{ name: "Gift Card Balance", path: "/gift-cards/balance" },
+		{ name: "Gift Card Redeem", path: "/gift-cards/redeem" },
+		{ name: "Loyalty", path: "/loyalty" },
+		{ name: "Subscriptions", path: "/subscriptions" },
+		{ name: "Downloads", path: "/downloads" },
+		{ name: "Notification Prefs", path: "/notifications/preferences" },
+		{ name: "Gift Wrapping", path: "/gift-wrapping" },
+		{ name: "Sitemap", path: "/sitemap" },
+	];
+
+	for (const { name, path } of modulePaths) {
+		test(`${name} page loads without errors`, async ({ page }) => {
+			const consoleErrors: string[] = [];
+			page.on("console", (msg) => {
+				if (msg.type() === "error") consoleErrors.push(msg.text());
+			});
+
+			await page.goto(path);
+			await page.waitForLoadState("networkidle");
+
+			const is404 = await page
+				.locator("h1, h2")
+				.filter({ hasText: /404|not found/i })
+				.isVisible()
+				.catch(() => false);
+			expect(is404, `${name} returned 404`).toBe(false);
+
+			const main = page.locator("main");
+			await expect(main).toBeVisible({ timeout: 10_000 });
+		});
+	}
+});
