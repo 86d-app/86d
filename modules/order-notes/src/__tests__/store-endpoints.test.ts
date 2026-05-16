@@ -10,6 +10,7 @@ import { createOrderNotesController } from "../service-impl";
  * 1. add-note: customer adds a note to their order
  * 2. list-by-order: returns non-internal notes for an order
  * 3. get-note: returns a single note
+ * 4. update-note: customer edits their own note; 401 without auth; 404 if not owner
  */
 
 type DataService = ReturnType<typeof createMockDataService>;
@@ -62,6 +63,23 @@ async function simulateGetNote(
 	const controller = createOrderNotesController(data);
 	const note = await controller.getNote(noteId);
 	if (!note || note.isInternal) {
+		return { error: "Note not found", status: 404 };
+	}
+	return { note };
+}
+
+async function simulateUpdateNote(
+	data: DataService,
+	noteId: string,
+	content: string,
+	opts: { customerId?: string } = {},
+) {
+	if (!opts.customerId) {
+		return { error: "Unauthorized", status: 401 };
+	}
+	const controller = createOrderNotesController(data);
+	const note = await controller.updateNote(noteId, opts.customerId, content, false);
+	if (!note) {
 		return { error: "Note not found", status: 404 };
 	}
 	return { note };
@@ -221,6 +239,76 @@ describe("store endpoint: get note — single note", () => {
 		const result = await simulateGetNote(data, "ghost_note", {
 			customerId: "cust_1",
 		});
+
+		expect(result).toEqual({ error: "Note not found", status: 404 });
+	});
+});
+
+describe("store endpoint: update note — customer edits own note", () => {
+	let data: DataService;
+
+	beforeEach(() => {
+		data = createMockDataService();
+	});
+
+	it("returns 401 without authentication", async () => {
+		const result = await simulateUpdateNote(data, "note_1", "updated content");
+		expect(result).toEqual({ error: "Unauthorized", status: 401 });
+	});
+
+	it("updates the note content", async () => {
+		const ctrl = createOrderNotesController(data);
+		const note = await ctrl.addNote({
+			orderId: "order_1",
+			content: "Original message",
+			authorId: "cust_1",
+			authorName: "Jane",
+			authorType: "customer",
+			isInternal: false,
+		});
+
+		const result = await simulateUpdateNote(
+			data,
+			note.id,
+			"Updated message",
+			{ customerId: "cust_1" },
+		);
+
+		expect("note" in result).toBe(true);
+		if ("note" in result) {
+			expect(result.note.content).toBe("Updated message");
+			expect(result.note.id).toBe(note.id);
+		}
+	});
+
+	it("returns 404 for nonexistent note", async () => {
+		const result = await simulateUpdateNote(
+			data,
+			"ghost_note",
+			"content",
+			{ customerId: "cust_1" },
+		);
+
+		expect(result).toEqual({ error: "Note not found", status: 404 });
+	});
+
+	it("returns 404 when customer tries to update another customer's note", async () => {
+		const ctrl = createOrderNotesController(data);
+		const note = await ctrl.addNote({
+			orderId: "order_1",
+			content: "Jane's note",
+			authorId: "cust_1",
+			authorName: "Jane",
+			authorType: "customer",
+			isInternal: false,
+		});
+
+		const result = await simulateUpdateNote(
+			data,
+			note.id,
+			"Tampered content",
+			{ customerId: "cust_2" },
+		);
 
 		expect(result).toEqual({ error: "Note not found", status: 404 });
 	});
