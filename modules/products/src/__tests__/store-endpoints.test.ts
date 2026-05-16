@@ -927,6 +927,152 @@ describe("store endpoint: search products", () => {
 	});
 });
 
+describe("store endpoint: list categories (category tree)", () => {
+	let data: DataService;
+
+	beforeEach(() => {
+		data = createMockDataService();
+	});
+
+	it("returns only visible categories in tree format", async () => {
+		await data.upsert(
+			"category",
+			"cat_v",
+			makeCategory({ id: "cat_v", slug: "visible", isVisible: true }),
+		);
+		await data.upsert(
+			"category",
+			"cat_h",
+			makeCategory({ id: "cat_h", slug: "hidden", isVisible: false }),
+		);
+
+		const ctx = makeControllerCtx(data, {});
+		const categories = (await controllers.category.getTree(ctx)) as unknown[];
+		// Only visible category should appear
+		expect(categories).toHaveLength(1);
+		expect((categories[0] as { id: string }).id).toBe("cat_v");
+	});
+
+	it("returns empty array when no categories exist", async () => {
+		const ctx = makeControllerCtx(data, {});
+		const categories = (await controllers.category.getTree(ctx)) as unknown[];
+		expect(categories).toHaveLength(0);
+	});
+
+	it("nests children under parent category", async () => {
+		await data.upsert(
+			"category",
+			"parent",
+			makeCategory({ id: "parent", slug: "parent", isVisible: true }),
+		);
+		await data.upsert(
+			"category",
+			"child",
+			makeCategory({
+				id: "child",
+				slug: "child",
+				parentId: "parent",
+				isVisible: true,
+			}),
+		);
+
+		const ctx = makeControllerCtx(data, {});
+		const tree = (await controllers.category.getTree(ctx)) as Array<{
+			id: string;
+			children: unknown[];
+		}>;
+		expect(tree).toHaveLength(1);
+		expect(tree[0].id).toBe("parent");
+		expect(tree[0].children).toHaveLength(1);
+		expect((tree[0].children[0] as { id: string }).id).toBe("child");
+	});
+});
+
+describe("store endpoint: list collections", () => {
+	let data: DataService;
+
+	beforeEach(() => {
+		data = createMockDataService();
+	});
+
+	it("returns only visible collections", async () => {
+		await data.upsert(
+			"collection",
+			"col_v",
+			makeCollection({ id: "col_v", slug: "visible", isVisible: true }),
+		);
+		await data.upsert(
+			"collection",
+			"col_h",
+			makeCollection({ id: "col_h", slug: "hidden", isVisible: false }),
+		);
+
+		const ctx = makeControllerCtx(data, { query: { visible: "true" } });
+		const result = (await controllers.collection.list(ctx)) as {
+			collections: unknown[];
+		};
+		expect(result.collections).toHaveLength(1);
+		expect((result.collections[0] as { id: string }).id).toBe("col_v");
+	});
+
+	it("filters by featured=true", async () => {
+		await data.upsert(
+			"collection",
+			"col_f",
+			makeCollection({
+				id: "col_f",
+				slug: "featured",
+				isFeatured: true,
+				isVisible: true,
+			}),
+		);
+		await data.upsert(
+			"collection",
+			"col_n",
+			makeCollection({
+				id: "col_n",
+				slug: "normal",
+				isFeatured: false,
+				isVisible: true,
+			}),
+		);
+
+		const ctx = makeControllerCtx(data, { query: { featured: "true" } });
+		const result = (await controllers.collection.list(ctx)) as {
+			collections: unknown[];
+		};
+		expect(result.collections).toHaveLength(1);
+		expect((result.collections[0] as { id: string }).id).toBe("col_f");
+	});
+
+	it("returns empty list when no collections exist", async () => {
+		const ctx = makeControllerCtx(data, {});
+		const result = (await controllers.collection.list(ctx)) as {
+			collections: unknown[];
+		};
+		expect(result.collections).toHaveLength(0);
+	});
+
+	it("paginates correctly", async () => {
+		for (let i = 1; i <= 5; i++) {
+			await data.upsert(
+				"collection",
+				`col${i}`,
+				makeCollection({ id: `col${i}`, slug: `col${i}` }),
+			);
+		}
+		const ctx = makeControllerCtx(data, { query: { page: "1", limit: "2" } });
+		const result = (await controllers.collection.list(ctx)) as {
+			collections: unknown[];
+			page: number;
+			limit: number;
+		};
+		expect(result.collections).toHaveLength(2);
+		expect(result.page).toBe(1);
+		expect(result.limit).toBe(2);
+	});
+});
+
 describe("store endpoint: admin create product slug uniqueness", () => {
 	let data: DataService;
 
