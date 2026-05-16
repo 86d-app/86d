@@ -656,6 +656,105 @@ test.describe("Account — Visual", () => {
 			SCREENSHOT_OPTS,
 		);
 	});
+
+	test("account loyalty page", async ({ admin }) => {
+		await admin.page.goto("/account/loyalty");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"account-loyalty.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("account downloads page", async ({ admin }) => {
+		await admin.page.goto("/account/downloads");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"account-downloads.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("account returns page", async ({ admin }) => {
+		await admin.page.goto("/account/returns");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"account-returns.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("account appointments page", async ({ admin }) => {
+		await admin.page.goto("/account/appointments");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"account-appointments.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("account preorders page", async ({ admin }) => {
+		await admin.page.goto("/account/preorders");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"account-preorders.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("account backorders page", async ({ admin }) => {
+		await admin.page.goto("/account/backorders");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"account-backorders.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("account store credits page", async ({ admin }) => {
+		await admin.page.goto("/account/store-credits");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"account-store-credits.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("account invoices page", async ({ admin }) => {
+		await admin.page.goto("/account/invoices");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"account-invoices.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("account warranties page", async ({ admin }) => {
+		await admin.page.goto("/account/warranties");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"account-warranties.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("account payment methods page", async ({ admin }) => {
+		await admin.page.goto("/account/payment-methods");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"account-payment-methods.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("account transactions page", async ({ admin }) => {
+		await admin.page.goto("/account/transactions");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"account-transactions.png",
+			SCREENSHOT_OPTS,
+		);
+	});
 });
 
 // ─── Unauthenticated account redirect ────────────────────────────────────────
