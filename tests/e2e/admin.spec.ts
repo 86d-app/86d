@@ -295,6 +295,8 @@ test.describe("Store Admin — Module Pages", () => {
 		{ name: "Pinterest Shop", path: "/admin/pinterest-shop" },
 		{ name: "Uber Eats", path: "/admin/uber-eats" },
 		{ name: "Toast POS", path: "/admin/toast" },
+		{ name: "X Shop", path: "/admin/x-shop" },
+		{ name: "Recently Viewed", path: "/admin/recently-viewed" },
 	];
 
 	for (const { name, path } of modulePaths) {
