@@ -78,7 +78,12 @@ async function simulateUpdateNote(
 		return { error: "Unauthorized", status: 401 };
 	}
 	const controller = createOrderNotesController(data);
-	const note = await controller.updateNote(noteId, opts.customerId, content, false);
+	const note = await controller.updateNote(
+		noteId,
+		opts.customerId,
+		content,
+		false,
+	);
 	if (!note) {
 		return { error: "Note not found", status: 404 };
 	}
@@ -267,12 +272,9 @@ describe("store endpoint: update note — customer edits own note", () => {
 			isInternal: false,
 		});
 
-		const result = await simulateUpdateNote(
-			data,
-			note.id,
-			"Updated message",
-			{ customerId: "cust_1" },
-		);
+		const result = await simulateUpdateNote(data, note.id, "Updated message", {
+			customerId: "cust_1",
+		});
 
 		expect("note" in result).toBe(true);
 		if ("note" in result) {
@@ -282,12 +284,9 @@ describe("store endpoint: update note — customer edits own note", () => {
 	});
 
 	it("returns 404 for nonexistent note", async () => {
-		const result = await simulateUpdateNote(
-			data,
-			"ghost_note",
-			"content",
-			{ customerId: "cust_1" },
-		);
+		const result = await simulateUpdateNote(data, "ghost_note", "content", {
+			customerId: "cust_1",
+		});
 
 		expect(result).toEqual({ error: "Note not found", status: 404 });
 	});
@@ -303,12 +302,9 @@ describe("store endpoint: update note — customer edits own note", () => {
 			isInternal: false,
 		});
 
-		const result = await simulateUpdateNote(
-			data,
-			note.id,
-			"Tampered content",
-			{ customerId: "cust_2" },
-		);
+		const result = await simulateUpdateNote(data, note.id, "Tampered content", {
+			customerId: "cust_2",
+		});
 
 		expect(result).toEqual({ error: "Note not found", status: 404 });
 	});

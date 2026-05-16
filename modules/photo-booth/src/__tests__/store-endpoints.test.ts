@@ -224,8 +224,16 @@ describe("store endpoint: list photos — public gallery", () => {
 		}
 
 		const controller = createPhotoBoothController(data);
-		const page1 = await controller.listPhotos({ isPublic: true, take: 2, skip: 0 });
-		const page2 = await controller.listPhotos({ isPublic: true, take: 2, skip: 2 });
+		const page1 = await controller.listPhotos({
+			isPublic: true,
+			take: 2,
+			skip: 0,
+		});
+		const page2 = await controller.listPhotos({
+			isPublic: true,
+			take: 2,
+			skip: 2,
+		});
 
 		expect(page1).toHaveLength(2);
 		expect(page2).toHaveLength(2);

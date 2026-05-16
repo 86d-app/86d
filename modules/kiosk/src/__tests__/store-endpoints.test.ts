@@ -435,12 +435,7 @@ describe("store endpoint: update item quantity", () => {
 		const session = await ctrl.startSession(station.id);
 		if (!session) throw new Error("startSession returned null");
 
-		const result = await simulateUpdateItem(
-			data,
-			session.id,
-			"ghost_item",
-			2,
-		);
+		const result = await simulateUpdateItem(data, session.id, "ghost_item", 2);
 
 		expect(result).toEqual({ error: "Session or item not found", status: 404 });
 	});
