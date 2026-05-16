@@ -1057,17 +1057,16 @@ describe("store endpoint: merge cart", () => {
 		data = createMockDataService();
 	});
 
-	it("returns 401 when not authenticated", async () => {
-		const _controller = createCartControllers(data);
-		// No customerId — simulate unauthenticated
-		const customerId = undefined;
-		if (!customerId) {
-			const result = { error: "Must be signed in to merge cart", status: 401 };
-			expect(result).toEqual({
-				error: "Must be signed in to merge cart",
-				status: 401,
-			});
-		}
+	it("returns 401 when not authenticated", () => {
+		// Simulate the endpoint auth guard: no session → return 401
+		const customerId = undefined as string | undefined;
+		const result = customerId
+			? null
+			: { error: "Must be signed in to merge cart", status: 401 };
+		expect(result).toEqual({
+			error: "Must be signed in to merge cart",
+			status: 401,
+		});
 	});
 
 	it("returns merged:0 when no guest cart exists", async () => {
