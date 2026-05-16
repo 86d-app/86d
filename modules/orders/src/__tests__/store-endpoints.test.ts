@@ -13,8 +13,9 @@ import { createOrderController } from "../service-impl";
  * 3. Order cancellation — state validation (only pending/processing/on_hold)
  * 4. Reorder — enriches items from products data registry
  * 5. Guest tracking — public lookup by orderNumber + email
- * 6. Returns — order status validation and item ownership checks
- * 7. List pagination — correct page/limit/total math
+ * 6. Confirm order — guest confirmation by orderId + email, owner bypass
+ * 7. Returns — order status validation and item ownership checks
+ * 8. List pagination — correct page/limit/total math
  */
 
 // ── Helpers ───────────────────────────────────────────────────────────
@@ -133,6 +134,34 @@ async function simulateCancelOrder(
 	}
 
 	return { order: cancelled };
+}
+
+async function simulateConfirmOrder(
+	controller: Controller,
+	orderId: string,
+	email: string,
+	userId?: string,
+) {
+	const order = await controller.getById(orderId);
+	if (!order) {
+		return { error: "Order not found", status: 404 };
+	}
+
+	// Allow if logged-in user owns this order
+	if (userId && order.customerId === userId) {
+		return { order };
+	}
+
+	// Allow if email matches the guest email on the order
+	const normalizedEmail = email.toLowerCase().trim();
+	if (
+		order.guestEmail &&
+		order.guestEmail.toLowerCase().trim() === normalizedEmail
+	) {
+		return { order };
+	}
+
+	return { error: "Order not found", status: 404 };
 }
 
 async function simulateTrackOrder(
@@ -281,6 +310,112 @@ describe("store endpoint: get order", () => {
 
 	it("returns 404 for nonexistent order ID", async () => {
 		const result = await simulateGetOrder(controller, "nonexistent", "cust_1");
+		expect(result).toEqual({ error: "Order not found", status: 404 });
+	});
+});
+
+describe("store endpoint: confirm order (guest)", () => {
+	let data: DataService;
+	let controller: Controller;
+
+	beforeEach(() => {
+		data = createMockDataService();
+		controller = createOrderController(data);
+	});
+
+	it("returns order for a guest when email matches guestEmail", async () => {
+		const order = await seedOrder(controller, {
+			guestEmail: "guest@example.com",
+		});
+
+		const result = await simulateConfirmOrder(
+			controller,
+			order.id,
+			"guest@example.com",
+		);
+
+		expect("order" in result).toBe(true);
+		if ("order" in result) {
+			expect(result.order.id).toBe(order.id);
+		}
+	});
+
+	it("matches guestEmail case-insensitively", async () => {
+		const order = await seedOrder(controller, {
+			guestEmail: "Guest@Example.COM",
+		});
+
+		const result = await simulateConfirmOrder(
+			controller,
+			order.id,
+			"guest@example.com",
+		);
+
+		expect("order" in result).toBe(true);
+	});
+
+	it("returns order for authenticated user who owns it", async () => {
+		const order = await seedOrder(controller, { customerId: "cust_1" });
+
+		const result = await simulateConfirmOrder(
+			controller,
+			order.id,
+			"any@example.com",
+			"cust_1",
+		);
+
+		expect("order" in result).toBe(true);
+		if ("order" in result) {
+			expect(result.order.id).toBe(order.id);
+		}
+	});
+
+	it("returns 404 when email does not match guestEmail", async () => {
+		const order = await seedOrder(controller, {
+			guestEmail: "guest@example.com",
+		});
+
+		const result = await simulateConfirmOrder(
+			controller,
+			order.id,
+			"wrong@example.com",
+		);
+
+		expect(result).toEqual({ error: "Order not found", status: 404 });
+	});
+
+	it("returns 404 for nonexistent order ID", async () => {
+		const result = await simulateConfirmOrder(
+			controller,
+			"nonexistent-id",
+			"guest@example.com",
+		);
+
+		expect(result).toEqual({ error: "Order not found", status: 404 });
+	});
+
+	it("returns 404 when authenticated user does not own the order", async () => {
+		const order = await seedOrder(controller, { customerId: "cust_1" });
+
+		const result = await simulateConfirmOrder(
+			controller,
+			order.id,
+			"guest@example.com",
+			"cust_other",
+		);
+
+		expect(result).toEqual({ error: "Order not found", status: 404 });
+	});
+
+	it("returns 404 when order has no guestEmail and no auth session", async () => {
+		const order = await seedOrder(controller, { customerId: "cust_1" });
+
+		const result = await simulateConfirmOrder(
+			controller,
+			order.id,
+			"guest@example.com",
+		);
+
 		expect(result).toEqual({ error: "Order not found", status: 404 });
 	});
 });

@@ -427,6 +427,130 @@ async function simulateApplyGiftCard(
 	return { session: updated };
 }
 
+async function simulateRemoveDiscount(
+	data: DataService,
+	sessionId: string,
+	opts: { userId?: string } = {},
+) {
+	const controller = createCheckoutController(data);
+	const session = await controller.getById(sessionId);
+	if (!session) {
+		return { error: "Checkout session not found", status: 404 };
+	}
+
+	if (
+		session.customerId &&
+		(!opts.userId || session.customerId !== opts.userId)
+	) {
+		return { error: "Checkout session not found", status: 404 };
+	}
+
+	const updated = await controller.removeDiscount(sessionId);
+	if (!updated) {
+		return { error: "Cannot modify this checkout session", status: 422 };
+	}
+
+	return { session: updated };
+}
+
+async function simulateRemoveGiftCard(
+	data: DataService,
+	sessionId: string,
+	opts: { userId?: string } = {},
+) {
+	const controller = createCheckoutController(data);
+	const session = await controller.getById(sessionId);
+	if (!session) {
+		return { error: "Checkout session not found", status: 404 };
+	}
+
+	if (
+		session.customerId &&
+		(!opts.userId || session.customerId !== opts.userId)
+	) {
+		return { error: "Checkout session not found", status: 404 };
+	}
+
+	const updated = await controller.removeGiftCard(sessionId);
+	if (!updated) {
+		return { error: "Cannot modify this checkout session", status: 422 };
+	}
+
+	return { session: updated };
+}
+
+async function simulateApplyStoreCredit(
+	data: DataService,
+	sessionId: string,
+	opts: {
+		userId?: string;
+		storeCreditBalance?: number;
+	} = {},
+) {
+	const controller = createCheckoutController(data);
+	const session = await controller.getById(sessionId);
+	if (!session) {
+		return { error: "Checkout session not found", status: 404 };
+	}
+
+	if (!opts.userId) {
+		return { error: "Must be signed in to use store credits", status: 401 };
+	}
+
+	if (session.customerId && session.customerId !== opts.userId) {
+		return { error: "Checkout session not found", status: 404 };
+	}
+
+	let storeCreditAmount = 0;
+	if (opts.storeCreditBalance !== undefined) {
+		if (opts.storeCreditBalance <= 0) {
+			return { error: "No store credit balance available", status: 400 };
+		}
+		const remainingTotal =
+			session.subtotal +
+			session.taxAmount +
+			session.shippingAmount -
+			session.discountAmount -
+			session.giftCardAmount;
+		storeCreditAmount = Math.min(
+			opts.storeCreditBalance,
+			Math.max(0, remainingTotal),
+		);
+	}
+
+	const updated = await controller.applyStoreCredit(sessionId, {
+		storeCreditAmount,
+	});
+
+	return { session: updated };
+}
+
+async function simulateRemoveStoreCredit(
+	data: DataService,
+	sessionId: string,
+	opts: { userId?: string } = {},
+) {
+	const controller = createCheckoutController(data);
+	const session = await controller.getById(sessionId);
+	if (!session) {
+		return { error: "Checkout session not found", status: 404 };
+	}
+
+	if (
+		session.customerId &&
+		(!opts.userId || session.customerId !== opts.userId)
+	) {
+		return { error: "Checkout session not found", status: 404 };
+	}
+
+	const updated = await controller.removeStoreCredit(sessionId);
+	if (!updated) {
+		return { error: "Cannot modify this checkout session", status: 422 };
+	}
+
+	return { session: updated };
+}
+
 // ── Tests ─────────────────────────────────────────────────────────────
 
 describe("checkout store endpoints", () => {
@@ -1104,6 +1228,253 @@ describe("checkout store endpoints", () => {
 			});
 
 			const result = await simulateApplyGiftCard(data, session.id, "gc-123", {
+				userId: "cust-intruder",
+			});
+
+			expect(result).toEqual({
+				error: "Checkout session not found",
+				status: 404,
+			});
+		});
+	});
+
+	// ── remove-discount ──────────────────────────────────────────────
+
+	describe("remove-discount", () => {
+		it("removes an applied discount and restores total", async () => {
+			const session = await createTestSession(controller, {
+				subtotal: 5000,
+				total: 5000,
+			});
+
+			// Apply a discount first
+			await controller.applyDiscount(session.id, {
+				code: "SAVE10",
+				discountAmount: 1000,
+				freeShipping: false,
+			});
+
+			const result = await simulateRemoveDiscount(data, session.id);
+
+			const res = result as { session: CheckoutSession };
+			expect(res.session?.discountCode).toBeUndefined();
+			expect(res.session?.discountAmount).toBe(0);
+		});
+
+		it("returns 404 for nonexistent session", async () => {
+			const result = await simulateRemoveDiscount(data, "no-such-id");
+			expect(result).toEqual({
+				error: "Checkout session not found",
+				status: 404,
+			});
+		});
+
+		it("blocks removal on another customer's session", async () => {
+			const session = await createTestSession(controller, {
+				customerId: "cust-owner",
+			});
+
+			const result = await simulateRemoveDiscount(data, session.id, {
+				userId: "cust-intruder",
+			});
+
+			expect(result).toEqual({
+				error: "Checkout session not found",
+				status: 404,
+			});
+		});
+
+		it("succeeds when session has no discount (idempotent)", async () => {
+			const session = await createTestSession(controller, {
+				subtotal: 3000,
+				total: 3000,
+			});
+
+			const result = await simulateRemoveDiscount(data, session.id);
+			const res = result as { session: CheckoutSession };
+			expect(res.session?.discountAmount).toBe(0);
+			expect(res.session?.total).toBe(3000);
+		});
+	});
+
+	// ── remove-gift-card ─────────────────────────────────────────────
+
+	describe("remove-gift-card", () => {
+		it("removes an applied gift card and restores total", async () => {
+			const session = await createTestSession(controller, {
+				subtotal: 4000,
+				total: 4000,
+			});
+
+			// Apply a gift card first
+			await controller.applyGiftCard(session.id, {
+				code: "GC-ABC",
+				giftCardAmount: 500,
+			});
+
+			const result = await simulateRemoveGiftCard(data, session.id);
+
+			const res = result as { session: CheckoutSession };
+			expect(res.session?.giftCardCode).toBeUndefined();
+			expect(res.session?.giftCardAmount).toBe(0);
+		});
+
+		it("returns 404 for nonexistent session", async () => {
+			const result = await simulateRemoveGiftCard(data, "no-such-id");
+			expect(result).toEqual({
+				error: "Checkout session not found",
+				status: 404,
+			});
+		});
+
+		it("blocks removal on another customer's session", async () => {
+			const session = await createTestSession(controller, {
+				customerId: "cust-owner",
+			});
+
+			const result = await simulateRemoveGiftCard(data, session.id, {
+				userId: "cust-intruder",
+			});
+
+			expect(result).toEqual({
+				error: "Checkout session not found",
+				status: 404,
+			});
+		});
+	});
+
+	// ── apply-store-credit ───────────────────────────────────────────
+
+	describe("apply-store-credit", () => {
+		it("returns 401 for unauthenticated user", async () => {
+			const session = await createTestSession(controller);
+
+			const result = await simulateApplyStoreCredit(data, session.id, {});
+
+			expect(result).toEqual({
+				error: "Must be signed in to use store credits",
+				status: 401,
+			});
+		});
+
+		it("returns 400 when customer has no store credit balance", async () => {
+			const session = await createTestSession(controller, {
+				customerId: "cust-1",
+			});
+
+			const result = await simulateApplyStoreCredit(data, session.id, {
+				userId: "cust-1",
+				storeCreditBalance: 0,
+			});
+
+			expect(result).toEqual({
+				error: "No store credit balance available",
+				status: 400,
+			});
+		});
+
+		it("applies store credit up to remaining total", async () => {
+			const session = await createTestSession(controller, {
+				customerId: "cust-1",
+				subtotal: 2000,
+				total: 2000,
+			});
+
+			const result = await simulateApplyStoreCredit(data, session.id, {
+				userId: "cust-1",
+				storeCreditBalance: 5000, // More than the order total
+			});
+
+			const res = result as { session: CheckoutSession };
+			// Capped to 2000 (the remaining total)
+			expect(res.session?.storeCreditAmount).toBe(2000);
+			expect(res.session?.total).toBe(0);
+		});
+
+		it("applies partial credit when balance is less than total", async () => {
+			const session = await createTestSession(controller, {
+				customerId: "cust-1",
+				subtotal: 5000,
+				total: 5000,
+			});
+
+			const result = await simulateApplyStoreCredit(data, session.id, {
+				userId: "cust-1",
+				storeCreditBalance: 1000,
+			});
+
+			const res = result as { session: CheckoutSession };
+			expect(res.session?.storeCreditAmount).toBe(1000);
+			expect(res.session?.total).toBe(4000);
+		});
+
+		it("returns 404 for nonexistent session", async () => {
+			const result = await simulateApplyStoreCredit(data, "no-such-id", {
+				userId: "cust-1",
+				storeCreditBalance: 1000,
+			});
+			expect(result).toEqual({
+				error: "Checkout session not found",
+				status: 404,
+			});
+		});
+
+		it("blocks credit on another customer's session", async () => {
+			const session = await createTestSession(controller, {
+				customerId: "cust-owner",
+			});
+
+			const result = await simulateApplyStoreCredit(data, session.id, {
+				userId: "cust-intruder",
+				storeCreditBalance: 1000,
+			});
+
+			expect(result).toEqual({
+				error: "Checkout session not found",
+				status: 404,
+			});
+		});
+	});
+
+	// ── remove-store-credit ──────────────────────────────────────────
+
+	describe("remove-store-credit", () => {
+		it("removes applied store credit and restores total", async () => {
+			const session = await createTestSession(controller, {
+				customerId: "cust-1",
+				subtotal: 3000,
+				total: 3000,
+			});
+
+			// Apply store credit first
+			await controller.applyStoreCredit(session.id, {
+				storeCreditAmount: 500,
+			});
+
+			const result = await simulateRemoveStoreCredit(data, session.id, {
+				userId: "cust-1",
+			});
+
+			const res = result as { session: CheckoutSession };
+			expect(res.session?.storeCreditAmount).toBe(0);
+		});
+
+		it("returns 404 for nonexistent session", async () => {
+			const result = await simulateRemoveStoreCredit(data, "no-such-id", {
+				userId: "cust-1",
+			});
+			expect(result).toEqual({
+				error: "Checkout session not found",
+				status: 404,
+			});
+		});
+
+		it("blocks removal on another customer's session", async () => {
+			const session = await createTestSession(controller, {
+				customerId: "cust-owner",
+			});
+
+			const result = await simulateRemoveStoreCredit(data, session.id, {
 				userId: "cust-intruder",
 			});
 
