@@ -426,6 +426,7 @@ describe("notifications settings — static response fields", () => {
 	});
 
 	it("returns fromAddress when configured", async () => {
+		vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(resendOkResponse());
 		const result = await callSettings({
 			resendApiKey: "re_abc123xyz",
 			resendFromAddress: "hello@example.com",
@@ -439,6 +440,9 @@ describe("notifications settings — static response fields", () => {
 	});
 
 	it("returns fromNumber when configured", async () => {
+		vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+			twilioErrorResponse(401, "Unauthorized"),
+		);
 		const result = await callSettings({
 			twilioAccountSid: "AC123",
 			twilioAuthToken: "token",

@@ -13,6 +13,14 @@ export type NotificationChannel = "in_app" | "email" | "both";
 
 export type NotificationPriority = "low" | "normal" | "high" | "urgent";
 
+export type DeliveryStatus =
+	| "pending"
+	| "sent"
+	| "delivered"
+	| "failed"
+	| "bounced"
+	| "complained";
+
 export type Notification = {
 	id: string;
 	customerId: string;
@@ -25,6 +33,10 @@ export type Notification = {
 	metadata: Record<string, unknown>;
 	read: boolean;
 	readAt?: Date | undefined;
+	/** External message ID from Resend or Twilio — used for delivery status webhook lookup */
+	deliveryExternalId?: string | undefined;
+	/** Delivery status set by inbound webhooks from Resend or Twilio */
+	deliveryStatus?: DeliveryStatus | undefined;
 	createdAt: Date;
 };
 
@@ -191,4 +203,13 @@ export type NotificationsController = ModuleController & {
 		actionUrl?: string | undefined;
 		metadata?: Record<string, unknown> | undefined;
 	}): Promise<BatchSendResult>;
+
+	// --- Delivery status webhook helpers ---
+
+	findByExternalId(externalId: string): Promise<Notification | null>;
+
+	updateDeliveryStatus(
+		id: string,
+		status: DeliveryStatus,
+	): Promise<Notification | null>;
 };

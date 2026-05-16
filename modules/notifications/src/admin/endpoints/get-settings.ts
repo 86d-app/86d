@@ -9,9 +9,11 @@ function maskKey(key: string): string {
 interface SettingsOptions {
 	resendApiKey?: string | undefined;
 	resendFromAddress?: string | undefined;
+	resendWebhookSecret?: string | undefined;
 	twilioAccountSid?: string | undefined;
 	twilioAuthToken?: string | undefined;
 	twilioFromNumber?: string | undefined;
+	twilioStatusCallbackUrl?: string | undefined;
 }
 
 export function createGetSettingsEndpoint(options: SettingsOptions) {
@@ -80,6 +82,7 @@ export function createGetSettingsEndpoint(options: SettingsOptions) {
 					apiKeyMasked: options.resendApiKey
 						? maskKey(options.resendApiKey)
 						: null,
+					webhookConfigured: Boolean(options.resendWebhookSecret),
 				},
 				sms: {
 					status: smsStatus,
@@ -91,6 +94,10 @@ export function createGetSettingsEndpoint(options: SettingsOptions) {
 					accountSidMasked: options.twilioAccountSid
 						? maskKey(options.twilioAccountSid)
 						: null,
+					webhookConfigured: Boolean(
+						options.twilioStatusCallbackUrl && options.twilioAuthToken,
+					),
+					statusCallbackUrl: options.twilioStatusCallbackUrl ?? null,
 				},
 			};
 		},

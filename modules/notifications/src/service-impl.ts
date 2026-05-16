@@ -6,6 +6,7 @@ import type {
 } from "./provider";
 import type {
 	BatchSendResult,
+	DeliveryStatus,
 	Notification,
 	NotificationPreference,
 	NotificationStats,
@@ -35,6 +36,8 @@ export interface NotificationsControllerOptions {
 				phone?: string | undefined;
 		  }>)
 		| undefined;
+	/** Full URL that Twilio should POST delivery status updates to (e.g. https://store.com/notifications/webhook/twilio) */
+	twilioStatusCallbackUrl?: string | undefined;
 }
 
 /** Minimal HTML-entity escape for user-facing strings injected into email HTML. */
@@ -73,6 +76,7 @@ export function createNotificationsController(
 	const emailProvider = options?.emailProvider;
 	const smsProvider = options?.smsProvider;
 	const customerResolver = options?.customerResolver;
+	const twilioStatusCallbackUrl = options?.twilioStatusCallbackUrl;
 
 	/**
 	 * Deliver a notification via the appropriate external channel.
@@ -116,9 +120,13 @@ export function createNotificationsController(
 						}),
 					);
 
-				// Record delivery attempt in metadata
+				// Record delivery attempt — store external ID for webhook lookup
 				await data.upsert("notification", notification.id, {
 					...notification,
+					deliveryExternalId: result.messageId ?? null,
+					deliveryStatus: result.success
+						? ("sent" satisfies DeliveryStatus)
+						: ("failed" satisfies DeliveryStatus),
 					metadata: {
 						...notification.metadata,
 						emailDelivery: {
@@ -141,6 +149,7 @@ export function createNotificationsController(
 					to: contact.phone,
 					body:
 						smsText.length > 1600 ? `${smsText.slice(0, 1597)}...` : smsText,
+					statusCallback: twilioStatusCallbackUrl,
 				})
 				.catch(
 					(err: Error): DeliveryResult => ({
@@ -149,8 +158,13 @@ export function createNotificationsController(
 					}),
 				);
 
+			// Store external ID for Twilio StatusCallback webhook lookup
 			await data.upsert("notification", notification.id, {
 				...notification,
+				deliveryExternalId: result.messageId ?? null,
+				deliveryStatus: result.success
+					? ("sent" satisfies DeliveryStatus)
+					: ("failed" satisfies DeliveryStatus),
 				metadata: {
 					...notification.metadata,
 					smsDelivery: {
@@ -645,6 +659,27 @@ export function createNotificationsController(
 			}
 
 			return result;
+		},
+
+		async findByExternalId(externalId) {
+			const results = (await data.findMany("notification", {
+				where: { deliveryExternalId: externalId },
+				take: 1,
+			})) as unknown as Notification[];
+			return results[0] ?? null;
+		},
+
+		async updateDeliveryStatus(id, status) {
+			const existing = (await data.get(
+				"notification",
+				id,
+			)) as unknown as Notification | null;
+			if (!existing) return null;
+			await data.upsert("notification", id, {
+				...existing,
+				deliveryStatus: status,
+			} as Record<string, unknown>);
+			return { ...existing, deliveryStatus: status };
 		},
 	};
 }

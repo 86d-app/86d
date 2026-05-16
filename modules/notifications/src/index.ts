@@ -10,10 +10,11 @@ import { buildReturnStatusEmail } from "./emails/return-status";
 import { ResendProvider, TwilioProvider } from "./provider";
 import { notificationsSchema } from "./schema";
 import { createNotificationsController } from "./service-impl";
-import { storeEndpoints } from "./store/endpoints";
+import { createStoreEndpoints } from "./store/endpoints";
 
 export type {
 	BatchSendResult,
+	DeliveryStatus,
 	Notification,
 	NotificationChannel,
 	NotificationPreference,
@@ -36,12 +37,16 @@ export interface NotificationsOptions extends ModuleConfig {
 	resendApiKey?: string | undefined;
 	/** Sender email address for Resend (e.g. "Store Name <noreply@store.com>") */
 	resendFromAddress?: string | undefined;
+	/** Resend webhook signing secret — enables delivery status tracking via inbound webhooks */
+	resendWebhookSecret?: string | undefined;
 	/** Twilio Account SID */
 	twilioAccountSid?: string | undefined;
 	/** Twilio Auth Token */
 	twilioAuthToken?: string | undefined;
 	/** Twilio phone number in E.164 format (e.g. "+15551234567") */
 	twilioFromNumber?: string | undefined;
+	/** Full public URL of the Twilio StatusCallback endpoint (e.g. "https://store.com/notifications/webhook/twilio") */
+	twilioStatusCallbackUrl?: string | undefined;
 }
 
 export default function notifications(options?: NotificationsOptions): Module {
@@ -64,8 +69,11 @@ export default function notifications(options?: NotificationsOptions): Module {
 	const settingsEndpoint = createGetSettingsEndpoint({
 		resendApiKey: options?.resendApiKey,
 		resendFromAddress: options?.resendFromAddress,
+		resendWebhookSecret: options?.resendWebhookSecret,
 		twilioAccountSid: options?.twilioAccountSid,
+		twilioAuthToken: options?.twilioAuthToken,
 		twilioFromNumber: options?.twilioFromNumber,
+		twilioStatusCallbackUrl: options?.twilioStatusCallbackUrl,
 	});
 
 	return {
@@ -112,6 +120,7 @@ export default function notifications(options?: NotificationsOptions): Module {
 				emailProvider,
 				smsProvider,
 				customerResolver,
+				twilioStatusCallbackUrl: options?.twilioStatusCallbackUrl,
 			});
 
 			interface CheckoutCompletedPayload {
@@ -427,7 +436,11 @@ export default function notifications(options?: NotificationsOptions): Module {
 			return { controllers: { notifications: controller } };
 		},
 		endpoints: {
-			store: storeEndpoints,
+			store: createStoreEndpoints({
+				resendWebhookSecret: options?.resendWebhookSecret,
+				twilioAuthToken: options?.twilioAuthToken,
+				twilioWebhookUrl: options?.twilioStatusCallbackUrl,
+			}),
 			admin: createAdminEndpointsWithSettings(settingsEndpoint),
 		},
 		admin: {

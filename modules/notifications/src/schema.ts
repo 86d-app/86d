@@ -14,6 +14,8 @@ export const notificationsSchema = {
 			metadata: { type: "json", required: true, defaultValue: {} },
 			read: { type: "boolean", required: true, defaultValue: false },
 			readAt: { type: "date", required: false },
+			deliveryExternalId: { type: "string", required: false },
+			deliveryStatus: { type: "string", required: false },
 			createdAt: {
 				type: "date",
 				required: true,

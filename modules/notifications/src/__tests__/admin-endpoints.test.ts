@@ -130,6 +130,8 @@ function makeController(
 			failed: 0,
 			errors: [],
 		} satisfies BatchSendResult),
+		findByExternalId: vi.fn().mockResolvedValue(null),
+		updateDeliveryStatus: vi.fn().mockResolvedValue(null),
 		...overrides,
 	};
 }
