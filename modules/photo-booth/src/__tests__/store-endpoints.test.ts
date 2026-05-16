@@ -178,3 +178,94 @@ describe("store endpoint: get stream photos", () => {
 		expect(result).toEqual({ error: "Stream not found", status: 404 });
 	});
 });
+
+describe("store endpoint: list photos — public gallery", () => {
+	let data: DataService;
+
+	beforeEach(() => {
+		data = createMockDataService();
+	});
+
+	it("returns public photos", async () => {
+		const ctrl = createPhotoBoothController(data);
+		const session = await ctrl.createSession({ name: "Gallery" });
+		await ctrl.capturePhoto({
+			sessionId: session.id,
+			imageUrl: "https://cdn.example.com/public1.jpg",
+			isPublic: true,
+		});
+		await ctrl.capturePhoto({
+			sessionId: session.id,
+			imageUrl: "https://cdn.example.com/private1.jpg",
+			isPublic: false,
+		});
+
+		const controller = createPhotoBoothController(data);
+		const photos = await controller.listPhotos({ isPublic: true });
+		expect(photos).toHaveLength(1);
+		expect(photos[0].imageUrl).toBe("https://cdn.example.com/public1.jpg");
+	});
+
+	it("returns empty when no public photos exist", async () => {
+		const controller = createPhotoBoothController(data);
+		const photos = await controller.listPhotos({ isPublic: true });
+		expect(photos).toHaveLength(0);
+	});
+
+	it("respects pagination", async () => {
+		const ctrl = createPhotoBoothController(data);
+		const session = await ctrl.createSession({ name: "Bulk" });
+		for (let i = 0; i < 5; i++) {
+			await ctrl.capturePhoto({
+				sessionId: session.id,
+				imageUrl: `https://cdn.example.com/photo${i}.jpg`,
+				isPublic: true,
+			});
+		}
+
+		const controller = createPhotoBoothController(data);
+		const page1 = await controller.listPhotos({ isPublic: true, take: 2, skip: 0 });
+		const page2 = await controller.listPhotos({ isPublic: true, take: 2, skip: 2 });
+
+		expect(page1).toHaveLength(2);
+		expect(page2).toHaveLength(2);
+		expect(page1[0].id).not.toBe(page2[0].id);
+	});
+});
+
+describe("store endpoint: send photo — deliver to email or phone", () => {
+	let data: DataService;
+
+	beforeEach(() => {
+		data = createMockDataService();
+	});
+
+	it("sends a photo to an email address", async () => {
+		const ctrl = createPhotoBoothController(data);
+		const session = await ctrl.createSession({ name: "Event" });
+		const photo = await ctrl.capturePhoto({
+			sessionId: session.id,
+			imageUrl: "https://cdn.example.com/to-send.jpg",
+		});
+
+		const controller = createPhotoBoothController(data);
+		const result = await controller.sendPhoto(photo.id, {
+			email: "guest@example.com",
+		});
+
+		expect(result).not.toBeNull();
+		if (result) {
+			expect(result.sendStatus).toBe("sent");
+			expect(result.email).toBe("guest@example.com");
+		}
+	});
+
+	it("returns null for nonexistent photo", async () => {
+		const controller = createPhotoBoothController(data);
+		const result = await controller.sendPhoto("ghost_photo", {
+			email: "guest@example.com",
+		});
+
+		expect(result).toBeNull();
+	});
+});
