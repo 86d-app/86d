@@ -378,6 +378,14 @@ test.describe("Storefront — Customer Account", () => {
 		{ name: "Loyalty", path: "/account/loyalty" },
 		{ name: "Returns", path: "/account/returns" },
 		{ name: "Reviews", path: "/account/reviews" },
+		{ name: "Appointments", path: "/account/appointments" },
+		{ name: "Preorders", path: "/account/preorders" },
+		{ name: "Backorders", path: "/account/backorders" },
+		{ name: "Store Credits", path: "/account/store-credits" },
+		{ name: "Invoices", path: "/account/invoices" },
+		{ name: "Warranties", path: "/account/warranties" },
+		{ name: "Payment Methods", path: "/account/payment-methods" },
+		{ name: "Transactions", path: "/account/transactions" },
 	];
 
 	for (const { name, path } of accountPaths) {
