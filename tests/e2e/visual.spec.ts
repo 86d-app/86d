@@ -1490,6 +1490,15 @@ test.describe("Account — Visual", () => {
 		);
 	});
 
+	test("account orders returns page", async ({ admin }) => {
+		await admin.page.goto("/account/orders/returns");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"account-orders-returns.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
 	test("account appointments page", async ({ admin }) => {
 		await admin.page.goto("/account/appointments");
 		await admin.page.waitForLoadState("networkidle");
@@ -1558,6 +1567,15 @@ test.describe("Account — Visual", () => {
 		await admin.page.waitForLoadState("networkidle");
 		await expect(admin.page).toHaveScreenshot(
 			"account-transactions.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("affiliate dashboard page", async ({ admin }) => {
+		await admin.page.goto("/affiliate/dashboard");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"affiliate-dashboard.png",
 			SCREENSHOT_OPTS,
 		);
 	});
