@@ -74,6 +74,14 @@ export default function reviews(options?: ReviewsOptions): Module {
 				},
 			],
 		},
+		store: {
+			pages: [
+				{
+					path: "/account/reviews",
+					component: "MyReviewsPage",
+				},
+			],
+		},
 		options,
 	};
 }
