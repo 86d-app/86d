@@ -44,7 +44,29 @@ export function RecentlyViewedProducts({
 
 	const items = data?.items ?? [];
 
-	if (isLoading || items.length === 0) return null;
+	if (isLoading) {
+		return (
+			<section className="border-border/50 border-t py-12 sm:py-14">
+				<div className="mb-6 h-6 w-36 animate-pulse rounded-lg bg-muted" />
+				<div className="scrollbar-none flex gap-4 overflow-x-auto pb-2">
+					{["a", "b", "c", "d", "e", "f"].map((id) => (
+						<div
+							key={`rv-skel-${id}`}
+							className="flex w-36 flex-none flex-col sm:w-44"
+						>
+							<div className="aspect-[3/4] animate-pulse rounded-lg bg-muted" />
+							<div className="mt-2.5">
+								<div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
+								<div className="mt-1 h-3 w-1/2 animate-pulse rounded bg-muted" />
+							</div>
+						</div>
+					))}
+				</div>
+			</section>
+		);
+	}
+
+	if (items.length === 0) return null;
 
 	return (
 		<section className="border-border/50 border-t py-12 sm:py-14">
