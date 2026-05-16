@@ -100,6 +100,11 @@ export default function AccountPage() {
 					label="Downloads"
 					sub="Digital files"
 				/>
+				<QuickNavCard
+					href="/account/reviews"
+					label="Reviews"
+					sub="Your feedback"
+				/>
 			</div>
 
 			{/* Recent orders */}
