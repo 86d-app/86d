@@ -298,4 +298,183 @@ test.describe("Admin — Authenticated Visual", () => {
 			SCREENSHOT_OPTS,
 		);
 	});
+
+	// ─── Payment & fulfillment admin screens (backfill) ──────────────────────
+
+	test("admin stripe settings", async ({ admin }) => {
+		await admin.page.goto("/admin/stripe");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-stripe-settings.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin shipping rates", async ({ admin }) => {
+		await admin.page.goto("/admin/shipping");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-shipping-rates.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin tax configuration", async ({ admin }) => {
+		await admin.page.goto("/admin/tax");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-tax-config.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin checkout sessions", async ({ admin }) => {
+		await admin.page.goto("/admin/checkout");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-checkout-sessions.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin blog posts", async ({ admin }) => {
+		await admin.page.goto("/admin/blog");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-blog-posts.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin discounts price rules", async ({ admin }) => {
+		await admin.page.goto("/admin/discounts/price-rules");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-discounts-price-rules.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin loyalty program", async ({ admin }) => {
+		await admin.page.goto("/admin/loyalty");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-loyalty.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin gift cards", async ({ admin }) => {
+		await admin.page.goto("/admin/gift-cards");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-gift-cards.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin collections list", async ({ admin }) => {
+		await admin.page.goto("/admin/collections");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-collections-list.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin brands list", async ({ admin }) => {
+		await admin.page.goto("/admin/brands");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-brands-list.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+});
+
+// ─── Account section (authenticated shopper) ─────────────────────────────────
+
+test.describe("Account — Visual", () => {
+	test.beforeEach(async ({ admin }) => {
+		// Sign in as the seeded admin user — same session works for the storefront account section
+		await admin.signIn();
+
+	test("account home page", async ({ admin }) => {
+		await admin.page.goto("/account");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"account-home.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("account orders page", async ({ admin }) => {
+		await admin.page.goto("/account/orders");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"account-orders.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("account profile page", async ({ admin }) => {
+		await admin.page.goto("/account/profile");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"account-profile.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("account addresses page", async ({ admin }) => {
+		await admin.page.goto("/account/addresses");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"account-addresses.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("account wishlist page", async ({ admin }) => {
+		await admin.page.goto("/account/wishlist");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"account-wishlist.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("account reviews page", async ({ admin }) => {
+		await admin.page.goto("/account/reviews");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"account-reviews.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("account subscriptions page", async ({ admin }) => {
+		await admin.page.goto("/account/subscriptions");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"account-subscriptions.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+});
+
+// ─── Unauthenticated account redirect ────────────────────────────────────────
+
+test.describe("Account — Unauthenticated", () => {
+	test("account page redirects to signin", async ({ page }) => {
+		await page.goto("/account");
+		await page.waitForURL((url) => url.pathname.startsWith("/auth/signin"), {
+			timeout: 10_000,
+		});
+		await page.waitForLoadState("networkidle");
+		await expect(page).toHaveScreenshot(
+			"account-unauthenticated-redirect.png",
+			SCREENSHOT_OPTS,
+		);
+	});
 });
