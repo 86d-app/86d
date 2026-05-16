@@ -7,6 +7,7 @@ import {
 	useStripe,
 } from "@stripe/react-stripe-js";
 import { loadStripe, type Stripe } from "@stripe/stripe-js";
+import { useTheme } from "next-themes";
 import { useCallback, useRef, useState } from "react";
 
 // ─── Singleton Stripe instance ─────────────────────────────────────
@@ -209,6 +210,31 @@ export function StripePaymentForm({
 	onBack,
 }: StripePaymentFormProps) {
 	const stripeRef = useRef(getStripe());
+	const { resolvedTheme } = useTheme();
+	const isDark = resolvedTheme === "dark";
+
+	const appearance = {
+		theme: "flat" as const,
+		variables: isDark
+			? {
+					colorPrimary: "oklch(0.985 0 0)",
+					colorBackground: "oklch(0.145 0 0)",
+					colorText: "oklch(0.985 0 0)",
+					colorDanger: "hsl(0 72% 51%)",
+					fontFamily: "inherit",
+					borderRadius: "8px",
+					spacingUnit: "4px",
+				}
+			: {
+					colorPrimary: "oklch(0.145 0 0)",
+					colorBackground: "oklch(1 0 0)",
+					colorText: "oklch(0.145 0 0)",
+					colorDanger: "hsl(0 84% 60%)",
+					fontFamily: "inherit",
+					borderRadius: "8px",
+					spacingUnit: "4px",
+				},
+	};
 
 	return (
 		<div className="mb-6 rounded-lg border border-border/40 p-5">
@@ -216,18 +242,7 @@ export function StripePaymentForm({
 				stripe={stripeRef.current}
 				options={{
 					clientSecret,
-					appearance: {
-						theme: "flat",
-						variables: {
-							colorPrimary: "hsl(0 0% 9%)",
-							colorBackground: "hsl(0 0% 100%)",
-							colorText: "hsl(0 0% 9%)",
-							colorDanger: "hsl(0 84% 60%)",
-							fontFamily: "inherit",
-							borderRadius: "8px",
-							spacingUnit: "4px",
-						},
-					},
+					appearance,
 				}}
 			>
 				<InnerForm
