@@ -260,4 +260,42 @@ test.describe("Admin — Authenticated Visual", () => {
 			SCREENSHOT_OPTS,
 		);
 	});
+
+	// ─── Discounts (backfill — previously uncovered) ─────────────────────────
+
+	test("admin discounts list", async ({ admin }) => {
+		await admin.page.goto("/admin/discounts");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-discounts-list.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin discounts analytics", async ({ admin }) => {
+		await admin.page.goto("/admin/discounts/analytics");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-discounts-analytics.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin reviews list", async ({ admin }) => {
+		await admin.page.goto("/admin/reviews");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-reviews-list.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("admin inventory list", async ({ admin }) => {
+		await admin.page.goto("/admin/inventory");
+		await admin.page.waitForLoadState("networkidle");
+		await expect(admin.page).toHaveScreenshot(
+			"admin-inventory-list.png",
+			SCREENSHOT_OPTS,
+		);
+	});
 });
