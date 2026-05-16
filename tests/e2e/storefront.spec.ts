@@ -386,6 +386,8 @@ test.describe("Storefront — Customer Account", () => {
 		{ name: "Warranties", path: "/account/warranties" },
 		{ name: "Payment Methods", path: "/account/payment-methods" },
 		{ name: "Transactions", path: "/account/transactions" },
+		{ name: "Orders Returns", path: "/account/orders/returns" },
+		{ name: "Affiliate Dashboard", path: "/affiliate/dashboard" },
 	];
 
 	for (const { name, path } of accountPaths) {
