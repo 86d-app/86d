@@ -9,6 +9,7 @@ import { createProductLabelController } from "../service-impl";
  *
  * 1. get-product-labels: returns active labels for a product
  * 2. list-labels: returns active labels
+ * 3. get-label: returns a single label by slug; 404 for inactive or missing
  */
 
 type DataService = ReturnType<typeof createMockDataService>;
@@ -33,6 +34,15 @@ async function simulateListLabels(
 		...(query.type != null && { type: query.type }),
 	});
 	return { labels };
+}
+
+async function simulateGetLabel(data: DataService, slug: string) {
+	const controller = createProductLabelController(data);
+	const label = await controller.getLabelBySlug(slug);
+	if (!label?.isActive) {
+		return { error: "Label not found", status: 404 };
+	}
+	return { label };
 }
 
 // ── Tests ───────────────────────────────────────────────────────────
@@ -155,5 +165,55 @@ describe("store endpoint: list labels — active only", () => {
 		const result = await simulateListLabels(data);
 
 		expect(result.labels).toHaveLength(0);
+	});
+});
+
+describe("store endpoint: get label by slug — single label lookup", () => {
+	let data: DataService;
+
+	beforeEach(() => {
+		data = createMockDataService();
+	});
+
+	it("returns an active label by slug", async () => {
+		const ctrl = createProductLabelController(data);
+		await ctrl.createLabel({
+			name: "Flash Sale",
+			slug: "flash-sale",
+			displayText: "FLASH",
+			type: "ribbon",
+			isActive: true,
+			priority: 5,
+		});
+
+		const result = await simulateGetLabel(data, "flash-sale");
+
+		expect("label" in result).toBe(true);
+		if ("label" in result) {
+			expect(result.label.slug).toBe("flash-sale");
+			expect(result.label.displayText).toBe("FLASH");
+		}
+	});
+
+	it("returns 404 for nonexistent slug", async () => {
+		const result = await simulateGetLabel(data, "ghost-label");
+
+		expect(result).toEqual({ error: "Label not found", status: 404 });
+	});
+
+	it("returns 404 for inactive label", async () => {
+		const ctrl = createProductLabelController(data);
+		await ctrl.createLabel({
+			name: "Old Promo",
+			slug: "old-promo",
+			displayText: "OLD",
+			type: "badge",
+			isActive: false,
+			priority: 1,
+		});
+
+		const result = await simulateGetLabel(data, "old-promo");
+
+		expect(result).toEqual({ error: "Label not found", status: 404 });
 	});
 });
