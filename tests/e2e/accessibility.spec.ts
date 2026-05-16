@@ -214,3 +214,138 @@ test.describe("Storefront — Forms", () => {
 		await expect(label.first()).toBeVisible();
 	});
 });
+
+// ── Admin — Accessibility ─────────────────────────────────────────────────────
+//
+// Admin pages use dynamic MDX rendering. Sign in before each test so the
+// admin session is established and the full admin UI renders.
+
+const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL || "admin@example.com";
+const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD || "password123";
+
+async function signInAsAdmin(page: import("@playwright/test").Page) {
+	await page.goto("/auth/signin");
+	const form = page.locator("main form");
+	await form.locator('input[type="email"]').fill(ADMIN_EMAIL);
+	await form.locator('input[type="password"]').fill(ADMIN_PASSWORD);
+	await form.locator('button[type="submit"]').click();
+	await page.waitForURL(/\/admin/, { timeout: 15_000 });
+	await page.waitForLoadState("networkidle");
+}
+
+test.describe("Admin — Accessibility (axe-core)", () => {
+	test.beforeEach(async ({ page }) => {
+		await signInAsAdmin(page);
+	});
+
+	test("admin dashboard passes axe", async ({ page }) => {
+		await page.waitForLoadState("networkidle");
+
+		const results = await new AxeBuilder({ page })
+			.withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+			.analyze();
+
+		const criticalOrSerious = results.violations.filter((v) =>
+			["critical", "serious"].includes(v.impact ?? ""),
+		);
+		expect(
+			criticalOrSerious,
+			`Admin dashboard axe violations:\n${criticalOrSerious.map((v) => `  [${v.impact}] ${v.id}: ${v.description}\n    ${v.nodes[0]?.target}`).join("\n")}`,
+		).toHaveLength(0);
+	});
+
+	test("admin products page passes axe", async ({ page }) => {
+		await page.goto("/admin/products");
+		await page.waitForLoadState("networkidle");
+		await page.waitForSelector("table, h1, h2", { timeout: 15_000 });
+
+		const results = await new AxeBuilder({ page })
+			.withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+			.analyze();
+
+		const criticalOrSerious = results.violations.filter((v) =>
+			["critical", "serious"].includes(v.impact ?? ""),
+		);
+		expect(
+			criticalOrSerious,
+			`Admin products page axe violations:\n${criticalOrSerious.map((v) => `  [${v.impact}] ${v.id}: ${v.description}\n    ${v.nodes[0]?.target}`).join("\n")}`,
+		).toHaveLength(0);
+	});
+
+	test("admin orders page passes axe", async ({ page }) => {
+		await page.goto("/admin/orders");
+		await page.waitForLoadState("networkidle");
+		await page.waitForSelector("table, h1, h2", { timeout: 15_000 });
+
+		const results = await new AxeBuilder({ page })
+			.withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+			.analyze();
+
+		const criticalOrSerious = results.violations.filter((v) =>
+			["critical", "serious"].includes(v.impact ?? ""),
+		);
+		expect(
+			criticalOrSerious,
+			`Admin orders page axe violations:\n${criticalOrSerious.map((v) => `  [${v.impact}] ${v.id}: ${v.description}\n    ${v.nodes[0]?.target}`).join("\n")}`,
+		).toHaveLength(0);
+	});
+
+	test("admin customers page passes axe", async ({ page }) => {
+		await page.goto("/admin/customers");
+		await page.waitForLoadState("networkidle");
+		await page.waitForSelector("table, h1, h2", { timeout: 15_000 });
+
+		const results = await new AxeBuilder({ page })
+			.withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+			.analyze();
+
+		const criticalOrSerious = results.violations.filter((v) =>
+			["critical", "serious"].includes(v.impact ?? ""),
+		);
+		expect(
+			criticalOrSerious,
+			`Admin customers page axe violations:\n${criticalOrSerious.map((v) => `  [${v.impact}] ${v.id}: ${v.description}\n    ${v.nodes[0]?.target}`).join("\n")}`,
+		).toHaveLength(0);
+	});
+
+	test("admin sign-in page passes axe", async ({ page }) => {
+		// Sign out first so we can check the sign-in page
+		await page.goto("/auth/signin");
+		await page.waitForLoadState("networkidle");
+
+		const results = await new AxeBuilder({ page })
+			.withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+			.analyze();
+
+		const criticalOrSerious = results.violations.filter((v) =>
+			["critical", "serious"].includes(v.impact ?? ""),
+		);
+		expect(
+			criticalOrSerious,
+			`Admin sign-in page axe violations:\n${criticalOrSerious.map((v) => `  [${v.impact}] ${v.id}: ${v.description}\n    ${v.nodes[0]?.target}`).join("\n")}`,
+		).toHaveLength(0);
+	});
+});
+
+// ── Admin — Structural Accessibility ─────────────────────────────────────────
+
+test.describe("Admin — Accessibility (structural)", () => {
+	test.beforeEach(async ({ page }) => {
+		await signInAsAdmin(page);
+	});
+
+	test("admin dashboard has main landmark", async ({ page }) => {
+		const main = page.locator("main");
+		await expect(main).toBeVisible({ timeout: 10_000 });
+	});
+
+	test("admin sidebar navigation is accessible", async ({ page }) => {
+		const nav = page.locator("nav").first();
+		await expect(nav).toBeVisible({ timeout: 10_000 });
+	});
+
+	test("admin dashboard heading is present", async ({ page }) => {
+		const heading = page.locator("h1, h2").first();
+		await expect(heading).toBeVisible({ timeout: 10_000 });
+	});
+});
