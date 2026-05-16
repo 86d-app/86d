@@ -116,6 +116,213 @@ test.describe("Storefront — Visual", () => {
 		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
 		await expect(page).toHaveScreenshot("track.png", SCREENSHOT_OPTS);
 	});
+
+	test("brands page", async ({ page }) => {
+		await stableGoto(page, "/brands");
+		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
+		await expect(page).toHaveScreenshot("brands.png", SCREENSHOT_OPTS);
+	});
+
+	test("bundles page", async ({ page }) => {
+		await stableGoto(page, "/bundles");
+		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
+		await expect(page).toHaveScreenshot("bundles.png", SCREENSHOT_OPTS);
+	});
+
+	test("faq page", async ({ page }) => {
+		await stableGoto(page, "/faq");
+		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
+		await expect(page).toHaveScreenshot("faq.png", SCREENSHOT_OPTS);
+	});
+
+	test("flash sales page", async ({ page }) => {
+		await stableGoto(page, "/flash-sales");
+		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
+		await expect(page).toHaveScreenshot("flash-sales.png", SCREENSHOT_OPTS);
+	});
+
+	test("forms page", async ({ page }) => {
+		await stableGoto(page, "/forms");
+		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
+		await expect(page).toHaveScreenshot("forms.png", SCREENSHOT_OPTS);
+	});
+
+	test("auctions page", async ({ page }) => {
+		await stableGoto(page, "/auctions");
+		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
+		await expect(page).toHaveScreenshot("auctions.png", SCREENSHOT_OPTS);
+	});
+
+	test("gift registry page", async ({ page }) => {
+		await stableGoto(page, "/gift-registry");
+		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
+		await expect(page).toHaveScreenshot("gift-registry.png", SCREENSHOT_OPTS);
+	});
+
+	test("memberships page", async ({ page }) => {
+		await stableGoto(page, "/memberships");
+		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
+		await expect(page).toHaveScreenshot("memberships.png", SCREENSHOT_OPTS);
+	});
+
+	test("vendors page", async ({ page }) => {
+		await stableGoto(page, "/vendors");
+		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
+		await expect(page).toHaveScreenshot("vendors.png", SCREENSHOT_OPTS);
+	});
+
+	test("vendor apply page", async ({ page }) => {
+		await stableGoto(page, "/vendors/apply");
+		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
+		await expect(page).toHaveScreenshot("vendors-apply.png", SCREENSHOT_OPTS);
+	});
+
+	test("waitlist page", async ({ page }) => {
+		await stableGoto(page, "/waitlist");
+		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
+		await expect(page).toHaveScreenshot("waitlist.png", SCREENSHOT_OPTS);
+	});
+
+	test("recently viewed page", async ({ page }) => {
+		await stableGoto(page, "/recently-viewed");
+		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
+		await expect(page).toHaveScreenshot("recently-viewed.png", SCREENSHOT_OPTS);
+	});
+
+	test("referrals page", async ({ page }) => {
+		await stableGoto(page, "/referrals");
+		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
+		await expect(page).toHaveScreenshot("referrals.png", SCREENSHOT_OPTS);
+	});
+
+	test("affiliate apply page", async ({ page }) => {
+		await stableGoto(page, "/affiliate/apply");
+		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
+		await expect(page).toHaveScreenshot("affiliate-apply.png", SCREENSHOT_OPTS);
+	});
+
+	test("appointments page", async ({ page }) => {
+		await stableGoto(page, "/appointments");
+		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
+		await expect(page).toHaveScreenshot("appointments.png", SCREENSHOT_OPTS);
+	});
+
+	test("delivery slots page", async ({ page }) => {
+		await stableGoto(page, "/delivery-slots");
+		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
+		await expect(page).toHaveScreenshot("delivery-slots.png", SCREENSHOT_OPTS);
+	});
+
+	test("store pickup page", async ({ page }) => {
+		await stableGoto(page, "/store-pickup");
+		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
+		await expect(page).toHaveScreenshot("store-pickup.png", SCREENSHOT_OPTS);
+	});
+
+	test("store locator page", async ({ page }) => {
+		await stableGoto(page, "/stores");
+		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
+		await expect(page).toHaveScreenshot("store-locator.png", SCREENSHOT_OPTS);
+	});
+
+	test("photo booth page", async ({ page }) => {
+		await stableGoto(page, "/photo-booth");
+		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
+		await expect(page).toHaveScreenshot("photo-booth.png", SCREENSHOT_OPTS);
+	});
+
+	test("compare page", async ({ page }) => {
+		await stableGoto(page, "/compare");
+		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
+		await expect(page).toHaveScreenshot("compare.png", SCREENSHOT_OPTS);
+	});
+
+	test("quotes page", async ({ page }) => {
+		await stableGoto(page, "/quotes");
+		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
+		await expect(page).toHaveScreenshot("quotes.png", SCREENSHOT_OPTS);
+	});
+
+	test("quote request page", async ({ page }) => {
+		await stableGoto(page, "/quotes/request");
+		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
+		await expect(page).toHaveScreenshot("quotes-request.png", SCREENSHOT_OPTS);
+	});
+
+	test("support tickets page", async ({ page }) => {
+		await stableGoto(page, "/support/tickets");
+		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
+		await expect(page).toHaveScreenshot(
+			"support-tickets.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("new support ticket page", async ({ page }) => {
+		await stableGoto(page, "/support/tickets/new");
+		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
+		await expect(page).toHaveScreenshot(
+			"support-tickets-new.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("gift card balance page", async ({ page }) => {
+		await stableGoto(page, "/gift-cards/balance");
+		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
+		await expect(page).toHaveScreenshot(
+			"gift-cards-balance.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("gift card redeem page", async ({ page }) => {
+		await stableGoto(page, "/gift-cards/redeem");
+		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
+		await expect(page).toHaveScreenshot(
+			"gift-cards-redeem.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("loyalty page", async ({ page }) => {
+		await stableGoto(page, "/loyalty");
+		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
+		await expect(page).toHaveScreenshot("loyalty.png", SCREENSHOT_OPTS);
+	});
+
+	test("subscriptions page", async ({ page }) => {
+		await stableGoto(page, "/subscriptions");
+		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
+		await expect(page).toHaveScreenshot("subscriptions.png", SCREENSHOT_OPTS);
+	});
+
+	test("digital downloads page", async ({ page }) => {
+		await stableGoto(page, "/downloads");
+		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
+		await expect(page).toHaveScreenshot("downloads.png", SCREENSHOT_OPTS);
+	});
+
+	test("notifications preferences page", async ({ page }) => {
+		await stableGoto(page, "/notifications/preferences");
+		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
+		await expect(page).toHaveScreenshot(
+			"notifications-preferences.png",
+			SCREENSHOT_OPTS,
+		);
+	});
+
+	test("gift wrapping page", async ({ page }) => {
+		await stableGoto(page, "/gift-wrapping");
+		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
+		await expect(page).toHaveScreenshot("gift-wrapping.png", SCREENSHOT_OPTS);
+	});
+
+	test("sitemap page", async ({ page }) => {
+		await stableGoto(page, "/sitemap");
+		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
+		await expect(page).toHaveScreenshot("sitemap.png", SCREENSHOT_OPTS);
+	});
 });
 
 // ─── Auth pages ─────────────────────────────────────────────────────────────
