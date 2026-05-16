@@ -66,6 +66,17 @@ function makeNotification(overrides: Partial<Notification> = {}): Notification {
 	};
 }
 
+function invokeEndpoint(
+	endpoint: unknown,
+	ctx: Record<string, unknown>,
+): Promise<Response> {
+	const h = endpoint as Record<string, unknown>;
+	const fn = (
+		typeof h.handler === "function" ? h.handler : h
+	) as CallableFunction;
+	return fn(ctx) as Promise<Response>;
+}
+
 function makeCtx(
 	formBody: string,
 	headers: Record<string, string> = {},
@@ -115,7 +126,7 @@ describe("createTwilioWebhook", () => {
 				},
 			);
 
-			const res = await (webhook as Function)(ctx);
+			const res = await invokeEndpoint(webhook, ctx);
 			expect(res.status).toBe(204);
 			expect(findSpy).toHaveBeenCalledWith("SM-001");
 			expect(updateSpy).toHaveBeenCalledWith("notif-001", "delivered");
@@ -139,7 +150,7 @@ describe("createTwilioWebhook", () => {
 				},
 			);
 
-			const res = await (webhook as Function)(ctx);
+			const res = await invokeEndpoint(webhook, ctx);
 			expect(res.status).toBe(204);
 			expect(updateSpy).toHaveBeenCalledWith("notif-001", "failed");
 		});
@@ -162,7 +173,7 @@ describe("createTwilioWebhook", () => {
 				},
 			);
 
-			const res = await (webhook as Function)(ctx);
+			const res = await invokeEndpoint(webhook, ctx);
 			expect(res.status).toBe(204);
 			expect(updateSpy).toHaveBeenCalledWith("notif-001", "failed");
 		});
@@ -174,7 +185,7 @@ describe("createTwilioWebhook", () => {
 			});
 			const ctx = makeCtx(body);
 
-			const res = await (webhook as Function)(ctx);
+			const res = await invokeEndpoint(webhook, ctx);
 			const json = await res.json();
 			expect(json.handled).toBe(false);
 		});
@@ -186,7 +197,7 @@ describe("createTwilioWebhook", () => {
 			});
 			const ctx = makeCtx(body);
 
-			const res = await (webhook as Function)(ctx);
+			const res = await invokeEndpoint(webhook, ctx);
 			const json = await res.json();
 			expect(json.handled).toBe(false);
 		});
@@ -195,7 +206,7 @@ describe("createTwilioWebhook", () => {
 			const body = makeFormBody({ MessageStatus: "delivered" });
 			const ctx = makeCtx(body);
 
-			const res = await (webhook as Function)(ctx);
+			const res = await invokeEndpoint(webhook, ctx);
 			expect(res.status).toBe(400);
 		});
 
@@ -208,7 +219,7 @@ describe("createTwilioWebhook", () => {
 			});
 			const ctx = makeCtx(body, {}, { findByExternalId: findSpy });
 
-			const res = await (webhook as Function)(ctx);
+			const res = await invokeEndpoint(webhook, ctx);
 			const json = await res.json();
 			expect(json.handled).toBe(false);
 		});
@@ -234,7 +245,7 @@ describe("createTwilioWebhook", () => {
 				},
 			);
 
-			const res = await (webhook as Function)(ctx);
+			const res = await invokeEndpoint(webhook, ctx);
 			const json = await res.json();
 			expect(json.handled).toBe(false);
 			expect(updateSpy).not.toHaveBeenCalled();
@@ -258,7 +269,7 @@ describe("createTwilioWebhook", () => {
 				},
 			);
 
-			const res = await (webhook as Function)(ctx);
+			const res = await invokeEndpoint(webhook, ctx);
 			expect(res.status).toBe(204);
 			expect(updateSpy).toHaveBeenCalledWith("notif-001", "delivered");
 		});
@@ -297,7 +308,7 @@ describe("createTwilioWebhook", () => {
 				{ findByExternalId: findSpy, updateDeliveryStatus: updateSpy },
 			);
 
-			const res = await (webhook as Function)(ctx);
+			const res = await invokeEndpoint(webhook, ctx);
 			expect(res.status).toBe(204);
 			expect(updateSpy).toHaveBeenCalledWith("notif-001", "delivered");
 		});
@@ -311,7 +322,7 @@ describe("createTwilioWebhook", () => {
 
 			const ctx = makeCtx(body, { "x-twilio-signature": "invalidsig" });
 
-			const res = await (webhook as Function)(ctx);
+			const res = await invokeEndpoint(webhook, ctx);
 			expect(res.status).toBe(401);
 		});
 
@@ -323,7 +334,7 @@ describe("createTwilioWebhook", () => {
 			const body = makeFormBody(params);
 			const ctx = makeCtx(body);
 
-			const res = await (webhook as Function)(ctx);
+			const res = await invokeEndpoint(webhook, ctx);
 			expect(res.status).toBe(400);
 		});
 	});

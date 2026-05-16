@@ -58,6 +58,17 @@ function makeNotification(overrides: Partial<Notification> = {}): Notification {
 	};
 }
 
+function invokeEndpoint(
+	endpoint: unknown,
+	ctx: Record<string, unknown>,
+): Promise<Response> {
+	const h = endpoint as Record<string, unknown>;
+	const fn = (
+		typeof h.handler === "function" ? h.handler : h
+	) as CallableFunction;
+	return fn(ctx) as Promise<Response>;
+}
+
 function makeCtx(
 	body: string,
 	headers: Record<string, string> = {},
@@ -106,7 +117,7 @@ describe("createResendWebhook", () => {
 				},
 			);
 
-			const res = await (webhook as Function)(ctx);
+			const res = await invokeEndpoint(webhook, ctx);
 			expect(res.status).toBe(200);
 			const json = await res.json();
 			expect(json.handled).toBe(true);
@@ -138,7 +149,7 @@ describe("createResendWebhook", () => {
 				},
 			);
 
-			const res = await (webhook as Function)(ctx);
+			const res = await invokeEndpoint(webhook, ctx);
 			expect(res.status).toBe(200);
 			const json = await res.json();
 			expect(json.handled).toBe(true);
@@ -165,7 +176,7 @@ describe("createResendWebhook", () => {
 				},
 			);
 
-			const res = await (webhook as Function)(ctx);
+			const res = await invokeEndpoint(webhook, ctx);
 			const json = await res.json();
 			expect(json.handled).toBe(true);
 			expect(json.deliveryStatus).toBe("complained");
@@ -178,7 +189,7 @@ describe("createResendWebhook", () => {
 			});
 			const ctx = makeCtx(body);
 
-			const res = await (webhook as Function)(ctx);
+			const res = await invokeEndpoint(webhook, ctx);
 			const json = await res.json();
 			expect(json.handled).toBe(false);
 		});
@@ -192,7 +203,7 @@ describe("createResendWebhook", () => {
 			});
 			const ctx = makeCtx(body, {}, { findByExternalId: findSpy });
 
-			const res = await (webhook as Function)(ctx);
+			const res = await invokeEndpoint(webhook, ctx);
 			const json = await res.json();
 			expect(json.handled).toBe(false);
 		});
@@ -218,7 +229,7 @@ describe("createResendWebhook", () => {
 				},
 			);
 
-			const res = await (webhook as Function)(ctx);
+			const res = await invokeEndpoint(webhook, ctx);
 			const json = await res.json();
 			expect(json.handled).toBe(false);
 			expect(updateSpy).not.toHaveBeenCalled();
@@ -227,7 +238,7 @@ describe("createResendWebhook", () => {
 		it("returns 400 for invalid JSON body", async () => {
 			const ctx = makeCtx("not-json");
 
-			const res = await (webhook as Function)(ctx);
+			const res = await invokeEndpoint(webhook, ctx);
 			expect(res.status).toBe(400);
 		});
 
@@ -238,7 +249,7 @@ describe("createResendWebhook", () => {
 			});
 			const ctx = makeCtx(body);
 
-			const res = await (webhook as Function)(ctx);
+			const res = await invokeEndpoint(webhook, ctx);
 			const json = await res.json();
 			expect(json.handled).toBe(false);
 		});
@@ -272,7 +283,7 @@ describe("createResendWebhook", () => {
 				{ findByExternalId: findSpy, updateDeliveryStatus: updateSpy },
 			);
 
-			const res = await (webhook as Function)(ctx);
+			const res = await invokeEndpoint(webhook, ctx);
 			expect(res.status).toBe(200);
 			const json = await res.json();
 			expect(json.handled).toBe(true);
@@ -292,7 +303,7 @@ describe("createResendWebhook", () => {
 				"svix-signature": "v1,invalidsignature==",
 			});
 
-			const res = await (webhook as Function)(ctx);
+			const res = await invokeEndpoint(webhook, ctx);
 			expect(res.status).toBe(401);
 		});
 
@@ -303,7 +314,7 @@ describe("createResendWebhook", () => {
 			});
 			const ctx = makeCtx(body);
 
-			const res = await (webhook as Function)(ctx);
+			const res = await invokeEndpoint(webhook, ctx);
 			expect(res.status).toBe(400);
 		});
 
@@ -328,7 +339,7 @@ describe("createResendWebhook", () => {
 				"svix-signature": signature,
 			});
 
-			const res = await (webhook as Function)(ctx);
+			const res = await invokeEndpoint(webhook, ctx);
 			expect(res.status).toBe(401);
 		});
 
@@ -360,7 +371,7 @@ describe("createResendWebhook", () => {
 				{ findByExternalId: findSpy, updateDeliveryStatus: updateSpy },
 			);
 
-			const res = await (webhook as Function)(ctx);
+			const res = await invokeEndpoint(webhook, ctx);
 			expect(res.status).toBe(200);
 			const json = await res.json();
 			expect(json.handled).toBe(true);

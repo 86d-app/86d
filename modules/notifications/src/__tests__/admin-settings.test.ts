@@ -514,7 +514,7 @@ describe("notifications settings — credential masking", () => {
 	});
 
 	it("caps asterisk count at 20 for a very long Resend API key", async () => {
-		const longKey = "re_live_" + "a".repeat(50);
+		const longKey = `re_live_${"a".repeat(50)}`;
 		const result = await callSettings({
 			resendApiKey: longKey,
 			resendFromAddress: "hello@example.com",
@@ -528,7 +528,7 @@ describe("notifications settings — credential masking", () => {
 	});
 
 	it("caps asterisk count at 20 for a very long Twilio accountSid", async () => {
-		const longSid = "AC123456" + "b".repeat(50);
+		const longSid = `AC123456${"b".repeat(50)}`;
 		const result = await callSettings({
 			twilioAccountSid: longSid,
 		});
