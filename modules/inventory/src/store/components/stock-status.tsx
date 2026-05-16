@@ -26,7 +26,16 @@ export function StockStatus({
 		isLoading: boolean;
 	};
 
-	if (isLoading || !data) return null;
+	if (isLoading) {
+		return (
+			<span className="inline-flex items-center gap-1.5">
+				<span className="h-2 w-2 animate-pulse rounded-full bg-muted" />
+				<span className="h-4 w-16 animate-pulse rounded bg-muted" />
+			</span>
+		);
+	}
+
+	if (!data) return null;
 
 	let status: "in-stock" | "low-stock" | "out-of-stock" | "backorder";
 	if (data.inStock) {

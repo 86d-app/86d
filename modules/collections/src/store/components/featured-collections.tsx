@@ -39,7 +39,23 @@ export function FeaturedCollections({ limit }: { limit?: number }) {
 		return row;
 	});
 
-	if (isLoading || collections.length === 0) return null;
+	if (isLoading) {
+		return (
+			<section className="py-8">
+				<div className="mb-6 h-8 w-52 animate-pulse rounded-lg bg-muted" />
+				<div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+					{[...Array(8)].map((_, i) => (
+						<div
+							key={i}
+							className="aspect-square animate-pulse rounded-xl bg-muted"
+						/>
+					))}
+				</div>
+			</section>
+		);
+	}
+
+	if (collections.length === 0) return null;
 
 	return <FeaturedCollectionsTemplate collections={collections} />;
 }
