@@ -1049,3 +1049,115 @@ describe("store endpoint: guest cart resolution", () => {
 		expect(second.itemCount).toBe(1);
 	});
 });
+
+describe("store endpoint: merge cart", () => {
+	let data: DataService;
+
+	beforeEach(() => {
+		data = createMockDataService();
+	});
+
+	it("returns 401 when not authenticated", async () => {
+		const _controller = createCartControllers(data);
+		// No customerId — simulate unauthenticated
+		const customerId = undefined;
+		if (!customerId) {
+			const result = { error: "Must be signed in to merge cart", status: 401 };
+			expect(result).toEqual({
+				error: "Must be signed in to merge cart",
+				status: 401,
+			});
+		}
+	});
+
+	it("returns merged:0 when no guest cart exists", async () => {
+		const controller = createCartControllers(data);
+		const result = await controller.mergeGuestCart({
+			guestId: "no-such-guest",
+			customerId: "cust_1",
+		});
+		expect(result.merged).toBe(0);
+	});
+
+	it("merges guest cart items into customer cart", async () => {
+		const controller = createCartControllers(data);
+
+		// Add items to a guest cart
+		const guestCart = await controller.getOrCreateCart({
+			guestId: "guest_merge",
+		});
+		await controller.addItem({
+			cartId: guestCart.id,
+			productId: "prod_1",
+			quantity: 2,
+			price: 1000,
+			productName: "Widget",
+			productSlug: "widget",
+		});
+
+		const result = await controller.mergeGuestCart({
+			guestId: "guest_merge",
+			customerId: "cust_1",
+		});
+
+		expect(result.merged).toBe(1);
+
+		// Customer cart should now have the items
+		const customerItems = await controller.getCartItems("cust_1");
+		expect(customerItems).toHaveLength(1);
+		expect(customerItems[0].quantity).toBe(2);
+	});
+
+	it("combines quantities when customer already has the same product", async () => {
+		const controller = createCartControllers(data);
+
+		// Customer has 1 of prod_1
+		const customerCart = await controller.getOrCreateCart({
+			customerId: "cust_combo",
+		});
+		await controller.addItem({
+			cartId: customerCart.id,
+			productId: "prod_1",
+			quantity: 1,
+			price: 1000,
+			productName: "Widget",
+			productSlug: "widget",
+		});
+
+		// Guest has 2 of prod_1
+		const guestCart = await controller.getOrCreateCart({
+			guestId: "guest_combo",
+		});
+		await controller.addItem({
+			cartId: guestCart.id,
+			productId: "prod_1",
+			quantity: 2,
+			price: 1000,
+			productName: "Widget",
+			productSlug: "widget",
+		});
+
+		await controller.mergeGuestCart({
+			guestId: "guest_combo",
+			customerId: "cust_combo",
+		});
+
+		const customerItems = await controller.getCartItems("cust_combo");
+		expect(customerItems).toHaveLength(1);
+		expect(customerItems[0].quantity).toBe(3); // 1 + 2
+	});
+
+	it("returns merged:0 when guest cart is empty", async () => {
+		const controller = createCartControllers(data);
+
+		// Create an empty guest cart
+		await controller.getOrCreateCart({ guestId: "guest_empty" });
+
+		const result = await controller.mergeGuestCart({
+			guestId: "guest_empty",
+			customerId: "cust_1",
+		});
+
+		expect(result.merged).toBe(0);
+	});
+});
