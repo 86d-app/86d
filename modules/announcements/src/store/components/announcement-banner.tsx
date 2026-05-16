@@ -44,7 +44,16 @@ export function AnnouncementBanner({
 		impressionMutation.mutate({ params: { id: banner.id } });
 	}, [banner, impressionMutation]);
 
-	if (isLoading || !banner) return null;
+	if (isLoading) {
+		return (
+			<div className="w-full animate-pulse rounded-xl bg-muted px-6 py-8">
+				<div className="mx-auto h-7 w-2/3 rounded-lg bg-muted-foreground/20" />
+				<div className="mx-auto mt-3 h-5 w-1/2 rounded bg-muted-foreground/20" />
+			</div>
+		);
+	}
+
+	if (!banner) return null;
 
 	const hasCustomBg = Boolean(banner.backgroundColor);
 	const wrapperStyle = hasCustomBg
