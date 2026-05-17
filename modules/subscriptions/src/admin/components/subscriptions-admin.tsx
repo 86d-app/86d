@@ -748,6 +748,7 @@ function SubscribersTab() {
 				</p>
 				<input
 					type="search"
+					aria-label="Filter subscriptions by email"
 					placeholder="Filter by email…"
 					value={emailFilter}
 					onChange={(e) => {

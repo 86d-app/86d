@@ -321,6 +321,7 @@ export function CheckoutList() {
 			<div className="mb-4 flex flex-wrap gap-3">
 				<input
 					type="search"
+					aria-label="Search checkout sessions"
 					placeholder="Search by email or session ID..."
 					value={search}
 					onChange={(e) => {

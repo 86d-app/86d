@@ -516,6 +516,7 @@ function TokensTab({
 				</div>
 				<input
 					type="search"
+					aria-label="Filter by email"
 					placeholder="Filter by email…"
 					value={emailFilter}
 					onChange={(e) => setEmailFilter(e.target.value)}

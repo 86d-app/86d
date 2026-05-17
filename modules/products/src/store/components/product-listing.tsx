@@ -112,6 +112,7 @@ export function ProductListing({
 							setPage(1);
 						}}
 						placeholder="Search…"
+						aria-label="Search products"
 						className="h-9 w-full rounded-md border border-border bg-background pr-3 pl-8 text-foreground text-sm placeholder:text-muted-foreground/60 focus:border-foreground/20 focus:outline-none focus:ring-1 focus:ring-foreground/10"
 					/>
 				</div>

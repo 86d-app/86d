@@ -462,6 +462,7 @@ export function OrderList() {
 				<input
 					type="search"
 					placeholder="Search by order number or email..."
+					aria-label="Search orders"
 					value={search}
 					onChange={(e) => {
 						setSearch(e.target.value);

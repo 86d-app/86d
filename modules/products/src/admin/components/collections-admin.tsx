@@ -428,6 +428,7 @@ export function CollectionsAdmin() {
 					<div className="relative mb-3">
 						<input
 							type="search"
+							aria-label="Search products to add"
 							value={productSearch}
 							onChange={(e) => setProductSearch(e.target.value)}
 							placeholder="Search products to add..."
