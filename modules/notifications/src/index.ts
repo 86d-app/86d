@@ -780,6 +780,120 @@ export default function notifications(options?: NotificationsOptions): Module {
 				});
 			}
 
+			// ── Loyalty points in-app notifications ──────────────────────────
+			interface LoyaltyPointsPayload {
+				customerId: string;
+				points: number;
+				balance?: number | undefined;
+				orderId?: string | undefined;
+				description?: string | undefined;
+			}
+
+			ctx.events?.on<LoyaltyPointsPayload>(
+				"loyalty.pointsEarned",
+				async (event) => {
+					const p = event.payload;
+					if (!p?.customerId || p.points <= 0) return;
+					await controller
+						.create({
+							customerId: p.customerId,
+							type: "promotion",
+							channel: "in_app",
+							priority: "low",
+							title: `${p.points} points earned`,
+							body:
+								p.balance !== undefined
+									? `You now have ${p.balance} points. ${p.description ?? ""}`
+									: (p.description ?? "Points added to your account."),
+							actionUrl: "/account/loyalty",
+							metadata: {
+								points: p.points,
+								balance: p.balance,
+								orderId: p.orderId,
+							},
+						})
+						.catch(() => {});
+				},
+			);
+
+			ctx.events?.on<LoyaltyPointsPayload>(
+				"loyalty.pointsRedeemed",
+				async (event) => {
+					const p = event.payload;
+					if (!p?.customerId) return;
+					await controller
+						.create({
+							customerId: p.customerId,
+							type: "promotion",
+							channel: "in_app",
+							priority: "low",
+							title: `${p.points} points redeemed`,
+							body: "Points applied to your order.",
+							actionUrl: p.orderId
+								? `/orders/${p.orderId}`
+								: "/account/loyalty",
+							metadata: { points: p.points, orderId: p.orderId },
+						})
+						.catch(() => {});
+				},
+			);
+
+			// ── Store credits in-app notifications ────────────────────────────
+			interface StoreCreditsPayload {
+				customerId: string;
+				amount?: number | undefined;
+				currency?: string | undefined;
+				balance?: number | undefined;
+				reason?: string | undefined;
+			}
+
+			ctx.events?.on<StoreCreditsPayload>(
+				"store-credits.credited",
+				async (event) => {
+					const p = event.payload;
+					if (!p?.customerId || !p.amount) return;
+					const amtStr = p.currency
+						? `${(p.amount / 100).toFixed(2)} ${p.currency.toUpperCase()}`
+						: `${(p.amount / 100).toFixed(2)}`;
+					await controller
+						.create({
+							customerId: p.customerId,
+							type: "promotion",
+							channel: "in_app",
+							priority: "normal",
+							title: `${amtStr} store credit added`,
+							body: p.reason ?? "Store credit has been added to your account.",
+							actionUrl: "/account",
+							metadata: {
+								amount: p.amount,
+								currency: p.currency,
+								balance: p.balance,
+							},
+						})
+						.catch(() => {});
+				},
+			);
+
+			ctx.events?.on<StoreCreditsPayload>(
+				"store-credits.account.frozen",
+				async (event) => {
+					const p = event.payload;
+					if (!p?.customerId) return;
+					await controller
+						.create({
+							customerId: p.customerId,
+							type: "warning",
+							channel: "in_app",
+							priority: "high",
+							title: "Store credit account suspended",
+							body: "Your store credit account has been suspended. Contact support for assistance.",
+							actionUrl: "/account",
+							metadata: {},
+						})
+						.catch(() => {});
+				},
+			);
+
 			return { controllers: { notifications: controller } };
 		},
 		endpoints: {
