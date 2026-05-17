@@ -145,6 +145,10 @@ export default function automations(options?: AutomationsOptions): Module {
 				"quote.accepted",
 				"quote.rejected",
 				"quote.converted",
+				"appointment.created",
+				"appointment.cancelled",
+				"appointment.confirmed",
+				"appointment.completed",
 			] as const;
 
 			for (const eventName of CROSS_MODULE_EVENTS) {
