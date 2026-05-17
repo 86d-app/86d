@@ -90,6 +90,7 @@ interface CheckoutSessionData {
 	shippingAmount: number;
 	discountAmount: number;
 	giftCardAmount: number;
+	storeCreditAmount: number;
 	total: number;
 	currency: string;
 	shippingAddress?: Address | null;
@@ -347,6 +348,11 @@ function OrderSummary({
 	onApplyGiftCard,
 	onRemoveGiftCard,
 	applyingGiftCard,
+	storeCreditBalance,
+	storeCreditApplied,
+	onApplyStoreCredit,
+	onRemoveStoreCredit,
+	applyingStoreCredit,
 }: {
 	cart: CartData | undefined;
 	session: CheckoutSessionData | null;
@@ -358,6 +364,11 @@ function OrderSummary({
 	onApplyGiftCard: (code: string) => void;
 	onRemoveGiftCard: () => void;
 	applyingGiftCard: boolean;
+	storeCreditBalance: number;
+	storeCreditApplied: boolean;
+	onApplyStoreCredit: () => void;
+	onRemoveStoreCredit: () => void;
+	applyingStoreCredit: boolean;
 }) {
 	const [promoInput, setPromoInput] = useState("");
 	const [giftCardInput, setGiftCardInput] = useState("");
@@ -366,6 +377,7 @@ function OrderSummary({
 	const shipping = session?.shippingAmount ?? 0;
 	const discount = session?.discountAmount ?? 0;
 	const giftCard = session?.giftCardAmount ?? 0;
+	const storeCredit = session?.storeCreditAmount ?? 0;
 	const tax = session?.taxAmount ?? 0;
 	const total = session?.total ?? subtotal;
 	const currency = session?.currency ?? "USD";
@@ -549,6 +561,73 @@ function OrderSummary({
 				</div>
 			)}
 
+			{/* Store credit */}
+			{storeCreditBalance > 0 && !storeCreditApplied && (
+				<div className="mb-4 flex items-center justify-between rounded-lg border border-border/60 bg-background px-3 py-2">
+					<div className="flex items-center gap-2">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="14"
+							height="14"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth="2"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							className="text-muted-foreground"
+							aria-hidden="true"
+						>
+							<circle cx="12" cy="12" r="10" />
+							<path d="M12 6v6l4 2" />
+						</svg>
+						<span className="text-foreground text-sm">
+							Store credit ({fmt(storeCreditBalance)} available)
+						</span>
+					</div>
+					<button
+						type="button"
+						onClick={onApplyStoreCredit}
+						disabled={applyingStoreCredit}
+						className="font-medium text-foreground text-xs transition-colors hover:text-foreground/70 disabled:opacity-50"
+					>
+						{applyingStoreCredit ? "..." : "Apply"}
+					</button>
+				</div>
+			)}
+			{storeCreditApplied && (
+				<div className="mb-4 flex items-center justify-between rounded-lg bg-background px-3 py-2">
+					<div className="flex items-center gap-2">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="14"
+							height="14"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth="2"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							className="text-foreground"
+							aria-hidden="true"
+						>
+							<circle cx="12" cy="12" r="10" />
+							<path d="m9 12 2 2 4-4" />
+						</svg>
+						<span className="font-medium text-foreground text-sm">
+							Store credit applied
+						</span>
+					</div>
+					<button
+						type="button"
+						onClick={onRemoveStoreCredit}
+						className="text-muted-foreground text-xs transition-colors hover:text-foreground"
+					>
+						Remove
+					</button>
+				</div>
+			)}
+
 			{/* Totals */}
 			<div className="flex flex-col gap-2 border-border/40 border-t pt-3">
 				<div className="flex justify-between text-sm">
@@ -576,6 +655,14 @@ function OrderSummary({
 						<span className="text-muted-foreground">Gift card</span>
 						<span className="text-status-success tabular-nums">
 							-{fmt(giftCard)}
+						</span>
+					</div>
+				)}
+				{storeCredit > 0 && (
+					<div className="flex justify-between text-sm">
+						<span className="text-muted-foreground">Store credit</span>
+						<span className="text-status-success tabular-nums">
+							-{fmt(storeCredit)}
 						</span>
 					</div>
 				)}
@@ -608,6 +695,12 @@ const CheckoutPage = observer(function CheckoutPage() {
 		data: CartData | undefined;
 	};
 
+	// ── Store credit balance (only for authenticated users; 401 returns undefined)
+	const { data: storeCreditData } = api.storeCredits.getBalance.useQuery(
+		undefined,
+		{ retry: false },
+	) as { data: { balance: number } | undefined };
+
 	// ── Form state
 	const [email, setEmail] = useState("");
 	const [shippingAddress, setShippingAddress] = useState<Address>(
@@ -618,6 +711,7 @@ const CheckoutPage = observer(function CheckoutPage() {
 	const [selectedRate, setSelectedRate] = useState<string | null>(null);
 	const [discountCode, setDiscountCode] = useState("");
 	const [giftCardCode, setGiftCardCode] = useState("");
+	const [storeCreditApplied, setStoreCreditApplied] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [paymentClientSecret, setPaymentClientSecret] = useState<string | null>(
 		null,
@@ -657,6 +751,12 @@ const CheckoutPage = observer(function CheckoutPage() {
 	});
 	const removeGiftCardMut = api.checkout.removeGiftCard.useMutation({
 		onError: () => setError("Failed to remove gift card"),
+	});
+	const applyStoreCreditMut = api.checkout.applyStoreCredit.useMutation({
+		onError: () => setError("Failed to apply store credit"),
+	});
+	const removeStoreCreditMut = api.checkout.removeStoreCredit.useMutation({
+		onError: () => setError("Failed to remove store credit"),
 	});
 	const createPaymentMut = api.checkout.createPayment.useMutation({
 		onError: () => setError("Failed to process payment"),
@@ -1125,6 +1225,7 @@ const CheckoutPage = observer(function CheckoutPage() {
 						shippingAmount: session?.shippingAmount ?? 0,
 						discountAmount: session?.discountAmount ?? 0,
 						giftCardAmount: session?.giftCardAmount ?? 0,
+						storeCreditAmount: session?.storeCreditAmount ?? 0,
 						total: session?.total ?? 0,
 						currency: session?.currency ?? "USD",
 						shippingAddress,
@@ -1248,6 +1349,42 @@ const CheckoutPage = observer(function CheckoutPage() {
 			// Error handled by mutation onError
 		}
 	}, [co, removeGiftCardMut]);
+
+	// ── Apply store credit
+	const handleApplyStoreCredit = useCallback(async () => {
+		if (!co.sessionId) return;
+		setError(null);
+		try {
+			const result: SessionResult = await applyStoreCreditMut.mutateAsync({
+				params: { id: co.sessionId },
+			});
+			const sess = result?.session;
+			if (sess) {
+				setSession(sess);
+				setStoreCreditApplied(true);
+			}
+		} catch {
+			// Error handled by mutation onError
+		}
+	}, [co, applyStoreCreditMut]);
+
+	// ── Remove store credit
+	const handleRemoveStoreCredit = useCallback(async () => {
+		if (!co.sessionId) return;
+		setError(null);
+		try {
+			const result: SessionResult = await removeStoreCreditMut.mutateAsync({
+				params: { id: co.sessionId },
+			});
+			const sess = result?.session;
+			if (sess) {
+				setSession(sess);
+				setStoreCreditApplied(false);
+			}
+		} catch {
+			// Error handled by mutation onError
+		}
+	}, [co, removeStoreCreditMut]);
 
 	// ── Empty cart state
 	if (cart && cart.items.length === 0 && !co.sessionId) {
@@ -1904,6 +2041,11 @@ const CheckoutPage = observer(function CheckoutPage() {
 							onApplyGiftCard={handleApplyGiftCard}
 							onRemoveGiftCard={handleRemoveGiftCard}
 							applyingGiftCard={applyGiftCardMut.isPending}
+							storeCreditBalance={storeCreditData?.balance ?? 0}
+							storeCreditApplied={storeCreditApplied}
+							onApplyStoreCredit={handleApplyStoreCredit}
+							onRemoveStoreCredit={handleRemoveStoreCredit}
+							applyingStoreCredit={applyStoreCreditMut.isPending}
 						/>
 					</div>
 				</div>

@@ -32,6 +32,7 @@ interface OrderSummary {
 	shippingAmount: number;
 	discountAmount: number;
 	giftCardAmount: number;
+	storeCreditAmount?: number;
 	total: number;
 	currency: string;
 	shippingAddress?: {
@@ -56,6 +57,7 @@ interface OrderApiResponse {
 	shippingAmount: number;
 	discountAmount: number;
 	giftCardAmount: number;
+	storeCreditAmount?: number;
 	total: number;
 	currency: string;
 	items?: Array<{ name: string; quantity: number; price: number }>;
@@ -103,6 +105,7 @@ function orderToSummary(o: OrderApiResponse): OrderSummary {
 		shippingAmount: o.shippingAmount ?? 0,
 		discountAmount: o.discountAmount ?? 0,
 		giftCardAmount: o.giftCardAmount ?? 0,
+		storeCreditAmount: o.storeCreditAmount ?? 0,
 		total: o.total ?? 0,
 		currency: o.currency ?? "USD",
 		...(addr
@@ -331,6 +334,14 @@ function ConfirmationContent() {
 								<div className="flex justify-between text-status-success">
 									<span>Gift card</span>
 									<span>-{formatPrice(summary.giftCardAmount, currency)}</span>
+								</div>
+							)}
+							{(summary.storeCreditAmount ?? 0) > 0 && (
+								<div className="flex justify-between text-status-success">
+									<span>Store credit</span>
+									<span>
+										-{formatPrice(summary.storeCreditAmount ?? 0, currency)}
+									</span>
 								</div>
 							)}
 							<div className="mt-1 flex justify-between border-border border-t pt-2 font-semibold text-foreground">
