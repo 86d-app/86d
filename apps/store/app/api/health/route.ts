@@ -1,6 +1,9 @@
 import { db } from "db";
-import { NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
+import { createRateLimiter } from "utils/rate-limit";
 import { getStorage } from "~/lib/storage";
+
+const healthLimiter = createRateLimiter({ limit: 60, window: 60_000 });
 
 /**
  * Health check endpoint for container readiness probes.
@@ -10,7 +13,13 @@ import { getStorage } from "~/lib/storage";
  * Storage failures degrade to a warning but don't fail the probe,
  * since the store can still serve pages without uploads.
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
+	const ip =
+		request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+	if (!healthLimiter.check(ip).allowed) {
+		return new NextResponse(null, { status: 429 });
+	}
+
 	const checks: Record<string, "ok" | "error"> = {
 		app: "ok",
 		database: "error",
