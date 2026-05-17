@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
 	ensureBooted: vi.fn(),
 	resolvePathForMarkdown: vi.fn(),
 	serializeToMarkdown: vi.fn(),
+	rateLimitCheck: vi.fn(),
 }));
 
 vi.mock("~/lib/store-registry", () => ({
@@ -19,6 +20,10 @@ vi.mock("~/lib/api-registry", () => ({
 vi.mock("~/lib/markdown-serializers", () => ({
 	resolvePathForMarkdown: mocks.resolvePathForMarkdown,
 	serializeToMarkdown: mocks.serializeToMarkdown,
+}));
+
+vi.mock("utils/rate-limit", () => ({
+	createRateLimiter: () => ({ check: mocks.rateLimitCheck }),
 }));
 
 const { GET } = await import("../route");
@@ -41,6 +46,48 @@ describe("GET /api/store-markdown", () => {
 		mocks.getStoreRoute.mockReturnValue(null);
 		mocks.resolvePathForMarkdown.mockReturnValue({ type: "homepage" });
 		mocks.serializeToMarkdown.mockResolvedValue("# Home\n\nWelcome!");
+		// Default: allow all requests
+		mocks.rateLimitCheck.mockReturnValue({ allowed: true, resetAt: 0 });
+	});
+
+	describe("rate limiting", () => {
+		it("returns 429 when rate limit is exceeded", async () => {
+			const resetAt = Date.now() + 30_000;
+			mocks.rateLimitCheck.mockReturnValue({ allowed: false, resetAt });
+			const response = await GET(makeRequest("/products"));
+			expect(response.status).toBe(429);
+		});
+
+		it("includes Retry-After header on 429", async () => {
+			const resetAt = Date.now() + 30_000;
+			mocks.rateLimitCheck.mockReturnValue({ allowed: false, resetAt });
+			const response = await GET(makeRequest("/"));
+			expect(response.headers.get("Retry-After")).toBeTruthy();
+		});
+
+		it("sets Content-Type to text/markdown on 429", async () => {
+			mocks.rateLimitCheck.mockReturnValue({
+				allowed: false,
+				resetAt: Date.now() + 1000,
+			});
+			const response = await GET(makeRequest("/"));
+			expect(response.headers.get("Content-Type")).toContain("text/markdown");
+		});
+
+		it("does not call getStoreRoute when rate limited", async () => {
+			mocks.rateLimitCheck.mockReturnValue({
+				allowed: false,
+				resetAt: Date.now() + 1000,
+			});
+			await GET(makeRequest("/products"));
+			expect(mocks.getStoreRoute).not.toHaveBeenCalled();
+		});
+
+		it("allows requests when within rate limit", async () => {
+			mocks.rateLimitCheck.mockReturnValue({ allowed: true, resetAt: 0 });
+			const response = await GET(makeRequest("/"));
+			expect(response.status).toBe(200);
+		});
 	});
 
 	describe("path derivation", () => {

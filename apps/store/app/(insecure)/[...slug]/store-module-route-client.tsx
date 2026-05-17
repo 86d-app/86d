@@ -2,6 +2,7 @@
 
 import { storeComponentLoaders } from "generated/store-loaders";
 import { Suspense, useEffect, useState } from "react";
+import { StorePageSkeleton } from "~/components/ui/page-skeleton";
 
 interface StoreModuleRouteClientProps {
 	moduleId: string;
@@ -53,21 +54,11 @@ export function StoreModuleRouteClient({
 	}
 
 	if (!Component) {
-		return (
-			<div className="flex items-center justify-center p-8">
-				<div className="h-8 w-8 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" />
-			</div>
-		);
+		return <StorePageSkeleton />;
 	}
 
 	return (
-		<Suspense
-			fallback={
-				<div className="flex items-center justify-center p-8">
-					<div className="h-8 w-8 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" />
-				</div>
-			}
-		>
+		<Suspense fallback={<StorePageSkeleton />}>
 			<Component {...(Object.keys(params).length > 0 ? { params } : {})} />
 		</Suspense>
 	);

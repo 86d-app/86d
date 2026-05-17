@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { createRateLimiter } from "utils/rate-limit";
 import { ensureBooted } from "~/lib/api-registry";
 import {
 	resolvePathForMarkdown,
@@ -11,7 +12,25 @@ const MARKDOWN_HEADERS = {
 	"Content-Type": "text/markdown; charset=utf-8",
 } as const;
 
+/** 120 requests per minute per IP — generous for LLM crawlers, protective against abuse. */
+const markdownLimiter = createRateLimiter({ limit: 120, window: 60_000 });
+
 export async function GET(request: NextRequest) {
+	const ip =
+		request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+	const rlResult = markdownLimiter.check(ip);
+	if (!rlResult.allowed) {
+		return new NextResponse("# Too Many Requests\n\nRate limit exceeded.", {
+			status: 429,
+			headers: {
+				...MARKDOWN_HEADERS,
+				"Retry-After": String(
+					Math.ceil((rlResult.resetAt - Date.now()) / 1000),
+				),
+			},
+		});
+	}
+
 	let rawPath = request.nextUrl.searchParams.get("path");
 	// Middleware rewrites /products.md -> /api/store-markdown?path=/products, but the handler
 	// may receive the original URL (request.url still shows /products.md). Derive path from

@@ -7,6 +7,7 @@ import {
 	useEffect,
 	useState,
 } from "react";
+import { AdminPageSkeleton } from "~/components/admin/page-skeleton";
 import { resolveAdminRouteComponent } from "./admin-component-loader";
 
 interface AdminModuleRouteClientProps {
@@ -100,22 +101,12 @@ export function AdminModuleRouteClient({
 	}
 
 	if (!Component) {
-		return (
-			<div className="flex items-center justify-center p-8">
-				<div className="h-8 w-8 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" />
-			</div>
-		);
+		return <AdminPageSkeleton />;
 	}
 
 	return (
 		<AdminModuleErrorBoundary moduleId={moduleId}>
-			<Suspense
-				fallback={
-					<div className="flex items-center justify-center p-8">
-						<div className="h-8 w-8 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" />
-					</div>
-				}
-			>
+			<Suspense fallback={<AdminPageSkeleton />}>
 				<Component {...(Object.keys(params).length > 0 ? { params } : {})} />
 			</Suspense>
 		</AdminModuleErrorBoundary>
