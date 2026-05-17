@@ -23,6 +23,11 @@ export const subscribe = createStoreEndpoint(
 				customerId: session.user.id,
 				planId: ctx.body.planId,
 			});
+			void ctx.context.events?.emit("membership.subscribed", {
+				membershipId: membership.id,
+				customerId: membership.customerId,
+				planId: membership.planId,
+			});
 			return { membership };
 		} catch {
 			return { error: "Subscription failed", status: 400 };

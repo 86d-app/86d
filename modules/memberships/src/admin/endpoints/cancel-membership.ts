@@ -15,7 +15,11 @@ export const cancelMembership = createAdminEndpoint(
 		if (!membership) {
 			return { error: "Membership not found", status: 404 };
 		}
-
+		void ctx.context.events?.emit("membership.cancelled", {
+			membershipId: membership.id,
+			customerId: membership.customerId,
+			planId: membership.planId,
+		});
 		return { membership };
 	},
 );
