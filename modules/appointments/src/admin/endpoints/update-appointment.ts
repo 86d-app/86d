@@ -1,6 +1,13 @@
 import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { AppointmentController } from "../../service";
 
+const STATUS_EVENT_MAP = {
+	confirmed: "appointment.confirmed",
+	cancelled: "appointment.cancelled",
+	completed: "appointment.completed",
+	"no-show": "appointment.no-show",
+} as const;
+
 export const updateAppointment = createAdminEndpoint(
 	"/admin/appointments/:id/update",
 	{
@@ -30,6 +37,17 @@ export const updateAppointment = createAdminEndpoint(
 		);
 		if (!appointment) {
 			return { error: "Appointment not found", status: 404 };
+		}
+
+		if (ctx.body.status && ctx.body.status in STATUS_EVENT_MAP) {
+			const eventName =
+				STATUS_EVENT_MAP[ctx.body.status as keyof typeof STATUS_EVENT_MAP];
+			void ctx.context.events?.emit(eventName, {
+				appointmentId: appointment.id,
+				serviceId: appointment.serviceId,
+				customerId: appointment.customerId,
+				customerEmail: appointment.customerEmail,
+			});
 		}
 
 		return { appointment };
