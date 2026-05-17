@@ -179,6 +179,14 @@ export function useProductQaApi() {
 	};
 }
 
+export function useBrandsApi() {
+	const client = useModuleClient();
+	return {
+		getProductBrand:
+			client.module("brands").store["/brands/product/:productId"],
+	};
+}
+
 export function useBackordersApi() {
 	const client = useModuleClient();
 	return {

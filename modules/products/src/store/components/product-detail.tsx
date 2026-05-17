@@ -20,6 +20,7 @@ import type {
 import { formatPrice, imageUrl } from "./_utils";
 import { BackInStockNotify } from "./back-in-stock-notify";
 import { BackorderSection } from "./backorder-section";
+import { BrandSection } from "./brand-section";
 import { BulkPricingSection } from "./bulk-pricing-section";
 import { ComparisonButtonSection } from "./comparison-button-section";
 import { FlashDealSection } from "./flash-deal-section";
@@ -342,6 +343,8 @@ export function ProductDetail(props: ProductDetailProps) {
 		</div>
 	);
 
+	const brandInfo = <BrandSection productId={product.id} />;
+
 	const categoryLink = product.category ? (
 		<Link
 			href={`/products?category=${product.category.id}`}
@@ -586,6 +589,7 @@ export function ProductDetail(props: ProductDetailProps) {
 		<ProductDetailTemplate
 			breadcrumbs={breadcrumbs}
 			imageGallery={imageGallery}
+			brandInfo={brandInfo}
 			categoryLink={categoryLink}
 			labelsBlock={labelsBlock}
 			name={product.name}
