@@ -19,6 +19,7 @@ import type {
 } from "./_types";
 import { formatPrice, imageUrl } from "./_utils";
 import { BackInStockNotify } from "./back-in-stock-notify";
+import { BulkPricingSection } from "./bulk-pricing-section";
 import ProductDetailTemplate from "./product-detail.mdx";
 import { ProductQASection } from "./product-qa-section";
 import { ProductReviewsSection } from "./product-reviews-section";
@@ -555,6 +556,13 @@ export function ProductDetail(props: ProductDetailProps) {
 			shortDescription={shortDescription}
 			variantSelector={variantSelector}
 			addToCartBlock={addToCartBlock}
+			pricingTiers={
+				<BulkPricingSection
+					productId={product.id}
+					basePriceInCents={selectedVariant?.price ?? product.price}
+					quantity={qty}
+				/>
+			}
 			outOfStockNotice={outOfStockNotice}
 			descriptionBlock={descriptionBlock}
 			tagsBlock={tagsBlock}

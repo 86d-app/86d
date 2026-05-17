@@ -93,6 +93,16 @@ export function useInventoryApi() {
 	};
 }
 
+export function useBulkPricingApi() {
+	const client = useModuleClient();
+	return {
+		getProductTiers:
+			client.module("bulk-pricing").store[
+				"/bulk-pricing/product/:productId/tiers"
+			],
+	};
+}
+
 export function useProductLabels(productId: string | undefined) {
 	const client = useModuleClient();
 	const getProductLabels =
