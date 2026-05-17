@@ -31,6 +31,12 @@ export const cancelAppointment = createStoreEndpoint(
 			return { error: "Appointment not found", status: 404 };
 		}
 
+		void ctx.context.events?.emit("appointment.cancelled", {
+			appointmentId: appointment.id,
+			serviceId: appointment.serviceId,
+			customerId: appointment.customerId,
+			customerEmail: appointment.customerEmail,
+		});
 		return { appointment };
 	},
 );

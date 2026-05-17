@@ -35,6 +35,13 @@ export const bookAppointment = createStoreEndpoint(
 
 		const appointment = await controller.createAppointment(params);
 
+		void ctx.context.events?.emit("appointment.created", {
+			appointmentId: appointment.id,
+			serviceId: appointment.serviceId,
+			customerId: appointment.customerId,
+			customerEmail: appointment.customerEmail,
+			startsAt: appointment.startsAt,
+		});
 		return { appointment };
 	},
 );
