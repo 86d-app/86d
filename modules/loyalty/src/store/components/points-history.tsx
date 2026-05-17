@@ -60,8 +60,8 @@ export function PointsHistory({ limit = 10 }: { limit?: number | undefined }) {
 
 	if (isUnauthenticated) {
 		return (
-			<div className="rounded-xl border border-gray-200 bg-white p-6 text-center dark:border-gray-800 dark:bg-gray-900">
-				<p className="text-gray-500 text-sm dark:text-gray-400">
+			<div className="rounded-xl border border-gray-200 bg-white p-6 text-center dark:border-gray-800">
+				<p className="text-muted-foreground text-sm">
 					Sign in to view your points history.
 				</p>
 			</div>
@@ -70,12 +70,12 @@ export function PointsHistory({ limit = 10 }: { limit?: number | undefined }) {
 
 	if (loading) {
 		return (
-			<div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
+			<div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800">
 				<div className="animate-pulse space-y-3">
 					{Array.from({ length: 3 }, (_, i) => (
 						<div key={i} className="flex justify-between">
-							<div className="h-4 w-40 rounded bg-gray-200 dark:bg-gray-700" />
-							<div className="h-4 w-16 rounded bg-gray-200 dark:bg-gray-700" />
+							<div className="h-4 w-40 rounded bg-muted dark:bg-muted" />
+							<div className="h-4 w-16 rounded bg-muted dark:bg-muted" />
 						</div>
 					))}
 				</div>
@@ -97,8 +97,8 @@ export function PointsHistory({ limit = 10 }: { limit?: number | undefined }) {
 					onClick={() => setFilter(type)}
 					className={`rounded-md px-2.5 py-1 font-medium text-xs capitalize transition-colors ${
 						filter === type
-							? "bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900"
-							: "text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+							? "bg-background text-white dark:bg-muted"
+							: "text-muted-foreground hover:bg-muted dark:hover:bg-muted"
 					}`}
 				>
 					{type}
@@ -112,7 +112,7 @@ export function PointsHistory({ limit = 10 }: { limit?: number | undefined }) {
 			<tr>
 				<td
 					colSpan={4}
-					className="px-4 py-8 text-center text-gray-400 text-sm dark:text-gray-500"
+					className="px-4 py-8 text-center text-muted-foreground text-sm"
 				>
 					No transactions found.
 				</td>
@@ -138,7 +138,7 @@ export function PointsHistory({ limit = 10 }: { limit?: number | undefined }) {
 								{typeInfo.label}
 							</span>
 						</td>
-						<td className="px-4 py-3 text-gray-700 text-sm dark:text-gray-300">
+						<td className="px-4 py-3 text-foreground/80 text-sm">
 							{tx.description}
 						</td>
 						<td className="px-4 py-3 text-right font-medium text-sm tabular-nums">
@@ -147,7 +147,7 @@ export function PointsHistory({ limit = 10 }: { limit?: number | undefined }) {
 								{formatPoints(Math.abs(tx.points))}
 							</span>
 						</td>
-						<td className="px-4 py-3 text-right text-gray-400 text-xs dark:text-gray-500">
+						<td className="px-4 py-3 text-right text-muted-foreground text-xs">
 							{formatDate(tx.createdAt)}
 						</td>
 					</tr>

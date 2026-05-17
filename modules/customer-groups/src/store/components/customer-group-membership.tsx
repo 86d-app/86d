@@ -24,11 +24,11 @@ export function CustomerGroupMembership() {
 
 	if (isLoading) {
 		return (
-			<div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
+			<div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800">
 				<div className="animate-pulse space-y-3">
-					<div className="h-4 w-36 rounded bg-gray-200 dark:bg-gray-700" />
-					<div className="h-10 w-full rounded-lg bg-gray-200 dark:bg-gray-700" />
-					<div className="h-10 w-full rounded-lg bg-gray-200 dark:bg-gray-700" />
+					<div className="h-4 w-36 rounded bg-muted dark:bg-muted" />
+					<div className="h-10 w-full rounded-lg bg-muted dark:bg-muted" />
+					<div className="h-10 w-full rounded-lg bg-muted dark:bg-muted" />
 				</div>
 			</div>
 		);
@@ -48,8 +48,8 @@ export function CustomerGroupMembership() {
 
 	if (groups.length === 0) {
 		return (
-			<div className="rounded-xl border border-gray-200 bg-white p-6 text-center dark:border-gray-800 dark:bg-gray-900">
-				<p className="text-gray-500 text-sm dark:text-gray-400">
+			<div className="rounded-xl border border-gray-200 bg-white p-6 text-center dark:border-gray-800">
+				<p className="text-muted-foreground text-sm">
 					You are not a member of any customer groups.
 				</p>
 			</div>

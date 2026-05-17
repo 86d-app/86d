@@ -29,8 +29,7 @@ export function SubscriptionCard({
 }) {
 	const isActive = ["active", "trialing"].includes(subscription.status);
 	const statusStyle =
-		STATUS_STYLES[subscription.status] ??
-		"bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
+		STATUS_STYLES[subscription.status] ?? "bg-muted/30 text-foreground";
 
 	return (
 		<SubscriptionCardTemplate

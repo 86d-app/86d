@@ -38,7 +38,7 @@ const STATUS_COLORS: Record<string, string> = {
 	ready:
 		"bg-green-50 text-green-700 border-green-200 dark:bg-green-950/50 dark:text-green-400 dark:border-green-800",
 	fulfilled:
-		"bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700",
+		"bg-muted/30 text-foreground/80 border-gray-200 dark:border-gray-700",
 	cancelled:
 		"bg-red-50 text-red-700 border-red-200 dark:bg-red-950/50 dark:text-red-400 dark:border-red-800",
 };
@@ -106,7 +106,7 @@ export function MyPreorders() {
 								Pre-order #{item.id.slice(0, 8)}
 							</p>
 							<span
-								className={`inline-flex rounded-full border px-2 py-0.5 text-xs ${STATUS_COLORS[item.status] ?? "border-gray-200 bg-gray-50 text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"}`}
+								className={`inline-flex rounded-full border px-2 py-0.5 text-xs ${STATUS_COLORS[item.status] ?? "border-gray-200 bg-muted/30 text-foreground/80 dark:border-gray-700"}`}
 							>
 								{STATUS_LABELS[item.status] ?? item.status}
 							</span>

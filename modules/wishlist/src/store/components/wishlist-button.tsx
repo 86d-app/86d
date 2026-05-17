@@ -69,7 +69,7 @@ export function WishlistButton({
 		return (
 			<button
 				type="button"
-				className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 px-3 py-1.5 font-medium text-gray-400 text-sm dark:border-gray-700"
+				className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 px-3 py-1.5 font-medium text-muted-foreground text-sm dark:border-gray-700"
 				disabled
 				title="Sign in to save items"
 			>
@@ -86,7 +86,7 @@ export function WishlistButton({
 			buttonClass={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 font-medium text-sm transition-colors ${
 				inWishlist
 					? "border-red-200 bg-red-50 text-red-600 dark:border-red-800 dark:bg-red-950 dark:text-red-400"
-					: "border-gray-200 text-gray-700 hover:border-red-200 hover:bg-red-50 hover:text-red-600 dark:border-gray-700 dark:text-gray-300 dark:hover:border-red-800 dark:hover:bg-red-950 dark:hover:text-red-400"
+					: "border-gray-200 text-foreground/80 hover:border-red-200 hover:bg-red-50 hover:text-red-600 dark:border-gray-700 dark:hover:border-red-800 dark:hover:bg-red-950 dark:hover:text-red-400"
 			}`}
 			heartIcon={<HeartIcon filled={inWishlist} />}
 			label={inWishlist ? "Saved" : "Save"}

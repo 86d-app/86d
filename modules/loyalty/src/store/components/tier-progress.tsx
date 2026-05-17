@@ -39,8 +39,8 @@ export function TierProgress() {
 
 	if (isUnauthenticated) {
 		return (
-			<div className="rounded-xl border border-gray-200 bg-white p-6 text-center dark:border-gray-800 dark:bg-gray-900">
-				<p className="text-gray-500 text-sm dark:text-gray-400">
+			<div className="rounded-xl border border-gray-200 bg-white p-6 text-center dark:border-gray-800">
+				<p className="text-muted-foreground text-sm">
 					Sign in to view your tier progress.
 				</p>
 			</div>
@@ -49,11 +49,11 @@ export function TierProgress() {
 
 	if (loadingBalance || loadingTiers) {
 		return (
-			<div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
+			<div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800">
 				<div className="animate-pulse space-y-3">
-					<div className="h-4 w-32 rounded bg-gray-200 dark:bg-gray-700" />
-					<div className="h-3 w-full rounded-full bg-gray-200 dark:bg-gray-700" />
-					<div className="h-3 w-48 rounded bg-gray-200 dark:bg-gray-700" />
+					<div className="h-4 w-32 rounded bg-muted dark:bg-muted" />
+					<div className="h-3 w-full rounded-full bg-muted dark:bg-muted" />
+					<div className="h-3 w-48 rounded bg-muted dark:bg-muted" />
 				</div>
 			</div>
 		);
@@ -108,7 +108,7 @@ export function TierProgress() {
 									? `${color.bg} ${color.text} ring-2 ${color.ring}`
 									: isPast
 										? `${color.bg} ${color.text}`
-										: "bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500"
+										: "bg-muted text-muted-foreground"
 							}`}
 						>
 							{isPast ? "\u2713" : isActive ? "\u2605" : "\u00B7"}
@@ -117,7 +117,7 @@ export function TierProgress() {
 							className={`text-xs capitalize ${
 								isActive
 									? `font-semibold ${color.text}`
-									: "text-gray-400 dark:text-gray-500"
+									: "text-muted-foreground"
 							}`}
 						>
 							{tier.name}

@@ -63,7 +63,7 @@ const SHARE_NETWORKS = [
 		label: "\ud83d\udd17",
 		title: "Copy link",
 		color:
-			"bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800/60 dark:text-gray-300 dark:hover:bg-gray-800/80",
+			"bg-muted text-muted-foreground hover:bg-muted/60 dark:hover:bg-muted/80",
 	},
 ] as const;
 

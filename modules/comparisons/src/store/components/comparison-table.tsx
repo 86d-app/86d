@@ -60,10 +60,10 @@ export function ComparisonTable({
 	if (!isLoading && items.length === 0) {
 		return (
 			<section className="py-6">
-				<h2 className="mb-4 font-semibold text-gray-900 text-lg dark:text-gray-100">
+				<h2 className="mb-4 font-semibold text-foreground text-lg">
 					{title ?? "Compare Products"}
 				</h2>
-				<p className="text-gray-500 text-sm dark:text-gray-400">
+				<p className="text-muted-foreground text-sm">
 					No products added to comparison yet. Browse products and click
 					"Compare" to add them.
 				</p>

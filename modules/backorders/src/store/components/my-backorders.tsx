@@ -117,7 +117,7 @@ export function MyBackorders() {
 					</div>
 					<div className="flex items-center gap-3">
 						<span
-							className={`inline-flex rounded-full border px-2 py-0.5 font-medium text-xs ${STATUS_COLORS[entry.status] ?? "border-gray-200 bg-gray-50 text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400"}`}
+							className={`inline-flex rounded-full border px-2 py-0.5 font-medium text-xs ${STATUS_COLORS[entry.status] ?? "border-gray-200 bg-muted/30 text-foreground/80 dark:border-gray-700"}`}
 						>
 							{STATUS_LABELS[entry.status] ?? entry.status}
 						</span>

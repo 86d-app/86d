@@ -140,10 +140,10 @@ export function AddressBook({
 		return (
 			<div className="py-16 text-center">
 				<p className="text-3xl">&#128205;</p>
-				<h2 className="mt-4 font-semibold text-gray-900 text-lg dark:text-gray-100">
+				<h2 className="mt-4 font-semibold text-foreground text-lg">
 					Your Addresses
 				</h2>
-				<p className="mt-2 text-gray-500 text-sm dark:text-gray-400">
+				<p className="mt-2 text-muted-foreground text-sm">
 					Sign in to manage your saved addresses.
 				</p>
 			</div>
@@ -241,15 +241,15 @@ export function AddressBook({
 	};
 
 	const formContent = showForm ? (
-		<div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
-			<h3 className="mb-4 font-medium text-gray-900 dark:text-gray-100">
+		<div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-800">
+			<h3 className="mb-4 font-medium text-foreground">
 				{editingId ? "Edit Address" : "New Address"}
 			</h3>
 			<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 				<div className="sm:col-span-2">
 					<label
 						htmlFor="addr-label"
-						className="mb-1 block text-gray-700 text-sm dark:text-gray-300"
+						className="mb-1 block text-foreground/80 text-sm"
 					>
 						Label
 					</label>
@@ -259,13 +259,13 @@ export function AddressBook({
 						placeholder="e.g. Home, Work"
 						value={form.label}
 						onChange={(e) => updateField("label", e.target.value)}
-						className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800"
+						className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700"
 					/>
 				</div>
 				<div>
 					<label
 						htmlFor="addr-firstName"
-						className="mb-1 block text-gray-700 text-sm dark:text-gray-300"
+						className="mb-1 block text-foreground/80 text-sm"
 					>
 						First Name *
 					</label>
@@ -274,13 +274,13 @@ export function AddressBook({
 						type="text"
 						value={form.firstName}
 						onChange={(e) => updateField("firstName", e.target.value)}
-						className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800"
+						className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700"
 					/>
 				</div>
 				<div>
 					<label
 						htmlFor="addr-lastName"
-						className="mb-1 block text-gray-700 text-sm dark:text-gray-300"
+						className="mb-1 block text-foreground/80 text-sm"
 					>
 						Last Name *
 					</label>
@@ -289,13 +289,13 @@ export function AddressBook({
 						type="text"
 						value={form.lastName}
 						onChange={(e) => updateField("lastName", e.target.value)}
-						className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800"
+						className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700"
 					/>
 				</div>
 				<div className="sm:col-span-2">
 					<label
 						htmlFor="addr-company"
-						className="mb-1 block text-gray-700 text-sm dark:text-gray-300"
+						className="mb-1 block text-foreground/80 text-sm"
 					>
 						Company
 					</label>
@@ -304,13 +304,13 @@ export function AddressBook({
 						type="text"
 						value={form.company}
 						onChange={(e) => updateField("company", e.target.value)}
-						className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800"
+						className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700"
 					/>
 				</div>
 				<div className="sm:col-span-2">
 					<label
 						htmlFor="addr-line1"
-						className="mb-1 block text-gray-700 text-sm dark:text-gray-300"
+						className="mb-1 block text-foreground/80 text-sm"
 					>
 						Address Line 1 *
 					</label>
@@ -319,13 +319,13 @@ export function AddressBook({
 						type="text"
 						value={form.line1}
 						onChange={(e) => updateField("line1", e.target.value)}
-						className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800"
+						className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700"
 					/>
 				</div>
 				<div className="sm:col-span-2">
 					<label
 						htmlFor="addr-line2"
-						className="mb-1 block text-gray-700 text-sm dark:text-gray-300"
+						className="mb-1 block text-foreground/80 text-sm"
 					>
 						Address Line 2
 					</label>
@@ -334,13 +334,13 @@ export function AddressBook({
 						type="text"
 						value={form.line2}
 						onChange={(e) => updateField("line2", e.target.value)}
-						className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800"
+						className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700"
 					/>
 				</div>
 				<div>
 					<label
 						htmlFor="addr-city"
-						className="mb-1 block text-gray-700 text-sm dark:text-gray-300"
+						className="mb-1 block text-foreground/80 text-sm"
 					>
 						City *
 					</label>
@@ -349,13 +349,13 @@ export function AddressBook({
 						type="text"
 						value={form.city}
 						onChange={(e) => updateField("city", e.target.value)}
-						className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800"
+						className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700"
 					/>
 				</div>
 				<div>
 					<label
 						htmlFor="addr-state"
-						className="mb-1 block text-gray-700 text-sm dark:text-gray-300"
+						className="mb-1 block text-foreground/80 text-sm"
 					>
 						State / Province
 					</label>
@@ -364,13 +364,13 @@ export function AddressBook({
 						type="text"
 						value={form.state}
 						onChange={(e) => updateField("state", e.target.value)}
-						className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800"
+						className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700"
 					/>
 				</div>
 				<div>
 					<label
 						htmlFor="addr-postalCode"
-						className="mb-1 block text-gray-700 text-sm dark:text-gray-300"
+						className="mb-1 block text-foreground/80 text-sm"
 					>
 						Postal Code *
 					</label>
@@ -379,13 +379,13 @@ export function AddressBook({
 						type="text"
 						value={form.postalCode}
 						onChange={(e) => updateField("postalCode", e.target.value)}
-						className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800"
+						className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700"
 					/>
 				</div>
 				<div>
 					<label
 						htmlFor="addr-country"
-						className="mb-1 block text-gray-700 text-sm dark:text-gray-300"
+						className="mb-1 block text-foreground/80 text-sm"
 					>
 						Country *
 					</label>
@@ -394,13 +394,13 @@ export function AddressBook({
 						type="text"
 						value={form.country}
 						onChange={(e) => updateField("country", e.target.value)}
-						className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800"
+						className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700"
 					/>
 				</div>
 				<div className="sm:col-span-2">
 					<label
 						htmlFor="addr-phone"
-						className="mb-1 block text-gray-700 text-sm dark:text-gray-300"
+						className="mb-1 block text-foreground/80 text-sm"
 					>
 						Phone
 					</label>
@@ -409,7 +409,7 @@ export function AddressBook({
 						type="tel"
 						value={form.phone}
 						onChange={(e) => updateField("phone", e.target.value)}
-						className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800"
+						className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700"
 					/>
 				</div>
 			</div>
@@ -418,7 +418,7 @@ export function AddressBook({
 					type="button"
 					onClick={handleSubmit}
 					disabled={createMutation.isPending || updateMutation.isPending}
-					className="rounded-md bg-gray-900 px-4 py-2 text-sm text-white transition-colors hover:bg-gray-800 disabled:opacity-50 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-gray-200"
+					className="rounded-md bg-background px-4 py-2 text-sm text-white transition-colors hover:bg-muted disabled:opacity-50 dark:bg-muted dark:hover:bg-muted"
 				>
 					{createMutation.isPending || updateMutation.isPending
 						? "Saving..."
@@ -429,7 +429,7 @@ export function AddressBook({
 				<button
 					type="button"
 					onClick={handleCancelForm}
-					className="rounded-md border border-gray-300 px-4 py-2 text-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
+					className="rounded-md border border-gray-300 px-4 py-2 text-sm transition-colors hover:bg-muted/30 dark:border-gray-700 dark:hover:bg-muted"
 				>
 					Cancel
 				</button>
@@ -442,10 +442,8 @@ export function AddressBook({
 			{items.length === 0 ? (
 				<div className="py-12 text-center">
 					<p className="text-3xl">&#128205;</p>
-					<h3 className="mt-4 font-medium text-gray-900 dark:text-gray-100">
-						No addresses yet
-					</h3>
-					<p className="mt-2 text-gray-500 text-sm dark:text-gray-400">
+					<h3 className="mt-4 font-medium text-foreground">No addresses yet</h3>
+					<p className="mt-2 text-muted-foreground text-sm">
 						Add your first address to get started.
 					</p>
 				</div>
@@ -454,16 +452,16 @@ export function AddressBook({
 					{items.map((addr) => (
 						<div
 							key={addr.id}
-							className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900"
+							className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-800"
 						>
 							<div className="flex items-start justify-between">
 								<div>
 									{addr.label && (
-										<span className="mb-1 inline-block rounded bg-gray-100 px-2 py-0.5 font-medium text-gray-700 text-xs dark:bg-gray-800 dark:text-gray-300">
+										<span className="mb-1 inline-block rounded bg-muted px-2 py-0.5 font-medium text-foreground/80 text-xs">
 											{addr.label}
 										</span>
 									)}
-									<p className="font-medium text-gray-900 text-sm dark:text-gray-100">
+									<p className="font-medium text-foreground text-sm">
 										{addr.firstName} {addr.lastName}
 									</p>
 								</div>
@@ -481,27 +479,21 @@ export function AddressBook({
 								</div>
 							</div>
 							{addr.company && (
-								<p className="mt-1 text-gray-500 text-xs dark:text-gray-400">
+								<p className="mt-1 text-muted-foreground text-xs">
 									{addr.company}
 								</p>
 							)}
-							<p className="mt-2 text-gray-700 text-sm dark:text-gray-300">
-								{addr.line1}
-							</p>
+							<p className="mt-2 text-foreground/80 text-sm">{addr.line1}</p>
 							{addr.line2 && (
-								<p className="text-gray-700 text-sm dark:text-gray-300">
-									{addr.line2}
-								</p>
+								<p className="text-foreground/80 text-sm">{addr.line2}</p>
 							)}
-							<p className="text-gray-700 text-sm dark:text-gray-300">
+							<p className="text-foreground/80 text-sm">
 								{addr.city}
 								{addr.state ? `, ${addr.state}` : ""} {addr.postalCode}
 							</p>
-							<p className="text-gray-700 text-sm dark:text-gray-300">
-								{addr.country}
-							</p>
+							<p className="text-foreground/80 text-sm">{addr.country}</p>
 							{addr.phone && (
-								<p className="mt-1 text-gray-500 text-xs dark:text-gray-400">
+								<p className="mt-1 text-muted-foreground text-xs">
 									{addr.phone}
 								</p>
 							)}
@@ -509,7 +501,7 @@ export function AddressBook({
 								<button
 									type="button"
 									onClick={() => handleEdit(addr)}
-									className="rounded px-2 py-1 text-gray-600 text-xs transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+									className="rounded px-2 py-1 text-muted-foreground text-xs transition-colors hover:bg-muted dark:hover:bg-muted"
 								>
 									Edit
 								</button>
@@ -524,7 +516,7 @@ export function AddressBook({
 									<button
 										type="button"
 										onClick={() => setDeletingId(null)}
-										className="rounded px-2 py-1 text-gray-500 text-xs hover:bg-gray-100 dark:hover:bg-gray-800"
+										className="rounded px-2 py-1 text-muted-foreground text-xs hover:bg-muted dark:hover:bg-muted"
 									>
 										Cancel
 									</button>
@@ -574,7 +566,7 @@ export function AddressBook({
 							setEditingId(null);
 							setForm(emptyForm);
 						}}
-						className="rounded-md bg-gray-900 px-4 py-2 text-sm text-white transition-colors hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-gray-200"
+						className="rounded-md bg-background px-4 py-2 text-sm text-white transition-colors hover:bg-muted dark:bg-muted dark:hover:bg-muted"
 					>
 						Add Address
 					</button>

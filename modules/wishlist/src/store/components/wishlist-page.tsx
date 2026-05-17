@@ -64,10 +64,10 @@ export function WishlistPage() {
 		return (
 			<div className="py-16 text-center">
 				<HeartIcon filled={false} large />
-				<h2 className="mt-4 font-semibold text-gray-900 text-lg dark:text-gray-100">
+				<h2 className="mt-4 font-semibold text-foreground text-lg">
 					Your Wishlist
 				</h2>
-				<p className="mt-2 text-gray-500 text-sm dark:text-gray-400">
+				<p className="mt-2 text-muted-foreground text-sm">
 					Sign in to start saving your favorite items.
 				</p>
 			</div>
@@ -118,10 +118,10 @@ export function WishlistPage() {
 		return (
 			<div className="py-16 text-center">
 				<HeartIcon filled={false} large />
-				<h2 className="mt-4 font-semibold text-gray-900 text-lg dark:text-gray-100">
+				<h2 className="mt-4 font-semibold text-foreground text-lg">
 					Your wishlist is empty
 				</h2>
-				<p className="mt-2 text-gray-500 text-sm dark:text-gray-400">
+				<p className="mt-2 text-muted-foreground text-sm">
 					Browse products and tap the heart to save items for later.
 				</p>
 			</div>
@@ -133,10 +133,10 @@ export function WishlistPage() {
 			{items.map((item) => (
 				<div
 					key={item.id}
-					className="group relative overflow-hidden rounded-lg border border-gray-200 bg-white transition-shadow hover:shadow-md dark:border-gray-800 dark:bg-gray-900"
+					className="group relative overflow-hidden rounded-lg border border-gray-200 bg-white transition-shadow hover:shadow-md dark:border-gray-800"
 				>
 					{item.productImage ? (
-						<div className="aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
+						<div className="aspect-square overflow-hidden bg-muted">
 							<img
 								src={item.productImage}
 								alt={item.productName}
@@ -144,30 +144,28 @@ export function WishlistPage() {
 							/>
 						</div>
 					) : (
-						<div className="flex aspect-square items-center justify-center bg-gray-100 dark:bg-gray-800">
-							<span className="text-3xl text-gray-300 dark:text-gray-600">
+						<div className="flex aspect-square items-center justify-center bg-muted">
+							<span className="text-3xl text-muted-foreground/50">
 								&#128722;
 							</span>
 						</div>
 					)}
 					<div className="p-4">
-						<h3 className="font-medium text-gray-900 text-sm dark:text-gray-100">
+						<h3 className="font-medium text-foreground text-sm">
 							{item.productName}
 						</h3>
 						{item.note && (
-							<p className="mt-1 text-gray-500 text-xs dark:text-gray-400">
-								{item.note}
-							</p>
+							<p className="mt-1 text-muted-foreground text-xs">{item.note}</p>
 						)}
 						<div className="mt-2 flex items-center justify-between">
-							<span className="text-gray-400 text-xs dark:text-gray-500">
+							<span className="text-muted-foreground text-xs">
 								Added {formatDate(item.addedAt)}
 							</span>
 							<button
 								type="button"
 								onClick={() => handleRemove(item.id)}
 								disabled={removingId === item.id}
-								className="text-gray-400 text-xs transition-colors hover:text-red-600 dark:text-gray-500 dark:hover:text-red-400"
+								className="text-muted-foreground text-xs transition-colors hover:text-red-600 dark:hover:text-red-400"
 							>
 								{removingId === item.id ? "Removing..." : "Remove"}
 							</button>
