@@ -127,9 +127,16 @@ function PlansTab() {
 	const [form, setForm] = useState<PlanForm>(DEFAULT_PLAN);
 	const [error, setError] = useState("");
 
-	const { data: plansData, isLoading: loading } = api.listPlans.useQuery() as {
+	const {
+		data: plansData,
+		isLoading: loading,
+		isError: plansError,
+		refetch: refetchPlans,
+	} = api.listPlans.useQuery() as {
 		data: { plans: SubscriptionPlan[] } | undefined;
 		isLoading: boolean;
+		isError: boolean;
+		refetch: () => void;
 	};
 	const plans = plansData?.plans ?? [];
 
@@ -150,6 +157,26 @@ function PlansTab() {
 			void api.listPlans.invalidate();
 		},
 	});
+
+	if (plansError) {
+		return (
+			<div className="rounded-md border border-destructive/50 bg-destructive/10 p-4">
+				<p className="font-semibold text-destructive">
+					Failed to load subscription plans
+				</p>
+				<p className="mt-1 text-muted-foreground text-sm">
+					Check your connection and try again.
+				</p>
+				<button
+					type="button"
+					onClick={() => refetchPlans()}
+					className="mt-3 rounded-md bg-destructive/20 px-3 py-1.5 font-medium text-destructive text-sm transition-colors hover:bg-destructive/30"
+				>
+					Try again
+				</button>
+			</div>
+		);
+	}
 
 	function handleCreate(e: React.FormEvent) {
 		e.preventDefault();
@@ -677,16 +704,41 @@ function SubscribersTab() {
 	if (emailFilter) queryInput.email = emailFilter;
 	if (statusFilter) queryInput.status = statusFilter;
 
-	const { data: subsData, isLoading: loading } = api.listSubscriptions.useQuery(
-		queryInput,
-	) as {
+	const {
+		data: subsData,
+		isLoading: loading,
+		isError: subsError,
+		refetch: refetchSubs,
+	} = api.listSubscriptions.useQuery(queryInput) as {
 		data: { subscriptions: Subscription[]; total: number } | undefined;
 		isLoading: boolean;
+		isError: boolean;
+		refetch: () => void;
 	};
 	const subscriptions = subsData?.subscriptions ?? [];
 	const total = subsData?.total ?? 0;
 
 	const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+	if (subsError) {
+		return (
+			<div className="rounded-md border border-destructive/50 bg-destructive/10 p-4">
+				<p className="font-semibold text-destructive">
+					Failed to load subscribers
+				</p>
+				<p className="mt-1 text-muted-foreground text-sm">
+					Check your connection and try again.
+				</p>
+				<button
+					type="button"
+					onClick={() => refetchSubs()}
+					className="mt-3 rounded-md bg-destructive/20 px-3 py-1.5 font-medium text-destructive text-sm transition-colors hover:bg-destructive/30"
+				>
+					Try again
+				</button>
+			</div>
+		);
+	}
 
 	return (
 		<div>
