@@ -616,13 +616,20 @@ export function BundleOverview() {
 	const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 	const [error, setError] = useState("");
 
-	const { data: listData, isLoading } = api.list.useQuery({
+	const {
+		data: listData,
+		isLoading,
+		isError: bundlesError,
+		refetch: refetchBundles,
+	} = api.list.useQuery({
 		take: String(PAGE_SIZE),
 		skip: String(skip),
 		...(statusFilter ? { status: statusFilter } : {}),
 	}) as {
 		data: { bundles: Bundle[]; total: number } | undefined;
 		isLoading: boolean;
+		isError: boolean;
+		refetch: () => void;
 	};
 
 	const bundles = listData?.bundles ?? [];
@@ -642,6 +649,24 @@ export function BundleOverview() {
 		setError("");
 		deleteMutation.mutate({ params: { id } });
 	};
+
+	if (bundlesError) {
+		return (
+			<div className="rounded-md border border-destructive/50 bg-destructive/10 p-4">
+				<p className="font-semibold text-destructive">Failed to load bundles</p>
+				<p className="mt-1 text-muted-foreground text-sm">
+					Check your connection and try again.
+				</p>
+				<button
+					type="button"
+					onClick={() => refetchBundles()}
+					className="mt-3 rounded-md bg-destructive/20 px-3 py-1.5 font-medium text-destructive text-sm transition-colors hover:bg-destructive/30"
+				>
+					Try again
+				</button>
+			</div>
+		);
+	}
 
 	if (selectedId) {
 		return (
