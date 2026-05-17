@@ -142,6 +142,8 @@ export default function notifications(options?: NotificationsOptions): Module {
 					name: string;
 					quantity: number;
 					price: number;
+					productId?: string | undefined;
+					variantId?: string | undefined;
 				}>;
 				subtotal: number;
 				taxAmount: number;
