@@ -37,6 +37,12 @@ export const applyEndpoint = createStoreEndpoint(
 			customerId,
 			notes: ctx.body.notes,
 		});
+		void ctx.context.events?.emit("affiliates.application_submitted", {
+			affiliateId: affiliate.id,
+			email: affiliate.email,
+			name: affiliate.name,
+			customerId: affiliate.customerId,
+		});
 		return { affiliate };
 	},
 );

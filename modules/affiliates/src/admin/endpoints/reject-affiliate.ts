@@ -12,6 +12,12 @@ export const rejectAffiliateEndpoint = createAdminEndpoint(
 			.affiliates as AffiliateController;
 		const affiliate = await controller.rejectAffiliate(ctx.params.id);
 		if (!affiliate) return { error: "Unable to reject affiliate" };
+		void ctx.context.events?.emit("affiliates.rejected", {
+			affiliateId: affiliate.id,
+			email: affiliate.email,
+			name: affiliate.name,
+			customerId: affiliate.customerId,
+		});
 		return { affiliate };
 	},
 );

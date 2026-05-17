@@ -12,6 +12,12 @@ export const suspendAffiliateEndpoint = createAdminEndpoint(
 			.affiliates as AffiliateController;
 		const affiliate = await controller.suspendAffiliate(ctx.params.id);
 		if (!affiliate) return { error: "Unable to suspend affiliate" };
+		void ctx.context.events?.emit("affiliates.suspended", {
+			affiliateId: affiliate.id,
+			email: affiliate.email,
+			name: affiliate.name,
+			customerId: affiliate.customerId,
+		});
 		return { affiliate };
 	},
 );

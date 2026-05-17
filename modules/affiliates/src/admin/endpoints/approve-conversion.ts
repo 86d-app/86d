@@ -12,6 +12,13 @@ export const approveConversionEndpoint = createAdminEndpoint(
 			.affiliates as AffiliateController;
 		const conversion = await controller.approveConversion(ctx.params.id);
 		if (!conversion) return { error: "Unable to approve conversion" };
+		void ctx.context.events?.emit("affiliates.conversion_recorded", {
+			conversionId: conversion.id,
+			affiliateId: conversion.affiliateId,
+			orderId: conversion.orderId,
+			amount: conversion.orderAmount,
+			commission: conversion.commissionAmount,
+		});
 		return { conversion };
 	},
 );

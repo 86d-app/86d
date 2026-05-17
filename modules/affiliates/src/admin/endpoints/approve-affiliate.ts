@@ -18,6 +18,12 @@ export const approveAffiliateEndpoint = createAdminEndpoint(
 			ctx.body.commissionRate,
 		);
 		if (!affiliate) return { error: "Unable to approve affiliate" };
+		void ctx.context.events?.emit("affiliates.approved", {
+			affiliateId: affiliate.id,
+			email: affiliate.email,
+			name: affiliate.name,
+			customerId: affiliate.customerId,
+		});
 		return { affiliate };
 	},
 );
