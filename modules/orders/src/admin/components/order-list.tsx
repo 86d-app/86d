@@ -477,6 +477,7 @@ export function OrderList() {
 						setPage(1);
 					}}
 					className="h-9 rounded-md border border-border bg-background px-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+					aria-label="Filter by status"
 				>
 					<option value="">All statuses</option>
 					<option value="pending">Pending</option>

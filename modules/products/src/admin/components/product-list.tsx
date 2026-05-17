@@ -860,6 +860,7 @@ export function ProductList() {
 						setPage(1);
 					}}
 					className="rounded-md border border-border bg-background px-3 py-2 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+					aria-label="Filter by status"
 				>
 					<option value="">All statuses</option>
 					<option value="draft">Draft</option>
