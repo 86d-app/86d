@@ -123,10 +123,10 @@ interface OrderCompleteResult {
 
 // ─── Helpers ────────────────────────────────────────────────────────
 
-function formatPrice(cents: number): string {
+function formatPrice(cents: number, currency = "USD"): string {
 	return new Intl.NumberFormat("en-US", {
 		style: "currency",
-		currency: "USD",
+		currency,
 	}).format(cents / 100);
 }
 
@@ -368,6 +368,8 @@ function OrderSummary({
 	const giftCard = session?.giftCardAmount ?? 0;
 	const tax = session?.taxAmount ?? 0;
 	const total = session?.total ?? subtotal;
+	const currency = session?.currency ?? "USD";
+	const fmt = (cents: number) => formatPrice(cents, currency);
 
 	return (
 		<div className="rounded-xl border border-border/40 bg-muted/30 p-5">
@@ -427,7 +429,7 @@ function OrderSummary({
 									)}
 								</div>
 								<p className="ml-3 flex-shrink-0 text-foreground text-sm tabular-nums">
-									{formatPrice(price * item.quantity)}
+									{fmt(price * item.quantity)}
 								</p>
 							</div>
 						</li>
@@ -551,15 +553,13 @@ function OrderSummary({
 			<div className="flex flex-col gap-2 border-border/40 border-t pt-3">
 				<div className="flex justify-between text-sm">
 					<span className="text-muted-foreground">Subtotal</span>
-					<span className="text-foreground tabular-nums">
-						{formatPrice(subtotal)}
-					</span>
+					<span className="text-foreground tabular-nums">{fmt(subtotal)}</span>
 				</div>
 				{shipping > 0 && (
 					<div className="flex justify-between text-sm">
 						<span className="text-muted-foreground">Shipping</span>
 						<span className="text-foreground tabular-nums">
-							{formatPrice(shipping)}
+							{fmt(shipping)}
 						</span>
 					</div>
 				)}
@@ -567,7 +567,7 @@ function OrderSummary({
 					<div className="flex justify-between text-sm">
 						<span className="text-muted-foreground">Discount</span>
 						<span className="text-status-success tabular-nums">
-							-{formatPrice(discount)}
+							-{fmt(discount)}
 						</span>
 					</div>
 				)}
@@ -575,22 +575,20 @@ function OrderSummary({
 					<div className="flex justify-between text-sm">
 						<span className="text-muted-foreground">Gift card</span>
 						<span className="text-status-success tabular-nums">
-							-{formatPrice(giftCard)}
+							-{fmt(giftCard)}
 						</span>
 					</div>
 				)}
 				{tax > 0 && (
 					<div className="flex justify-between text-sm">
 						<span className="text-muted-foreground">Tax</span>
-						<span className="text-foreground tabular-nums">
-							{formatPrice(tax)}
-						</span>
+						<span className="text-foreground tabular-nums">{fmt(tax)}</span>
 					</div>
 				)}
 				<div className="flex justify-between border-border/40 border-t pt-3">
 					<span className="font-bold text-foreground">Total</span>
 					<span className="font-bold font-display text-foreground text-lg tabular-nums">
-						{formatPrice(total)}
+						{fmt(total)}
 					</span>
 				</div>
 			</div>
@@ -1506,7 +1504,9 @@ const CheckoutPage = observer(function CheckoutPage() {
 												</div>
 											</div>
 											<p className="font-medium text-foreground text-sm tabular-nums">
-												{rate.price === 0 ? "Free" : formatPrice(rate.price)}
+												{rate.price === 0
+													? "Free"
+													: formatPrice(rate.price, session?.currency ?? "USD")}
 											</p>
 										</label>
 									))}
@@ -1864,7 +1864,7 @@ const CheckoutPage = observer(function CheckoutPage() {
 										Placing order...
 									</span>
 								) : (
-									`Place order • ${formatPrice(session?.total ?? cart?.subtotal ?? 0)}`
+									`Place order • ${formatPrice(session?.total ?? cart?.subtotal ?? 0, session?.currency ?? "USD")}`
 								)}
 							</button>
 
