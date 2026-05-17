@@ -688,6 +688,61 @@ export default function notifications(options?: NotificationsOptions): Module {
 				);
 			}
 
+			// ── Membership notifications ─────────────────────────────────────
+			interface MembershipEventPayload {
+				membershipId: string;
+				customerId: string;
+				planId?: string | undefined;
+			}
+
+			const membershipMessages: Record<
+				string,
+				{ title: string; body: string }
+			> = {
+				subscribed: {
+					title: "Membership activated",
+					body: "Your membership is now active. Enjoy your benefits!",
+				},
+				cancelled: {
+					title: "Membership cancelled",
+					body: "Your membership has been cancelled.",
+				},
+				paused: {
+					title: "Membership paused",
+					body: "Your membership has been paused.",
+				},
+				resumed: {
+					title: "Membership resumed",
+					body: "Your membership has been resumed.",
+				},
+			};
+
+			for (const status of Object.keys(membershipMessages)) {
+				ctx.events?.on<MembershipEventPayload>(
+					`membership.${status}`,
+					async (event) => {
+						const p = event.payload;
+						if (!p?.customerId) return;
+						const msg = membershipMessages[status];
+						await controller
+							.create({
+								customerId: p.customerId,
+								type: "info",
+								channel: "in_app",
+								priority: "normal",
+								title: msg.title,
+								body: msg.body,
+								actionUrl: "/account/memberships",
+								metadata: {
+									membershipId: p.membershipId,
+									planId: p.planId,
+								},
+							})
+							.catch(() => {});
+					},
+				);
+			}
+
 			// ── Affiliate notifications ──────────────────────────────────────
 			interface AffiliateEventPayload {
 				affiliateId: string;
