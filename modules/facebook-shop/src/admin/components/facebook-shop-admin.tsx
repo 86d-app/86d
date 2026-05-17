@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -169,6 +169,10 @@ function FbListingSheet({
 		document.addEventListener("keydown", handler);
 		return () => document.removeEventListener("keydown", handler);
 	}, [onCancel]);
+	const firstInputRef = useRef<HTMLInputElement>(null);
+	useEffect(() => {
+		firstInputRef.current?.focus();
+	}, []);
 	const isEditing = !!listing;
 	const [localProductId, setLocalProductId] = useState(
 		listing?.localProductId ?? "",
@@ -277,6 +281,7 @@ function FbListingSheet({
 							</label>
 							<input
 								id="fls-productid"
+								ref={firstInputRef}
 								className={inputCls}
 								value={localProductId}
 								onChange={(e) => setLocalProductId(e.target.value)}
@@ -357,6 +362,10 @@ function FbCollectionSheet({ onSaved, onCancel, api }: FbCollectionSheetProps) {
 		document.addEventListener("keydown", handler);
 		return () => document.removeEventListener("keydown", handler);
 	}, [onCancel]);
+	const firstInputRef = useRef<HTMLInputElement>(null);
+	useEffect(() => {
+		firstInputRef.current?.focus();
+	}, []);
 	const [name, setName] = useState("");
 	const [productIds, setProductIds] = useState("");
 	const [error, setError] = useState("");
@@ -430,6 +439,7 @@ function FbCollectionSheet({ onSaved, onCancel, api }: FbCollectionSheetProps) {
 							</label>
 							<input
 								id="fcs-name"
+								ref={firstInputRef}
 								className={inputCls}
 								value={name}
 								onChange={(e) => setName(e.target.value)}

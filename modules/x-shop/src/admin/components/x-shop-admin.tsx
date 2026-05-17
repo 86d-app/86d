@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -328,6 +328,10 @@ interface ListingSheetProps {
 function ListingSheet({ listing, onSaved, onCancel }: ListingSheetProps) {
 	const api = useXShopApi();
 	const isEditing = !!listing;
+	const firstInputRef = useRef<HTMLInputElement>(null);
+	useEffect(() => {
+		firstInputRef.current?.focus();
+	}, []);
 
 	const [localProductId, setLocalProductId] = useState(
 		listing?.localProductId ?? "",
@@ -444,6 +448,7 @@ function ListingSheet({ listing, onSaved, onCancel }: ListingSheetProps) {
 							</label>
 							<input
 								id="ls-productid"
+								ref={firstInputRef}
 								className={inputCls}
 								value={localProductId}
 								onChange={(e) => setLocalProductId(e.target.value)}
@@ -973,6 +978,10 @@ interface CreateDropSheetProps {
 
 function CreateDropSheet({ onSaved, onCancel }: CreateDropSheetProps) {
 	const api = useXShopApi();
+	const firstInputRef = useRef<HTMLInputElement>(null);
+	useEffect(() => {
+		firstInputRef.current?.focus();
+	}, []);
 	const [name, setName] = useState("");
 	const [description, setDescription] = useState("");
 	const [productIds, setProductIds] = useState("");
@@ -1069,6 +1078,7 @@ function CreateDropSheet({ onSaved, onCancel }: CreateDropSheetProps) {
 							</label>
 							<input
 								id="cd-name"
+								ref={firstInputRef}
 								className={inputCls}
 								value={name}
 								onChange={(e) => setName(e.target.value)}

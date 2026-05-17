@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import WrapOptionDetailTemplate from "./wrap-option-detail.mdx";
 
 interface WrapOptionData {
@@ -61,6 +61,10 @@ function EditSheet({ option, onSaved, onCancel, api }: EditSheetProps) {
 		document.addEventListener("keydown", handler);
 		return () => document.removeEventListener("keydown", handler);
 	}, [onCancel]);
+	const firstInputRef = useRef<HTMLInputElement>(null);
+	useEffect(() => {
+		firstInputRef.current?.focus();
+	}, []);
 	const [name, setName] = useState(option.name);
 	const [description, setDescription] = useState(option.description ?? "");
 	const [price, setPrice] = useState(
@@ -141,6 +145,7 @@ function EditSheet({ option, onSaved, onCancel, api }: EditSheetProps) {
 							</label>
 							<input
 								id="gwd-name"
+								ref={firstInputRef}
 								className={inputCls}
 								value={name}
 								onChange={(e) => setName(e.target.value)}

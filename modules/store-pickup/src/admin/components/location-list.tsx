@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import LocationListTemplate from "./location-list.mdx";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -125,6 +125,10 @@ function LocationSheet({ location, onSaved, onCancel }: LocationSheetProps) {
 		document.addEventListener("keydown", handler);
 		return () => document.removeEventListener("keydown", handler);
 	}, [onCancel]);
+	const firstInputRef = useRef<HTMLInputElement>(null);
+	useEffect(() => {
+		firstInputRef.current?.focus();
+	}, []);
 
 	function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
@@ -210,6 +214,7 @@ function LocationSheet({ location, onSaved, onCancel }: LocationSheetProps) {
 							</label>
 							<input
 								id="ll-name"
+								ref={firstInputRef}
 								className={inputCls}
 								value={name}
 								onChange={(e) => setName(e.target.value)}

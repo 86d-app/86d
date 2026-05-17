@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -125,6 +125,10 @@ function RuleSheet({ rule, onSaved, onCancel }: RuleSheetProps) {
 		document.addEventListener("keydown", handler);
 		return () => document.removeEventListener("keydown", handler);
 	}, [onCancel]);
+	const firstInputRef = useRef<HTMLInputElement>(null);
+	useEffect(() => {
+		firstInputRef.current?.focus();
+	}, []);
 	const api = useBulkPricingApi();
 	const isEditing = !!rule;
 
@@ -221,6 +225,7 @@ function RuleSheet({ rule, onSaved, onCancel }: RuleSheetProps) {
 							</label>
 							<input
 								id="bp-name"
+								ref={firstInputRef}
 								className={inputCls}
 								value={name}
 								onChange={(e) => setName(e.target.value)}
@@ -348,6 +353,10 @@ function TierSheet({ ruleId, tier, onSaved, onCancel, api }: TierSheetProps) {
 		document.addEventListener("keydown", handler);
 		return () => document.removeEventListener("keydown", handler);
 	}, [onCancel]);
+	const firstInputRef = useRef<HTMLInputElement>(null);
+	useEffect(() => {
+		firstInputRef.current?.focus();
+	}, []);
 	const isEditing = !!tier;
 	const [minQty, setMinQty] = useState(String(tier?.minQuantity ?? 2));
 	const [maxQty, setMaxQty] = useState(
@@ -479,6 +488,7 @@ function TierSheet({ ruleId, tier, onSaved, onCancel, api }: TierSheetProps) {
 								<input
 									id="bt-min"
 									type="number"
+									ref={firstInputRef}
 									min="1"
 									className={inputCls}
 									value={minQty}

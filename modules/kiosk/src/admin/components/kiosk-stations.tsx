@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -137,6 +137,10 @@ function StationSheet({ station, onSaved, onCancel }: StationSheetProps) {
 		document.addEventListener("keydown", handler);
 		return () => document.removeEventListener("keydown", handler);
 	}, [onCancel]);
+	const firstInputRef = useRef<HTMLInputElement>(null);
+	useEffect(() => {
+		firstInputRef.current?.focus();
+	}, []);
 
 	function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
@@ -215,6 +219,7 @@ function StationSheet({ station, onSaved, onCancel }: StationSheetProps) {
 							</label>
 							<input
 								id="ks-name"
+								ref={firstInputRef}
 								className={inputCls}
 								value={name}
 								onChange={(e) => setName(e.target.value)}

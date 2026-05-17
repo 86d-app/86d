@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import PaymentsAdminTemplate from "./payments-admin.mdx";
 
 interface PaymentIntent {
@@ -81,6 +81,10 @@ function RefundModal({
 		document.addEventListener("keydown", handler);
 		return () => document.removeEventListener("keydown", handler);
 	}, [onClose]);
+	const firstInputRef = useRef<HTMLInputElement>(null);
+	useEffect(() => {
+		firstInputRef.current?.focus();
+	}, []);
 	const api = usePaymentsAdminApi();
 	const [amount, setAmount] = useState("");
 	const [reason, setReason] = useState("");
@@ -184,6 +188,7 @@ function RefundModal({
 								<input
 									id="refund-amount"
 									type="number"
+									ref={firstInputRef}
 									step="0.01"
 									min="0.01"
 									max={maxAmount}

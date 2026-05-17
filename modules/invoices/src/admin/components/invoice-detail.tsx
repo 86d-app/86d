@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import InvoiceDetailTemplate from "./invoice-detail.mdx";
 
 interface InvoiceDetail {
@@ -95,6 +95,10 @@ function EditInvoiceSheet({ invoice, onSaved, onCancel }: EditSheetProps) {
 		document.addEventListener("keydown", handler);
 		return () => document.removeEventListener("keydown", handler);
 	}, [onCancel]);
+	const firstInputRef = useRef<HTMLInputElement>(null);
+	useEffect(() => {
+		firstInputRef.current?.focus();
+	}, []);
 	const api = useInvoiceDetailApi();
 	const [customerName, setCustomerName] = useState(invoice.customerName ?? "");
 	const [guestEmail, setGuestEmail] = useState(invoice.guestEmail ?? "");
@@ -183,6 +187,7 @@ function EditInvoiceSheet({ invoice, onSaved, onCancel }: EditSheetProps) {
 						<input
 							id="ei-name"
 							type="text"
+							ref={firstInputRef}
 							value={customerName}
 							onChange={(e) => setCustomerName(e.target.value)}
 							className={inputCls}

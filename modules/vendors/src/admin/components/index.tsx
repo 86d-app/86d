@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -144,6 +144,10 @@ function VendorSheet({ vendor, onSaved, onCancel }: VendorSheetProps) {
 		document.addEventListener("keydown", handler);
 		return () => document.removeEventListener("keydown", handler);
 	}, [onCancel]);
+	const firstInputRef = useRef<HTMLInputElement>(null);
+	useEffect(() => {
+		firstInputRef.current?.focus();
+	}, []);
 	const api = useVendorsApi();
 	const isEditing = !!vendor;
 
@@ -257,6 +261,7 @@ function VendorSheet({ vendor, onSaved, onCancel }: VendorSheetProps) {
 								</label>
 								<input
 									id="vs-name"
+									ref={firstInputRef}
 									className={inputCls}
 									value={name}
 									onChange={(e) => setName(e.target.value)}

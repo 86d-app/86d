@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import WrapOptionListTemplate from "./wrap-option-list.mdx";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -80,6 +80,10 @@ function WrapOptionSheet({ option, onSaved, onCancel }: WrapOptionSheetProps) {
 		document.addEventListener("keydown", handler);
 		return () => document.removeEventListener("keydown", handler);
 	}, [onCancel]);
+	const firstInputRef = useRef<HTMLInputElement>(null);
+	useEffect(() => {
+		firstInputRef.current?.focus();
+	}, []);
 	const api = useGiftWrappingApi();
 	const isEditing = !!option;
 
@@ -185,6 +189,7 @@ function WrapOptionSheet({ option, onSaved, onCancel }: WrapOptionSheetProps) {
 							</label>
 							<input
 								id="gw-name"
+								ref={firstInputRef}
 								className={inputCls}
 								value={name}
 								onChange={(e) => setName(e.target.value)}

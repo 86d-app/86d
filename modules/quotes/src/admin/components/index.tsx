@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface Quote {
 	id: string;
@@ -137,6 +137,10 @@ function QuoteSheet({ onSaved, onCancel }: QuoteSheetProps) {
 		document.addEventListener("keydown", handler);
 		return () => document.removeEventListener("keydown", handler);
 	}, [onCancel]);
+	const firstInputRef = useRef<HTMLInputElement>(null);
+	useEffect(() => {
+		firstInputRef.current?.focus();
+	}, []);
 	const api = useQuotesApi();
 	const [customerEmail, setCustomerEmail] = useState("");
 	const [customerName, setCustomerName] = useState("");
@@ -210,6 +214,7 @@ function QuoteSheet({ onSaved, onCancel }: QuoteSheetProps) {
 						<input
 							id="qs-email"
 							type="email"
+							ref={firstInputRef}
 							value={customerEmail}
 							onChange={(e) => setCustomerEmail(e.target.value)}
 							className={inputCls}
