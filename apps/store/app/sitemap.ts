@@ -1,8 +1,11 @@
 import type { MetadataRoute } from "next";
 import { getBaseUrl } from "utils/url";
 import {
+	fetchAuctionIdsForSitemap,
 	fetchBlogPostSlugsForSitemap,
 	fetchCollectionSlugsForSitemap,
+	fetchFlashSaleSlugsForSitemap,
+	fetchPreorderCampaignIdsForSitemap,
 	fetchProductSlugsForSitemap,
 } from "../lib/seo";
 
@@ -71,12 +74,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 	let productPages: MetadataRoute.Sitemap = [];
 	let collectionPages: MetadataRoute.Sitemap = [];
 	let blogPages: MetadataRoute.Sitemap = [];
+	let flashSalePages: MetadataRoute.Sitemap = [];
+	let auctionPages: MetadataRoute.Sitemap = [];
+	let preorderPages: MetadataRoute.Sitemap = [];
 
 	try {
-		const [products, collections, blogPosts] = await Promise.all([
+		const [
+			products,
+			collections,
+			blogPosts,
+			flashSales,
+			auctions,
+			preorderCampaigns,
+		] = await Promise.all([
 			fetchProductSlugsForSitemap(),
 			fetchCollectionSlugsForSitemap(),
 			fetchBlogPostSlugsForSitemap(),
+			fetchFlashSaleSlugsForSitemap(),
+			fetchAuctionIdsForSitemap(),
+			fetchPreorderCampaignIdsForSitemap(),
 		]);
 
 		productPages = products.map((p) => ({
@@ -99,9 +115,68 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 			changeFrequency: "weekly" as const,
 			priority: 0.6,
 		}));
+
+		if (flashSales.length > 0) {
+			flashSalePages = [
+				{
+					url: `${url}/flash-sales`,
+					lastModified: new Date(),
+					changeFrequency: "hourly" as const,
+					priority: 0.9,
+				},
+				...flashSales.map((s) => ({
+					url: `${url}/flash-sales/${s.slug}`,
+					lastModified: s.updatedAt,
+					changeFrequency: "hourly" as const,
+					priority: 0.85,
+				})),
+			];
+		}
+
+		if (auctions.length > 0) {
+			auctionPages = [
+				{
+					url: `${url}/auctions`,
+					lastModified: new Date(),
+					changeFrequency: "hourly" as const,
+					priority: 0.9,
+				},
+				...auctions.map((a) => ({
+					url: `${url}/auctions/${a.id}`,
+					lastModified: a.updatedAt,
+					changeFrequency: "hourly" as const,
+					priority: 0.85,
+				})),
+			];
+		}
+
+		if (preorderCampaigns.length > 0) {
+			preorderPages = [
+				{
+					url: `${url}/preorders`,
+					lastModified: new Date(),
+					changeFrequency: "daily" as const,
+					priority: 0.8,
+				},
+				...preorderCampaigns.map((c) => ({
+					url: `${url}/preorders/${c.id}`,
+					lastModified: c.updatedAt,
+					changeFrequency: "daily" as const,
+					priority: 0.75,
+				})),
+			];
+		}
 	} catch {
 		// DB not available (e.g., build time without DATABASE_URL) — skip dynamic pages
 	}
 
-	return [...staticPages, ...productPages, ...collectionPages, ...blogPages];
+	return [
+		...staticPages,
+		...productPages,
+		...collectionPages,
+		...blogPages,
+		...flashSalePages,
+		...auctionPages,
+		...preorderPages,
+	];
 }

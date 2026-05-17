@@ -386,6 +386,98 @@ export async function fetchBlogPostSlugsForSitemap(): Promise<SitemapEntry[]> {
 		}));
 }
 
+/**
+ * Fetch active flash sale slugs for the sitemap.
+ */
+export async function fetchFlashSaleSlugsForSitemap(): Promise<SitemapEntry[]> {
+	const moduleId = await getModuleIdByName("flash-sales");
+	if (!moduleId) return [];
+
+	const now = new Date().toISOString();
+	const rows = await db.moduleData.findMany({
+		where: {
+			moduleId,
+			entityType: "flashSale",
+			data: {
+				path: ["status"],
+				equals: "active",
+			},
+		},
+		select: { data: true, updatedAt: true },
+	});
+
+	return rows
+		.filter((r) => {
+			const d = r.data as JsonData | null;
+			if (!d || typeof d.slug !== "string") return false;
+			const endsAt = typeof d.endsAt === "string" ? d.endsAt : null;
+			return !endsAt || endsAt > now;
+		})
+		.map((r) => ({
+			slug: (r.data as JsonData).slug as string,
+			updatedAt: r.updatedAt,
+		}));
+}
+
+/**
+ * Fetch active auction IDs for the sitemap.
+ */
+export async function fetchAuctionIdsForSitemap(): Promise<
+	Array<{ id: string; updatedAt: Date }>
+> {
+	const moduleId = await getModuleIdByName("auctions");
+	if (!moduleId) return [];
+
+	const now = new Date().toISOString();
+	const rows = await db.moduleData.findMany({
+		where: {
+			moduleId,
+			entityType: "auction",
+			data: {
+				path: ["status"],
+				equals: "active",
+			},
+		},
+		select: { entityId: true, updatedAt: true, data: true },
+	});
+
+	return rows
+		.filter((r) => {
+			const d = r.data as JsonData | null;
+			const endsAt = d && typeof d.endsAt === "string" ? d.endsAt : null;
+			return !endsAt || endsAt > now;
+		})
+		.map((r) => ({ id: r.entityId, updatedAt: r.updatedAt }));
+}
+
+/**
+ * Fetch active preorder campaign IDs for the sitemap.
+ */
+export async function fetchPreorderCampaignIdsForSitemap(): Promise<
+	Array<{ id: string; updatedAt: Date }>
+> {
+	const moduleId = await getModuleIdByName("preorders");
+	if (!moduleId) return [];
+
+	const now = new Date().toISOString();
+	const rows = await db.moduleData.findMany({
+		where: {
+			moduleId,
+			entityType: "campaign",
+		},
+		select: { entityId: true, updatedAt: true, data: true },
+	});
+
+	return rows
+		.filter((r) => {
+			const d = r.data as JsonData | null;
+			if (!d) return false;
+			const endDate = typeof d.endDate === "string" ? d.endDate : null;
+			return !endDate || endDate > now;
+		})
+		.map((r) => ({ id: r.entityId, updatedAt: r.updatedAt }));
+}
+
 // ── llms-full.txt content fetchers ──────────────────────────────────────────
 
 export type {
