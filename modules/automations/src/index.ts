@@ -153,6 +153,11 @@ export default function automations(options?: AutomationsOptions): Module {
 				"auction.cancelled",
 				"store-credits.account.frozen",
 				"waitlist.unsubscribed",
+				"warranty.registered",
+				"claim.submitted",
+				"claim.approved",
+				"claim.denied",
+				"claim.resolved",
 			] as const;
 
 			for (const eventName of CROSS_MODULE_EVENTS) {
