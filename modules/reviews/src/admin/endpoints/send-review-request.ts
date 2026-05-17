@@ -36,6 +36,13 @@ export const sendReviewRequest = createAdminEndpoint(
 			customerName: ctx.body.customerName,
 			items: ctx.body.items,
 		});
+		void ctx.context.events?.emit("review.requested", {
+			orderId: request.orderId,
+			orderNumber: request.orderNumber,
+			email: request.email,
+			customerName: request.customerName,
+			items: request.items,
+		});
 		return { request };
 	},
 );
