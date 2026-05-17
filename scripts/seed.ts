@@ -1470,6 +1470,8 @@ async function seedFlashSales(client: pg.PoolClient) {
 			id: saleProductId,
 			flashSaleId: saleId,
 			productId: productIds[productKey],
+			productName: product.name,
+			productSlug: product.slug,
 			salePrice,
 			originalPrice,
 			stockLimit: 20,
