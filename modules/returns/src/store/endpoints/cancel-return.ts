@@ -25,6 +25,15 @@ export const cancelReturn = createStoreEndpoint(
 		}
 
 		const result = await controller.cancel(ctx.params.id);
+		if (result) {
+			void ctx.context.events?.emit("return.cancelled", {
+				returnId: result.id,
+				orderId: result.orderId,
+				orderNumber: result.orderId,
+				email: result.customerEmail ?? "",
+				customerName: "",
+			});
+		}
 		return { return: result };
 	},
 );
