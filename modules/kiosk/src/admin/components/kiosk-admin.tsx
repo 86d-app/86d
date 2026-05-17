@@ -21,7 +21,12 @@ function useKioskAdminApi() {
 
 export function KioskAdmin() {
 	const api = useKioskAdminApi();
-	const { data, isLoading: loading } = api.getStats.useQuery({}) as {
+	const {
+		data,
+		isLoading: loading,
+		isError: statsError,
+		refetch: refetchStats,
+	} = api.getStats.useQuery({}) as {
 		data:
 			| {
 					stats: {
@@ -34,7 +39,29 @@ export function KioskAdmin() {
 			  }
 			| undefined;
 		isLoading: boolean;
+		isError: boolean;
+		refetch: () => void;
 	};
+
+	if (statsError) {
+		return (
+			<div className="rounded-md border border-destructive/50 bg-destructive/10 p-4">
+				<p className="font-semibold text-destructive">
+					Failed to load kiosk stats
+				</p>
+				<p className="mt-1 text-muted-foreground text-sm">
+					Check your connection and try again.
+				</p>
+				<button
+					type="button"
+					onClick={() => refetchStats()}
+					className="mt-3 rounded-md bg-destructive/20 px-3 py-1.5 font-medium text-destructive text-sm transition-colors hover:bg-destructive/30"
+				>
+					Try again
+				</button>
+			</div>
+		);
+	}
 
 	const stats = data?.stats;
 

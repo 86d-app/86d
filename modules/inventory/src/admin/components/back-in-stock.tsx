@@ -63,11 +63,18 @@ export function BackInStockAdmin() {
 		data: { stats: Stats } | undefined;
 	};
 
-	const { data: listData, isLoading } = api.list.useQuery(
+	const {
+		data: listData,
+		isLoading,
+		isError: subsError,
+		refetch: refetchSubs,
+	} = api.list.useQuery(
 		statusFilter ? { status: statusFilter } : undefined,
 	) as {
 		data: { subscriptions: Subscription[] } | undefined;
 		isLoading: boolean;
+		isError: boolean;
+		refetch: () => void;
 	};
 
 	const deleteMutation = api.remove.useMutation({
@@ -79,6 +86,26 @@ export function BackInStockAdmin() {
 			setDeleting(null);
 		},
 	});
+
+	if (subsError) {
+		return (
+			<div className="rounded-md border border-destructive/50 bg-destructive/10 p-4">
+				<p className="font-semibold text-destructive">
+					Failed to load back-in-stock subscriptions
+				</p>
+				<p className="mt-1 text-muted-foreground text-sm">
+					Check your connection and try again.
+				</p>
+				<button
+					type="button"
+					onClick={() => refetchSubs()}
+					className="mt-3 rounded-md bg-destructive/20 px-3 py-1.5 font-medium text-destructive text-sm transition-colors hover:bg-destructive/30"
+				>
+					Try again
+				</button>
+			</div>
+		);
+	}
 
 	function handleDelete(sub: Subscription) {
 		setDeleting(sub.id);

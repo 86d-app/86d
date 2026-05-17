@@ -101,13 +101,20 @@ export function FavorAdmin() {
 		data: { stats: FavorStats } | undefined;
 	};
 
-	const { data: listData, isLoading: listLoading } = api.list.useQuery({
+	const {
+		data: listData,
+		isLoading: listLoading,
+		isError: deliveriesError,
+		refetch: refetchDeliveries,
+	} = api.list.useQuery({
 		take: String(PAGE_SIZE),
 		skip: String(skip),
 		...(statusFilter ? { status: statusFilter } : {}),
 	}) as {
 		data: { deliveries: DeliveryItem[]; total: number } | undefined;
 		isLoading: boolean;
+		isError: boolean;
+		refetch: () => void;
 	};
 
 	const { data: areasData, isLoading: areasLoading } = api.areas.useQuery(
@@ -116,6 +123,26 @@ export function FavorAdmin() {
 		data: { areas: ServiceAreaItem[] } | undefined;
 		isLoading: boolean;
 	};
+
+	if (deliveriesError) {
+		return (
+			<div className="rounded-md border border-destructive/50 bg-destructive/10 p-4">
+				<p className="font-semibold text-destructive">
+					Failed to load deliveries
+				</p>
+				<p className="mt-1 text-muted-foreground text-sm">
+					Check your connection and try again.
+				</p>
+				<button
+					type="button"
+					onClick={() => refetchDeliveries()}
+					className="mt-3 rounded-md bg-destructive/20 px-3 py-1.5 font-medium text-destructive text-sm transition-colors hover:bg-destructive/30"
+				>
+					Try again
+				</button>
+			</div>
+		);
+	}
 
 	const settings = settingsData;
 	const stats = statsData?.stats;
