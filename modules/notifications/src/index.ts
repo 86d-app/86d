@@ -1,6 +1,7 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
 import { createAdminEndpointsWithSettings } from "./admin/endpoints";
 import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
+import { buildAffiliateStatusEmail } from "./emails/affiliate-status";
 import { buildAppointmentStatusEmail } from "./emails/appointment-status";
 import { buildAuctionWonEmail } from "./emails/auction-won";
 import { buildBackInStockEmail } from "./emails/back-in-stock";
@@ -678,6 +679,49 @@ export default function notifications(options?: NotificationsOptions): Module {
 								tags: [
 									{ name: "type", value: `appointment_${status}` },
 									{ name: "appointment_id", value: p.appointmentId },
+								],
+							})
+							.catch(() => {});
+					},
+				);
+			}
+
+			// ── Affiliate notifications ──────────────────────────────────────
+			interface AffiliateEventPayload {
+				affiliateId: string;
+				email?: string | undefined;
+				name?: string | undefined;
+				customerId?: string | undefined;
+			}
+
+			const affiliateStatuses = [
+				"application_submitted",
+				"approved",
+				"rejected",
+			] as const;
+
+			for (const status of affiliateStatuses) {
+				ctx.events?.on<AffiliateEventPayload>(
+					`affiliates.${status}`,
+					async (event) => {
+						const p = event.payload;
+						if (!p || !emailProvider || !p.email) return;
+
+						const emailStatus =
+							status === "application_submitted" ? "submitted" : status;
+						const { subject, html, text } = buildAffiliateStatusEmail({
+							status: emailStatus,
+							name: p.name ?? "there",
+						});
+						await emailProvider
+							.sendEmail({
+								to: p.email,
+								subject,
+								html,
+								text,
+								tags: [
+									{ name: "type", value: `affiliate_${status}` },
+									{ name: "affiliate_id", value: p.affiliateId },
 								],
 							})
 							.catch(() => {});
