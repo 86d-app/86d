@@ -86,6 +86,59 @@ export default function search(options?: SearchOptions): Module {
 				embeddingProvider,
 				meiliProvider,
 			);
+
+			ctx.events?.on("product.created", async (event) => {
+				const p = event.payload as {
+					productId: string;
+					name: string;
+					slug: string;
+					price?: number;
+					status?: string;
+				};
+				if (p.status && p.status !== "active") return;
+				await controller
+					.indexItem({
+						entityType: "product",
+						entityId: p.productId,
+						title: p.name,
+						url: `/products/${p.slug}`,
+						metadata: { price: p.price, status: p.status },
+					})
+					.catch(() => {});
+			});
+
+			ctx.events?.on("product.updated", async (event) => {
+				const p = event.payload as {
+					productId: string;
+					name: string;
+					slug: string;
+					price?: number;
+					status?: string;
+				};
+				if (p.status && p.status !== "active") {
+					await controller
+						.removeFromIndex("product", p.productId)
+						.catch(() => {});
+					return;
+				}
+				await controller
+					.indexItem({
+						entityType: "product",
+						entityId: p.productId,
+						title: p.name,
+						url: `/products/${p.slug}`,
+						metadata: { price: p.price, status: p.status },
+					})
+					.catch(() => {});
+			});
+
+			ctx.events?.on("product.deleted", async (event) => {
+				const p = event.payload as { productId: string };
+				await controller
+					.removeFromIndex("product", p.productId)
+					.catch(() => {});
+			});
+
 			return { controllers: { search: controller } };
 		},
 		search: { store: "/search/store-search" },
