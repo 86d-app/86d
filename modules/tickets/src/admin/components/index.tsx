@@ -98,7 +98,7 @@ const STATUS_COLORS: Record<string, string> = {
 		"bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400",
 	resolved:
 		"bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-	closed: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400",
+	closed: "bg-muted text-muted-foreground",
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -110,7 +110,7 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const PRIORITY_COLORS: Record<string, string> = {
-	low: "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400",
+	low: "bg-muted text-muted-foreground",
 	normal: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
 	high: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
 	urgent: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
@@ -234,7 +234,7 @@ export function TicketList() {
 						<p className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
 							Closed
 						</p>
-						<p className="mt-1 font-bold text-2xl text-gray-600">
+						<p className="mt-1 font-bold text-2xl text-muted-foreground">
 							{stats.closed}
 						</p>
 					</div>
@@ -598,7 +598,7 @@ export function TicketDetail({ params }: { params: { id: string } }) {
 													msg.authorType === "admin"
 														? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400"
 														: msg.authorType === "system"
-															? "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400"
+															? "bg-muted text-muted-foreground"
 															: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
 												}`}
 											>
@@ -972,7 +972,7 @@ export function TicketCategories() {
 											className={`inline-flex items-center rounded-full px-2 py-0.5 font-medium text-xs ${
 												cat.isActive
 													? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-													: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400"
+													: "bg-muted text-muted-foreground"
 											}`}
 										>
 											{cat.isActive ? "Active" : "Inactive"}
