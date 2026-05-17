@@ -19,6 +19,11 @@ export const denyClaim = createAdminEndpoint(
 		if (!claim) {
 			return { error: "Claim not found", status: 404 };
 		}
+		void ctx.context.events?.emit("claim.denied", {
+			claimId: claim.id,
+			customerId: claim.customerId,
+			warrantyRegistrationId: claim.warrantyRegistrationId,
+		});
 		return { claim };
 	},
 );

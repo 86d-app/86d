@@ -18,6 +18,12 @@ export const registerWarranty = createAdminEndpoint(
 	async (ctx) => {
 		const controller = ctx.context.controllers.warranties as WarrantyController;
 		const registration = await controller.register(ctx.body);
+		void ctx.context.events?.emit("warranty.registered", {
+			registrationId: registration.id,
+			customerId: registration.customerId,
+			productId: registration.productId,
+			warrantyPlanId: registration.warrantyPlanId,
+		});
 		return { registration };
 	},
 );

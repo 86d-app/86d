@@ -33,6 +33,12 @@ export const submitClaim = createStoreEndpoint(
 			issueDescription: ctx.body.issueDescription,
 		});
 
+		void ctx.context.events?.emit("claim.submitted", {
+			claimId: claim.id,
+			customerId: userId,
+			warrantyRegistrationId: claim.warrantyRegistrationId,
+			issueType: claim.issueType,
+		});
 		return { claim };
 	},
 );

@@ -21,6 +21,12 @@ export const approveClaim = createAdminEndpoint(
 		if (!claim) {
 			return { error: "Claim not found", status: 404 };
 		}
+		void ctx.context.events?.emit("claim.approved", {
+			claimId: claim.id,
+			customerId: claim.customerId,
+			warrantyRegistrationId: claim.warrantyRegistrationId,
+			resolution: ctx.body.resolution,
+		});
 		return { claim };
 	},
 );
