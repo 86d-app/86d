@@ -44,6 +44,13 @@ export const markReceived = createAdminEndpoint(
 			}
 		}
 
+		void ctx.context.events?.emit("return.received", {
+			returnId: result.id,
+			orderId: result.orderId,
+			orderNumber: result.orderId,
+			email: result.customerEmail ?? "",
+			customerName: "",
+		});
 		return { return: result };
 	},
 );
