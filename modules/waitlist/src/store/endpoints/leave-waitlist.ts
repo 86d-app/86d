@@ -20,6 +20,13 @@ export const leaveWaitlist = createStoreEndpoint(
 			session.user.email,
 			ctx.body.productId,
 		);
+		if (cancelled) {
+			void ctx.context.events?.emit("waitlist.unsubscribed", {
+				productId: ctx.body.productId,
+				email: session.user.email,
+				customerId: session.user.id,
+			});
+		}
 		return { cancelled };
 	},
 );

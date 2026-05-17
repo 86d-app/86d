@@ -13,6 +13,10 @@ export const notifyWaitlist = createAdminEndpoint(
 	async (ctx) => {
 		const controller = ctx.context.controllers.waitlist as WaitlistController;
 		const notifiedCount = await controller.markNotified(ctx.params.productId);
+		void ctx.context.events?.emit("waitlist.notified", {
+			productId: ctx.params.productId,
+			notifiedCount,
+		});
 		return { notifiedCount };
 	},
 );

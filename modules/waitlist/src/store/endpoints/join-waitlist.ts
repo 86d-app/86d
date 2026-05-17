@@ -23,6 +23,12 @@ export const joinWaitlist = createStoreEndpoint(
 			email: ctx.body.email,
 			customerId: ctx.context.session?.user?.id,
 		});
+		void ctx.context.events?.emit("waitlist.subscribed", {
+			entryId: entry.id,
+			productId: entry.productId,
+			email: entry.email,
+			customerId: entry.customerId,
+		});
 		return { entry };
 	},
 );
