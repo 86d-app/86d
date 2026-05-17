@@ -15,6 +15,10 @@ export const completeCampaign = createAdminEndpoint(
 		if (!campaign) {
 			return { error: "Cannot complete campaign", campaign: null };
 		}
+		void ctx.context.events?.emit("preorder.campaign.completed", {
+			campaignId: campaign.id,
+			productId: campaign.productId,
+		});
 		return { campaign };
 	},
 );

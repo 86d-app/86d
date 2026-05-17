@@ -15,6 +15,10 @@ export const activateCampaign = createAdminEndpoint(
 		if (!campaign) {
 			return { error: "Cannot activate campaign", campaign: null };
 		}
+		void ctx.context.events?.emit("preorder.campaign.activated", {
+			campaignId: campaign.id,
+			productId: campaign.productId,
+		});
 		return { campaign };
 	},
 );

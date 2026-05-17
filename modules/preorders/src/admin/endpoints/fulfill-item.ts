@@ -21,6 +21,11 @@ export const fulfillItem = createAdminEndpoint(
 		if (!item) {
 			return { error: "Cannot fulfill preorder", item: null };
 		}
+		void ctx.context.events?.emit("preorder.fulfilled", {
+			preorderItemId: item.id,
+			customerId: item.customerId,
+			orderId: item.orderId ?? ctx.body.orderId,
+		});
 		return { item };
 	},
 );
