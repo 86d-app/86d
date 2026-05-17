@@ -142,7 +142,7 @@ const TYPE_COLORS: Record<string, string> = {
 		"bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400",
 	purchase:
 		"bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-	search: "bg-gray-100 text-gray-600 dark:bg-gray-900/30 dark:text-gray-400",
+	search: "bg-muted text-muted-foreground",
 };
 
 const FUNNEL_LABELS: Record<string, string> = {
@@ -202,9 +202,7 @@ function useAnalyticsAdminApi() {
 // ── Shared Components ────────────────────────────────────────────────────────
 
 function EventTypeBadge({ type }: { type: string }) {
-	const cls =
-		TYPE_COLORS[type] ??
-		"bg-gray-100 text-gray-600 dark:bg-gray-900/30 dark:text-gray-400";
+	const cls = TYPE_COLORS[type] ?? "bg-muted text-muted-foreground";
 	return (
 		<span
 			className={`inline-block rounded px-2 py-0.5 font-medium text-xs ${cls}`}
@@ -226,10 +224,10 @@ function StatCard({
 	change?: { text: string; positive: boolean } | null | undefined;
 }) {
 	return (
-		<div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-			<p className="text-gray-500 text-sm dark:text-gray-400">{label}</p>
+		<div className="rounded-lg border border-border bg-card p-4">
+			<p className="text-muted-foreground text-sm">{label}</p>
 			<div className="mt-1 flex items-baseline gap-2">
-				<p className="font-semibold text-2xl text-gray-900 dark:text-white">
+				<p className="font-semibold text-2xl text-foreground">
 					{typeof value === "number" ? value.toLocaleString() : value}
 				</p>
 				{change && (
@@ -240,16 +238,14 @@ function StatCard({
 					</span>
 				)}
 			</div>
-			{sub && (
-				<p className="mt-0.5 text-gray-400 text-xs dark:text-gray-500">{sub}</p>
-			)}
+			{sub && <p className="mt-0.5 text-muted-foreground text-xs">{sub}</p>}
 		</div>
 	);
 }
 
 function LoadingState() {
 	return (
-		<div className="flex justify-center py-12 text-gray-400">
+		<div className="flex justify-center py-12 text-muted-foreground">
 			Loading&hellip;
 		</div>
 	);
@@ -257,7 +253,7 @@ function LoadingState() {
 
 function EmptyState({ message }: { message: string }) {
 	return (
-		<div className="rounded-lg border border-gray-200 bg-white py-12 text-center text-gray-400 text-sm dark:border-gray-700 dark:bg-gray-800">
+		<div className="rounded-lg border border-border bg-card py-12 text-center text-muted-foreground text-sm">
 			{message}
 		</div>
 	);
@@ -271,9 +267,9 @@ function ChartCard({
 	children: React.ReactNode;
 }) {
 	return (
-		<div className="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-			<div className="border-gray-200 border-b px-4 py-3 dark:border-gray-700">
-				<h2 className="font-medium text-gray-900 dark:text-white">{title}</h2>
+		<div className="rounded-lg border border-border bg-card">
+			<div className="border-border border-b px-4 py-3">
+				<h2 className="font-medium text-foreground">{title}</h2>
 			</div>
 			<div className="p-4">{children}</div>
 		</div>
@@ -288,11 +284,9 @@ function ChartTooltipBase({
 }: ChartTooltipProps) {
 	if (!active || !payload?.length) return null;
 	return (
-		<div className="rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-lg dark:border-gray-700 dark:bg-gray-800">
+		<div className="rounded-lg border border-border bg-card px-3 py-2 shadow-lg">
 			{label && (
-				<p className="mb-1 font-medium text-gray-900 text-xs dark:text-white">
-					{label}
-				</p>
+				<p className="mb-1 font-medium text-foreground text-xs">{label}</p>
 			)}
 			{payload.map((entry) => (
 				<div
@@ -303,10 +297,8 @@ function ChartTooltipBase({
 						className="inline-block h-2 w-2 rounded-full"
 						style={{ backgroundColor: entry.color }}
 					/>
-					<span className="text-gray-500 dark:text-gray-400">
-						{entry.name}:
-					</span>
-					<span className="font-medium text-gray-900 dark:text-white">
+					<span className="text-muted-foreground">{entry.name}:</span>
+					<span className="font-medium text-foreground">
 						{formatter ? formatter(entry.value) : entry.value?.toLocaleString()}
 					</span>
 				</div>
@@ -404,7 +396,7 @@ function OverviewTab({
 									/>
 									<Legend
 										formatter={(value: string) => (
-											<span className="text-gray-600 text-xs dark:text-gray-400">
+											<span className="text-muted-foreground text-xs">
 												{value}
 											</span>
 										)}
@@ -606,7 +598,7 @@ function RevenueTab({
 								<Tooltip content={<RevenueTooltip />} />
 								<Legend
 									formatter={(value: string) => (
-										<span className="text-gray-600 text-xs dark:text-gray-400">
+										<span className="text-muted-foreground text-xs">
 											{value}
 										</span>
 									)}
@@ -670,42 +662,37 @@ function RevenueTab({
 					</div>
 					<div className="mt-4 overflow-x-auto">
 						<table className="w-full text-sm">
-							<thead className="border-gray-200 border-b bg-gray-50 text-left dark:border-gray-700 dark:bg-gray-800/50">
+							<thead className="border-border border-b bg-muted/30 text-left">
 								<tr>
-									<th className="px-4 py-2 font-medium text-gray-600 dark:text-gray-400">
+									<th className="px-4 py-2 font-medium text-muted-foreground">
 										#
 									</th>
-									<th className="px-4 py-2 font-medium text-gray-600 dark:text-gray-400">
+									<th className="px-4 py-2 font-medium text-muted-foreground">
 										Product ID
 									</th>
-									<th className="px-4 py-2 font-medium text-gray-600 dark:text-gray-400">
+									<th className="px-4 py-2 font-medium text-muted-foreground">
 										Revenue
 									</th>
-									<th className="px-4 py-2 font-medium text-gray-600 dark:text-gray-400">
+									<th className="px-4 py-2 font-medium text-muted-foreground">
 										Orders
 									</th>
-									<th className="px-4 py-2 font-medium text-gray-600 dark:text-gray-400">
+									<th className="px-4 py-2 font-medium text-muted-foreground">
 										AOV
 									</th>
 								</tr>
 							</thead>
-							<tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+							<tbody className="divide-y divide-border">
 								{salesProducts.map((p, i) => (
-									<tr
-										key={p.productId}
-										className="hover:bg-gray-50 dark:hover:bg-gray-700/30"
-									>
-										<td className="px-4 py-2 text-gray-400">{i + 1}</td>
-										<td className="px-4 py-2 font-mono text-gray-700 text-xs dark:text-gray-300">
+									<tr key={p.productId} className="hover:bg-muted/30">
+										<td className="px-4 py-2 text-muted-foreground">{i + 1}</td>
+										<td className="px-4 py-2 font-mono text-foreground/70 text-xs">
 											{p.productId}
 										</td>
 										<td className="px-4 py-2 font-medium text-green-600 dark:text-green-400">
 											{formatCurrency(p.revenue)}
 										</td>
-										<td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-											{p.orders}
-										</td>
-										<td className="px-4 py-2 text-gray-500 dark:text-gray-400">
+										<td className="px-4 py-2 text-foreground/70">{p.orders}</td>
+										<td className="px-4 py-2 text-muted-foreground">
 											{formatCurrency(p.averageValue)}
 										</td>
 									</tr>
@@ -722,20 +709,16 @@ function RevenueTab({
 function RevenueTooltip({ active, payload, label }: ChartTooltipProps) {
 	if (!active || !payload?.length) return null;
 	return (
-		<div className="rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-lg dark:border-gray-700 dark:bg-gray-800">
-			<p className="mb-1 font-medium text-gray-900 text-xs dark:text-white">
-				{label}
-			</p>
+		<div className="rounded-lg border border-border bg-card px-3 py-2 shadow-lg">
+			<p className="mb-1 font-medium text-foreground text-xs">{label}</p>
 			{payload.map((entry) => (
 				<div key={entry.dataKey} className="flex items-center gap-2 text-xs">
 					<span
 						className="inline-block h-2 w-2 rounded-full"
 						style={{ backgroundColor: entry.color }}
 					/>
-					<span className="text-gray-500 dark:text-gray-400">
-						{entry.name}:
-					</span>
-					<span className="font-medium text-gray-900 dark:text-white">
+					<span className="text-muted-foreground">{entry.name}:</span>
+					<span className="font-medium text-foreground">
 						{entry.dataKey === "revenue"
 							? formatCurrency(
 									typeof entry.value === "number" ? entry.value : 0,
@@ -835,40 +818,37 @@ function FunnelTab({ since }: { since: string | undefined }) {
 			<ChartCard title="Step-by-Step Drop-off">
 				<div className="overflow-x-auto">
 					<table className="w-full text-sm">
-						<thead className="border-gray-200 border-b bg-gray-50 text-left dark:border-gray-700 dark:bg-gray-800/50">
+						<thead className="border-border border-b bg-muted/30 text-left">
 							<tr>
-								<th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">
+								<th className="px-4 py-3 font-medium text-muted-foreground">
 									Step
 								</th>
-								<th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">
+								<th className="px-4 py-3 font-medium text-muted-foreground">
 									Sessions
 								</th>
-								<th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">
+								<th className="px-4 py-3 font-medium text-muted-foreground">
 									From Top
 								</th>
-								<th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">
+								<th className="px-4 py-3 font-medium text-muted-foreground">
 									Drop-off
 								</th>
 							</tr>
 						</thead>
-						<tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+						<tbody className="divide-y divide-border">
 							{funnel.map((step, i) => {
 								const prev = i > 0 ? funnel[i - 1].count : step.count;
 								const dropped = prev - step.count;
 								const dropPct =
 									prev > 0 && i > 0 ? ((dropped / prev) * 100).toFixed(1) : "—";
 								return (
-									<tr
-										key={step.step}
-										className="hover:bg-gray-50 dark:hover:bg-gray-700/30"
-									>
-										<td className="px-4 py-3 font-medium text-gray-900 dark:text-white">
+									<tr key={step.step} className="hover:bg-muted/30">
+										<td className="px-4 py-3 font-medium text-foreground">
 											{FUNNEL_LABELS[step.step] ?? step.step}
 										</td>
-										<td className="px-4 py-3 text-gray-700 dark:text-gray-300">
+										<td className="px-4 py-3 text-foreground/70">
 											{step.count.toLocaleString()}
 										</td>
-										<td className="px-4 py-3 text-gray-500 dark:text-gray-400">
+										<td className="px-4 py-3 text-muted-foreground">
 											{step.rate}%
 										</td>
 										<td className="px-4 py-3">
@@ -877,7 +857,7 @@ function FunnelTab({ since }: { since: string | undefined }) {
 													-{dropped.toLocaleString()} ({dropPct}%)
 												</span>
 											) : (
-												<span className="text-gray-400">{"—"}</span>
+												<span className="text-muted-foreground">{"—"}</span>
 											)}
 										</td>
 									</tr>
@@ -907,15 +887,15 @@ function FunnelTooltip({
 		(s: FunnelStep) => (FUNNEL_LABELS[s.step] ?? s.step) === label,
 	);
 	return (
-		<div className="rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-lg dark:border-gray-700 dark:bg-gray-800">
-			<p className="mb-1 font-medium text-gray-900 text-xs dark:text-white">
-				{label}
-			</p>
-			<p className="text-gray-600 text-xs dark:text-gray-300">
+		<div className="rounded-lg border border-border bg-card px-3 py-2 shadow-lg">
+			<p className="mb-1 font-medium text-foreground text-xs">{label}</p>
+			<p className="text-muted-foreground text-xs">
 				{payload[0].value.toLocaleString()} sessions
 			</p>
 			{step && (
-				<p className="text-gray-400 text-xs">{step.rate}% from top of funnel</p>
+				<p className="text-muted-foreground text-xs">
+					{step.rate}% from top of funnel
+				</p>
 			)}
 		</div>
 	);
@@ -955,63 +935,66 @@ function EventsTab({ since }: { since: string | undefined }) {
 						setTypeFilter(e.target.value);
 						setPage(1);
 					}}
-					className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+					className="rounded-md border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-foreground"
 				/>
 			</div>
 
-			<div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+			<div className="overflow-x-auto rounded-lg border border-border">
 				<table className="w-full text-sm">
-					<thead className="border-gray-200 border-b bg-gray-50 text-left dark:border-gray-700 dark:bg-gray-800/50">
+					<thead className="border-border border-b bg-muted/30 text-left">
 						<tr>
-							<th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">
+							<th className="px-4 py-3 font-medium text-muted-foreground">
 								Type
 							</th>
-							<th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">
+							<th className="px-4 py-3 font-medium text-muted-foreground">
 								Product
 							</th>
-							<th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">
+							<th className="px-4 py-3 font-medium text-muted-foreground">
 								Session
 							</th>
-							<th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">
+							<th className="px-4 py-3 font-medium text-muted-foreground">
 								Value
 							</th>
-							<th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">
+							<th className="px-4 py-3 font-medium text-muted-foreground">
 								Time
 							</th>
 						</tr>
 					</thead>
-					<tbody className="divide-y divide-gray-100 bg-white dark:divide-gray-700 dark:bg-gray-800">
+					<tbody className="divide-y divide-border bg-card">
 						{isLoading ? (
 							<tr>
-								<td colSpan={5} className="py-12 text-center text-gray-400">
+								<td
+									colSpan={5}
+									className="py-12 text-center text-muted-foreground"
+								>
 									Loading&hellip;
 								</td>
 							</tr>
 						) : events.length === 0 ? (
 							<tr>
-								<td colSpan={5} className="py-12 text-center text-gray-400">
+								<td
+									colSpan={5}
+									className="py-12 text-center text-muted-foreground"
+								>
 									No events found.
 								</td>
 							</tr>
 						) : (
 							events.map((ev) => (
-								<tr
-									key={ev.id}
-									className="hover:bg-gray-50 dark:hover:bg-gray-700/30"
-								>
+								<tr key={ev.id} className="hover:bg-muted/30">
 									<td className="px-4 py-3">
 										<EventTypeBadge type={ev.type} />
 									</td>
-									<td className="px-4 py-3 font-mono text-gray-500 text-xs dark:text-gray-400">
+									<td className="px-4 py-3 font-mono text-muted-foreground text-xs">
 										{ev.productId ? `${ev.productId.slice(0, 12)}…` : "—"}
 									</td>
-									<td className="px-4 py-3 font-mono text-gray-500 text-xs dark:text-gray-400">
+									<td className="px-4 py-3 font-mono text-muted-foreground text-xs">
 										{ev.sessionId ? `${ev.sessionId.slice(0, 10)}…` : "—"}
 									</td>
-									<td className="px-4 py-3 text-gray-700 dark:text-gray-300">
+									<td className="px-4 py-3 text-foreground/70">
 										{ev.value != null ? formatCurrency(ev.value) : "—"}
 									</td>
-									<td className="px-4 py-3 text-gray-500 dark:text-gray-400">
+									<td className="px-4 py-3 text-muted-foreground">
 										{timeAgo(ev.createdAt)}
 									</td>
 								</tr>
@@ -1022,7 +1005,7 @@ function EventsTab({ since }: { since: string | undefined }) {
 			</div>
 
 			{events.length > 0 && (
-				<div className="flex items-center justify-between text-gray-500 text-sm">
+				<div className="flex items-center justify-between text-muted-foreground text-sm">
 					<span>
 						Page {page} &middot; {events.length} events
 					</span>
@@ -1031,7 +1014,7 @@ function EventsTab({ since }: { since: string | undefined }) {
 							type="button"
 							onClick={() => setPage((p) => Math.max(1, p - 1))}
 							disabled={page === 1}
-							className="rounded border px-3 py-1 hover:bg-gray-50 disabled:opacity-40 dark:border-gray-700 dark:hover:bg-gray-700"
+							className="rounded border px-3 py-1 hover:bg-muted/30 disabled:opacity-40"
 						>
 							&larr; Prev
 						</button>
@@ -1039,7 +1022,7 @@ function EventsTab({ since }: { since: string | undefined }) {
 							type="button"
 							onClick={() => setPage((p) => p + 1)}
 							disabled={events.length < 50}
-							className="rounded border px-3 py-1 hover:bg-gray-50 disabled:opacity-40 dark:border-gray-700 dark:hover:bg-gray-700"
+							className="rounded border px-3 py-1 hover:bg-muted/30 disabled:opacity-40"
 						>
 							Next &rarr;
 						</button>
@@ -1086,9 +1069,7 @@ function TopProductsTab({
 							<Tooltip content={<TopProductsTooltip />} />
 							<Legend
 								formatter={(value: string) => (
-									<span className="text-gray-600 text-xs dark:text-gray-400">
-										{value}
-									</span>
+									<span className="text-muted-foreground text-xs">{value}</span>
 								)}
 							/>
 							<Bar
@@ -1109,51 +1090,44 @@ function TopProductsTab({
 			</ChartCard>
 
 			{/* Detailed table */}
-			<div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+			<div className="overflow-x-auto rounded-lg border border-border">
 				<table className="w-full text-sm">
-					<thead className="border-gray-200 border-b bg-gray-50 text-left dark:border-gray-700 dark:bg-gray-800/50">
+					<thead className="border-border border-b bg-muted/30 text-left">
 						<tr>
-							<th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">
-								#
-							</th>
-							<th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">
+							<th className="px-4 py-3 font-medium text-muted-foreground">#</th>
+							<th className="px-4 py-3 font-medium text-muted-foreground">
 								Product ID
 							</th>
-							<th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">
+							<th className="px-4 py-3 font-medium text-muted-foreground">
 								Views
 							</th>
-							<th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">
+							<th className="px-4 py-3 font-medium text-muted-foreground">
 								Purchases
 							</th>
-							<th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">
+							<th className="px-4 py-3 font-medium text-muted-foreground">
 								Conversion
 							</th>
 						</tr>
 					</thead>
-					<tbody className="divide-y divide-gray-100 bg-white dark:divide-gray-700 dark:bg-gray-800">
+					<tbody className="divide-y divide-border bg-card">
 						{topProducts.map((p, i) => {
 							const conv =
 								p.views > 0
 									? `${((p.purchases / p.views) * 100).toFixed(1)}%`
 									: "—";
 							return (
-								<tr
-									key={p.productId}
-									className="hover:bg-gray-50 dark:hover:bg-gray-700/30"
-								>
-									<td className="px-4 py-3 text-gray-400">{i + 1}</td>
-									<td className="px-4 py-3 font-mono text-gray-700 text-xs dark:text-gray-300">
+								<tr key={p.productId} className="hover:bg-muted/30">
+									<td className="px-4 py-3 text-muted-foreground">{i + 1}</td>
+									<td className="px-4 py-3 font-mono text-foreground/70 text-xs">
 										{p.productId}
 									</td>
-									<td className="px-4 py-3 font-medium text-gray-900 dark:text-white">
+									<td className="px-4 py-3 font-medium text-foreground">
 										{p.views.toLocaleString()}
 									</td>
 									<td className="px-4 py-3 font-medium text-green-600 dark:text-green-400">
 										{p.purchases.toLocaleString()}
 									</td>
-									<td className="px-4 py-3 text-gray-500 dark:text-gray-400">
-										{conv}
-									</td>
+									<td className="px-4 py-3 text-muted-foreground">{conv}</td>
 								</tr>
 							);
 						})}
@@ -1168,8 +1142,8 @@ function TopProductsTooltip({ active, payload, label }: ChartTooltipProps) {
 	if (!active || !payload?.length) return null;
 	const item = payload[0]?.payload;
 	return (
-		<div className="rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-lg dark:border-gray-700 dark:bg-gray-800">
-			<p className="mb-1 font-medium font-mono text-gray-900 text-xs dark:text-white">
+		<div className="rounded-lg border border-border bg-card px-3 py-2 shadow-lg">
+			<p className="mb-1 font-medium font-mono text-foreground text-xs">
 				{(item?.fullId as string | undefined) ?? label}
 			</p>
 			{payload.map((entry) => (
@@ -1178,10 +1152,8 @@ function TopProductsTooltip({ active, payload, label }: ChartTooltipProps) {
 						className="inline-block h-2 w-2 rounded-full"
 						style={{ backgroundColor: entry.color }}
 					/>
-					<span className="text-gray-500 dark:text-gray-400">
-						{entry.name}:
-					</span>
-					<span className="font-medium text-gray-900 dark:text-white">
+					<span className="text-muted-foreground">{entry.name}:</span>
+					<span className="font-medium text-foreground">
 						{typeof entry.value === "number"
 							? entry.value.toLocaleString()
 							: (entry.value ?? "")}
@@ -1189,7 +1161,7 @@ function TopProductsTooltip({ active, payload, label }: ChartTooltipProps) {
 				</div>
 			))}
 			{item && typeof item.views === "number" && item.views > 0 && (
-				<p className="mt-1 text-gray-400 text-xs">
+				<p className="mt-1 text-muted-foreground text-xs">
 					Conversion: {((Number(item.purchases) / item.views) * 100).toFixed(1)}
 					%
 				</p>
@@ -1283,36 +1255,33 @@ function SearchTab({
 				<ChartCard title="Top Search Queries">
 					<div className="overflow-x-auto">
 						<table className="w-full text-sm">
-							<thead className="border-gray-200 border-b bg-gray-50 text-left dark:border-gray-700 dark:bg-gray-800/50">
+							<thead className="border-border border-b bg-muted/30 text-left">
 								<tr>
-									<th className="px-4 py-2 font-medium text-gray-600 dark:text-gray-400">
+									<th className="px-4 py-2 font-medium text-muted-foreground">
 										#
 									</th>
-									<th className="px-4 py-2 font-medium text-gray-600 dark:text-gray-400">
+									<th className="px-4 py-2 font-medium text-muted-foreground">
 										Query
 									</th>
-									<th className="px-4 py-2 font-medium text-gray-600 dark:text-gray-400">
+									<th className="px-4 py-2 font-medium text-muted-foreground">
 										Searches
 									</th>
-									<th className="px-4 py-2 font-medium text-gray-600 dark:text-gray-400">
+									<th className="px-4 py-2 font-medium text-muted-foreground">
 										Avg. Results
 									</th>
-									<th className="px-4 py-2 font-medium text-gray-600 dark:text-gray-400">
+									<th className="px-4 py-2 font-medium text-muted-foreground">
 										Last Searched
 									</th>
 								</tr>
 							</thead>
-							<tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+							<tbody className="divide-y divide-border">
 								{analytics.topQueries.map((q, i) => (
-									<tr
-										key={q.query}
-										className="hover:bg-gray-50 dark:hover:bg-gray-700/30"
-									>
-										<td className="px-4 py-2 text-gray-400">{i + 1}</td>
-										<td className="px-4 py-2 font-medium text-gray-900 dark:text-white">
+									<tr key={q.query} className="hover:bg-muted/30">
+										<td className="px-4 py-2 text-muted-foreground">{i + 1}</td>
+										<td className="px-4 py-2 font-medium text-foreground">
 											{q.query}
 										</td>
-										<td className="px-4 py-2 text-gray-700 dark:text-gray-300">
+										<td className="px-4 py-2 text-foreground/70">
 											{q.count.toLocaleString()}
 										</td>
 										<td className="px-4 py-2">
@@ -1321,12 +1290,12 @@ function SearchTab({
 													0
 												</span>
 											) : (
-												<span className="text-gray-700 dark:text-gray-300">
+												<span className="text-foreground/70">
 													{q.avgResultCount.toLocaleString()}
 												</span>
 											)}
 										</td>
-										<td className="px-4 py-2 text-gray-500 dark:text-gray-400">
+										<td className="px-4 py-2 text-muted-foreground">
 											{timeAgo(q.lastSearchedAt)}
 										</td>
 									</tr>
@@ -1340,38 +1309,35 @@ function SearchTab({
 			{/* Zero-result queries */}
 			{analytics.zeroResultQueries.length > 0 && (
 				<ChartCard title="Zero-Result Queries">
-					<p className="mb-3 text-gray-500 text-xs dark:text-gray-400">
+					<p className="mb-3 text-muted-foreground text-xs">
 						Customers searched for these terms but found nothing. Consider
 						adding products or adjusting tags to match these queries.
 					</p>
 					<div className="overflow-x-auto">
 						<table className="w-full text-sm">
-							<thead className="border-gray-200 border-b bg-gray-50 text-left dark:border-gray-700 dark:bg-gray-800/50">
+							<thead className="border-border border-b bg-muted/30 text-left">
 								<tr>
-									<th className="px-4 py-2 font-medium text-gray-600 dark:text-gray-400">
+									<th className="px-4 py-2 font-medium text-muted-foreground">
 										Query
 									</th>
-									<th className="px-4 py-2 font-medium text-gray-600 dark:text-gray-400">
+									<th className="px-4 py-2 font-medium text-muted-foreground">
 										Searches
 									</th>
-									<th className="px-4 py-2 font-medium text-gray-600 dark:text-gray-400">
+									<th className="px-4 py-2 font-medium text-muted-foreground">
 										Last Searched
 									</th>
 								</tr>
 							</thead>
-							<tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+							<tbody className="divide-y divide-border">
 								{analytics.zeroResultQueries.map((q) => (
-									<tr
-										key={q.query}
-										className="hover:bg-gray-50 dark:hover:bg-gray-700/30"
-									>
-										<td className="px-4 py-2 font-medium text-gray-900 dark:text-white">
+									<tr key={q.query} className="hover:bg-muted/30">
+										<td className="px-4 py-2 font-medium text-foreground">
 											{q.query}
 										</td>
-										<td className="px-4 py-2 text-gray-700 dark:text-gray-300">
+										<td className="px-4 py-2 text-foreground/70">
 											{q.count.toLocaleString()}
 										</td>
-										<td className="px-4 py-2 text-gray-500 dark:text-gray-400">
+										<td className="px-4 py-2 text-muted-foreground">
 											{timeAgo(q.lastSearchedAt)}
 										</td>
 									</tr>

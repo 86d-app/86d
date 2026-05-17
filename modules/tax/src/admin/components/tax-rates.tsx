@@ -71,7 +71,7 @@ function TaxJarStatus({ settings }: { settings: TaxSettings | undefined }) {
 			? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
 			: settings.status === "error"
 				? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-				: "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400";
+				: "bg-muted text-muted-foreground";
 
 	const statusLabel =
 		settings.status === "connected"
@@ -199,7 +199,7 @@ function CreateRateForm({
 			<button
 				type="button"
 				onClick={() => setOpen(true)}
-				className="rounded-md bg-neutral-900 px-3 py-2 font-medium text-sm text-white transition-colors hover:bg-neutral-800"
+				className="rounded-md bg-foreground px-3 py-2 font-medium text-background text-sm transition-colors hover:opacity-90"
 			>
 				Add Tax Rate
 			</button>
@@ -209,7 +209,7 @@ function CreateRateForm({
 	return (
 		<form
 			onSubmit={handleSubmit}
-			className="space-y-3 rounded-lg border border-neutral-200 bg-white p-4"
+			className="space-y-3 rounded-lg border border-border bg-card p-4"
 		>
 			{createMutation.isError && (
 				<p className="text-red-600 text-sm" role="alert">
@@ -220,7 +220,7 @@ function CreateRateForm({
 				<div>
 					<label
 						htmlFor="tax-name"
-						className="mb-1 block font-medium text-neutral-500 text-xs"
+						className="mb-1 block font-medium text-muted-foreground text-xs"
 					>
 						Name
 					</label>
@@ -229,13 +229,13 @@ function CreateRateForm({
 						name="name"
 						required
 						placeholder="e.g. California Sales Tax"
-						className="w-full rounded-md border border-neutral-200 px-3 py-1.5 text-sm"
+						className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm"
 					/>
 				</div>
 				<div>
 					<label
 						htmlFor="tax-country"
-						className="mb-1 block font-medium text-neutral-500 text-xs"
+						className="mb-1 block font-medium text-muted-foreground text-xs"
 					>
 						Country
 					</label>
@@ -243,7 +243,7 @@ function CreateRateForm({
 						id="tax-country"
 						name="country"
 						required
-						className="w-full rounded-md border border-neutral-200 px-3 py-1.5 text-sm"
+						className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm"
 					>
 						{COMMON_COUNTRIES.map((c) => (
 							<option key={c.code} value={c.code}>
@@ -255,7 +255,7 @@ function CreateRateForm({
 				<div>
 					<label
 						htmlFor="tax-state"
-						className="mb-1 block font-medium text-neutral-500 text-xs"
+						className="mb-1 block font-medium text-muted-foreground text-xs"
 					>
 						State/Province
 					</label>
@@ -263,13 +263,13 @@ function CreateRateForm({
 						id="tax-state"
 						name="state"
 						placeholder="e.g. CA (or leave blank for all)"
-						className="w-full rounded-md border border-neutral-200 px-3 py-1.5 text-sm"
+						className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm"
 					/>
 				</div>
 				<div>
 					<label
 						htmlFor="tax-city"
-						className="mb-1 block font-medium text-neutral-500 text-xs"
+						className="mb-1 block font-medium text-muted-foreground text-xs"
 					>
 						City
 					</label>
@@ -277,13 +277,13 @@ function CreateRateForm({
 						id="tax-city"
 						name="city"
 						placeholder="Optional"
-						className="w-full rounded-md border border-neutral-200 px-3 py-1.5 text-sm"
+						className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm"
 					/>
 				</div>
 				<div>
 					<label
 						htmlFor="tax-postal"
-						className="mb-1 block font-medium text-neutral-500 text-xs"
+						className="mb-1 block font-medium text-muted-foreground text-xs"
 					>
 						Postal Code
 					</label>
@@ -291,13 +291,13 @@ function CreateRateForm({
 						id="tax-postal"
 						name="postalCode"
 						placeholder="Optional"
-						className="w-full rounded-md border border-neutral-200 px-3 py-1.5 text-sm"
+						className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm"
 					/>
 				</div>
 				<div>
 					<label
 						htmlFor="tax-rate"
-						className="mb-1 block font-medium text-neutral-500 text-xs"
+						className="mb-1 block font-medium text-muted-foreground text-xs"
 					>
 						Rate (%)
 					</label>
@@ -310,20 +310,20 @@ function CreateRateForm({
 						max="100"
 						required
 						placeholder="e.g. 8.25"
-						className="w-full rounded-md border border-neutral-200 px-3 py-1.5 text-sm"
+						className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm"
 					/>
 				</div>
 				<div>
 					<label
 						htmlFor="tax-type"
-						className="mb-1 block font-medium text-neutral-500 text-xs"
+						className="mb-1 block font-medium text-muted-foreground text-xs"
 					>
 						Type
 					</label>
 					<select
 						id="tax-type"
 						name="type"
-						className="w-full rounded-md border border-neutral-200 px-3 py-1.5 text-sm"
+						className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm"
 					>
 						<option value="percentage">Percentage</option>
 						<option value="fixed">Fixed Amount</option>
@@ -332,14 +332,14 @@ function CreateRateForm({
 				<div>
 					<label
 						htmlFor="tax-category"
-						className="mb-1 block font-medium text-neutral-500 text-xs"
+						className="mb-1 block font-medium text-muted-foreground text-xs"
 					>
 						Category
 					</label>
 					<select
 						id="tax-category"
 						name="categoryId"
-						className="w-full rounded-md border border-neutral-200 px-3 py-1.5 text-sm"
+						className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm"
 					>
 						<option value="default">Default (all products)</option>
 						{categories.map((c) => (
@@ -352,7 +352,7 @@ function CreateRateForm({
 				<div>
 					<label
 						htmlFor="tax-priority"
-						className="mb-1 block font-medium text-neutral-500 text-xs"
+						className="mb-1 block font-medium text-muted-foreground text-xs"
 					>
 						Priority
 					</label>
@@ -362,7 +362,7 @@ function CreateRateForm({
 						type="number"
 						defaultValue="0"
 						min="0"
-						className="w-full rounded-md border border-neutral-200 px-3 py-1.5 text-sm"
+						className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm"
 					/>
 				</div>
 				<div className="col-span-2 flex items-center gap-4">
@@ -380,14 +380,14 @@ function CreateRateForm({
 				<button
 					type="submit"
 					disabled={createMutation.isPending}
-					className="rounded-md bg-neutral-900 px-3 py-1.5 font-medium text-sm text-white transition-colors hover:bg-neutral-800 disabled:opacity-50"
+					className="rounded-md bg-foreground px-3 py-1.5 font-medium text-background text-sm transition-colors hover:opacity-90 disabled:opacity-50"
 				>
 					{createMutation.isPending ? "Creating..." : "Create Rate"}
 				</button>
 				<button
 					type="button"
 					onClick={() => setOpen(false)}
-					className="rounded-md border border-neutral-200 px-3 py-1.5 text-sm"
+					className="rounded-md border border-border bg-background px-3 py-1.5 text-sm"
 				>
 					Cancel
 				</button>
@@ -455,30 +455,36 @@ export function TaxRates() {
 			<CreateRateForm categories={categories} onCreated={handleRefresh} />
 
 			{loading ? (
-				<div className="text-neutral-500 text-sm">Loading tax rates...</div>
+				<div className="text-muted-foreground text-sm">
+					Loading tax rates...
+				</div>
 			) : rates.length === 0 ? (
-				<div className="rounded-lg border border-neutral-300 border-dashed p-8 text-center">
-					<p className="text-neutral-500 text-sm">
+				<div className="rounded-lg border border-border border-dashed p-8 text-center">
+					<p className="text-muted-foreground text-sm">
 						No tax rates configured yet. Add your first tax rate above.
 					</p>
 				</div>
 			) : (
-				<div className="overflow-hidden rounded-lg border border-neutral-200">
+				<div className="overflow-hidden rounded-lg border border-border">
 					<table className="w-full text-sm">
 						<thead>
-							<tr className="border-neutral-200 border-b bg-neutral-50 text-left">
-								<th className="px-4 py-2 font-medium text-neutral-500">Name</th>
-								<th className="px-4 py-2 font-medium text-neutral-500">
+							<tr className="border-border border-b bg-muted/30 text-left">
+								<th className="px-4 py-2 font-medium text-muted-foreground">
+									Name
+								</th>
+								<th className="px-4 py-2 font-medium text-muted-foreground">
 									Jurisdiction
 								</th>
-								<th className="px-4 py-2 font-medium text-neutral-500">Rate</th>
-								<th className="px-4 py-2 font-medium text-neutral-500">
+								<th className="px-4 py-2 font-medium text-muted-foreground">
+									Rate
+								</th>
+								<th className="px-4 py-2 font-medium text-muted-foreground">
 									Category
 								</th>
-								<th className="px-4 py-2 font-medium text-neutral-500">
+								<th className="px-4 py-2 font-medium text-muted-foreground">
 									Status
 								</th>
-								<th className="px-4 py-2 font-medium text-neutral-500">
+								<th className="px-4 py-2 font-medium text-muted-foreground">
 									Actions
 								</th>
 							</tr>
@@ -487,21 +493,21 @@ export function TaxRates() {
 							{rates.map((rate) => (
 								<tr
 									key={rate.id}
-									className="border-neutral-100 border-b last:border-0"
+									className="border-border border-b last:border-0"
 								>
 									<td className="px-4 py-3 font-medium">{rate.name}</td>
-									<td className="px-4 py-3 text-neutral-600">
+									<td className="px-4 py-3 text-muted-foreground">
 										{rate.country}
 										{rate.state !== "*" ? ` / ${rate.state}` : ""}
 										{rate.city !== "*" ? ` / ${rate.city}` : ""}
 										{rate.postalCode !== "*" ? ` (${rate.postalCode})` : ""}
 									</td>
-									<td className="px-4 py-3 font-mono text-neutral-600">
+									<td className="px-4 py-3 font-mono text-muted-foreground">
 										{formatRate(rate)}
 										{rate.compound ? " (compound)" : ""}
 										{rate.inclusive ? " (inclusive)" : ""}
 									</td>
-									<td className="px-4 py-3 text-neutral-600">
+									<td className="px-4 py-3 text-muted-foreground">
 										{rate.categoryId === "default"
 											? "All products"
 											: (categories.find((c) => c.id === rate.categoryId)
@@ -514,7 +520,7 @@ export function TaxRates() {
 											className={`inline-flex items-center rounded-full px-2 py-0.5 font-medium text-xs ${
 												rate.enabled
 													? "bg-green-50 text-green-700"
-													: "bg-neutral-100 text-neutral-500"
+													: "bg-muted text-muted-foreground"
 											}`}
 										>
 											{rate.enabled ? "Active" : "Disabled"}
@@ -537,9 +543,9 @@ export function TaxRates() {
 			)}
 
 			{/* Categories section */}
-			<div className="space-y-4 border-neutral-200 border-t pt-4">
+			<div className="space-y-4 border-border border-t pt-4">
 				<h2 className="font-semibold text-lg tracking-tight">Tax Categories</h2>
-				<p className="text-neutral-500 text-sm">
+				<p className="text-muted-foreground text-sm">
 					Create categories to apply different tax rates to different product
 					types.
 				</p>
@@ -603,7 +609,7 @@ function CategoryManager({
 						value={name}
 						onChange={(e) => setName(e.target.value)}
 						placeholder="Category name (e.g. clothing)"
-						className="rounded-md border border-neutral-200 px-3 py-1.5 text-sm"
+						className="rounded-md border border-border bg-background px-3 py-1.5 text-sm"
 					/>
 				</div>
 				<div>
@@ -611,14 +617,14 @@ function CategoryManager({
 						value={description}
 						onChange={(e) => setDescription(e.target.value)}
 						placeholder="Description (optional)"
-						className="rounded-md border border-neutral-200 px-3 py-1.5 text-sm"
+						className="rounded-md border border-border bg-background px-3 py-1.5 text-sm"
 					/>
 				</div>
 				<button
 					type="button"
 					onClick={handleAdd}
 					disabled={addMutation.isPending || !name.trim()}
-					className="rounded-md bg-neutral-900 px-3 py-1.5 font-medium text-sm text-white transition-colors hover:bg-neutral-800 disabled:opacity-50"
+					className="rounded-md bg-foreground px-3 py-1.5 font-medium text-background text-sm transition-colors hover:opacity-90 disabled:opacity-50"
 				>
 					{addMutation.isPending ? "Adding..." : "Add"}
 				</button>
@@ -629,17 +635,17 @@ function CategoryManager({
 					{categories.map((cat) => (
 						<span
 							key={cat.id}
-							className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-1 text-sm"
+							className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-sm"
 						>
 							<span className="font-medium">{cat.name}</span>
 							{cat.description && (
-								<span className="text-neutral-400">{cat.description}</span>
+								<span className="text-muted-foreground">{cat.description}</span>
 							)}
 							<button
 								type="button"
 								onClick={() => handleDelete(cat.id)}
 								aria-label="Remove category"
-								className="ml-1 text-neutral-400 hover:text-red-600"
+								className="ml-1 text-muted-foreground hover:text-red-600"
 							>
 								&times;
 							</button>
