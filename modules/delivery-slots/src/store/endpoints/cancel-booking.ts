@@ -22,6 +22,11 @@ export const cancelBookingStore = createStoreEndpoint(
 		const booking = await controller.cancelBooking(ctx.params.id);
 		if (!booking) return { error: "Booking not found", status: 404 };
 
+		void ctx.context.events?.emit("delivery-slots.booking.cancelled", {
+			id: booking.id,
+			orderId: booking.orderId,
+			customerId: booking.customerId,
+		});
 		return { booking };
 	},
 );

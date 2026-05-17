@@ -32,6 +32,12 @@ export const bookSlot = createStoreEndpoint(
 		if (ctx.body.instructions != null)
 			params.instructions = ctx.body.instructions;
 		const booking = await controller.bookSlot(params);
+		void ctx.context.events?.emit("delivery-slots.booking.created", {
+			id: booking.id,
+			orderId: booking.orderId,
+			customerId: booking.customerId,
+			deliveryDate: booking.deliveryDate,
+		});
 		return { booking };
 	},
 );
