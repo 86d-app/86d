@@ -23,6 +23,8 @@ export const registerWarranty = createAdminEndpoint(
 			customerId: registration.customerId,
 			productId: registration.productId,
 			warrantyPlanId: registration.warrantyPlanId,
+			productName: ctx.body.productName,
+			serialNumber: ctx.body.serialNumber,
 		});
 		return { registration };
 	},

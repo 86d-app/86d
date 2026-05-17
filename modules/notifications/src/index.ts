@@ -12,6 +12,7 @@ import { buildOrderShippedEmail } from "./emails/order-shipped";
 import { buildReturnStatusEmail } from "./emails/return-status";
 import { buildReviewApprovedEmail } from "./emails/review-approved";
 import { buildSubscriptionStatusEmail } from "./emails/subscription-status";
+import { buildWarrantyRegisteredEmail } from "./emails/warranty-registered";
 import { ResendProvider, TwilioProvider } from "./provider";
 import { notificationsSchema } from "./schema";
 import { createNotificationsController } from "./service-impl";
@@ -432,6 +433,48 @@ export default function notifications(options?: NotificationsOptions): Module {
 								{ name: "type", value: "cart_recovery" },
 								{ name: "cart_id", value: p.cartId },
 								{ name: "attempt_id", value: p.attemptId },
+							],
+						})
+						.catch(() => {});
+				},
+			);
+
+			// ── Warranty registration notifications ──────────────────────────
+			interface WarrantyRegisteredPayload {
+				registrationId: string;
+				customerId: string;
+				productId: string;
+				warrantyPlanId: string;
+				productName?: string | undefined;
+				serialNumber?: string | undefined;
+				expiresAt?: Date | undefined;
+			}
+
+			ctx.events?.on<WarrantyRegisteredPayload>(
+				"warranty.registered",
+				async (event) => {
+					const p = event.payload;
+					if (!p || !emailProvider || !customerResolver) return;
+
+					const contact = await customerResolver(p.customerId).catch(
+						() => null,
+					);
+					if (!contact?.email) return;
+
+					const { subject, html, text } = buildWarrantyRegisteredEmail({
+						productName: p.productName ?? p.productId,
+						serialNumber: p.serialNumber,
+						expiresAt: p.expiresAt,
+					});
+					await emailProvider
+						.sendEmail({
+							to: contact.email,
+							subject,
+							html,
+							text,
+							tags: [
+								{ name: "type", value: "warranty_registered" },
+								{ name: "registration_id", value: p.registrationId },
 							],
 						})
 						.catch(() => {});
