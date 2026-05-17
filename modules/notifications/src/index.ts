@@ -440,6 +440,7 @@ export default function notifications(options?: NotificationsOptions): Module {
 				serviceId: string;
 				customerId?: string | undefined;
 				customerEmail?: string | undefined;
+				customerName?: string | undefined;
 				startsAt?: Date | undefined;
 			}
 
@@ -458,7 +459,7 @@ export default function notifications(options?: NotificationsOptions): Module {
 
 						const { subject, html, text } = buildAppointmentStatusEmail({
 							status,
-							customerName: "",
+							customerName: p.customerName ?? "",
 							serviceName: p.serviceId,
 							startsAt: p.startsAt ?? new Date(),
 						});

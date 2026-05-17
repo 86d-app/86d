@@ -36,6 +36,8 @@ export const cancelAppointment = createStoreEndpoint(
 			serviceId: appointment.serviceId,
 			customerId: appointment.customerId,
 			customerEmail: appointment.customerEmail,
+			customerName: appointment.customerName,
+			startsAt: appointment.startsAt,
 		});
 		return { appointment };
 	},
