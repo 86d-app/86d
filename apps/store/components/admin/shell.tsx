@@ -250,7 +250,10 @@ function Sidebar({
 	}, []);
 
 	return (
-		<aside className="flex h-full w-60 flex-col border-border border-r bg-background">
+		<aside
+			aria-label="Store administration"
+			className="flex h-full w-60 flex-col border-border border-r bg-background"
+		>
 			{/* Logo */}
 			<div className="flex h-14 items-center border-border border-b px-4">
 				<a href="/" className="flex items-center gap-2">
@@ -269,7 +272,10 @@ function Sidebar({
 			</div>
 
 			{/* Nav */}
-			<nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-3">
+			<nav
+				aria-label="Admin navigation"
+				className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-3"
+			>
 				{/* Dashboard */}
 				<NavLink
 					item={DASHBOARD_ITEM}
