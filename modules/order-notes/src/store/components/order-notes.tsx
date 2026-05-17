@@ -48,7 +48,7 @@ function AuthorTypeBadge({ authorType }: { authorType: string }) {
 		customer: "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
 		admin:
 			"bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300",
-		system: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300",
+		system: "bg-muted text-muted-foreground",
 	};
 
 	return (
@@ -174,16 +174,14 @@ export function OrderNotes({
 			{[1, 2, 3].map((n) => (
 				<div
 					key={n}
-					className="h-20 animate-pulse rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800"
+					className="h-20 animate-pulse rounded-lg border border-border bg-muted/30"
 				/>
 			))}
 		</div>
 	) : notes.length === 0 ? (
-		<div className="rounded-xl border border-gray-200 bg-gray-50 py-10 text-center dark:border-gray-700 dark:bg-gray-800">
-			<p className="font-medium text-gray-900 text-sm dark:text-gray-100">
-				No notes yet
-			</p>
-			<p className="mt-1 text-gray-500 text-sm dark:text-gray-400">
+		<div className="rounded-xl border border-border bg-muted/30 py-10 text-center">
+			<p className="font-medium text-foreground text-sm">No notes yet</p>
+			<p className="mt-1 text-muted-foreground text-sm">
 				Add a note to communicate with the store about this order.
 			</p>
 		</div>
@@ -192,7 +190,7 @@ export function OrderNotes({
 			{notes.map((note) => (
 				<div
 					key={note.id}
-					className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800"
+					className="rounded-lg border border-border bg-card p-4"
 				>
 					{editingId === note.id ? (
 						<div className="space-y-2">
@@ -200,7 +198,7 @@ export function OrderNotes({
 								value={editContent}
 								onChange={(e) => setEditContent(e.target.value)}
 								rows={3}
-								className="w-full resize-none rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+								className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
 							/>
 							<div className="flex gap-2">
 								<button
@@ -214,7 +212,7 @@ export function OrderNotes({
 								<button
 									type="button"
 									onClick={cancelEdit}
-									className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 font-medium text-gray-700 text-sm transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+									className="rounded-lg border border-border bg-background px-3 py-1.5 font-medium text-foreground text-sm transition-colors hover:bg-muted"
 								>
 									Cancel
 								</button>
@@ -223,15 +221,15 @@ export function OrderNotes({
 					) : (
 						<>
 							<div className="mb-1 flex flex-wrap items-center gap-2">
-								<span className="font-medium text-gray-900 text-sm dark:text-gray-100">
+								<span className="font-medium text-foreground text-sm">
 									{note.authorName}
 								</span>
 								<AuthorTypeBadge authorType={note.authorType} />
-								<span className="text-gray-400 text-xs dark:text-gray-500">
+								<span className="text-muted-foreground text-xs">
 									{formatDate(note.createdAt)}
 								</span>
 							</div>
-							<p className="whitespace-pre-wrap text-gray-700 text-sm dark:text-gray-300">
+							<p className="whitespace-pre-wrap text-foreground text-sm">
 								{note.content}
 							</p>
 							{isOwnNote(note) && (
@@ -245,7 +243,7 @@ export function OrderNotes({
 									</button>
 									{deleteConfirm === note.id ? (
 										<span className="inline-flex items-center gap-1.5">
-											<span className="text-gray-400 text-xs dark:text-gray-500">
+											<span className="text-muted-foreground text-xs">
 												Delete?
 											</span>
 											<button
@@ -259,7 +257,7 @@ export function OrderNotes({
 											<button
 												type="button"
 												onClick={() => setDeleteConfirm(null)}
-												className="font-medium text-gray-500 text-xs hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-300"
+												className="font-medium text-muted-foreground text-xs hover:text-foreground"
 											>
 												Cancel
 											</button>
@@ -289,7 +287,7 @@ export function OrderNotes({
 				onChange={(e) => setNewNote(e.target.value)}
 				placeholder="Add a note..."
 				rows={3}
-				className="w-full resize-none rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+				className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
 			/>
 			<button
 				type="button"
