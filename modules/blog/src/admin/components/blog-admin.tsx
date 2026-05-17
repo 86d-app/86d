@@ -404,9 +404,16 @@ export function BlogAdmin() {
 	};
 	if (statusFilter) queryInput.status = statusFilter;
 
-	const { data, isLoading: loading } = api.listPosts.useQuery(queryInput) as {
+	const {
+		data,
+		isLoading: loading,
+		isError: postsError,
+		refetch: refetchPosts,
+	} = api.listPosts.useQuery(queryInput) as {
 		data: { posts: BlogPost[]; total: number } | undefined;
 		isLoading: boolean;
+		isError: boolean;
+		refetch: () => void;
 	};
 
 	const posts = data?.posts ?? [];
@@ -426,6 +433,26 @@ export function BlogAdmin() {
 					setEditTarget(null);
 				}}
 			/>
+		);
+	}
+
+	if (postsError) {
+		return (
+			<div className="rounded-md border border-destructive/50 bg-destructive/10 p-4">
+				<p className="font-semibold text-destructive">
+					Failed to load blog posts
+				</p>
+				<p className="mt-1 text-muted-foreground text-sm">
+					Check your connection and try again.
+				</p>
+				<button
+					type="button"
+					onClick={() => refetchPosts()}
+					className="mt-3 rounded-md bg-destructive/20 px-3 py-1.5 font-medium text-destructive text-sm transition-colors hover:bg-destructive/30"
+				>
+					Try again
+				</button>
+			</div>
 		);
 	}
 

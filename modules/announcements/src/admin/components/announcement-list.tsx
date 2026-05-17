@@ -123,6 +123,26 @@ export function AnnouncementList() {
 		[]) as AnnouncementItem[];
 	const stats = statsQuery.data?.stats;
 
+	if (listQuery.isError) {
+		return (
+			<div className="rounded-md border border-destructive/50 bg-destructive/10 p-4">
+				<p className="font-semibold text-destructive">
+					Failed to load announcements
+				</p>
+				<p className="mt-1 text-muted-foreground text-sm">
+					Check your connection and try again.
+				</p>
+				<button
+					type="button"
+					onClick={() => void listQuery.refetch()}
+					className="mt-3 rounded-md bg-destructive/20 px-3 py-1.5 font-medium text-destructive text-sm transition-colors hover:bg-destructive/30"
+				>
+					Try again
+				</button>
+			</div>
+		);
+	}
+
 	return (
 		<div>
 			{/* Header */}

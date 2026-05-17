@@ -458,11 +458,16 @@ export function BrandAdmin() {
 	if (activeFilter) queryInput.active = activeFilter;
 	if (featuredFilter) queryInput.featured = featuredFilter;
 
-	const { data: listData, isLoading: listLoading } = api.list.useQuery(
-		queryInput,
-	) as {
+	const {
+		data: listData,
+		isLoading: listLoading,
+		isError: brandsError,
+		refetch: refetchBrands,
+	} = api.list.useQuery(queryInput) as {
 		data: { brands: BrandData[]; total: number } | undefined;
 		isLoading: boolean;
+		isError: boolean;
+		refetch: () => void;
 	};
 
 	const { data: statsData } = api.stats.useQuery({}) as {
@@ -474,6 +479,24 @@ export function BrandAdmin() {
 	const stats = statsData?.stats;
 	const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 	const currentPage = Math.floor(skip / PAGE_SIZE) + 1;
+
+	if (brandsError) {
+		return (
+			<div className="rounded-md border border-destructive/50 bg-destructive/10 p-4">
+				<p className="font-semibold text-destructive">Failed to load brands</p>
+				<p className="mt-1 text-muted-foreground text-sm">
+					Check your connection and try again.
+				</p>
+				<button
+					type="button"
+					onClick={() => refetchBrands()}
+					className="mt-3 rounded-md bg-destructive/20 px-3 py-1.5 font-medium text-destructive text-sm transition-colors hover:bg-destructive/30"
+				>
+					Try again
+				</button>
+			</div>
+		);
+	}
 
 	// ── Form views
 	if (showCreateForm || editTarget) {

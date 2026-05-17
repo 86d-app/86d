@@ -126,9 +126,16 @@ export function ReviewList() {
 					skip: String(skip),
 				};
 
-	const { data, isLoading: loading } = api.listReviews.useQuery(queryInput) as {
+	const {
+		data,
+		isLoading: loading,
+		isError: reviewsError,
+		refetch: refetchReviews,
+	} = api.listReviews.useQuery(queryInput) as {
 		data: { reviews: Review[]; total: number } | undefined;
 		isLoading: boolean;
+		isError: boolean;
+		refetch: () => void;
 	};
 
 	const reviews = data?.reviews ?? [];
@@ -163,6 +170,24 @@ export function ReviewList() {
 			setError(extractError(err, "Failed to delete review."));
 		},
 	});
+
+	if (reviewsError) {
+		return (
+			<div className="rounded-md border border-destructive/50 bg-destructive/10 p-4">
+				<p className="font-semibold text-destructive">Failed to load reviews</p>
+				<p className="mt-1 text-muted-foreground text-sm">
+					Check your connection and try again.
+				</p>
+				<button
+					type="button"
+					onClick={() => refetchReviews()}
+					className="mt-3 rounded-md bg-destructive/20 px-3 py-1.5 font-medium text-destructive text-sm transition-colors hover:bg-destructive/30"
+				>
+					Try again
+				</button>
+			</div>
+		);
+	}
 
 	const handleApprove = (id: string) => {
 		setActionLoading(id);
