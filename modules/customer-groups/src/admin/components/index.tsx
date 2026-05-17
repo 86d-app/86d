@@ -560,12 +560,39 @@ export function CustomerGroupList() {
 	const [editTarget, setEditTarget] = useState<CustomerGroup | null>(null);
 	const [showCreateForm, setShowCreateForm] = useState(false);
 
-	const { data, isLoading } = api.list.useQuery({}) as {
+	const {
+		data,
+		isLoading,
+		isError: groupsError,
+		refetch: refetchGroups,
+	} = api.list.useQuery({}) as {
 		data: { groups?: CustomerGroup[] } | undefined;
 		isLoading: boolean;
+		isError: boolean;
+		refetch: () => void;
 	};
 
 	const groups = data?.groups ?? [];
+
+	if (groupsError) {
+		return (
+			<div className="rounded-md border border-destructive/50 bg-destructive/10 p-4">
+				<p className="font-semibold text-destructive">
+					Failed to load customer groups
+				</p>
+				<p className="mt-1 text-muted-foreground text-sm">
+					Check your connection and try again.
+				</p>
+				<button
+					type="button"
+					onClick={() => refetchGroups()}
+					className="mt-3 rounded-md bg-destructive/20 px-3 py-1.5 font-medium text-destructive text-sm transition-colors hover:bg-destructive/30"
+				>
+					Try again
+				</button>
+			</div>
+		);
+	}
 
 	if (showCreateForm || editTarget) {
 		return (
