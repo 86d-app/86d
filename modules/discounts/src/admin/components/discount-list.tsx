@@ -57,11 +57,16 @@ export function DiscountList() {
 	};
 	if (isActiveFilter !== "") queryInput.isActive = isActiveFilter;
 
-	const { data: listData, isLoading: loading } = api.listDiscounts.useQuery(
-		queryInput,
-	) as {
+	const {
+		data: listData,
+		isLoading: loading,
+		isError: discountsError,
+		refetch: refetchDiscounts,
+	} = api.listDiscounts.useQuery(queryInput) as {
 		data: ListResult | undefined;
 		isLoading: boolean;
+		isError: boolean;
+		refetch: () => void;
 	};
 
 	const discounts = listData?.discounts ?? [];
@@ -79,6 +84,26 @@ export function DiscountList() {
 			void api.listDiscounts.invalidate();
 		},
 	});
+
+	if (discountsError) {
+		return (
+			<div className="rounded-md border border-destructive/50 bg-destructive/10 p-4">
+				<p className="font-semibold text-destructive">
+					Failed to load discounts
+				</p>
+				<p className="mt-1 text-muted-foreground text-sm">
+					Check your connection and try again.
+				</p>
+				<button
+					type="button"
+					onClick={() => refetchDiscounts()}
+					className="mt-3 rounded-md bg-destructive/20 px-3 py-1.5 font-medium text-destructive text-sm transition-colors hover:bg-destructive/30"
+				>
+					Try again
+				</button>
+			</div>
+		);
+	}
 
 	const handleDelete = (id: string) => {
 		if (!confirm("Delete this discount? This cannot be undone.")) return;

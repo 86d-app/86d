@@ -198,11 +198,16 @@ export function OrderList() {
 	if (search) queryInput.search = search;
 	if (statusFilter) queryInput.status = statusFilter;
 
-	const { data: listData, isLoading: loading } = api.listOrders.useQuery(
-		queryInput,
-	) as {
+	const {
+		data: listData,
+		isLoading: loading,
+		isError: ordersError,
+		refetch: refetchOrders,
+	} = api.listOrders.useQuery(queryInput) as {
 		data: ListResult | undefined;
 		isLoading: boolean;
+		isError: boolean;
+		refetch: () => void;
 	};
 
 	const bulkMutation = api.bulkAction.useMutation({
@@ -311,6 +316,24 @@ export function OrderList() {
 			setExporting(false);
 		}
 	}, [api.exportOrders, search, statusFilter, dateFrom, dateTo]);
+
+	if (ordersError) {
+		return (
+			<div className="rounded-md border border-destructive/50 bg-destructive/10 p-4">
+				<p className="font-semibold text-destructive">Failed to load orders</p>
+				<p className="mt-1 text-muted-foreground text-sm">
+					Check your connection and try again.
+				</p>
+				<button
+					type="button"
+					onClick={() => refetchOrders()}
+					className="mt-3 rounded-md bg-destructive/20 px-3 py-1.5 font-medium text-destructive text-sm transition-colors hover:bg-destructive/30"
+				>
+					Try again
+				</button>
+			</div>
+		);
+	}
 
 	const content = (
 		<div>
