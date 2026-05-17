@@ -13,6 +13,10 @@ export const cancelAuction = createAdminEndpoint(
 		if (!auction) {
 			return { error: "Auction not found", status: 404 };
 		}
+		void ctx.context.events?.emit("auction.cancelled", {
+			auctionId: auction.id,
+			title: auction.title,
+		});
 		return { auction };
 	},
 );
