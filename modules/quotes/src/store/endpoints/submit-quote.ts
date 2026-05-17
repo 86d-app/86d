@@ -32,6 +32,11 @@ export const submitQuoteEndpoint = createStoreEndpoint(
 
 		const quote = await controller.submitQuote(quoteId);
 		if (!quote) return { error: "Cannot submit this quote", status: 422 };
+		void ctx.context.events?.emit("quote.submitted", {
+			quoteId: quote.id,
+			customerId: quote.customerId,
+			total: quote.total,
+		});
 		return { quote };
 	},
 );

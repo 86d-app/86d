@@ -38,6 +38,11 @@ export const acceptQuoteEndpoint = createStoreEndpoint(
 		const quote = await controller.acceptQuote(quoteId);
 		if (!quote) return { error: "Cannot accept this quote", status: 422 };
 
+		void ctx.context.events?.emit("quote.accepted", {
+			quoteId: quote.id,
+			customerId: quote.customerId,
+			total: quote.total,
+		});
 		return { quote };
 	},
 );

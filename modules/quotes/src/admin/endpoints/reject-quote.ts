@@ -14,6 +14,11 @@ export const rejectQuoteEndpoint = createAdminEndpoint(
 		const controller = ctx.context.controllers.quotes as QuoteController;
 		const quote = await controller.rejectQuote(ctx.params.id, ctx.body.reason);
 		if (!quote) return { error: "Cannot reject this quote" };
+		void ctx.context.events?.emit("quote.rejected", {
+			quoteId: quote.id,
+			customerId: quote.customerId,
+			reason: ctx.body.reason,
+		});
 		return { quote };
 	},
 );

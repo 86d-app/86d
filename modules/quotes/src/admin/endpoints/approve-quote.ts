@@ -18,6 +18,11 @@ export const approveQuoteEndpoint = createAdminEndpoint(
 			adminNotes: ctx.body.adminNotes,
 		});
 		if (!quote) return { error: "Cannot approve this quote" };
+		void ctx.context.events?.emit("quote.reviewed", {
+			quoteId: quote.id,
+			customerId: quote.customerId,
+			status: quote.status,
+		});
 		return { quote };
 	},
 );
