@@ -19,6 +19,7 @@ import type {
 } from "./_types";
 import { formatPrice, imageUrl } from "./_utils";
 import { BackInStockNotify } from "./back-in-stock-notify";
+import { BackorderSection } from "./backorder-section";
 import { BulkPricingSection } from "./bulk-pricing-section";
 import { ComparisonButtonSection } from "./comparison-button-section";
 import { FlashDealSection } from "./flash-deal-section";
@@ -543,6 +544,12 @@ export function ProductDetail(props: ProductDetailProps) {
 	const outOfStockNotice = !inStock ? (
 		<div className="flex flex-col gap-2">
 			<PreorderSection productId={product.id} variantId={selectedVariant?.id} />
+			<BackorderSection
+				productId={product.id}
+				productName={product.name}
+				variantId={selectedVariant?.id}
+				variantLabel={selectedVariant?.name}
+			/>
 			<BackInStockNotify
 				productId={product.id}
 				variantId={selectedVariant?.id}

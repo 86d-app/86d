@@ -179,6 +179,15 @@ export function useProductQaApi() {
 	};
 }
 
+export function useBackordersApi() {
+	const client = useModuleClient();
+	return {
+		checkEligibility:
+			client.module("backorders").store["/backorders/check/:productId"],
+		createBackorder: client.module("backorders").store["/backorders/create"],
+	};
+}
+
 export function usePreordersApi() {
 	const client = useModuleClient();
 	return {
