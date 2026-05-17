@@ -158,6 +158,16 @@ export default function automations(options?: AutomationsOptions): Module {
 				"claim.approved",
 				"claim.denied",
 				"claim.resolved",
+				"product.created",
+				"product.updated",
+				"product.deleted",
+				"checkout.completed",
+				"inventory.back-in-stock",
+				"delivery-slots.booking.created",
+				"delivery-slots.booking.cancelled",
+				"bundle.created",
+				"bundle.updated",
+				"affiliates.suspended",
 			] as const;
 
 			for (const eventName of CROSS_MODULE_EVENTS) {
