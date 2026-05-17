@@ -92,6 +92,15 @@ export const updateProduct = createAdminEndpoint(
 			}
 		}
 
+		if (product) {
+			void ctx.context.events?.emit("product.updated", {
+				productId: product.id,
+				name: product.name,
+				slug: product.slug,
+				price: product.price,
+				status: product.status,
+			});
+		}
 		return { product };
 	},
 );

@@ -1,4 +1,5 @@
 import { createAdminEndpoint, z } from "@86d-app/core";
+import type { Product } from "../../controllers";
 
 export const deleteProduct = createAdminEndpoint(
 	"/admin/products/:id/delete",
@@ -12,7 +13,7 @@ export const deleteProduct = createAdminEndpoint(
 		const controllers = ctx.context.controllers;
 
 		// Check if product exists
-		const existingProduct = await controllers.product.getById(ctx);
+		const existingProduct = (await controllers.product.getById(ctx)) as Product | null;
 		if (!existingProduct) {
 			return {
 				error: "Product not found",
@@ -21,6 +22,12 @@ export const deleteProduct = createAdminEndpoint(
 		}
 
 		await controllers.product.delete(ctx);
+
+		void ctx.context.events?.emit("product.deleted", {
+			productId: existingProduct.id,
+			name: existingProduct.name,
+			slug: existingProduct.slug,
+		});
 
 		return { success: true, message: "Product deleted successfully" };
 	},
