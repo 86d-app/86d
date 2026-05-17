@@ -74,6 +74,13 @@ export const submitReview = createStoreEndpoint(
 			isVerifiedPurchase,
 			images: ctx.body.images,
 		});
+		void ctx.context.events?.emit("review.submitted", {
+			reviewId: review.id,
+			productId: review.productId,
+			customerId: review.customerId,
+			authorEmail: review.authorEmail,
+			rating: review.rating,
+		});
 		return { review };
 	},
 );

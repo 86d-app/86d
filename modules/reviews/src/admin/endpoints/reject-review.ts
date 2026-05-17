@@ -14,6 +14,13 @@ export const rejectReview = createAdminEndpoint(
 			"rejected",
 		);
 		if (!review) return { error: "Review not found", status: 404 };
+		void ctx.context.events?.emit("review.rejected", {
+			reviewId: review.id,
+			productId: review.productId,
+			customerId: review.customerId,
+			authorEmail: review.authorEmail,
+			rating: review.rating,
+		});
 		return { review };
 	},
 );

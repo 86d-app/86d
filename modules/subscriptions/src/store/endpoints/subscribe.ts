@@ -68,6 +68,12 @@ export const subscribe = createStoreEndpoint(
 				? { paymentIntentId: ctx.body.paymentIntentId }
 				: {}),
 		});
+		void ctx.context.events?.emit("subscription.created", {
+			subscriptionId: subscription.id,
+			planId: subscription.planId,
+			customerId: subscription.customerId,
+			email: subscription.email,
+		});
 		return { subscription };
 	},
 );

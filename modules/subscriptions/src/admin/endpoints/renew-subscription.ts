@@ -14,6 +14,12 @@ export const adminRenewSubscription = createAdminEndpoint(
 		if (!subscription) {
 			return { error: "Subscription not found", status: 404 };
 		}
+		void ctx.context.events?.emit("subscription.renewed", {
+			subscriptionId: subscription.id,
+			planId: subscription.planId,
+			customerId: subscription.customerId,
+			email: subscription.email,
+		});
 		return { subscription };
 	},
 );

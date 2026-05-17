@@ -17,6 +17,12 @@ export const respondReview = createAdminEndpoint(
 			ctx.body.response,
 		);
 		if (!review) return { error: "Review not found", status: 404 };
+		void ctx.context.events?.emit("review.responded", {
+			reviewId: review.id,
+			productId: review.productId,
+			customerId: review.customerId,
+			authorEmail: review.authorEmail,
+		});
 		return { review };
 	},
 );

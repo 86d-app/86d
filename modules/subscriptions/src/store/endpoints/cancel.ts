@@ -28,6 +28,16 @@ export const cancelSubscription = createStoreEndpoint(
 			id: ctx.body.id,
 			cancelAtPeriodEnd: ctx.body.cancelAtPeriodEnd,
 		});
+		if (!subscription) {
+			return { error: "Subscription not found", status: 404 };
+		}
+
+		void ctx.context.events?.emit("subscription.cancelled", {
+			subscriptionId: subscription.id,
+			planId: subscription.planId,
+			customerId: subscription.customerId,
+			email: subscription.email,
+		});
 
 		return { subscription };
 	},
