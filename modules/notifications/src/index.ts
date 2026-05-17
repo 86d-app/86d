@@ -2,6 +2,7 @@ import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
 import { createAdminEndpointsWithSettings } from "./admin/endpoints";
 import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
 import { buildAppointmentStatusEmail } from "./emails/appointment-status";
+import { buildAuctionWonEmail } from "./emails/auction-won";
 import { buildBackInStockEmail } from "./emails/back-in-stock";
 import { buildCartRecoveryEmail } from "./emails/cart-recovery";
 import { buildOrderCancelledEmail } from "./emails/order-cancelled";
@@ -435,6 +436,41 @@ export default function notifications(options?: NotificationsOptions): Module {
 						.catch(() => {});
 				},
 			);
+
+			// ── Auction won notifications ────────────────────────────────────
+			interface AuctionSoldPayload {
+				auctionId: string;
+				title: string;
+				winnerId?: string | undefined;
+				salePrice: number;
+			}
+
+			ctx.events?.on<AuctionSoldPayload>("auction.sold", async (event) => {
+				const p = event.payload;
+				if (!p || !emailProvider || !p.winnerId || !customerResolver) return;
+
+				const winnerContact = await customerResolver(p.winnerId).catch(
+					() => null,
+				);
+				if (!winnerContact?.email) return;
+
+				const { subject, html, text } = buildAuctionWonEmail({
+					auctionTitle: p.title,
+					winningBid: p.salePrice,
+				});
+				await emailProvider
+					.sendEmail({
+						to: winnerContact.email,
+						subject,
+						html,
+						text,
+						tags: [
+							{ name: "type", value: "auction_won" },
+							{ name: "auction_id", value: p.auctionId },
+						],
+					})
+					.catch(() => {});
+			});
 
 			// ── Back-in-stock notifications ─────────────────────────────────
 			interface BackInStockPayload {
