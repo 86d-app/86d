@@ -62,8 +62,8 @@ function Skeleton({ className = "" }: { className?: string }) {
 
 function StatCard({ label, value }: { label: string; value: string | number }) {
 	return (
-		<div className="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
-			<p className="text-neutral-500 text-sm dark:text-neutral-400">{label}</p>
+		<div className="rounded-lg border border-border bg-card p-4">
+			<p className="text-muted-foreground text-sm">{label}</p>
 			<p className="mt-1 font-semibold text-2xl">{String(value)}</p>
 		</div>
 	);
@@ -162,7 +162,7 @@ function CustomerLoyaltyModal({
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-			<div className="mx-4 w-full max-w-lg rounded-lg bg-white p-6 shadow-xl dark:bg-neutral-900">
+			<div className="mx-4 w-full max-w-lg rounded-lg bg-card p-6 shadow-xl">
 				<div className="mb-4 flex items-center justify-between">
 					<h3 className="font-semibold text-lg">
 						{customer.firstName} {customer.lastName} — Loyalty Points
@@ -171,7 +171,7 @@ function CustomerLoyaltyModal({
 						type="button"
 						onClick={onClose}
 						aria-label="Close"
-						className="text-neutral-400 hover:text-neutral-600"
+						className="text-muted-foreground hover:text-foreground"
 					>
 						&times;
 					</button>
@@ -182,7 +182,7 @@ function CustomerLoyaltyModal({
 						{Array.from({ length: 3 }, (_, i) => (
 							<div
 								key={`sk-${i}`}
-								className="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900"
+								className="rounded-lg border border-border bg-card p-4"
 							>
 								<Skeleton className="mb-2 h-3 w-16" />
 								<Skeleton className="h-6 w-12" />
@@ -222,7 +222,7 @@ function CustomerLoyaltyModal({
 						</div>
 
 						{actionType && (
-							<div className="mb-4 rounded border border-neutral-200 p-3 dark:border-neutral-700">
+							<div className="mb-4 rounded border border-border p-3">
 								<p className="mb-2 font-medium text-sm">
 									{actionType === "earn"
 										? "Add Points"
@@ -239,28 +239,28 @@ function CustomerLoyaltyModal({
 									}
 									value={points}
 									onChange={(e) => setPoints(e.target.value)}
-									className="mb-2 w-full rounded border px-3 py-1.5 text-sm dark:border-neutral-700 dark:bg-neutral-800"
+									className="mb-2 w-full rounded border border-border bg-background px-3 py-1.5 text-sm"
 								/>
 								<input
 									type="text"
 									placeholder="Reason"
 									value={reason}
 									onChange={(e) => setReason(e.target.value)}
-									className="mb-2 w-full rounded border px-3 py-1.5 text-sm dark:border-neutral-700 dark:bg-neutral-800"
+									className="mb-2 w-full rounded border border-border bg-background px-3 py-1.5 text-sm"
 								/>
 								<div className="flex gap-2">
 									<button
 										type="button"
 										onClick={handleSubmit}
 										disabled={submitting}
-										className="rounded bg-neutral-900 px-3 py-1.5 text-sm text-white hover:bg-neutral-800 disabled:opacity-50 dark:bg-white dark:text-black"
+										className="rounded bg-foreground px-3 py-1.5 text-background text-sm hover:opacity-90 disabled:opacity-50"
 									>
 										{submitting ? "Saving..." : "Submit"}
 									</button>
 									<button
 										type="button"
 										onClick={() => setActionType(null)}
-										className="rounded border px-3 py-1.5 text-sm hover:bg-neutral-50 dark:border-neutral-700 dark:hover:bg-neutral-800"
+										className="rounded border px-3 py-1.5 text-sm hover:bg-muted"
 									>
 										Cancel
 									</button>
@@ -269,23 +269,23 @@ function CustomerLoyaltyModal({
 						)}
 
 						<div>
-							<h4 className="mb-2 font-medium text-neutral-500 text-sm">
+							<h4 className="mb-2 font-medium text-muted-foreground text-sm">
 								Recent Transactions
 							</h4>
 							{transactions.length === 0 ? (
-								<p className="text-neutral-400 text-sm">No transactions yet</p>
+								<p className="text-muted-foreground text-sm">
+									No transactions yet
+								</p>
 							) : (
 								<div className="max-h-48 space-y-2 overflow-y-auto">
 									{transactions.map((t) => (
 										<div
 											key={t.id}
-											className="flex items-center justify-between rounded border px-3 py-2 text-sm dark:border-neutral-700"
+											className="flex items-center justify-between rounded border border-border px-3 py-2 text-sm"
 										>
 											<div>
 												<TransactionBadge type={t.type} />
-												<span className="ml-2 text-neutral-600 dark:text-neutral-300">
-													{t.reason}
-												</span>
+												<span className="ml-2 text-foreground">{t.reason}</span>
 											</div>
 											<div className="text-right">
 												<span
@@ -298,7 +298,7 @@ function CustomerLoyaltyModal({
 													{t.points > 0 ? "+" : ""}
 													{t.points}
 												</span>
-												<p className="text-neutral-400 text-xs">
+												<p className="text-muted-foreground text-xs">
 													{formatDate(t.createdAt)}
 												</p>
 											</div>
@@ -376,7 +376,7 @@ export function LoyaltyAdmin() {
 		<div className="space-y-6">
 			<div>
 				<h2 className="font-semibold text-xl">Loyalty Program</h2>
-				<p className="text-neutral-500 text-sm dark:text-neutral-400">
+				<p className="text-muted-foreground text-sm">
 					Manage customer loyalty points and rewards
 				</p>
 			</div>
@@ -387,7 +387,7 @@ export function LoyaltyAdmin() {
 					{Array.from({ length: 5 }).map((_, i) => (
 						<div
 							key={`skeleton-${i}`}
-							className="h-20 animate-pulse rounded-lg bg-neutral-100 dark:bg-neutral-800"
+							className="h-20 animate-pulse rounded-lg bg-muted"
 						/>
 					))}
 				</div>
@@ -419,30 +419,29 @@ export function LoyaltyAdmin() {
 			{/* Top Customers */}
 			{stats && stats.topCustomers.length > 0 && (
 				<div>
-					<h3 className="mb-3 font-medium text-neutral-500 text-sm dark:text-neutral-400">
+					<h3 className="mb-3 font-medium text-muted-foreground text-sm">
 						Top Customers by Points Balance
 					</h3>
 					<div className="overflow-x-auto">
 						<table className="w-full text-left text-sm">
 							<thead>
-								<tr className="border-b dark:border-neutral-700">
-									<th className="pb-2 font-medium text-neutral-500">
+								<tr className="border-border border-b">
+									<th className="pb-2 font-medium text-muted-foreground">
 										Customer
 									</th>
-									<th className="pb-2 font-medium text-neutral-500">Email</th>
-									<th className="pb-2 text-right font-medium text-neutral-500">
+									<th className="pb-2 font-medium text-muted-foreground">
+										Email
+									</th>
+									<th className="pb-2 text-right font-medium text-muted-foreground">
 										Balance
 									</th>
 								</tr>
 							</thead>
 							<tbody>
 								{stats.topCustomers.map((tc) => (
-									<tr
-										key={tc.customerId}
-										className="border-b dark:border-neutral-800"
-									>
+									<tr key={tc.customerId} className="border-border border-b">
 										<td className="py-2">{tc.name}</td>
-										<td className="py-2 text-neutral-500">{tc.email}</td>
+										<td className="py-2 text-muted-foreground">{tc.email}</td>
 										<td className="py-2 text-right font-medium">
 											{tc.balance.toLocaleString()}
 										</td>
@@ -456,7 +455,7 @@ export function LoyaltyAdmin() {
 
 			{/* Customer Search + Manage */}
 			<div>
-				<h3 className="mb-3 font-medium text-neutral-500 text-sm dark:text-neutral-400">
+				<h3 className="mb-3 font-medium text-muted-foreground text-sm">
 					Manage Customer Points
 				</h3>
 				<input
@@ -467,38 +466,42 @@ export function LoyaltyAdmin() {
 						setSearch(e.target.value);
 						setPage(1);
 					}}
-					className="mb-3 w-full rounded-lg border px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800"
+					className="mb-3 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
 				/>
 
 				{customersLoading ? (
-					<p className="text-neutral-400 text-sm">Loading customers...</p>
+					<p className="text-muted-foreground text-sm">Loading customers...</p>
 				) : customers.length === 0 ? (
-					<p className="text-neutral-400 text-sm">No customers found</p>
+					<p className="text-muted-foreground text-sm">No customers found</p>
 				) : (
 					<>
 						<div className="overflow-x-auto">
 							<table className="w-full text-left text-sm">
 								<thead>
-									<tr className="border-b dark:border-neutral-700">
-										<th className="pb-2 font-medium text-neutral-500">Name</th>
-										<th className="pb-2 font-medium text-neutral-500">Email</th>
-										<th className="pb-2 text-right font-medium text-neutral-500">
+									<tr className="border-border border-b">
+										<th className="pb-2 font-medium text-muted-foreground">
+											Name
+										</th>
+										<th className="pb-2 font-medium text-muted-foreground">
+											Email
+										</th>
+										<th className="pb-2 text-right font-medium text-muted-foreground">
 											Actions
 										</th>
 									</tr>
 								</thead>
 								<tbody>
 									{customers.map((c) => (
-										<tr key={c.id} className="border-b dark:border-neutral-800">
+										<tr key={c.id} className="border-border border-b">
 											<td className="py-2">
 												{c.firstName} {c.lastName}
 											</td>
-											<td className="py-2 text-neutral-500">{c.email}</td>
+											<td className="py-2 text-muted-foreground">{c.email}</td>
 											<td className="py-2 text-right">
 												<button
 													type="button"
 													onClick={() => setSelectedCustomer(c)}
-													className="rounded bg-neutral-100 px-3 py-1 font-medium text-xs hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700"
+													className="rounded bg-muted px-3 py-1 font-medium text-xs hover:bg-muted/80"
 												>
 													Manage Points
 												</button>
@@ -516,18 +519,18 @@ export function LoyaltyAdmin() {
 									type="button"
 									onClick={() => setPage((p) => Math.max(1, p - 1))}
 									disabled={page === 1}
-									className="rounded border px-3 py-1 text-sm disabled:opacity-50 dark:border-neutral-700"
+									className="rounded border border-border px-3 py-1 text-sm disabled:opacity-50"
 								>
 									Previous
 								</button>
-								<span className="text-neutral-500 text-sm">
+								<span className="text-muted-foreground text-sm">
 									Page {page} of {totalPages}
 								</span>
 								<button
 									type="button"
 									onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
 									disabled={page === totalPages}
-									className="rounded border px-3 py-1 text-sm disabled:opacity-50 dark:border-neutral-700"
+									className="rounded border border-border px-3 py-1 text-sm disabled:opacity-50"
 								>
 									Next
 								</button>
