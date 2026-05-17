@@ -323,6 +323,72 @@ describe("createFlashSaleController", () => {
 			const p2 = await addTestProduct(sale.id, { productId: "p2" });
 			expect(p1.id).not.toBe(p2.id);
 		});
+
+		it("stores productName when provided", async () => {
+			const sale = await createTestSale();
+			const product = await controller.addProduct({
+				flashSaleId: sale.id,
+				productId: "product-1",
+				salePrice: 29.99,
+				originalPrice: 59.99,
+				productName: "Blue Widget",
+			});
+			expect(product.productName).toBe("Blue Widget");
+		});
+
+		it("stores productSlug when provided", async () => {
+			const sale = await createTestSale();
+			const product = await controller.addProduct({
+				flashSaleId: sale.id,
+				productId: "product-1",
+				salePrice: 29.99,
+				originalPrice: 59.99,
+				productSlug: "blue-widget",
+			});
+			expect(product.productSlug).toBe("blue-widget");
+		});
+
+		it("stores productImage when provided", async () => {
+			const sale = await createTestSale();
+			const product = await controller.addProduct({
+				flashSaleId: sale.id,
+				productId: "product-1",
+				salePrice: 29.99,
+				originalPrice: 59.99,
+				productImage: "https://example.com/widget.jpg",
+			});
+			expect(product.productImage).toBe("https://example.com/widget.jpg");
+		});
+
+		it("omits metadata fields when not provided", async () => {
+			const sale = await createTestSale();
+			const product = await addTestProduct(sale.id);
+			expect(product.productName).toBeUndefined();
+			expect(product.productSlug).toBeUndefined();
+			expect(product.productImage).toBeUndefined();
+		});
+
+		it("preserves metadata on upsert", async () => {
+			const sale = await createTestSale();
+			await controller.addProduct({
+				flashSaleId: sale.id,
+				productId: "product-1",
+				salePrice: 29.99,
+				originalPrice: 59.99,
+				productName: "Blue Widget",
+				productSlug: "blue-widget",
+			});
+			// Upsert with updated price — metadata should persist
+			const updated = await controller.addProduct({
+				flashSaleId: sale.id,
+				productId: "product-1",
+				salePrice: 19.99,
+				originalPrice: 59.99,
+				productName: "Blue Widget Updated",
+			});
+			expect(updated.salePrice).toBe(19.99);
+			expect(updated.productName).toBe("Blue Widget Updated");
+		});
 	});
 
 	// ── updateProduct ──
