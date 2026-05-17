@@ -77,6 +77,13 @@ export const createProduct = createAdminEndpoint(
 			}
 		}
 
+		void ctx.context.events?.emit("product.created", {
+			productId: product.id,
+			name: product.name,
+			slug: product.slug,
+			price: product.price,
+			status: product.status,
+		});
 		return { product, status: 201 };
 	},
 );
