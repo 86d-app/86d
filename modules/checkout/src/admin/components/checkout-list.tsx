@@ -243,11 +243,16 @@ export function CheckoutList() {
 	if (search) queryInput.search = search;
 	if (statusFilter) queryInput.status = statusFilter;
 
-	const { data: listData, isLoading: loading } = api.listSessions.useQuery(
-		queryInput,
-	) as {
+	const {
+		data: listData,
+		isLoading: loading,
+		isError: checkoutsError,
+		refetch: refetchCheckouts,
+	} = api.listSessions.useQuery(queryInput) as {
 		data: ListResult | undefined;
 		isLoading: boolean;
+		isError: boolean;
+		refetch: () => void;
 	};
 
 	const expireStale = api.expireStale.useMutation({
@@ -257,6 +262,26 @@ export function CheckoutList() {
 			void api.getStats.invalidate();
 		},
 	});
+
+	if (checkoutsError) {
+		return (
+			<div className="rounded-md border border-destructive/50 bg-destructive/10 p-4">
+				<p className="font-semibold text-destructive">
+					Failed to load checkout sessions
+				</p>
+				<p className="mt-1 text-muted-foreground text-sm">
+					Check your connection and try again.
+				</p>
+				<button
+					type="button"
+					onClick={() => refetchCheckouts()}
+					className="mt-3 rounded-md bg-destructive/20 px-3 py-1.5 font-medium text-destructive text-sm transition-colors hover:bg-destructive/30"
+				>
+					Try again
+				</button>
+			</div>
+		);
+	}
 
 	const sessions = listData?.sessions ?? [];
 	const total = listData?.total ?? 0;
