@@ -43,7 +43,10 @@ export function SignUpForm() {
 	return (
 		<form className="flex flex-col gap-4" onSubmit={handleSubmit}>
 			{error ? (
-				<div className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-destructive text-sm">
+				<div
+					role="alert"
+					className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-destructive text-sm"
+				>
 					{error}
 				</div>
 			) : null}

@@ -46,7 +46,10 @@ export function StoreModuleRouteClient({
 
 	if (error) {
 		return (
-			<div className="rounded-md border border-destructive/50 bg-destructive/10 p-4 text-destructive">
+			<div
+				role="alert"
+				className="rounded-md border border-destructive/50 bg-destructive/10 p-4 text-destructive"
+			>
 				<p className="font-medium">Failed to load page</p>
 				<p className="mt-1 text-sm">{error.message}</p>
 			</div>
