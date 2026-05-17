@@ -8,6 +8,7 @@ import { buildOrderConfirmationEmail } from "./emails/order-confirmation";
 import { buildOrderFulfilledEmail } from "./emails/order-fulfilled";
 import { buildOrderShippedEmail } from "./emails/order-shipped";
 import { buildReturnStatusEmail } from "./emails/return-status";
+import { buildSubscriptionStatusEmail } from "./emails/subscription-status";
 import { ResendProvider, TwilioProvider } from "./provider";
 import { notificationsSchema } from "./schema";
 import { createNotificationsController } from "./service-impl";
@@ -433,6 +434,49 @@ export default function notifications(options?: NotificationsOptions): Module {
 						.catch(() => {});
 				},
 			);
+
+			// ── Subscription notifications ───────────────────────────────────
+			interface SubscriptionEventPayload {
+				subscriptionId: string;
+				planId: string;
+				customerId: string;
+				email?: string | undefined;
+				planName?: string | undefined;
+				price?: number | undefined;
+				currency?: string | undefined;
+			}
+
+			const subscriptionStatuses = ["created", "cancelled", "renewed"] as const;
+
+			for (const status of subscriptionStatuses) {
+				ctx.events?.on<SubscriptionEventPayload>(
+					`subscription.${status}`,
+					async (event) => {
+						const p = event.payload;
+						if (!p || !emailProvider || !p.email) return;
+
+						const { subject, html, text } = buildSubscriptionStatusEmail({
+							status,
+							customerEmail: p.email,
+							planName: p.planName ?? p.planId,
+							price: p.price,
+							currency: p.currency,
+						});
+						await emailProvider
+							.sendEmail({
+								to: p.email,
+								subject,
+								html,
+								text,
+								tags: [
+									{ name: "type", value: `subscription_${status}` },
+									{ name: "subscription_id", value: p.subscriptionId },
+								],
+							})
+							.catch(() => {});
+					},
+				);
+			}
 
 			// ── Appointment notifications ────────────────────────────────────
 			interface AppointmentEventPayload {
