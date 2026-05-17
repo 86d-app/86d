@@ -1,6 +1,7 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
 import { createAdminEndpointsWithSettings } from "./admin/endpoints";
 import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
+import { buildAppointmentStatusEmail } from "./emails/appointment-status";
 import { buildCartRecoveryEmail } from "./emails/cart-recovery";
 import { buildOrderCancelledEmail } from "./emails/order-cancelled";
 import { buildOrderConfirmationEmail } from "./emails/order-confirmation";
@@ -432,6 +433,50 @@ export default function notifications(options?: NotificationsOptions): Module {
 						.catch(() => {});
 				},
 			);
+
+			// ── Appointment notifications ────────────────────────────────────
+			interface AppointmentEventPayload {
+				appointmentId: string;
+				serviceId: string;
+				customerId?: string | undefined;
+				customerEmail?: string | undefined;
+				startsAt?: Date | undefined;
+			}
+
+			const appointmentStatuses = [
+				"created",
+				"confirmed",
+				"cancelled",
+			] as const;
+
+			for (const status of appointmentStatuses) {
+				ctx.events?.on<AppointmentEventPayload>(
+					`appointment.${status}`,
+					async (event) => {
+						const p = event.payload;
+						if (!p || !emailProvider || !p.customerEmail) return;
+
+						const { subject, html, text } = buildAppointmentStatusEmail({
+							status,
+							customerName: "",
+							serviceName: p.serviceId,
+							startsAt: p.startsAt ?? new Date(),
+						});
+						await emailProvider
+							.sendEmail({
+								to: p.customerEmail,
+								subject,
+								html,
+								text,
+								tags: [
+									{ name: "type", value: `appointment_${status}` },
+									{ name: "appointment_id", value: p.appointmentId },
+								],
+							})
+							.catch(() => {});
+					},
+				);
+			}
 
 			return { controllers: { notifications: controller } };
 		},
