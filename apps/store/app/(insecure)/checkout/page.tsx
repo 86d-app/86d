@@ -1322,7 +1322,10 @@ const CheckoutPage = observer(function CheckoutPage() {
 			<StepIndicator current={co.currentStep} />
 
 			{error && (
-				<div className="mb-6 rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-destructive text-sm">
+				<div
+					role="alert"
+					className="mb-6 rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-destructive text-sm"
+				>
 					{error}
 				</div>
 			)}
@@ -1509,7 +1512,10 @@ const CheckoutPage = observer(function CheckoutPage() {
 									))}
 								</div>
 							) : calcShippingMut.isError ? (
-								<div className="mb-6 rounded-lg border border-destructive/40 bg-destructive/5 p-4">
+								<div
+									role="alert"
+									className="mb-6 rounded-lg border border-destructive/40 bg-destructive/5 p-4"
+								>
 									<p className="font-medium text-destructive text-sm">
 										Unable to calculate shipping rates
 									</p>
