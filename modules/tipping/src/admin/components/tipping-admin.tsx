@@ -55,14 +55,39 @@ export function TippingAdmin() {
 	const [statusFilter, setStatusFilter] = useState("");
 	const [error] = useState("");
 
-	const { data: listData, isLoading } = api.list.useQuery({
+	const {
+		data: listData,
+		isLoading,
+		isError: tipsError,
+		refetch: refetchTips,
+	} = api.list.useQuery({
 		take: String(PAGE_SIZE),
 		skip: String(skip),
 		...(statusFilter ? { status: statusFilter } : {}),
 	}) as {
 		data: { tips: TipItem[]; total: number } | undefined;
 		isLoading: boolean;
+		isError: boolean;
+		refetch: () => void;
 	};
+
+	if (tipsError) {
+		return (
+			<div className="rounded-md border border-destructive/50 bg-destructive/10 p-4">
+				<p className="font-semibold text-destructive">Failed to load tips</p>
+				<p className="mt-1 text-muted-foreground text-sm">
+					Check your connection and try again.
+				</p>
+				<button
+					type="button"
+					onClick={() => refetchTips()}
+					className="mt-3 rounded-md bg-destructive/20 px-3 py-1.5 font-medium text-destructive text-sm transition-colors hover:bg-destructive/30"
+				>
+					Try again
+				</button>
+			</div>
+		);
+	}
 
 	const tips = listData?.tips ?? [];
 	const total = listData?.total ?? 0;

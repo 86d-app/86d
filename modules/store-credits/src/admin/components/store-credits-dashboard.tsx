@@ -89,11 +89,17 @@ export function StoreCreditsDashboard() {
 	};
 	if (statusFilter !== "all") queryInput.status = statusFilter;
 
-	const { data: accountsData, isLoading: accountsLoading } =
-		api.listAccounts.useQuery(queryInput) as {
-			data: { accounts: CreditAccount[] } | undefined;
-			isLoading: boolean;
-		};
+	const {
+		data: accountsData,
+		isLoading: accountsLoading,
+		isError: accountsError,
+		refetch: refetchAccounts,
+	} = api.listAccounts.useQuery(queryInput) as {
+		data: { accounts: CreditAccount[] } | undefined;
+		isLoading: boolean;
+		isError: boolean;
+		refetch: () => void;
+	};
 
 	const { data: summaryData, isLoading: summaryLoading } = api.summary.useQuery(
 		{},
@@ -101,6 +107,26 @@ export function StoreCreditsDashboard() {
 		data: CreditSummary | undefined;
 		isLoading: boolean;
 	};
+
+	if (accountsError) {
+		return (
+			<div className="rounded-md border border-destructive/50 bg-destructive/10 p-4">
+				<p className="font-semibold text-destructive">
+					Failed to load store credit accounts
+				</p>
+				<p className="mt-1 text-muted-foreground text-sm">
+					Check your connection and try again.
+				</p>
+				<button
+					type="button"
+					onClick={() => refetchAccounts()}
+					className="mt-3 rounded-md bg-destructive/20 px-3 py-1.5 font-medium text-destructive text-sm transition-colors hover:bg-destructive/30"
+				>
+					Try again
+				</button>
+			</div>
+		);
+	}
 
 	const accounts = accountsData?.accounts ?? [];
 	const summary = summaryData ?? null;
