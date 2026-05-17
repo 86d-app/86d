@@ -1,6 +1,6 @@
 {
   "lockfileVersion": 1,
-  "generatedAt": "2026-05-17T07:45:02.316Z",
+  "generatedAt": "2026-05-17T16:03:06.804Z",
   "modules": {
     "abandoned-carts": {
       "source": "local",
@@ -48,7 +48,7 @@
       "source": "local",
       "packageName": "@86d-app/auctions",
       "version": "0.0.40",
-      "integrity": "sha256-64475597c7e04ba3727d9b9c6da583c9b47a22487dd2a5649b0fa36dd97293b2",
+      "integrity": "sha256-92abd0d5f9839906a58d6e5db919bb1f927a65b75c925fe4c2b3b3a5cc9bab8c",
       "localPath": "modules/auctions"
     },
     "audit-log": {

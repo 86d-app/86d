@@ -86,6 +86,16 @@ import Link from "next/link";
   </div>
 </section>
 
+{/* Active Flash Sales — only renders when sales are live */}
+<section className="mx-auto w-full max-w-7xl px-4 pt-16 sm:px-6 sm:pt-20 lg:px-8 lg:pt-24">
+  <FlashSalesHomepageSection productLimit={4} saleLimit={2} />
+</section>
+
+{/* Live Auctions — only renders when auctions are active */}
+<section className="mx-auto w-full max-w-7xl px-4 pt-16 sm:px-6 sm:pt-20 lg:px-8 lg:pt-24">
+  <AuctionsHomepageSection limit={4} />
+</section>
+
 {/* Featured Products */}
 <section className="mx-auto w-full max-w-7xl px-4 pt-16 sm:px-6 sm:pt-20 lg:px-8 lg:pt-24">
   <FeaturedProducts limit={4} title="Featured" />
