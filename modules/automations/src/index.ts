@@ -96,6 +96,58 @@ export default function automations(options?: AutomationsOptions): Module {
 				},
 				ctx.controllers,
 			);
+
+			// Subscribe to cross-module events so automations can trigger on them.
+			// Each call to evaluateEvent finds all active automations matching the
+			// event type and executes them with the event payload as context.
+			const CROSS_MODULE_EVENTS = [
+				"order.placed",
+				"order.shipped",
+				"order.fulfilled",
+				"order.cancelled",
+				"return.requested",
+				"return.approved",
+				"return.rejected",
+				"return.completed",
+				"review.submitted",
+				"review.approved",
+				"review.rejected",
+				"review.responded",
+				"review.requested",
+				"subscription.created",
+				"subscription.cancelled",
+				"subscription.renewed",
+				"membership.subscribed",
+				"membership.cancelled",
+				"membership.paused",
+				"membership.resumed",
+				"loyalty.pointsEarned",
+				"loyalty.pointsRedeemed",
+				"waitlist.subscribed",
+				"waitlist.notified",
+				"affiliates.application_submitted",
+				"affiliates.approved",
+				"affiliates.rejected",
+				"affiliates.conversion_recorded",
+				"newsletter.subscribed",
+				"newsletter.campaign.sent",
+				"store-credits.credited",
+				"store-credits.debited",
+				"cart.abandoned",
+				"cart.recovered",
+			] as const;
+
+			for (const eventName of CROSS_MODULE_EVENTS) {
+				ctx.events?.on(eventName, async (event) => {
+					await controller
+						.evaluateEvent(
+							eventName,
+							(event.payload as Record<string, unknown>) ?? {},
+						)
+						.catch(() => {});
+				});
+			}
+
 			return {
 				controllers: { automations: controller },
 			};
