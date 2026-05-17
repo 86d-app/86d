@@ -157,7 +157,10 @@ export function CheckoutDetail({
 
 	if (error || !data) {
 		const content = (
-			<div className="rounded-md border border-destructive/50 bg-destructive/10 p-6 text-center">
+			<div
+				role="alert"
+				className="rounded-md border border-destructive/50 bg-destructive/10 p-6 text-center"
+			>
 				<p className="font-medium text-destructive">
 					{error?.message ?? "Checkout session not found"}
 				</p>

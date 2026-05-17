@@ -335,7 +335,10 @@ function DetailPanel({
 			</div>
 
 			{error && (
-				<div className="rounded-lg bg-destructive/10 p-3 text-destructive text-sm">
+				<div
+					role="alert"
+					className="rounded-lg bg-destructive/10 p-3 text-destructive text-sm"
+				>
 					{error}
 				</div>
 			)}

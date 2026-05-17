@@ -57,7 +57,10 @@ export function RecommendationSettings() {
 						Recommendation Settings
 					</h1>
 				</div>
-				<div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive text-sm">
+				<div
+					role="alert"
+					className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive text-sm"
+				>
 					Failed to load settings: {error.message}
 				</div>
 			</div>

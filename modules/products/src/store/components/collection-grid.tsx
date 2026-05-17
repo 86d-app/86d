@@ -35,7 +35,10 @@ export function CollectionGrid({
 	if (isError) {
 		return (
 			<section className="py-12 sm:py-14">
-				<div className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-6 text-center">
+				<div
+					role="alert"
+					className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-6 text-center"
+				>
 					<p className="font-medium text-destructive text-sm">
 						Failed to load collections
 					</p>

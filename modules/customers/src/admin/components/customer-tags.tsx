@@ -127,7 +127,10 @@ export function CustomerTags() {
 
 	if (tagsError) {
 		return (
-			<div className="rounded-md border border-destructive/50 bg-destructive/10 p-4">
+			<div
+				role="alert"
+				className="rounded-md border border-destructive/50 bg-destructive/10 p-4"
+			>
 				<p className="font-semibold text-destructive">
 					Failed to load customer tags
 				</p>

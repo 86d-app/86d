@@ -449,7 +449,10 @@ export function ProductForm({ productId, onNavigate }: ProductFormProps) {
 	return (
 		<form onSubmit={(e) => handleSubmit(e)} className="space-y-6">
 			{error && (
-				<div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-destructive text-sm">
+				<div
+					role="alert"
+					className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-destructive text-sm"
+				>
 					{error}
 				</div>
 			)}

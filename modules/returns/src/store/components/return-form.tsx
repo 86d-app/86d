@@ -158,7 +158,10 @@ export function ReturnForm({
 			</h2>
 
 			{error && (
-				<div className="mb-4 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-destructive text-sm">
+				<div
+					role="alert"
+					className="mb-4 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-destructive text-sm"
+				>
 					{error}
 				</div>
 			)}

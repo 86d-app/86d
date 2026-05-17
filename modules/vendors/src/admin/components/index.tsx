@@ -230,7 +230,10 @@ function VendorSheet({ vendor, onSaved, onCancel }: VendorSheetProps) {
 					className="flex flex-1 flex-col gap-5 px-6 py-6"
 				>
 					{error ? (
-						<div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-destructive text-sm">
+						<div
+							role="alert"
+							className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-destructive text-sm"
+						>
 							{error}
 						</div>
 					) : null}
@@ -408,7 +411,10 @@ export function VendorAdmin() {
 
 	if (vendorsError) {
 		return (
-			<div className="rounded-md border border-destructive/50 bg-destructive/10 p-4">
+			<div
+				role="alert"
+				className="rounded-md border border-destructive/50 bg-destructive/10 p-4"
+			>
 				<p className="font-semibold text-destructive">Failed to load vendors</p>
 				<p className="mt-1 text-muted-foreground text-sm">
 					Check your connection and try again.
@@ -799,7 +805,10 @@ export function VendorPayouts() {
 						New Payout
 					</h2>
 					{payoutError ? (
-						<div className="mb-3 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-destructive text-sm">
+						<div
+							role="alert"
+							className="mb-3 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-destructive text-sm"
+						>
 							{payoutError}
 						</div>
 					) : null}

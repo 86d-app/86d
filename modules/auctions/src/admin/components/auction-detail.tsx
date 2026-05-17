@@ -600,7 +600,10 @@ export function AuctionDetail({ auctionId }: { auctionId: string }) {
 
 			{/* Action error */}
 			{actionError && (
-				<div className="rounded-md bg-destructive/10 px-4 py-3 text-destructive text-sm">
+				<div
+					role="alert"
+					className="rounded-md bg-destructive/10 px-4 py-3 text-destructive text-sm"
+				>
 					{actionError}
 					<button
 						type="button"

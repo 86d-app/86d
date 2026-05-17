@@ -333,7 +333,10 @@ function ImportDialog({
 							</div>
 
 							{result.errors.length > 0 && (
-								<div className="max-h-32 overflow-y-auto rounded-md border border-destructive/30 bg-destructive/5 p-3">
+								<div
+									role="alert"
+									className="max-h-32 overflow-y-auto rounded-md border border-destructive/30 bg-destructive/5 p-3"
+								>
 									{result.errors.map((err) => (
 										<p
 											key={`${err.row}-${err.field}`}
@@ -558,7 +561,10 @@ export function CustomerList() {
 
 	if (customersError) {
 		return (
-			<div className="rounded-md border border-destructive/50 bg-destructive/10 p-4">
+			<div
+				role="alert"
+				className="rounded-md border border-destructive/50 bg-destructive/10 p-4"
+			>
 				<p className="font-semibold text-destructive">
 					Failed to load customers
 				</p>

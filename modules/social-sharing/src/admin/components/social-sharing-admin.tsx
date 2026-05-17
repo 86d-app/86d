@@ -170,7 +170,10 @@ function SettingsPanel({
 					</h2>
 
 					{error && (
-						<div className="mt-3 rounded-md bg-destructive/10 px-3 py-2 text-destructive text-sm">
+						<div
+							role="alert"
+							className="mt-3 rounded-md bg-destructive/10 px-3 py-2 text-destructive text-sm"
+						>
 							{error}
 						</div>
 					)}

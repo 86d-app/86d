@@ -183,7 +183,10 @@ function LocationSheet({ location, onSaved, onCancel }: LocationSheetProps) {
 					className="flex flex-1 flex-col gap-5 px-6 py-6"
 				>
 					{error ? (
-						<div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-destructive text-sm">
+						<div
+							role="alert"
+							className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-destructive text-sm"
+						>
 							{error}
 						</div>
 					) : null}

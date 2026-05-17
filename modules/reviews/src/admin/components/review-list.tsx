@@ -173,7 +173,10 @@ export function ReviewList() {
 
 	if (reviewsError) {
 		return (
-			<div className="rounded-md border border-destructive/50 bg-destructive/10 p-4">
+			<div
+				role="alert"
+				className="rounded-md border border-destructive/50 bg-destructive/10 p-4"
+			>
 				<p className="font-semibold text-destructive">Failed to load reviews</p>
 				<p className="mt-1 text-muted-foreground text-sm">
 					Check your connection and try again.

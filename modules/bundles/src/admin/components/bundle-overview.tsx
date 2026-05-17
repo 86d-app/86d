@@ -143,7 +143,10 @@ function CreateForm({ onClose }: { onClose: () => void }) {
 	return (
 		<form onSubmit={handleSubmit} className="space-y-4">
 			{error && (
-				<div className="rounded-lg bg-destructive/10 p-3 text-destructive text-sm">
+				<div
+					role="alert"
+					className="rounded-lg bg-destructive/10 p-3 text-destructive text-sm"
+				>
 					{error}
 				</div>
 			)}
@@ -481,7 +484,10 @@ function DetailPanel({
 			</div>
 
 			{error && (
-				<div className="rounded-lg bg-destructive/10 p-3 text-destructive text-sm">
+				<div
+					role="alert"
+					className="rounded-lg bg-destructive/10 p-3 text-destructive text-sm"
+				>
 					{error}
 				</div>
 			)}
@@ -652,7 +658,10 @@ export function BundleOverview() {
 
 	if (bundlesError) {
 		return (
-			<div className="rounded-md border border-destructive/50 bg-destructive/10 p-4">
+			<div
+				role="alert"
+				className="rounded-md border border-destructive/50 bg-destructive/10 p-4"
+			>
 				<p className="font-semibold text-destructive">Failed to load bundles</p>
 				<p className="mt-1 text-muted-foreground text-sm">
 					Check your connection and try again.

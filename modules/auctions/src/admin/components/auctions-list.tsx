@@ -815,7 +815,10 @@ export function AuctionsList() {
 
 	if (auctionsError) {
 		return (
-			<div className="rounded-md border border-destructive/50 bg-destructive/10 p-4">
+			<div
+				role="alert"
+				className="rounded-md border border-destructive/50 bg-destructive/10 p-4"
+			>
 				<p className="font-semibold text-destructive">
 					Failed to load auctions
 				</p>
@@ -887,7 +890,10 @@ export function AuctionsList() {
 
 			{/* Action error */}
 			{actionError && (
-				<div className="rounded-md bg-destructive/10 px-4 py-3 text-destructive text-sm">
+				<div
+					role="alert"
+					className="rounded-md bg-destructive/10 px-4 py-3 text-destructive text-sm"
+				>
 					{actionError}
 					<button
 						type="button"
