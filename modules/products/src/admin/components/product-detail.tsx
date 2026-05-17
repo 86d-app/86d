@@ -246,6 +246,7 @@ function VariantForm({
 								<button
 									type="button"
 									onClick={() => removeOption(idx)}
+									aria-label="Remove option"
 									className="rounded-md px-2 text-muted-foreground hover:text-destructive"
 								>
 									<svg

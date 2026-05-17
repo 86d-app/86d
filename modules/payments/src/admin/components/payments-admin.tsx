@@ -118,6 +118,7 @@ function RefundModal({
 					<button
 						type="button"
 						onClick={onClose}
+						aria-label="Close"
 						className="rounded-md p-1 text-muted-foreground hover:bg-muted"
 					>
 						<svg

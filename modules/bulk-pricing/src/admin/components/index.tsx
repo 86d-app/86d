@@ -186,6 +186,7 @@ function RuleSheet({ rule, onSaved, onCancel }: RuleSheetProps) {
 						type="button"
 						onClick={onCancel}
 						className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+						aria-label="Close"
 					>
 						✕
 					</button>
@@ -427,6 +428,7 @@ function TierSheet({ ruleId, tier, onSaved, onCancel, api }: TierSheetProps) {
 						type="button"
 						onClick={onCancel}
 						className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+						aria-label="Close"
 					>
 						✕
 					</button>

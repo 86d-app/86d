@@ -149,6 +149,7 @@ function EditInvoiceSheet({ invoice, onSaved, onCancel }: EditSheetProps) {
 						type="button"
 						onClick={onCancel}
 						className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+						aria-label="Close"
 					>
 						✕
 					</button>
