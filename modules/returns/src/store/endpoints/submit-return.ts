@@ -69,6 +69,15 @@ export const submitReturn = createStoreEndpoint(
 			items: ctx.body.items,
 		});
 
+		void ctx.context.events?.emit("return.requested", {
+			returnId: returnRequest.id,
+			orderId: returnRequest.orderId,
+			orderNumber: returnRequest.orderId,
+			email: returnRequest.customerEmail ?? "",
+			customerName: ctx.context.session?.user?.name ?? "",
+			reason: returnRequest.reason,
+		});
+
 		return { return: returnRequest };
 	},
 );

@@ -327,9 +327,9 @@ export default function notifications(options?: NotificationsOptions): Module {
 			interface ReturnEventPayload {
 				returnId: string;
 				orderId: string;
-				orderNumber: string;
-				email: string;
-				customerName: string;
+				orderNumber?: string | undefined;
+				email?: string | undefined;
+				customerName?: string | undefined;
 				reason?: string | undefined;
 				adminNotes?: string | undefined;
 			}
@@ -351,8 +351,8 @@ export default function notifications(options?: NotificationsOptions): Module {
 						if (emailProvider && p.email) {
 							const { subject, html, text } = buildReturnStatusEmail({
 								status,
-								orderNumber: p.orderNumber,
-								customerName: p.customerName,
+								orderNumber: p.orderNumber ?? p.orderId,
+								customerName: p.customerName ?? "",
 								reason: p.reason,
 								adminNotes: p.adminNotes,
 							});

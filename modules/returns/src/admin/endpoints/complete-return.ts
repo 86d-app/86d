@@ -19,6 +19,14 @@ export const completeReturn = createAdminEndpoint(
 		if (!result) {
 			return { error: "Return request not found", status: 404 };
 		}
+		void ctx.context.events?.emit("return.completed", {
+			returnId: result.id,
+			orderId: result.orderId,
+			orderNumber: result.orderId,
+			email: result.customerEmail ?? "",
+			customerName: "",
+			reason: result.reason,
+		});
 		return { return: result };
 	},
 );

@@ -787,7 +787,8 @@ describe("createNewsletterController with email provider", () => {
 		await controller.sendCampaign(campaign.id);
 
 		expect(mockProvider.sendBatch).toHaveBeenCalledOnce();
-		const [emails, campaignId] = vi.mocked(mockProvider.sendBatch).mock.calls[0];
+		const [emails, campaignId] = vi.mocked(mockProvider.sendBatch).mock
+			.calls[0];
 		expect(emails).toHaveLength(2);
 		expect(emails[0].subject).toBe("Hello");
 		expect(campaignId).toBe(campaign.id);

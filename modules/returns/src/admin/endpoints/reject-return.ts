@@ -16,6 +16,15 @@ export const rejectReturn = createAdminEndpoint(
 		if (!result) {
 			return { error: "Return request not found", status: 404 };
 		}
+		void ctx.context.events?.emit("return.rejected", {
+			returnId: result.id,
+			orderId: result.orderId,
+			orderNumber: result.orderId,
+			email: result.customerEmail ?? "",
+			customerName: "",
+			reason: result.reason,
+			adminNotes: result.adminNotes,
+		});
 		return { return: result };
 	},
 );
