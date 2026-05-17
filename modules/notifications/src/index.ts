@@ -2,6 +2,7 @@ import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
 import { createAdminEndpointsWithSettings } from "./admin/endpoints";
 import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
 import { buildAppointmentStatusEmail } from "./emails/appointment-status";
+import { buildBackInStockEmail } from "./emails/back-in-stock";
 import { buildCartRecoveryEmail } from "./emails/cart-recovery";
 import { buildOrderCancelledEmail } from "./emails/order-cancelled";
 import { buildOrderConfirmationEmail } from "./emails/order-confirmation";
@@ -432,6 +433,43 @@ export default function notifications(options?: NotificationsOptions): Module {
 							],
 						})
 						.catch(() => {});
+				},
+			);
+
+			// ── Back-in-stock notifications ─────────────────────────────────
+			interface BackInStockPayload {
+				productId: string;
+				variantId?: string | undefined;
+				available: number;
+				subscribers: Array<{
+					email: string;
+					productName: string;
+				}>;
+			}
+
+			ctx.events?.on<BackInStockPayload>(
+				"inventory.back-in-stock",
+				async (event) => {
+					const p = event.payload;
+					if (!p || !emailProvider || !p.subscribers.length) return;
+
+					for (const sub of p.subscribers) {
+						const { subject, html, text } = buildBackInStockEmail({
+							productName: sub.productName,
+						});
+						await emailProvider
+							.sendEmail({
+								to: sub.email,
+								subject,
+								html,
+								text,
+								tags: [
+									{ name: "type", value: "back_in_stock" },
+									{ name: "product_id", value: p.productId },
+								],
+							})
+							.catch(() => {});
+					}
 				},
 			);
 
