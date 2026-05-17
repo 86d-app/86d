@@ -11,7 +11,11 @@ interface BadgeData {
 	url?: string | undefined;
 }
 
-export function TrustBadgesSection({ position = "product" }: { position?: string }) {
+export function TrustBadgesSection({
+	position = "product",
+}: {
+	position?: string;
+}) {
 	const api = useSocialProofApi();
 
 	const { data, isLoading, isError } = api.listBadges.useQuery({
@@ -39,25 +43,28 @@ export function TrustBadgesSection({ position = "product" }: { position?: string
 
 	return (
 		<div className="flex flex-wrap gap-x-4 gap-y-2">
-			{badges.map((badge) => {
-				const content = (
-					<span className="flex items-center gap-1.5 text-muted-foreground text-xs">
-						<span aria-hidden="true">{badge.icon}</span>
-						<span>{badge.name}</span>
-					</span>
-				);
-				return badge.url ? (
+			{badges.map((badge) =>
+				badge.url ? (
 					<a
 						key={badge.id}
 						href={badge.url}
 						className="transition-opacity hover:opacity-70"
 					>
-						{content}
+						<span className="flex items-center gap-1.5 text-muted-foreground text-xs">
+							<span aria-hidden="true">{badge.icon}</span>
+							<span>{badge.name}</span>
+						</span>
 					</a>
 				) : (
-					<span key={badge.id}>{content}</span>
-				);
-			})}
+					<span
+						key={badge.id}
+						className="flex items-center gap-1.5 text-muted-foreground text-xs"
+					>
+						<span aria-hidden="true">{badge.icon}</span>
+						<span>{badge.name}</span>
+					</span>
+				),
+			)}
 		</div>
 	);
 }
@@ -100,7 +107,5 @@ export function ProductActivitySection({
 
 	if (parts.length === 0) return null;
 
-	return (
-		<p className="text-muted-foreground text-xs">{parts.join(" · ")}</p>
-	);
+	return <p className="text-muted-foreground text-xs">{parts.join(" · ")}</p>;
 }

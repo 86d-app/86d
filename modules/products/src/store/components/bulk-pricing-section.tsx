@@ -38,16 +38,12 @@ export function BulkPricingSection({
 	const tiers = data?.tiers ?? [];
 
 	if (isLoading) {
-		return (
-			<div className="mt-1 h-16 animate-pulse rounded-lg bg-muted/60" />
-		);
+		return <div className="mt-1 h-16 animate-pulse rounded-lg bg-muted/60" />;
 	}
 
 	return (
 		<div className="mt-1 rounded-lg border border-border bg-muted/20 p-3">
-			<p className="mb-2 font-medium text-foreground text-xs">
-				Volume pricing
-			</p>
+			<p className="mb-2 font-medium text-foreground text-xs">Volume pricing</p>
 			<div className="flex flex-col gap-1">
 				{tiers.map((tp) => {
 					const t = tp.tier;

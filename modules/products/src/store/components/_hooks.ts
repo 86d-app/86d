@@ -103,6 +103,14 @@ export function useBulkPricingApi() {
 	};
 }
 
+export function useFlashSalesApi() {
+	const client = useModuleClient();
+	return {
+		getProductDeal:
+			client.module("flash-sales").store["/flash-sales/product/:productId"],
+	};
+}
+
 export function useSocialProofApi() {
 	const client = useModuleClient();
 	return {

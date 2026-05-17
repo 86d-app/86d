@@ -20,13 +20,17 @@ import type {
 import { formatPrice, imageUrl } from "./_utils";
 import { BackInStockNotify } from "./back-in-stock-notify";
 import { BulkPricingSection } from "./bulk-pricing-section";
+import { FlashDealSection } from "./flash-deal-section";
 import ProductDetailTemplate from "./product-detail.mdx";
-import { ProductActivitySection, TrustBadgesSection } from "./social-proof-section";
 import { ProductQASection } from "./product-qa-section";
 import { ProductReviewsSection } from "./product-reviews-section";
 import { RecentlyViewedProducts } from "./recently-viewed";
 import { RecommendedProducts } from "./recommended-products";
 import { RelatedProducts } from "./related-products";
+import {
+	ProductActivitySection,
+	TrustBadgesSection,
+} from "./social-proof-section";
 import { StarDisplay } from "./star-display";
 import { StockBadge } from "./stock-badge";
 
@@ -564,6 +568,7 @@ export function ProductDetail(props: ProductDetailProps) {
 					quantity={qty}
 				/>
 			}
+			flashDeal={<FlashDealSection productId={product.id} />}
 			activityBadge={<ProductActivitySection productId={product.id} />}
 			trustBadges={<TrustBadgesSection position="product" />}
 			outOfStockNotice={outOfStockNotice}
