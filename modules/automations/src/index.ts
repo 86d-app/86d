@@ -135,6 +135,16 @@ export default function automations(options?: AutomationsOptions): Module {
 				"store-credits.debited",
 				"cart.abandoned",
 				"cart.recovered",
+				"bid.placed",
+				"bid.outbid",
+				"auction.ended",
+				"auction.sold",
+				"auction.buy_now",
+				"quote.submitted",
+				"quote.reviewed",
+				"quote.accepted",
+				"quote.rejected",
+				"quote.converted",
 			] as const;
 
 			for (const eventName of CROSS_MODULE_EVENTS) {
