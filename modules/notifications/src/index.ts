@@ -9,6 +9,7 @@ import { buildOrderCancelledEmail } from "./emails/order-cancelled";
 import { buildOrderConfirmationEmail } from "./emails/order-confirmation";
 import { buildOrderFulfilledEmail } from "./emails/order-fulfilled";
 import { buildOrderShippedEmail } from "./emails/order-shipped";
+import { buildQuoteStatusEmail } from "./emails/quote-status";
 import { buildReturnStatusEmail } from "./emails/return-status";
 import { buildReviewApprovedEmail } from "./emails/review-approved";
 import { buildSubscriptionStatusEmail } from "./emails/subscription-status";
@@ -682,6 +683,57 @@ export default function notifications(options?: NotificationsOptions): Module {
 							.catch(() => {});
 					},
 				);
+			}
+
+			// ── Quote notifications ──────────────────────────────────────────
+			interface QuoteEventPayload {
+				quoteId: string;
+				customerId?: string | undefined;
+				total?: number | undefined;
+				currency?: string | undefined;
+				reason?: string | undefined;
+				status?: string | undefined;
+			}
+
+			const quoteStatuses = [
+				"submitted",
+				"reviewed",
+				"accepted",
+				"rejected",
+				"converted",
+			] as const;
+
+			for (const status of quoteStatuses) {
+				ctx.events?.on<QuoteEventPayload>(`quote.${status}`, async (event) => {
+					const p = event.payload;
+					if (!p || !emailProvider || !p.customerId || !customerResolver)
+						return;
+
+					const contact = await customerResolver(p.customerId).catch(
+						() => null,
+					);
+					if (!contact?.email) return;
+
+					const { subject, html, text } = buildQuoteStatusEmail({
+						status,
+						quoteId: p.quoteId,
+						total: p.total,
+						currency: p.currency,
+						reason: p.reason,
+					});
+					await emailProvider
+						.sendEmail({
+							to: contact.email,
+							subject,
+							html,
+							text,
+							tags: [
+								{ name: "type", value: `quote_${status}` },
+								{ name: "quote_id", value: p.quoteId },
+							],
+						})
+						.catch(() => {});
+				});
 			}
 
 			return { controllers: { notifications: controller } };
