@@ -1,4 +1,5 @@
 import type { ModuleDataService, ScopedEventEmitter } from "@86d-app/core";
+import type { NewsletterEmailProvider } from "./email-provider";
 import type {
 	Campaign,
 	CampaignStats,
@@ -10,6 +11,7 @@ import type {
 export function createNewsletterController(
 	data: ModuleDataService,
 	events?: ScopedEventEmitter | undefined,
+	emailProvider?: NewsletterEmailProvider | undefined,
 ): NewsletterController {
 	return {
 		async subscribe(params) {
@@ -269,21 +271,47 @@ export function createNewsletterController(
 				return null;
 			}
 
-			// Count active subscribers as recipients
 			const activeSubscribers = await data.findMany("subscriber", {
 				where: { status: "active" },
 			});
-			const recipientCount = activeSubscribers.length;
+			const subscribers = activeSubscribers as unknown as Subscriber[];
+			const recipientCount = subscribers.length;
 
+			// Mark as sending before dispatch
 			const now = new Date();
+			const sending: Campaign = {
+				...campaign,
+				status: "sending",
+				recipientCount,
+				updatedAt: now,
+			};
+			await data.upsert("campaign", id, sending as Record<string, unknown>);
+
+			let sentCount = 0;
+			let failedCount = 0;
+
+			if (emailProvider && recipientCount > 0) {
+				const result = await emailProvider.sendBatch(
+					subscribers.map((s) => ({
+						to: s.email,
+						subject: campaign.subject,
+						html: campaign.body,
+					})),
+					id,
+				);
+				sentCount = result.sent;
+				failedCount = result.failed;
+			}
+
+			const sentAt = new Date();
 			const updated: Campaign = {
 				...campaign,
 				status: "sent",
 				recipientCount,
-				sentCount: recipientCount,
-				failedCount: 0,
-				sentAt: now,
-				updatedAt: now,
+				sentCount,
+				failedCount,
+				sentAt,
+				updatedAt: sentAt,
 			};
 			await data.upsert("campaign", id, updated as Record<string, unknown>);
 			void events?.emit("newsletter.campaign.sent", {

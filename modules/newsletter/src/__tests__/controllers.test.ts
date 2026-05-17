@@ -446,7 +446,8 @@ describe("newsletter controller edge cases", () => {
 			const sent = await controller.sendCampaign(campaign.id);
 
 			expect(sent?.recipientCount).toBe(2);
-			expect(sent?.sentCount).toBe(2);
+			// No email provider configured — delivered 0 emails (graceful degradation)
+			expect(sent?.sentCount).toBe(0);
 		});
 
 		it("reports zero recipients when all subscribers are inactive", async () => {
@@ -519,7 +520,8 @@ describe("newsletter controller edge cases", () => {
 			expect(stats.sent).toBe(2);
 			expect(stats.sending).toBe(0);
 			expect(stats.totalRecipients).toBe(4);
-			expect(stats.totalSent).toBe(4);
+			// No email provider — sentCount is 0 per campaign
+			expect(stats.totalSent).toBe(0);
 			expect(stats.totalFailed).toBe(0);
 		});
 
@@ -544,7 +546,8 @@ describe("newsletter controller edge cases", () => {
 			expect(stats.total).toBe(1);
 			expect(stats.sent).toBe(1);
 			expect(stats.totalRecipients).toBe(1);
-			expect(stats.totalSent).toBe(1);
+			// No email provider — sentCount is 0
+			expect(stats.totalSent).toBe(0);
 		});
 
 		it("returns all zeroes when no campaigns exist", async () => {

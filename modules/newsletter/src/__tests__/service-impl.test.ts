@@ -1,5 +1,6 @@
 import { createMockDataService } from "@86d-app/core/test-utils";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { NewsletterEmailProvider } from "../email-provider";
 import { createNewsletterController } from "../service-impl";
 
 describe("createNewsletterController", () => {
@@ -660,7 +661,8 @@ describe("createNewsletterController", () => {
 			const sent = await controller.sendCampaign(campaign.id);
 			expect(sent?.status).toBe("sent");
 			expect(sent?.recipientCount).toBe(2);
-			expect(sent?.sentCount).toBe(2);
+			// No email provider configured — delivery count is 0 (graceful degradation)
+			expect(sent?.sentCount).toBe(0);
 			expect(sent?.sentAt).toBeInstanceOf(Date);
 		});
 
@@ -752,7 +754,103 @@ describe("createNewsletterController", () => {
 			const stats = await controller.getCampaignStats();
 			expect(stats.sent).toBe(2);
 			expect(stats.totalRecipients).toBe(4);
-			expect(stats.totalSent).toBe(4);
+			// No email provider — sentCount is 0 per campaign
+			expect(stats.totalSent).toBe(0);
 		});
+	});
+});
+
+// ── sendCampaign with email provider ────────────────────────────────────────
+
+describe("createNewsletterController with email provider", () => {
+	let mockData: ReturnType<typeof createMockDataService>;
+	let mockProvider: NewsletterEmailProvider;
+	let controller: ReturnType<typeof createNewsletterController>;
+
+	beforeEach(() => {
+		mockData = createMockDataService();
+		mockProvider = {
+			sendBatch: vi.fn(),
+		};
+		controller = createNewsletterController(mockData, undefined, mockProvider);
+	});
+
+	it("calls sendBatch with all active subscribers", async () => {
+		vi.mocked(mockProvider.sendBatch).mockResolvedValue({ sent: 2, failed: 0 });
+		await controller.subscribe({ email: "a@test.com" });
+		await controller.subscribe({ email: "b@test.com" });
+		const campaign = await controller.createCampaign({
+			subject: "Hello",
+			body: "<p>World</p>",
+		});
+
+		await controller.sendCampaign(campaign.id);
+
+		expect(mockProvider.sendBatch).toHaveBeenCalledOnce();
+		const [emails, campaignId] = vi.mocked(mockProvider.sendBatch).mock.calls[0];
+		expect(emails).toHaveLength(2);
+		expect(emails[0].subject).toBe("Hello");
+		expect(campaignId).toBe(campaign.id);
+	});
+
+	it("records sent and failed counts from provider response", async () => {
+		vi.mocked(mockProvider.sendBatch).mockResolvedValue({ sent: 1, failed: 1 });
+		await controller.subscribe({ email: "good@test.com" });
+		await controller.subscribe({ email: "bad@test.com" });
+		const campaign = await controller.createCampaign({
+			subject: "Test",
+			body: "Body",
+		});
+
+		const result = await controller.sendCampaign(campaign.id);
+
+		expect(result?.sentCount).toBe(1);
+		expect(result?.failedCount).toBe(1);
+		expect(result?.recipientCount).toBe(2);
+	});
+
+	it("does not call sendBatch when no active subscribers", async () => {
+		const campaign = await controller.createCampaign({
+			subject: "Empty list",
+			body: "Content",
+		});
+
+		const result = await controller.sendCampaign(campaign.id);
+
+		expect(mockProvider.sendBatch).not.toHaveBeenCalled();
+		expect(result?.sentCount).toBe(0);
+		expect(result?.recipientCount).toBe(0);
+	});
+
+	it("marks campaign as sent even if provider returns all failed", async () => {
+		vi.mocked(mockProvider.sendBatch).mockResolvedValue({ sent: 0, failed: 2 });
+		await controller.subscribe({ email: "x@test.com" });
+		await controller.subscribe({ email: "y@test.com" });
+		const campaign = await controller.createCampaign({
+			subject: "Bad batch",
+			body: "Content",
+		});
+
+		const result = await controller.sendCampaign(campaign.id);
+
+		expect(result?.status).toBe("sent");
+		expect(result?.sentCount).toBe(0);
+		expect(result?.failedCount).toBe(2);
+	});
+
+	it("reflects totalSent from provider in stats", async () => {
+		vi.mocked(mockProvider.sendBatch).mockResolvedValue({ sent: 3, failed: 0 });
+		await controller.subscribe({ email: "a@test.com" });
+		await controller.subscribe({ email: "b@test.com" });
+		await controller.subscribe({ email: "c@test.com" });
+		const campaign = await controller.createCampaign({
+			subject: "Stats test",
+			body: "Content",
+		});
+		await controller.sendCampaign(campaign.id);
+
+		const stats = await controller.getCampaignStats();
+		expect(stats.totalSent).toBe(3);
+		expect(stats.totalFailed).toBe(0);
 	});
 });

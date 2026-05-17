@@ -1,5 +1,6 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
 import { adminEndpoints } from "./admin/endpoints";
+import { ResendNewsletterProvider } from "./email-provider";
 import { newsletterSchema } from "./schema";
 import { createNewsletterController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints";
@@ -16,6 +17,10 @@ export type {
 export interface NewsletterOptions extends ModuleConfig {
 	/** Allow duplicate subscriptions silently (default: true) */
 	allowResubscribe?: string; // "true" | "false"
+	/** Resend API key — enables real campaign delivery when set */
+	resendApiKey?: string | undefined;
+	/** Sender email shown to recipients, e.g. "Store <newsletter@store.com>" */
+	resendFromAddress?: string | undefined;
 }
 
 export default function newsletter(options?: NewsletterOptions): Module {
@@ -34,7 +39,18 @@ export default function newsletter(options?: NewsletterOptions): Module {
 			],
 		},
 		init: async (ctx: ModuleContext) => {
-			const controller = createNewsletterController(ctx.data, ctx.events);
+			const emailProvider =
+				options?.resendApiKey && options?.resendFromAddress
+					? new ResendNewsletterProvider(
+							options.resendApiKey,
+							options.resendFromAddress,
+						)
+					: undefined;
+			const controller = createNewsletterController(
+				ctx.data,
+				ctx.events,
+				emailProvider,
+			);
 			return { controllers: { newsletter: controller } };
 		},
 		endpoints: {
