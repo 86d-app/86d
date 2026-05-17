@@ -1,6 +1,6 @@
 {
   "lockfileVersion": 1,
-  "generatedAt": "2026-05-17T16:03:06.804Z",
+  "generatedAt": "2026-05-17T16:09:51.067Z",
   "modules": {
     "abandoned-carts": {
       "source": "local",
@@ -405,7 +405,7 @@
       "source": "local",
       "packageName": "@86d-app/preorders",
       "version": "0.0.40",
-      "integrity": "sha256-7335fac99cf3784102786d4cb51b8e86ae41b66a0ae088937a61f2cd1a32daec",
+      "integrity": "sha256-59e458e4c6ad0f5912e0c5960c13dd1dc5e0f8c0abc51c4d7de82313c72ee388",
       "localPath": "modules/preorders"
     },
     "price-lists": {

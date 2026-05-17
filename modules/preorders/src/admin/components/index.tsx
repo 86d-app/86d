@@ -445,9 +445,9 @@ export function CampaignList() {
 			{/* Campaign list */}
 			{isLoading ? (
 				<div className="space-y-3">
-					{Array.from({ length: 4 }).map((_, i) => (
+					{["sk-a", "sk-b", "sk-c", "sk-d"].map((k) => (
 						<div
-							key={`skel-${i}`}
+							key={k}
 							className="h-20 animate-pulse rounded-lg border border-border bg-muted/30"
 						/>
 					))}

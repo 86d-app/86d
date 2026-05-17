@@ -19,6 +19,8 @@
 	"homepage": "https://86d.app",
 	"type": "module",
 	"exports": {
+		"./components": "./src/store/components",
+		"./admin-components": "./src/admin/components",
 		"./*": "./src/*"
 	},
 	"scripts": {
@@ -38,7 +40,12 @@
 		"@biomejs/biome": "catalog:",
 		"@types/mdx": "catalog:mdx",
 		"@types/react": "catalog:react",
+		"next": "catalog:next",
 		"typescript": "catalog:",
 		"vitest": "catalog:vite"
+	},
+	"peerDependencies": {
+		"next": ">=15",
+		"react": ">=19"
 	}
 }

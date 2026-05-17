@@ -96,6 +96,11 @@ import Link from "next/link";
   <AuctionsHomepageSection limit={4} />
 </section>
 
+{/* Pre-order Campaigns — only renders when campaigns are active */}
+<section className="mx-auto w-full max-w-7xl px-4 pt-16 sm:px-6 sm:pt-20 lg:px-8 lg:pt-24">
+  <PreordersHomepageSection limit={3} />
+</section>
+
 {/* Featured Products */}
 <section className="mx-auto w-full max-w-7xl px-4 pt-16 sm:px-6 sm:pt-20 lg:px-8 lg:pt-24">
   <FeaturedProducts limit={4} title="Featured" />

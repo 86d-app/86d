@@ -75,9 +75,9 @@ export function MyPreorders() {
 
 	const content = isLoading ? (
 		<div className="divide-y divide-border">
-			{Array.from({ length: 3 }).map((_, i) => (
+			{["sk-a", "sk-b", "sk-c"].map((k) => (
 				<div
-					key={`skel-${i}`}
+					key={k}
 					className="flex items-start justify-between gap-4 px-5 py-4"
 				>
 					<div className="flex-1 space-y-2">
