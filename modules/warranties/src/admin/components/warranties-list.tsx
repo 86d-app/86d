@@ -39,7 +39,7 @@ const STATUS_COLORS: Record<string, string> = {
 		"bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400",
 	resolved:
 		"bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400",
-	closed: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400",
+	closed: "bg-muted text-muted-foreground",
 };
 
 function useWarrantiesApi() {

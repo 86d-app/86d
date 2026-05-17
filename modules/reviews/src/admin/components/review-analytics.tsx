@@ -33,7 +33,7 @@ function StarDisplay({ rating }: { rating: number }) {
 					className={
 						n <= Math.round(rating)
 							? "text-amber-400"
-							: "text-gray-200 dark:text-gray-700"
+							: "text-muted-foreground/50"
 					}
 				>
 					★

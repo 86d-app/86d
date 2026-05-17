@@ -229,7 +229,7 @@ export function DiscountAnalytics() {
 						</div>
 						<div className="flex items-center justify-between">
 							<div className="flex items-center gap-2">
-								<span className="h-2.5 w-2.5 rounded-full bg-gray-400" />
+								<span className="h-2.5 w-2.5 rounded-full bg-muted" />
 								<span className="text-foreground text-sm">
 									Expired / Inactive
 								</span>
@@ -280,7 +280,7 @@ export function DiscountAnalytics() {
 										<td className="py-3 pr-4">
 											<div className="flex items-center gap-2">
 												<span
-													className={`h-1.5 w-1.5 rounded-full ${d.isActive ? "bg-emerald-500" : "bg-gray-400"}`}
+													className={`h-1.5 w-1.5 rounded-full ${d.isActive ? "bg-emerald-500" : "bg-muted"}`}
 												/>
 												<span className="font-medium text-foreground">
 													{d.name}

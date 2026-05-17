@@ -40,7 +40,7 @@ function statusBadge(status: string) {
 			</span>
 		);
 	return (
-		<span className="rounded-full bg-gray-100 px-2 py-0.5 font-medium text-gray-600 text-xs dark:bg-gray-800 dark:text-gray-400">
+		<span className="rounded-full bg-muted px-2 py-0.5 font-medium text-muted-foreground text-xs">
 			Notified
 		</span>
 	);

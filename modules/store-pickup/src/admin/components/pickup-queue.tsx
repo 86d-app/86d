@@ -31,7 +31,7 @@ interface PickupItem {
 const PAGE_SIZE = 50;
 
 const STATUS_COLORS: Record<PickupStatus, string> = {
-	scheduled: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400",
+	scheduled: "bg-muted text-muted-foreground",
 	preparing:
 		"bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
 	ready: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",

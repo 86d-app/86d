@@ -85,7 +85,7 @@ const STATUS_COLORS: Record<string, string> = {
 		"bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
 	recovered:
 		"bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-	expired: "bg-gray-100 text-gray-600 dark:bg-gray-900/30 dark:text-gray-400",
+	expired: "bg-muted text-muted-foreground",
 	dismissed: "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400",
 };
 

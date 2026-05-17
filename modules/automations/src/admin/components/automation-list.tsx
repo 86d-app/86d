@@ -29,7 +29,7 @@ const STATUS_STYLES: Record<string, string> = {
 	active:
 		"bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
 	paused: "bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
-	draft: "bg-gray-50 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+	draft: "bg-muted/30 text-foreground/80 ",
 };
 
 function Skeleton({ className = "" }: { className?: string }) {
@@ -42,9 +42,7 @@ function Skeleton({ className = "" }: { className?: string }) {
 }
 
 function StatusBadge({ status }: { status: string }) {
-	const style =
-		STATUS_STYLES[status] ??
-		"bg-gray-50 text-gray-700 dark:bg-gray-800 dark:text-gray-300";
+	const style = STATUS_STYLES[status] ?? "bg-muted/30 text-foreground/80 ";
 	return (
 		<span
 			className={`inline-block rounded-full px-2 py-0.5 font-medium text-xs ${style}`}

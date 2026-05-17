@@ -98,7 +98,7 @@ const STATUS_COLORS: Record<string, string> = {
 	approved:
 		"bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
 	suspended: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-	rejected: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400",
+	rejected: "bg-muted text-muted-foreground",
 };
 
 const CONVERSION_STATUS_COLORS: Record<string, string> = {

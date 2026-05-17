@@ -71,8 +71,7 @@ function formatDate(iso: string): string {
 const ITEM_STATUS_STYLES: Record<string, string> = {
 	published:
 		"bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-	unpublished:
-		"bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400",
+	unpublished: "bg-muted text-muted-foreground",
 	retired:
 		"bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400",
 	"system-error":

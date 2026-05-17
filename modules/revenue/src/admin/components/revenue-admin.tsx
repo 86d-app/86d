@@ -86,7 +86,7 @@ const STATUS_COLORS: Record<PaymentIntentStatus, string> = {
 	succeeded:
 		"bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
 	failed: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-	cancelled: "bg-gray-100 text-gray-600 dark:bg-gray-800/50 dark:text-gray-400",
+	cancelled: "bg-muted text-muted-foreground",
 	refunded:
 		"bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
 };

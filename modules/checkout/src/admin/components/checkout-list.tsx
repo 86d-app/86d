@@ -76,7 +76,7 @@ const STATUS_COLORS: Record<string, string> = {
 		"bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
 	abandoned:
 		"bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400",
-	expired: "bg-gray-100 text-gray-600 dark:bg-gray-900/30 dark:text-gray-400",
+	expired: "bg-muted text-muted-foreground",
 };
 
 const PAYMENT_STATUS_COLORS: Record<string, string> = {
@@ -179,7 +179,7 @@ function FunnelChart() {
 		{
 			label: "Expired",
 			count: data.expired,
-			color: "text-gray-500",
+			color: "text-muted-foreground",
 		},
 	];
 

@@ -90,7 +90,7 @@ function AuthorTypeBadge({ authorType }: { authorType: string }) {
 		customer: "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
 		admin:
 			"bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300",
-		system: "bg-gray-50 text-gray-700 dark:bg-gray-950 dark:text-gray-300",
+		system: "bg-muted/30 text-foreground/80 dark:bg-background",
 	};
 
 	return (

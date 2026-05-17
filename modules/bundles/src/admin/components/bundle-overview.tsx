@@ -67,7 +67,7 @@ const STATUS_COLORS: Record<string, string> = {
 	active:
 		"bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
 	draft: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
-	archived: "bg-gray-100 text-gray-600 dark:bg-gray-900/30 dark:text-gray-400",
+	archived: "bg-muted text-muted-foreground",
 };
 
 function useBundleAdminApi() {

@@ -61,7 +61,7 @@ function formatPrice(cents: number, currency = "USD"): string {
 const STATUS_COLORS: Record<string, string> = {
 	paid: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
 	issued: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-	draft: "bg-gray-100 text-gray-600 dark:bg-gray-900/30 dark:text-gray-400",
+	draft: "bg-muted text-muted-foreground",
 	void: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
 };
 
@@ -146,7 +146,7 @@ export function OrderInvoice({ orderId }: { orderId: string }) {
 			</div>
 
 			{/* Invoice document */}
-			<div className="rounded-lg border border-border bg-white p-8 dark:bg-gray-950">
+			<div className="rounded-lg border border-border bg-white p-8 dark:bg-background">
 				{/* Invoice header */}
 				<div className="mb-8 flex items-start justify-between">
 					<div>

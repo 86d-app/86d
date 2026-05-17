@@ -405,7 +405,7 @@ export function TaxReporting() {
 														? "bg-blue-100 text-blue-800"
 														: n.type === "economic"
 															? "bg-purple-100 text-purple-800"
-															: "bg-gray-100 text-gray-800"
+															: "bg-muted text-muted-foreground"
 												}`}
 											>
 												{n.type}

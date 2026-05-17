@@ -85,7 +85,7 @@ const STATUS_COLORS: Record<string, string> = {
 		"bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400",
 	completed:
 		"bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-	cancelled: "bg-gray-100 text-gray-600 dark:bg-gray-900/30 dark:text-gray-400",
+	cancelled: "bg-muted text-muted-foreground",
 	refunded: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
 };
 
@@ -93,8 +93,8 @@ const PAYMENT_COLORS: Record<string, string> = {
 	unpaid: "text-red-600 dark:text-red-400",
 	paid: "text-green-600 dark:text-green-400",
 	partially_paid: "text-yellow-600 dark:text-yellow-400",
-	refunded: "text-gray-500",
-	voided: "text-gray-500",
+	refunded: "text-muted-foreground",
+	voided: "text-muted-foreground",
 };
 
 function useOrdersAdminApi() {

@@ -76,7 +76,7 @@ const ACTION_STYLES: Record<string, string> = {
 	settings_change:
 		"bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-300",
 	status_change: "bg-cyan-50 text-cyan-700 dark:bg-cyan-950 dark:text-cyan-300",
-	custom: "bg-gray-50 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+	custom: "bg-muted/30 text-foreground/80 ",
 };
 
 function Skeleton({ className = "" }: { className?: string }) {
@@ -89,9 +89,7 @@ function Skeleton({ className = "" }: { className?: string }) {
 }
 
 function ActionBadge({ action }: { action: string }) {
-	const style =
-		ACTION_STYLES[action] ??
-		"bg-gray-50 text-gray-700 dark:bg-gray-800 dark:text-gray-300";
+	const style = ACTION_STYLES[action] ?? "bg-muted/30 text-foreground/80 ";
 	return (
 		<span
 			className={`inline-block rounded-full px-2 py-0.5 font-medium text-xs ${style}`}
@@ -104,13 +102,11 @@ function ActionBadge({ action }: { action: string }) {
 function ActorTypeBadge({ type }: { type: string }) {
 	const styles: Record<string, string> = {
 		admin: "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
-		system: "bg-gray-50 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+		system: "bg-muted/30 text-foreground/80 ",
 		api_key:
 			"bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300",
 	};
-	const style =
-		styles[type] ??
-		"bg-gray-50 text-gray-700 dark:bg-gray-800 dark:text-gray-300";
+	const style = styles[type] ?? "bg-muted/30 text-foreground/80 ";
 	return (
 		<span
 			className={`inline-block rounded-full px-2 py-0.5 font-medium text-xs ${style}`}

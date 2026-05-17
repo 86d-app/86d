@@ -30,8 +30,7 @@ function timeAgo(dateStr: string): string {
 const STATUS_COLORS: Record<string, string> = {
 	active:
 		"bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-	unsubscribed:
-		"bg-gray-100 text-gray-600 dark:bg-gray-900/30 dark:text-gray-400",
+	unsubscribed: "bg-muted text-muted-foreground",
 	bounced: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
 };
 

@@ -224,7 +224,7 @@ export function GamificationAdmin() {
 										className={`inline-block rounded-full px-2 py-0.5 font-medium text-xs ${
 											game.isActive
 												? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
-												: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+												: "bg-muted text-muted-foreground"
 										}`}
 									>
 										{game.isActive ? "Active" : "Inactive"}
@@ -287,7 +287,7 @@ export function GamificationAdmin() {
 										className={`inline-block rounded-full px-2 py-0.5 font-medium text-xs ${
 											game.isActive
 												? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
-												: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+												: "bg-muted text-muted-foreground"
 										}`}
 									>
 										{game.isActive ? "Active" : "Inactive"}

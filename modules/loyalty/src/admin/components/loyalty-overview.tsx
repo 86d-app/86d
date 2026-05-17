@@ -44,7 +44,7 @@ const STATUS_FILTERS: { label: string; value: StatusFilter }[] = [
 const TIER_COLORS: Record<string, string> = {
 	bronze:
 		"bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-300",
-	silver: "bg-gray-50 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+	silver: "bg-muted/30 text-foreground/80 ",
 	gold: "bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300",
 	platinum:
 		"bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300",
@@ -81,7 +81,7 @@ function StatusBadge({ status }: { status: LoyaltyAccount["status"] }) {
 			"bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
 		suspended:
 			"bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
-		closed: "bg-gray-50 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+		closed: "bg-muted/30 text-foreground/80 ",
 	};
 
 	return (

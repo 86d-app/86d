@@ -93,7 +93,7 @@ function formatNumber(n: number): string {
 const LISTING_STATUS_STYLES: Record<string, string> = {
 	active:
 		"bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-	draft: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400",
+	draft: "bg-muted text-muted-foreground",
 	expired:
 		"bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400",
 	inactive:

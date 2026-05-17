@@ -68,7 +68,7 @@ const STATUS_COLORS: Record<string, string> = {
 		"bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
 	completed:
 		"bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-	cancelled: "bg-gray-100 text-gray-600 dark:bg-gray-900/30 dark:text-gray-400",
+	cancelled: "bg-muted text-muted-foreground",
 };
 
 function useFavorAdminApi() {
@@ -392,7 +392,7 @@ export function FavorAdmin() {
 						</td>
 						<td className="px-5 py-3">
 							<span
-								className={`rounded-full px-2 py-0.5 font-medium text-xs ${a.isActive ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" : "bg-gray-100 text-gray-600 dark:bg-gray-800/50 dark:text-gray-400"}`}
+								className={`rounded-full px-2 py-0.5 font-medium text-xs ${a.isActive ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" : "bg-muted text-muted-foreground"}`}
 							>
 								{a.isActive ? "Active" : "Inactive"}
 							</span>

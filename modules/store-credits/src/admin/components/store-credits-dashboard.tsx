@@ -56,7 +56,7 @@ function StatusBadge({ status }: { status: CreditAccount["status"] }) {
 		active:
 			"bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
 		frozen: "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
-		closed: "bg-gray-50 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+		closed: "bg-muted/30 text-foreground/80 ",
 	};
 
 	return (

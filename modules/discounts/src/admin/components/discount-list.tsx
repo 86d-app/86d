@@ -168,7 +168,7 @@ export function DiscountList() {
 						className={`inline-flex items-center rounded-full px-2 py-0.5 font-medium text-xs ${
 							discount.isActive
 								? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-								: "bg-gray-100 text-gray-600 dark:bg-gray-900/30 dark:text-gray-400"
+								: "bg-muted text-muted-foreground"
 						}`}
 					>
 						{discount.isActive ? "Active" : "Inactive"}

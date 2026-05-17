@@ -31,7 +31,7 @@ interface CampaignStats {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-	draft: "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400",
+	draft: "bg-muted text-muted-foreground",
 	scheduled:
 		"bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
 	sending: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
