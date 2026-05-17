@@ -179,6 +179,16 @@ export function useProductQaApi() {
 	};
 }
 
+export function useWishlistApi() {
+	const client = useModuleClient();
+	return {
+		checkWishlist:
+			client.module("wishlist").store["/wishlist/check/:productId"],
+		addToWishlist: client.module("wishlist").store["/wishlist/add"],
+		removeFromWishlist: client.module("wishlist").store["/wishlist/remove/:id"],
+	};
+}
+
 export function useRecommendationsApi() {
 	const client = useModuleClient();
 	return {

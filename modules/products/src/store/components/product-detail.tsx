@@ -33,6 +33,7 @@ import {
 } from "./social-proof-section";
 import { StarDisplay } from "./star-display";
 import { StockBadge } from "./stock-badge";
+import { WishlistButtonSection } from "./wishlist-button-section";
 
 export type ProductDetailProps = {
 	slug?: string;
@@ -478,6 +479,14 @@ export function ProductDetail(props: ProductDetailProps) {
 		);
 	}
 
+	const wishlistButton = (
+		<WishlistButtonSection
+			productId={product.id}
+			productName={product.name}
+			productImage={imageUrl(product.images[0])}
+		/>
+	);
+
 	const addToCartBlock = (
 		<div className="mt-1 flex items-center gap-2.5">
 			<div className="flex items-center rounded-md border border-border">
@@ -561,6 +570,7 @@ export function ProductDetail(props: ProductDetailProps) {
 			shortDescription={shortDescription}
 			variantSelector={variantSelector}
 			addToCartBlock={addToCartBlock}
+			wishlistButton={wishlistButton}
 			pricingTiers={
 				<BulkPricingSection
 					productId={product.id}
