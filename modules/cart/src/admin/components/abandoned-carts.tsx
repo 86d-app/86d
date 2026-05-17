@@ -351,11 +351,41 @@ export function AbandonedCarts() {
 	const [recoveryFormId, setRecoveryFormId] = useState<string | null>(null);
 	const limit = 20;
 
-	const { data: listData, isLoading: loading } = api.listAbandoned.useQuery({
+	const {
+		data: listData,
+		isLoading: loading,
+		isError: cartsError,
+		refetch: refetchCarts,
+	} = api.listAbandoned.useQuery({
 		page: String(page),
 		limit: String(limit),
 		thresholdHours: "1",
-	}) as { data: AbandonedListResult | undefined; isLoading: boolean };
+	}) as {
+		data: AbandonedListResult | undefined;
+		isLoading: boolean;
+		isError: boolean;
+		refetch: () => void;
+	};
+
+	if (cartsError) {
+		return (
+			<div className="rounded-md border border-destructive/50 bg-destructive/10 p-4">
+				<p className="font-semibold text-destructive">
+					Failed to load abandoned carts
+				</p>
+				<p className="mt-1 text-muted-foreground text-sm">
+					Check your connection and try again.
+				</p>
+				<button
+					type="button"
+					onClick={() => refetchCarts()}
+					className="mt-3 rounded-md bg-destructive/20 px-3 py-1.5 font-medium text-destructive text-sm transition-colors hover:bg-destructive/30"
+				>
+					Try again
+				</button>
+			</div>
+		);
+	}
 
 	const carts = listData?.carts ?? [];
 	const total = listData?.total ?? 0;
