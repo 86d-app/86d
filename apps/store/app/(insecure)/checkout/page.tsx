@@ -443,6 +443,7 @@ function OrderSummary({
 						value={promoInput}
 						onChange={(e) => setPromoInput(e.target.value)}
 						placeholder="Discount code"
+						aria-label="Discount code"
 						className="min-w-0 flex-1 rounded-lg border border-border/60 bg-background px-3 py-2 text-foreground text-sm outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-foreground/30"
 					/>
 					<button
@@ -499,6 +500,7 @@ function OrderSummary({
 						value={giftCardInput}
 						onChange={(e) => setGiftCardInput(e.target.value.toUpperCase())}
 						placeholder="Gift card code"
+						aria-label="Gift card code"
 						className="min-w-0 flex-1 rounded-lg border border-border/60 bg-background px-3 py-2 font-mono text-foreground text-sm uppercase outline-none transition-colors placeholder:text-muted-foreground/50 placeholder:normal-case focus:border-foreground/30"
 					/>
 					<button

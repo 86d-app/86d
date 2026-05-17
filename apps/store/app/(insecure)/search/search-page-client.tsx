@@ -390,6 +390,7 @@ function SearchResults() {
 						onChange={(e) => setSearch(e.target.value)}
 						onKeyDown={handleInputKeyDown}
 						placeholder="Search products…"
+						aria-label="Search products"
 						className="h-12 w-full rounded-xl border border-border bg-background pr-4 pl-12 text-base text-foreground placeholder:text-muted-foreground/50 focus:border-foreground/20 focus:outline-none focus:ring-2 focus:ring-foreground/5 sm:h-14 sm:text-lg"
 					/>
 				</form>
