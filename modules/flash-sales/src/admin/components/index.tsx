@@ -23,6 +23,9 @@ interface FlashSaleProduct {
 	id: string;
 	flashSaleId: string;
 	productId: string;
+	productName?: string;
+	productSlug?: string;
+	productImage?: string;
 	salePrice: number;
 	originalPrice: number;
 	stockLimit?: number;
@@ -868,8 +871,10 @@ export function FlashSaleDetail({ params }: { params: { id: string } }) {
 								className="flex items-center justify-between rounded-lg border border-border bg-background p-3"
 							>
 								<div className="min-w-0 flex-1">
-									<p className="font-mono text-foreground text-sm">
-										{p.productId}
+									<p className="truncate text-foreground text-sm">
+										{p.productName ?? (
+											<span className="font-mono">{p.productId}</span>
+										)}
 									</p>
 									<p className="mt-0.5 text-muted-foreground text-xs">
 										<span className="line-through">
