@@ -13,6 +13,12 @@ export const publishAuction = createAdminEndpoint(
 		if (!auction) {
 			return { error: "Auction not found", status: 404 };
 		}
+		void ctx.context.events?.emit("auction.published", {
+			auctionId: auction.id,
+			title: auction.title,
+			startsAt: auction.startsAt,
+			endsAt: auction.endsAt,
+		});
 		return { auction };
 	},
 );
