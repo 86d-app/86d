@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import DoorDashAdminTemplate from "./doordash-admin.mdx";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -203,6 +203,15 @@ export function DoorDashAdmin() {
 			setSaving(false);
 		},
 	});
+
+	useEffect(() => {
+		if (!showCreateZone) return;
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") setShowCreateZone(false);
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [showCreateZone]);
 
 	const handleCreateZone = useCallback(
 		(e: React.FormEvent) => {

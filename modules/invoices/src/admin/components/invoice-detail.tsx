@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import InvoiceDetailTemplate from "./invoice-detail.mdx";
 
 interface InvoiceDetail {
@@ -88,6 +88,13 @@ interface EditSheetProps {
 }
 
 function EditInvoiceSheet({ invoice, onSaved, onCancel }: EditSheetProps) {
+	useEffect(() => {
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") onCancel();
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [onCancel]);
 	const api = useInvoiceDetailApi();
 	const [customerName, setCustomerName] = useState(invoice.customerName ?? "");
 	const [guestEmail, setGuestEmail] = useState(invoice.guestEmail ?? "");

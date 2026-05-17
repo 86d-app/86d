@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import CustomerListTemplate from "./customer-list.mdx";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -195,6 +195,13 @@ function ImportDialog({
 	onClose: () => void;
 	onImport: (customers: ImportCustomerRow[]) => Promise<ImportResult>;
 }) {
+	useEffect(() => {
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") onClose();
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [onClose]);
 	const fileRef = useRef<HTMLInputElement>(null);
 	const [preview, setPreview] = useState<{
 		headers: string[];

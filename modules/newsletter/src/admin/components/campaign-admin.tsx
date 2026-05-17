@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import CampaignAdminTemplate from "./campaign-admin.mdx";
 
 interface Campaign {
@@ -316,6 +316,15 @@ export function CampaignAdmin() {
 	const [page, setPage] = useState(1);
 	const [modal, setModal] = useState<ModalState>(null);
 	const pageSize = 25;
+
+	useEffect(() => {
+		if (!modal) return;
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") setModal(null);
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [modal]);
 
 	const queryInput: Record<string, string> = {
 		page: String(page),

@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import PriceRuleAdminTemplate from "./price-rule-admin.mdx";
 
 interface CartPriceRuleCondition {
@@ -123,6 +123,15 @@ export function PriceRuleAdmin() {
 			void api.list.invalidate();
 		},
 	});
+	useEffect(() => {
+		if (!showCreate) return;
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") setShowCreate(false);
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [showCreate]);
+
 	const createMut = api.create.useMutation({
 		onSettled: () => {
 			void api.list.invalidate();

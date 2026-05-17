@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import FulfillmentAdminTemplate from "./fulfillment-admin.mdx";
 
 interface FulfillmentItem {
@@ -237,6 +237,24 @@ export function FulfillmentAdmin() {
 		},
 		onSettled: () => setSaving(false),
 	});
+
+	useEffect(() => {
+		if (!showCreate) return;
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") setShowCreate(false);
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [showCreate]);
+
+	useEffect(() => {
+		if (!trackingTarget) return;
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") setTrackingTarget(null);
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [trackingTarget]);
 
 	function handleCreate(e: React.FormEvent) {
 		e.preventDefault();

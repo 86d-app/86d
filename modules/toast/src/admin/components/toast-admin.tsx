@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import ToastAdminTemplate from "./toast-admin.mdx";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -206,6 +206,15 @@ export function ToastAdmin() {
 			setSaving(false);
 		},
 	});
+
+	useEffect(() => {
+		if (!showCreateMapping) return;
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") setShowCreateMapping(false);
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [showCreateMapping]);
 
 	const handleCreateMapping = useCallback(
 		(e: React.FormEvent) => {

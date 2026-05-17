@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import SocialSharingAdminTemplate from "./social-sharing-admin.mdx";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -101,6 +101,13 @@ function SettingsPanel({
 	onClose: () => void;
 	onSaved: () => void;
 }) {
+	useEffect(() => {
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") onClose();
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [onClose]);
 	const api = useSocialSharingAdminApi();
 	const [error, setError] = useState("");
 	const [enabledNetworks, setEnabledNetworks] = useState<string[]>([]);

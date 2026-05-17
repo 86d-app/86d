@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 function useAnnouncementsAdminApi() {
 	const client = useModuleClient();
@@ -65,6 +65,13 @@ function DeleteModal({
 	onDelete: () => void;
 	isPending: boolean;
 }) {
+	useEffect(() => {
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") onClose();
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [onClose]);
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
 			<div

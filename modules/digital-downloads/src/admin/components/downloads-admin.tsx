@@ -130,6 +130,15 @@ function FilesTab({
 	};
 	const files = filesData?.files ?? [];
 
+	useEffect(() => {
+		if (!showCreate) return;
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") setShowCreate(false);
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [showCreate]);
+
 	const createFileMutation = api.createFile.useMutation({
 		onSettled: () => {
 			void api.listFiles.invalidate();
@@ -483,6 +492,15 @@ function TokensTab({
 	useEffect(() => {
 		if (fileFilter) setForm((f) => ({ ...f, fileId: fileFilter.id }));
 	}, [fileFilter]);
+
+	useEffect(() => {
+		if (!showCreate) return;
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") setShowCreate(false);
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [showCreate]);
 
 	const createTokenMutation = api.createToken.useMutation({
 		onSettled: () => {

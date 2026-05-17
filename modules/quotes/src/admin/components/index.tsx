@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface Quote {
 	id: string;
@@ -130,6 +130,13 @@ interface QuoteSheetProps {
 }
 
 function QuoteSheet({ onSaved, onCancel }: QuoteSheetProps) {
+	useEffect(() => {
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") onCancel();
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [onCancel]);
 	const api = useQuotesApi();
 	const [customerEmail, setCustomerEmail] = useState("");
 	const [customerName, setCustomerName] = useState("");

@@ -85,6 +85,15 @@ export function AnnouncementPopup({
 		setVisible(null);
 	}, [visible, dismissMutation]);
 
+	useEffect(() => {
+		if (!visible) return;
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") handleDismiss();
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [visible, handleDismiss]);
+
 	const handleLinkClick = useCallback(() => {
 		if (!visible) return;
 		clickMutation.mutate({ params: { id: visible.id } });

@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import LocationDetailTemplate from "./location-detail.mdx";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -132,6 +132,14 @@ function LocationEditSheet({
 		},
 		onError: (err: Error) => setError(extractError(err)),
 	});
+
+	useEffect(() => {
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") onCancel();
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [onCancel]);
 
 	function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
@@ -380,6 +388,14 @@ function WindowSheet({
 	});
 
 	const isPending = createMutation.isPending || updateMutation.isPending;
+
+	useEffect(() => {
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") onCancel();
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [onCancel]);
 
 	function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();

@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import WrapOptionListTemplate from "./wrap-option-list.mdx";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -73,6 +73,13 @@ interface WrapOptionSheetProps {
 }
 
 function WrapOptionSheet({ option, onSaved, onCancel }: WrapOptionSheetProps) {
+	useEffect(() => {
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") onCancel();
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [onCancel]);
 	const api = useGiftWrappingApi();
 	const isEditing = !!option;
 

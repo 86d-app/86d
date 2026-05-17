@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -119,6 +119,14 @@ function DeleteModal({
 		onSuccess: () => onDeleted(),
 	});
 
+	useEffect(() => {
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") onClose();
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [onClose]);
+
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
 			<div
@@ -213,6 +221,14 @@ function EditSheet({
 		},
 		onError: (err: Error) => setError(err.message ?? "Failed to update"),
 	});
+
+	useEffect(() => {
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") onCancel();
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [onCancel]);
 
 	function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();

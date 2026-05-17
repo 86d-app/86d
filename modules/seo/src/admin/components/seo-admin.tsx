@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import SeoAdminTemplate from "./seo-admin.mdx";
 
 interface MetaTag {
@@ -470,6 +470,19 @@ function MetaTagsTab() {
 	const [editing, setEditing] = useState<MetaTag | null>(null);
 	const [deleting, setDeleting] = useState<MetaTag | null>(null);
 
+	const anyMetaModalOpen = showForm || !!deleting;
+	useEffect(() => {
+		if (!anyMetaModalOpen) return;
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") {
+				setShowForm(false);
+				setDeleting(null);
+			}
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [anyMetaModalOpen]);
+
 	const {
 		data,
 		isLoading,
@@ -682,6 +695,19 @@ function RedirectsTab() {
 	const [showForm, setShowForm] = useState(false);
 	const [editing, setEditing] = useState<Redirect | null>(null);
 	const [deleting, setDeleting] = useState<Redirect | null>(null);
+
+	const anyRedirectModalOpen = showForm || !!deleting;
+	useEffect(() => {
+		if (!anyRedirectModalOpen) return;
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") {
+				setShowForm(false);
+				setDeleting(null);
+			}
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [anyRedirectModalOpen]);
 
 	const { data, isLoading } = api.listRedirects.useQuery({});
 

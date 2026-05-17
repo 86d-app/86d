@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const PAGE_SIZE = 20;
 
@@ -496,6 +496,15 @@ export function CollectionAdmin() {
 	const [deleteTarget, setDeleteTarget] = useState<CollectionData | null>(null);
 	const [editTarget, setEditTarget] = useState<CollectionData | null>(null);
 	const [showCreateForm, setShowCreateForm] = useState(false);
+
+	useEffect(() => {
+		if (!deleteTarget) return;
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") setDeleteTarget(null);
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [deleteTarget]);
 
 	const queryInput: Record<string, string> = {
 		take: String(PAGE_SIZE),

@@ -2,7 +2,7 @@
 
 import { useModuleClient } from "@86d-app/core/client";
 import Image from "next/image";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ProductListTemplate from "./product-list.mdx";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -280,6 +280,13 @@ function ImportDialog({
 	onClose: () => void;
 	onImport: (products: Record<string, unknown>[]) => Promise<ImportResult>;
 }) {
+	useEffect(() => {
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") onClose();
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [onClose]);
 	const fileRef = useRef<HTMLInputElement>(null);
 	const [preview, setPreview] = useState<{
 		headers: string[];

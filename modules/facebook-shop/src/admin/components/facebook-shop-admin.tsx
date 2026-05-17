@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -162,6 +162,13 @@ function FbListingSheet({
 	onCancel,
 	api,
 }: FbListingSheetProps) {
+	useEffect(() => {
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") onCancel();
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [onCancel]);
 	const isEditing = !!listing;
 	const [localProductId, setLocalProductId] = useState(
 		listing?.localProductId ?? "",
@@ -343,6 +350,13 @@ interface FbCollectionSheetProps {
 }
 
 function FbCollectionSheet({ onSaved, onCancel, api }: FbCollectionSheetProps) {
+	useEffect(() => {
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") onCancel();
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [onCancel]);
 	const [name, setName] = useState("");
 	const [productIds, setProductIds] = useState("");
 	const [error, setError] = useState("");

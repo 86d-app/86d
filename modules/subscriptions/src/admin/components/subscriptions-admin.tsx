@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import SubscriptionsAdminTemplate from "./subscriptions-admin.mdx";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -139,6 +139,15 @@ function PlansTab() {
 		refetch: () => void;
 	};
 	const plans = plansData?.plans ?? [];
+
+	useEffect(() => {
+		if (!showCreate) return;
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") setShowCreate(false);
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [showCreate]);
 
 	const createPlanMutation = api.createPlan.useMutation({
 		onSettled: () => {

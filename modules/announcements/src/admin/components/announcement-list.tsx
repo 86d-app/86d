@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 function useAnnouncementsAdminApi() {
 	const client = useModuleClient();
@@ -56,6 +56,13 @@ function DeleteModal({
 	onClose: () => void;
 	onSuccess: () => void;
 }) {
+	useEffect(() => {
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") onClose();
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [onClose]);
 	const api = useAnnouncementsAdminApi();
 	const deleteMutation = api.deleteAnnouncement.useMutation({
 		onSuccess: () => {

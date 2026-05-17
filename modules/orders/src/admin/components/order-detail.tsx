@@ -1,7 +1,7 @@
 "use client";
 
 import { ModuleClientError, useModuleClient } from "@86d-app/core/client";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import OrderDetailTemplate from "./order-detail.mdx";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -663,6 +663,14 @@ function FulfillDialog({
 		},
 	});
 
+	useEffect(() => {
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") onClose();
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [onClose]);
+
 	const itemEntries = Object.entries(selectedItems).filter(
 		([, qty]) => qty > 0,
 	);
@@ -1267,6 +1275,15 @@ export function OrderDetail(props: {
 	const orderId = props.orderId ?? props.params?.id;
 	const api = useOrderAdminApi();
 	const [showFulfillDialog, setShowFulfillDialog] = useState(false);
+
+	useEffect(() => {
+		if (!showFulfillDialog) return;
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") setShowFulfillDialog(false);
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [showFulfillDialog]);
 
 	const {
 		data: orderData,

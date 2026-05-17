@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ShipmentsAdminTemplate from "./shipments-admin.mdx";
 
 type ShipmentStatus =
@@ -251,6 +251,15 @@ export function ShipmentsAdmin() {
 
 	const shipments = shipmentsData?.shipments ?? [];
 	const carriers = carriersData?.carriers ?? [];
+
+	useEffect(() => {
+		if (!showCreate) return;
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") setShowCreate(false);
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [showCreate]);
 
 	const createMutation = api.createShipment.useMutation({
 		onSuccess: () => {

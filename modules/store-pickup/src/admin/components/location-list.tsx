@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import LocationListTemplate from "./location-list.mdx";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -117,6 +117,14 @@ function LocationSheet({ location, onSaved, onCancel }: LocationSheetProps) {
 	});
 
 	const isPending = createMutation.isPending || updateMutation.isPending;
+
+	useEffect(() => {
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") onCancel();
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [onCancel]);
 
 	function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();

@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -773,6 +773,20 @@ export function AuctionsList() {
 		null,
 	);
 	const [actionError, setActionError] = useState<string | null>(null);
+
+	const anyModalOpen = showCreate || !!editAuction || !!deleteAuction;
+	useEffect(() => {
+		if (!anyModalOpen) return;
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") {
+				setShowCreate(false);
+				setEditAuction(null);
+				setDeleteAuction(null);
+			}
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [anyModalOpen]);
 
 	const queryInput: Record<string, string> = { take: String(PAGE_SIZE) };
 	if (statusFilter) queryInput.status = statusFilter;

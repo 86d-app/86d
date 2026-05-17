@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ShippingCarriersAdminTemplate from "./shipping-carriers-admin.mdx";
 
 interface ShippingCarrier {
@@ -216,6 +216,19 @@ export function ShippingCarriersAdmin() {
 
 	const carriers = carriersData?.carriers ?? [];
 	const methods = methodsData?.methods ?? [];
+
+	const anyModalOpen = showCreateCarrier || showCreateMethod;
+	useEffect(() => {
+		if (!anyModalOpen) return;
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") {
+				setShowCreateCarrier(false);
+				setShowCreateMethod(false);
+			}
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [anyModalOpen]);
 
 	const createCarrierMutation = api.createCarrier.useMutation({
 		onSuccess: () => {

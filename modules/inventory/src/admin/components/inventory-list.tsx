@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import InventoryListTemplate from "./inventory-list.mdx";
 
 interface InventoryItem {
@@ -406,6 +406,19 @@ export function InventoryList() {
 	const [adjustForm, setAdjustForm] = useState<AdjustForm>(DEFAULT_ADJUST);
 	const [saving, setSaving] = useState(false);
 	const [error, setError] = useState("");
+
+	const anyModalOpen = showSet || showAdjust;
+	useEffect(() => {
+		if (!anyModalOpen) return;
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") {
+				setShowSet(false);
+				setShowAdjust(false);
+			}
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [anyModalOpen]);
 
 	const listQueryInput = productFilter
 		? { take: "100", productId: productFilter }

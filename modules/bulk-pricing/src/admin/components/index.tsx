@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -118,6 +118,13 @@ interface RuleSheetProps {
 }
 
 function RuleSheet({ rule, onSaved, onCancel }: RuleSheetProps) {
+	useEffect(() => {
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") onCancel();
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [onCancel]);
 	const api = useBulkPricingApi();
 	const isEditing = !!rule;
 
@@ -334,6 +341,13 @@ interface TierSheetProps {
 }
 
 function TierSheet({ ruleId, tier, onSaved, onCancel, api }: TierSheetProps) {
+	useEffect(() => {
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") onCancel();
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [onCancel]);
 	const isEditing = !!tier;
 	const [minQty, setMinQty] = useState(String(tier?.minQuantity ?? 2));
 	const [maxQty, setMaxQty] = useState(

@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import BlogAdminTemplate from "./blog-admin.mdx";
 
 interface BlogPost {
@@ -74,6 +74,13 @@ function DeleteModal({
 	onClose: () => void;
 	onSuccess: () => void;
 }) {
+	useEffect(() => {
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") onClose();
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [onClose]);
 	const api = useBlogAdminApi();
 
 	const deleteMutation = api.deletePost.useMutation({

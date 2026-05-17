@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -691,6 +691,19 @@ export function MembershipPlans() {
 	const api = useMembershipsApi();
 	const [showCreate, setShowCreate] = useState(false);
 	const [editPlan, setEditPlan] = useState<MembershipPlan | null>(null);
+
+	const anyModalOpen = showCreate || !!editPlan;
+	useEffect(() => {
+		if (!anyModalOpen) return;
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") {
+				setShowCreate(false);
+				setEditPlan(null);
+			}
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [anyModalOpen]);
 
 	const { data, isLoading } = api.listPlans.useQuery({}) as {
 		data: { plans?: MembershipPlan[]; total?: number } | undefined;

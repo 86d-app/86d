@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -564,6 +564,19 @@ export function CustomerGroupList() {
 	const [editTarget, setEditTarget] = useState<CustomerGroup | null>(null);
 	const [showCreateForm, setShowCreateForm] = useState(false);
 
+	const anyModalOpen = !!deleteTarget || showCreateForm;
+	useEffect(() => {
+		if (!anyModalOpen) return;
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") {
+				setDeleteTarget(null);
+				setShowCreateForm(false);
+			}
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [anyModalOpen]);
+
 	const {
 		data,
 		isLoading,
@@ -792,6 +805,15 @@ export function CustomerGroupDetail({
 	const [showAddPricing, setShowAddPricing] = useState(false);
 	const [removingMember, setRemovingMember] = useState<string | null>(null);
 	const [removingPricing, setRemovingPricing] = useState<string | null>(null);
+
+	useEffect(() => {
+		if (!showDeleteModal) return;
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") setShowDeleteModal(false);
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [showDeleteModal]);
 
 	const { data, isLoading } = api.get.useQuery({ params: { id } }) as {
 		data: { group?: CustomerGroup } | undefined;

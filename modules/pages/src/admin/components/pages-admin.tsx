@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import PagesAdminTemplate from "./pages-admin.mdx";
 
 interface PageItem {
@@ -405,6 +405,15 @@ export function PagesAdmin() {
 	const [editTarget, setEditTarget] = useState<PageItem | null>(null);
 	const [showCreateForm, setShowCreateForm] = useState(false);
 	const pageSize = 25;
+
+	useEffect(() => {
+		if (!deleteTarget) return;
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") setDeleteTarget(null);
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [deleteTarget]);
 
 	const queryInput: Record<string, string> = {
 		page: String(page),

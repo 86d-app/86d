@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import NewsletterAdminTemplate from "./newsletter-admin.mdx";
 
 interface Subscriber {
@@ -109,6 +109,15 @@ export function NewsletterAdmin() {
 	const [page, setPage] = useState(1);
 	const [deleteTarget, setDeleteTarget] = useState<Subscriber | null>(null);
 	const pageSize = 25;
+
+	useEffect(() => {
+		if (!deleteTarget) return;
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") setDeleteTarget(null);
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [deleteTarget]);
 
 	const queryInput: Record<string, string> = {
 		page: String(page),

@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import NotificationTemplateListTemplate from "./notification-template-list.mdx";
 
 interface TemplateItem {
@@ -120,6 +120,15 @@ export function NotificationTemplateList() {
 	const [page, setPage] = useState(1);
 	const [deleteTarget, setDeleteTarget] = useState<TemplateItem | null>(null);
 	const pageSize = 25;
+
+	useEffect(() => {
+		if (!deleteTarget) return;
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") setDeleteTarget(null);
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [deleteTarget]);
 
 	const {
 		data,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import MediaAdminTemplate from "./media-admin.mdx";
 
 interface Asset {
@@ -468,6 +468,19 @@ export function MediaAdmin() {
 	const [showNewFolder, setShowNewFolder] = useState(false);
 	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 	const pageSize = 50;
+
+	const anyModalOpen = !!deleteTarget || showNewFolder;
+	useEffect(() => {
+		if (!anyModalOpen) return;
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") {
+				setDeleteTarget(null);
+				setShowNewFolder(false);
+			}
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [anyModalOpen]);
 
 	const queryInput: Record<string, string> = {
 		page: String(page),

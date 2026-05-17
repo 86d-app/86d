@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import ShippingAdminTemplate from "./shipping-admin.mdx";
 
 interface ShippingZone {
@@ -429,6 +429,19 @@ export function ShippingAdmin() {
 			return next;
 		});
 	}
+
+	const anyModalOpen = showCreateZone || !!addRateZoneId;
+	useEffect(() => {
+		if (!anyModalOpen) return;
+		function handler(e: KeyboardEvent) {
+			if (e.key === "Escape") {
+				setShowCreateZone(false);
+				setAddRateZoneId(null);
+			}
+		}
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [anyModalOpen]);
 
 	const createZoneMutation = api.createZone.useMutation({
 		onSuccess: () => {
