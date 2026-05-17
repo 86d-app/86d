@@ -113,12 +113,37 @@ export function NewsletterAdmin() {
 	};
 	if (statusFilter) queryInput.status = statusFilter;
 
-	const { data, isLoading: loading } = api.listSubscribers.useQuery(
-		queryInput,
-	) as {
+	const {
+		data,
+		isLoading: loading,
+		isError: subscribersError,
+		refetch: refetchSubscribers,
+	} = api.listSubscribers.useQuery(queryInput) as {
 		data: { subscribers: Subscriber[]; total: number } | undefined;
 		isLoading: boolean;
+		isError: boolean;
+		refetch: () => void;
 	};
+
+	if (subscribersError) {
+		return (
+			<div className="rounded-md border border-destructive/50 bg-destructive/10 p-4">
+				<p className="font-semibold text-destructive">
+					Failed to load subscribers
+				</p>
+				<p className="mt-1 text-muted-foreground text-sm">
+					Check your connection and try again.
+				</p>
+				<button
+					type="button"
+					onClick={() => refetchSubscribers()}
+					className="mt-3 rounded-md bg-destructive/20 px-3 py-1.5 font-medium text-destructive text-sm transition-colors hover:bg-destructive/30"
+				>
+					Try again
+				</button>
+			</div>
+		);
+	}
 
 	const subscribers = data?.subscribers ?? [];
 	const total = data?.total ?? 0;
