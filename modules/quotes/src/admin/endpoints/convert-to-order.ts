@@ -17,6 +17,12 @@ export const convertToOrderEndpoint = createAdminEndpoint(
 			ctx.body.orderId,
 		);
 		if (!quote) return { error: "Cannot convert this quote to an order" };
+		void ctx.context.events?.emit("quote.converted", {
+			quoteId: quote.id,
+			customerId: quote.customerId,
+			orderId: ctx.body.orderId,
+			total: quote.total,
+		});
 		return { quote };
 	},
 );
