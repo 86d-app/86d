@@ -304,7 +304,11 @@ export function PriceRuleAdmin() {
 
 	const createModal = showCreate ? (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-			<div className="w-full max-w-lg rounded-xl border border-border bg-card p-6 shadow-lg">
+			<div
+				role="dialog"
+				aria-modal="true"
+				className="w-full max-w-lg rounded-xl border border-border bg-card p-6 shadow-lg"
+			>
 				<h2 className="mb-4 font-semibold text-foreground text-lg">
 					Create Price Rule
 				</h2>

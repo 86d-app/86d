@@ -106,7 +106,11 @@ function CreateCampaignModal({
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-			<div className="w-full max-w-lg rounded-xl border border-border bg-card shadow-xl">
+			<div
+				role="dialog"
+				aria-modal="true"
+				className="w-full max-w-lg rounded-xl border border-border bg-card shadow-xl"
+			>
 				<form onSubmit={handleSubmit}>
 					<div className="px-6 py-5">
 						<h2 className="font-semibold text-foreground text-lg">
@@ -194,7 +198,11 @@ function SendConfirmModal({
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-			<div className="w-full max-w-sm rounded-xl border border-border bg-card shadow-xl">
+			<div
+				role="dialog"
+				aria-modal="true"
+				className="w-full max-w-sm rounded-xl border border-border bg-card shadow-xl"
+			>
 				<div className="px-6 py-5">
 					<h2 className="font-semibold text-foreground text-lg">
 						Send campaign?
@@ -254,7 +262,11 @@ function DeleteCampaignModal({
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-			<div className="w-full max-w-sm rounded-xl border border-border bg-card shadow-xl">
+			<div
+				role="dialog"
+				aria-modal="true"
+				className="w-full max-w-sm rounded-xl border border-border bg-card shadow-xl"
+			>
 				<div className="px-6 py-5">
 					<h2 className="font-semibold text-foreground text-lg">
 						Delete campaign?

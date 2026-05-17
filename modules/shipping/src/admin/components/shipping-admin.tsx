@@ -615,7 +615,11 @@ export function ShippingAdmin() {
 					{/* Create Zone Modal */}
 					{showCreateZone && (
 						<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-							<div className="w-full max-w-md rounded-xl border border-border bg-background p-6 shadow-xl">
+							<div
+								role="dialog"
+								aria-modal="true"
+								className="w-full max-w-md rounded-xl border border-border bg-background p-6 shadow-xl"
+							>
 								<h2 className="mb-4 font-semibold text-foreground text-lg">
 									Create shipping zone
 								</h2>
@@ -708,7 +712,11 @@ export function ShippingAdmin() {
 					{/* Add Rate Modal */}
 					{addRateZoneId && (
 						<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-							<div className="w-full max-w-md rounded-xl border border-border bg-background p-6 shadow-xl">
+							<div
+								role="dialog"
+								aria-modal="true"
+								className="w-full max-w-md rounded-xl border border-border bg-background p-6 shadow-xl"
+							>
 								<h2 className="mb-4 font-semibold text-foreground text-lg">
 									Add shipping rate
 								</h2>

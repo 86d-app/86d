@@ -250,6 +250,8 @@ function AccountActions({ account, onUpdated }: AccountActionsProps) {
 			{showAdjustForm && (
 				<div className="fixed inset-0 z-20 flex items-center justify-center bg-black/40">
 					<form
+						role="dialog"
+						aria-modal="true"
 						onSubmit={handleAdjustSubmit}
 						className="w-80 rounded-lg border border-border bg-background p-5 shadow-lg"
 					>

@@ -270,7 +270,11 @@ function ImportDialog({
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-			<div className="w-full max-w-2xl rounded-lg border border-border bg-card shadow-xl">
+			<div
+				role="dialog"
+				aria-modal="true"
+				className="w-full max-w-2xl rounded-lg border border-border bg-card shadow-xl"
+			>
 				<div className="flex items-center justify-between border-border border-b px-6 py-4">
 					<h2 className="font-semibold text-foreground text-lg">
 						Import Customers

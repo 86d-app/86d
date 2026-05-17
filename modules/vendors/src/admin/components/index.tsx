@@ -210,7 +210,11 @@ function VendorSheet({ vendor, onSaved, onCancel }: VendorSheetProps) {
 				aria-label="Close panel"
 				onClick={onCancel}
 			/>
-			<div className="relative flex h-full w-full max-w-md flex-col overflow-y-auto border-border border-l bg-background shadow-2xl">
+			<div
+				role="dialog"
+				aria-modal="true"
+				className="relative flex h-full w-full max-w-md flex-col overflow-y-auto border-border border-l bg-background shadow-2xl"
+			>
 				<div className="flex shrink-0 items-center justify-between border-border border-b px-6 py-4">
 					<h2 className="font-semibold text-foreground text-lg">
 						{isEditing ? "Edit Vendor" : "New Vendor"}

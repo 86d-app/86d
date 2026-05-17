@@ -110,7 +110,11 @@ function SetStockModal({
 }) {
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-			<div className="w-full max-w-md rounded-xl border border-border bg-background p-6 shadow-xl">
+			<div
+				role="dialog"
+				aria-modal="true"
+				className="w-full max-w-md rounded-xl border border-border bg-background p-6 shadow-xl"
+			>
 				<h2 className="mb-4 font-semibold text-foreground text-lg">
 					Set stock level
 				</h2>
@@ -272,7 +276,11 @@ function AdjustStockModal({
 }) {
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-			<div className="w-full max-w-sm rounded-xl border border-border bg-background p-6 shadow-xl">
+			<div
+				role="dialog"
+				aria-modal="true"
+				className="w-full max-w-sm rounded-xl border border-border bg-background p-6 shadow-xl"
+			>
 				<h2 className="mb-1 font-semibold text-foreground text-lg">
 					Adjust stock
 				</h2>

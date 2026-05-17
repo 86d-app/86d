@@ -109,6 +109,8 @@ export function AnnouncementPopup({
 				aria-label="Close announcement"
 			/>
 			<div
+				role="dialog"
+				aria-modal="true"
 				className={`relative z-10 w-full max-w-md rounded-2xl shadow-2xl ${
 					hasCustomBg ? "" : "bg-card text-foreground"
 				}`}
