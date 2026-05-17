@@ -350,6 +350,12 @@ export function AdminShell({
 
 	return (
 		<div className="flex h-svh overflow-hidden bg-background">
+			<a
+				href="#admin-main"
+				className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[200] focus:rounded-md focus:bg-background focus:px-4 focus:py-2 focus:font-medium focus:text-foreground focus:text-sm focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-ring"
+			>
+				Skip to main content
+			</a>
 			{/* Desktop sidebar */}
 			<div className="hidden lg:flex lg:flex-shrink-0">
 				<Sidebar navGroups={navGroups} />
@@ -404,7 +410,9 @@ export function AdminShell({
 					</span>
 				</div>
 
-				<main className="flex-1 overflow-y-auto p-6">{children}</main>
+				<main id="admin-main" className="flex-1 overflow-y-auto p-6">
+					{children}
+				</main>
 			</div>
 		</div>
 	);
