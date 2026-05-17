@@ -13,7 +13,9 @@ export const deleteProduct = createAdminEndpoint(
 		const controllers = ctx.context.controllers;
 
 		// Check if product exists
-		const existingProduct = (await controllers.product.getById(ctx)) as Product | null;
+		const existingProduct = (await controllers.product.getById(
+			ctx,
+		)) as Product | null;
 		if (!existingProduct) {
 			return {
 				error: "Product not found",
