@@ -506,6 +506,7 @@ function TokensTab({
 							<button
 								type="button"
 								onClick={onClearFileFilter}
+								aria-label="Clear file filter"
 								className="ml-1 text-muted-foreground hover:text-foreground"
 							>
 								×
