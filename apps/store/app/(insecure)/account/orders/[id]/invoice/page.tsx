@@ -43,6 +43,8 @@ interface InvoiceData {
 	taxAmount: number;
 	shippingAmount: number;
 	discountAmount: number;
+	giftCardAmount?: number;
+	storeCreditAmount?: number;
 	total: number;
 	currency: string;
 	storeName: string;
@@ -325,6 +327,26 @@ export default function CustomerInvoicePage() {
 								<span className="text-status-success">Discount</span>
 								<span className="text-status-success tabular-nums">
 									-{formatPrice(invoice.discountAmount, invoice.currency)}
+								</span>
+							</div>
+						)}
+						{(invoice.giftCardAmount ?? 0) > 0 && (
+							<div className="flex justify-between text-sm">
+								<span className="text-status-success">Gift card</span>
+								<span className="text-status-success tabular-nums">
+									-{formatPrice(invoice.giftCardAmount ?? 0, invoice.currency)}
+								</span>
+							</div>
+						)}
+						{(invoice.storeCreditAmount ?? 0) > 0 && (
+							<div className="flex justify-between text-sm">
+								<span className="text-status-success">Store credit</span>
+								<span className="text-status-success tabular-nums">
+									-
+									{formatPrice(
+										invoice.storeCreditAmount ?? 0,
+										invoice.currency,
+									)}
 								</span>
 							</div>
 						)}
