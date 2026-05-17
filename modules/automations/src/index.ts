@@ -149,6 +149,10 @@ export default function automations(options?: AutomationsOptions): Module {
 				"appointment.cancelled",
 				"appointment.confirmed",
 				"appointment.completed",
+				"auction.published",
+				"auction.cancelled",
+				"store-credits.account.frozen",
+				"waitlist.unsubscribed",
 			] as const;
 
 			for (const eventName of CROSS_MODULE_EVENTS) {
