@@ -50,11 +50,17 @@ export function RedirectsAdmin() {
 	const [testPath, setTestPath] = useState("");
 	const [testResult, setTestResult] = useState<string | null>(null);
 
-	const { data, isLoading, refetch } = api.list.useQuery({
+	const {
+		data,
+		isLoading,
+		isError: redirectsError,
+		refetch,
+	} = api.list.useQuery({
 		...(search ? { search } : {}),
 	}) as {
 		data: { redirects?: Redirect[]; total?: number } | undefined;
 		isLoading: boolean;
+		isError: boolean;
 		refetch: () => void;
 	};
 
@@ -76,6 +82,26 @@ export function RedirectsAdmin() {
 			redirect?: { targetPath: string; statusCode: number };
 		}>;
 	};
+
+	if (redirectsError) {
+		return (
+			<div className="rounded-md border border-destructive/50 bg-destructive/10 p-4">
+				<p className="font-semibold text-destructive">
+					Failed to load redirects
+				</p>
+				<p className="mt-1 text-muted-foreground text-sm">
+					Check your connection and try again.
+				</p>
+				<button
+					type="button"
+					onClick={() => void refetch()}
+					className="mt-3 rounded-md bg-destructive/20 px-3 py-1.5 font-medium text-destructive text-sm transition-colors hover:bg-destructive/30"
+				>
+					Try again
+				</button>
+			</div>
+		);
+	}
 
 	const redirects = data?.redirects ?? [];
 	const stats = statsData?.stats;
