@@ -31,6 +31,10 @@ export const createSchedule = createAdminEndpoint(
 		if (ctx.body.active != null) params.active = ctx.body.active;
 		if (ctx.body.sortOrder != null) params.sortOrder = ctx.body.sortOrder;
 		const schedule = await controller.createSchedule(params);
+		void ctx.context.events?.emit("delivery-slots.schedule.created", {
+			scheduleId: schedule.id,
+			name: schedule.name,
+		});
 		return { schedule };
 	},
 );
