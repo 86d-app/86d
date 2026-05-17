@@ -3,7 +3,7 @@
 import { cartState } from "@86d-app/cart/state";
 import { ModuleClientError, useModuleClient } from "@86d-app/core/client";
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { StatusBadge } from "~/components/status-badge";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -82,6 +82,36 @@ type OrderFulfillmentStatus =
 	| "partially_fulfilled"
 	| "fulfilled";
 
+interface ReturnRequestItem {
+	id: string;
+	orderItemId: string;
+	quantity: number;
+}
+
+interface ReturnRequest {
+	id: string;
+	status: string;
+	type: string;
+	reason: string;
+	customerNotes?: string | null;
+	adminNotes?: string | null;
+	refundAmount?: number | null;
+	createdAt: string;
+	items: ReturnRequestItem[];
+}
+
+const RETURN_REASONS = [
+	{ value: "defective", label: "Defective / not working" },
+	{ value: "wrong_item", label: "Wrong item received" },
+	{ value: "not_as_described", label: "Not as described" },
+	{ value: "changed_mind", label: "Changed my mind" },
+	{ value: "too_small", label: "Too small" },
+	{ value: "too_large", label: "Too large" },
+	{ value: "arrived_late", label: "Arrived too late" },
+	{ value: "damaged_in_shipping", label: "Damaged in shipping" },
+	{ value: "other", label: "Other" },
+];
+
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 function formatPrice(cents: number, currency = "USD"): string {
@@ -110,6 +140,12 @@ export default function OrderDetailPage() {
 	const [reorderStatus, setReorderStatus] = useState<
 		"idle" | "loading" | "success" | "error"
 	>("idle");
+	const [showReturnForm, setShowReturnForm] = useState(false);
+	const [returnReason, setReturnReason] = useState("");
+	const [returnNotes, setReturnNotes] = useState("");
+	const [returnItems, setReturnItems] = useState<Record<string, number>>({});
+	const [returnError, setReturnError] = useState("");
+	const [returnSuccess, setReturnSuccess] = useState(false);
 
 	const orderApi = client.module("orders").store["/orders/me/:id"];
 	const cancelApi = client.module("orders").store["/orders/me/:id/cancel"];
@@ -117,6 +153,9 @@ export default function OrderDetailPage() {
 	const cartApi = client.module("cart").store["/cart"];
 	const fulfillmentApi =
 		client.module("orders").store["/orders/me/:id/fulfillments"];
+	const returnsApi = client.module("orders").store["/orders/me/:id/returns"];
+	const createReturnApi =
+		client.module("orders").store["/orders/me/:id/returns/create"];
 
 	const { data, isLoading, isError, error } = orderApi.useQuery({
 		params: { id: orderId },
@@ -139,6 +178,78 @@ export default function OrderDetailPage() {
 	};
 
 	const fulfillments = fulfillmentData?.fulfillments ?? [];
+
+	const { data: returnsData, refetch: refetchReturns } = returnsApi.useQuery({
+		params: { id: orderId },
+	}) as {
+		data: { returns: ReturnRequest[] } | undefined;
+		refetch: () => void;
+	};
+
+	const existingReturns = returnsData?.returns ?? [];
+
+	const createReturnMutation = createReturnApi.useMutation({
+		onSuccess: () => {
+			setShowReturnForm(false);
+			setReturnSuccess(true);
+			setReturnReason("");
+			setReturnNotes("");
+			setReturnItems({});
+			refetchReturns();
+		},
+		onError: (err: Error) => {
+			const body = err instanceof ModuleClientError ? err.body : undefined;
+			setReturnError(
+				typeof body?.error === "string"
+					? body.error
+					: "Failed to submit return request.",
+			);
+		},
+	});
+
+	const handleReturnItemToggle = useCallback(
+		(itemId: string, maxQty: number) => {
+			setReturnItems((prev) => {
+				if (prev[itemId] !== undefined) {
+					const next = { ...prev };
+					delete next[itemId];
+					return next;
+				}
+				return { ...prev, [itemId]: maxQty };
+			});
+		},
+		[],
+	);
+
+	const handleReturnSubmit = useCallback(
+		(e: React.FormEvent) => {
+			e.preventDefault();
+			if (!returnReason) {
+				setReturnError("Please select a reason for the return.");
+				return;
+			}
+			const itemEntries = Object.entries(returnItems).filter(
+				([, qty]) => qty > 0,
+			);
+			if (itemEntries.length === 0) {
+				setReturnError("Select at least one item to return.");
+				return;
+			}
+			setReturnError("");
+			createReturnMutation.mutate({
+				params: { id: orderId },
+				body: {
+					reason: returnReason,
+					customerNotes: returnNotes || undefined,
+					items: itemEntries.map(([orderItemId, quantity]) => ({
+						orderItemId,
+						quantity,
+					})),
+				},
+			});
+		},
+		[orderId, returnReason, returnNotes, returnItems, createReturnMutation],
+	);
 
 	const cancelMutation = cancelApi.useMutation({
 		onError: (err: Error) => {
@@ -228,6 +339,7 @@ export default function OrderDetailPage() {
 	const cancellable = ["pending", "processing", "on_hold"].includes(
 		order.status,
 	);
+	const returnable = ["completed", "processing"].includes(order.status);
 	const shipping = order.addresses.find((a) => a.type === "shipping");
 	const billing = order.addresses.find((a) => a.type === "billing");
 
@@ -546,6 +658,227 @@ export default function OrderDetailPage() {
 				<div className="mb-6 rounded-xl border border-border bg-muted/30 p-4">
 					<h2 className="mb-1 font-semibold text-foreground text-sm">Notes</h2>
 					<p className="text-muted-foreground text-sm">{order.notes}</p>
+				</div>
+			)}
+
+			{/* Returns */}
+			{(returnable || existingReturns.length > 0) && (
+				<div className="mb-6 rounded-xl border border-border p-4 sm:p-5">
+					<div className="mb-3 flex items-center justify-between">
+						<h2 className="font-semibold text-foreground text-sm">Returns</h2>
+						{returnable && !showReturnForm && !returnSuccess && (
+							<button
+								type="button"
+								onClick={() => {
+									setShowReturnForm(true);
+									setReturnError("");
+									setReturnItems(
+										Object.fromEntries(
+											order.items.map((i) => [i.id, i.quantity]),
+										),
+									);
+								}}
+								className="font-medium text-foreground text-xs underline-offset-4 hover:underline"
+							>
+								Request Return
+							</button>
+						)}
+					</div>
+
+					{returnSuccess && (
+						<div
+							className="rounded-lg border border-status-success/20 bg-status-success-bg px-3 py-2 text-sm text-status-success"
+							role="status"
+						>
+							Return request submitted successfully.
+						</div>
+					)}
+
+					{showReturnForm && !returnSuccess && (
+						<form onSubmit={handleReturnSubmit} className="space-y-4">
+							{returnError && (
+								<div
+									className="rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2 text-destructive text-sm"
+									role="alert"
+								>
+									{returnError}
+								</div>
+							)}
+							<div>
+								<p className="mb-2 font-medium text-foreground text-sm">
+									Select items to return
+								</p>
+								<div className="space-y-2 rounded-xl border border-border p-3">
+									{order.items.map((item) => {
+										const checked = returnItems[item.id] !== undefined;
+										return (
+											<div key={item.id} className="flex items-center gap-3">
+												<input
+													type="checkbox"
+													id={`return-item-${item.id}`}
+													checked={checked}
+													onChange={() =>
+														handleReturnItemToggle(item.id, item.quantity)
+													}
+													className="size-4 rounded border-border"
+												/>
+												<label
+													htmlFor={`return-item-${item.id}`}
+													className="min-w-0 flex-1 cursor-pointer text-foreground text-sm"
+												>
+													{item.name}
+												</label>
+												{checked && (
+													<input
+														type="number"
+														min={1}
+														max={item.quantity}
+														value={returnItems[item.id] ?? 1}
+														onChange={(e) =>
+															setReturnItems((prev) => ({
+																...prev,
+																[item.id]: Math.min(
+																	item.quantity,
+																	Math.max(
+																		1,
+																		Number.parseInt(e.target.value, 10) || 1,
+																	),
+																),
+															}))
+														}
+														className="h-8 w-16 rounded border border-border bg-background px-2 text-center text-sm"
+														aria-label={`Quantity for ${item.name}`}
+													/>
+												)}
+												<span className="shrink-0 text-muted-foreground text-xs">
+													/ {item.quantity}
+												</span>
+											</div>
+										);
+									})}
+								</div>
+							</div>
+							<div>
+								<label
+									htmlFor="return-reason"
+									className="mb-1 block font-medium text-foreground text-sm"
+								>
+									Reason
+								</label>
+								<select
+									id="return-reason"
+									value={returnReason}
+									onChange={(e) => setReturnReason(e.target.value)}
+									className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground text-sm outline-none focus:border-foreground/30"
+								>
+									<option value="">Select a reason...</option>
+									{RETURN_REASONS.map((r) => (
+										<option key={r.value} value={r.value}>
+											{r.label}
+										</option>
+									))}
+								</select>
+							</div>
+							<div>
+								<label
+									htmlFor="return-notes"
+									className="mb-1 block font-medium text-foreground text-sm"
+								>
+									Additional notes{" "}
+									<span className="font-normal text-muted-foreground">
+										(optional)
+									</span>
+								</label>
+								<textarea
+									id="return-notes"
+									value={returnNotes}
+									onChange={(e) => setReturnNotes(e.target.value)}
+									rows={3}
+									maxLength={2000}
+									className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-foreground text-sm outline-none focus:border-foreground/30"
+									placeholder="Describe the issue..."
+								/>
+							</div>
+							<div className="flex gap-2">
+								<button
+									type="submit"
+									disabled={createReturnMutation.isPending}
+									className="rounded-lg bg-foreground px-4 py-2 font-medium text-background text-sm transition-colors hover:bg-foreground/90 disabled:opacity-50"
+								>
+									{createReturnMutation.isPending
+										? "Submitting..."
+										: "Submit Return"}
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										setShowReturnForm(false);
+										setReturnError("");
+									}}
+									className="rounded-lg border border-border px-4 py-2 font-medium text-foreground text-sm transition-colors hover:bg-muted"
+								>
+									Cancel
+								</button>
+							</div>
+						</form>
+					)}
+
+					{existingReturns.length > 0 && (
+						<div
+							className={
+								showReturnForm ? "mt-4 border-border border-t pt-4" : ""
+							}
+						>
+							{showReturnForm && (
+								<p className="mb-2 font-medium text-muted-foreground text-xs uppercase tracking-wide">
+									Previous requests
+								</p>
+							)}
+							<div className="space-y-3">
+								{existingReturns.map((r) => (
+									<div
+										key={r.id}
+										className="rounded-lg border border-border p-3"
+									>
+										<div className="mb-1 flex items-center gap-2">
+											<span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 font-medium text-foreground text-xs capitalize">
+												{r.status.replace(/_/g, " ")}
+											</span>
+											<span className="text-muted-foreground text-xs capitalize">
+												{r.type.replace(/_/g, " ")}
+											</span>
+										</div>
+										<p className="text-foreground text-sm capitalize">
+											{r.reason.replace(/_/g, " ")}
+										</p>
+										{r.customerNotes && (
+											<p className="mt-1 text-muted-foreground text-sm">
+												{r.customerNotes}
+											</p>
+										)}
+										{r.adminNotes && (
+											<div className="mt-2 rounded-lg bg-muted/40 p-2">
+												<p className="text-muted-foreground text-xs">
+													Store response
+												</p>
+												<p className="text-foreground text-sm">
+													{r.adminNotes}
+												</p>
+											</div>
+										)}
+										{r.refundAmount != null && r.refundAmount > 0 && (
+											<p className="mt-1.5 font-medium text-sm text-status-success">
+												Refund: {formatPrice(r.refundAmount, order.currency)}
+											</p>
+										)}
+										<p className="mt-1.5 text-muted-foreground text-xs">
+											Requested {formatDate(r.createdAt)}
+										</p>
+									</div>
+								))}
+							</div>
+						</div>
+					)}
 				</div>
 			)}
 
