@@ -36,7 +36,7 @@ export function LocationDetail({ locationId }: { locationId: string }) {
 						className={`rounded-full px-3 py-1 text-xs ${
 							location.isActive
 								? "bg-green-100 text-green-700"
-								: "bg-gray-100 text-gray-600"
+								: "bg-muted text-muted-foreground"
 						}`}
 					>
 						{location.isActive ? "Active" : "Inactive"}

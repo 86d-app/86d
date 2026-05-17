@@ -141,7 +141,7 @@ export function LocationList() {
 											className={`rounded-full px-2 py-0.5 text-xs ${
 												loc.isActive
 													? "bg-green-100 text-green-700"
-													: "bg-gray-100 text-gray-600"
+													: "bg-muted text-muted-foreground"
 											}`}
 										>
 											{loc.isActive ? "Active" : "Inactive"}
