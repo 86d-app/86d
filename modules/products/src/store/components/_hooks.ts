@@ -179,6 +179,15 @@ export function useProductQaApi() {
 	};
 }
 
+export function useComparisonApi() {
+	const client = useModuleClient();
+	return {
+		listComparison: client.module("comparisons").store["/comparisons"],
+		addProduct: client.module("comparisons").store["/comparisons/add"],
+		removeProduct: client.module("comparisons").store["/comparisons/remove"],
+	};
+}
+
 export function useWishlistApi() {
 	const client = useModuleClient();
 	return {

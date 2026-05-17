@@ -20,6 +20,7 @@ import type {
 import { formatPrice, imageUrl } from "./_utils";
 import { BackInStockNotify } from "./back-in-stock-notify";
 import { BulkPricingSection } from "./bulk-pricing-section";
+import { ComparisonButtonSection } from "./comparison-button-section";
 import { FlashDealSection } from "./flash-deal-section";
 import ProductDetailTemplate from "./product-detail.mdx";
 import { ProductQASection } from "./product-qa-section";
@@ -487,6 +488,16 @@ export function ProductDetail(props: ProductDetailProps) {
 		/>
 	);
 
+	const compareButton = (
+		<ComparisonButtonSection
+			productId={product.id}
+			productName={product.name}
+			productSlug={product.slug}
+			productImage={imageUrl(product.images[0])}
+			productPrice={displayPrice}
+		/>
+	);
+
 	const addToCartBlock = (
 		<div className="mt-1 flex items-center gap-2.5">
 			<div className="flex items-center rounded-md border border-border">
@@ -571,6 +582,7 @@ export function ProductDetail(props: ProductDetailProps) {
 			variantSelector={variantSelector}
 			addToCartBlock={addToCartBlock}
 			wishlistButton={wishlistButton}
+			compareButton={compareButton}
 			pricingTiers={
 				<BulkPricingSection
 					productId={product.id}

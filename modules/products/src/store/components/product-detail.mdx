@@ -21,7 +21,10 @@
       {props.shortDescription}
       {props.variantSelector}
       {props.addToCartBlock}
-      {props.wishlistButton}
+      <div className="flex flex-wrap gap-2">
+        {props.wishlistButton}
+        {props.compareButton}
+      </div>
       {props.pricingTiers}
       {props.trustBadges}
       {props.outOfStockNotice}
