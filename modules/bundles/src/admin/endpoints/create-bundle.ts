@@ -41,6 +41,11 @@ export const createBundle = createAdminEndpoint(
 		}
 
 		const bundle = await controller.create(ctx.body);
+		void ctx.context.events?.emit("bundle.created", {
+			bundleId: bundle.id,
+			name: bundle.name,
+			slug: bundle.slug,
+		});
 		return { bundle };
 	},
 );

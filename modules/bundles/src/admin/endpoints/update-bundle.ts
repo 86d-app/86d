@@ -62,6 +62,23 @@ export const updateBundle = createAdminEndpoint(
 			return { error: "Bundle not found", status: 404 };
 		}
 
+		void ctx.context.events?.emit("bundle.updated", {
+			bundleId: bundle.id,
+			name: bundle.name,
+			status: bundle.status,
+		});
+		if (ctx.body.status === "active") {
+			void ctx.context.events?.emit("bundle.activated", {
+				bundleId: bundle.id,
+				name: bundle.name,
+			});
+		} else if (ctx.body.status === "archived") {
+			void ctx.context.events?.emit("bundle.archived", {
+				bundleId: bundle.id,
+				name: bundle.name,
+			});
+		}
+
 		return { bundle };
 	},
 );
