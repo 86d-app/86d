@@ -29,7 +29,7 @@ import Link from "next/link";
     </Link>
 
     {/* Desktop navigation */}
-    <nav className="ml-auto hidden items-center gap-1 md:flex lg:ml-10">
+    <nav aria-label="Main navigation" className="ml-auto hidden items-center gap-1 md:flex lg:ml-10">
       {props.navItems.map((link) => (
         <Link
           key={link.label}
@@ -168,7 +168,7 @@ import Link from "next/link";
         : "pointer-events-none opacity-0"
     }`}
   >
-    <nav className="flex flex-1 flex-col px-6 pt-6">
+    <nav aria-label="Mobile navigation" className="flex flex-1 flex-col px-6 pt-6">
       {props.navItems.map((link) => (
         <Link
           key={link.label}
