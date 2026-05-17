@@ -103,6 +103,15 @@ export function useBulkPricingApi() {
 	};
 }
 
+export function useSocialProofApi() {
+	const client = useModuleClient();
+	return {
+		getProductActivity:
+			client.module("social-proof").store["/social-proof/activity/:productId"],
+		listBadges: client.module("social-proof").store["/social-proof/badges"],
+	};
+}
+
 export function useProductLabels(productId: string | undefined) {
 	const client = useModuleClient();
 	const getProductLabels =

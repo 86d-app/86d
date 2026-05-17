@@ -21,6 +21,7 @@ import { formatPrice, imageUrl } from "./_utils";
 import { BackInStockNotify } from "./back-in-stock-notify";
 import { BulkPricingSection } from "./bulk-pricing-section";
 import ProductDetailTemplate from "./product-detail.mdx";
+import { ProductActivitySection, TrustBadgesSection } from "./social-proof-section";
 import { ProductQASection } from "./product-qa-section";
 import { ProductReviewsSection } from "./product-reviews-section";
 import { RecentlyViewedProducts } from "./recently-viewed";
@@ -563,6 +564,8 @@ export function ProductDetail(props: ProductDetailProps) {
 					quantity={qty}
 				/>
 			}
+			activityBadge={<ProductActivitySection productId={product.id} />}
+			trustBadges={<TrustBadgesSection position="product" />}
 			outOfStockNotice={outOfStockNotice}
 			descriptionBlock={descriptionBlock}
 			tagsBlock={tagsBlock}
