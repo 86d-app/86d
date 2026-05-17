@@ -40,6 +40,14 @@ export const adjustCredit = createAdminEndpoint(
 					});
 
 		const account = await controller.getAccount(customerId);
+		const eventName =
+			amount > 0 ? "store-credits.credited" : "store-credits.debited";
+		void ctx.context.events?.emit(eventName, {
+			customerId,
+			amount: Math.abs(amount),
+			balance: account?.balance ?? 0,
+			description,
+		});
 		return { transaction, account };
 	},
 );

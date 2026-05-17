@@ -30,6 +30,12 @@ export const applyCredit = createStoreEndpoint(
 			referenceType: ctx.body.orderId ? "order" : undefined,
 			referenceId: ctx.body.orderId,
 		});
+		void ctx.context.events?.emit("store-credits.debited", {
+			customerId,
+			amount: ctx.body.amount,
+			balance: transaction.balanceAfter,
+			orderId: ctx.body.orderId,
+		});
 		return { transaction, remainingBalance: transaction.balanceAfter };
 	},
 );

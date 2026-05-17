@@ -14,6 +14,9 @@ export const freezeAccount = createAdminEndpoint(
 			"store-credits"
 		] as StoreCreditController;
 		const account = await controller.freezeAccount(ctx.params.customerId);
+		void ctx.context.events?.emit("store-credits.account.frozen", {
+			customerId: ctx.params.customerId,
+		});
 		return { account };
 	},
 );
