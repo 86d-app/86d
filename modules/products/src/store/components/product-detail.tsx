@@ -22,6 +22,7 @@ import { BackInStockNotify } from "./back-in-stock-notify";
 import { BulkPricingSection } from "./bulk-pricing-section";
 import { ComparisonButtonSection } from "./comparison-button-section";
 import { FlashDealSection } from "./flash-deal-section";
+import { LoyaltyPointsSection } from "./loyalty-points-section";
 import ProductDetailTemplate from "./product-detail.mdx";
 import { ProductQASection } from "./product-qa-section";
 import { ProductReviewsSection } from "./product-reviews-section";
@@ -488,6 +489,8 @@ export function ProductDetail(props: ProductDetailProps) {
 		/>
 	);
 
+	const loyaltyPoints = <LoyaltyPointsSection priceInCents={displayPrice} />;
+
 	const compareButton = (
 		<ComparisonButtonSection
 			productId={product.id}
@@ -583,6 +586,7 @@ export function ProductDetail(props: ProductDetailProps) {
 			addToCartBlock={addToCartBlock}
 			wishlistButton={wishlistButton}
 			compareButton={compareButton}
+			loyaltyPoints={loyaltyPoints}
 			pricingTiers={
 				<BulkPricingSection
 					productId={product.id}

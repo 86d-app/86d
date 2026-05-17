@@ -179,6 +179,14 @@ export function useProductQaApi() {
 	};
 }
 
+export function useLoyaltyApi() {
+	const client = useModuleClient();
+	return {
+		calculatePoints: client.module("loyalty").store["/loyalty/calculate"],
+		getBalance: client.module("loyalty").store["/loyalty/balance"],
+	};
+}
+
 export function useComparisonApi() {
 	const client = useModuleClient();
 	return {
