@@ -3,6 +3,7 @@
 import { observer } from "@86d-app/core/state";
 import { useApi } from "generated/hooks";
 import { useStore } from "hooks/use-store";
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect } from "react";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -109,6 +110,100 @@ function CartEmpty() {
 				Continue shopping
 			</Link>
 		</div>
+	);
+}
+
+// ─── Cart recommendations ───────────────────────────────────────────
+
+interface TrendingProduct {
+	productId: string;
+	productName: string;
+	productSlug: string;
+	productImage?: string | undefined;
+	productPrice?: number | undefined;
+}
+
+function CartRecommendations() {
+	const api = useApi();
+	const { data, isLoading } = api.recommendations.getTrending.useQuery({
+		take: "4",
+	}) as {
+		data: { recommendations: TrendingProduct[] } | undefined;
+		isLoading: boolean;
+	};
+
+	const items = data?.recommendations ?? [];
+
+	if (!isLoading && items.length === 0) return null;
+
+	return (
+		<section className="mt-16 border-border/40 border-t pt-12">
+			<h2 className="mb-6 font-display font-semibold text-foreground text-lg tracking-tight">
+				You may also like
+			</h2>
+			<div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-4">
+				{isLoading
+					? Array.from({ length: 4 }, (_, i) => `cart-rec-skel-${i}`).map(
+							(id) => (
+								<div key={id}>
+									<Skeleton className="aspect-[3/4] w-full rounded-lg" />
+									<Skeleton className="mt-3 h-3.5 w-3/4" />
+									<Skeleton className="mt-1.5 h-3.5 w-1/3" />
+								</div>
+							),
+						)
+					: items.map((item) => (
+							<Link
+								key={item.productId}
+								href={`/products/${item.productSlug}`}
+								className="group"
+							>
+								{item.productImage ? (
+									<div className="aspect-[3/4] overflow-hidden rounded-lg bg-muted">
+										<Image
+											src={item.productImage}
+											alt={item.productName}
+											width={300}
+											height={400}
+											unoptimized
+											className="h-full w-full object-cover transition-transform group-hover:scale-105"
+										/>
+									</div>
+								) : (
+									<div className="flex aspect-[3/4] items-center justify-center rounded-lg bg-muted">
+										<svg
+											xmlns="http://www.w3.org/2000/svg"
+											width="24"
+											height="24"
+											viewBox="0 0 24 24"
+											fill="none"
+											stroke="currentColor"
+											strokeWidth="1.5"
+											strokeLinecap="round"
+											strokeLinejoin="round"
+											className="text-muted-foreground/30"
+											aria-hidden="true"
+										>
+											<rect width="18" height="18" x="3" y="3" rx="2" />
+											<circle cx="9" cy="9" r="2" />
+											<path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+										</svg>
+									</div>
+								)}
+								<div className="mt-3">
+									<p className="truncate text-foreground text-sm group-hover:underline">
+										{item.productName}
+									</p>
+									{item.productPrice != null && (
+										<p className="mt-0.5 text-muted-foreground text-sm tabular-nums">
+											{formatPrice(item.productPrice)}
+										</p>
+									)}
+								</div>
+							</Link>
+						))}
+			</div>
+		</section>
 	);
 }
 
@@ -343,7 +438,14 @@ const CartPageClient = observer(function CartPageClient() {
 	}
 
 	if (!cart || cart.itemCount === 0) {
-		return <CartEmpty />;
+		return (
+			<>
+				<CartEmpty />
+				<div className="mx-auto w-full max-w-4xl px-4 pb-16 sm:px-6">
+					<CartRecommendations />
+				</div>
+			</>
+		);
 	}
 
 	return (
@@ -425,6 +527,8 @@ const CartPageClient = observer(function CartPageClient() {
 					</div>
 				</div>
 			</div>
+
+			<CartRecommendations />
 		</div>
 	);
 });
