@@ -30,10 +30,37 @@ const STATUS_COLORS: Record<string, string> = {
 
 export function ProductFeedsOverview() {
 	const api = useProductFeedsApi();
-	const { data, isLoading } = api.list.useQuery({}) as {
+	const {
+		data,
+		isLoading,
+		isError: feedsError,
+		refetch: refetchFeeds,
+	} = api.list.useQuery({}) as {
 		data: { feeds?: ProductFeed[] } | undefined;
 		isLoading: boolean;
+		isError: boolean;
+		refetch: () => void;
 	};
+
+	if (feedsError) {
+		return (
+			<div className="rounded-md border border-destructive/50 bg-destructive/10 p-4">
+				<p className="font-semibold text-destructive">
+					Failed to load product feeds
+				</p>
+				<p className="mt-1 text-muted-foreground text-sm">
+					Check your connection and try again.
+				</p>
+				<button
+					type="button"
+					onClick={() => refetchFeeds()}
+					className="mt-3 rounded-md bg-destructive/20 px-3 py-1.5 font-medium text-destructive text-sm transition-colors hover:bg-destructive/30"
+				>
+					Try again
+				</button>
+			</div>
+		);
+	}
 
 	const feeds = data?.feeds ?? [];
 

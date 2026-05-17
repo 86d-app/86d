@@ -458,7 +458,17 @@ function MetaTagsTab() {
 	const [editing, setEditing] = useState<MetaTag | null>(null);
 	const [deleting, setDeleting] = useState<MetaTag | null>(null);
 
-	const { data, isLoading } = api.listMeta.useQuery({});
+	const {
+		data,
+		isLoading,
+		isError: metaTagsError,
+		refetch: refetchMetaTags,
+	} = api.listMeta.useQuery({}) as {
+		data: { metaTags?: unknown[] } | undefined;
+		isLoading: boolean;
+		isError: boolean;
+		refetch: () => void;
+	};
 
 	const deleteMutation = api.deleteMeta.useMutation({
 		onSuccess: () => {
@@ -466,6 +476,26 @@ function MetaTagsTab() {
 			setDeleting(null);
 		},
 	});
+
+	if (metaTagsError) {
+		return (
+			<div className="rounded-md border border-destructive/50 bg-destructive/10 p-4">
+				<p className="font-semibold text-destructive">
+					Failed to load SEO meta tags
+				</p>
+				<p className="mt-1 text-muted-foreground text-sm">
+					Check your connection and try again.
+				</p>
+				<button
+					type="button"
+					onClick={() => refetchMetaTags()}
+					className="mt-3 rounded-md bg-destructive/20 px-3 py-1.5 font-medium text-destructive text-sm transition-colors hover:bg-destructive/30"
+				>
+					Try again
+				</button>
+			</div>
+		);
+	}
 
 	const metaTags = (data?.metaTags ?? []) as MetaTag[];
 

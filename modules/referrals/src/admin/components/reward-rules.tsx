@@ -45,9 +45,16 @@ export function RewardRules() {
 	const [refereeValue, setRefereeValue] = useState("10");
 	const [minOrderAmount, setMinOrderAmount] = useState("0");
 
-	const { data, isLoading: loading } = api.list.useQuery({}) as {
+	const {
+		data,
+		isLoading: loading,
+		isError: rulesError,
+		refetch: refetchRules,
+	} = api.list.useQuery({}) as {
 		data: { rules: RewardRule[] } | undefined;
 		isLoading: boolean;
+		isError: boolean;
+		refetch: () => void;
 	};
 
 	const createMutation = api.create.useMutation({
@@ -80,6 +87,26 @@ export function RewardRules() {
 			minOrderAmount: Number.parseFloat(minOrderAmount),
 		});
 	};
+
+	if (rulesError) {
+		return (
+			<div className="rounded-md border border-destructive/50 bg-destructive/10 p-4">
+				<p className="font-semibold text-destructive">
+					Failed to load reward rules
+				</p>
+				<p className="mt-1 text-muted-foreground text-sm">
+					Check your connection and try again.
+				</p>
+				<button
+					type="button"
+					onClick={() => refetchRules()}
+					className="mt-3 rounded-md bg-destructive/20 px-3 py-1.5 font-medium text-destructive text-sm transition-colors hover:bg-destructive/30"
+				>
+					Try again
+				</button>
+			</div>
+		);
+	}
 
 	const rules = data?.rules ?? [];
 

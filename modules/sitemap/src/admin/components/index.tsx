@@ -61,11 +61,14 @@ export function SitemapAdmin() {
 		data: { config?: SitemapConfig } | undefined;
 	};
 
-	const { data: entriesData, refetch: refetchEntries } = api.entries.useQuery(
-		{},
-	) as {
+	const {
+		data: entriesData,
+		refetch: refetchEntries,
+		isError: entriesError,
+	} = api.entries.useQuery({}) as {
 		data: { entries?: SitemapEntry[]; total?: number } | undefined;
 		refetch: () => void;
+		isError: boolean;
 	};
 
 	const regenerateMutation = api.regenerate.useMutation() as {
@@ -78,6 +81,26 @@ export function SitemapAdmin() {
 	const removeEntryMutation = api.removeEntry.useMutation() as {
 		mutateAsync: (params: { params: { id: string } }) => Promise<unknown>;
 	};
+
+	if (entriesError) {
+		return (
+			<div className="rounded-md border border-destructive/50 bg-destructive/10 p-4">
+				<p className="font-semibold text-destructive">
+					Failed to load sitemap entries
+				</p>
+				<p className="mt-1 text-muted-foreground text-sm">
+					Check your connection and try again.
+				</p>
+				<button
+					type="button"
+					onClick={() => void refetchEntries()}
+					className="mt-3 rounded-md bg-destructive/20 px-3 py-1.5 font-medium text-destructive text-sm transition-colors hover:bg-destructive/30"
+				>
+					Try again
+				</button>
+			</div>
+		);
+	}
 
 	const stats = statsData?.stats;
 	const config = configData?.config;
