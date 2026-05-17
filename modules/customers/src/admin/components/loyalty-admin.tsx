@@ -170,6 +170,7 @@ function CustomerLoyaltyModal({
 					<button
 						type="button"
 						onClick={onClose}
+						aria-label="Close"
 						className="text-neutral-400 hover:text-neutral-600"
 					>
 						&times;

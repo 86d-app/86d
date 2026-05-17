@@ -638,6 +638,7 @@ function CategoryManager({
 							<button
 								type="button"
 								onClick={() => handleDelete(cat.id)}
+								aria-label="Remove category"
 								className="ml-1 text-neutral-400 hover:text-red-600"
 							>
 								&times;

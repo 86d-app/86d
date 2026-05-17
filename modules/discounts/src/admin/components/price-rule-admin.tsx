@@ -417,6 +417,7 @@ export function PriceRuleAdmin() {
 										<button
 											type="button"
 											onClick={() => removeCondition(i)}
+											aria-label="Remove condition"
 											className="ml-1 text-muted-foreground hover:text-foreground"
 										>
 											&times;
