@@ -54,7 +54,30 @@ export default function referrals(options?: ReferralsOptions): Module {
 					.catch(() => []);
 
 				for (const referral of pending) {
-					await controller.completeReferral(referral.id).catch(() => {});
+					const completed = await controller
+						.completeReferral(referral.id)
+						.catch(() => null);
+					if (!completed || !ctx.events) continue;
+
+					// Emit reward events so store-credits and other modules can grant rewards
+					const rules = await controller
+						.listRewardRules({ active: true })
+						.catch(() => []);
+					const rule = rules[0];
+					if (rule) {
+						void ctx.events.emit("referrals.referral_completed", {
+							referralId: completed.id,
+							customerId: completed.referrerCustomerId,
+							rewardType: rule.referrerRewardType,
+							rewardAmount: rule.referrerRewardValue,
+						});
+						void ctx.events.emit("referrals.referral_completed", {
+							referralId: completed.id,
+							customerId: completed.refereeCustomerId,
+							rewardType: rule.refereeRewardType,
+							rewardAmount: rule.refereeRewardValue,
+						});
+					}
 				}
 			});
 
