@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import MediaAdminTemplate from "./media-admin.mdx";
 
 interface Asset {
@@ -407,6 +407,10 @@ function NewFolderModal({
 	onSuccess: () => void;
 }) {
 	const api = useMediaAdminApi();
+	const folderNameRef = useRef<HTMLInputElement>(null);
+	useEffect(() => {
+		folderNameRef.current?.focus();
+	}, []);
 	const [name, setName] = useState("");
 
 	const createMutation = api.createFolder.useMutation({
@@ -426,6 +430,7 @@ function NewFolderModal({
 				<div className="px-6 py-5">
 					<h2 className="font-semibold text-foreground text-lg">New Folder</h2>
 					<input
+						ref={folderNameRef}
 						type="text"
 						value={name}
 						onChange={(e) => setName(e.target.value)}

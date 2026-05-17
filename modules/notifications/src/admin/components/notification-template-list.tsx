@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import NotificationTemplateListTemplate from "./notification-template-list.mdx";
 
 interface TemplateItem {
@@ -64,6 +64,10 @@ function DeleteTemplateModal({
 	onSuccess: () => void;
 }) {
 	const api = useTemplatesApi();
+	const cancelRef = useRef<HTMLButtonElement>(null);
+	useEffect(() => {
+		cancelRef.current?.focus();
+	}, []);
 
 	const deleteMutation = api.deleteTemplate.useMutation({
 		onSuccess: () => {
@@ -90,6 +94,7 @@ function DeleteTemplateModal({
 					</p>
 					<div className="mt-5 flex justify-end gap-2">
 						<button
+							ref={cancelRef}
 							type="button"
 							onClick={onClose}
 							className="rounded-md border border-border px-4 py-2 text-foreground text-sm hover:bg-muted"

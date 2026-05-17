@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import DoorDashAdminTemplate from "./doordash-admin.mdx";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -169,6 +169,7 @@ export function DoorDashAdmin() {
 	};
 
 	// ── Create zone form ─────────────────────────────────────────────────
+	const zoneNameRef = useRef<HTMLInputElement>(null);
 	const [showCreateZone, setShowCreateZone] = useState(false);
 	const [zoneForm, setZoneForm] = useState({
 		name: "",
@@ -204,6 +205,10 @@ export function DoorDashAdmin() {
 		},
 	});
 
+	useEffect(() => {
+		if (!showCreateZone) return;
+		zoneNameRef.current?.focus();
+	}, [showCreateZone]);
 	useEffect(() => {
 		if (!showCreateZone) return;
 		function handler(e: KeyboardEvent) {
@@ -527,6 +532,7 @@ export function DoorDashAdmin() {
 										Zone name <span className="text-red-500">*</span>
 									</label>
 									<input
+										ref={zoneNameRef}
 										id="dd-zone-name"
 										required
 										value={zoneForm.name}

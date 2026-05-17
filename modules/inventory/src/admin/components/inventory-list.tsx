@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import InventoryListTemplate from "./inventory-list.mdx";
 
 interface InventoryItem {
@@ -108,6 +108,10 @@ function SetStockModal({
 	saving: boolean;
 	error: string;
 }) {
+	const firstInputRef = useRef<HTMLInputElement>(null);
+	useEffect(() => {
+		firstInputRef.current?.focus();
+	}, []);
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
 			<div
@@ -132,6 +136,7 @@ function SetStockModal({
 							Product ID <span className="text-red-500">*</span>
 						</label>
 						<input
+							ref={firstInputRef}
 							id="inv-set-productId"
 							required
 							value={form.productId}
@@ -274,6 +279,10 @@ function AdjustStockModal({
 	saving: boolean;
 	error: string;
 }) {
+	const firstInputRef = useRef<HTMLInputElement>(null);
+	useEffect(() => {
+		firstInputRef.current?.focus();
+	}, []);
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
 			<div
@@ -301,6 +310,7 @@ function AdjustStockModal({
 							Product ID <span className="text-red-500">*</span>
 						</label>
 						<input
+							ref={firstInputRef}
 							id="inv-adj-productId"
 							required
 							value={form.productId}

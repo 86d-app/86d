@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface LoyaltyBalance {
 	customerId: string;
@@ -101,6 +101,10 @@ function CustomerLoyaltyModal({
 	customer: Customer;
 	onClose: () => void;
 }) {
+	const firstInputRef = useRef<HTMLButtonElement>(null);
+	useEffect(() => {
+		firstInputRef.current?.focus();
+	}, []);
 	useEffect(() => {
 		function handler(e: KeyboardEvent) {
 			if (e.key === "Escape") onClose();
@@ -179,6 +183,7 @@ function CustomerLoyaltyModal({
 						{customer.firstName} {customer.lastName} — Loyalty Points
 					</h3>
 					<button
+						ref={firstInputRef}
 						type="button"
 						onClick={onClose}
 						aria-label="Close"

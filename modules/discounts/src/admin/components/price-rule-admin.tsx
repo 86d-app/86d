@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import PriceRuleAdminTemplate from "./price-rule-admin.mdx";
 
 interface CartPriceRuleCondition {
@@ -81,6 +81,7 @@ export function PriceRuleAdmin() {
 	const api = usePriceRuleApi();
 	const [page, setPage] = useState(1);
 	const [isActiveFilter, setIsActiveFilter] = useState("");
+	const priceRuleNameRef = useRef<HTMLInputElement>(null);
 	const [showCreate, setShowCreate] = useState(false);
 
 	// Create form state
@@ -123,6 +124,10 @@ export function PriceRuleAdmin() {
 			void api.list.invalidate();
 		},
 	});
+	useEffect(() => {
+		if (!showCreate) return;
+		priceRuleNameRef.current?.focus();
+	}, [showCreate]);
 	useEffect(() => {
 		if (!showCreate) return;
 		function handler(e: KeyboardEvent) {
@@ -326,6 +331,7 @@ export function PriceRuleAdmin() {
 					<label className="block">
 						<span className="mb-1 block font-medium text-sm">Name</span>
 						<input
+							ref={priceRuleNameRef}
 							type="text"
 							value={formName}
 							onChange={(e) => setFormName(e.target.value)}

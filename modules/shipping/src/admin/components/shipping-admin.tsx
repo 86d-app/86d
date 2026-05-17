@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ShippingAdminTemplate from "./shipping-admin.mdx";
 
 interface ShippingZone {
@@ -377,10 +377,12 @@ export function ShippingAdmin() {
 	const [expandedZones, setExpandedZones] = useState<Set<string>>(new Set());
 
 	// Create zone modal
+	const zoneNameRef = useRef<HTMLInputElement>(null);
 	const [showCreateZone, setShowCreateZone] = useState(false);
 	const [zoneForm, setZoneForm] = useState<ZoneForm>(DEFAULT_ZONE);
 
 	// Add rate modal
+	const rateNameRef = useRef<HTMLInputElement>(null);
 	const [addRateZoneId, setAddRateZoneId] = useState<string | null>(null);
 	const [rateForm, setRateForm] = useState<RateForm>(DEFAULT_RATE);
 
@@ -431,6 +433,14 @@ export function ShippingAdmin() {
 	}
 
 	const anyModalOpen = showCreateZone || !!addRateZoneId;
+	useEffect(() => {
+		if (!showCreateZone) return;
+		zoneNameRef.current?.focus();
+	}, [showCreateZone]);
+	useEffect(() => {
+		if (!addRateZoneId) return;
+		rateNameRef.current?.focus();
+	}, [addRateZoneId]);
 	useEffect(() => {
 		if (!anyModalOpen) return;
 		function handler(e: KeyboardEvent) {
@@ -653,6 +663,7 @@ export function ShippingAdmin() {
 											Zone name <span className="text-red-500">*</span>
 										</label>
 										<input
+											ref={zoneNameRef}
 											id="ship-zone-name"
 											required
 											value={zoneForm.name}
@@ -747,6 +758,7 @@ export function ShippingAdmin() {
 											Rate name <span className="text-red-500">*</span>
 										</label>
 										<input
+											ref={rateNameRef}
 											id="ship-rate-name"
 											required
 											value={rateForm.name}

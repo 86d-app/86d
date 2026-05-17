@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import SeoAdminTemplate from "./seo-admin.mdx";
 
 interface MetaTag {
@@ -63,6 +63,10 @@ function MetaTagForm({
 	onCancel: () => void;
 }) {
 	const api = useSeoAdminApi();
+	const firstInputRef = useRef<HTMLInputElement>(null);
+	useEffect(() => {
+		firstInputRef.current?.focus();
+	}, []);
 	const [path, setPath] = useState(initial?.path ?? "");
 	const [title, setTitle] = useState(initial?.title ?? "");
 	const [description, setDescription] = useState(initial?.description ?? "");
@@ -118,6 +122,7 @@ function MetaTagForm({
 								Path *
 							</label>
 							<input
+								ref={firstInputRef}
 								id="seo-path"
 								type="text"
 								value={path}
@@ -285,6 +290,10 @@ function RedirectForm({
 	onCancel: () => void;
 }) {
 	const api = useSeoAdminApi();
+	const firstInputRef = useRef<HTMLInputElement>(null);
+	useEffect(() => {
+		firstInputRef.current?.focus();
+	}, []);
 	const [fromPath, setFromPath] = useState(initial?.fromPath ?? "");
 	const [toPath, setToPath] = useState(initial?.toPath ?? "");
 	const [statusCode, setStatusCode] = useState(
@@ -342,6 +351,7 @@ function RedirectForm({
 								From Path *
 							</label>
 							<input
+								ref={firstInputRef}
 								id="redirect-from"
 								type="text"
 								value={fromPath}
@@ -426,6 +436,10 @@ function DeleteModal({
 	onConfirm: () => void;
 	isPending: boolean;
 }) {
+	const cancelRef = useRef<HTMLButtonElement>(null);
+	useEffect(() => {
+		cancelRef.current?.focus();
+	}, []);
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
 			<div
@@ -442,6 +456,7 @@ function DeleteModal({
 				</div>
 				<div className="flex justify-end gap-2 border-border border-t px-6 py-4">
 					<button
+						ref={cancelRef}
 						type="button"
 						onClick={onClose}
 						className="rounded-md border border-border px-4 py-2 text-foreground text-sm hover:bg-muted"

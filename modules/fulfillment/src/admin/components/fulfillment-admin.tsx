@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import FulfillmentAdminTemplate from "./fulfillment-admin.mdx";
 
 interface FulfillmentItem {
@@ -186,6 +186,8 @@ const DEFAULT_TRACKING: TrackingForm = {
 export function FulfillmentAdmin() {
 	const api = useFulfillmentAdminApi();
 	const [statusFilter, setStatusFilter] = useState<StatusFilter>("");
+	const createOrderIdRef = useRef<HTMLInputElement>(null);
+	const trackingCarrierRef = useRef<HTMLInputElement>(null);
 	const [showCreate, setShowCreate] = useState(false);
 	const [createForm, setCreateForm] = useState<CreateForm>(DEFAULT_CREATE);
 	const [trackingTarget, setTrackingTarget] = useState<string | null>(null);
@@ -240,6 +242,10 @@ export function FulfillmentAdmin() {
 
 	useEffect(() => {
 		if (!showCreate) return;
+		createOrderIdRef.current?.focus();
+	}, [showCreate]);
+	useEffect(() => {
+		if (!showCreate) return;
 		function handler(e: KeyboardEvent) {
 			if (e.key === "Escape") setShowCreate(false);
 		}
@@ -247,6 +253,10 @@ export function FulfillmentAdmin() {
 		return () => document.removeEventListener("keydown", handler);
 	}, [showCreate]);
 
+	useEffect(() => {
+		if (!trackingTarget) return;
+		trackingCarrierRef.current?.focus();
+	}, [trackingTarget]);
 	useEffect(() => {
 		if (!trackingTarget) return;
 		function handler(e: KeyboardEvent) {
@@ -461,6 +471,7 @@ export function FulfillmentAdmin() {
 											Order ID <span className="text-red-500">*</span>
 										</label>
 										<input
+											ref={createOrderIdRef}
 											id="ff-order-id"
 											required
 											value={createForm.orderId}
@@ -566,6 +577,7 @@ export function FulfillmentAdmin() {
 											Carrier <span className="text-red-500">*</span>
 										</label>
 										<input
+											ref={trackingCarrierRef}
 											id="ff-carrier"
 											required
 											value={trackingForm.carrier}

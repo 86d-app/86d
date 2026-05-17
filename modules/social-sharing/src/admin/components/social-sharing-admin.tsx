@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import SocialSharingAdminTemplate from "./social-sharing-admin.mdx";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -101,6 +101,10 @@ function SettingsPanel({
 	onClose: () => void;
 	onSaved: () => void;
 }) {
+	const firstInputRef = useRef<HTMLInputElement>(null);
+	useEffect(() => {
+		firstInputRef.current?.focus();
+	}, []);
 	useEffect(() => {
 		function handler(e: KeyboardEvent) {
 			if (e.key === "Escape") onClose();
@@ -226,6 +230,7 @@ function SettingsPanel({
 									Default Message
 								</label>
 								<input
+									ref={firstInputRef}
 									id="social-sharing-default-message"
 									type="text"
 									value={defaultMessage}

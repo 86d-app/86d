@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ShipmentsAdminTemplate from "./shipments-admin.mdx";
 
 type ShipmentStatus =
@@ -231,6 +231,7 @@ function ShipmentRow({
 export function ShipmentsAdmin() {
 	const api = useShipmentsApi();
 
+	const shipmentOrderIdRef = useRef<HTMLInputElement>(null);
 	const [statusFilter, setStatusFilter] = useState<ShipmentStatus | "">("");
 	const [showCreate, setShowCreate] = useState(false);
 	const [form, setForm] = useState<CreateShipmentForm>(DEFAULT_FORM);
@@ -252,6 +253,10 @@ export function ShipmentsAdmin() {
 	const shipments = shipmentsData?.shipments ?? [];
 	const carriers = carriersData?.carriers ?? [];
 
+	useEffect(() => {
+		if (!showCreate) return;
+		shipmentOrderIdRef.current?.focus();
+	}, [showCreate]);
 	useEffect(() => {
 		if (!showCreate) return;
 		function handler(e: KeyboardEvent) {
@@ -444,6 +449,7 @@ export function ShipmentsAdmin() {
 											Order ID <span className="text-red-500">*</span>
 										</label>
 										<input
+											ref={shipmentOrderIdRef}
 											id="shipment-order-id"
 											required
 											value={form.orderId}

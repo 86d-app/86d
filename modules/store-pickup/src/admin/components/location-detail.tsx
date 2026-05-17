@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import LocationDetailTemplate from "./location-detail.mdx";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -113,6 +113,10 @@ function LocationEditSheet({
 	onCancel,
 	api,
 }: LocationEditSheetProps) {
+	const firstInputRef = useRef<HTMLInputElement>(null);
+	useEffect(() => {
+		firstInputRef.current?.focus();
+	}, []);
 	const [name, setName] = useState(location.name);
 	const [address, setAddress] = useState(location.address);
 	const [city, setCity] = useState(location.city);
@@ -209,6 +213,7 @@ function LocationEditSheet({
 								Name
 							</label>
 							<input
+								ref={firstInputRef}
 								id="led-name"
 								className={inputCls}
 								value={name}

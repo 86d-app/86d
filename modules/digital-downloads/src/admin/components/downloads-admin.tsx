@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import DownloadsAdminTemplate from "./downloads-admin.mdx";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -118,6 +118,7 @@ function FilesTab({
 	onSelectFile: (file: DownloadableFile) => void;
 }) {
 	const api = useDownloadsAdminApi();
+	const fileProductIdRef = useRef<HTMLInputElement>(null);
 	const [showCreate, setShowCreate] = useState(false);
 	const [form, setForm] = useState<FileForm>(DEFAULT_FILE);
 	const [error, setError] = useState("");
@@ -130,6 +131,10 @@ function FilesTab({
 	};
 	const files = filesData?.files ?? [];
 
+	useEffect(() => {
+		if (!showCreate) return;
+		fileProductIdRef.current?.focus();
+	}, [showCreate]);
 	useEffect(() => {
 		if (!showCreate) return;
 		function handler(e: KeyboardEvent) {
@@ -343,6 +348,7 @@ function FilesTab({
 									Product ID <span className="text-red-500">*</span>
 								</label>
 								<input
+									ref={fileProductIdRef}
 									id="dl-file-productId"
 									required
 									value={form.productId}
@@ -472,6 +478,7 @@ function TokensTab({
 	onClearFileFilter: () => void;
 }) {
 	const api = useDownloadsAdminApi();
+	const tokenFileIdRef = useRef<HTMLInputElement>(null);
 	const [emailFilter, setEmailFilter] = useState("");
 	const [showCreate, setShowCreate] = useState(false);
 	const [form, setForm] = useState<TokenForm>(DEFAULT_TOKEN);
@@ -493,6 +500,10 @@ function TokensTab({
 		if (fileFilter) setForm((f) => ({ ...f, fileId: fileFilter.id }));
 	}, [fileFilter]);
 
+	useEffect(() => {
+		if (!showCreate) return;
+		tokenFileIdRef.current?.focus();
+	}, [showCreate]);
 	useEffect(() => {
 		if (!showCreate) return;
 		function handler(e: KeyboardEvent) {
@@ -712,6 +723,7 @@ function TokensTab({
 									File ID <span className="text-red-500">*</span>
 								</label>
 								<input
+									ref={tokenFileIdRef}
 									id="dl-token-fileId"
 									required
 									value={form.fileId}

@@ -1,7 +1,7 @@
 "use client";
 
 import { ModuleClientError, useModuleClient } from "@86d-app/core/client";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import OrderDetailTemplate from "./order-detail.mdx";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -618,6 +618,10 @@ function FulfillDialog({
 	onCreated: () => void;
 }) {
 	const api = useOrderAdminApi();
+	const firstInputRef = useRef<HTMLInputElement>(null);
+	useEffect(() => {
+		firstInputRef.current?.focus();
+	}, []);
 	const [carrier, setCarrier] = useState("");
 	const [trackingNumber, setTrackingNumber] = useState("");
 	const [notes, setNotes] = useState("");
@@ -813,6 +817,7 @@ function FulfillDialog({
 							Tracking Number
 						</label>
 						<input
+							ref={firstInputRef}
 							id="fulfill-tracking"
 							type="text"
 							value={trackingNumber}

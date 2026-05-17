@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import SubscriptionsAdminTemplate from "./subscriptions-admin.mdx";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -123,6 +123,7 @@ function useSubscriptionsAdminApi() {
 
 function PlansTab() {
 	const api = useSubscriptionsAdminApi();
+	const planNameRef = useRef<HTMLInputElement>(null);
 	const [showCreate, setShowCreate] = useState(false);
 	const [form, setForm] = useState<PlanForm>(DEFAULT_PLAN);
 	const [error, setError] = useState("");
@@ -140,6 +141,10 @@ function PlansTab() {
 	};
 	const plans = plansData?.plans ?? [];
 
+	useEffect(() => {
+		if (!showCreate) return;
+		planNameRef.current?.focus();
+	}, [showCreate]);
 	useEffect(() => {
 		if (!showCreate) return;
 		function handler(e: KeyboardEvent) {
@@ -388,6 +393,7 @@ function PlansTab() {
 									Name <span className="text-red-500">*</span>
 								</label>
 								<input
+									ref={planNameRef}
 									id="sub-plan-name"
 									required
 									value={form.name}

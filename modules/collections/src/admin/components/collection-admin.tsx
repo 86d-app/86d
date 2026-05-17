@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const PAGE_SIZE = 20;
 
@@ -109,6 +109,10 @@ function DeleteModal({
 	onSuccess: () => void;
 }) {
 	const api = useCollectionAdminApi();
+	const cancelRef = useRef<HTMLButtonElement>(null);
+	useEffect(() => {
+		cancelRef.current?.focus();
+	}, []);
 
 	const deleteMutation = api.deleteCollection.useMutation({
 		onSuccess: () => {
@@ -137,6 +141,7 @@ function DeleteModal({
 					</p>
 					<div className="mt-5 flex justify-end gap-2">
 						<button
+							ref={cancelRef}
 							type="button"
 							onClick={onClose}
 							className="rounded-md border border-border px-4 py-2 text-foreground text-sm hover:bg-muted"

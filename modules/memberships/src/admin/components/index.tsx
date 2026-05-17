@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -377,6 +377,10 @@ interface PlanSheetProps {
 function PlanSheet({ plan, onSaved, onCancel }: PlanSheetProps) {
 	const api = useMembershipsApi();
 	const isEditing = !!plan;
+	const firstInputRef = useRef<HTMLInputElement>(null);
+	useEffect(() => {
+		firstInputRef.current?.focus();
+	}, []);
 
 	const [name, setName] = useState(plan?.name ?? "");
 	const [slug, setSlug] = useState(plan?.slug ?? "");
@@ -526,6 +530,7 @@ function PlanSheet({ plan, onSaved, onCancel }: PlanSheetProps) {
 									Name <span className="text-destructive">*</span>
 								</label>
 								<input
+									ref={firstInputRef}
 									id="ps-name"
 									className={inputCls}
 									value={name}

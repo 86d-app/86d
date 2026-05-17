@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ShippingCarriersAdminTemplate from "./shipping-carriers-admin.mdx";
 
 interface ShippingCarrier {
@@ -193,9 +193,11 @@ function MethodRow({
 export function ShippingCarriersAdmin() {
 	const api = useCarriersApi();
 
+	const carrierNameRef = useRef<HTMLInputElement>(null);
 	const [showCreateCarrier, setShowCreateCarrier] = useState(false);
 	const [carrierForm, setCarrierForm] = useState<CarrierForm>(DEFAULT_CARRIER);
 
+	const methodNameRef = useRef<HTMLInputElement>(null);
 	const [showCreateMethod, setShowCreateMethod] = useState(false);
 	const [methodForm, setMethodForm] = useState<MethodForm>(DEFAULT_METHOD);
 
@@ -218,6 +220,14 @@ export function ShippingCarriersAdmin() {
 	const methods = methodsData?.methods ?? [];
 
 	const anyModalOpen = showCreateCarrier || showCreateMethod;
+	useEffect(() => {
+		if (!showCreateCarrier) return;
+		carrierNameRef.current?.focus();
+	}, [showCreateCarrier]);
+	useEffect(() => {
+		if (!showCreateMethod) return;
+		methodNameRef.current?.focus();
+	}, [showCreateMethod]);
 	useEffect(() => {
 		if (!anyModalOpen) return;
 		function handler(e: KeyboardEvent) {
@@ -495,6 +505,7 @@ export function ShippingCarriersAdmin() {
 											Carrier name <span className="text-red-500">*</span>
 										</label>
 										<input
+											ref={carrierNameRef}
 											id="carrier-name"
 											required
 											value={carrierForm.name}
@@ -619,6 +630,7 @@ export function ShippingCarriersAdmin() {
 											Method name <span className="text-red-500">*</span>
 										</label>
 										<input
+											ref={methodNameRef}
 											id="method-name"
 											required
 											value={methodForm.name}

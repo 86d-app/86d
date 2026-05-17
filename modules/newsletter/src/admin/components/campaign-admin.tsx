@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import CampaignAdminTemplate from "./campaign-admin.mdx";
 
 interface Campaign {
@@ -87,6 +87,10 @@ function CreateCampaignModal({
 	onSuccess: () => void;
 }) {
 	const api = useCampaignApi();
+	const firstInputRef = useRef<HTMLInputElement>(null);
+	useEffect(() => {
+		firstInputRef.current?.focus();
+	}, []);
 	const [subject, setSubject] = useState("");
 	const [body, setBody] = useState("");
 
@@ -125,6 +129,7 @@ function CreateCampaignModal({
 									Subject line
 								</label>
 								<input
+									ref={firstInputRef}
 									id="campaign-subject"
 									type="text"
 									value={subject}
@@ -187,6 +192,10 @@ function SendConfirmModal({
 	onSuccess: () => void;
 }) {
 	const api = useCampaignApi();
+	const cancelRef = useRef<HTMLButtonElement>(null);
+	useEffect(() => {
+		cancelRef.current?.focus();
+	}, []);
 
 	const sendMutation = api.send.useMutation({
 		onSuccess: () => {
@@ -216,6 +225,7 @@ function SendConfirmModal({
 					</p>
 					<div className="mt-5 flex justify-end gap-2">
 						<button
+							ref={cancelRef}
 							type="button"
 							onClick={onClose}
 							className="rounded-md border border-border px-4 py-2 text-foreground text-sm hover:bg-muted"
@@ -251,6 +261,10 @@ function DeleteCampaignModal({
 	onSuccess: () => void;
 }) {
 	const api = useCampaignApi();
+	const cancelRef = useRef<HTMLButtonElement>(null);
+	useEffect(() => {
+		cancelRef.current?.focus();
+	}, []);
 
 	const deleteMutation = api.delete.useMutation({
 		onSuccess: () => {
@@ -279,6 +293,7 @@ function DeleteCampaignModal({
 					</p>
 					<div className="mt-5 flex justify-end gap-2">
 						<button
+							ref={cancelRef}
 							type="button"
 							onClick={onClose}
 							className="rounded-md border border-border px-4 py-2 text-foreground text-sm hover:bg-muted"

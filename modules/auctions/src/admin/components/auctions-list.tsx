@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -112,6 +112,10 @@ function DeleteModal({
 	onSuccess: () => void;
 }) {
 	const api = useAuctionsApi();
+	const cancelRef = useRef<HTMLButtonElement>(null);
+	useEffect(() => {
+		cancelRef.current?.focus();
+	}, []);
 
 	const deleteMutation = api.remove.useMutation({
 		onSuccess: () => {
@@ -143,6 +147,7 @@ function DeleteModal({
 					)}
 					<div className="mt-5 flex justify-end gap-2">
 						<button
+							ref={cancelRef}
 							type="button"
 							onClick={onClose}
 							className="rounded-md border border-border px-4 py-2 text-foreground text-sm hover:bg-muted"
@@ -177,6 +182,10 @@ interface AuctionFormProps {
 function AuctionForm({ auction, onSaved, onCancel }: AuctionFormProps) {
 	const api = useAuctionsApi();
 	const isEditing = !!auction;
+	const firstInputRef = useRef<HTMLInputElement>(null);
+	useEffect(() => {
+		firstInputRef.current?.focus();
+	}, []);
 
 	const [title, setTitle] = useState(auction?.title ?? "");
 	const [productId, setProductId] = useState("");
@@ -360,6 +369,7 @@ function AuctionForm({ auction, onSaved, onCancel }: AuctionFormProps) {
 								Title <span className="text-destructive">*</span>
 							</label>
 							<input
+								ref={firstInputRef}
 								id="af-title"
 								className={inputCls}
 								value={title}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ToastAdminTemplate from "./toast-admin.mdx";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -185,6 +185,7 @@ export function ToastAdmin() {
 		};
 
 	// ── Create mapping form ──────────────────────────────────────────────
+	const mappingFirstInputRef = useRef<HTMLInputElement>(null);
 	const [showCreateMapping, setShowCreateMapping] = useState(false);
 	const [mappingForm, setMappingForm] = useState({
 		localProductId: "",
@@ -207,6 +208,10 @@ export function ToastAdmin() {
 		},
 	});
 
+	useEffect(() => {
+		if (!showCreateMapping) return;
+		mappingFirstInputRef.current?.focus();
+	}, [showCreateMapping]);
 	useEffect(() => {
 		if (!showCreateMapping) return;
 		function handler(e: KeyboardEvent) {
@@ -595,6 +600,7 @@ export function ToastAdmin() {
 											Local product ID <span className="text-red-500">*</span>
 										</label>
 										<input
+											ref={mappingFirstInputRef}
 											id="toast-local-product"
 											required
 											value={mappingForm.localProductId}
