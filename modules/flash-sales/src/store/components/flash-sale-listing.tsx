@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useFlashSalesApi } from "./_hooks";
 import { formatPrice } from "./_utils";
@@ -8,6 +9,9 @@ import { Countdown } from "./countdown";
 interface FlashSaleProduct {
 	id: string;
 	productId: string;
+	productName?: string;
+	productSlug?: string;
+	productImage?: string;
 	salePrice: number;
 	originalPrice: number;
 	stockLimit: number | null;
@@ -143,15 +147,27 @@ export function FlashSaleListing() {
 										: null;
 								const isSoldOut = stockRemaining != null && stockRemaining <= 0;
 
-								return (
-									<div
-										key={product.id}
-										className="relative rounded-lg border border-border bg-background p-4 transition-shadow hover:shadow-sm"
-									>
+								const cardContent = (
+									<>
 										<div className="absolute top-2 right-2 z-10 rounded-full bg-red-500 px-2 py-0.5 font-medium text-white text-xs">
 											-{discountPct}%
 										</div>
-										<div className="mb-3 aspect-square rounded-md bg-muted" />
+										<div className="relative mb-3 aspect-square overflow-hidden rounded-md bg-muted">
+											{product.productImage && (
+												<Image
+													src={product.productImage}
+													alt={product.productName ?? "Product on sale"}
+													fill
+													className="object-cover"
+													sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 20vw"
+												/>
+											)}
+										</div>
+										{product.productName && (
+											<p className="mb-1 truncate font-medium text-foreground text-xs">
+												{product.productName}
+											</p>
+										)}
 										<div className="mb-2 flex items-baseline gap-2">
 											<span className="font-semibold text-foreground text-sm">
 												{formatPrice(product.salePrice)}
@@ -185,6 +201,23 @@ export function FlashSaleListing() {
 												)}
 											</div>
 										)}
+									</>
+								);
+
+								return product.productSlug ? (
+									<Link
+										key={product.id}
+										href={`/products/${product.productSlug}`}
+										className="relative block rounded-lg border border-border bg-background p-4 transition-shadow hover:shadow-sm"
+									>
+										{cardContent}
+									</Link>
+								) : (
+									<div
+										key={product.id}
+										className="relative rounded-lg border border-border bg-background p-4 transition-shadow hover:shadow-sm"
+									>
+										{cardContent}
 									</div>
 								);
 							})}

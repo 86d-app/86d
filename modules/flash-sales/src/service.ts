@@ -18,6 +18,9 @@ export type FlashSaleProduct = {
 	id: string;
 	flashSaleId: string;
 	productId: string;
+	productName?: string;
+	productSlug?: string;
+	productImage?: string;
 	salePrice: number;
 	originalPrice: number;
 	stockLimit?: number;
@@ -96,6 +99,9 @@ export type FlashSaleController = ModuleController & {
 	addProduct(params: {
 		flashSaleId: string;
 		productId: string;
+		productName?: string;
+		productSlug?: string;
+		productImage?: string;
 		salePrice: number;
 		originalPrice: number;
 		stockLimit?: number;
@@ -126,6 +132,9 @@ export type FlashSaleController = ModuleController & {
 		flashSaleId: string,
 		products: Array<{
 			productId: string;
+			productName?: string;
+			productSlug?: string;
+			productImage?: string;
 			salePrice: number;
 			originalPrice: number;
 			stockLimit?: number;

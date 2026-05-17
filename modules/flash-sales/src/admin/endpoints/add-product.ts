@@ -1,4 +1,4 @@
-import { createAdminEndpoint, z } from "@86d-app/core";
+import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { FlashSaleController } from "../../service";
 
 export const addProduct = createAdminEndpoint(
@@ -10,6 +10,9 @@ export const addProduct = createAdminEndpoint(
 		}),
 		body: z.object({
 			productId: z.string().min(1),
+			productName: z.string().max(500).transform(sanitizeText).optional(),
+			productSlug: z.string().max(500).transform(sanitizeText).optional(),
+			productImage: z.string().url().max(2000).optional(),
 			salePrice: z.number().min(0),
 			originalPrice: z.number().min(0),
 			stockLimit: z.number().int().min(1).optional(),
@@ -38,6 +41,9 @@ export const addProduct = createAdminEndpoint(
 			salePrice: ctx.body.salePrice,
 			originalPrice: ctx.body.originalPrice,
 		};
+		if (ctx.body.productName) params.productName = ctx.body.productName;
+		if (ctx.body.productSlug) params.productSlug = ctx.body.productSlug;
+		if (ctx.body.productImage) params.productImage = ctx.body.productImage;
 		if (ctx.body.stockLimit != null) params.stockLimit = ctx.body.stockLimit;
 		if (ctx.body.sortOrder != null) params.sortOrder = ctx.body.sortOrder;
 
