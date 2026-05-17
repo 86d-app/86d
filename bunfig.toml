@@ -1,0 +1,13 @@
+[install]
+# Supply-chain hardening: pin everything, never widen ranges automatically.
+exact = true
+saveTextLockfile = true
+# Run only allowlisted postinstall/preinstall scripts (Bun's trustedDependencies).
+auto = "fallback"
+
+[install.scopes]
+# Explicit registry pin so a misconfigured proxy can't silently swap sources.
+"" = "https://registry.npmjs.org/"
+
+[install.cache]
+disable = false

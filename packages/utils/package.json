@@ -34,6 +34,6 @@
 		"typescript": "catalog:"
 	},
 	"dependencies": {
-		"winston": "^3.19.0"
+		"winston": "3.19.0"
 	}
 }

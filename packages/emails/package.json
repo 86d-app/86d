@@ -47,6 +47,6 @@
 		"vitest": "catalog:vite"
 	},
 	"peerDependencies": {
-		"react": ">=18"
+		"react": "19.2.5"
 	}
 }

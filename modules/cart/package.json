@@ -44,7 +44,7 @@
 		"vitest": "catalog:vite"
 	},
 	"peerDependencies": {
-		"next": ">=15",
-		"react": ">=19"
+		"next": "16.2.4",
+		"react": "19.2.5"
 	}
 }

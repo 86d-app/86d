@@ -14,7 +14,7 @@
 		"zod": "catalog:"
 	},
 	"peerDependencies": {
-		"@vercel/blob": ">=2.0.0"
+		"@vercel/blob": "2.0.0"
 	},
 	"peerDependenciesMeta": {
 		"@vercel/blob": {
