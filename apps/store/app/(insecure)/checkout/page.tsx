@@ -2,14 +2,40 @@
 
 import type { CheckoutStep } from "@86d-app/checkout/state";
 import { observer } from "@86d-app/core/state";
-import { BraintreePaymentForm } from "components/braintree-payment-form";
-import { PayPalPaymentForm } from "components/paypal-payment-form";
-import { SquarePaymentForm } from "components/square-payment-form";
-import { StripePaymentForm } from "components/stripe-payment-form";
 import { useApi } from "generated/hooks";
 import { useAnalytics } from "hooks/use-analytics";
 import { useStore } from "hooks/use-store";
+import dynamic from "next/dynamic";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
+
+const StripePaymentForm = dynamic(
+	() =>
+		import("components/stripe-payment-form").then((m) => ({
+			default: m.StripePaymentForm,
+		})),
+	{ ssr: false },
+);
+const PayPalPaymentForm = dynamic(
+	() =>
+		import("components/paypal-payment-form").then((m) => ({
+			default: m.PayPalPaymentForm,
+		})),
+	{ ssr: false },
+);
+const BraintreePaymentForm = dynamic(
+	() =>
+		import("components/braintree-payment-form").then((m) => ({
+			default: m.BraintreePaymentForm,
+		})),
+	{ ssr: false },
+);
+const SquarePaymentForm = dynamic(
+	() =>
+		import("components/square-payment-form").then((m) => ({
+			default: m.SquarePaymentForm,
+		})),
+	{ ssr: false },
+);
 
 // ─── Types ──────────────────────────────────────────────────────────
 
