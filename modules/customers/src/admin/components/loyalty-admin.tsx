@@ -336,11 +336,37 @@ export function LoyaltyAdmin() {
 	};
 	if (search) customerQuery.search = search;
 
-	const { data: customersData, isLoading: customersLoading } =
-		api.listCustomers.useQuery(customerQuery) as {
-			data: { customers: Customer[]; total: number; pages: number } | undefined;
-			isLoading: boolean;
-		};
+	const {
+		data: customersData,
+		isLoading: customersLoading,
+		isError: customersError,
+		refetch: refetchCustomers,
+	} = api.listCustomers.useQuery(customerQuery) as {
+		data: { customers: Customer[]; total: number; pages: number } | undefined;
+		isLoading: boolean;
+		isError: boolean;
+		refetch: () => void;
+	};
+
+	if (customersError) {
+		return (
+			<div className="rounded-md border border-destructive/50 bg-destructive/10 p-4">
+				<p className="font-semibold text-destructive">
+					Failed to load loyalty customers
+				</p>
+				<p className="mt-1 text-muted-foreground text-sm">
+					Check your connection and try again.
+				</p>
+				<button
+					type="button"
+					onClick={() => refetchCustomers()}
+					className="mt-3 rounded-md bg-destructive/20 px-3 py-1.5 font-medium text-destructive text-sm transition-colors hover:bg-destructive/30"
+				>
+					Try again
+				</button>
+			</div>
+		);
+	}
 
 	const customers = customersData?.customers ?? [];
 	const totalPages = customersData?.pages ?? 1;

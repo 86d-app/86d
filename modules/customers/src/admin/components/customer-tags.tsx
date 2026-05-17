@@ -40,11 +40,16 @@ export function CustomerTags() {
 	const [bulkTagInput, setBulkTagInput] = useState("");
 	const [page, setPage] = useState(1);
 
-	const { data: tagsData, isLoading: tagsLoading } = api.listTags.useQuery(
-		{},
-	) as {
+	const {
+		data: tagsData,
+		isLoading: tagsLoading,
+		isError: tagsError,
+		refetch: refetchTags,
+	} = api.listTags.useQuery({}) as {
 		data: { tags: TagEntry[] } | undefined;
 		isLoading: boolean;
+		isError: boolean;
+		refetch: () => void;
 	};
 
 	const tags = tagsData?.tags ?? [];
@@ -119,6 +124,26 @@ export function CustomerTags() {
 			setSelectedCustomers(new Set(customers.map((c) => c.id)));
 		}
 	};
+
+	if (tagsError) {
+		return (
+			<div className="rounded-md border border-destructive/50 bg-destructive/10 p-4">
+				<p className="font-semibold text-destructive">
+					Failed to load customer tags
+				</p>
+				<p className="mt-1 text-muted-foreground text-sm">
+					Check your connection and try again.
+				</p>
+				<button
+					type="button"
+					onClick={() => refetchTags()}
+					className="mt-3 rounded-md bg-destructive/20 px-3 py-1.5 font-medium text-destructive text-sm transition-colors hover:bg-destructive/30"
+				>
+					Try again
+				</button>
+			</div>
+		);
+	}
 
 	return (
 		<div>
