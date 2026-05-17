@@ -26,6 +26,21 @@ export const placeBid = createStoreEndpoint(
 			maxAutoBid: ctx.body.maxAutoBid,
 		});
 
+		void ctx.context.events?.emit("bid.placed", {
+			bidId: result.bid.id,
+			auctionId: result.bid.auctionId,
+			customerId: result.bid.customerId,
+			amount: result.bid.amount,
+			currentHighest: result.auction.currentBid,
+		});
+
+		if (result.outbidPreviousHighest) {
+			void ctx.context.events?.emit("bid.outbid", {
+				auctionId: result.bid.auctionId,
+				newBidAmount: result.bid.amount,
+			});
+		}
+
 		return { result };
 	},
 );

@@ -13,6 +13,20 @@ export const closeAuction = createAdminEndpoint(
 		if (!auction) {
 			return { error: "Auction not found", status: 404 };
 		}
+		void ctx.context.events?.emit("auction.ended", {
+			auctionId: auction.id,
+			title: auction.title,
+			winnerId: auction.winnerId,
+			winningBid: auction.currentBid,
+		});
+		if (auction.winnerId) {
+			void ctx.context.events?.emit("auction.sold", {
+				auctionId: auction.id,
+				title: auction.title,
+				winnerId: auction.winnerId,
+				salePrice: auction.currentBid,
+			});
+		}
 		return { auction };
 	},
 );

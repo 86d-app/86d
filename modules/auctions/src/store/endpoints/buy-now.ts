@@ -21,6 +21,18 @@ export const buyNow = createStoreEndpoint(
 			customerId: userId,
 		});
 
+		void ctx.context.events?.emit("auction.buy_now", {
+			auctionId: auction.id,
+			buyerId: userId,
+			price: auction.buyNowPrice ?? auction.currentBid,
+		});
+		void ctx.context.events?.emit("auction.sold", {
+			auctionId: auction.id,
+			title: auction.title,
+			winnerId: userId,
+			salePrice: auction.buyNowPrice ?? auction.currentBid,
+		});
+
 		return { auction };
 	},
 );
