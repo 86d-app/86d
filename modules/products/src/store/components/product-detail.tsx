@@ -36,6 +36,7 @@ import {
 	ProductActivitySection,
 	TrustBadgesSection,
 } from "./social-proof-section";
+import { SocialSharingSection } from "./social-sharing-section";
 import { StarDisplay } from "./star-display";
 import { StockBadge } from "./stock-badge";
 import { WishlistButtonSection } from "./wishlist-button-section";
@@ -585,6 +586,15 @@ export function ProductDetail(props: ProductDetailProps) {
 			</div>
 		) : null;
 
+	const productUrl = `${window.location.origin}/products/${product.slug}`;
+	const socialSharing = (
+		<SocialSharingSection
+			productId={product.id}
+			productName={product.name}
+			productUrl={productUrl}
+		/>
+	);
+
 	return (
 		<ProductDetailTemplate
 			breadcrumbs={breadcrumbs}
@@ -615,6 +625,7 @@ export function ProductDetail(props: ProductDetailProps) {
 			outOfStockNotice={outOfStockNotice}
 			descriptionBlock={descriptionBlock}
 			tagsBlock={tagsBlock}
+			socialSharing={socialSharing}
 			reviewsSection={<ProductReviewsSection productId={product.id} />}
 			questionsSection={<ProductQASection productId={product.id} />}
 			recommendedProducts={<RecommendedProducts productId={product.id} />}

@@ -242,6 +242,14 @@ export function useRecommendationsApi() {
 	};
 }
 
+export function useSocialSharingApi() {
+	const client = useModuleClient();
+	return {
+		share: client.module("social-sharing").store["/social-sharing/share"],
+		getCount: client.module("social-sharing").store["/social-sharing/count"],
+	};
+}
+
 /** Fire-and-forget analytics event via the analytics module endpoint. */
 export function useTrack() {
 	const client = useModuleClient();
