@@ -27,6 +27,7 @@ export type Order = {
 	shippingAmount: number;
 	discountAmount: number;
 	giftCardAmount: number;
+	storeCreditAmount: number;
 	total: number;
 	currency: string;
 	notes?: string | undefined;
@@ -80,6 +81,7 @@ export type CreateOrderParams = {
 	shippingAmount?: number | undefined;
 	discountAmount?: number | undefined;
 	giftCardAmount?: number | undefined;
+	storeCreditAmount?: number | undefined;
 	total: number;
 	notes?: string | undefined;
 	metadata?: Record<string, unknown> | undefined;
@@ -271,6 +273,7 @@ export type InvoiceData = {
 	shippingAmount: number;
 	discountAmount: number;
 	giftCardAmount: number;
+	storeCreditAmount: number;
 	total: number;
 	currency: string;
 	storeName: string;

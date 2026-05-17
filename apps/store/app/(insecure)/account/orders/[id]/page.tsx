@@ -46,6 +46,8 @@ interface OrderWithDetails {
 	taxAmount: number;
 	shippingAmount: number;
 	discountAmount: number;
+	giftCardAmount?: number;
+	storeCreditAmount?: number;
 	total: number;
 	currency: string;
 	notes?: string | undefined;
@@ -449,6 +451,22 @@ export default function OrderDetailPage() {
 							<span className="text-muted-foreground">Discount</span>
 							<span className="text-status-success tabular-nums">
 								-{formatPrice(order.discountAmount, order.currency)}
+							</span>
+						</div>
+					)}
+					{(order.giftCardAmount ?? 0) > 0 && (
+						<div className="flex justify-between">
+							<span className="text-muted-foreground">Gift card</span>
+							<span className="text-status-success tabular-nums">
+								-{formatPrice(order.giftCardAmount ?? 0, order.currency)}
+							</span>
+						</div>
+					)}
+					{(order.storeCreditAmount ?? 0) > 0 && (
+						<div className="flex justify-between">
+							<span className="text-muted-foreground">Store credit</span>
+							<span className="text-status-success tabular-nums">
+								-{formatPrice(order.storeCreditAmount ?? 0, order.currency)}
 							</span>
 						</div>
 					)}
