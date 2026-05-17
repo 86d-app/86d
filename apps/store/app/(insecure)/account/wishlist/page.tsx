@@ -68,10 +68,7 @@ export default function WishlistPage() {
 	async function handleRemove(id: string) {
 		setRemoveError("");
 		try {
-			await removeApi.fetch({
-				method: "DELETE",
-				params: { id },
-			});
+			await removeApi.fetch({ params: { id } });
 			wishlistApi.invalidate();
 		} catch {
 			setRemoveError("Failed to remove item. Please try again.");
