@@ -468,9 +468,16 @@ export function MediaAdmin() {
 	if (searchQuery.trim()) queryInput.search = searchQuery.trim();
 	if (typeFilter) queryInput.mimeType = typeFilter;
 
-	const { data, isLoading: loading } = api.listAssets.useQuery(queryInput) as {
+	const {
+		data,
+		isLoading: loading,
+		isError: assetsError,
+		refetch: refetchAssets,
+	} = api.listAssets.useQuery(queryInput) as {
 		data: { assets: Asset[]; total: number } | undefined;
 		isLoading: boolean;
+		isError: boolean;
+		refetch: () => void;
 	};
 
 	const { data: foldersData } = api.listFolders.useQuery({}) as {
@@ -508,6 +515,24 @@ export function MediaAdmin() {
 			setSelectedIds(new Set());
 		},
 	});
+
+	if (assetsError) {
+		return (
+			<div className="rounded-md border border-destructive/50 bg-destructive/10 p-4">
+				<p className="font-semibold text-destructive">Failed to load media</p>
+				<p className="mt-1 text-muted-foreground text-sm">
+					Check your connection and try again.
+				</p>
+				<button
+					type="button"
+					onClick={() => refetchAssets()}
+					className="mt-3 rounded-md bg-destructive/20 px-3 py-1.5 font-medium text-destructive text-sm transition-colors hover:bg-destructive/30"
+				>
+					Try again
+				</button>
+			</div>
+		);
+	}
 
 	if (showCreateForm || editTarget) {
 		return (

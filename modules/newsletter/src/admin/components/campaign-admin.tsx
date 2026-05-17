@@ -311,14 +311,41 @@ export function CampaignAdmin() {
 	};
 	if (statusFilter) queryInput.status = statusFilter;
 
-	const { data, isLoading: loading } = api.list.useQuery(queryInput) as {
+	const {
+		data,
+		isLoading: loading,
+		isError: campaignsError,
+		refetch: refetchCampaigns,
+	} = api.list.useQuery(queryInput) as {
 		data: { campaigns: Campaign[]; total: number } | undefined;
 		isLoading: boolean;
+		isError: boolean;
+		refetch: () => void;
 	};
 
 	const { data: statsData } = api.stats.useQuery({}) as {
 		data: { stats: CampaignStats } | undefined;
 	};
+
+	if (campaignsError) {
+		return (
+			<div className="rounded-md border border-destructive/50 bg-destructive/10 p-4">
+				<p className="font-semibold text-destructive">
+					Failed to load campaigns
+				</p>
+				<p className="mt-1 text-muted-foreground text-sm">
+					Check your connection and try again.
+				</p>
+				<button
+					type="button"
+					onClick={() => refetchCampaigns()}
+					className="mt-3 rounded-md bg-destructive/20 px-3 py-1.5 font-medium text-destructive text-sm transition-colors hover:bg-destructive/30"
+				>
+					Try again
+				</button>
+			</div>
+		);
+	}
 
 	const campaigns = data?.campaigns ?? [];
 	const total = data?.total ?? 0;
