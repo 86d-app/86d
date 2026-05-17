@@ -1416,11 +1416,16 @@ export function AnalyticsAdmin() {
 	const topProductsInput: Record<string, string> = { limit: "10" };
 	if (since) topProductsInput.since = since;
 
-	const { data: statsData, isLoading: loadingStats } = api.getStats.useQuery(
-		statsInput,
-	) as {
+	const {
+		data: statsData,
+		isLoading: loadingStats,
+		isError: statsError,
+		refetch: refetchStats,
+	} = api.getStats.useQuery(statsInput) as {
 		data: { stats?: EventStats[] } | undefined;
 		isLoading: boolean;
+		isError: boolean;
+		refetch: () => void;
 	};
 
 	const { data: topProductsData, isLoading: loadingTopProducts } =
@@ -1428,6 +1433,26 @@ export function AnalyticsAdmin() {
 			data: { products?: ProductStats[] } | undefined;
 			isLoading: boolean;
 		};
+
+	if (statsError) {
+		return (
+			<div className="rounded-md border border-destructive/50 bg-destructive/10 p-4">
+				<p className="font-semibold text-destructive">
+					Failed to load analytics data
+				</p>
+				<p className="mt-1 text-muted-foreground text-sm">
+					Check your connection and try again.
+				</p>
+				<button
+					type="button"
+					onClick={() => refetchStats()}
+					className="mt-3 rounded-md bg-destructive/20 px-3 py-1.5 font-medium text-destructive text-sm transition-colors hover:bg-destructive/30"
+				>
+					Try again
+				</button>
+			</div>
+		);
+	}
 
 	const stats = statsData?.stats ?? [];
 	const topProducts = topProductsData?.products ?? [];
