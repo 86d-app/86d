@@ -10,6 +10,7 @@ import { buildOrderConfirmationEmail } from "./emails/order-confirmation";
 import { buildOrderFulfilledEmail } from "./emails/order-fulfilled";
 import { buildOrderShippedEmail } from "./emails/order-shipped";
 import { buildReturnStatusEmail } from "./emails/return-status";
+import { buildReviewApprovedEmail } from "./emails/review-approved";
 import { buildSubscriptionStatusEmail } from "./emails/subscription-status";
 import { ResendProvider, TwilioProvider } from "./provider";
 import { notificationsSchema } from "./schema";
@@ -431,6 +432,49 @@ export default function notifications(options?: NotificationsOptions): Module {
 								{ name: "type", value: "cart_recovery" },
 								{ name: "cart_id", value: p.cartId },
 								{ name: "attempt_id", value: p.attemptId },
+							],
+						})
+						.catch(() => {});
+				},
+			);
+
+			// ── Review approved notifications ───────────────────────────────
+			interface ReviewApprovedPayload {
+				reviewId: string;
+				productId: string;
+				customerId?: string | undefined;
+				authorEmail?: string | undefined;
+				rating: number;
+			}
+
+			ctx.events?.on<ReviewApprovedPayload>(
+				"review.approved",
+				async (event) => {
+					const p = event.payload;
+					if (!p || !emailProvider) return;
+
+					// Try to get email from the event payload first, then from customerResolver
+					let email = p.authorEmail;
+					if (!email && p.customerId && customerResolver) {
+						const contact = await customerResolver(p.customerId).catch(
+							() => null,
+						);
+						email = contact?.email;
+					}
+					if (!email) return;
+
+					const { subject, html, text } = buildReviewApprovedEmail({
+						rating: p.rating,
+					});
+					await emailProvider
+						.sendEmail({
+							to: email,
+							subject,
+							html,
+							text,
+							tags: [
+								{ name: "type", value: "review_approved" },
+								{ name: "review_id", value: p.reviewId },
 							],
 						})
 						.catch(() => {});
