@@ -72,6 +72,14 @@ export default function preorders(options?: PreordersOptions): Module {
 		store: {
 			pages: [
 				{
+					path: "/preorders",
+					component: "CampaignList",
+				},
+				{
+					path: "/preorders/:id",
+					component: "CampaignDetail",
+				},
+				{
 					path: "/account/preorders",
 					component: "MyPreorders",
 				},
