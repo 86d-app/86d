@@ -55,7 +55,7 @@ const STATUS_COLORS: Record<string, string> = {
 	pending: "bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
 	sent: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
 	failed: "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300",
-	none: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
+	none: "bg-muted text-muted-foreground",
 };
 
 function Skeleton({ className = "" }: { className?: string }) {
@@ -233,7 +233,7 @@ export function PhotoBoothAdmin() {
 								className={`inline-block rounded-full px-2 py-0.5 font-medium text-xs ${
 									session.isActive
 										? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
-										: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+										: "bg-muted text-muted-foreground"
 								}`}
 							>
 								{session.isActive ? "Active" : "Ended"}

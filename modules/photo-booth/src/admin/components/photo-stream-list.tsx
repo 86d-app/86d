@@ -164,7 +164,7 @@ export function PhotoStreamList() {
 							className={`inline-block rounded-full px-2 py-0.5 font-medium text-xs ${
 								stream.isLive
 									? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
-									: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+									: "bg-muted text-muted-foreground"
 							}`}
 						>
 							{stream.isLive ? "Live" : "Offline"}
@@ -191,7 +191,7 @@ export function PhotoStreamList() {
 					onClick={() => handleToggle(selectedStream.id)}
 					className={`rounded px-3 py-1 font-medium text-xs ${
 						selectedStream.isLive
-							? "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300"
+							? "bg-muted text-muted-foreground hover:bg-muted/80"
 							: "bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900 dark:text-emerald-300"
 					}`}
 				>
