@@ -15,6 +15,11 @@ export const useDownload = createStoreEndpoint(
 		if (!result.ok) {
 			return { ok: false, reason: result.reason };
 		}
+		void ctx.context.events?.emit("download.accessed", {
+			token: ctx.params.token,
+			fileId: result.file?.id,
+			fileName: result.file?.name,
+		});
 		return { ok: true, url: result.file?.url, file: result.file };
 	},
 );

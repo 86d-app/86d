@@ -299,6 +299,8 @@ export const completeSession = createStoreEndpoint(
 					name: item.name,
 					quantity: item.quantity,
 					price: item.price,
+					productId: item.productId ?? undefined,
+					variantId: item.variantId ?? undefined,
 				})),
 				subtotal: session.subtotal,
 				taxAmount: session.taxAmount,

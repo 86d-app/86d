@@ -32,6 +32,50 @@ export default function digitalDownloads(
 		},
 		init: async (ctx: ModuleContext) => {
 			const controller = createDigitalDownloadsController(ctx.data);
+
+			ctx.events?.on("checkout.completed", async (event) => {
+				const p = event.payload as {
+					orderId: string;
+					email: string;
+					items: Array<{ productId?: string | undefined }>;
+				};
+				if (!p?.email || !p.items?.length) return;
+
+				const expiryDays = options?.defaultTokenExpiryDays ?? 0;
+				const expiresAt =
+					expiryDays > 0
+						? new Date(Date.now() + expiryDays * 24 * 60 * 60 * 1000)
+						: undefined;
+
+				for (const item of p.items) {
+					if (!item.productId) continue;
+					const files = await controller
+						.listFiles({ productId: item.productId })
+						.catch(() => []);
+					const activeFiles = files.filter((f) => f.isActive);
+					if (!activeFiles.length) continue;
+
+					await controller
+						.createTokenBatch({
+							fileIds: activeFiles.map((f) => f.id),
+							email: p.email,
+							orderId: p.orderId,
+							...(expiresAt ? { expiresAt } : {}),
+							...(options?.defaultMaxDownloads
+								? { maxDownloads: options.defaultMaxDownloads }
+								: {}),
+						})
+						.catch(() => {});
+
+					void ctx.events?.emit("download.purchased", {
+						orderId: p.orderId,
+						email: p.email,
+						productId: item.productId,
+						fileCount: activeFiles.length,
+					});
+				}
+			});
+
 			return { controllers: { "digital-downloads": controller } };
 		},
 		search: { store: "/digital-downloads/store-search" },
