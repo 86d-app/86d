@@ -1,6 +1,8 @@
 "use client";
 
 import { useStoreContext } from "@86d-app/core/client";
+import Image from "next/image";
+import Link from "next/link";
 import { memo } from "react";
 import { useCartMutation } from "./_hooks";
 import { formatPrice } from "./_utils";
@@ -8,6 +10,9 @@ import { formatPrice } from "./_utils";
 export type FlashSaleProductData = {
 	id: string;
 	productId: string;
+	productName?: string;
+	productSlug?: string;
+	productImage?: string;
 	salePrice: number;
 	originalPrice: number;
 	stockLimit: number | null;
@@ -44,20 +49,37 @@ export const FlashSaleProductCard = memo(function FlashSaleProductCard({
 			productId: product.productId,
 			quantity: 1,
 			price: product.salePrice,
-			productName: product.productId,
-			productSlug: product.productId,
+			...(product.productName ? { productName: product.productName } : {}),
+			...(product.productSlug ? { productSlug: product.productSlug } : {}),
 		});
 	};
 
-	return (
-		<div className="group relative rounded-lg border border-border bg-background p-4 transition-shadow hover:shadow-sm">
+	const cardContent = (
+		<>
 			{/* Discount badge */}
 			<div className="absolute top-2 right-2 z-10 rounded-full bg-red-500 px-2 py-0.5 font-medium text-white text-xs">
 				-{discountPct}%
 			</div>
 
-			{/* Product placeholder */}
-			<div className="mb-3 aspect-square rounded-md bg-muted" />
+			{/* Product image */}
+			<div className="relative mb-3 aspect-square overflow-hidden rounded-md bg-muted">
+				{product.productImage && (
+					<Image
+						src={product.productImage}
+						alt={product.productName ?? "Product on sale"}
+						fill
+						className="object-cover"
+						sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 20vw"
+					/>
+				)}
+			</div>
+
+			{/* Product name */}
+			{product.productName && (
+				<p className="mb-1.5 truncate font-medium text-foreground text-sm">
+					{product.productName}
+				</p>
+			)}
 
 			{/* Pricing */}
 			<div className="mb-2 flex items-baseline gap-2">
@@ -115,6 +137,23 @@ export const FlashSaleProductCard = memo(function FlashSaleProductCard({
 						? "Adding…"
 						: "Add to cart"}
 			</button>
+		</>
+	);
+
+	if (product.productSlug) {
+		return (
+			<Link
+				href={`/products/${product.productSlug}`}
+				className="group relative block rounded-lg border border-border bg-background p-4 transition-shadow hover:shadow-sm"
+			>
+				{cardContent}
+			</Link>
+		);
+	}
+
+	return (
+		<div className="group relative rounded-lg border border-border bg-background p-4 transition-shadow hover:shadow-sm">
+			{cardContent}
 		</div>
 	);
 });
