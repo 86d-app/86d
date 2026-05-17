@@ -66,6 +66,41 @@ export default function recommendations(
 				ctx.events,
 				embeddingProvider,
 			);
+
+			if (embeddingProvider) {
+				ctx.events?.on("product.created", async (event) => {
+					const p = event.payload as {
+						productId: string;
+						name: string;
+						slug: string;
+						price?: number;
+					};
+					await controller
+						.generateProductEmbedding(p.productId, p.name, {
+							productName: p.name,
+							productSlug: p.slug,
+							productPrice: p.price,
+						})
+						.catch(() => {});
+				});
+
+				ctx.events?.on("product.updated", async (event) => {
+					const p = event.payload as {
+						productId: string;
+						name: string;
+						slug: string;
+						price?: number;
+					};
+					await controller
+						.generateProductEmbedding(p.productId, p.name, {
+							productName: p.name,
+							productSlug: p.slug,
+							productPrice: p.price,
+						})
+						.catch(() => {});
+				});
+			}
+
 			return { controllers: { recommendations: controller } };
 		},
 		endpoints: {
