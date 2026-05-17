@@ -37,6 +37,27 @@ export default function referrals(options?: ReferralsOptions): Module {
 		},
 		init: async (ctx: ModuleContext) => {
 			const controller = createReferralController(ctx.data);
+
+			ctx.events?.on("checkout.completed", async (event) => {
+				const p = event.payload as {
+					customerId?: string | undefined;
+					orderId: string;
+				};
+				if (!p?.customerId) return;
+
+				const pending = await controller
+					.listReferrals({
+						refereeCustomerId: p.customerId,
+						status: "pending",
+						take: 1,
+					})
+					.catch(() => []);
+
+				for (const referral of pending) {
+					await controller.completeReferral(referral.id).catch(() => {});
+				}
+			});
+
 			return { controllers: { referrals: controller } };
 		},
 		endpoints: {
