@@ -45,13 +45,15 @@ export function QuestionCard({ question }: { question: Question }) {
 			type="button"
 			disabled={voted || upvoting}
 			onClick={() => void handleUpvote()}
+			aria-label={voted ? "Upvoted" : "Upvote this question"}
+			aria-pressed={voted}
 			className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs transition-colors ${
 				voted
 					? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
 					: "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
 			} disabled:opacity-60`}
 		>
-			<span>{voted ? "+" : "^"}</span>
+			<span aria-hidden="true">{voted ? "+" : "^"}</span>
 			<span>{localUpvotes}</span>
 		</button>
 	);
