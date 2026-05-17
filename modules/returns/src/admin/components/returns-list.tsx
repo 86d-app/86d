@@ -209,7 +209,7 @@ export function ReturnsList() {
 										</span>
 									</td>
 									<td className="hidden px-4 py-3 text-muted-foreground text-sm sm:table-cell">
-										{ret.customerEmail ?? ret.customerId.slice(0, 8) + "…"}
+										{ret.customerEmail ?? `${ret.customerId.slice(0, 8)}…`}
 									</td>
 									<td className="px-4 py-3">
 										<span

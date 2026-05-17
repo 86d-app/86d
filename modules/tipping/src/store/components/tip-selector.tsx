@@ -62,6 +62,7 @@ export function TipSelector({
 	const settingsQuery = api.getSettings.useQuery({}) as {
 		data: TipSettings | undefined;
 		isLoading: boolean;
+		isError: boolean;
 	};
 
 	const tipsQuery = api.getOrderTips.useQuery(
@@ -87,6 +88,8 @@ export function TipSelector({
 	const existingTips = tipsQuery.data?.tips ?? [];
 	const currentTip = existingTips[0] ?? null;
 	const tipTotal = tipsQuery.data?.total ?? 0;
+
+	if (settingsQuery.isError) return null;
 
 	const isLoading = settingsQuery.isLoading || tipsQuery.isLoading;
 	const isMutating = addMutation.isPending || removeMutation.isPending;

@@ -172,7 +172,7 @@ export function WishlistOverview() {
 									)}
 								</td>
 								<td className="px-5 py-3 text-muted-foreground text-sm">
-									{item.customerEmail ?? item.customerId.slice(0, 8) + "…"}
+									{item.customerEmail ?? `${item.customerId.slice(0, 8)}…`}
 								</td>
 								<td className="px-5 py-3 text-muted-foreground">
 									{formatDate(item.addedAt)}
@@ -220,7 +220,7 @@ export function WishlistOverview() {
 									{item.productName}
 								</p>
 								<p className="mt-0.5 text-muted-foreground text-xs">
-									{item.customerEmail ?? item.customerId.slice(0, 8) + "…"}
+									{item.customerEmail ?? `${item.customerId.slice(0, 8)}…`}
 								</p>
 								<p className="mt-0.5 text-muted-foreground text-xs">
 									{formatDate(item.addedAt)}

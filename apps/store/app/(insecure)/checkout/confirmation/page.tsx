@@ -1,10 +1,19 @@
 "use client";
 
 import { useAnalytics } from "hooks/use-analytics";
+import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { buttonVariants } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
+
+const TipSelector = dynamic(
+	() =>
+		import("@86d-app/tipping/components").then((m) => ({
+			default: m.default.TipSelector,
+		})),
+	{ ssr: false },
+);
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -352,6 +361,17 @@ function ConfirmationContent() {
 						<br />
 						{addr.city}, {addr.state} {addr.postalCode}
 					</p>
+				</div>
+			)}
+
+			{/* Tipping — shown when the tipping module is installed */}
+			{summary && (
+				<div className="mb-8">
+					<TipSelector
+						orderId={summary.orderId}
+						orderTotal={summary.total}
+						currency={summary.currency}
+					/>
 				</div>
 			)}
 
