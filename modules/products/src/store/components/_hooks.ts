@@ -179,6 +179,15 @@ export function useProductQaApi() {
 	};
 }
 
+export function usePreordersApi() {
+	const client = useModuleClient();
+	return {
+		checkAvailability:
+			client.module("preorders").store["/preorders/check/:productId"],
+		placePreorder: client.module("preorders").store["/preorders/place"],
+	};
+}
+
 export function useLoyaltyApi() {
 	const client = useModuleClient();
 	return {

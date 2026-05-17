@@ -23,6 +23,7 @@ import { BulkPricingSection } from "./bulk-pricing-section";
 import { ComparisonButtonSection } from "./comparison-button-section";
 import { FlashDealSection } from "./flash-deal-section";
 import { LoyaltyPointsSection } from "./loyalty-points-section";
+import { PreorderSection } from "./preorder-section";
 import ProductDetailTemplate from "./product-detail.mdx";
 import { ProductQASection } from "./product-qa-section";
 import { ProductReviewsSection } from "./product-reviews-section";
@@ -540,11 +541,14 @@ export function ProductDetail(props: ProductDetailProps) {
 	);
 
 	const outOfStockNotice = !inStock ? (
-		<BackInStockNotify
-			productId={product.id}
-			variantId={selectedVariant?.id}
-			productName={product.name}
-		/>
+		<div className="flex flex-col gap-2">
+			<PreorderSection productId={product.id} variantId={selectedVariant?.id} />
+			<BackInStockNotify
+				productId={product.id}
+				variantId={selectedVariant?.id}
+				productName={product.name}
+			/>
+		</div>
 	) : null;
 
 	const descriptionBlock = product.description ? (
