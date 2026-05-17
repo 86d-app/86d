@@ -21,6 +21,14 @@ export const adjustPoints = createAdminEndpoint(
 			description: ctx.body.description,
 		});
 		const account = await controller.getAccount(ctx.params.customerId);
+		if (ctx.body.points > 0) {
+			void ctx.context.events?.emit("loyalty.pointsEarned", {
+				customerId: ctx.params.customerId,
+				points: ctx.body.points,
+				balance: account?.balance ?? 0,
+				description: ctx.body.description,
+			});
+		}
 		return { transaction, account };
 	},
 );

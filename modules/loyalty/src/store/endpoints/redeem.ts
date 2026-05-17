@@ -24,6 +24,11 @@ export const redeem = createStoreEndpoint(
 			description: ctx.body.description,
 			orderId: ctx.body.orderId,
 		});
+		void ctx.context.events?.emit("loyalty.pointsRedeemed", {
+			customerId: session.user.id,
+			points: ctx.body.points,
+			orderId: ctx.body.orderId,
+		});
 		return { transaction };
 	},
 );

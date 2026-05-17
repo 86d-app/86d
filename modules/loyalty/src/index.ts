@@ -62,6 +62,13 @@ export default function loyalty(options?: LoyaltyOptions): Module {
 						description: `Order reward (${orderTotal.toFixed(2)})`,
 						orderId: event.payload?.orderId,
 					});
+					const account = await controller.getAccount(customerId);
+					void ctx.events?.emit("loyalty.pointsEarned", {
+						customerId,
+						points,
+						balance: account?.balance ?? 0,
+						orderId: event.payload?.orderId,
+					});
 				}
 			});
 
