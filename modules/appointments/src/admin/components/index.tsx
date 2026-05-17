@@ -239,6 +239,7 @@ export function AppointmentList() {
 			{/* Filter */}
 			<div className="mb-4">
 				<select
+					aria-label="Filter by status"
 					value={statusFilter}
 					onChange={(e) => setStatusFilter(e.target.value)}
 					className="rounded-md border border-border bg-background px-2 py-1.5 text-sm"

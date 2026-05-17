@@ -442,19 +442,34 @@ function ImportDialog({
 										<table className="w-full text-xs">
 											<thead>
 												<tr className="border-border border-b bg-muted/50">
-													<th className="px-3 py-2 text-left font-medium text-muted-foreground">
+													<th
+														scope="col"
+														className="px-3 py-2 text-left font-medium text-muted-foreground"
+													>
 														Row
 													</th>
-													<th className="px-3 py-2 text-left font-medium text-muted-foreground">
+													<th
+														scope="col"
+														className="px-3 py-2 text-left font-medium text-muted-foreground"
+													>
 														Name
 													</th>
-													<th className="px-3 py-2 text-left font-medium text-muted-foreground">
+													<th
+														scope="col"
+														className="px-3 py-2 text-left font-medium text-muted-foreground"
+													>
 														Price
 													</th>
-													<th className="px-3 py-2 text-left font-medium text-muted-foreground">
+													<th
+														scope="col"
+														className="px-3 py-2 text-left font-medium text-muted-foreground"
+													>
 														SKU
 													</th>
-													<th className="px-3 py-2 text-left font-medium text-muted-foreground">
+													<th
+														scope="col"
+														className="px-3 py-2 text-left font-medium text-muted-foreground"
+													>
 														Status
 													</th>
 												</tr>
@@ -947,7 +962,7 @@ export function ProductList() {
 					<table className="w-full text-sm">
 						<thead>
 							<tr className="border-border border-b bg-muted/50">
-								<th className="w-10 px-4 py-3">
+								<th scope="col" className="w-10 px-4 py-3">
 									<input
 										type="checkbox"
 										checked={allOnPageSelected}
@@ -957,25 +972,46 @@ export function ProductList() {
 										aria-label="Select all products on this page"
 									/>
 								</th>
-								<th className="px-4 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider">
+								<th
+									scope="col"
+									className="px-4 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider"
+								>
 									Image
 								</th>
-								<th className="px-4 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider">
+								<th
+									scope="col"
+									className="px-4 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider"
+								>
 									Name
 								</th>
-								<th className="px-4 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider">
+								<th
+									scope="col"
+									className="px-4 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider"
+								>
 									Status
 								</th>
-								<th className="px-4 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider">
+								<th
+									scope="col"
+									className="px-4 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider"
+								>
 									Price
 								</th>
-								<th className="px-4 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider">
+								<th
+									scope="col"
+									className="px-4 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider"
+								>
 									Inventory
 								</th>
-								<th className="px-4 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider">
+								<th
+									scope="col"
+									className="px-4 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider"
+								>
 									Created
 								</th>
-								<th className="px-4 py-3 text-right font-medium text-muted-foreground text-xs uppercase tracking-wider">
+								<th
+									scope="col"
+									className="px-4 py-3 text-right font-medium text-muted-foreground text-xs uppercase tracking-wider"
+								>
 									Actions
 								</th>
 							</tr>

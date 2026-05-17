@@ -269,7 +269,7 @@ export function CustomerTags() {
 						<table className="w-full">
 							<thead>
 								<tr className="border-border border-b bg-muted/50">
-									<th className="w-10 px-4 py-3">
+									<th scope="col" className="w-10 px-4 py-3">
 										<input
 											type="checkbox"
 											checked={
@@ -280,13 +280,22 @@ export function CustomerTags() {
 											className="rounded border-border"
 										/>
 									</th>
-									<th className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+									<th
+										scope="col"
+										className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+									>
 										Name
 									</th>
-									<th className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+									<th
+										scope="col"
+										className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+									>
 										Email
 									</th>
-									<th className="hidden px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide sm:table-cell">
+									<th
+										scope="col"
+										className="hidden px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide sm:table-cell"
+									>
 										Tags
 									</th>
 								</tr>

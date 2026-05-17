@@ -433,6 +433,7 @@ function SearchResults() {
 					<div className="mb-6 flex flex-wrap items-center gap-2.5">
 						{categories.length > 0 && (
 							<select
+								aria-label="Filter by category"
 								value={category}
 								onChange={(e) => {
 									setCategory(e.target.value);
@@ -450,6 +451,7 @@ function SearchResults() {
 						)}
 
 						<select
+							aria-label="Sort products"
 							value={`${sort}:${order}`}
 							onChange={(e) => {
 								const [s, o] = e.target.value.split(":");

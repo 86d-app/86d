@@ -928,10 +928,16 @@ export function CustomerDetail(props: CustomerDetailProps) {
 								<table className="w-full text-sm">
 									<thead>
 										<tr className="border-border border-b">
-											<th className="pb-2 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider">
+											<th
+												scope="col"
+												className="pb-2 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider"
+											>
 												Key
 											</th>
-											<th className="pb-2 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider">
+											<th
+												scope="col"
+												className="pb-2 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider"
+											>
 												Value
 											</th>
 										</tr>

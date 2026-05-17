@@ -539,16 +539,28 @@ export function QrCodeDetail(props: {
 							<table className="w-full text-sm">
 								<thead>
 									<tr className="border-border border-b bg-muted/50">
-										<th className="px-5 py-2.5 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+										<th
+											scope="col"
+											className="px-5 py-2.5 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+										>
 											Scanned At
 										</th>
-										<th className="hidden px-5 py-2.5 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide sm:table-cell">
+										<th
+											scope="col"
+											className="hidden px-5 py-2.5 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide sm:table-cell"
+										>
 											User Agent
 										</th>
-										<th className="hidden px-5 py-2.5 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide md:table-cell">
+										<th
+											scope="col"
+											className="hidden px-5 py-2.5 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide md:table-cell"
+										>
 											IP Address
 										</th>
-										<th className="hidden px-5 py-2.5 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide lg:table-cell">
+										<th
+											scope="col"
+											className="hidden px-5 py-2.5 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide lg:table-cell"
+										>
 											Referrer
 										</th>
 									</tr>

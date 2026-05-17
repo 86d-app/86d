@@ -220,6 +220,7 @@ export function PriceListAdmin() {
 			{/* Filter */}
 			<div className="mb-4 flex gap-2">
 				<select
+					aria-label="Filter by status"
 					value={statusFilter}
 					onChange={(e) => setStatusFilter(e.target.value)}
 					className="rounded-md border border-border bg-background px-2 py-1.5 text-sm"
@@ -251,19 +252,34 @@ export function PriceListAdmin() {
 					<table className="w-full">
 						<thead>
 							<tr className="border-border border-b bg-muted/40">
-								<th className="px-4 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wide">
+								<th
+									scope="col"
+									className="px-4 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wide"
+								>
 									Name
 								</th>
-								<th className="px-4 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wide">
+								<th
+									scope="col"
+									className="px-4 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wide"
+								>
 									Status
 								</th>
-								<th className="px-4 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wide">
+								<th
+									scope="col"
+									className="px-4 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wide"
+								>
 									Priority
 								</th>
-								<th className="px-4 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wide">
+								<th
+									scope="col"
+									className="px-4 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wide"
+								>
 									Currency
 								</th>
-								<th className="px-4 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wide">
+								<th
+									scope="col"
+									className="px-4 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wide"
+								>
 									Schedule
 								</th>
 							</tr>
@@ -785,19 +801,34 @@ export function PriceListDetail({
 								<table className="w-full">
 									<thead>
 										<tr className="border-border border-b bg-muted/40">
-											<th className="px-4 py-2 text-left font-medium text-muted-foreground text-xs">
+											<th
+												scope="col"
+												className="px-4 py-2 text-left font-medium text-muted-foreground text-xs"
+											>
 												Product ID
 											</th>
-											<th className="px-4 py-2 text-right font-medium text-muted-foreground text-xs">
+											<th
+												scope="col"
+												className="px-4 py-2 text-right font-medium text-muted-foreground text-xs"
+											>
 												Price
 											</th>
-											<th className="px-4 py-2 text-right font-medium text-muted-foreground text-xs">
+											<th
+												scope="col"
+												className="px-4 py-2 text-right font-medium text-muted-foreground text-xs"
+											>
 												Compare At
 											</th>
-											<th className="px-4 py-2 text-right font-medium text-muted-foreground text-xs">
+											<th
+												scope="col"
+												className="px-4 py-2 text-right font-medium text-muted-foreground text-xs"
+											>
 												Qty Range
 											</th>
-											<th className="px-4 py-2 text-right font-medium text-muted-foreground text-xs">
+											<th
+												scope="col"
+												className="px-4 py-2 text-right font-medium text-muted-foreground text-xs"
+											>
 												Actions
 											</th>
 										</tr>

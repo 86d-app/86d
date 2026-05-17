@@ -250,19 +250,34 @@ export function FavorAdmin() {
 					<table className="w-full text-left text-sm">
 						<thead className="border-border border-b bg-muted/50">
 							<tr>
-								<th className="px-5 py-2.5 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-5 py-2.5 font-medium text-muted-foreground"
+								>
 									Order
 								</th>
-								<th className="px-5 py-2.5 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-5 py-2.5 font-medium text-muted-foreground"
+								>
 									Status
 								</th>
-								<th className="px-5 py-2.5 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-5 py-2.5 font-medium text-muted-foreground"
+								>
 									Fee
 								</th>
-								<th className="px-5 py-2.5 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-5 py-2.5 font-medium text-muted-foreground"
+								>
 									Runner
 								</th>
-								<th className="px-5 py-2.5 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-5 py-2.5 font-medium text-muted-foreground"
+								>
 									Created
 								</th>
 							</tr>
@@ -364,15 +379,34 @@ export function FavorAdmin() {
 		<table className="w-full text-left text-sm">
 			<thead className="border-border border-b bg-muted/50">
 				<tr>
-					<th className="px-5 py-2.5 font-medium text-muted-foreground">
+					<th
+						scope="col"
+						className="px-5 py-2.5 font-medium text-muted-foreground"
+					>
 						Name
 					</th>
-					<th className="px-5 py-2.5 font-medium text-muted-foreground">
+					<th
+						scope="col"
+						className="px-5 py-2.5 font-medium text-muted-foreground"
+					>
 						Zip Codes
 					</th>
-					<th className="px-5 py-2.5 font-medium text-muted-foreground">Fee</th>
-					<th className="px-5 py-2.5 font-medium text-muted-foreground">ETA</th>
-					<th className="px-5 py-2.5 font-medium text-muted-foreground">
+					<th
+						scope="col"
+						className="px-5 py-2.5 font-medium text-muted-foreground"
+					>
+						Fee
+					</th>
+					<th
+						scope="col"
+						className="px-5 py-2.5 font-medium text-muted-foreground"
+					>
+						ETA
+					</th>
+					<th
+						scope="col"
+						className="px-5 py-2.5 font-medium text-muted-foreground"
+					>
 						Status
 					</th>
 				</tr>

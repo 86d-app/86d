@@ -254,22 +254,40 @@ export function DiscountAnalytics() {
 						<table className="w-full text-sm">
 							<thead>
 								<tr className="border-border border-b text-left">
-									<th className="pr-4 pb-3 font-medium text-muted-foreground">
+									<th
+										scope="col"
+										className="pr-4 pb-3 font-medium text-muted-foreground"
+									>
 										Name
 									</th>
-									<th className="pr-4 pb-3 font-medium text-muted-foreground">
+									<th
+										scope="col"
+										className="pr-4 pb-3 font-medium text-muted-foreground"
+									>
 										Type
 									</th>
-									<th className="pr-4 pb-3 font-medium text-muted-foreground">
+									<th
+										scope="col"
+										className="pr-4 pb-3 font-medium text-muted-foreground"
+									>
 										Value
 									</th>
-									<th className="pr-4 pb-3 text-right font-medium text-muted-foreground">
+									<th
+										scope="col"
+										className="pr-4 pb-3 text-right font-medium text-muted-foreground"
+									>
 										Uses
 									</th>
-									<th className="pr-4 pb-3 text-right font-medium text-muted-foreground">
+									<th
+										scope="col"
+										className="pr-4 pb-3 text-right font-medium text-muted-foreground"
+									>
 										Limit
 									</th>
-									<th className="pb-3 text-right font-medium text-muted-foreground">
+									<th
+										scope="col"
+										className="pb-3 text-right font-medium text-muted-foreground"
+									>
 										Codes
 									</th>
 								</tr>

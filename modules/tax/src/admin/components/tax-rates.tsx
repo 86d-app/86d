@@ -469,22 +469,40 @@ export function TaxRates() {
 					<table className="w-full text-sm">
 						<thead>
 							<tr className="border-border border-b bg-muted/30 text-left">
-								<th className="px-4 py-2 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-2 font-medium text-muted-foreground"
+								>
 									Name
 								</th>
-								<th className="px-4 py-2 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-2 font-medium text-muted-foreground"
+								>
 									Jurisdiction
 								</th>
-								<th className="px-4 py-2 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-2 font-medium text-muted-foreground"
+								>
 									Rate
 								</th>
-								<th className="px-4 py-2 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-2 font-medium text-muted-foreground"
+								>
 									Category
 								</th>
-								<th className="px-4 py-2 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-2 font-medium text-muted-foreground"
+								>
 									Status
 								</th>
-								<th className="px-4 py-2 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-2 font-medium text-muted-foreground"
+								>
 									Actions
 								</th>
 							</tr>

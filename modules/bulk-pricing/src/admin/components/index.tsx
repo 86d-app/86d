@@ -644,19 +644,34 @@ export function BulkPricingList() {
 					<table className="w-full text-left text-sm">
 						<thead>
 							<tr className="border-border border-b bg-muted">
-								<th className="px-4 py-2 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-2 font-medium text-muted-foreground"
+								>
 									Name
 								</th>
-								<th className="px-4 py-2 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-2 font-medium text-muted-foreground"
+								>
 									Scope
 								</th>
-								<th className="px-4 py-2 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-2 font-medium text-muted-foreground"
+								>
 									Priority
 								</th>
-								<th className="px-4 py-2 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-2 font-medium text-muted-foreground"
+								>
 									Status
 								</th>
-								<th className="px-4 py-2 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-2 font-medium text-muted-foreground"
+								>
 									Actions
 								</th>
 							</tr>
@@ -898,16 +913,28 @@ export function BulkPricingDetail({
 							<table className="w-full">
 								<thead>
 									<tr className="border-border border-b text-left">
-										<th className="px-4 py-2 font-medium text-muted-foreground text-xs">
+										<th
+											scope="col"
+											className="px-4 py-2 font-medium text-muted-foreground text-xs"
+										>
 											Quantity Range
 										</th>
-										<th className="px-4 py-2 font-medium text-muted-foreground text-xs">
+										<th
+											scope="col"
+											className="px-4 py-2 font-medium text-muted-foreground text-xs"
+										>
 											Discount
 										</th>
-										<th className="px-4 py-2 font-medium text-muted-foreground text-xs">
+										<th
+											scope="col"
+											className="px-4 py-2 font-medium text-muted-foreground text-xs"
+										>
 											Label
 										</th>
-										<th className="px-4 py-2 font-medium text-muted-foreground text-xs">
+										<th
+											scope="col"
+											className="px-4 py-2 font-medium text-muted-foreground text-xs"
+										>
 											Actions
 										</th>
 									</tr>

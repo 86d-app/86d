@@ -230,19 +230,34 @@ export function QuoteDetail(props: {
 					<table className="w-full text-sm">
 						<thead>
 							<tr className="border-border border-b bg-muted/20">
-								<th className="px-4 py-2 text-left font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-2 text-left font-medium text-muted-foreground"
+								>
 									Product
 								</th>
-								<th className="px-4 py-2 text-right font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-2 text-right font-medium text-muted-foreground"
+								>
 									Qty
 								</th>
-								<th className="px-4 py-2 text-right font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-2 text-right font-medium text-muted-foreground"
+								>
 									Unit Price
 								</th>
-								<th className="px-4 py-2 text-right font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-2 text-right font-medium text-muted-foreground"
+								>
 									Offered Price
 								</th>
-								<th className="px-4 py-2 text-right font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-2 text-right font-medium text-muted-foreground"
+								>
 									Subtotal
 								</th>
 							</tr>

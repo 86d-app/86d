@@ -226,19 +226,34 @@ export function SitemapAdmin() {
 					<table className="w-full">
 						<thead>
 							<tr className="border-border border-b text-left">
-								<th className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">
+								<th
+									scope="col"
+									className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider"
+								>
 									URL
 								</th>
-								<th className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">
+								<th
+									scope="col"
+									className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider"
+								>
 									Source
 								</th>
-								<th className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">
+								<th
+									scope="col"
+									className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider"
+								>
 									Priority
 								</th>
-								<th className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">
+								<th
+									scope="col"
+									className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider"
+								>
 									Freq
 								</th>
-								<th className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">
+								<th
+									scope="col"
+									className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider"
+								>
 									Actions
 								</th>
 							</tr>

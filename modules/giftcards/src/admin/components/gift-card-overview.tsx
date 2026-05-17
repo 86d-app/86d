@@ -606,22 +606,40 @@ export function GiftCardOverview() {
 					<table className="w-full text-left text-sm">
 						<thead className="border-border border-b bg-muted/50">
 							<tr>
-								<th className="px-5 py-2.5 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-5 py-2.5 font-medium text-muted-foreground"
+								>
 									Code
 								</th>
-								<th className="px-5 py-2.5 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-5 py-2.5 font-medium text-muted-foreground"
+								>
 									Balance
 								</th>
-								<th className="px-5 py-2.5 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-5 py-2.5 font-medium text-muted-foreground"
+								>
 									Status
 								</th>
-								<th className="px-5 py-2.5 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-5 py-2.5 font-medium text-muted-foreground"
+								>
 									Recipient
 								</th>
-								<th className="px-5 py-2.5 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-5 py-2.5 font-medium text-muted-foreground"
+								>
 									Created
 								</th>
-								<th className="px-5 py-2.5 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-5 py-2.5 font-medium text-muted-foreground"
+								>
 									Actions
 								</th>
 							</tr>

@@ -428,6 +428,7 @@ export function CampaignList() {
 			{/* Filter */}
 			<div className="mb-4">
 				<select
+					aria-label="Filter by status"
 					value={statusFilter}
 					onChange={(e) => setStatusFilter(e.target.value)}
 					className="rounded-md border border-border bg-background px-2 py-1.5 text-sm"
@@ -728,19 +729,34 @@ export function CampaignDetail({ params }: { params: { id: string } }) {
 					<table className="w-full text-left text-sm">
 						<thead>
 							<tr className="border-border border-b bg-muted">
-								<th className="px-4 py-2 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-2 font-medium text-muted-foreground"
+								>
 									Customer
 								</th>
-								<th className="px-4 py-2 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-2 font-medium text-muted-foreground"
+								>
 									Qty
 								</th>
-								<th className="px-4 py-2 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-2 font-medium text-muted-foreground"
+								>
 									Status
 								</th>
-								<th className="px-4 py-2 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-2 font-medium text-muted-foreground"
+								>
 									Date
 								</th>
-								<th className="px-4 py-2 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-2 font-medium text-muted-foreground"
+								>
 									Actions
 								</th>
 							</tr>

@@ -318,6 +318,7 @@ export function ShipmentsAdmin() {
 			}}
 			filter={
 				<select
+					aria-label="Filter by status"
 					value={statusFilter}
 					onChange={(e) =>
 						setStatusFilter(e.target.value as ShipmentStatus | "")
@@ -338,22 +339,40 @@ export function ShipmentsAdmin() {
 						<table className="w-full">
 							<thead>
 								<tr className="border-border border-b bg-muted/50">
-									<th className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+									<th
+										scope="col"
+										className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+									>
 										Order
 									</th>
-									<th className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+									<th
+										scope="col"
+										className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+									>
 										Status
 									</th>
-									<th className="hidden px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide md:table-cell">
+									<th
+										scope="col"
+										className="hidden px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide md:table-cell"
+									>
 										Carrier
 									</th>
-									<th className="hidden px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide lg:table-cell">
+									<th
+										scope="col"
+										className="hidden px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide lg:table-cell"
+									>
 										Tracking
 									</th>
-									<th className="hidden px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide xl:table-cell">
+									<th
+										scope="col"
+										className="hidden px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide xl:table-cell"
+									>
 										Created
 									</th>
-									<th className="px-4 py-3 text-right font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+									<th
+										scope="col"
+										className="px-4 py-3 text-right font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+									>
 										Actions
 									</th>
 								</tr>

@@ -418,22 +418,40 @@ export function StoreCreditDetail(props: {
 					<table className="w-full text-sm">
 						<thead>
 							<tr className="border-border border-b bg-muted/40">
-								<th className="px-4 py-3 text-left font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-3 text-left font-medium text-muted-foreground"
+								>
 									Type
 								</th>
-								<th className="px-4 py-3 text-left font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-3 text-left font-medium text-muted-foreground"
+								>
 									Amount
 								</th>
-								<th className="px-4 py-3 text-left font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-3 text-left font-medium text-muted-foreground"
+								>
 									Balance After
 								</th>
-								<th className="px-4 py-3 text-left font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-3 text-left font-medium text-muted-foreground"
+								>
 									Reason
 								</th>
-								<th className="px-4 py-3 text-left font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-3 text-left font-medium text-muted-foreground"
+								>
 									Description
 								</th>
-								<th className="px-4 py-3 text-left font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-3 text-left font-medium text-muted-foreground"
+								>
 									Date
 								</th>
 							</tr>

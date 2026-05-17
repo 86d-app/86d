@@ -183,6 +183,7 @@ function ProductsSection() {
 			)}
 			<div className="flex items-center gap-3">
 				<select
+					aria-label="Filter by status"
 					value={statusFilter}
 					onChange={(e) => {
 						setStatusFilter(e.target.value);
@@ -225,22 +226,40 @@ function ProductsSection() {
 					<table className="w-full text-left text-sm">
 						<thead className="border-border border-b bg-muted/50">
 							<tr>
-								<th className="px-4 py-2.5 font-medium text-muted-foreground text-xs">
+								<th
+									scope="col"
+									className="px-4 py-2.5 font-medium text-muted-foreground text-xs"
+								>
 									Product
 								</th>
-								<th className="px-4 py-2.5 font-medium text-muted-foreground text-xs">
+								<th
+									scope="col"
+									className="px-4 py-2.5 font-medium text-muted-foreground text-xs"
+								>
 									Price
 								</th>
-								<th className="px-4 py-2.5 font-medium text-muted-foreground text-xs">
+								<th
+									scope="col"
+									className="px-4 py-2.5 font-medium text-muted-foreground text-xs"
+								>
 									Qty
 								</th>
-								<th className="px-4 py-2.5 font-medium text-muted-foreground text-xs">
+								<th
+									scope="col"
+									className="px-4 py-2.5 font-medium text-muted-foreground text-xs"
+								>
 									Status
 								</th>
-								<th className="px-4 py-2.5 font-medium text-muted-foreground text-xs">
+								<th
+									scope="col"
+									className="px-4 py-2.5 font-medium text-muted-foreground text-xs"
+								>
 									Synced
 								</th>
-								<th className="px-4 py-2.5 font-medium text-muted-foreground text-xs" />
+								<th
+									scope="col"
+									className="px-4 py-2.5 font-medium text-muted-foreground text-xs"
+								/>
 							</tr>
 						</thead>
 						<tbody className="divide-y divide-border">
@@ -345,6 +364,7 @@ function OrdersSection() {
 		<div className="space-y-3">
 			<div className="flex items-center gap-3">
 				<select
+					aria-label="Filter by status"
 					value={statusFilter}
 					onChange={(e) => {
 						setStatusFilter(e.target.value);
@@ -389,19 +409,34 @@ function OrdersSection() {
 					<table className="w-full text-left text-sm">
 						<thead className="border-border border-b bg-muted/50">
 							<tr>
-								<th className="px-4 py-2.5 font-medium text-muted-foreground text-xs">
+								<th
+									scope="col"
+									className="px-4 py-2.5 font-medium text-muted-foreground text-xs"
+								>
 									Order ID
 								</th>
-								<th className="px-4 py-2.5 font-medium text-muted-foreground text-xs">
+								<th
+									scope="col"
+									className="px-4 py-2.5 font-medium text-muted-foreground text-xs"
+								>
 									Customer
 								</th>
-								<th className="px-4 py-2.5 font-medium text-muted-foreground text-xs">
+								<th
+									scope="col"
+									className="px-4 py-2.5 font-medium text-muted-foreground text-xs"
+								>
 									Total
 								</th>
-								<th className="px-4 py-2.5 font-medium text-muted-foreground text-xs">
+								<th
+									scope="col"
+									className="px-4 py-2.5 font-medium text-muted-foreground text-xs"
+								>
 									Status
 								</th>
-								<th className="px-4 py-2.5 font-medium text-muted-foreground text-xs">
+								<th
+									scope="col"
+									className="px-4 py-2.5 font-medium text-muted-foreground text-xs"
+								>
 									Date
 								</th>
 							</tr>
@@ -529,19 +564,34 @@ function PendingShipmentsSection() {
 					<table className="w-full text-left text-sm">
 						<thead className="border-border border-b bg-muted/50">
 							<tr>
-								<th className="px-4 py-2.5 font-medium text-muted-foreground text-xs">
+								<th
+									scope="col"
+									className="px-4 py-2.5 font-medium text-muted-foreground text-xs"
+								>
 									Order ID
 								</th>
-								<th className="px-4 py-2.5 font-medium text-muted-foreground text-xs">
+								<th
+									scope="col"
+									className="px-4 py-2.5 font-medium text-muted-foreground text-xs"
+								>
 									Customer
 								</th>
-								<th className="px-4 py-2.5 font-medium text-muted-foreground text-xs">
+								<th
+									scope="col"
+									className="px-4 py-2.5 font-medium text-muted-foreground text-xs"
+								>
 									Total
 								</th>
-								<th className="px-4 py-2.5 font-medium text-muted-foreground text-xs">
+								<th
+									scope="col"
+									className="px-4 py-2.5 font-medium text-muted-foreground text-xs"
+								>
 									Ship by
 								</th>
-								<th className="px-4 py-2.5 font-medium text-muted-foreground text-xs" />
+								<th
+									scope="col"
+									className="px-4 py-2.5 font-medium text-muted-foreground text-xs"
+								/>
 							</tr>
 						</thead>
 						<tbody className="divide-y divide-border">

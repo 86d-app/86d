@@ -553,16 +553,28 @@ function MetaTagsTab() {
 					<table className="w-full">
 						<thead>
 							<tr className="border-border border-b bg-muted/50">
-								<th className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+								<th
+									scope="col"
+									className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+								>
 									Path
 								</th>
-								<th className="hidden px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide md:table-cell">
+								<th
+									scope="col"
+									className="hidden px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide md:table-cell"
+								>
 									Title
 								</th>
-								<th className="hidden px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide lg:table-cell">
+								<th
+									scope="col"
+									className="hidden px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide lg:table-cell"
+								>
 									Robots
 								</th>
-								<th className="px-4 py-3 text-right font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+								<th
+									scope="col"
+									className="px-4 py-3 text-right font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+								>
 									Actions
 								</th>
 							</tr>
@@ -725,19 +737,34 @@ function RedirectsTab() {
 					<table className="w-full">
 						<thead>
 							<tr className="border-border border-b bg-muted/50">
-								<th className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+								<th
+									scope="col"
+									className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+								>
 									From
 								</th>
-								<th className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+								<th
+									scope="col"
+									className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+								>
 									To
 								</th>
-								<th className="hidden px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide md:table-cell">
+								<th
+									scope="col"
+									className="hidden px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide md:table-cell"
+								>
 									Status
 								</th>
-								<th className="hidden px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide lg:table-cell">
+								<th
+									scope="col"
+									className="hidden px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide lg:table-cell"
+								>
 									State
 								</th>
-								<th className="px-4 py-3 text-right font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+								<th
+									scope="col"
+									className="px-4 py-3 text-right font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+								>
 									Actions
 								</th>
 							</tr>

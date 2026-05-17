@@ -931,25 +931,43 @@ export function AuctionsList() {
 					<table className="w-full text-sm">
 						<thead>
 							<tr className="border-border border-b bg-muted/40">
-								<th className="px-4 py-3 text-left font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-3 text-left font-medium text-muted-foreground"
+								>
 									Auction
 								</th>
-								<th className="px-4 py-3 text-left font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-3 text-left font-medium text-muted-foreground"
+								>
 									Type
 								</th>
-								<th className="px-4 py-3 text-left font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-3 text-left font-medium text-muted-foreground"
+								>
 									Status
 								</th>
-								<th className="px-4 py-3 text-right font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-3 text-right font-medium text-muted-foreground"
+								>
 									Current Bid
 								</th>
-								<th className="px-4 py-3 text-right font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-3 text-right font-medium text-muted-foreground"
+								>
 									Bids
 								</th>
-								<th className="px-4 py-3 text-left font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-3 text-left font-medium text-muted-foreground"
+								>
 									Ends
 								</th>
-								<th className="px-4 py-3" />
+								<th scope="col" className="px-4 py-3" />
 							</tr>
 						</thead>
 						<tbody className="divide-y divide-border">

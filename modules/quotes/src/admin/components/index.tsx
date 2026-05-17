@@ -656,16 +656,28 @@ export function QuoteList() {
 					<table className="w-full">
 						<thead>
 							<tr className="border-border border-b text-left">
-								<th className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">
+								<th
+									scope="col"
+									className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider"
+								>
 									Quote
 								</th>
-								<th className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">
+								<th
+									scope="col"
+									className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider"
+								>
 									Customer
 								</th>
-								<th className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">
+								<th
+									scope="col"
+									className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider"
+								>
 									Total
 								</th>
-								<th className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">
+								<th
+									scope="col"
+									className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider"
+								>
 									Status
 								</th>
 							</tr>
@@ -1051,20 +1063,35 @@ export function QuoteDetail({ params }: { params?: Record<string, string> }) {
 							<table className="w-full">
 								<thead>
 									<tr className="border-border border-b text-left">
-										<th className="px-4 py-2 font-medium text-muted-foreground text-xs">
+										<th
+											scope="col"
+											className="px-4 py-2 font-medium text-muted-foreground text-xs"
+										>
 											Product
 										</th>
-										<th className="px-4 py-2 font-medium text-muted-foreground text-xs">
+										<th
+											scope="col"
+											className="px-4 py-2 font-medium text-muted-foreground text-xs"
+										>
 											Qty
 										</th>
-										<th className="px-4 py-2 text-right font-medium text-muted-foreground text-xs">
+										<th
+											scope="col"
+											className="px-4 py-2 text-right font-medium text-muted-foreground text-xs"
+										>
 											Unit Price
 										</th>
-										<th className="px-4 py-2 text-right font-medium text-muted-foreground text-xs">
+										<th
+											scope="col"
+											className="px-4 py-2 text-right font-medium text-muted-foreground text-xs"
+										>
 											Offered
 										</th>
 										{isDraft ? (
-											<th className="px-4 py-2 font-medium text-muted-foreground text-xs" />
+											<th
+												scope="col"
+												className="px-4 py-2 font-medium text-muted-foreground text-xs"
+											/>
 										) : null}
 									</tr>
 								</thead>

@@ -106,12 +106,24 @@ export function LocationList() {
 					<table className="w-full text-sm">
 						<thead className="bg-muted">
 							<tr>
-								<th className="px-4 py-3 text-left font-medium">Name</th>
-								<th className="px-4 py-3 text-left font-medium">City</th>
-								<th className="px-4 py-3 text-left font-medium">Country</th>
-								<th className="px-4 py-3 text-left font-medium">Status</th>
-								<th className="px-4 py-3 text-left font-medium">Pickup</th>
-								<th className="px-4 py-3 text-right font-medium">Actions</th>
+								<th scope="col" className="px-4 py-3 text-left font-medium">
+									Name
+								</th>
+								<th scope="col" className="px-4 py-3 text-left font-medium">
+									City
+								</th>
+								<th scope="col" className="px-4 py-3 text-left font-medium">
+									Country
+								</th>
+								<th scope="col" className="px-4 py-3 text-left font-medium">
+									Status
+								</th>
+								<th scope="col" className="px-4 py-3 text-left font-medium">
+									Pickup
+								</th>
+								<th scope="col" className="px-4 py-3 text-right font-medium">
+									Actions
+								</th>
 							</tr>
 						</thead>
 						<tbody className="divide-y">

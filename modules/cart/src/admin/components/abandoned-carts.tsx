@@ -287,19 +287,34 @@ function AbandonedCartDetail({
 						<table className="w-full text-left text-sm">
 							<thead>
 								<tr className="border-border border-b bg-muted">
-									<th className="px-3 py-1.5 font-medium text-muted-foreground text-xs">
+									<th
+										scope="col"
+										className="px-3 py-1.5 font-medium text-muted-foreground text-xs"
+									>
 										Product
 									</th>
-									<th className="px-3 py-1.5 font-medium text-muted-foreground text-xs">
+									<th
+										scope="col"
+										className="px-3 py-1.5 font-medium text-muted-foreground text-xs"
+									>
 										Variant
 									</th>
-									<th className="px-3 py-1.5 font-medium text-muted-foreground text-xs">
+									<th
+										scope="col"
+										className="px-3 py-1.5 font-medium text-muted-foreground text-xs"
+									>
 										Qty
 									</th>
-									<th className="px-3 py-1.5 font-medium text-muted-foreground text-xs">
+									<th
+										scope="col"
+										className="px-3 py-1.5 font-medium text-muted-foreground text-xs"
+									>
 										Price
 									</th>
-									<th className="px-3 py-1.5 font-medium text-muted-foreground text-xs">
+									<th
+										scope="col"
+										className="px-3 py-1.5 font-medium text-muted-foreground text-xs"
+									>
 										Line Total
 									</th>
 								</tr>
@@ -434,25 +449,46 @@ export function AbandonedCarts() {
 					<table className="w-full text-left text-sm">
 						<thead>
 							<tr className="border-border border-b bg-muted">
-								<th className="px-4 py-2 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-2 font-medium text-muted-foreground"
+								>
 									Cart
 								</th>
-								<th className="px-4 py-2 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-2 font-medium text-muted-foreground"
+								>
 									Customer
 								</th>
-								<th className="px-4 py-2 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-2 font-medium text-muted-foreground"
+								>
 									Items
 								</th>
-								<th className="px-4 py-2 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-2 font-medium text-muted-foreground"
+								>
 									Subtotal
 								</th>
-								<th className="px-4 py-2 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-2 font-medium text-muted-foreground"
+								>
 									Last Active
 								</th>
-								<th className="px-4 py-2 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-2 font-medium text-muted-foreground"
+								>
 									Recovery
 								</th>
-								<th className="px-4 py-2 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-2 font-medium text-muted-foreground"
+								>
 									Actions
 								</th>
 							</tr>

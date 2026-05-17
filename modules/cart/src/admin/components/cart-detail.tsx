@@ -285,19 +285,34 @@ export function CartDetail(props: CartDetailProps) {
 						<table className="w-full text-left text-sm">
 							<thead>
 								<tr className="border-border border-b bg-muted">
-									<th className="px-4 py-2 font-medium text-muted-foreground">
+									<th
+										scope="col"
+										className="px-4 py-2 font-medium text-muted-foreground"
+									>
 										Product ID
 									</th>
-									<th className="px-4 py-2 font-medium text-muted-foreground">
+									<th
+										scope="col"
+										className="px-4 py-2 font-medium text-muted-foreground"
+									>
 										Variant ID
 									</th>
-									<th className="px-4 py-2 font-medium text-muted-foreground">
+									<th
+										scope="col"
+										className="px-4 py-2 font-medium text-muted-foreground"
+									>
 										Quantity
 									</th>
-									<th className="px-4 py-2 font-medium text-muted-foreground">
+									<th
+										scope="col"
+										className="px-4 py-2 font-medium text-muted-foreground"
+									>
 										Price
 									</th>
-									<th className="px-4 py-2 font-medium text-muted-foreground">
+									<th
+										scope="col"
+										className="px-4 py-2 font-medium text-muted-foreground"
+									>
 										Line Total
 									</th>
 								</tr>

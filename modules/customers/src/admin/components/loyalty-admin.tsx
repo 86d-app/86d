@@ -429,13 +429,22 @@ export function LoyaltyAdmin() {
 						<table className="w-full text-left text-sm">
 							<thead>
 								<tr className="border-border border-b">
-									<th className="pb-2 font-medium text-muted-foreground">
+									<th
+										scope="col"
+										className="pb-2 font-medium text-muted-foreground"
+									>
 										Customer
 									</th>
-									<th className="pb-2 font-medium text-muted-foreground">
+									<th
+										scope="col"
+										className="pb-2 font-medium text-muted-foreground"
+									>
 										Email
 									</th>
-									<th className="pb-2 text-right font-medium text-muted-foreground">
+									<th
+										scope="col"
+										className="pb-2 text-right font-medium text-muted-foreground"
+									>
 										Balance
 									</th>
 								</tr>
@@ -482,13 +491,22 @@ export function LoyaltyAdmin() {
 							<table className="w-full text-left text-sm">
 								<thead>
 									<tr className="border-border border-b">
-										<th className="pb-2 font-medium text-muted-foreground">
+										<th
+											scope="col"
+											className="pb-2 font-medium text-muted-foreground"
+										>
 											Name
 										</th>
-										<th className="pb-2 font-medium text-muted-foreground">
+										<th
+											scope="col"
+											className="pb-2 font-medium text-muted-foreground"
+										>
 											Email
 										</th>
-										<th className="pb-2 text-right font-medium text-muted-foreground">
+										<th
+											scope="col"
+											className="pb-2 text-right font-medium text-muted-foreground"
+										>
 											Actions
 										</th>
 									</tr>

@@ -407,19 +407,34 @@ export function WrapOptionList() {
 					<table className="w-full text-left text-sm">
 						<thead>
 							<tr className="border-border border-b bg-muted">
-								<th className="px-4 py-2 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-2 font-medium text-muted-foreground"
+								>
 									Name
 								</th>
-								<th className="px-4 py-2 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-2 font-medium text-muted-foreground"
+								>
 									Price
 								</th>
-								<th className="px-4 py-2 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-2 font-medium text-muted-foreground"
+								>
 									Status
 								</th>
-								<th className="px-4 py-2 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-2 font-medium text-muted-foreground"
+								>
 									Sort
 								</th>
-								<th className="px-4 py-2 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-2 font-medium text-muted-foreground"
+								>
 									Actions
 								</th>
 							</tr>

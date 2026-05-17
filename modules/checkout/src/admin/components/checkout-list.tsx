@@ -334,6 +334,7 @@ export function CheckoutList() {
 					className="h-9 rounded-md border border-border bg-background px-3 text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
 				/>
 				<select
+					aria-label="Filter by status"
 					value={statusFilter}
 					onChange={(e) => {
 						setStatusFilter(e.target.value);
@@ -355,22 +356,40 @@ export function CheckoutList() {
 				<table className="w-full">
 					<thead>
 						<tr className="border-border border-b bg-muted/50">
-							<th className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+							<th
+								scope="col"
+								className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+							>
 								Session
 							</th>
-							<th className="hidden px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide sm:table-cell">
+							<th
+								scope="col"
+								className="hidden px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide sm:table-cell"
+							>
 								Customer
 							</th>
-							<th className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+							<th
+								scope="col"
+								className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+							>
 								Status
 							</th>
-							<th className="hidden px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide md:table-cell">
+							<th
+								scope="col"
+								className="hidden px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide md:table-cell"
+							>
 								Payment
 							</th>
-							<th className="px-4 py-3 text-right font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+							<th
+								scope="col"
+								className="px-4 py-3 text-right font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+							>
 								Total
 							</th>
-							<th className="hidden px-4 py-3 text-right font-semibold text-muted-foreground text-xs uppercase tracking-wide lg:table-cell">
+							<th
+								scope="col"
+								className="hidden px-4 py-3 text-right font-semibold text-muted-foreground text-xs uppercase tracking-wide lg:table-cell"
+							>
 								Created
 							</th>
 						</tr>

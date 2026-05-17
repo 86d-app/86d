@@ -260,19 +260,34 @@ function ZoneRow({
 							<table className="w-full">
 								<thead>
 									<tr className="border-border border-b bg-muted/50">
-										<th className="py-2 pr-4 pl-12 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+										<th
+											scope="col"
+											className="py-2 pr-4 pl-12 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+										>
 											Rate name
 										</th>
-										<th className="px-4 py-2 text-right font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+										<th
+											scope="col"
+											className="px-4 py-2 text-right font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+										>
 											Price
 										</th>
-										<th className="hidden px-4 py-2 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide md:table-cell">
+										<th
+											scope="col"
+											className="hidden px-4 py-2 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide md:table-cell"
+										>
 											Conditions
 										</th>
-										<th className="px-4 py-2 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+										<th
+											scope="col"
+											className="px-4 py-2 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+										>
 											Status
 										</th>
-										<th className="px-4 py-2 text-right font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+										<th
+											scope="col"
+											className="px-4 py-2 text-right font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+										>
 											Actions
 										</th>
 									</tr>
@@ -515,19 +530,34 @@ export function ShippingAdmin() {
 						<table className="w-full">
 							<thead>
 								<tr className="border-border border-b bg-muted/50">
-									<th className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+									<th
+										scope="col"
+										className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+									>
 										Zone
 									</th>
-									<th className="hidden px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide sm:table-cell">
+									<th
+										scope="col"
+										className="hidden px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide sm:table-cell"
+									>
 										Countries
 									</th>
-									<th className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+									<th
+										scope="col"
+										className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+									>
 										Rates
 									</th>
-									<th className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+									<th
+										scope="col"
+										className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+									>
 										Status
 									</th>
-									<th className="px-4 py-3 text-right font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+									<th
+										scope="col"
+										className="px-4 py-3 text-right font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+									>
 										Actions
 									</th>
 								</tr>

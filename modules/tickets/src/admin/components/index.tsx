@@ -244,6 +244,7 @@ export function TicketList() {
 			{/* Filters */}
 			<div className="mb-4 flex gap-2">
 				<select
+					aria-label="Filter by status"
 					value={statusFilter}
 					onChange={(e) => setStatusFilter(e.target.value)}
 					className="rounded-md border border-border bg-background px-2 py-1.5 text-sm"
@@ -256,6 +257,7 @@ export function TicketList() {
 					<option value="closed">Closed</option>
 				</select>
 				<select
+					aria-label="Filter by priority"
 					value={priorityFilter}
 					onChange={(e) => setPriorityFilter(e.target.value)}
 					className="rounded-md border border-border bg-background px-2 py-1.5 text-sm"

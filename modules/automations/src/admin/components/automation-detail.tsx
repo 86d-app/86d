@@ -162,13 +162,22 @@ export function AutomationDetail({ id }: { id: string }) {
 			<table className="w-full text-left text-sm">
 				<thead>
 					<tr className="border-border border-b">
-						<th className="px-4 py-2 font-medium text-muted-foreground">
+						<th
+							scope="col"
+							className="px-4 py-2 font-medium text-muted-foreground"
+						>
 							Status
 						</th>
-						<th className="px-4 py-2 font-medium text-muted-foreground">
+						<th
+							scope="col"
+							className="px-4 py-2 font-medium text-muted-foreground"
+						>
 							Started
 						</th>
-						<th className="px-4 py-2 font-medium text-muted-foreground">
+						<th
+							scope="col"
+							className="px-4 py-2 font-medium text-muted-foreground"
+						>
 							Error
 						</th>
 					</tr>

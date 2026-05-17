@@ -490,19 +490,34 @@ export function PinterestShopAdmin() {
 								<table className="w-full text-left text-sm">
 									<thead className="border-border border-b bg-muted/50">
 										<tr>
-											<th className="px-5 py-2.5 font-medium text-muted-foreground">
+											<th
+												scope="col"
+												className="px-5 py-2.5 font-medium text-muted-foreground"
+											>
 												Product
 											</th>
-											<th className="px-5 py-2.5 font-medium text-muted-foreground">
+											<th
+												scope="col"
+												className="px-5 py-2.5 font-medium text-muted-foreground"
+											>
 												Status
 											</th>
-											<th className="px-5 py-2.5 font-medium text-muted-foreground">
+											<th
+												scope="col"
+												className="px-5 py-2.5 font-medium text-muted-foreground"
+											>
 												Availability
 											</th>
-											<th className="px-5 py-2.5 font-medium text-muted-foreground">
+											<th
+												scope="col"
+												className="px-5 py-2.5 font-medium text-muted-foreground"
+											>
 												Price
 											</th>
-											<th className="px-5 py-2.5 font-medium text-muted-foreground">
+											<th
+												scope="col"
+												className="px-5 py-2.5 font-medium text-muted-foreground"
+											>
 												Last Synced
 											</th>
 										</tr>
@@ -624,19 +639,34 @@ export function PinterestShopAdmin() {
 								<table className="w-full text-left text-sm">
 									<thead className="border-border border-b bg-muted/50">
 										<tr>
-											<th className="px-5 py-2.5 font-medium text-muted-foreground">
+											<th
+												scope="col"
+												className="px-5 py-2.5 font-medium text-muted-foreground"
+											>
 												Pin
 											</th>
-											<th className="px-5 py-2.5 font-medium text-muted-foreground">
+											<th
+												scope="col"
+												className="px-5 py-2.5 font-medium text-muted-foreground"
+											>
 												Impressions
 											</th>
-											<th className="px-5 py-2.5 font-medium text-muted-foreground">
+											<th
+												scope="col"
+												className="px-5 py-2.5 font-medium text-muted-foreground"
+											>
 												Clicks
 											</th>
-											<th className="px-5 py-2.5 font-medium text-muted-foreground">
+											<th
+												scope="col"
+												className="px-5 py-2.5 font-medium text-muted-foreground"
+											>
 												Saves
 											</th>
-											<th className="px-5 py-2.5 font-medium text-muted-foreground">
+											<th
+												scope="col"
+												className="px-5 py-2.5 font-medium text-muted-foreground"
+											>
 												Created
 											</th>
 										</tr>
@@ -748,19 +778,34 @@ export function PinterestShopAdmin() {
 								<table className="w-full text-left text-sm">
 									<thead className="border-border border-b bg-muted/50">
 										<tr>
-											<th className="px-5 py-2.5 font-medium text-muted-foreground">
+											<th
+												scope="col"
+												className="px-5 py-2.5 font-medium text-muted-foreground"
+											>
 												Status
 											</th>
-											<th className="px-5 py-2.5 font-medium text-muted-foreground">
+											<th
+												scope="col"
+												className="px-5 py-2.5 font-medium text-muted-foreground"
+											>
 												Items
 											</th>
-											<th className="px-5 py-2.5 font-medium text-muted-foreground">
+											<th
+												scope="col"
+												className="px-5 py-2.5 font-medium text-muted-foreground"
+											>
 												Synced
 											</th>
-											<th className="px-5 py-2.5 font-medium text-muted-foreground">
+											<th
+												scope="col"
+												className="px-5 py-2.5 font-medium text-muted-foreground"
+											>
 												Failed
 											</th>
-											<th className="px-5 py-2.5 font-medium text-muted-foreground">
+											<th
+												scope="col"
+												className="px-5 py-2.5 font-medium text-muted-foreground"
+											>
 												Started
 											</th>
 										</tr>

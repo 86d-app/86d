@@ -380,19 +380,34 @@ export function FormsList() {
 					<table className="w-full">
 						<thead>
 							<tr className="border-border border-b bg-muted/40">
-								<th className="px-4 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wide">
+								<th
+									scope="col"
+									className="px-4 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wide"
+								>
 									Name
 								</th>
-								<th className="px-4 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wide">
+								<th
+									scope="col"
+									className="px-4 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wide"
+								>
 									Slug
 								</th>
-								<th className="px-4 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wide">
+								<th
+									scope="col"
+									className="px-4 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wide"
+								>
 									Fields
 								</th>
-								<th className="px-4 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wide">
+								<th
+									scope="col"
+									className="px-4 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wide"
+								>
 									Status
 								</th>
-								<th className="px-4 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wide">
+								<th
+									scope="col"
+									className="px-4 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wide"
+								>
 									Created
 								</th>
 							</tr>
@@ -1276,6 +1291,7 @@ export function FormSubmissions({
 				</div>
 				<div className="flex gap-2">
 					<select
+						aria-label="Filter by status"
 						value={statusFilter}
 						onChange={(e) => setStatusFilter(e.target.value)}
 						className="rounded-md border border-border bg-background px-2 py-1.5 text-sm"

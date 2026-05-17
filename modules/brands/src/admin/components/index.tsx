@@ -681,19 +681,34 @@ export function BrandAdmin() {
 				<table className="w-full text-sm">
 					<thead>
 						<tr className="border-b bg-muted/30 text-left">
-							<th className="px-4 py-2.5 font-medium text-muted-foreground">
+							<th
+								scope="col"
+								className="px-4 py-2.5 font-medium text-muted-foreground"
+							>
 								Brand
 							</th>
-							<th className="px-4 py-2.5 font-medium text-muted-foreground">
+							<th
+								scope="col"
+								className="px-4 py-2.5 font-medium text-muted-foreground"
+							>
 								Status
 							</th>
-							<th className="hidden px-4 py-2.5 font-medium text-muted-foreground md:table-cell">
+							<th
+								scope="col"
+								className="hidden px-4 py-2.5 font-medium text-muted-foreground md:table-cell"
+							>
 								Featured
 							</th>
-							<th className="px-4 py-2.5 font-medium text-muted-foreground">
+							<th
+								scope="col"
+								className="px-4 py-2.5 font-medium text-muted-foreground"
+							>
 								Products
 							</th>
-							<th className="px-4 py-2.5 text-right font-medium text-muted-foreground">
+							<th
+								scope="col"
+								className="px-4 py-2.5 text-right font-medium text-muted-foreground"
+							>
 								Actions
 							</th>
 						</tr>

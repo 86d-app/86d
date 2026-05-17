@@ -594,19 +594,34 @@ export function GoogleShoppingAdmin() {
 								<table className="w-full text-left text-sm">
 									<thead className="border-border border-b bg-muted/50">
 										<tr>
-											<th className="px-5 py-2.5 font-medium text-muted-foreground">
+											<th
+												scope="col"
+												className="px-5 py-2.5 font-medium text-muted-foreground"
+											>
 												Product
 											</th>
-											<th className="px-5 py-2.5 font-medium text-muted-foreground">
+											<th
+												scope="col"
+												className="px-5 py-2.5 font-medium text-muted-foreground"
+											>
 												Status
 											</th>
-											<th className="px-5 py-2.5 font-medium text-muted-foreground">
+											<th
+												scope="col"
+												className="px-5 py-2.5 font-medium text-muted-foreground"
+											>
 												Price
 											</th>
-											<th className="px-5 py-2.5 font-medium text-muted-foreground">
+											<th
+												scope="col"
+												className="px-5 py-2.5 font-medium text-muted-foreground"
+											>
 												Brand
 											</th>
-											<th className="px-5 py-2.5 font-medium text-muted-foreground">
+											<th
+												scope="col"
+												className="px-5 py-2.5 font-medium text-muted-foreground"
+											>
 												Last Synced
 											</th>
 										</tr>
@@ -740,16 +755,28 @@ export function GoogleShoppingAdmin() {
 								<table className="w-full text-left text-sm">
 									<thead className="border-border border-b bg-muted/50">
 										<tr>
-											<th className="px-5 py-2.5 font-medium text-muted-foreground">
+											<th
+												scope="col"
+												className="px-5 py-2.5 font-medium text-muted-foreground"
+											>
 												Google Order ID
 											</th>
-											<th className="px-5 py-2.5 font-medium text-muted-foreground">
+											<th
+												scope="col"
+												className="px-5 py-2.5 font-medium text-muted-foreground"
+											>
 												Status
 											</th>
-											<th className="px-5 py-2.5 font-medium text-muted-foreground">
+											<th
+												scope="col"
+												className="px-5 py-2.5 font-medium text-muted-foreground"
+											>
 												Total
 											</th>
-											<th className="px-5 py-2.5 font-medium text-muted-foreground">
+											<th
+												scope="col"
+												className="px-5 py-2.5 font-medium text-muted-foreground"
+											>
 												Created
 											</th>
 										</tr>

@@ -399,16 +399,28 @@ function ImportDialog({
 										<table className="w-full text-sm">
 											<thead>
 												<tr className="border-border border-b bg-muted/50">
-													<th className="px-3 py-2 text-left font-semibold text-muted-foreground text-xs">
+													<th
+														scope="col"
+														className="px-3 py-2 text-left font-semibold text-muted-foreground text-xs"
+													>
 														Email
 													</th>
-													<th className="px-3 py-2 text-left font-semibold text-muted-foreground text-xs">
+													<th
+														scope="col"
+														className="px-3 py-2 text-left font-semibold text-muted-foreground text-xs"
+													>
 														First Name
 													</th>
-													<th className="px-3 py-2 text-left font-semibold text-muted-foreground text-xs">
+													<th
+														scope="col"
+														className="px-3 py-2 text-left font-semibold text-muted-foreground text-xs"
+													>
 														Last Name
 													</th>
-													<th className="px-3 py-2 text-left font-semibold text-muted-foreground text-xs">
+													<th
+														scope="col"
+														className="px-3 py-2 text-left font-semibold text-muted-foreground text-xs"
+													>
 														Tags
 													</th>
 												</tr>

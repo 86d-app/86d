@@ -554,7 +554,7 @@ export function OrderList() {
 				<table className="w-full">
 					<thead>
 						<tr className="border-border border-b bg-muted/50">
-							<th className="w-10 px-4 py-3">
+							<th scope="col" className="w-10 px-4 py-3">
 								<input
 									type="checkbox"
 									checked={allOnPageSelected}
@@ -564,22 +564,40 @@ export function OrderList() {
 									aria-label="Select all orders on this page"
 								/>
 							</th>
-							<th className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+							<th
+								scope="col"
+								className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+							>
 								Order
 							</th>
-							<th className="hidden px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide sm:table-cell">
+							<th
+								scope="col"
+								className="hidden px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide sm:table-cell"
+							>
 								Customer
 							</th>
-							<th className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+							<th
+								scope="col"
+								className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+							>
 								Status
 							</th>
-							<th className="hidden px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide md:table-cell">
+							<th
+								scope="col"
+								className="hidden px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide md:table-cell"
+							>
 								Payment
 							</th>
-							<th className="px-4 py-3 text-right font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+							<th
+								scope="col"
+								className="px-4 py-3 text-right font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+							>
 								Total
 							</th>
-							<th className="hidden px-4 py-3 text-right font-semibold text-muted-foreground text-xs uppercase tracking-wide lg:table-cell">
+							<th
+								scope="col"
+								className="hidden px-4 py-3 text-right font-semibold text-muted-foreground text-xs uppercase tracking-wide lg:table-cell"
+							>
 								Date
 							</th>
 						</tr>

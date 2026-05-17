@@ -140,22 +140,37 @@ export default function OrdersPage() {
 						<table className="w-full">
 							<thead>
 								<tr className="border-border border-b bg-muted/40">
-									<th className="px-4 py-3 text-left font-medium text-muted-foreground text-xs">
+									<th
+										scope="col"
+										className="px-4 py-3 text-left font-medium text-muted-foreground text-xs"
+									>
 										Order
 									</th>
-									<th className="px-4 py-3 text-left font-medium text-muted-foreground text-xs">
+									<th
+										scope="col"
+										className="px-4 py-3 text-left font-medium text-muted-foreground text-xs"
+									>
 										Date
 									</th>
-									<th className="px-4 py-3 text-left font-medium text-muted-foreground text-xs">
+									<th
+										scope="col"
+										className="px-4 py-3 text-left font-medium text-muted-foreground text-xs"
+									>
 										Status
 									</th>
-									<th className="px-4 py-3 text-left font-medium text-muted-foreground text-xs">
+									<th
+										scope="col"
+										className="px-4 py-3 text-left font-medium text-muted-foreground text-xs"
+									>
 										Payment
 									</th>
-									<th className="px-4 py-3 text-right font-medium text-muted-foreground text-xs">
+									<th
+										scope="col"
+										className="px-4 py-3 text-right font-medium text-muted-foreground text-xs"
+									>
 										Total
 									</th>
-									<th className="w-10 px-4 py-3" />
+									<th scope="col" className="w-10 px-4 py-3" />
 								</tr>
 							</thead>
 							<tbody>

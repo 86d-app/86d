@@ -197,16 +197,28 @@ export function SocialProofAdmin() {
 				<table className="w-full text-left text-sm">
 					<thead className="border-border border-b bg-muted/50">
 						<tr>
-							<th className="px-5 py-2.5 font-medium text-muted-foreground">
+							<th
+								scope="col"
+								className="px-5 py-2.5 font-medium text-muted-foreground"
+							>
 								Product
 							</th>
-							<th className="px-5 py-2.5 font-medium text-muted-foreground">
+							<th
+								scope="col"
+								className="px-5 py-2.5 font-medium text-muted-foreground"
+							>
 								Event
 							</th>
-							<th className="px-5 py-2.5 font-medium text-muted-foreground">
+							<th
+								scope="col"
+								className="px-5 py-2.5 font-medium text-muted-foreground"
+							>
 								Location
 							</th>
-							<th className="px-5 py-2.5 font-medium text-muted-foreground">
+							<th
+								scope="col"
+								className="px-5 py-2.5 font-medium text-muted-foreground"
+							>
 								Time
 							</th>
 						</tr>

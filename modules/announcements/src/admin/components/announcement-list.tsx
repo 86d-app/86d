@@ -234,6 +234,7 @@ export function AnnouncementList() {
 			{/* Filter bar */}
 			<div className="mb-4">
 				<select
+					aria-label="Filter by type"
 					value={typeFilter}
 					onChange={(e) => setTypeFilter(e.target.value)}
 					className="h-9 rounded-md border border-border bg-background px-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
@@ -250,22 +251,40 @@ export function AnnouncementList() {
 				<table className="w-full">
 					<thead>
 						<tr className="border-border border-b bg-muted/50">
-							<th className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+							<th
+								scope="col"
+								className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+							>
 								Title
 							</th>
-							<th className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+							<th
+								scope="col"
+								className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+							>
 								Type
 							</th>
-							<th className="hidden px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide sm:table-cell">
+							<th
+								scope="col"
+								className="hidden px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide sm:table-cell"
+							>
 								Audience
 							</th>
-							<th className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+							<th
+								scope="col"
+								className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+							>
 								Status
 							</th>
-							<th className="hidden px-4 py-3 text-right font-semibold text-muted-foreground text-xs uppercase tracking-wide lg:table-cell">
+							<th
+								scope="col"
+								className="hidden px-4 py-3 text-right font-semibold text-muted-foreground text-xs uppercase tracking-wide lg:table-cell"
+							>
 								Impressions
 							</th>
-							<th className="px-4 py-3 text-right font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+							<th
+								scope="col"
+								className="px-4 py-3 text-right font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+							>
 								Actions
 							</th>
 						</tr>

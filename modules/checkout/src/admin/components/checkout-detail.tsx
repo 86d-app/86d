@@ -267,19 +267,34 @@ export function CheckoutDetail({
 					<table className="w-full">
 						<thead>
 							<tr className="border-border border-b bg-muted/50">
-								<th className="px-4 py-2 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+								<th
+									scope="col"
+									className="px-4 py-2 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+								>
 									Product
 								</th>
-								<th className="hidden px-4 py-2 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide sm:table-cell">
+								<th
+									scope="col"
+									className="hidden px-4 py-2 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide sm:table-cell"
+								>
 									SKU
 								</th>
-								<th className="px-4 py-2 text-right font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+								<th
+									scope="col"
+									className="px-4 py-2 text-right font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+								>
 									Price
 								</th>
-								<th className="px-4 py-2 text-right font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+								<th
+									scope="col"
+									className="px-4 py-2 text-right font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+								>
 									Qty
 								</th>
-								<th className="px-4 py-2 text-right font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+								<th
+									scope="col"
+									className="px-4 py-2 text-right font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+								>
 									Subtotal
 								</th>
 							</tr>

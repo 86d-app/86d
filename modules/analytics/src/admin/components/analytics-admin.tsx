@@ -664,19 +664,34 @@ function RevenueTab({
 						<table className="w-full text-sm">
 							<thead className="border-border border-b bg-muted/30 text-left">
 								<tr>
-									<th className="px-4 py-2 font-medium text-muted-foreground">
+									<th
+										scope="col"
+										className="px-4 py-2 font-medium text-muted-foreground"
+									>
 										#
 									</th>
-									<th className="px-4 py-2 font-medium text-muted-foreground">
+									<th
+										scope="col"
+										className="px-4 py-2 font-medium text-muted-foreground"
+									>
 										Product ID
 									</th>
-									<th className="px-4 py-2 font-medium text-muted-foreground">
+									<th
+										scope="col"
+										className="px-4 py-2 font-medium text-muted-foreground"
+									>
 										Revenue
 									</th>
-									<th className="px-4 py-2 font-medium text-muted-foreground">
+									<th
+										scope="col"
+										className="px-4 py-2 font-medium text-muted-foreground"
+									>
 										Orders
 									</th>
-									<th className="px-4 py-2 font-medium text-muted-foreground">
+									<th
+										scope="col"
+										className="px-4 py-2 font-medium text-muted-foreground"
+									>
 										AOV
 									</th>
 								</tr>
@@ -820,16 +835,28 @@ function FunnelTab({ since }: { since: string | undefined }) {
 					<table className="w-full text-sm">
 						<thead className="border-border border-b bg-muted/30 text-left">
 							<tr>
-								<th className="px-4 py-3 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-3 font-medium text-muted-foreground"
+								>
 									Step
 								</th>
-								<th className="px-4 py-3 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-3 font-medium text-muted-foreground"
+								>
 									Sessions
 								</th>
-								<th className="px-4 py-3 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-3 font-medium text-muted-foreground"
+								>
 									From Top
 								</th>
-								<th className="px-4 py-3 font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-4 py-3 font-medium text-muted-foreground"
+								>
 									Drop-off
 								</th>
 							</tr>
@@ -943,19 +970,34 @@ function EventsTab({ since }: { since: string | undefined }) {
 				<table className="w-full text-sm">
 					<thead className="border-border border-b bg-muted/30 text-left">
 						<tr>
-							<th className="px-4 py-3 font-medium text-muted-foreground">
+							<th
+								scope="col"
+								className="px-4 py-3 font-medium text-muted-foreground"
+							>
 								Type
 							</th>
-							<th className="px-4 py-3 font-medium text-muted-foreground">
+							<th
+								scope="col"
+								className="px-4 py-3 font-medium text-muted-foreground"
+							>
 								Product
 							</th>
-							<th className="px-4 py-3 font-medium text-muted-foreground">
+							<th
+								scope="col"
+								className="px-4 py-3 font-medium text-muted-foreground"
+							>
 								Session
 							</th>
-							<th className="px-4 py-3 font-medium text-muted-foreground">
+							<th
+								scope="col"
+								className="px-4 py-3 font-medium text-muted-foreground"
+							>
 								Value
 							</th>
-							<th className="px-4 py-3 font-medium text-muted-foreground">
+							<th
+								scope="col"
+								className="px-4 py-3 font-medium text-muted-foreground"
+							>
 								Time
 							</th>
 						</tr>
@@ -1094,17 +1136,34 @@ function TopProductsTab({
 				<table className="w-full text-sm">
 					<thead className="border-border border-b bg-muted/30 text-left">
 						<tr>
-							<th className="px-4 py-3 font-medium text-muted-foreground">#</th>
-							<th className="px-4 py-3 font-medium text-muted-foreground">
+							<th
+								scope="col"
+								className="px-4 py-3 font-medium text-muted-foreground"
+							>
+								#
+							</th>
+							<th
+								scope="col"
+								className="px-4 py-3 font-medium text-muted-foreground"
+							>
 								Product ID
 							</th>
-							<th className="px-4 py-3 font-medium text-muted-foreground">
+							<th
+								scope="col"
+								className="px-4 py-3 font-medium text-muted-foreground"
+							>
 								Views
 							</th>
-							<th className="px-4 py-3 font-medium text-muted-foreground">
+							<th
+								scope="col"
+								className="px-4 py-3 font-medium text-muted-foreground"
+							>
 								Purchases
 							</th>
-							<th className="px-4 py-3 font-medium text-muted-foreground">
+							<th
+								scope="col"
+								className="px-4 py-3 font-medium text-muted-foreground"
+							>
 								Conversion
 							</th>
 						</tr>
@@ -1257,19 +1316,34 @@ function SearchTab({
 						<table className="w-full text-sm">
 							<thead className="border-border border-b bg-muted/30 text-left">
 								<tr>
-									<th className="px-4 py-2 font-medium text-muted-foreground">
+									<th
+										scope="col"
+										className="px-4 py-2 font-medium text-muted-foreground"
+									>
 										#
 									</th>
-									<th className="px-4 py-2 font-medium text-muted-foreground">
+									<th
+										scope="col"
+										className="px-4 py-2 font-medium text-muted-foreground"
+									>
 										Query
 									</th>
-									<th className="px-4 py-2 font-medium text-muted-foreground">
+									<th
+										scope="col"
+										className="px-4 py-2 font-medium text-muted-foreground"
+									>
 										Searches
 									</th>
-									<th className="px-4 py-2 font-medium text-muted-foreground">
+									<th
+										scope="col"
+										className="px-4 py-2 font-medium text-muted-foreground"
+									>
 										Avg. Results
 									</th>
-									<th className="px-4 py-2 font-medium text-muted-foreground">
+									<th
+										scope="col"
+										className="px-4 py-2 font-medium text-muted-foreground"
+									>
 										Last Searched
 									</th>
 								</tr>
@@ -1317,13 +1391,22 @@ function SearchTab({
 						<table className="w-full text-sm">
 							<thead className="border-border border-b bg-muted/30 text-left">
 								<tr>
-									<th className="px-4 py-2 font-medium text-muted-foreground">
+									<th
+										scope="col"
+										className="px-4 py-2 font-medium text-muted-foreground"
+									>
 										Query
 									</th>
-									<th className="px-4 py-2 font-medium text-muted-foreground">
+									<th
+										scope="col"
+										className="px-4 py-2 font-medium text-muted-foreground"
+									>
 										Searches
 									</th>
-									<th className="px-4 py-2 font-medium text-muted-foreground">
+									<th
+										scope="col"
+										className="px-4 py-2 font-medium text-muted-foreground"
+									>
 										Last Searched
 									</th>
 								</tr>

@@ -201,12 +201,24 @@ export function TaxReporting() {
 						<table className="w-full text-sm">
 							<thead>
 								<tr className="border-b bg-muted/50">
-									<th className="px-4 py-2 text-left">Jurisdiction</th>
-									<th className="px-4 py-2 text-right">Tax Collected</th>
-									<th className="px-4 py-2 text-right">Shipping Tax</th>
-									<th className="px-4 py-2 text-right">Taxable Sales</th>
-									<th className="px-4 py-2 text-right">Transactions</th>
-									<th className="px-4 py-2 text-right">Eff. Rate</th>
+									<th scope="col" className="px-4 py-2 text-left">
+										Jurisdiction
+									</th>
+									<th scope="col" className="px-4 py-2 text-right">
+										Tax Collected
+									</th>
+									<th scope="col" className="px-4 py-2 text-right">
+										Shipping Tax
+									</th>
+									<th scope="col" className="px-4 py-2 text-right">
+										Taxable Sales
+									</th>
+									<th scope="col" className="px-4 py-2 text-right">
+										Transactions
+									</th>
+									<th scope="col" className="px-4 py-2 text-right">
+										Eff. Rate
+									</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -257,13 +269,27 @@ export function TaxReporting() {
 					<table className="w-full text-sm">
 						<thead>
 							<tr className="border-b bg-muted/50">
-								<th className="px-4 py-2 text-left">Date</th>
-								<th className="px-4 py-2 text-left">Order</th>
-								<th className="px-4 py-2 text-left">Jurisdiction</th>
-								<th className="px-4 py-2 text-right">Subtotal</th>
-								<th className="px-4 py-2 text-right">Tax</th>
-								<th className="px-4 py-2 text-right">Rate</th>
-								<th className="px-4 py-2 text-center">Status</th>
+								<th scope="col" className="px-4 py-2 text-left">
+									Date
+								</th>
+								<th scope="col" className="px-4 py-2 text-left">
+									Order
+								</th>
+								<th scope="col" className="px-4 py-2 text-left">
+									Jurisdiction
+								</th>
+								<th scope="col" className="px-4 py-2 text-right">
+									Subtotal
+								</th>
+								<th scope="col" className="px-4 py-2 text-right">
+									Tax
+								</th>
+								<th scope="col" className="px-4 py-2 text-right">
+									Rate
+								</th>
+								<th scope="col" className="px-4 py-2 text-center">
+									Status
+								</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -387,11 +413,21 @@ export function TaxReporting() {
 						<table className="w-full text-sm">
 							<thead>
 								<tr className="border-b bg-muted/50">
-									<th className="px-4 py-2 text-left">Jurisdiction</th>
-									<th className="px-4 py-2 text-left">Type</th>
-									<th className="px-4 py-2 text-left">Notes</th>
-									<th className="px-4 py-2 text-left">Added</th>
-									<th className="px-4 py-2 text-right">Actions</th>
+									<th scope="col" className="px-4 py-2 text-left">
+										Jurisdiction
+									</th>
+									<th scope="col" className="px-4 py-2 text-left">
+										Type
+									</th>
+									<th scope="col" className="px-4 py-2 text-left">
+										Notes
+									</th>
+									<th scope="col" className="px-4 py-2 text-left">
+										Added
+									</th>
+									<th scope="col" className="px-4 py-2 text-right">
+										Actions
+									</th>
 								</tr>
 							</thead>
 							<tbody>

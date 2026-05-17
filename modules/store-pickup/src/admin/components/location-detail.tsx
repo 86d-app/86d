@@ -730,19 +730,34 @@ export function LocationDetail({ locationId }: { locationId: string }) {
 						<table className="w-full text-left text-sm">
 							<thead>
 								<tr className="border-border border-b bg-muted">
-									<th className="px-4 py-2 font-medium text-muted-foreground">
+									<th
+										scope="col"
+										className="px-4 py-2 font-medium text-muted-foreground"
+									>
 										Day
 									</th>
-									<th className="px-4 py-2 font-medium text-muted-foreground">
+									<th
+										scope="col"
+										className="px-4 py-2 font-medium text-muted-foreground"
+									>
 										Window
 									</th>
-									<th className="px-4 py-2 font-medium text-muted-foreground">
+									<th
+										scope="col"
+										className="px-4 py-2 font-medium text-muted-foreground"
+									>
 										Capacity
 									</th>
-									<th className="px-4 py-2 font-medium text-muted-foreground">
+									<th
+										scope="col"
+										className="px-4 py-2 font-medium text-muted-foreground"
+									>
 										Status
 									</th>
-									<th className="px-4 py-2 font-medium text-muted-foreground">
+									<th
+										scope="col"
+										className="px-4 py-2 font-medium text-muted-foreground"
+									>
 										Actions
 									</th>
 								</tr>
@@ -870,13 +885,22 @@ export function LocationDetail({ locationId }: { locationId: string }) {
 						<table className="w-full text-left text-sm">
 							<thead>
 								<tr className="border-border border-b bg-muted">
-									<th className="px-4 py-2 font-medium text-muted-foreground">
+									<th
+										scope="col"
+										className="px-4 py-2 font-medium text-muted-foreground"
+									>
 										Date
 									</th>
-									<th className="px-4 py-2 font-medium text-muted-foreground">
+									<th
+										scope="col"
+										className="px-4 py-2 font-medium text-muted-foreground"
+									>
 										Reason
 									</th>
-									<th className="px-4 py-2 font-medium text-muted-foreground">
+									<th
+										scope="col"
+										className="px-4 py-2 font-medium text-muted-foreground"
+									>
 										Actions
 									</th>
 								</tr>

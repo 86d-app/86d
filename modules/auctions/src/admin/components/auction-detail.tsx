@@ -719,16 +719,28 @@ export function AuctionDetail({ auctionId }: { auctionId: string }) {
 					<table className="w-full text-sm">
 						<thead>
 							<tr className="border-border border-b bg-muted/40">
-								<th className="px-5 py-3 text-left font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-5 py-3 text-left font-medium text-muted-foreground"
+								>
 									Bidder
 								</th>
-								<th className="px-5 py-3 text-right font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-5 py-3 text-right font-medium text-muted-foreground"
+								>
 									Amount
 								</th>
-								<th className="px-5 py-3 text-left font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-5 py-3 text-left font-medium text-muted-foreground"
+								>
 									Time
 								</th>
-								<th className="px-5 py-3 text-left font-medium text-muted-foreground">
+								<th
+									scope="col"
+									className="px-5 py-3 text-left font-medium text-muted-foreground"
+								>
 									Status
 								</th>
 							</tr>

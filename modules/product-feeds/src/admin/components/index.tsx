@@ -100,16 +100,28 @@ export function ProductFeedsOverview() {
 					<table className="w-full">
 						<thead>
 							<tr className="border-border border-b text-left">
-								<th className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">
+								<th
+									scope="col"
+									className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider"
+								>
 									Feed
 								</th>
-								<th className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">
+								<th
+									scope="col"
+									className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider"
+								>
 									Type
 								</th>
-								<th className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">
+								<th
+									scope="col"
+									className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider"
+								>
 									Products
 								</th>
-								<th className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">
+								<th
+									scope="col"
+									className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider"
+								>
 									Status
 								</th>
 							</tr>
@@ -338,13 +350,22 @@ export function ProductFeedDetail({
 							<table className="w-full">
 								<thead>
 									<tr className="border-border border-b text-left">
-										<th className="px-4 py-2 font-medium text-muted-foreground text-xs">
+										<th
+											scope="col"
+											className="px-4 py-2 font-medium text-muted-foreground text-xs"
+										>
 											Source
 										</th>
-										<th className="px-4 py-2 font-medium text-muted-foreground text-xs">
+										<th
+											scope="col"
+											className="px-4 py-2 font-medium text-muted-foreground text-xs"
+										>
 											Target
 										</th>
-										<th className="px-4 py-2 font-medium text-muted-foreground text-xs">
+										<th
+											scope="col"
+											className="px-4 py-2 font-medium text-muted-foreground text-xs"
+										>
 											Transform
 										</th>
 									</tr>
@@ -379,13 +400,22 @@ export function ProductFeedDetail({
 							<table className="w-full">
 								<thead>
 									<tr className="border-border border-b text-left">
-										<th className="px-4 py-2 font-medium text-muted-foreground text-xs">
+										<th
+											scope="col"
+											className="px-4 py-2 font-medium text-muted-foreground text-xs"
+										>
 											Product ID
 										</th>
-										<th className="px-4 py-2 font-medium text-muted-foreground text-xs">
+										<th
+											scope="col"
+											className="px-4 py-2 font-medium text-muted-foreground text-xs"
+										>
 											Status
 										</th>
-										<th className="px-4 py-2 font-medium text-muted-foreground text-xs">
+										<th
+											scope="col"
+											className="px-4 py-2 font-medium text-muted-foreground text-xs"
+										>
 											Issues
 										</th>
 									</tr>

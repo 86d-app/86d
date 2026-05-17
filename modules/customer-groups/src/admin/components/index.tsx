@@ -664,19 +664,34 @@ export function CustomerGroupList() {
 					<table className="w-full">
 						<thead>
 							<tr className="border-border border-b text-left">
-								<th className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">
+								<th
+									scope="col"
+									className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider"
+								>
 									Group
 								</th>
-								<th className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">
+								<th
+									scope="col"
+									className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider"
+								>
 									Type
 								</th>
-								<th className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">
+								<th
+									scope="col"
+									className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider"
+								>
 									Members
 								</th>
-								<th className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">
+								<th
+									scope="col"
+									className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider"
+								>
 									Status
 								</th>
-								<th className="px-4 py-3 text-right font-medium text-muted-foreground text-xs uppercase tracking-wider">
+								<th
+									scope="col"
+									className="px-4 py-3 text-right font-medium text-muted-foreground text-xs uppercase tracking-wider"
+								>
 									Actions
 								</th>
 							</tr>
@@ -970,16 +985,25 @@ export function CustomerGroupDetail({
 							<table className="w-full">
 								<thead>
 									<tr className="border-border border-b text-left">
-										<th className="px-4 py-2 font-medium text-muted-foreground text-xs">
+										<th
+											scope="col"
+											className="px-4 py-2 font-medium text-muted-foreground text-xs"
+										>
 											Customer
 										</th>
-										<th className="px-4 py-2 font-medium text-muted-foreground text-xs">
+										<th
+											scope="col"
+											className="px-4 py-2 font-medium text-muted-foreground text-xs"
+										>
 											Joined
 										</th>
-										<th className="px-4 py-2 font-medium text-muted-foreground text-xs">
+										<th
+											scope="col"
+											className="px-4 py-2 font-medium text-muted-foreground text-xs"
+										>
 											Expires
 										</th>
-										<th className="px-4 py-2" />
+										<th scope="col" className="px-4 py-2" />
 									</tr>
 								</thead>
 								<tbody className="divide-y divide-border">
@@ -1063,13 +1087,19 @@ export function CustomerGroupDetail({
 							<table className="w-full">
 								<thead>
 									<tr className="border-border border-b text-left">
-										<th className="px-4 py-2 font-medium text-muted-foreground text-xs">
+										<th
+											scope="col"
+											className="px-4 py-2 font-medium text-muted-foreground text-xs"
+										>
 											Discount
 										</th>
-										<th className="px-4 py-2 font-medium text-muted-foreground text-xs">
+										<th
+											scope="col"
+											className="px-4 py-2 font-medium text-muted-foreground text-xs"
+										>
 											Scope
 										</th>
-										<th className="px-4 py-2" />
+										<th scope="col" className="px-4 py-2" />
 									</tr>
 								</thead>
 								<tbody className="divide-y divide-border">

@@ -252,16 +252,28 @@ export default function CustomerInvoicePage() {
 					<table className="w-full text-sm">
 						<thead>
 							<tr className="border-border border-b bg-muted/40">
-								<th className="px-4 py-2.5 text-left font-medium text-muted-foreground text-xs uppercase">
+								<th
+									scope="col"
+									className="px-4 py-2.5 text-left font-medium text-muted-foreground text-xs uppercase"
+								>
 									Item
 								</th>
-								<th className="hidden px-4 py-2.5 text-center font-medium text-muted-foreground text-xs uppercase sm:table-cell">
+								<th
+									scope="col"
+									className="hidden px-4 py-2.5 text-center font-medium text-muted-foreground text-xs uppercase sm:table-cell"
+								>
 									Qty
 								</th>
-								<th className="hidden px-4 py-2.5 text-right font-medium text-muted-foreground text-xs uppercase sm:table-cell">
+								<th
+									scope="col"
+									className="hidden px-4 py-2.5 text-right font-medium text-muted-foreground text-xs uppercase sm:table-cell"
+								>
 									Price
 								</th>
-								<th className="px-4 py-2.5 text-right font-medium text-muted-foreground text-xs uppercase">
+								<th
+									scope="col"
+									className="px-4 py-2.5 text-right font-medium text-muted-foreground text-xs uppercase"
+								>
 									Amount
 								</th>
 							</tr>

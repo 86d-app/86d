@@ -327,19 +327,34 @@ export function ShippingCarriersAdmin() {
 						<table className="w-full">
 							<thead>
 								<tr className="border-border border-b bg-muted/50">
-									<th className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+									<th
+										scope="col"
+										className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+									>
 										Name
 									</th>
-									<th className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+									<th
+										scope="col"
+										className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+									>
 										Code
 									</th>
-									<th className="hidden px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide md:table-cell">
+									<th
+										scope="col"
+										className="hidden px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide md:table-cell"
+									>
 										Tracking URL
 									</th>
-									<th className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+									<th
+										scope="col"
+										className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+									>
 										Status
 									</th>
-									<th className="px-4 py-3 text-right font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+									<th
+										scope="col"
+										className="px-4 py-3 text-right font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+									>
 										Actions
 									</th>
 								</tr>
@@ -382,19 +397,34 @@ export function ShippingCarriersAdmin() {
 						<table className="w-full">
 							<thead>
 								<tr className="border-border border-b bg-muted/50">
-									<th className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+									<th
+										scope="col"
+										className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+									>
 										Method
 									</th>
-									<th className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+									<th
+										scope="col"
+										className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+									>
 										Delivery
 									</th>
-									<th className="hidden px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide md:table-cell">
+									<th
+										scope="col"
+										className="hidden px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide md:table-cell"
+									>
 										Order
 									</th>
-									<th className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+									<th
+										scope="col"
+										className="px-4 py-3 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+									>
 										Status
 									</th>
-									<th className="px-4 py-3 text-right font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+									<th
+										scope="col"
+										className="px-4 py-3 text-right font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+									>
 										Actions
 									</th>
 								</tr>

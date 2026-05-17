@@ -599,6 +599,7 @@ export function UberDirectAdmin() {
 							All deliveries dispatched through Uber Direct.
 						</p>
 						<select
+							aria-label="Filter by status"
 							value={statusFilter}
 							onChange={(e) => {
 								setStatusFilter(e.target.value);
