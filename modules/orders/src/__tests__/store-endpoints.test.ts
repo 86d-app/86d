@@ -302,7 +302,9 @@ describe("store endpoint: get order", () => {
 	});
 
 	it("includes storeCreditAmount in order response", async () => {
-		const items = [{ productId: "p1", name: "Widget", price: 5000, quantity: 1 }];
+		const items = [
+			{ productId: "p1", name: "Widget", price: 5000, quantity: 1 },
+		];
 		const subtotal = 5000;
 		const order = await controller.create({
 			customerId: "cust_1",
