@@ -1,7 +1,7 @@
 {
 	"name": "@86d-app/flash-sales",
 	"version": "0.0.40",
-	"description": "Flash sales — time-limited promotional events with countdown timers, per-product sale pricing, and stock limits",
+	"description": "Flash sales \u2014 time-limited promotional events with countdown timers, per-product sale pricing, and stock limits",
 	"keywords": [
 		"commerce",
 		"flash-sales",
@@ -47,7 +47,7 @@
 		"vitest": "catalog:vite"
 	},
 	"peerDependencies": {
-		"next": "16.2.4",
-		"react": "19.2.5"
+		"next": "16.2.6",
+		"react": "19.2.6"
 	}
 }

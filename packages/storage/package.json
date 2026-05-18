@@ -14,7 +14,7 @@
 		"zod": "catalog:"
 	},
 	"peerDependencies": {
-		"@vercel/blob": "2.0.0"
+		"@vercel/blob": "2.3.3"
 	},
 	"peerDependenciesMeta": {
 		"@vercel/blob": {
@@ -23,7 +23,7 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "catalog:",
-		"@vercel/blob": "2.0.0",
+		"@vercel/blob": "2.3.3",
 		"vitest": "catalog:vite",
 		"typescript": "catalog:",
 		"@types/node": "catalog:node"

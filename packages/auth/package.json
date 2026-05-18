@@ -26,7 +26,7 @@
 		"typecheck": "tsc --noEmit --emitDeclarationOnly false"
 	},
 	"dependencies": {
-		"better-auth": "1.2.10",
+		"better-auth": "1.6.11",
 		"db": "workspace:*"
 	},
 	"devDependencies": {
@@ -37,7 +37,7 @@
 		"vitest": "catalog:vite"
 	},
 	"peerDependencies": {
-		"next": "16.2.4"
+		"next": "16.2.6"
 	},
 	"peerDependenciesMeta": {
 		"next": {

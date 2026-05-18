@@ -1,6 +1,6 @@
 {
   "lockfileVersion": 1,
-  "generatedAt": "2026-05-17T22:59:11.678Z",
+  "generatedAt": "2026-05-18T01:21:18.758Z",
   "modules": {
     "abandoned-carts": {
       "source": "local",
@@ -48,7 +48,7 @@
       "source": "local",
       "packageName": "@86d-app/auctions",
       "version": "0.0.40",
-      "integrity": "sha256-8b3ec37b752ba5ce76214d56f38a53665b0bdda0f5e3166e8eac9b960279921e",
+      "integrity": "sha256-4400bc1eab1617882f69ffd71e59289769579639fcc091b923bc54b0bbe7f516",
       "localPath": "modules/auctions"
     },
     "audit-log": {
@@ -76,7 +76,7 @@
       "source": "local",
       "packageName": "@86d-app/blog",
       "version": "0.0.40",
-      "integrity": "sha256-aa2533f6e64fcf731b377b013f50038cc0dcf4562c83a5792bbbef5496f150a8",
+      "integrity": "sha256-96cd53389c979a3c84c45c26829ccc26ad3452568b97e2a2770031f2af567ac5",
       "localPath": "modules/blog"
     },
     "braintree": {
@@ -111,7 +111,7 @@
       "source": "local",
       "packageName": "@86d-app/cart",
       "version": "0.0.40",
-      "integrity": "sha256-586fb3292c231b128ae114130f9e5811de7967d7b9d7ed35eb31f52e57cefbfd",
+      "integrity": "sha256-46b3a709d983b65055c06a33499dd537157d5d0ddbe36424740ad5b6b61c0632",
       "localPath": "modules/cart"
     },
     "checkout": {
@@ -216,7 +216,7 @@
       "source": "local",
       "packageName": "@86d-app/flash-sales",
       "version": "0.0.40",
-      "integrity": "sha256-0172dd31f26478adbb363c4401dcbac780bfc68b157542758fe414562cd47e56",
+      "integrity": "sha256-b0fdbe987ddf91854efe5b8f9286851699277d71e738553cff00d583884e7738",
       "localPath": "modules/flash-sales"
     },
     "forms": {
@@ -321,7 +321,7 @@
       "source": "local",
       "packageName": "@86d-app/memberships",
       "version": "0.0.40",
-      "integrity": "sha256-f934534dbdaec51dec3b7e6101aba9e34494ce975b21a9e407f78753aa683c1a",
+      "integrity": "sha256-e1608d1df01026f9e5eae112ae9281938a997f7983a340ad8b484d205d8bc9ea",
       "localPath": "modules/memberships"
     },
     "multi-currency": {
@@ -405,7 +405,7 @@
       "source": "local",
       "packageName": "@86d-app/preorders",
       "version": "0.0.40",
-      "integrity": "sha256-225498748a5202f5333dcaa3003591df2044beb49a58ad122cff0f45f3f2c32b",
+      "integrity": "sha256-b2b3265dfa4bc7992b42866930c9ad2e1a9209b5dbb9fba2be4cb2dee08dba5d",
       "localPath": "modules/preorders"
     },
     "price-lists": {
@@ -440,7 +440,7 @@
       "source": "local",
       "packageName": "@86d-app/products",
       "version": "0.0.40",
-      "integrity": "sha256-a7e208acc0d18e1965068352c2ebdb5179261b5d3882f027e28bdab2ec534b4e",
+      "integrity": "sha256-dfa24005e31624290ce2436cf91fa20a1eeaa2fc0300d55b43940ee514a3abb9",
       "localPath": "modules/products"
     },
     "qr-code": {
