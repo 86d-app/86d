@@ -1,0 +1,12 @@
+{
+  "eval_id": 1,
+  "config": "without_skill",
+  "expectations": [
+    {"text": "An updated AGENTS.md file exists in the outputs directory", "passed": true, "evidence": "File exists, 38 lines"},
+    {"text": "The original content is preserved", "passed": true, "evidence": "Architecture, Tech stack, Development sections intact"},
+    {"text": "The file documents the Redis connection pool leak issue", "passed": true, "evidence": "Gotchas subsection with redis.quit() in afterAll and code example"},
+    {"text": "The file documents the task_assignments DB trigger", "passed": true, "evidence": "Gotchas subsection documenting trigger and Prisma requirement"},
+    {"text": "The update is additive — not a rewrite", "passed": true, "evidence": "Original content preserved, Gotchas section appended"},
+    {"text": "The file is under 300 lines", "passed": true, "evidence": "38 lines"}
+  ]
+}

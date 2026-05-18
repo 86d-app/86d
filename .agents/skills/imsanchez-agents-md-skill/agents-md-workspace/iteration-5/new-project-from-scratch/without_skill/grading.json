@@ -1,0 +1,14 @@
+{
+  "eval_id": 0,
+  "config": "without_skill",
+  "expectations": [
+    {"text": "An AGENTS.md file exists in the outputs directory", "passed": true, "evidence": "File exists, 110 lines"},
+    {"text": "The file contains a section describing the project's directory structure", "passed": true, "evidence": "Project Structure section (lines 76-89) with tree diagram showing src/api/, src/workers/, src/shared/"},
+    {"text": "The file includes build and test commands", "passed": true, "evidence": "Build and Run section with npm run dev, npm run build. Testing section with npm test, npm run test:ci"},
+    {"text": "The file mentions the key technologies", "passed": true, "evidence": "Overview: 'TypeScript backend service...Express...Prisma...BullMQ backed by Redis...Zod'"},
+    {"text": "The file mentions database migration or seeding commands", "passed": true, "evidence": "Database section: npm run db:migrate, npm run db:seed"},
+    {"text": "The file is under 300 lines", "passed": true, "evidence": "110 lines"},
+    {"text": "The file does not contain generic filler", "passed": false, "evidence": "Line 23: 'npm install' in code block under '# Install dependencies' comment. Verbose section structure with separate code blocks for each command."},
+    {"text": "Commands are formatted as bullet list items rather than headings with code blocks", "passed": false, "evidence": "Commands use heading + code block format: '## Build and Run' with ```bash block, '## Database' with ```bash block, '## Testing' with ```bash block"}
+  ]
+}

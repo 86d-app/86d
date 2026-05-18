@@ -1,0 +1,52 @@
+{
+  "eval_id": 0,
+  "eval_name": "new-project-from-scratch",
+  "prompt": "Create an AGENTS.md for this project. I want future agents to know how to build, test, and navigate the codebase.",
+  "assertions": [
+    {
+      "id": "file-created",
+      "text": "An AGENTS.md file exists in the outputs directory",
+      "type": "file_exists"
+    },
+    {
+      "id": "has-architecture-section",
+      "text": "The file contains a section describing the project's directory structure (src/api, src/workers, src/shared)",
+      "type": "content_check"
+    },
+    {
+      "id": "has-build-commands",
+      "text": "The file includes build and test commands (e.g., tsc, vitest or the npm script equivalents)",
+      "type": "content_check"
+    },
+    {
+      "id": "has-tech-stack",
+      "text": "The file mentions the key technologies: TypeScript, Express, Prisma, Redis, BullMQ",
+      "type": "content_check"
+    },
+    {
+      "id": "mentions-db-workflow",
+      "text": "The file mentions database migration or seeding commands (prisma migrate, seed)",
+      "type": "content_check"
+    },
+    {
+      "id": "under-100-lines",
+      "text": "The file is under 100 lines — a well-written AGENTS.md should be lean and focused",
+      "type": "line_count"
+    },
+    {
+      "id": "no-obvious-filler",
+      "text": "The file does not contain generic filler like 'npm install' as a standalone setup step, or verbose explanations of obvious commands",
+      "type": "content_check"
+    },
+    {
+      "id": "uses-list-format",
+      "text": "Commands are formatted as bullet list items (e.g., '- `cmd` — description') rather than headings with code blocks",
+      "type": "content_check"
+    },
+    {
+      "id": "discovers-gotchas",
+      "text": "The file includes at least one project-specific gotcha or convention discovered from reading the source code (e.g., redis.quit() in teardown, transaction patterns in sync-worker, singleton connections)",
+      "type": "content_check"
+    }
+  ]
+}

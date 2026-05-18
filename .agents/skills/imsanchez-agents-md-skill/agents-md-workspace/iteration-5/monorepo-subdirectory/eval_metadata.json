@@ -1,0 +1,37 @@
+{
+  "eval_id": 2,
+  "eval_name": "monorepo-subdirectory",
+  "prompt": "I've been working in the auth package and discovered that the token refresh uses a sliding window with rotation — old refresh tokens are immediately invalidated, so retry logic can't reuse them. Add agent docs for this package. The project already has a root CLAUDE.md.",
+  "assertions": [
+    {
+      "id": "subdirectory-file-created",
+      "text": "A CLAUDE.md (not AGENTS.md) was created for the auth package, respecting the project's existing naming convention",
+      "type": "file_exists"
+    },
+    {
+      "id": "token-rotation-documented",
+      "text": "The auth package docs mention the sliding window token rotation and that old refresh tokens are immediately invalidated",
+      "type": "content_check"
+    },
+    {
+      "id": "retry-warning",
+      "text": "The docs warn that retry logic must re-authenticate from scratch, not reuse refresh tokens",
+      "type": "content_check"
+    },
+    {
+      "id": "root-file-intact",
+      "text": "The root CLAUDE.md was not significantly altered — its existing structure and content are preserved",
+      "type": "content_check"
+    },
+    {
+      "id": "no-root-duplication",
+      "text": "The subdirectory file does not duplicate content already in the root CLAUDE.md (e.g., doesn't repeat the full monorepo structure)",
+      "type": "content_check"
+    },
+    {
+      "id": "auth-specific-context",
+      "text": "The subdirectory file includes auth-package-specific info (tech stack like jose/iron-session, build/test commands from its package.json)",
+      "type": "content_check"
+    }
+  ]
+}

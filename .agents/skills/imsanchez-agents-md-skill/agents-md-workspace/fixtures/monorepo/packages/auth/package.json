@@ -1,0 +1,12 @@
+{
+  "name": "@acme/auth",
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest",
+    "test:watch": "vitest --watch"
+  },
+  "dependencies": {
+    "jose": "^5.2.0",
+    "iron-session": "^8.0.0"
+  }
+}

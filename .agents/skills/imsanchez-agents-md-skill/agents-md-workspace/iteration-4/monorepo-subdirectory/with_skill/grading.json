@@ -1,0 +1,12 @@
+{
+  "eval_id": 2,
+  "config": "with_skill",
+  "expectations": [
+    {"text": "A CLAUDE.md (not AGENTS.md) was created for the auth package", "passed": true, "evidence": "packages-auth-CLAUDE.md created, respecting CLAUDE.md naming convention"},
+    {"text": "The auth package docs mention the sliding window token rotation", "passed": true, "evidence": "Architecture lines 19-22: 'sliding-window rotation: each refresh issues a new token pair and immediately invalidates the old refresh token'"},
+    {"text": "The docs warn that retry logic must re-authenticate from scratch", "passed": true, "evidence": "Gotchas lines 28-31: 'Retry logic cannot reuse refresh tokens...must re-authenticate from scratch — never retry with the same refresh token'"},
+    {"text": "The root CLAUDE.md was not significantly altered", "passed": true, "evidence": "Root CLAUDE.md output preserves monorepo structure, turborepo commands, and package-level docs pointer. Same structure as fixture."},
+    {"text": "The subdirectory file does not duplicate content already in the root CLAUDE.md", "passed": true, "evidence": "Auth file covers only auth-specific context (JWT, sessions, rotation). No monorepo structure or turborepo commands duplicated."},
+    {"text": "The subdirectory file includes auth-package-specific info", "passed": true, "evidence": "Header: jose (HS256), iron-session. Development: turbo test --filter=@acme/auth, vitest, tsup"}
+  ]
+}

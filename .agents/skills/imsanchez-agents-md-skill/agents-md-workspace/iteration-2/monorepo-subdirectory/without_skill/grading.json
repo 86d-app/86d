@@ -1,0 +1,12 @@
+{
+  "eval_id": 2,
+  "config": "without_skill",
+  "expectations": [
+    {"text": "A CLAUDE.md (not AGENTS.md) was created for the auth package", "passed": true, "evidence": "packages-auth-CLAUDE.md created"},
+    {"text": "The auth package docs mention the sliding window token rotation and that old refresh tokens are immediately invalidated", "passed": true, "evidence": "Gotchas: 'Token refresh uses sliding-window rotation... old refresh token is immediately invalidated'"},
+    {"text": "The docs warn that retry logic must re-authenticate from scratch", "passed": true, "evidence": "Gotchas: 'the client must re-authenticate from scratch rather than retrying with the same token'"},
+    {"text": "The root CLAUDE.md was not significantly altered", "passed": true, "evidence": "root-CLAUDE.md identical to original"},
+    {"text": "The subdirectory file does not duplicate content already in the root CLAUDE.md", "passed": true, "evidence": "No monorepo structure duplicated, auth-focused only (28 lines)"},
+    {"text": "The subdirectory file includes auth-package-specific info (jose/iron-session, commands)", "passed": true, "evidence": "Tech section lists jose and iron-session; Development has turbo test --filter, vitest, tsup"}
+  ]
+}

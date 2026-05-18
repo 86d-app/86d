@@ -1,0 +1,12 @@
+{
+  "eval_id": 2,
+  "config": "without_skill",
+  "expectations": [
+    {"text": "A CLAUDE.md (not AGENTS.md) was created for the auth package", "passed": true, "evidence": "packages-auth-CLAUDE.md created"},
+    {"text": "The auth package docs mention the sliding window token rotation", "passed": true, "evidence": "Architecture: 'sliding-window rotation' documented"},
+    {"text": "The docs warn that retry logic must re-authenticate from scratch", "passed": true, "evidence": "Gotchas: 'client must re-authenticate from scratch'"},
+    {"text": "The root CLAUDE.md was not significantly altered", "passed": true, "evidence": "Root content preserved; package-level docs pointer added"},
+    {"text": "The subdirectory file does not duplicate content already in the root CLAUDE.md", "passed": true, "evidence": "No duplication of root content"},
+    {"text": "The subdirectory file includes auth-package-specific info", "passed": true, "evidence": "Lists jose, iron-session, turbo test --filter, vitest, tsup"}
+  ]
+}

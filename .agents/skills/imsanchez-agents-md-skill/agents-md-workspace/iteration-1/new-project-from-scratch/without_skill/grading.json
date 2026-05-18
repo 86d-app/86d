@@ -1,0 +1,13 @@
+{
+  "eval_id": 0,
+  "config": "without_skill",
+  "expectations": [
+    {"text": "An AGENTS.md file exists in the outputs directory", "passed": true, "evidence": "File exists at outputs/AGENTS.md, 102 lines"},
+    {"text": "The file contains a section describing the project's directory structure (src/api, src/workers, src/shared)", "passed": true, "evidence": "Project Structure section with tree diagram showing all three directories"},
+    {"text": "The file includes build and test commands (e.g., tsc, vitest or the npm script equivalents)", "passed": true, "evidence": "Build and Run, Testing, Linting sections all include commands"},
+    {"text": "The file mentions the key technologies: TypeScript, Express, Prisma, Redis, BullMQ", "passed": true, "evidence": "Tech Stack section lists all five plus Zod, Vitest, Biome"},
+    {"text": "The file mentions database migration or seeding commands (prisma migrate, seed)", "passed": true, "evidence": "Database section includes db:migrate, db:seed, db:studio"},
+    {"text": "The file is under 300 lines", "passed": true, "evidence": "102 lines"},
+    {"text": "The file does not contain generic filler like 'run npm install to install dependencies'", "passed": false, "evidence": "Line 42: '# Install dependencies\\nnpm install' — this is generic filler that every developer already knows"}
+  ]
+}

@@ -1,6 +1,6 @@
 # Monorepos on Vercel
 
-Vercel auto-detects monorepo tools (Turborepo, Nx) and workspace managers (Bun, Yarn, npm). Each project in the monorepo gets its own Vercel project, linked via `vercel link --repo`.
+Vercel auto-detects monorepo tools (Turborepo, Nx) and workspace managers (pnpm, Yarn, npm). Each project in the monorepo gets its own Vercel project, linked via `vercel link --repo`.
 
 ## Quick Start
 
@@ -79,13 +79,13 @@ Nx requires a build target. Define it in `nx.json`:
 }
 ```
 
-## Example: Turborepo + Bun + Hono
+## Example: Turborepo + pnpm + Hono
 
 ```
 root/
 ├── turbo.json
 ├── package.json
-├── package.json
+├── pnpm-workspace.yaml
 ├── vercel.json
 ├── apps/
 │   └── api/
@@ -97,12 +97,12 @@ root/
         └── src/index.ts
 ```
 
-**package.json (workspaces):**
+**pnpm-workspace.yaml:**
 
-```json
-{
-  "workspaces": ["apps/*", "packages/*"]
-}
+```yaml
+packages:
+  - 'apps/*'
+  - 'packages/*'
 ```
 
 **vercel.json:**

@@ -1,0 +1,33 @@
+{
+  "skill_name": "agents-md",
+  "iteration": 4,
+  "configs": [
+    {
+      "name": "with_skill",
+      "evals": [
+        {"eval_name": "new-project-from-scratch", "pass_rate": 0.875, "passed": 7, "total": 8, "tokens": 25117, "duration_seconds": 75.5},
+        {"eval_name": "update-existing-with-gotchas", "pass_rate": 1.0, "passed": 6, "total": 6, "tokens": 21948, "duration_seconds": 53.3},
+        {"eval_name": "monorepo-subdirectory", "pass_rate": 1.0, "passed": 6, "total": 6, "tokens": 25593, "duration_seconds": 97.6}
+      ],
+      "aggregate": {"mean_pass_rate": 0.958, "stddev_pass_rate": 0.072, "mean_tokens": 24219, "mean_duration_seconds": 75.5}
+    },
+    {
+      "name": "without_skill",
+      "evals": [
+        {"eval_name": "new-project-from-scratch", "pass_rate": 0.75, "passed": 6, "total": 8, "tokens": 19802, "duration_seconds": 55.6},
+        {"eval_name": "update-existing-with-gotchas", "pass_rate": 1.0, "passed": 6, "total": 6, "tokens": 18997, "duration_seconds": 48.4},
+        {"eval_name": "monorepo-subdirectory", "pass_rate": 1.0, "passed": 6, "total": 6, "tokens": 21718, "duration_seconds": 71.4}
+      ],
+      "aggregate": {"mean_pass_rate": 0.917, "stddev_pass_rate": 0.144, "mean_tokens": 20172, "mean_duration_seconds": 58.5}
+    }
+  ],
+  "delta": {"pass_rate": "+4.2%", "tokens": "+20.1%", "duration": "+29.1%"},
+  "analysis": [
+    "The 'no-obvious-filler' assertion still fails for with_skill on eval 0 — the model outputs 'npm install' in the Setup section despite the updated example no longer showing install commands. The example change alone was insufficient; the model independently treats Setup as a special case where install instructions feel necessary. The 'What NOT to include' section already says 'Don't write run npm install to install dependencies' but the model ignores it in practice. Stronger language or a more prominent placement may be needed.",
+    "Removing 'bun install' from the SKILL.md example did NOT regress any other assertions. All previously passing assertions still pass. The example change was safe.",
+    "Eval 1 (update existing) with_skill remains leaner (32 lines) vs without_skill (47 lines). The without_skill version duplicates gotchas — same information appears both inline and in a separate Gotchas section. The skill's 'be lean' principle prevents this duplication.",
+    "Eval 2 (monorepo) outputs are nearly identical between with_skill and without_skill. Both configs produce the same structure and content. The fixture's existing CLAUDE.md already contained the token rotation info from previous iteration runs. This makes eval 2 non-discriminating — it passes regardless of skill presence.",
+    "Token overhead dropped from +25.1% (iter-3) to +20.1%. Duration overhead dropped from +44.4% to +29.1%. Both improvements are likely run-to-run variance rather than a trend from the example change.",
+    "The with_skill output for eval 0 is identical to iteration-3 (same 70 lines, same structure). This confirms the model cached/regenerated the same output despite the example change — the npm install line is a model behavior issue, not an example-following issue."
+  ]
+}

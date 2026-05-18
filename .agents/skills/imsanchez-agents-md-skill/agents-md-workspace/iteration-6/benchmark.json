@@ -1,0 +1,33 @@
+{
+  "skill_name": "agents-md",
+  "iteration": 6,
+  "configs": [
+    {
+      "name": "with_skill",
+      "evals": [
+        {"eval_name": "new-project-from-scratch", "pass_rate": 0.889, "passed": 8, "total": 9, "tokens": 23259, "duration_seconds": 65.9},
+        {"eval_name": "update-existing-with-gotchas", "pass_rate": 1.0, "passed": 7, "total": 7, "tokens": 20768, "duration_seconds": 38.4},
+        {"eval_name": "monorepo-subdirectory", "pass_rate": 1.0, "passed": 7, "total": 7, "tokens": 23617, "duration_seconds": 76.8}
+      ],
+      "aggregate": {"mean_pass_rate": 0.963, "stddev_pass_rate": 0.064, "mean_tokens": 22548, "mean_duration_seconds": 60.4}
+    },
+    {
+      "name": "without_skill",
+      "evals": [
+        {"eval_name": "new-project-from-scratch", "pass_rate": 0.667, "passed": 6, "total": 9, "tokens": 19198, "duration_seconds": 50.5},
+        {"eval_name": "update-existing-with-gotchas", "pass_rate": 1.0, "passed": 7, "total": 7, "tokens": 18202, "duration_seconds": 34.6},
+        {"eval_name": "monorepo-subdirectory", "pass_rate": 1.0, "passed": 7, "total": 7, "tokens": 18334, "duration_seconds": 44.7}
+      ],
+      "aggregate": {"mean_pass_rate": 0.889, "stddev_pass_rate": 0.192, "mean_tokens": 18578, "mean_duration_seconds": 43.3}
+    }
+  ],
+  "delta": {"pass_rate": "+7.4%", "tokens": "+21.4%", "duration": "+39.5%"},
+  "analysis": [
+    "Clean fixtures reveal the real gap: with_skill 96.3% vs without_skill 88.9% (+7.4%), up from the misleading +4.2% in iterations 3-5 where contaminated fixtures made evals 1 and 2 non-discriminating.",
+    "Eval 0 (new project from scratch) now shows a 22-point gap: with_skill 8/9 (88.9%) vs without_skill 6/9 (66.7%). The new 'under-100-lines' assertion is the biggest discriminator — with_skill produced 60 lines vs without_skill's 138 lines. The 'no-obvious-filler' assertion also discriminates: with_skill omits npm install entirely, without_skill includes it with a standalone code block.",
+    "The 'no-obvious-filler' assertion now PASSES for with_skill (first time across all iterations). With clean fixtures, the model no longer copies npm install from a pre-existing AGENTS.md. The skill's instruction to avoid filler is finally working when creating from scratch.",
+    "The 'uses-list-format' assertion still fails for with_skill when creating from scratch. The model defaults to ```bash code blocks for commands even though the skill example uses bullet format. This may require explicit instruction in the skill body, not just an example.",
+    "Evals 1 and 2 pass 100% for both configs, but with_skill produces notably leaner outputs: eval 1 with_skill is 27 lines vs without_skill 40 lines (the without_skill includes a code snippet example). Eval 2 with_skill is 32 lines vs without_skill 43 lines. Tighter line count assertions (e.g., under-35-lines) could capture this difference.",
+    "Token overhead is stable at ~21%, similar to previous iterations. Duration overhead at ~39% is within normal variance."
+  ]
+}

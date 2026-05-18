@@ -1,0 +1,14 @@
+{
+  "eval_id": 0,
+  "config": "without_skill",
+  "expectations": [
+    {"text": "An AGENTS.md file exists in the outputs directory", "passed": true, "evidence": "File exists, 115 lines"},
+    {"text": "The file contains a section describing the project's directory structure", "passed": true, "evidence": "Codebase Structure section with tree diagram + Architecture subsection"},
+    {"text": "The file includes build and test commands", "passed": true, "evidence": "Build and Run, Testing, Linting sections"},
+    {"text": "The file mentions the key technologies", "passed": true, "evidence": "Project Overview lists full stack"},
+    {"text": "The file mentions database migration or seeding commands", "passed": true, "evidence": "Database Setup subsection with db:migrate, db:seed, db:studio"},
+    {"text": "The file is under 300 lines", "passed": true, "evidence": "115 lines"},
+    {"text": "The file does not contain generic filler", "passed": false, "evidence": "Line 11: 'npm install'"},
+    {"text": "Commands are formatted as bullet list items", "passed": false, "evidence": "All commands in ```bash code blocks throughout"}
+  ]
+}

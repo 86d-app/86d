@@ -223,7 +223,7 @@ npx turbo-ignore --task=test
 
 - name: Build
   if: steps.turbo-ignore.outcome == 'failure'  # changes detected
-  run: bun run build
+  run: pnpm build
 ```
 
 ## Comparison Depth

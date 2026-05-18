@@ -1,0 +1,14 @@
+{
+  "eval_id": 0,
+  "config": "without_skill",
+  "expectations": [
+    {"text": "An AGENTS.md file exists in the outputs directory", "passed": true, "evidence": "File exists, 119 lines"},
+    {"text": "The file contains a section describing the project's directory structure", "passed": true, "evidence": "Codebase Structure section (lines 62-75) with tree diagram showing src/api/, src/workers/, src/shared/"},
+    {"text": "The file includes build and test commands", "passed": true, "evidence": "Build & Run section with npm run dev, npm run build. Testing section with npm test, npm run test:ci"},
+    {"text": "The file mentions the key technologies", "passed": true, "evidence": "Overview: 'Built on Express, Prisma (database ORM), BullMQ (job queues), and Redis'"},
+    {"text": "The file mentions database migration or seeding commands", "passed": true, "evidence": "Database Setup section lines 23-26: npm run db:migrate, npm run db:seed"},
+    {"text": "The file is under 300 lines", "passed": true, "evidence": "119 lines"},
+    {"text": "The file does not contain generic filler", "passed": false, "evidence": "Line 18: 'npm install' in its own code block under 'Install Dependencies' heading. Lines 30-33: 'npm run dev' in its own code block. Lines 38-40: 'npm run build' in its own code block. Verbose headings for simple commands."},
+    {"text": "Commands are formatted as bullet list items rather than headings with code blocks", "passed": false, "evidence": "Commands use heading + code block format throughout: '### Install Dependencies' + code block, '### Start Development Server' + code block, '### Build for Production' + code block"}
+  ]
+}

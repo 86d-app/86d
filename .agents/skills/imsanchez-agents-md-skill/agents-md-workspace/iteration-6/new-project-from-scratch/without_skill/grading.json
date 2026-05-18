@@ -1,0 +1,15 @@
+{
+  "eval_id": 0,
+  "config": "without_skill",
+  "expectations": [
+    {"text": "An AGENTS.md file exists in the outputs directory", "passed": true, "evidence": "File exists, 138 lines"},
+    {"text": "The file contains a section describing the project's directory structure", "passed": true, "evidence": "Repository Structure section (lines 18-33) with tree diagram and descriptions"},
+    {"text": "The file includes build and test commands", "passed": true, "evidence": "Build and Development section with build, dev, database commands. Testing section (lines 81-89)."},
+    {"text": "The file mentions the key technologies", "passed": true, "evidence": "Tech Stack section (lines 8-16): TypeScript, Express, Prisma, BullMQ/ioredis, Zod, Biome, Vitest"},
+    {"text": "The file mentions database migration or seeding commands", "passed": true, "evidence": "Database Commands section (lines 71-77): db:migrate, db:seed, db:studio"},
+    {"text": "The file is under 100 lines", "passed": false, "evidence": "138 lines — verbose, with separate headings and code blocks for each command"},
+    {"text": "The file does not contain generic filler", "passed": false, "evidence": "Line 52: standalone 'npm install' code block. Line 58: 'npm run build' with 'This runs tsc to compile TypeScript to JavaScript' explanation. Line 66: 'npm run dev' with verbose description. Multiple obvious commands given their own headings."},
+    {"text": "Commands are formatted as bullet list items rather than headings with code blocks", "passed": false, "evidence": "Uses heading + code block format throughout: '### Install Dependencies' + code block, '### Build' + code block, '### Run in Development Mode' + code block"},
+    {"text": "The file includes at least one project-specific gotcha or convention discovered from reading the source code", "passed": true, "evidence": "Line 38: sync-worker processes jobs 'inside a Prisma transaction'. Line 39: 'Singleton instances (Redis connection, Prisma client) shared across API and workers'. Architecture patterns surfaced from reading source."}
+  ]
+}

@@ -25,7 +25,7 @@ npx turbo-ignore
 Or install globally in your project:
 
 ```bash
-bun add -d turbo-ignore
+pnpm add -D turbo-ignore
 ```
 
 ### Setup in Vercel

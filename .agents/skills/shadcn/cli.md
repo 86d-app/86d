@@ -2,13 +2,13 @@
 
 Configuration is read from `components.json`.
 
-> **IMPORTANT:** Always run commands using the project's package runner: `npx shadcn@latest` or `bunx --bun shadcn@latest`. Check `packageManager` from project context to choose the right one. Examples below use `bunx --bun shadcn@latest` for Bun projects.
+> **IMPORTANT:** Always run commands using the project's package runner: `npx shadcn@latest`, `pnpm dlx shadcn@latest`, or `bunx --bun shadcn@latest`. Check `packageManager` from project context to choose the right one. Examples below use `npx shadcn@latest` but substitute the correct runner for the project.
 
 > **IMPORTANT:** Only use the flags documented below. Do not invent or guess flags — if a flag isn't listed here, it doesn't exist. The CLI auto-detects the package manager from the project's lockfile; there is no `--package-manager` flag.
 
 ## Contents
 
-- Commands: init, add (dry-run, smart merge), search, view, docs, info, build
+- Commands: init, apply, add (dry-run, smart merge), search, view, docs, info, build
 - Templates: next, vite, start, react-router, astro
 - Presets: named, code, URL formats and fields
 - Switching presets
@@ -41,6 +41,24 @@ Initializes shadcn/ui in an existing project or creates a new project (when `--n
 | `--no-monorepo`         |       | Skip the monorepo prompt                                  | —       |
 
 `npx shadcn@latest create` is an alias for `npx shadcn@latest init`.
+
+### `apply` — Apply a preset to an existing project
+
+```bash
+npx shadcn@latest apply [preset] [options]
+```
+
+Applies a preset to an existing project, overwriting preset-driven config, fonts, CSS variables, and detected UI components.
+
+| Flag                | Short | Description                                | Default |
+| ------------------- | ----- | ------------------------------------------ | ------- |
+| `--preset <preset>` | —     | Preset configuration (named, code, or URL) | —       |
+| `--yes`             | `-y`  | Skip confirmation prompt                   | `false` |
+| `--cwd <cwd>`       | `-c`  | Working directory                          | current |
+| `--silent`          | `-s`  | Mute output                                | `false` |
+
+`[preset]` is a shorthand for `--preset <preset>`. If both are provided, they must match.
+If no preset is provided, the CLI offers to open the custom preset builder on `ui.shadcn.com/create`.
 
 ### `add` — Add components
 
@@ -181,7 +199,7 @@ Displays project info and `components.json` configuration. Run this first to dis
 | `tailwindConfigFile` | `string`  | Path to the Tailwind config file                                   |
 | `tailwindCssFile`    | `string`  | Path to the global CSS file                                        |
 | `aliasPrefix`        | `string`  | Import alias prefix (e.g. `@`, `~`, `@/`)                          |
-| `packageManager`     | `string`  | Detected package manager (`npm`, `yarn`, `bun`)            |
+| `packageManager`     | `string`  | Detected package manager (`npm`, `pnpm`, `yarn`, `bun`)            |
 
 **Components.json fields:**
 
@@ -240,16 +258,19 @@ All templates support monorepo scaffolding via the `--monorepo` flag. When passe
 
 Three ways to specify a preset via `--preset`:
 
-1. **Named:** `--preset base-nova` or `--preset radix-nova`
-2. **Code:** `--preset a2r6bw` (base62 string, starts with lowercase `a`)
+1. **Named:** `--preset nova` or `--preset lyra`
+2. **Code:** `--preset a2r6bw` (version-prefixed base62 string, e.g. `a2r6bw` or `b0`)
 3. **URL:** `--preset "https://ui.shadcn.com/init?base=radix&style=nova&..."`
 
 > **IMPORTANT:** Never try to decode, fetch, or resolve preset codes manually. Preset codes are opaque — pass them directly to `npx shadcn@latest init --preset <code>` and let the CLI handle resolution.
+> Use `npx shadcn@latest apply --preset <code>` when overwriting an existing project's preset.
 
 ## Switching Presets
 
-Ask the user first: **reinstall**, **merge**, or **skip** existing components?
+Ask the user first: **overwrite**, **merge**, or **skip** existing components?
 
-- **Re-install** → `npx shadcn@latest init --preset <code> --force --reinstall`. Overwrites all component files with the new preset styles. Use when the user hasn't customized components.
+- **Overwrite / Re-install** → `npx shadcn@latest apply --preset <code>`. Overwrites all detected component files with the new preset styles. Use when the user hasn't customized components.
 - **Merge** → `npx shadcn@latest init --preset <code> --force --no-reinstall`, then run `npx shadcn@latest info` to get the list of installed components and use the [smart merge workflow](./SKILL.md#updating-components) to update them one by one, preserving local changes. Use when the user has customized components.
 - **Skip** → `npx shadcn@latest init --preset <code> --force --no-reinstall`. Only updates config and CSS variables, leaves existing components as-is.
+
+Always run preset commands inside the user's project directory. `apply` only works in an existing project with a `components.json` file. The CLI automatically preserves the current base (`base` vs `radix`) from `components.json`. If you must use a scratch/temp directory (e.g. for `--dry-run` comparisons), pass `--base <current-base>` explicitly — preset codes do not encode the base.

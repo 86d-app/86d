@@ -1,0 +1,15 @@
+{
+  "eval_id": 0,
+  "config": "with_skill",
+  "expectations": [
+    {"text": "An AGENTS.md file exists in the outputs directory", "passed": true, "evidence": "File exists, 60 lines"},
+    {"text": "The file contains a section describing the project's directory structure", "passed": true, "evidence": "Project overview section (lines 6-9): src/api/, src/workers/, src/shared/ with purpose annotations"},
+    {"text": "The file includes build and test commands", "passed": true, "evidence": "Development section (lines 21-28) and Testing section (lines 40-45) with all npm scripts"},
+    {"text": "The file mentions the key technologies", "passed": true, "evidence": "Tech stack section (lines 12-19): TypeScript, Express, Prisma, Redis/ioredis, BullMQ, Zod, Biome, Vitest"},
+    {"text": "The file mentions database migration or seeding commands", "passed": true, "evidence": "Database section (lines 30-38): db:migrate, db:seed, db:studio with note about ordering"},
+    {"text": "The file is under 100 lines", "passed": true, "evidence": "60 lines — lean and focused"},
+    {"text": "The file does not contain generic filler", "passed": true, "evidence": "No 'npm install' anywhere. No verbose explanations of obvious commands. Every line adds value."},
+    {"text": "Commands are formatted as bullet list items rather than headings with code blocks", "passed": false, "evidence": "Development (lines 23-28), Database (lines 32-36), and Testing (lines 42-45) all use ```bash code blocks, not bullet list items"},
+    {"text": "The file includes at least one project-specific gotcha or convention discovered from reading the source code", "passed": true, "evidence": "Architecture notes (lines 47-52): $transaction atomicity pattern in sync worker, centralized Redis singleton in shared/redis.ts, REDIS_URL default. Conventions (lines 54-59): Biome not ESLint, Zod for validation."}
+  ]
+}

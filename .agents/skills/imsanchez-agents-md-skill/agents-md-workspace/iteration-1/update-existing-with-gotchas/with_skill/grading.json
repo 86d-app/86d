@@ -1,0 +1,12 @@
+{
+  "eval_id": 1,
+  "config": "with_skill",
+  "expectations": [
+    {"text": "An updated AGENTS.md file exists in the outputs directory", "passed": true, "evidence": "File exists at outputs/AGENTS.md, 36 lines"},
+    {"text": "The original content is preserved — the Architecture, Tech stack, and Development sections still exist with their original information", "passed": true, "evidence": "Lines 1-21 match the original file exactly: title, Architecture, Tech stack, Build, and Test sections all intact"},
+    {"text": "The file documents the Redis connection pool leak issue — mentioning redis.quit() and test teardown", "passed": true, "evidence": "Gotchas bullet: 'Always call redis.quit() in your test teardown (e.g. afterAll). The ioredis connection pool stays open after tests finish, which causes vitest to hang indefinitely'"},
+    {"text": "The file documents the task_assignments DB trigger that syncs to search_index, warning against direct SQL", "passed": true, "evidence": "Gotchas bullet documents the trigger and warns: 'Direct SQL inserts bypass the trigger's expected Prisma lifecycle — always use Prisma to write to this table'"},
+    {"text": "The update is additive — new content is added without rewriting or significantly restructuring the existing sections", "passed": true, "evidence": "Original 22 lines preserved verbatim, Gotchas section appended at end"},
+    {"text": "The file is under 300 lines", "passed": true, "evidence": "36 lines"}
+  ]
+}

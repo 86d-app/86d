@@ -1,0 +1,89 @@
+{
+  "skill_name": "agents-md",
+  "iteration": 1,
+  "configs": [
+    {
+      "name": "with_skill",
+      "evals": [
+        {
+          "eval_name": "new-project-from-scratch",
+          "pass_rate": 1.0,
+          "passed": 7,
+          "total": 7,
+          "tokens": 27894,
+          "duration_seconds": 97.6
+        },
+        {
+          "eval_name": "update-existing-with-gotchas",
+          "pass_rate": 1.0,
+          "passed": 6,
+          "total": 6,
+          "tokens": 21588,
+          "duration_seconds": 43.6
+        },
+        {
+          "eval_name": "monorepo-subdirectory",
+          "pass_rate": 1.0,
+          "passed": 6,
+          "total": 6,
+          "tokens": 25803,
+          "duration_seconds": 100.9
+        }
+      ],
+      "aggregate": {
+        "mean_pass_rate": 1.0,
+        "stddev_pass_rate": 0.0,
+        "mean_tokens": 25095,
+        "mean_duration_seconds": 80.7
+      }
+    },
+    {
+      "name": "without_skill",
+      "evals": [
+        {
+          "eval_name": "new-project-from-scratch",
+          "pass_rate": 0.857,
+          "passed": 6,
+          "total": 7,
+          "tokens": 18770,
+          "duration_seconds": 43.8
+        },
+        {
+          "eval_name": "update-existing-with-gotchas",
+          "pass_rate": 1.0,
+          "passed": 6,
+          "total": 6,
+          "tokens": 18357,
+          "duration_seconds": 36.5
+        },
+        {
+          "eval_name": "monorepo-subdirectory",
+          "pass_rate": 1.0,
+          "passed": 6,
+          "total": 6,
+          "tokens": 20043,
+          "duration_seconds": 48.8
+        }
+      ],
+      "aggregate": {
+        "mean_pass_rate": 0.952,
+        "stddev_pass_rate": 0.082,
+        "mean_tokens": 19057,
+        "mean_duration_seconds": 43.0
+      }
+    }
+  ],
+  "delta": {
+    "pass_rate": "+4.8%",
+    "tokens": "+31.7%",
+    "duration": "+87.7%"
+  },
+  "analysis": [
+    "The skill achieves 100% pass rate across all 3 evals vs 95.2% for baseline. The baseline failed on the 'no filler' assertion in eval 0 (included 'npm install' instruction).",
+    "The with-skill outputs are notably more concise: 65 lines vs 102 for eval 0. The skill's <300 line guidance and 'don't state the obvious' instruction appear to be working.",
+    "Eval 1 (update existing) is non-discriminating — both versions passed all assertions. This is expected since the task is fairly constrained and the user provided very specific instructions.",
+    "Eval 2 (monorepo) is also non-discriminating on assertions, but qualitative differences exist: the with-skill version (27 lines) includes turborepo filter syntax, while the baseline (22 lines) uses only npm commands.",
+    "The skill costs more tokens (~32% more) and takes roughly 2x longer due to reading the skill file and best-practices reference. This overhead is acceptable given the quality improvements, especially for the from-scratch use case.",
+    "The most impactful skill guidance appears to be: (1) the 'no filler' instruction preventing boilerplate, (2) the monorepo subdirectory handling, and (3) the WHAT/WHY/HOW framework producing better-organized output."
+  ]
+}

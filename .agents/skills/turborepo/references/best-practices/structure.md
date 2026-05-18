@@ -4,16 +4,16 @@ Detailed guidance on structuring a Turborepo monorepo.
 
 ## Workspace Configuration
 
-### Bun (Recommended)
+### pnpm (Recommended)
 
 ```yaml
-// package.json
-{
-  "workspaces": ["apps/*", "packages/*"]
-}
+# pnpm-workspace.yaml
+packages:
+  - "apps/*"
+  - "packages/*"
 ```
 
-### npm/yarn
+### npm/yarn/bun
 
 ```json
 // package.json
@@ -28,7 +28,7 @@ Detailed guidance on structuring a Turborepo monorepo.
 {
   "name": "my-monorepo",
   "private": true,
-  "packageManager": "bun@1.3.6",
+  "packageManager": "pnpm@9.0.0",
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
@@ -95,7 +95,34 @@ Package tasks enable Turborepo to:
 
 ```json
 {
-  "$schema": "https://v2-8-15-canary-10.turborepo.dev/schema.json",
+  "$schema": "https://v2-9-15-canary-3.turborepo.dev/schema.json",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
+    },
+    "lint": {},
+    "test": {
+      "dependsOn": ["build"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    }
+  }
+}
+```
+
+With `futureFlags.globalConfiguration`, global settings move under a `global` key:
+
+```json
+{
+  "$schema": "https://v2-9-15-canary-3.turborepo.dev/schema.json",
+  "futureFlags": { "globalConfiguration": true },
+  "global": {
+    "inputs": ["tsconfig.json"],
+    "env": ["CI"]
+  },
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
@@ -120,10 +147,12 @@ Package tasks enable Turborepo to:
 You can group packages by adding more workspace paths:
 
 ```yaml
-// package.json
-{
-  "workspaces": ["apps/*", "packages/*", "packages/config/*", "packages/features/*"]
-}
+# pnpm-workspace.yaml
+packages:
+  - "apps/*"
+  - "packages/*"
+  - "packages/config/*" # Grouped configs
+  - "packages/features/*" # Feature packages
 ```
 
 This allows:

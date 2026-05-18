@@ -1,0 +1,33 @@
+{
+  "skill_name": "agents-md",
+  "iteration": 5,
+  "configs": [
+    {
+      "name": "with_skill",
+      "evals": [
+        {"eval_name": "new-project-from-scratch", "pass_rate": 0.875, "passed": 7, "total": 8, "tokens": 25680, "duration_seconds": 82.7},
+        {"eval_name": "update-existing-with-gotchas", "pass_rate": 1.0, "passed": 6, "total": 6, "tokens": 22452, "duration_seconds": 71.8},
+        {"eval_name": "monorepo-subdirectory", "pass_rate": 1.0, "passed": 6, "total": 6, "tokens": 25232, "duration_seconds": 94.8}
+      ],
+      "aggregate": {"mean_pass_rate": 0.958, "stddev_pass_rate": 0.072, "mean_tokens": 24455, "mean_duration_seconds": 83.1}
+    },
+    {
+      "name": "without_skill",
+      "evals": [
+        {"eval_name": "new-project-from-scratch", "pass_rate": 0.75, "passed": 6, "total": 8, "tokens": 20051, "duration_seconds": 62.4},
+        {"eval_name": "update-existing-with-gotchas", "pass_rate": 1.0, "passed": 6, "total": 6, "tokens": 18932, "duration_seconds": 39.0},
+        {"eval_name": "monorepo-subdirectory", "pass_rate": 1.0, "passed": 6, "total": 6, "tokens": 20711, "duration_seconds": 58.7}
+      ],
+      "aggregate": {"mean_pass_rate": 0.917, "stddev_pass_rate": 0.144, "mean_tokens": 19898, "mean_duration_seconds": 53.4}
+    }
+  ],
+  "delta": {"pass_rate": "+4.2%", "tokens": "+22.9%", "duration": "+55.6%"},
+  "analysis": [
+    "Scores are identical to iterations 3 and 4: with_skill 95.8% vs without_skill 91.7%. The example content change (bun/Express to pnpm/Turborepo) had zero effect on model behavior for the npm-based test fixtures. This confirms the 'no-filler' assertion failure is a model behavior issue, not an example-following issue.",
+    "The with_skill eval 0 output is byte-for-byte identical across iterations 3, 4, and 5 (same 70 lines, same npm install on line 29). The model has a strong prior that Setup sections should include install commands regardless of what the skill's example shows.",
+    "Eval 1 outputs are now identical between with_skill and without_skill (both 32 lines, same content). The fixture already contains both gotchas from previous iteration runs, making this eval non-discriminating. The fixtures need to be reset to clean state for meaningful comparison.",
+    "Eval 2 outputs are also nearly identical between configs — same fixture contamination issue. Both produce the same 39-line auth CLAUDE.md with the same structure and content.",
+    "The only consistently discriminating assertion is 'uses-list-format' on eval 0: with_skill uses bullet lists for commands, without_skill uses heading + code block format. This has been stable across all iterations.",
+    "Recommendation: To make the 'no-filler' assertion pass, the skill would need to explicitly call out install commands in the writing rules (not just the example). Alternatively, accept that 7/8 on eval 0 is the skill's ceiling for this assertion."
+  ]
+}
