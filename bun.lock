@@ -165,7 +165,7 @@
         "mobx": "6.15.3",
         "mobx-react-lite": "4.1.1",
         "next": "catalog:next",
-        "next-themes": "0.4.6",
+        "next-themes": "catalog:next",
         "nuqs": "2.8.9",
         "react": "catalog:react",
         "react-day-picker": "9.14.0",
@@ -182,15 +182,15 @@
       },
       "devDependencies": {
         "@biomejs/biome": "catalog:",
-        "@tailwindcss/postcss": "4.3.0",
+        "@tailwindcss/postcss": "catalog:",
         "@types/mdx": "catalog:mdx",
         "@types/next": "catalog:next",
         "@types/node": "catalog:node",
         "@types/react": "catalog:react",
         "@types/react-dom": "catalog:react",
-        "postcss": "8.5.14",
+        "postcss": "catalog:",
         "raw-loader": "4.0.2",
-        "tailwindcss": "4.3.0",
+        "tailwindcss": "catalog:",
         "typescript": "catalog:",
       },
     },
@@ -296,8 +296,8 @@
         "vitest": "catalog:vite",
       },
       "peerDependencies": {
-        "next": "16.2.6",
-        "react": "19.2.6",
+        "next": "catalog:next",
+        "react": "catalog:react",
       },
     },
     "modules/audit-log": {
@@ -357,8 +357,8 @@
         "vitest": "catalog:vite",
       },
       "peerDependencies": {
-        "next": "16.2.6",
-        "react": "19.2.6",
+        "next": "catalog:next",
+        "react": "catalog:react",
       },
     },
     "modules/braintree": {
@@ -431,8 +431,8 @@
         "vitest": "catalog:vite",
       },
       "peerDependencies": {
-        "next": "16.2.6",
-        "react": "19.2.6",
+        "next": "catalog:next",
+        "react": "catalog:react",
       },
     },
     "modules/checkout": {
@@ -646,8 +646,8 @@
         "vitest": "catalog:vite",
       },
       "peerDependencies": {
-        "next": "16.2.6",
-        "react": "19.2.6",
+        "next": "catalog:next",
+        "react": "catalog:react",
       },
     },
     "modules/forms": {
@@ -861,8 +861,8 @@
         "vitest": "catalog:vite",
       },
       "peerDependencies": {
-        "next": "16.2.6",
-        "react": "19.2.6",
+        "next": "catalog:next",
+        "react": "catalog:react",
       },
     },
     "modules/multi-currency": {
@@ -1033,8 +1033,8 @@
         "vitest": "catalog:vite",
       },
       "peerDependencies": {
-        "next": "16.2.6",
-        "react": "19.2.6",
+        "next": "catalog:next",
+        "react": "catalog:react",
       },
     },
     "modules/price-lists": {
@@ -1108,8 +1108,8 @@
         "vitest": "catalog:vite",
       },
       "peerDependencies": {
-        "next": "16.2.6",
-        "react": "19.2.6",
+        "next": "catalog:next",
+        "react": "catalog:react",
       },
     },
     "modules/qr-code": {
@@ -1643,7 +1643,7 @@
         "vitest": "catalog:vite",
       },
       "peerDependencies": {
-        "next": "16.2.6",
+        "next": "catalog:next",
       },
       "optionalPeers": [
         "next",
@@ -1691,7 +1691,7 @@
         "vitest": "catalog:vite",
       },
       "peerDependencies": {
-        "react": "19.2.6",
+        "react": "catalog:react",
       },
       "optionalPeers": [
         "react",
@@ -1727,7 +1727,7 @@
         "vitest": "catalog:vite",
       },
       "peerDependencies": {
-        "react": "19.2.6",
+        "react": "catalog:react",
       },
     },
     "packages/env": {

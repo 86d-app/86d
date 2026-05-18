@@ -37,7 +37,7 @@
 		"vitest": "catalog:vite"
 	},
 	"peerDependencies": {
-		"next": "16.2.6"
+		"next": "catalog:next"
 	},
 	"peerDependenciesMeta": {
 		"next": {
