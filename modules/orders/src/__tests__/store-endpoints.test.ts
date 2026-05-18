@@ -301,6 +301,25 @@ describe("store endpoint: get order", () => {
 		}
 	});
 
+	it("includes storeCreditAmount in order response", async () => {
+		const items = [{ productId: "p1", name: "Widget", price: 5000, quantity: 1 }];
+		const subtotal = 5000;
+		const order = await controller.create({
+			customerId: "cust_1",
+			subtotal,
+			total: 3000,
+			storeCreditAmount: 2000,
+			items,
+		});
+		const result = await simulateGetOrder(controller, order.id, "cust_1");
+
+		expect("order" in result).toBe(true);
+		if ("order" in result) {
+			expect(result.order.storeCreditAmount).toBe(2000);
+			expect(result.order.total).toBe(3000);
+		}
+	});
+
 	it("returns 404 when order belongs to a different customer", async () => {
 		const order = await seedOrder(controller, { customerId: "cust_1" });
 		const result = await simulateGetOrder(controller, order.id, "cust_other");
