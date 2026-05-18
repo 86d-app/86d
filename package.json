@@ -54,7 +54,7 @@
 		"@types/pg": "8.20.0",
 		"@vitest/coverage-v8": "4.1.6",
 		"dotenv-cli": "catalog:",
-		"pg": "8.20.0",
+		"pg": "8.21.0",
 		"sharp": "0.34.5",
 		"turbo": "2.9.14",
 		"type-fest": "catalog:",
@@ -100,7 +100,7 @@
 			"next-themes": "0.4.6"
 		},
 		"node": {
-			"@types/node": "25.8.0"
+			"@types/node": "25.9.0"
 		},
 		"prisma": {
 			"@prisma/client": "7.8.0",
