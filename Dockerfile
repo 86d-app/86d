@@ -7,7 +7,7 @@
 # ============================================================================
 
 # ── Stage 1: Install dependencies ──────────────────────────────────────────
-FROM oven/bun:1.3.6 AS deps
+FROM oven/bun:1.3.11 AS deps
 WORKDIR /app
 
 ENV NODE_ENV=production
@@ -52,7 +52,7 @@ RUN for attempt in 1 2 3; do \
     exit 1
 
 # ── Stage 2: Build ─────────────────────────────────────────────────────────
-FROM oven/bun:1.3.6 AS builder
+FROM oven/bun:1.3.11 AS builder
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
@@ -79,14 +79,14 @@ RUN bun run build:store
 
 # ── Stage 3: Install Prisma CLI for runtime migrations ─────────────────────
 # Separate stage so we can copy node_modules/prisma into the slim runner
-FROM oven/bun:1.3.6 AS prisma-installer
+FROM oven/bun:1.3.11 AS prisma-installer
 WORKDIR /app
 RUN echo '{"dependencies":{"prisma":"7.3.0"}}' > package.json && \
     bun install --ignore-scripts
 
 # ── Stage 3b: Full `pg` tree for seed.ts ───────────────────────────────────
 # Standalone image + a lone `pg` copy is missing hoisted deps (e.g. pg-types).
-FROM oven/bun:1.3.6 AS pg-export
+FROM oven/bun:1.3.11 AS pg-export
 WORKDIR /app
 RUN echo '{"dependencies":{"pg":"8.20.0"}}' > package.json && bun install --ignore-scripts
 RUN mkdir -p /export && cd node_modules && \
@@ -96,7 +96,7 @@ RUN mkdir -p /export && cd node_modules && \
     done
 
 # ── Stage 4: Production runtime ────────────────────────────────────────────
-FROM oven/bun:1.3.6-slim AS runner
+FROM oven/bun:1.3.11-slim AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
