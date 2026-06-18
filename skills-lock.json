@@ -23,7 +23,7 @@
       "source": "anthropics/skills",
       "sourceType": "github",
       "skillPath": "skills/claude-api/SKILL.md",
-      "computedHash": "56eb11d68a601c8ba87750e6bdda44a4569a1fe8f66057d2dc5d75843b23889f"
+      "computedHash": "9f19be17e56542510e93d2943227c776ecbbe978307fc43d660dd04b346ef395"
     },
     "deploy-to-vercel": {
       "source": "vercel-labs/agent-skills",
@@ -53,7 +53,7 @@
       "source": "anthropics/skills",
       "sourceType": "github",
       "skillPath": "skills/frontend-design/SKILL.md",
-      "computedHash": "063a0e6448123cd359ad0044cc46b0e490cc7964d45ef4bb9fd842bd2ffbca67"
+      "computedHash": "4eabc66183767153e404b39d1b839b1c37f2d82d86f0a0d7e880a579d8d62336"
     },
     "imsanchez/agents-md-skill": {
       "source": "imsanchez/agents-md-skill",
@@ -89,7 +89,7 @@
       "source": "prisma/skills",
       "sourceType": "github",
       "skillPath": "prisma-cli/SKILL.md",
-      "computedHash": "b9d9314e3716af725997843c5026ba0e258fb2d27a986190bf2ad53be67b72b9"
+      "computedHash": "1cfdc0011df8699a2ece587f229a1e892df2a9a3eec40b5407492cb4c6570e95"
     },
     "prisma-client-api": {
       "source": "prisma/skills",
@@ -137,7 +137,7 @@
       "source": "shadcn/ui",
       "sourceType": "github",
       "skillPath": "skills/shadcn/SKILL.md",
-      "computedHash": "80a6226e78f6d1fe464214ae0ef449d49d8ffaa3e7704f011e9b418c678ad4d1"
+      "computedHash": "ac9d0d69caac7de1d1e5647f3db3bcd2f13af355d6b3a78780fbf7fc80e8dca0"
     },
     "skill-creator": {
       "source": "anthropics/skills",
@@ -167,13 +167,13 @@
       "source": "vercel/turborepo",
       "sourceType": "github",
       "skillPath": "skills/turborepo/SKILL.md",
-      "computedHash": "6a23ee82918e35f8848b6fc2ccbea699d740a30fee65f288201adb4e98bf3827"
+      "computedHash": "b7c3165ae67a2892d6195a5b2cba15c8d96341f5c64ddd0d3ce4225c94a2ae83"
     },
     "vercel-cli": {
       "source": "vercel/vercel",
       "sourceType": "github",
       "skillPath": "skills/vercel-cli/SKILL.md",
-      "computedHash": "c84063e620245370062f39471f3a2dc6452542a0b49ba0ed926751be30b08b62"
+      "computedHash": "51828eca03c6039b79443fdb84d017ec14ce6bab106b042da43914ffe837667e"
     },
     "vercel-cli-with-tokens": {
       "source": "vercel-labs/agent-skills",
