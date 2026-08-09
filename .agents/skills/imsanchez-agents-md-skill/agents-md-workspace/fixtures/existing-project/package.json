@@ -1,8 +1,0 @@
-{
-  "name": "taskflow",
-  "scripts": {
-    "build": "tsc",
-    "test": "vitest",
-    "dev": "tsx watch src/index.ts"
-  }
-}
