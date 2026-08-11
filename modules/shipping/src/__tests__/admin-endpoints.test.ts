@@ -735,7 +735,7 @@ describe("admin GET /shipping/settings", () => {
 		expect(result.configured).toBe(false);
 	});
 
-	it("returns status and configured fields when key is present", async () => {
+	it("returns unavailable when only the API key is present", async () => {
 		const endpoint = createGetSettingsEndpoint({
 			easypostApiKey: "EZTKtest_key_abc123",
 		});
@@ -746,8 +746,8 @@ describe("admin GET /shipping/settings", () => {
 			body: {},
 			context: {},
 		})) as { status: string; configured: boolean; apiKeyMasked: string | null };
-		expect(result.configured).toBe(true);
+		expect(result.configured).toBe(false);
 		expect(result.apiKeyMasked).not.toBeNull();
-		expect(["connected", "error"]).toContain(result.status);
+		expect(result.status).toBe("not_configured");
 	});
 });

@@ -1,11 +1,5 @@
-import { createAmazonWebhook } from "./webhooks";
-
-export { createAmazonWebhook };
-
-export function createStoreEndpoints(webhookSecret?: string | undefined) {
-	return {
-		"/amazon/webhooks": createAmazonWebhook(webhookSecret),
-	};
+export function createStoreEndpoints() {
+	return {};
 }
 
-export const storeEndpoints = createStoreEndpoints();
+export const storeEndpoints = {};

@@ -58,6 +58,8 @@ describe("getSettings — status (live verification)", () => {
 			privateKey: "sk_123456789",
 		});
 		expect(result.status).toBe("connected");
+		expect(result.ready).toBe(true);
+		expect(result.webhookVerificationConfigured).toBe(true);
 	});
 
 	it('returns "error" when Braintree API rejects credentials', async () => {
@@ -108,6 +110,8 @@ describe("getSettings — status (live verification)", () => {
 			publicKey: "pk_123456789",
 		});
 		expect(result.status).toBe("not_configured");
+		expect(result.ready).toBe(false);
+		expect(result.webhookVerificationConfigured).toBe(false);
 	});
 
 	it('returns "not_configured" when all keys are missing', async () => {

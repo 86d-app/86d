@@ -11,6 +11,8 @@ interface UberDirectSettings {
 	error?: string | undefined;
 	accountName?: string | undefined;
 	configured: boolean;
+	apiConfigured: boolean;
+	webhookConfigured: boolean;
 	clientIdMasked: string | null;
 	customerIdMasked: string | null;
 }
@@ -317,8 +319,8 @@ export function UberDirectAdmin() {
 
 					{settings?.status === "not_configured" && (
 						<div className="mt-3 rounded-md bg-yellow-50 p-3 text-sm text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300">
-							Add your Uber Direct client ID, client secret, and customer ID to
-							the module configuration to enable delivery integration.
+							Add your Uber Direct client ID, client secret, customer ID, and
+							dedicated webhook signing key to enable delivery integration.
 						</div>
 					)}
 				</SettingsCard>

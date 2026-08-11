@@ -20,7 +20,9 @@ describe("financial safety guards", () => {
 
 	beforeEach(() => {
 		mockData = createMockDataService();
-		controller = createPaymentController(mockData);
+		controller = createPaymentController(mockData, undefined, {
+			allowOfflineForDevelopment: true,
+		});
 	});
 
 	// ── Amount validation ──────────────────────────────────────────────
@@ -413,7 +415,7 @@ describe("financial safety guards", () => {
 			expect(result?.intent.status).toBe("refunded");
 		});
 
-		it("returns existing refund on duplicate providerRefundId", async () => {
+		it("returns null on duplicate providerRefundId", async () => {
 			const mockProvider: PaymentProvider = {
 				createIntent: vi.fn().mockResolvedValue({
 					providerIntentId: "pi_dedup2",
@@ -441,9 +443,9 @@ describe("financial safety guards", () => {
 				amount: 3000,
 			});
 
-			// Should return same refund, not create a new one
-			expect(second?.refund.id).toBe(first?.refund.id);
-			expect(second?.refund.amount).toBe(3000);
+			// A null result tells webhook endpoints not to re-emit a business event.
+			expect(first).not.toBeNull();
+			expect(second).toBeNull();
 
 			// Only one refund record should exist
 			const refunds = await ctrl.listRefunds(intent.id);
@@ -481,7 +483,7 @@ describe("financial safety guards", () => {
 			expect(total).toBe(7000);
 		});
 
-		it("dedup returns original refund even if amount differs in retry", async () => {
+		it("dedup returns null even if amount differs in retry", async () => {
 			const mockProvider: PaymentProvider = {
 				createIntent: vi.fn().mockResolvedValue({
 					providerIntentId: "pi_dedup3",
@@ -496,7 +498,7 @@ describe("financial safety guards", () => {
 			await ctrl.createIntent({ amount: 5000 });
 
 			// First call
-			const first = await ctrl.handleWebhookRefund({
+			await ctrl.handleWebhookRefund({
 				providerIntentId: "pi_dedup3",
 				providerRefundId: "re_same",
 				amount: 3000,
@@ -509,8 +511,7 @@ describe("financial safety guards", () => {
 				amount: 9999,
 			});
 
-			expect(second?.refund.amount).toBe(first?.refund.amount);
-			expect(second?.refund.amount).toBe(3000);
+			expect(second).toBeNull();
 		});
 	});
 

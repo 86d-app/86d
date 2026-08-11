@@ -32,7 +32,20 @@ async function callWebhook(
 	handler: ReturnType<typeof createPayPalWebhook>,
 	request: Request,
 	context?: Record<string, unknown>,
+	autoVerify = true,
 ): Promise<Response> {
+	if (autoVerify) {
+		if (!request.headers.has("paypal-auth-algo")) {
+			const headers = new Headers(request.headers);
+			for (const [name, value] of Object.entries(PAYPAL_HEADERS)) {
+				headers.set(name, value);
+			}
+			request = new Request(request, { headers });
+		}
+		if (!vi.isMockFunction(globalThis.fetch)) {
+			mockPayPalVerification("SUCCESS");
+		}
+	}
 	const h = handler as unknown as Record<string, unknown>;
 	const fn = typeof h.handler === "function" ? h.handler : h;
 	return (fn as CallableFunction)({ request, context }) as Promise<Response>;
@@ -87,7 +100,7 @@ afterEach(() => {
 	vi.restoreAllMocks();
 });
 
-// ── No webhookId (dev mode) ───────────────────────────────────────────────────
+// ── Missing verification configuration ───────────────────────────────────────
 
 describe("createPayPalWebhook — no webhookId configured", () => {
 	const handler = createPayPalWebhook({
@@ -95,24 +108,21 @@ describe("createPayPalWebhook — no webhookId configured", () => {
 		clientSecret: CLIENT_SECRET,
 	});
 
-	it("accepts any request when no webhookId is set", async () => {
+	it("fails closed when no webhookId is set", async () => {
 		const body = JSON.stringify({ event_type: "PAYMENT.CAPTURE.COMPLETED" });
 		const res = await callWebhook(handler, makeRequest(body));
-		expect(res.status).toBe(200);
-		const json = (await res.json()) as { received: boolean; type: string };
-		expect(json.received).toBe(true);
-		expect(json.type).toBe("PAYMENT.CAPTURE.COMPLETED");
+		expect(res.status).toBe(503);
 	});
 
-	it("returns 400 for missing event_type", async () => {
+	it("fails closed before checking event_type", async () => {
 		const body = JSON.stringify({ id: "evt-123" });
 		const res = await callWebhook(handler, makeRequest(body));
-		expect(res.status).toBe(400);
+		expect(res.status).toBe(503);
 	});
 
-	it("returns 400 for invalid JSON body", async () => {
+	it("fails closed before parsing invalid JSON", async () => {
 		const res = await callWebhook(handler, makeRequest("not-json"));
-		expect(res.status).toBe(400);
+		expect(res.status).toBe(503);
 	});
 });
 
@@ -145,7 +155,7 @@ describe("createPayPalWebhook — with webhookId", () => {
 	it("rejects when PayPal transmission headers are missing", async () => {
 		const body = JSON.stringify({ event_type: "PAYMENT.CAPTURE.COMPLETED" });
 		// No PayPal headers — missing all 5 required headers
-		const res = await callWebhook(handler, makeRequest(body));
+		const res = await callWebhook(handler, makeRequest(body), undefined, false);
 		expect(res.status).toBe(401);
 	});
 
@@ -157,6 +167,8 @@ describe("createPayPalWebhook — with webhookId", () => {
 				"paypal-transmission-id": "tx-id-123",
 				// Missing the other 4 headers
 			}),
+			undefined,
+			false,
 		);
 		expect(res.status).toBe(401);
 	});
@@ -211,6 +223,7 @@ describe("createPayPalWebhook — event handling", () => {
 	const handler = createPayPalWebhook({
 		clientId: CLIENT_ID,
 		clientSecret: CLIENT_SECRET,
+		webhookId: WEBHOOK_ID,
 	});
 
 	it("handles PAYMENT.CAPTURE.COMPLETED and emits payment.completed", async () => {

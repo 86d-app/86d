@@ -46,6 +46,9 @@ export const getSettings = createAdminEndpoint(
 
 		return {
 			status,
+			ready: status === "connected" && allKeysPresent,
+			webhookVerificationConfigured:
+				publicKey.length > 0 && privateKey.length > 0,
 			error,
 			merchantIdMasked: merchantId ? maskKey(merchantId) : null,
 			publicKeyMasked: publicKey ? maskKey(publicKey) : null,

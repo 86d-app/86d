@@ -1,6 +1,7 @@
 import { createMockDataService } from "@86d-app/core/test-utils";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createShippingController } from "../service-impl";
+import { createShippingWebhook } from "../store/endpoints/webhook";
 
 /**
  * Tests for the EasyPost tracking webhook handler.
@@ -61,6 +62,215 @@ function makeTrackerEvent(
 	};
 }
 
+async function callWebhook(
+	endpoint: ReturnType<typeof createShippingWebhook>,
+	request: Request,
+	context: Record<string, unknown>,
+): Promise<Response> {
+	const candidate = endpoint as unknown as Record<string, unknown>;
+	const handler =
+		typeof candidate.handler === "function" ? candidate.handler : candidate;
+	return (handler as CallableFunction)({
+		request,
+		context,
+	}) as Promise<Response>;
+}
+
+function currentRfc2822Timestamp(): string {
+	return new Date().toUTCString().replace("GMT", "+0000");
+}
+
+async function makeV2Request(
+	body: string,
+	secret: string,
+	overrides: {
+		timestamp?: string;
+		path?: string;
+		signature?: string | null;
+	} = {},
+): Promise<Request> {
+	const timestamp = overrides.timestamp ?? currentRfc2822Timestamp();
+	const path = overrides.path ?? "/api/shipping/webhook";
+	const digest = await hmacSha256Hex(secret, `${timestamp}POST${path}${body}`);
+	const headers: Record<string, string> = {
+		"content-type": "application/json",
+		"x-timestamp": timestamp,
+		"x-path": path,
+	};
+	if (overrides.signature !== null) {
+		headers["x-hmac-signature-v2"] =
+			overrides.signature ?? `hmac-sha256-hex=${digest}`;
+	}
+	return new Request(`https://store.example.com${path}`, {
+		method: "POST",
+		headers,
+		body,
+	});
+}
+
+describe("EasyPost webhook HTTP boundary", () => {
+	it("fails closed without verification material before any side effect", async () => {
+		const findShipment = vi.fn();
+		const emit = vi.fn();
+		const request = await makeV2Request(
+			JSON.stringify(makeTrackerEvent("delivered")),
+			"unused-secret",
+		);
+
+		const response = await callWebhook(createShippingWebhook({}), request, {
+			controllers: {
+				shipping: { findShipmentByTrackingNumber: findShipment },
+			},
+			events: { emit },
+		});
+
+		expect(response.status).toBe(503);
+		expect(findShipment).not.toHaveBeenCalled();
+		expect(emit).not.toHaveBeenCalled();
+	});
+
+	it("accepts the documented EasyPost v2 signature inputs", async () => {
+		const secret = "easypost-webhook-secret";
+		const request = await makeV2Request(
+			JSON.stringify(makeTrackerEvent("delivered")),
+			secret,
+		);
+		const response = await callWebhook(
+			createShippingWebhook({ webhookSecret: secret }),
+			request,
+			{
+				controllers: {
+					shipping: { findShipmentByTrackingNumber: vi.fn(async () => null) },
+				},
+				events: { emit: vi.fn() },
+			},
+		);
+
+		expect(response.status).toBe(200);
+	});
+
+	it("rejects an invalid v2 signature before any side effect", async () => {
+		const findShipment = vi.fn();
+		const emit = vi.fn();
+		const request = await makeV2Request(
+			JSON.stringify(makeTrackerEvent("delivered")),
+			"easypost-webhook-secret",
+			{ signature: "hmac-sha256-hex=00" },
+		);
+
+		const response = await callWebhook(
+			createShippingWebhook({ webhookSecret: "easypost-webhook-secret" }),
+			request,
+			{
+				controllers: {
+					shipping: { findShipmentByTrackingNumber: findShipment },
+				},
+				events: { emit },
+			},
+		);
+
+		expect(response.status).toBe(401);
+		expect(findShipment).not.toHaveBeenCalled();
+		expect(emit).not.toHaveBeenCalled();
+	});
+
+	it("applies a duplicate EasyPost event only once", async () => {
+		const data = createMockDataService();
+		const emit = vi.fn(async (_type: string, _payload: unknown) => undefined);
+		const controller = createShippingController(data, {
+			emit,
+			on: vi.fn(() => () => undefined),
+			off: vi.fn(),
+		});
+		const carrier = await controller.createCarrier({
+			name: "USPS",
+			code: "usps",
+			isActive: true,
+		});
+		const shipment = await controller.createShipment({
+			orderId: "order_duplicate",
+			carrierId: carrier.id,
+			trackingNumber: "TRACK_DUPLICATE",
+		});
+		const stored = await data.get("shipment", shipment.id);
+		await data.upsert("shipment", shipment.id, {
+			...stored,
+			status: "in_transit",
+		});
+		emit.mockClear();
+
+		const secret = "easypost-webhook-secret";
+		const body = JSON.stringify(
+			makeTrackerEvent("delivered", "TRACK_DUPLICATE"),
+		);
+		const endpoint = createShippingWebhook({ webhookSecret: secret });
+		const context = {
+			controllers: { shipping: controller },
+			events: { emit },
+		};
+
+		await callWebhook(endpoint, await makeV2Request(body, secret), context);
+		await callWebhook(endpoint, await makeV2Request(body, secret), context);
+
+		expect(
+			emit.mock.calls.filter(([type]) => type === "shipment.delivered"),
+		).toHaveLength(1);
+		const updated = await controller.getShipment(shipment.id);
+		expect(updated?.status).toBe("delivered");
+	});
+
+	it("reserves a receipt before concurrent duplicate mutations", async () => {
+		let releaseUpdate: (() => void) | undefined;
+		const updateGate = new Promise<void>((resolve) => {
+			releaseUpdate = resolve;
+		});
+		const findShipment = vi.fn(async () => ({
+			id: "shipment_concurrent",
+			status: "in_transit",
+		}));
+		const updateShipmentStatus = vi.fn(async () => {
+			await updateGate;
+			return { id: "shipment_concurrent", status: "delivered" };
+		});
+		const secret = "easypost-webhook-secret";
+		const body = JSON.stringify(
+			makeTrackerEvent("delivered", "TRACK_CONCURRENT"),
+		);
+		const endpoint = createShippingWebhook({ webhookSecret: secret });
+		const context = {
+			controllers: {
+				shipping: {
+					findShipmentByTrackingNumber: findShipment,
+					updateShipmentStatus,
+				},
+			},
+			events: { emit: vi.fn() },
+		};
+
+		const first = callWebhook(
+			endpoint,
+			await makeV2Request(body, secret),
+			context,
+		);
+		await vi.waitFor(() =>
+			expect(updateShipmentStatus).toHaveBeenCalledTimes(1),
+		);
+		const secondPromise = callWebhook(
+			endpoint,
+			await makeV2Request(body, secret),
+			context,
+		);
+		await new Promise((resolve) => setTimeout(resolve, 10));
+		releaseUpdate?.();
+		const [firstResponse, second] = await Promise.all([first, secondPromise]);
+
+		expect(firstResponse.status).toBe(200);
+		expect(second.status).toBe(409);
+		expect(findShipment).toHaveBeenCalledTimes(1);
+		expect(updateShipmentStatus).toHaveBeenCalledTimes(1);
+	});
+});
+
 // ── Simulate the webhook endpoint core logic ──────────────────────────────────
 
 interface SimulateResult {
@@ -105,7 +315,7 @@ async function simulateWebhook(
 	}
 
 	const result = event.result as Record<string, unknown> | undefined;
-	if (!result || result.object !== "Tracker" || !result.tracking_code) {
+	if (result?.object !== "Tracker" || !result.tracking_code) {
 		return { statusCode: 200, body: { received: true, handled: false } };
 	}
 
@@ -144,45 +354,6 @@ async function simulateWebhook(
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe("shipping webhook", () => {
-	describe("signature verification", () => {
-		it("rejects when secret is set and signature is missing", async () => {
-			const event = makeTrackerEvent("delivered");
-			const result = await simulateWebhook(event, {
-				webhookSecret: "whsec_test123",
-				incomingSignature: "",
-			});
-			expect(result.statusCode).toBe(401);
-			expect(result.body.error).toMatch(/signature/i);
-		});
-
-		it("rejects when signature is wrong", async () => {
-			const event = makeTrackerEvent("delivered");
-			const result = await simulateWebhook(event, {
-				webhookSecret: "whsec_test123",
-				incomingSignature: "aaaa1111",
-			});
-			expect(result.statusCode).toBe(401);
-		});
-
-		it("accepts valid HMAC-SHA256 signature", async () => {
-			const secret = "whsec_test123";
-			const event = makeTrackerEvent("delivered");
-			const rawBody = JSON.stringify(event);
-			const validSig = await hmacSha256Hex(secret, rawBody);
-			const result = await simulateWebhook(event, {
-				webhookSecret: secret,
-				incomingSignature: validSig,
-			});
-			expect(result.statusCode).toBe(200);
-		});
-
-		it("accepts events without verification when no secret is configured", async () => {
-			const event = makeTrackerEvent("delivered");
-			const result = await simulateWebhook(event, {});
-			expect(result.statusCode).toBe(200);
-		});
-	});
-
 	describe("event filtering", () => {
 		it("ignores non-Event objects", async () => {
 			const result = await simulateWebhook({

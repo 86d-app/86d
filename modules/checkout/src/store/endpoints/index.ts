@@ -1,14 +1,16 @@
 import { abandonSession } from "./abandon-session";
+import {
+	capturePaymentUnavailable as capturePayment,
+	completeSessionUnavailable as completeSession,
+	confirmSessionUnavailable as confirmSession,
+	createPaymentUnavailable as createPayment,
+	getPaymentUnavailable as getPayment,
+} from "./activation-unavailable";
 import { applyDiscount } from "./apply-discount";
 import { applyGiftCard } from "./apply-gift-card";
 import { applyStoreCredit } from "./apply-store-credit";
-import { capturePayment } from "./capture-payment";
-import { completeSession } from "./complete-session";
-import { confirmSession } from "./confirm-session";
-import { createPayment } from "./create-payment";
 import { createSession } from "./create-session";
 import { getLineItems } from "./get-line-items";
-import { getPayment } from "./get-payment";
 import { getSession } from "./get-session";
 import { getShippingRates } from "./get-shipping-rates";
 import { removeDiscount } from "./remove-discount";

@@ -19,12 +19,14 @@ export const getSettings = createAdminEndpoint(
 		const accessToken = str(opts.accessToken);
 		const webhookSignatureKey = str(opts.webhookSignatureKey);
 		const webhookNotificationUrl = str(opts.webhookNotificationUrl);
+		const webhookVerificationConfigured =
+			webhookSignatureKey.length > 0 && webhookNotificationUrl.length > 0;
 
 		let status: "connected" | "not_configured" | "error" = "not_configured";
 		let error: string | undefined;
 		let locationCount: number | undefined;
 
-		if (accessToken.length > 0) {
+		if (accessToken.length > 0 && webhookVerificationConfigured) {
 			const provider = new SquarePaymentProvider(accessToken);
 			const result = await provider.verifyConnection();
 			if (result.ok) {
@@ -38,10 +40,11 @@ export const getSettings = createAdminEndpoint(
 
 		return {
 			status,
+			ready: status === "connected" && webhookVerificationConfigured,
 			error,
 			locationCount,
 			accessTokenMasked: accessToken ? maskKey(accessToken) : null,
-			webhookSignatureConfigured: webhookSignatureKey.length > 0,
+			webhookSignatureConfigured: webhookVerificationConfigured,
 			webhookSignatureKeyMasked: webhookSignatureKey
 				? maskKey(webhookSignatureKey)
 				: null,

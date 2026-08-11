@@ -51,6 +51,7 @@ describe("admin GET /stripe/settings", () => {
 		mockVerifyConnection.mockResolvedValue({ ok: true, accountName: "Acme" });
 		const result = (await call(settingsHandler, {
 			apiKey: "sk_test_abc1234567890",
+			webhookSecret: "whsec_test",
 		})) as { status: string; apiKeyMode: string; apiKeyMasked: string };
 		expect(result.apiKeyMode).toBe("test");
 		expect(result.status).toBe("connected");
@@ -61,6 +62,7 @@ describe("admin GET /stripe/settings", () => {
 		mockVerifyConnection.mockResolvedValue({ ok: true, accountName: "Prod" });
 		const result = (await call(settingsHandler, {
 			apiKey: "sk_live_abc1234567890",
+			webhookSecret: "whsec_live",
 		})) as { status: string; apiKeyMode: string };
 		expect(result.apiKeyMode).toBe("live");
 		expect(result.status).toBe("connected");
@@ -73,6 +75,7 @@ describe("admin GET /stripe/settings", () => {
 		});
 		const result = (await call(settingsHandler, {
 			apiKey: "sk_test_invalid",
+			webhookSecret: "whsec_test",
 		})) as { status: string; error: string };
 		expect(result.status).toBe("error");
 		expect(result.error).toBe("Invalid API key");

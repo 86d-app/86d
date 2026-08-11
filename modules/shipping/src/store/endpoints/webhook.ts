@@ -9,10 +9,9 @@ import type { ShippingController } from "../../service";
  * EasyPost webhook endpoint — handles tracker events to keep shipment status
  * in sync with real carrier data.
  *
- * Signature verification uses HMAC-SHA256 with the `X-Hmac-Sha256-Signature-2`
- * header. When no secret is configured the endpoint still accepts events
- * (useful for local development), but production deployments should always
- * set `easypostWebhookSecret`.
+ * Signature verification implements EasyPost's v2 HMAC contract. Verification
+ * material is mandatory because tracker events can mutate shipment state.
+ * https://support.easypost.com/hc/en-us/articles/39826034964237-Webhook-HMAC-Validation
  */
 
 interface EasyPostTrackerResult {
@@ -48,6 +47,71 @@ async function hmacSha256Hex(secret: string, data: string): Promise<string> {
 		.join("");
 }
 
+const RFC_2822_TIMESTAMP =
+	/^(Sun|Mon|Tue|Wed|Thu|Fri|Sat), (\d{2}) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) (\d{4}) (\d{2}):(\d{2}):(\d{2}) ([+-])(\d{2})(\d{2})$/;
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MONTHS = [
+	"Jan",
+	"Feb",
+	"Mar",
+	"Apr",
+	"May",
+	"Jun",
+	"Jul",
+	"Aug",
+	"Sep",
+	"Oct",
+	"Nov",
+	"Dec",
+];
+const EASYPOST_MAX_AGE_MS = 60_000;
+const EASYPOST_FUTURE_SKEW_MS = 30_000;
+
+function parseRfc2822Timestamp(value: string): number | null {
+	const match = RFC_2822_TIMESTAMP.exec(value);
+	if (!match) return null;
+
+	const [
+		,
+		weekday,
+		dayValue,
+		monthValue,
+		yearValue,
+		hourValue,
+		minuteValue,
+		secondValue,
+		sign,
+		offsetHourValue,
+		offsetMinuteValue,
+	] = match;
+	const day = Number(dayValue);
+	const month = MONTHS.indexOf(monthValue ?? "");
+	const year = Number(yearValue);
+	const hour = Number(hourValue);
+	const minute = Number(minuteValue);
+	const second = Number(secondValue);
+	const offsetHours = Number(offsetHourValue);
+	const offsetMinutes = Number(offsetMinuteValue);
+
+	if (
+		month < 0 ||
+		day < 1 ||
+		day > new Date(Date.UTC(year, month + 1, 0)).getUTCDate() ||
+		hour > 23 ||
+		minute > 59 ||
+		second > 59 ||
+		offsetHours > 23 ||
+		offsetMinutes > 59 ||
+		WEEKDAYS[new Date(Date.UTC(year, month, day)).getUTCDay()] !== weekday
+	) {
+		return null;
+	}
+
+	const localTime = Date.UTC(year, month, day, hour, minute, second);
+	const offsetMs = (offsetHours * 60 + offsetMinutes) * 60_000;
+	return sign === "+" ? localTime - offsetMs : localTime + offsetMs;
+}
+
 function timingSafeEqual(a: string, b: string): boolean {
 	if (a.length !== b.length) return false;
 	let result = 0;
@@ -59,16 +123,80 @@ function timingSafeEqual(a: string, b: string): boolean {
 
 async function verifyEasyPostSignature(
 	rawBody: string,
-	signatureHeader: string,
+	request: Request,
 	secret: string,
 ): Promise<boolean> {
-	const expected = await hmacSha256Hex(secret, rawBody);
-	return timingSafeEqual(signatureHeader, expected);
+	const timestamp = request.headers.get("x-timestamp") ?? "";
+	const signedPath = request.headers.get("x-path") ?? "";
+	const signatureHeader = request.headers.get("x-hmac-signature-v2") ?? "";
+	const requestPath = new URL(request.url).pathname;
+	const timestampMs = parseRfc2822Timestamp(timestamp);
+	const ageMs =
+		timestampMs === null ? Number.POSITIVE_INFINITY : Date.now() - timestampMs;
+	const signature = /^hmac-sha256-hex=([0-9a-fA-F]{64})$/.exec(
+		signatureHeader,
+	)?.[1];
+
+	if (
+		!signature ||
+		!signedPath ||
+		signedPath !== requestPath ||
+		ageMs > EASYPOST_MAX_AGE_MS ||
+		ageMs < -EASYPOST_FUTURE_SKEW_MS
+	) {
+		return false;
+	}
+
+	const signedPayload = `${timestamp}${request.method.toUpperCase()}${signedPath}${rawBody}`;
+	const expected = await hmacSha256Hex(secret, signedPayload);
+	return timingSafeEqual(signature.toLowerCase(), expected);
+}
+
+const MAX_WEBHOOK_RECEIPTS = 10_000;
+
+function createReceiptGuard() {
+	const receipts = new Map<string, "processing" | "processed">();
+
+	return async function withReceipt(
+		key: string,
+		work: () => Promise<Response>,
+	): Promise<Response> {
+		const state = receipts.get(key);
+		if (state === "processed") {
+			return Response.json({ received: true, handled: false, duplicate: true });
+		}
+		if (state === "processing") {
+			return Response.json(
+				{ error: "Webhook event is already being processed." },
+				{ status: 409 },
+			);
+		}
+
+		receipts.set(key, "processing");
+		try {
+			const response = await work();
+			if (response.ok) {
+				receipts.set(key, "processed");
+				if (receipts.size > MAX_WEBHOOK_RECEIPTS) {
+					const oldest = receipts.keys().next().value;
+					if (oldest) receipts.delete(oldest);
+				}
+			} else {
+				receipts.delete(key);
+			}
+			return response;
+		} catch (error) {
+			receipts.delete(key);
+			throw error;
+		}
+	};
 }
 
 export function createShippingWebhook(opts: {
 	webhookSecret?: string | undefined;
 }) {
+	const withReceipt = createReceiptGuard();
+
 	return createStoreEndpoint(
 		"/shipping/webhook",
 		{
@@ -77,22 +205,24 @@ export function createShippingWebhook(opts: {
 		},
 		async (ctx) => {
 			const request = ctx.request;
-			const rawBody = await request.text();
-
-			if (opts.webhookSecret) {
-				const sigHeader =
-					request.headers.get("x-hmac-sha256-signature-2") ?? "";
-				const valid = await verifyEasyPostSignature(
-					rawBody,
-					sigHeader,
-					opts.webhookSecret,
+			if (!opts.webhookSecret) {
+				return Response.json(
+					{ error: "EasyPost webhook verification is not configured." },
+					{ status: 503 },
 				);
-				if (!valid) {
-					return Response.json(
-						{ error: "Invalid webhook signature." },
-						{ status: 401 },
-					);
-				}
+			}
+
+			const rawBody = await request.text();
+			const valid = await verifyEasyPostSignature(
+				rawBody,
+				request,
+				opts.webhookSecret,
+			);
+			if (!valid) {
+				return Response.json(
+					{ error: "Invalid webhook signature." },
+					{ status: 401 },
+				);
 			}
 
 			let event: EasyPostWebhookEvent;
@@ -110,53 +240,52 @@ export function createShippingWebhook(opts: {
 			}
 
 			const tracker = event.result;
-			if (!tracker || tracker.object !== "Tracker" || !tracker.tracking_code) {
+			if (tracker?.object !== "Tracker" || !tracker.tracking_code) {
 				return Response.json({ received: true, handled: false });
 			}
-
-			const shipping = ctx.context?.controllers?.shipping as
-				| ShippingController
-				| undefined;
-			const events = ctx.context?.events;
-
-			if (!shipping) {
-				return Response.json({ received: true, handled: false });
+			if (!event.id) {
+				return Response.json(
+					{ error: "Missing EasyPost event ID." },
+					{ status: 400 },
+				);
 			}
 
-			const shipment = await shipping
-				.findShipmentByTrackingNumber(tracker.tracking_code)
-				.catch(() => null);
+			return withReceipt(event.id, async () => {
+				const shipping = ctx.context?.controllers?.shipping as
+					| ShippingController
+					| undefined;
 
-			if (!shipment) {
-				return Response.json({ received: true, handled: false });
-			}
+				if (!shipping) {
+					return Response.json({ received: true, handled: false });
+				}
 
-			const internalStatus = mapEasyPostStatusToInternal(tracker.status);
+				const shipment = await shipping
+					.findShipmentByTrackingNumber(tracker.tracking_code)
+					.catch(() => null);
 
-			if (internalStatus === shipment.status) {
-				return Response.json({ received: true, handled: false });
-			}
+				if (!shipment) {
+					return Response.json({ received: true, handled: false });
+				}
 
-			const updated = await shipping
-				.updateShipmentStatus(shipment.id, internalStatus)
-				.catch(() => null);
+				const internalStatus = mapEasyPostStatusToInternal(tracker.status);
 
-			if (updated && events) {
-				await events
-					.emit(`shipment.${internalStatus}`, {
-						shipmentId: updated.id,
-						orderId: updated.orderId,
-						trackingNumber: updated.trackingNumber,
-						status: internalStatus,
-					})
-					.catch(() => undefined);
-			}
+				if (internalStatus === shipment.status) {
+					return Response.json({ received: true, handled: false });
+				}
 
-			return Response.json({
-				received: true,
-				handled: true,
-				shipmentId: shipment.id,
-				status: internalStatus,
+				const updated = await shipping
+					.updateShipmentStatus(shipment.id, internalStatus)
+					.catch(() => null);
+				if (!updated) {
+					return Response.json({ received: true, handled: false });
+				}
+
+				return Response.json({
+					received: true,
+					handled: true,
+					shipmentId: shipment.id,
+					status: internalStatus,
+				});
 			});
 		},
 	);

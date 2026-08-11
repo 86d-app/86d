@@ -14,9 +14,13 @@ function extractHandler(
 }
 
 const handler = extractHandler(getSettings);
+const DEFAULT_WEBHOOK_SECRET = "whsec_admin_test";
 
 function callGetSettings(opts: Record<string, unknown>) {
-	return handler({ context: { options: opts } });
+	const options = Object.hasOwn(opts, "webhookSecret")
+		? opts
+		: { ...opts, webhookSecret: DEFAULT_WEBHOOK_SECRET };
+	return handler({ context: { options } });
 }
 
 function mockFetchOk(body: Record<string, unknown>) {
@@ -103,6 +107,17 @@ describe("getSettings — status (live verification)", () => {
 	it('returns "not_configured" when apiKey is a non-string value', async () => {
 		const result = await callGetSettings({ apiKey: 12345 });
 		expect(result.status).toBe("not_configured");
+	});
+
+	it('returns "not_configured" and does not connect without webhook verification', async () => {
+		const fetchSpy = vi.spyOn(globalThis, "fetch");
+		const result = await callGetSettings({
+			apiKey: "sk_test_abc123def456",
+			webhookSecret: "",
+		});
+		expect(result.status).toBe("not_configured");
+		expect(result.ready).toBe(false);
+		expect(fetchSpy).not.toHaveBeenCalled();
 	});
 });
 
@@ -197,7 +212,10 @@ describe("getSettings — webhookSecretConfigured", () => {
 
 	it("returns false when webhookSecret is missing", async () => {
 		mockFetchOk({ id: "acct_1" });
-		const result = await callGetSettings({ apiKey: "sk_test_key" });
+		const result = await callGetSettings({
+			apiKey: "sk_test_key",
+			webhookSecret: undefined,
+		});
 		expect(result.webhookSecretConfigured).toBe(false);
 	});
 });
@@ -207,7 +225,10 @@ describe("getSettings — webhookSecretConfigured", () => {
 describe("getSettings — webhookSecretMasked", () => {
 	it("returns null when no webhookSecret is present", async () => {
 		mockFetchOk({ id: "acct_1" });
-		const result = await callGetSettings({ apiKey: "sk_test_key" });
+		const result = await callGetSettings({
+			apiKey: "sk_test_key",
+			webhookSecret: undefined,
+		});
 		expect(result.webhookSecretMasked).toBeNull();
 	});
 

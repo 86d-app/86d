@@ -35,7 +35,9 @@ export interface ShippingOptions extends ModuleConfig {
 }
 
 export default function shipping(options?: ShippingOptions): Module {
-	const hasEasyPost = Boolean(options?.easypostApiKey);
+	const hasEasyPost = Boolean(
+		options?.easypostApiKey && options?.easypostWebhookSecret,
+	);
 
 	const settingsEndpoint = createGetSettingsEndpoint({
 		easypostApiKey: options?.easypostApiKey,

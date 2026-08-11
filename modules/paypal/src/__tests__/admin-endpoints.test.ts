@@ -69,6 +69,7 @@ describe("admin GET /paypal/settings", () => {
 		const result = (await call(settingsHandler, {
 			clientId: "AaBbCcDd12345678",
 			clientSecret: "EeFfGgHh12345678",
+			webhookId: "WH-admin-test",
 		})) as { status: string; clientIdMasked: string };
 		expect(result.status).toBe("connected");
 		expect(result.clientIdMasked).toMatch(/\*+/);
@@ -82,6 +83,7 @@ describe("admin GET /paypal/settings", () => {
 		const result = (await call(settingsHandler, {
 			clientId: "AaBbCcDd12345678",
 			clientSecret: "EeFfGgHh12345678",
+			webhookId: "WH-admin-test",
 		})) as { status: string; error: string };
 		expect(result.status).toBe("error");
 		expect(result.error).toBe("Invalid credentials");

@@ -41,7 +41,17 @@ async function callWebhook(
 	handler: ReturnType<typeof createSquareWebhook>,
 	request: Request,
 	context?: Record<string, unknown>,
+	autoSign = true,
 ): Promise<Response> {
+	if (autoSign && !request.headers.has("x-square-hmacsha256-signature")) {
+		const body = await request.clone().text();
+		const headers = new Headers(request.headers);
+		headers.set(
+			"x-square-hmacsha256-signature",
+			await buildSquareSignature(SIG_KEY, NOTIFICATION_URL, body),
+		);
+		request = new Request(request, { headers });
+	}
 	const h = handler as unknown as Record<string, unknown>;
 	const fn = typeof h.handler === "function" ? h.handler : h;
 	return (fn as CallableFunction)({ request, context }) as Promise<Response>;
@@ -77,26 +87,23 @@ async function seedIntent(
 describe("createSquareWebhook — no signature configured", () => {
 	const handler = createSquareWebhook({});
 
-	it("accepts any request without a signature key", async () => {
+	it("fails closed without a signature key", async () => {
 		const body = JSON.stringify({ type: "payment.created", data: {} });
 		const res = await callWebhook(handler, makeRequest(body));
-		expect(res.status).toBe(200);
-		const json = (await res.json()) as { received: boolean; type: string };
-		expect(json.received).toBe(true);
-		expect(json.type).toBe("payment.created");
+		expect(res.status).toBe(503);
 	});
 
-	it("returns 400 for missing event type", async () => {
+	it("fails closed before checking event type", async () => {
 		const res = await callWebhook(
 			handler,
 			makeRequest(JSON.stringify({ data: {} })),
 		);
-		expect(res.status).toBe(400);
+		expect(res.status).toBe(503);
 	});
 
-	it("returns 400 for invalid JSON", async () => {
+	it("fails closed before parsing invalid JSON", async () => {
 		const res = await callWebhook(handler, makeRequest("bad-json"));
-		expect(res.status).toBe(400);
+		expect(res.status).toBe(503);
 	});
 });
 
@@ -122,7 +129,7 @@ describe("createSquareWebhook — with signature verification", () => {
 	it("rejects a missing signature header", async () => {
 		const body = JSON.stringify({ type: "payment.created", data: {} });
 		const req = makeRequest(body); // no signature header
-		const res = await callWebhook(handler, req);
+		const res = await callWebhook(handler, req, undefined, false);
 		expect(res.status).toBe(401);
 	});
 
@@ -165,7 +172,10 @@ describe("createSquareWebhook — with signature verification", () => {
 // ── Event handling ────────────────────────────────────────────────────────────
 
 describe("createSquareWebhook — event handling", () => {
-	const handler = createSquareWebhook({});
+	const handler = createSquareWebhook({
+		webhookSignatureKey: SIG_KEY,
+		notificationUrl: NOTIFICATION_URL,
+	});
 
 	it("handles payment.completed and emits payment.completed", async () => {
 		const { data, payments, context } = createTestContext();

@@ -18,7 +18,10 @@ export function createGetSettingsEndpoint(options: SettingsOptions) {
 		{ method: "GET" },
 		async () => {
 			const apiKey = options.easypostApiKey ?? "";
-			const hasCredentials = apiKey.length > 0;
+			const webhookSecret = options.easypostWebhookSecret ?? "";
+			const apiConfigured = apiKey.length > 0;
+			const webhookConfigured = webhookSecret.length > 0;
+			const hasCredentials = apiConfigured && webhookConfigured;
 
 			let status: "connected" | "not_configured" | "error" = "not_configured";
 			let error: string | undefined;
@@ -39,16 +42,15 @@ export function createGetSettingsEndpoint(options: SettingsOptions) {
 				}
 			}
 
-			const webhookSecret = options.easypostWebhookSecret ?? "";
-
 			return {
 				status,
 				error,
 				accountName,
 				configured: hasCredentials,
+				apiConfigured,
 				testMode: options.easypostTestMode ?? true,
-				apiKeyMasked: hasCredentials ? maskKey(apiKey) : null,
-				webhookConfigured: webhookSecret.length > 0,
+				apiKeyMasked: apiConfigured ? maskKey(apiKey) : null,
+				webhookConfigured,
 				webhookSecretMasked:
 					webhookSecret.length > 0 ? maskKey(webhookSecret) : null,
 			};

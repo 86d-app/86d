@@ -55,7 +55,17 @@ async function callWebhook(
 	handler: ReturnType<typeof createSquareWebhook>,
 	request: Request,
 	context?: Record<string, unknown>,
+	autoSign = true,
 ): Promise<Response> {
+	if (autoSign && !request.headers.has("x-square-hmacsha256-signature")) {
+		const body = await request.clone().text();
+		const headers = new Headers(request.headers);
+		headers.set(
+			"x-square-hmacsha256-signature",
+			await buildSignature(SIG_KEY, NOTIFICATION_URL, body),
+		);
+		request = new Request(request, { headers });
+	}
 	const h = handler as unknown as Record<string, unknown>;
 	const fn = typeof h.handler === "function" ? h.handler : h;
 	return (fn as CallableFunction)({ request, context }) as Promise<Response>;
@@ -185,7 +195,10 @@ describe("square endpoint security", () => {
 	// ── Webhook Event Type Filtering ────────────────────────────────
 
 	describe("webhook event type filtering", () => {
-		const handler = createSquareWebhook({});
+		const handler = createSquareWebhook({
+			webhookSignatureKey: SIG_KEY,
+			notificationUrl: NOTIFICATION_URL,
+		});
 
 		it("rejects payload with missing event type", async () => {
 			const body = JSON.stringify({ data: { object: {} } });
@@ -247,7 +260,10 @@ describe("square endpoint security", () => {
 	// ── Webhook Payload Extraction Safety ───────────────────────────
 
 	describe("webhook payload extraction safety", () => {
-		const handler = createSquareWebhook({});
+		const handler = createSquareWebhook({
+			webhookSignatureKey: SIG_KEY,
+			notificationUrl: NOTIFICATION_URL,
+		});
 
 		it("handles missing data.object gracefully without crashing", async () => {
 			const body = JSON.stringify({
@@ -323,21 +339,21 @@ describe("square endpoint security", () => {
 		});
 	});
 
-	// ── No-signature mode (permissive) ──────────────────────────────
+	// ── Missing verification configuration ─────────────────────────
 
 	describe("webhook without signature key configured", () => {
 		const handler = createSquareWebhook({});
 
-		it("accepts requests without any signature header", async () => {
+		it("fails closed without any signature configuration", async () => {
 			const body = JSON.stringify({
 				type: "payment.created",
 				data: {},
 			});
 			const res = await callWebhook(handler, makeRequest(body));
-			expect(res.status).toBe(200);
+			expect(res.status).toBe(503);
 		});
 
-		it("does not require notificationUrl when key is absent", async () => {
+		it("requires both the key and notification URL", async () => {
 			const handler2 = createSquareWebhook({
 				notificationUrl: "",
 			});
@@ -346,7 +362,7 @@ describe("square endpoint security", () => {
 				data: {},
 			});
 			const res = await callWebhook(handler2, makeRequest(body));
-			expect(res.status).toBe(200);
+			expect(res.status).toBe(503);
 		});
 	});
 

@@ -11,6 +11,9 @@ interface DoordashSettings {
 	error?: string | undefined;
 	accountName?: string | undefined;
 	configured: boolean;
+	apiConfigured: boolean;
+	webhookConfigured: boolean;
+	webhookStatus: "disabled";
 	sandbox: boolean;
 	developerIdMasked: string | null;
 	keyIdMasked: string | null;
@@ -324,7 +327,11 @@ export function DoorDashAdmin() {
 						)}
 						<StatusRow
 							label="Webhook endpoint"
-							value="/api/store/doordash/webhook"
+							value={
+								settings?.webhookStatus === "disabled"
+									? "Disabled"
+									: "/api/store/doordash/webhook"
+							}
 							mono
 						/>
 					</div>

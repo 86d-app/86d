@@ -39,18 +39,18 @@ describe("createStoreEndpoints — stripe", () => {
 		expect(endpoints).toHaveProperty("/stripe/webhook");
 	});
 
-	it("endpoint returns 400 for invalid JSON body", async () => {
+	it("endpoint fails closed before parsing invalid JSON", async () => {
 		const endpoints = createStoreEndpoints();
 		const req = makeRequest("not-json");
 		const res = await callEndpoint(endpoints, "/stripe/webhook", req);
-		expect(res.status).toBe(400);
+		expect(res.status).toBe(503);
 	});
 
-	it("endpoint returns 400 for missing event type", async () => {
+	it("endpoint fails closed before checking event type", async () => {
 		const endpoints = createStoreEndpoints();
 		const req = makeRequest(JSON.stringify({ id: "evt_123" }));
 		const res = await callEndpoint(endpoints, "/stripe/webhook", req);
-		expect(res.status).toBe(400);
+		expect(res.status).toBe(503);
 	});
 
 	it("endpoint returns 401 when secret is set but signature header is missing", async () => {
@@ -62,14 +62,12 @@ describe("createStoreEndpoints — stripe", () => {
 		expect(res.status).toBe(401);
 	});
 
-	it("endpoint accepts events when no secret is configured", async () => {
+	it("endpoint rejects events when no secret is configured", async () => {
 		const endpoints = createStoreEndpoints();
 		const req = makeRequest(
 			JSON.stringify({ type: "customer.created", data: { object: {} } }),
 		);
 		const res = await callEndpoint(endpoints, "/stripe/webhook", req);
-		expect(res.status).toBe(200);
-		const json = (await res.json()) as { received: boolean };
-		expect(json.received).toBe(true);
+		expect(res.status).toBe(503);
 	});
 });

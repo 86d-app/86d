@@ -608,34 +608,34 @@ export type Router = typeof router;
 
 		if (hasStripe) {
 			blocks.push(`// Wire Stripe options from env vars
-if (process.env.STRIPE_SECRET_KEY) {
+if (process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET) {
   moduleOptions["@86d-app/stripe"] = {
     ...moduleOptions["@86d-app/stripe"],
     apiKey: process.env.STRIPE_SECRET_KEY,
-    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET ?? "",
+    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
   };
 }`);
 		}
 		if (hasPayPal) {
 			blocks.push(`// Wire PayPal options from env vars
-if (process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_CLIENT_SECRET) {
+if (process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_CLIENT_SECRET && process.env.PAYPAL_WEBHOOK_ID) {
   moduleOptions["@86d-app/paypal"] = {
     ...moduleOptions["@86d-app/paypal"],
     clientId: process.env.PAYPAL_CLIENT_ID,
     clientSecret: process.env.PAYPAL_CLIENT_SECRET,
     sandbox: process.env.PAYPAL_SANDBOX ?? "",
-    webhookId: process.env.PAYPAL_WEBHOOK_ID ?? "",
+    webhookId: process.env.PAYPAL_WEBHOOK_ID,
   };
 }`);
 		}
 		if (hasSquare) {
 			blocks.push(`// Wire Square options from env vars
-if (process.env.SQUARE_ACCESS_TOKEN) {
+if (process.env.SQUARE_ACCESS_TOKEN && process.env.SQUARE_WEBHOOK_SIGNATURE_KEY && process.env.SQUARE_WEBHOOK_NOTIFICATION_URL) {
   moduleOptions["@86d-app/square"] = {
     ...moduleOptions["@86d-app/square"],
     accessToken: process.env.SQUARE_ACCESS_TOKEN,
-    webhookSignatureKey: process.env.SQUARE_WEBHOOK_SIGNATURE_KEY ?? "",
-    webhookNotificationUrl: process.env.SQUARE_WEBHOOK_NOTIFICATION_URL ?? "",
+    webhookSignatureKey: process.env.SQUARE_WEBHOOK_SIGNATURE_KEY,
+    webhookNotificationUrl: process.env.SQUARE_WEBHOOK_NOTIFICATION_URL,
   };
 }`);
 		}
@@ -655,12 +655,12 @@ if (process.env.BRAINTREE_MERCHANT_ID && process.env.BRAINTREE_PUBLIC_KEY && pro
 		// Build the provider resolution function — first configured provider wins
 		const providerChecks: string[] = [];
 		if (hasStripe) {
-			providerChecks.push(`  if (process.env.STRIPE_SECRET_KEY) {
+			providerChecks.push(`  if (process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET) {
     return new StripePaymentProvider(process.env.STRIPE_SECRET_KEY);
   }`);
 		}
 		if (hasPayPal) {
-			providerChecks.push(`  if (process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_CLIENT_SECRET) {
+			providerChecks.push(`  if (process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_CLIENT_SECRET && process.env.PAYPAL_WEBHOOK_ID) {
     return new PayPalPaymentProvider(
       process.env.PAYPAL_CLIENT_ID,
       process.env.PAYPAL_CLIENT_SECRET,
@@ -669,7 +669,7 @@ if (process.env.BRAINTREE_MERCHANT_ID && process.env.BRAINTREE_PUBLIC_KEY && pro
   }`);
 		}
 		if (hasSquare) {
-			providerChecks.push(`  if (process.env.SQUARE_ACCESS_TOKEN) {
+			providerChecks.push(`  if (process.env.SQUARE_ACCESS_TOKEN && process.env.SQUARE_WEBHOOK_SIGNATURE_KEY && process.env.SQUARE_WEBHOOK_NOTIFICATION_URL) {
     return new SquarePaymentProvider(process.env.SQUARE_ACCESS_TOKEN);
   }`);
 		}
@@ -756,6 +756,7 @@ if (process.env.EASYPOST_API_KEY) {
     ...moduleOptions["@86d-app/shipping"],
     easypostApiKey: process.env.EASYPOST_API_KEY,
     easypostTestMode: process.env.EASYPOST_TEST_MODE !== "false",
+    easypostWebhookSecret: process.env.EASYPOST_WEBHOOK_SECRET ?? "",
   };
 }
 `;
@@ -831,6 +832,7 @@ if (process.env.UBER_CLIENT_ID && process.env.UBER_CLIENT_SECRET && process.env.
     clientId: process.env.UBER_CLIENT_ID,
     clientSecret: process.env.UBER_CLIENT_SECRET,
     customerId: process.env.UBER_CUSTOMER_ID,
+    webhookSigningKey: process.env.UBER_DIRECT_WEBHOOK_SIGNING_KEY ?? "",
   };
 }
 `;

@@ -19,9 +19,9 @@ describe("amazon module factory", () => {
 		);
 	});
 
-	it("exposes store webhook endpoint", () => {
+	it("does not expose the unsupported SP-API HTTP webhook endpoint", () => {
 		const mod = createModule();
-		expect(Object.keys(mod.endpoints?.store ?? {})).toContain(
+		expect(Object.keys(mod.endpoints?.store ?? {})).not.toContain(
 			"/amazon/webhooks",
 		);
 	});

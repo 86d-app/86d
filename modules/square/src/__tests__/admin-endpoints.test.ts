@@ -51,6 +51,8 @@ describe("admin GET /square/settings", () => {
 		mockVerifyConnection.mockResolvedValue({ ok: true, locationCount: 5 });
 		const result = (await call(settingsHandler, {
 			accessToken: "EAAAEAbcdefghijk12345",
+			webhookSignatureKey: "whk_admin_test",
+			webhookNotificationUrl: "https://example.com/webhooks/square",
 		})) as { status: string; locationCount: number; accessTokenMasked: string };
 		expect(result.status).toBe("connected");
 		expect(result.locationCount).toBe(5);
@@ -64,6 +66,8 @@ describe("admin GET /square/settings", () => {
 		});
 		const result = (await call(settingsHandler, {
 			accessToken: "EAAAEAbcdefghijk12345",
+			webhookSignatureKey: "whk_admin_test",
+			webhookNotificationUrl: "https://example.com/webhooks/square",
 		})) as { status: string; error: string };
 		expect(result.status).toBe("error");
 		expect(result.error).toBe("Unauthorized");

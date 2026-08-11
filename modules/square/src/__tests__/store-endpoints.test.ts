@@ -42,18 +42,18 @@ describe("createStoreEndpoints — square", () => {
 		expect(endpoints).toHaveProperty("/square/webhook");
 	});
 
-	it("endpoint returns 400 for invalid JSON body", async () => {
+	it("endpoint fails closed before parsing invalid JSON", async () => {
 		const endpoints = createStoreEndpoints();
 		const req = makeRequest("not-json");
 		const res = await callEndpoint(endpoints, "/square/webhook", req);
-		expect(res.status).toBe(400);
+		expect(res.status).toBe(503);
 	});
 
-	it("endpoint returns 400 for missing event type", async () => {
+	it("endpoint fails closed before checking event type", async () => {
 		const endpoints = createStoreEndpoints();
 		const req = makeRequest(JSON.stringify({ id: "evt_123" }));
 		const res = await callEndpoint(endpoints, "/square/webhook", req);
-		expect(res.status).toBe(400);
+		expect(res.status).toBe(503);
 	});
 
 	it("endpoint returns 401 when signature key is set but header is missing", async () => {
@@ -68,14 +68,12 @@ describe("createStoreEndpoints — square", () => {
 		expect(res.status).toBe(401);
 	});
 
-	it("endpoint accepts events when no signature key is configured", async () => {
+	it("endpoint rejects events when no signature key is configured", async () => {
 		const endpoints = createStoreEndpoints();
 		const req = makeRequest(
 			JSON.stringify({ type: "catalog.version.updated", data: { object: {} } }),
 		);
 		const res = await callEndpoint(endpoints, "/square/webhook", req);
-		expect(res.status).toBe(200);
-		const json = (await res.json()) as { received: boolean };
-		expect(json.received).toBe(true);
+		expect(res.status).toBe(503);
 	});
 });

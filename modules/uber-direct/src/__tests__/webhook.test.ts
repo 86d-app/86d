@@ -1,8 +1,10 @@
 import { createMockDataService } from "@86d-app/core/test-utils";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Delivery } from "../service";
 import { createUberDirectController } from "../service-impl";
 import { createUberDirectWebhook } from "../store/endpoints/webhook";
+
+const TEST_SIGNING_KEY = "test-signing-key-for-uber-direct";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -28,11 +30,18 @@ function createMockEvents() {
 	};
 }
 
-function makeWebhookRequest(body: Record<string, unknown>): Request {
+async function makeWebhookRequest(
+	body: Record<string, unknown>,
+): Promise<Request> {
+	const rawBody = JSON.stringify(body);
+	const signature = await computeSignature(rawBody, TEST_SIGNING_KEY);
 	return new Request("https://store.example.com/api/uber-direct/webhook", {
 		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify(body),
+		headers: {
+			"Content-Type": "application/json",
+			"x-uber-signature": signature,
+		},
+		body: rawBody,
 	});
 }
 
@@ -113,14 +122,22 @@ const DELIVERY_CANCELED_PAYLOAD = {
 // ── Tests ────────────────────────────────────────────────────────────────────
 
 describe("uber-direct webhook endpoint", () => {
-	const endpoint = createUberDirectWebhook();
+	let endpoint: ReturnType<typeof createUberDirectWebhook>;
+
+	beforeEach(() => {
+		endpoint = createUberDirectWebhook(TEST_SIGNING_KEY);
+	});
 
 	it("rejects invalid JSON with 400", async () => {
+		const signature = await computeSignature("not json", TEST_SIGNING_KEY);
 		const request = new Request(
 			"https://store.example.com/api/uber-direct/webhook",
 			{
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: {
+					"Content-Type": "application/json",
+					"x-uber-signature": signature,
+				},
 				body: "not json",
 			},
 		);
@@ -134,7 +151,7 @@ describe("uber-direct webhook endpoint", () => {
 	});
 
 	it("rejects payloads missing kind with 400", async () => {
-		const request = makeWebhookRequest({
+		const request = await makeWebhookRequest({
 			id: "uber-delivery-abc123",
 			status: "pickup",
 		});
@@ -147,7 +164,7 @@ describe("uber-direct webhook endpoint", () => {
 	});
 
 	it("emits uber-direct.webhook.received for all events", async () => {
-		const request = makeWebhookRequest(DELIVERY_PICKUP_PAYLOAD);
+		const request = await makeWebhookRequest(DELIVERY_PICKUP_PAYLOAD);
 		const { context, events } = createTestContext();
 
 		await callWebhook(endpoint, request, context);
@@ -162,7 +179,7 @@ describe("uber-direct webhook endpoint", () => {
 	});
 
 	it("returns handled:false for non-delivery_status events", async () => {
-		const request = makeWebhookRequest({
+		const request = await makeWebhookRequest({
 			kind: "event.courier_update",
 			id: "uber-delivery-abc123",
 		});
@@ -176,7 +193,7 @@ describe("uber-direct webhook endpoint", () => {
 	});
 
 	it("returns handled:false when delivery not found", async () => {
-		const request = makeWebhookRequest(DELIVERY_PICKUP_PAYLOAD);
+		const request = await makeWebhookRequest(DELIVERY_PICKUP_PAYLOAD);
 		const { context } = createTestContext();
 
 		// No delivery seeded — externalId won't match
@@ -189,7 +206,7 @@ describe("uber-direct webhook endpoint", () => {
 	});
 
 	it("returns handled:false when payload is missing id or status", async () => {
-		const request = makeWebhookRequest({
+		const request = await makeWebhookRequest({
 			kind: "event.delivery_status",
 			// missing id and status
 		});
@@ -207,7 +224,7 @@ describe("uber-direct webhook endpoint", () => {
 		const { data, controller, context } = createTestContext();
 		const delivery = await seedDelivery(data);
 
-		const request = makeWebhookRequest(DELIVERY_PICKUP_PAYLOAD);
+		const request = await makeWebhookRequest(DELIVERY_PICKUP_PAYLOAD);
 		const response = await callWebhook(endpoint, request, context);
 
 		const body = await response.json();
@@ -224,7 +241,7 @@ describe("uber-direct webhook endpoint", () => {
 		const { data, controller, context } = createTestContext();
 		await seedDelivery(data, { status: "accepted" });
 
-		const request = makeWebhookRequest(DELIVERY_PICKED_UP_PAYLOAD);
+		const request = await makeWebhookRequest(DELIVERY_PICKED_UP_PAYLOAD);
 		const response = await callWebhook(endpoint, request, context);
 
 		const body = await response.json();
@@ -245,7 +262,7 @@ describe("uber-direct webhook endpoint", () => {
 		const { data, controller, context } = createTestContext();
 		await seedDelivery(data, { status: "picked-up" });
 
-		const request = makeWebhookRequest(DELIVERY_DELIVERED_PAYLOAD);
+		const request = await makeWebhookRequest(DELIVERY_DELIVERED_PAYLOAD);
 		await callWebhook(endpoint, request, context);
 
 		const deliveries = await controller.listDeliveries();
@@ -258,18 +275,98 @@ describe("uber-direct webhook endpoint", () => {
 		const { data, controller, context } = createTestContext();
 		await seedDelivery(data);
 
-		const request = makeWebhookRequest(DELIVERY_CANCELED_PAYLOAD);
+		const request = await makeWebhookRequest(DELIVERY_CANCELED_PAYLOAD);
 		await callWebhook(endpoint, request, context);
 
 		const deliveries = await controller.listDeliveries();
 		const updated = deliveries[0];
 		expect(updated?.status).toBe("cancelled");
 	});
+
+	it("does not reapply or re-emit a duplicate delivery status", async () => {
+		const { data, context, events } = createTestContext();
+		await seedDelivery(data, { status: "accepted" });
+
+		await callWebhook(
+			endpoint,
+			await makeWebhookRequest(DELIVERY_PICKED_UP_PAYLOAD),
+			context,
+		);
+		await callWebhook(
+			endpoint,
+			await makeWebhookRequest(DELIVERY_PICKED_UP_PAYLOAD),
+			context,
+		);
+
+		expect(
+			events.emitted.filter(
+				(event) => event.type === "uber-direct.delivery.picked-up",
+			),
+		).toHaveLength(1);
+		expect(
+			events.emitted.filter(
+				(event) => event.type === "uber-direct.webhook.received",
+			),
+		).toHaveLength(1);
+	});
+
+	it("reserves a receipt before concurrent duplicate mutations", async () => {
+		let releaseUpdate: (() => void) | undefined;
+		const updateGate = new Promise<void>((resolve) => {
+			releaseUpdate = resolve;
+		});
+		const events = createMockEvents();
+		const updateDeliveryStatus = vi.fn(async () => {
+			await updateGate;
+			return { id: "delivery-local", status: "picked-up" };
+		});
+		const listDeliveries = vi.fn(async () => [
+			{
+				id: "delivery-local",
+				externalId: DELIVERY_PICKED_UP_PAYLOAD.id,
+				status: "accepted",
+			},
+		]);
+		const context = {
+			controllers: {
+				uberDirect: { listDeliveries, updateDeliveryStatus },
+			},
+			events,
+		};
+
+		const first = callWebhook(
+			endpoint,
+			await makeWebhookRequest(DELIVERY_PICKED_UP_PAYLOAD),
+			context,
+		);
+		await vi.waitFor(() =>
+			expect(updateDeliveryStatus).toHaveBeenCalledTimes(1),
+		);
+		const secondPromise = callWebhook(
+			endpoint,
+			await makeWebhookRequest(DELIVERY_PICKED_UP_PAYLOAD),
+			context,
+		);
+		await new Promise((resolve) => setTimeout(resolve, 10));
+		releaseUpdate?.();
+		const [firstResponse, secondResponse] = await Promise.all([
+			first,
+			secondPromise,
+		]);
+
+		expect(firstResponse.status).toBe(200);
+		expect(secondResponse.status).toBe(409);
+		expect(listDeliveries).toHaveBeenCalledTimes(1);
+		expect(updateDeliveryStatus).toHaveBeenCalledTimes(1);
+		expect(
+			events.emitted.filter(
+				(event) => event.type === "uber-direct.webhook.received",
+			),
+		).toHaveLength(1);
+	});
 });
 
 // ── Signature verification tests ─────────────────────────────────────────────
-
-const TEST_SIGNING_KEY = "test-signing-key-for-uber-direct";
 
 async function computeSignature(
 	payload: string,
@@ -393,16 +490,17 @@ describe("uber-direct webhook signature verification", () => {
 		expect(response.status).toBe(401);
 	});
 
-	it("skips verification when no signing key configured", async () => {
+	it("fails closed when no signing key is configured", async () => {
 		const unsignedEndpoint = createUberDirectWebhook();
 		const body = JSON.stringify(DELIVERY_PICKUP_PAYLOAD);
 		const request = makeSignedRequest(body, null);
-		const { context } = createTestContext();
+		const { context, events } = createTestContext();
 
 		const response = await callWebhook(unsignedEndpoint, request, context);
 
-		expect(response.status).toBe(200);
+		expect(response.status).toBe(503);
 		const json = await response.json();
-		expect(json.received).toBe(true);
+		expect(json.error).toMatch(/not configured/i);
+		expect(events.emitted).toHaveLength(0);
 	});
 });

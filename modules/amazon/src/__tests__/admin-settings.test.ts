@@ -37,7 +37,7 @@ afterEach(() => {
 // ── Connection verification ──────────────────────────────────────────────────
 
 describe("Amazon settings — connection verification", () => {
-	it('returns "connected" when Amazon SP-API responds OK', async () => {
+	it("reports the integration unavailable while notifications are disabled", async () => {
 		const spy = vi.spyOn(globalThis, "fetch");
 		// First call: token refresh
 		spy.mockResolvedValueOnce(
@@ -64,9 +64,11 @@ describe("Amazon settings — connection verification", () => {
 			refreshToken: "Atzr|refresh-token",
 		});
 
-		expect(result.status).toBe("connected");
-		expect(result.configured).toBe(true);
-		expect(result.error).toBeUndefined();
+		expect(result.status).toBe("error");
+		expect(result.configured).toBe(false);
+		expect(result.apiConfigured).toBe(true);
+		expect(result.notificationStatus).toBe("disabled");
+		expect(result.error).toMatch(/notification.*disabled/i);
 	});
 
 	it('returns "not_configured" when no credentials', async () => {
@@ -105,7 +107,8 @@ describe("Amazon settings — connection verification", () => {
 		});
 
 		expect(result.status).toBe("error");
-		expect(result.configured).toBe(true);
+		expect(result.configured).toBe(false);
+		expect(result.apiConfigured).toBe(true);
 	});
 
 	it('returns "error" when API is unreachable', async () => {

@@ -9,7 +9,9 @@ describe("payment controller edge cases", () => {
 
 	beforeEach(() => {
 		mockData = createMockDataService();
-		controller = createPaymentController(mockData);
+		controller = createPaymentController(mockData, undefined, {
+			allowOfflineForDevelopment: true,
+		});
 	});
 
 	// ── createIntent edge cases ─────────────────────────────────────────

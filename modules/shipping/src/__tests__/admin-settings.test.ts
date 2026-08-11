@@ -16,8 +16,12 @@ function extractHandler(
 function callSettings(options: {
 	easypostApiKey?: string;
 	easypostTestMode?: boolean;
+	easypostWebhookSecret?: string;
 }) {
-	const endpoint = createGetSettingsEndpoint(options);
+	const endpoint = createGetSettingsEndpoint({
+		easypostWebhookSecret: "test-webhook-secret",
+		...options,
+	});
 	const handler = extractHandler(endpoint);
 	return handler({ context: {} });
 }
@@ -38,6 +42,20 @@ afterEach(() => {
 // ── Connection verification ───────────────────────────────────────────────────
 
 describe("Shipping settings — connection verification", () => {
+	it("is unavailable without the EasyPost webhook secret", async () => {
+		const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+		const result = await callSettings({
+			easypostApiKey: VALID_API_KEY,
+			easypostWebhookSecret: "",
+		});
+
+		expect(result.status).toBe("not_configured");
+		expect(result.configured).toBe(false);
+		expect(result.webhookConfigured).toBe(false);
+		expect(fetchSpy).not.toHaveBeenCalled();
+	});
+
 	it('returns "connected" when EasyPost API responds OK', async () => {
 		vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
 			new Response(JSON.stringify(MOCK_USER), { status: 200 }),

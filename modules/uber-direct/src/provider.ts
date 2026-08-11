@@ -382,18 +382,19 @@ export async function verifyWebhookSignature(
 	signature: string,
 	signingKey: string,
 ): Promise<boolean> {
+	if (!/^[0-9a-fA-F]{64}$/.test(signature)) return false;
+
 	const key = await crypto.subtle.importKey(
 		"raw",
 		enc.encode(signingKey),
 		{ name: "HMAC", hash: "SHA-256" },
 		false,
-		["sign"],
+		["verify"],
 	);
 
-	const computed = await crypto.subtle.sign("HMAC", key, enc.encode(payload));
-	const computedHex = Array.from(new Uint8Array(computed))
-		.map((b) => b.toString(16).padStart(2, "0"))
-		.join("");
-
-	return computedHex === signature;
+	const signatureBytes = Uint8Array.from(
+		signature.match(/.{2}/g) ?? [],
+		(byte) => Number.parseInt(byte, 16),
+	);
+	return crypto.subtle.verify("HMAC", key, signatureBytes, enc.encode(payload));
 }

@@ -9,7 +9,9 @@ describe("payments edge cases", () => {
 
 	beforeEach(() => {
 		mockData = createMockDataService();
-		controller = createPaymentController(mockData);
+		controller = createPaymentController(mockData, undefined, {
+			allowOfflineForDevelopment: true,
+		});
 	});
 
 	// ── State transition edge cases ─────────────────────────────────────
@@ -518,7 +520,7 @@ describe("payments edge cases", () => {
 
 	// ── No-op confirmIntent on local controller ─────────────────────────
 
-	describe("local mode (no provider)", () => {
+	describe("explicit development offline mode", () => {
 		it("confirmIntent skips provider delegation", async () => {
 			const intent = await controller.createIntent({ amount: 1000 });
 			const confirmed = await controller.confirmIntent(intent.id);
@@ -533,7 +535,7 @@ describe("payments edge cases", () => {
 			expect(cancelled?.providerMetadata).toEqual({});
 		});
 
-		it("createRefund works without provider for local intents", async () => {
+		it("creates a local refund only when development mode was explicitly enabled", async () => {
 			const intent = await controller.createIntent({ amount: 3000 });
 			await controller.confirmIntent(intent.id);
 			const refund = await controller.createRefund({

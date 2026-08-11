@@ -44,7 +44,9 @@ async function simulateCreateIntent(
 	},
 	opts: { session?: { user: { id: string; email: string } } } = {},
 ) {
-	const controller = createPaymentController(data);
+	const controller = createPaymentController(data, undefined, {
+		allowOfflineForDevelopment: true,
+	});
 	const email = opts.session ? opts.session.user.email : body.email;
 	const intent = await controller.createIntent({
 		amount: body.amount,
@@ -61,7 +63,9 @@ async function simulateCreateIntent(
  * Simulates get-intent endpoint: retrieves intent by ID, returns 404 if missing.
  */
 async function simulateGetIntent(data: DataService, id: string) {
-	const controller = createPaymentController(data);
+	const controller = createPaymentController(data, undefined, {
+		allowOfflineForDevelopment: true,
+	});
 	const intent = await controller.getIntent(id);
 	if (!intent) return { error: "Payment intent not found", status: 404 };
 	return { intent };
@@ -80,7 +84,9 @@ async function simulateConfirmIntent(
 		return { error: "Authentication required", status: 401 };
 	}
 
-	const controller = createPaymentController(data);
+	const controller = createPaymentController(data, undefined, {
+		allowOfflineForDevelopment: true,
+	});
 	try {
 		const intent = await controller.confirmIntent(id);
 		if (!intent) return { error: "Payment intent not found", status: 404 };
@@ -110,7 +116,9 @@ async function simulateCancelIntent(
 		return { error: "Authentication required", status: 401 };
 	}
 
-	const controller = createPaymentController(data);
+	const controller = createPaymentController(data, undefined, {
+		allowOfflineForDevelopment: true,
+	});
 	const existing = await controller.getIntent(id);
 	if (!existing) return { error: "Payment intent not found", status: 404 };
 
@@ -141,7 +149,9 @@ async function simulateListMethods(
 		return { error: "Authentication required", status: 401 };
 	}
 
-	const controller = createPaymentController(data);
+	const controller = createPaymentController(data, undefined, {
+		allowOfflineForDevelopment: true,
+	});
 	const methods = await controller.listPaymentMethods(opts.session.user.id);
 	return { methods };
 }
@@ -159,7 +169,9 @@ async function simulateDeleteMethod(
 		return { error: "Authentication required", status: 401 };
 	}
 
-	const controller = createPaymentController(data);
+	const controller = createPaymentController(data, undefined, {
+		allowOfflineForDevelopment: true,
+	});
 	const method = await controller.getPaymentMethod(id);
 	if (!method) return { error: "Payment method not found", status: 404 };
 
@@ -317,7 +329,9 @@ describe("store endpoint: confirm intent — auth and state machine", () => {
 	});
 
 	it("confirms a pending intent", async () => {
-		const controller = createPaymentController(data);
+		const controller = createPaymentController(data, undefined, {
+			allowOfflineForDevelopment: true,
+		});
 		const intent = await controller.createIntent({
 			amount: 5000,
 			customerId: "cust_1",
@@ -334,7 +348,9 @@ describe("store endpoint: confirm intent — auth and state machine", () => {
 	});
 
 	it("returns already-succeeded intent without error", async () => {
-		const controller = createPaymentController(data);
+		const controller = createPaymentController(data, undefined, {
+			allowOfflineForDevelopment: true,
+		});
 		const intent = await controller.createIntent({
 			amount: 5000,
 			customerId: "cust_1",
@@ -363,7 +379,9 @@ describe("store endpoint: confirm intent — auth and state machine", () => {
 	});
 
 	it("returns 404 when intent belongs to another customer", async () => {
-		const controller = createPaymentController(data);
+		const controller = createPaymentController(data, undefined, {
+			allowOfflineForDevelopment: true,
+		});
 		const intent = await controller.createIntent({
 			amount: 5000,
 			customerId: "cust_owner",
@@ -380,7 +398,9 @@ describe("store endpoint: confirm intent — auth and state machine", () => {
 	});
 
 	it("returns 400 when trying to confirm a cancelled intent", async () => {
-		const controller = createPaymentController(data);
+		const controller = createPaymentController(data, undefined, {
+			allowOfflineForDevelopment: true,
+		});
 		const intent = await controller.createIntent({
 			amount: 5000,
 			customerId: "cust_1",
@@ -399,7 +419,9 @@ describe("store endpoint: confirm intent — auth and state machine", () => {
 	});
 
 	it("returns 400 when trying to confirm a failed intent", async () => {
-		const controller = createPaymentController(data);
+		const controller = createPaymentController(data, undefined, {
+			allowOfflineForDevelopment: true,
+		});
 		const intent = await controller.createIntent({
 			amount: 5000,
 			customerId: "cust_1",
@@ -429,7 +451,9 @@ describe("store endpoint: confirm intent — auth and state machine", () => {
 	});
 
 	it("allows confirming an intent with no customerId (guest intent)", async () => {
-		const controller = createPaymentController(data);
+		const controller = createPaymentController(data, undefined, {
+			allowOfflineForDevelopment: true,
+		});
 		const intent = await controller.createIntent({
 			amount: 3000,
 			email: "guest@example.com",
@@ -463,7 +487,9 @@ describe("store endpoint: cancel intent — auth and ownership", () => {
 	});
 
 	it("cancels a pending intent", async () => {
-		const controller = createPaymentController(data);
+		const controller = createPaymentController(data, undefined, {
+			allowOfflineForDevelopment: true,
+		});
 		const intent = await controller.createIntent({
 			amount: 5000,
 			customerId: "cust_1",
@@ -491,7 +517,9 @@ describe("store endpoint: cancel intent — auth and ownership", () => {
 	});
 
 	it("returns 404 when intent belongs to another customer", async () => {
-		const controller = createPaymentController(data);
+		const controller = createPaymentController(data, undefined, {
+			allowOfflineForDevelopment: true,
+		});
 		const intent = await controller.createIntent({
 			amount: 5000,
 			customerId: "cust_owner",
@@ -508,7 +536,9 @@ describe("store endpoint: cancel intent — auth and ownership", () => {
 	});
 
 	it("returns 400 when trying to cancel a succeeded intent", async () => {
-		const controller = createPaymentController(data);
+		const controller = createPaymentController(data, undefined, {
+			allowOfflineForDevelopment: true,
+		});
 		const intent = await controller.createIntent({
 			amount: 5000,
 			customerId: "cust_1",
@@ -527,7 +557,9 @@ describe("store endpoint: cancel intent — auth and ownership", () => {
 	});
 
 	it("returns already-cancelled intent without error", async () => {
-		const controller = createPaymentController(data);
+		const controller = createPaymentController(data, undefined, {
+			allowOfflineForDevelopment: true,
+		});
 		const intent = await controller.createIntent({
 			amount: 5000,
 			customerId: "cust_1",
@@ -545,7 +577,9 @@ describe("store endpoint: cancel intent — auth and ownership", () => {
 	});
 
 	it("allows cancelling an intent with no customerId", async () => {
-		const controller = createPaymentController(data);
+		const controller = createPaymentController(data, undefined, {
+			allowOfflineForDevelopment: true,
+		});
 		const intent = await controller.createIntent({
 			amount: 3000,
 			email: "guest@example.com",
@@ -579,7 +613,9 @@ describe("store endpoint: list payment methods — auth scoping", () => {
 	});
 
 	it("returns methods for the authenticated user", async () => {
-		const controller = createPaymentController(data);
+		const controller = createPaymentController(data, undefined, {
+			allowOfflineForDevelopment: true,
+		});
 		await controller.savePaymentMethod({
 			customerId: "cust_1",
 			providerMethodId: "pm_stripe_1",
@@ -606,7 +642,9 @@ describe("store endpoint: list payment methods — auth scoping", () => {
 	});
 
 	it("does not return methods belonging to other users", async () => {
-		const controller = createPaymentController(data);
+		const controller = createPaymentController(data, undefined, {
+			allowOfflineForDevelopment: true,
+		});
 		await controller.savePaymentMethod({
 			customerId: "cust_other",
 			providerMethodId: "pm_stripe_1",
@@ -654,7 +692,9 @@ describe("store endpoint: delete payment method — auth and ownership", () => {
 	});
 
 	it("deletes a method owned by the authenticated user", async () => {
-		const controller = createPaymentController(data);
+		const controller = createPaymentController(data, undefined, {
+			allowOfflineForDevelopment: true,
+		});
 		const method = await controller.savePaymentMethod({
 			customerId: "cust_1",
 			providerMethodId: "pm_stripe_1",
@@ -689,7 +729,9 @@ describe("store endpoint: delete payment method — auth and ownership", () => {
 	});
 
 	it("returns 404 when method belongs to another customer", async () => {
-		const controller = createPaymentController(data);
+		const controller = createPaymentController(data, undefined, {
+			allowOfflineForDevelopment: true,
+		});
 		const method = await controller.savePaymentMethod({
 			customerId: "cust_owner",
 			providerMethodId: "pm_stripe_1",
@@ -713,7 +755,9 @@ describe("store endpoint: delete payment method — auth and ownership", () => {
 	});
 
 	it("preserves other methods when one is deleted", async () => {
-		const controller = createPaymentController(data);
+		const controller = createPaymentController(data, undefined, {
+			allowOfflineForDevelopment: true,
+		});
 		const methodA = await controller.savePaymentMethod({
 			customerId: "cust_1",
 			providerMethodId: "pm_a",

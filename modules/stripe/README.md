@@ -107,7 +107,7 @@ The webhook endpoint:
 2. Verifies the `Stripe-Signature` header using HMAC-SHA256 with timestamp replay protection (5-minute tolerance)
 3. Returns `{ received: true, type: "..." }` on success
 
-**Without `webhookSecret`:** All requests are accepted without verification (useful for local development).
+**Without `webhookSecret`:** The webhook endpoint returns `503` and performs no payment or event effects.
 
 **With `webhookSecret`:** Invalid or expired signatures return `401`.
 

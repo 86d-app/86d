@@ -30,7 +30,10 @@ export interface UberDirectOptions extends ModuleConfig {
 
 export default function uberDirect(options?: UberDirectOptions): Module {
 	const hasCredentials = Boolean(
-		options?.clientId && options?.clientSecret && options?.customerId,
+		options?.clientId &&
+			options?.clientSecret &&
+			options?.customerId &&
+			options?.webhookSigningKey,
 	);
 
 	// Build endpoints — include webhook and settings when credentials are present
@@ -39,6 +42,7 @@ export default function uberDirect(options?: UberDirectOptions): Module {
 		clientId: options?.clientId,
 		clientSecret: options?.clientSecret,
 		customerId: options?.customerId,
+		webhookSigningKey: options?.webhookSigningKey,
 	});
 
 	return {

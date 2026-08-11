@@ -15,7 +15,7 @@ export function createGetSettingsEndpoint(options: SettingsOptions) {
 		"/admin/amazon/settings",
 		{ method: "GET" },
 		async () => {
-			const hasCredentials = Boolean(
+			const apiConfigured = Boolean(
 				options.sellerId &&
 					options.clientId &&
 					options.clientSecret &&
@@ -26,7 +26,7 @@ export function createGetSettingsEndpoint(options: SettingsOptions) {
 			let error: string | undefined;
 
 			if (
-				hasCredentials &&
+				apiConfigured &&
 				options.sellerId &&
 				options.clientId &&
 				options.clientSecret &&
@@ -42,7 +42,9 @@ export function createGetSettingsEndpoint(options: SettingsOptions) {
 				});
 				const result = await provider.verifyConnection();
 				if (result.ok) {
-					status = "connected";
+					status = "error";
+					error =
+						"Amazon SP-API notification ingestion is disabled until an SQS or EventBridge consumer is configured.";
 				} else {
 					status = "error";
 					error = result.error;
@@ -52,7 +54,9 @@ export function createGetSettingsEndpoint(options: SettingsOptions) {
 			return {
 				status,
 				error,
-				configured: hasCredentials,
+				configured: false,
+				apiConfigured,
+				notificationStatus: "disabled",
 				sellerId: options.sellerId ?? null,
 				marketplaceId: options.marketplaceId ?? null,
 				region: options.region ?? "NA",

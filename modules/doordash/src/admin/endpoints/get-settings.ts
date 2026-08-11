@@ -18,7 +18,7 @@ export function createGetSettingsEndpoint(options: SettingsOptions) {
 		"/admin/doordash/settings",
 		{ method: "GET" },
 		async () => {
-			const hasCredentials = Boolean(
+			const apiConfigured = Boolean(
 				options.developerId && options.keyId && options.signingSecret,
 			);
 
@@ -26,7 +26,7 @@ export function createGetSettingsEndpoint(options: SettingsOptions) {
 			let error: string | undefined;
 			let accountName: string | undefined;
 
-			if (hasCredentials) {
+			if (apiConfigured) {
 				const provider = new DoordashDriveProvider(
 					{
 						developerId: options.developerId ?? "",
@@ -37,8 +37,10 @@ export function createGetSettingsEndpoint(options: SettingsOptions) {
 				);
 				const result = await provider.verifyConnection();
 				if (result.ok) {
-					status = "connected";
+					status = "error";
 					accountName = result.accountName;
+					error =
+						"DoorDash webhook ingress is disabled until documented webhook authentication is configured.";
 				} else {
 					status = "error";
 					error = result.error;
@@ -49,7 +51,10 @@ export function createGetSettingsEndpoint(options: SettingsOptions) {
 				status,
 				error,
 				accountName,
-				configured: hasCredentials,
+				configured: false,
+				apiConfigured,
+				webhookConfigured: false,
+				webhookStatus: "disabled",
 				sandbox: options.sandbox ?? true,
 				developerIdMasked: options.developerId
 					? maskKey(options.developerId)

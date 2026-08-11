@@ -13,7 +13,7 @@ interface SquareEventData {
 }
 
 interface SquareWebhookOptions {
-	/** Square webhook signature key. When provided, the `x-square-hmacsha256-signature`
+	/** Square webhook signature key. The `x-square-hmacsha256-signature`
 	 *  header is verified against the raw body + notification URL. */
 	webhookSignatureKey?: string | undefined;
 	/** The full URL that Square sends webhooks to (e.g. https://your-store.com/api/square/webhook).
@@ -55,6 +55,52 @@ async function verifySquareSignature(
 	const sig = await crypto.subtle.sign("HMAC", key, enc.encode(payload));
 	const expected = btoa(String.fromCharCode(...new Uint8Array(sig)));
 	return timingSafeEqual(signatureHeader, expected);
+}
+
+const MAX_WEBHOOK_RECEIPTS = 10_000;
+
+async function sha256Hex(data: string): Promise<string> {
+	const digest = await crypto.subtle.digest("SHA-256", enc.encode(data));
+	return Array.from(new Uint8Array(digest), (byte) =>
+		byte.toString(16).padStart(2, "0"),
+	).join("");
+}
+
+function createReceiptGuard() {
+	const receipts = new Map<string, "processing" | "processed">();
+	return async function withReceipt(
+		key: string,
+		duplicateBody: Record<string, unknown>,
+		work: () => Promise<Response>,
+	): Promise<Response> {
+		const state = receipts.get(key);
+		if (state === "processed") {
+			return Response.json({ ...duplicateBody, duplicate: true });
+		}
+		if (state === "processing") {
+			return Response.json(
+				{ error: "Webhook event is already being processed." },
+				{ status: 409 },
+			);
+		}
+		receipts.set(key, "processing");
+		try {
+			const response = await work();
+			if (response.ok) {
+				receipts.set(key, "processed");
+				if (receipts.size > MAX_WEBHOOK_RECEIPTS) {
+					const oldest = receipts.keys().next().value;
+					if (oldest) receipts.delete(oldest);
+				}
+			} else {
+				receipts.delete(key);
+			}
+			return response;
+		} catch (error) {
+			receipts.delete(key);
+			throw error;
+		}
+	};
 }
 
 // ── Square event → payment status mapping ────────────────────────────────────
@@ -127,14 +173,13 @@ function extractRefundDetails(event: Record<string, unknown>):
 	| undefined {
 	const data = event.data as SquareEventData | undefined;
 	const refund = data?.object?.refund;
-	if (!refund) return undefined;
+	if (!refund || typeof refund.id !== "string") return undefined;
+	const amount = refund.amount_money?.amount;
+	if (!Number.isSafeInteger(amount) || (amount ?? 0) <= 0) return undefined;
 
 	return {
-		providerRefundId: refund.id ?? `sq_re_${crypto.randomUUID()}`,
-		amount:
-			typeof refund.amount_money?.amount === "number"
-				? refund.amount_money.amount
-				: 0,
+		providerRefundId: refund.id,
+		amount: amount as number,
 	};
 }
 
@@ -142,10 +187,12 @@ function extractRefundDetails(event: Record<string, unknown>):
 
 /**
  * Create the Square webhook endpoint.
- * Provide `{ webhookSignatureKey, notificationUrl }` from module options to
- * enable signature verification. Without a key, all requests are accepted.
+ * The signature key and exact notification URL are mandatory. The endpoint is
+ * unavailable until both values are configured.
  */
 export function createSquareWebhook(opts: SquareWebhookOptions) {
+	const withReceipt = createReceiptGuard();
+
 	return createStoreEndpoint(
 		"/square/webhook",
 		{
@@ -153,24 +200,31 @@ export function createSquareWebhook(opts: SquareWebhookOptions) {
 			requireRequest: true,
 		},
 		async (ctx) => {
+			const webhookSignatureKey = opts.webhookSignatureKey?.trim();
+			const notificationUrl = opts.notificationUrl?.trim();
+			if (!webhookSignatureKey || !notificationUrl) {
+				return Response.json(
+					{ error: "Square webhook verification is not configured." },
+					{ status: 503 },
+				);
+			}
+
 			const request = ctx.request;
 			const rawBody = await request.text();
 
-			if (opts.webhookSignatureKey && opts.notificationUrl) {
-				const sigHeader =
-					request.headers.get("x-square-hmacsha256-signature") ?? "";
-				const valid = await verifySquareSignature(
-					rawBody,
-					sigHeader,
-					opts.webhookSignatureKey,
-					opts.notificationUrl,
+			const sigHeader =
+				request.headers.get("x-square-hmacsha256-signature") ?? "";
+			const valid = await verifySquareSignature(
+				rawBody,
+				sigHeader,
+				webhookSignatureKey,
+				notificationUrl,
+			);
+			if (!valid) {
+				return Response.json(
+					{ error: "Invalid webhook signature." },
+					{ status: 401 },
 				);
-				if (!valid) {
-					return Response.json(
-						{ error: "Invalid webhook signature." },
-						{ status: 401 },
-					);
-				}
 			}
 
 			let event: Record<string, unknown>;
@@ -184,62 +238,76 @@ export function createSquareWebhook(opts: SquareWebhookOptions) {
 			if (!eventType) {
 				return Response.json({ error: "Missing event type." }, { status: 400 });
 			}
+			const eventId =
+				typeof event.event_id === "string" ? event.event_id : undefined;
+			const receiptKey = eventId || (await sha256Hex(rawBody));
 
-			// ── Process payment events ──────────────────────────────────────
-			const providerIntentId = extractProviderIntentId(event);
-			const payments = ctx.context?.controllers?.payments;
-			const events = ctx.context?.events;
+			return withReceipt(
+				receiptKey,
+				{ received: true, type: eventType },
+				async () => {
+					// ── Process payment events ──────────────────────────────────────
+					const providerIntentId = extractProviderIntentId(event);
+					const payments = ctx.context?.controllers?.payments;
+					const events = ctx.context?.events;
 
-			if (providerIntentId && payments) {
-				if (SQUARE_REFUND_EVENTS.has(eventType)) {
-					const refundDetails = extractRefundDetails(event);
-					const result = (await payments.handleWebhookRefund({
-						providerIntentId,
-						providerRefundId:
-							refundDetails?.providerRefundId ?? `sq_re_${crypto.randomUUID()}`,
-						amount: refundDetails?.amount,
-					})) as WebhookRefundResult | null;
-					if (result && events) {
-						await events.emit("payment.refunded", {
-							paymentIntentId: result.intent.id,
-							refundId: result.refund.id,
-							amount: result.refund.amount,
-						});
+					if (providerIntentId && payments) {
+						if (SQUARE_REFUND_EVENTS.has(eventType)) {
+							const refundDetails = extractRefundDetails(event);
+							if (!refundDetails) {
+								return Response.json(
+									{ error: "Missing stable Square refund ID." },
+									{ status: 400 },
+								);
+							}
+							const result = (await payments.handleWebhookRefund({
+								providerIntentId,
+								providerRefundId: refundDetails.providerRefundId,
+								amount: refundDetails.amount,
+							})) as WebhookRefundResult | null;
+							if (result && events) {
+								await events.emit("payment.refunded", {
+									paymentIntentId: result.intent.id,
+									refundId: result.refund.id,
+									amount: result.refund.amount,
+								});
+							}
+							return Response.json({
+								received: true,
+								type: eventType,
+								handled: true,
+							});
+						}
+
+						const mapping = SQUARE_EVENT_MAP[eventType];
+						if (mapping) {
+							const updated = (await payments.handleWebhookEvent({
+								providerIntentId,
+								status: mapping.status,
+								providerMetadata: {
+									squareEventId: event.event_id,
+									squareEventType: eventType,
+								},
+							})) as WebhookEventResult | null;
+							if (updated && mapping.domainEvent && events) {
+								await events.emit(mapping.domainEvent, {
+									paymentIntentId: updated.id,
+									amount: updated.amount,
+									currency: updated.currency,
+									orderId: updated.orderId,
+								});
+							}
+							return Response.json({
+								received: true,
+								type: eventType,
+								handled: true,
+							});
+						}
 					}
-					return Response.json({
-						received: true,
-						type: eventType,
-						handled: true,
-					});
-				}
 
-				const mapping = SQUARE_EVENT_MAP[eventType];
-				if (mapping) {
-					const updated = (await payments.handleWebhookEvent({
-						providerIntentId,
-						status: mapping.status,
-						providerMetadata: {
-							squareEventId: event.event_id,
-							squareEventType: eventType,
-						},
-					})) as WebhookEventResult | null;
-					if (updated && mapping.domainEvent && events) {
-						await events.emit(mapping.domainEvent, {
-							paymentIntentId: updated.id,
-							amount: updated.amount,
-							currency: updated.currency,
-							orderId: updated.orderId,
-						});
-					}
-					return Response.json({
-						received: true,
-						type: eventType,
-						handled: true,
-					});
-				}
-			}
-
-			return Response.json({ received: true, type: eventType });
+					return Response.json({ received: true, type: eventType });
+				},
+			);
 		},
 	);
 }

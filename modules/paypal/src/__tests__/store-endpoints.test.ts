@@ -50,18 +50,17 @@ describe("createStoreEndpoints — paypal", () => {
 		expect(endpoints).toHaveProperty("/paypal/webhook");
 	});
 
-	it("endpoint returns 400 for invalid JSON body", async () => {
+	it("endpoint fails closed before parsing invalid JSON", async () => {
 		const endpoints = createStoreEndpoints({
 			clientId: "c",
 			clientSecret: "s",
 		});
 		const req = makeRequest("not-json");
 		const res = await callEndpoint(endpoints, "/paypal/webhook", req);
-		expect(res.status).toBe(400);
+		expect(res.status).toBe(503);
 	});
 
-	it("endpoint returns 400 for missing event type", async () => {
-		// Without webhookId, PayPal verification is skipped
+	it("endpoint fails closed before checking event type", async () => {
 		vi.spyOn(global, "fetch").mockResolvedValue(
 			new Response(JSON.stringify({ verification_status: "SUCCESS" }), {
 				status: 200,
@@ -73,10 +72,10 @@ describe("createStoreEndpoints — paypal", () => {
 		});
 		const req = makeRequest(JSON.stringify({ id: "EVT-001" }));
 		const res = await callEndpoint(endpoints, "/paypal/webhook", req);
-		expect(res.status).toBe(400);
+		expect(res.status).toBe(503);
 	});
 
-	it("endpoint accepts events when no webhookId is configured (no verification)", async () => {
+	it("endpoint rejects events when no webhookId is configured", async () => {
 		const endpoints = createStoreEndpoints({
 			clientId: "c",
 			clientSecret: "s",
@@ -85,8 +84,6 @@ describe("createStoreEndpoints — paypal", () => {
 			JSON.stringify({ event_type: "UNKNOWN.EVENT", resource: {} }),
 		);
 		const res = await callEndpoint(endpoints, "/paypal/webhook", req);
-		expect(res.status).toBe(200);
-		const json = (await res.json()) as { received: boolean };
-		expect(json.received).toBe(true);
+		expect(res.status).toBe(503);
 	});
 });

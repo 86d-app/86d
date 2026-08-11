@@ -1,167 +1,24 @@
 import { createStoreEndpoint } from "@86d-app/core";
-import {
-	mapDriveStatusToInternal,
-	verifyWebhookSignature,
-} from "../../provider";
-import type { DoordashController } from "../../service";
 
 /**
- * DoorDash Drive webhook event names.
- * See: https://developer.doordash.com/en-US/docs/drive/reference/webhooks
+ * DoorDash Drive does not document the former x-doordash-signature body-HMAC
+ * scheme. Keep direct imports fail-closed while the route is unregistered.
+ * https://developer.doordash.com/en-US/docs/drive/how_to/webhooks/
  */
-type DriveWebhookEvent =
-	| "DASHER_CONFIRMED"
-	| "DASHER_CONFIRMED_PICKUP_ARRIVAL"
-	| "DASHER_PICKED_UP"
-	| "DASHER_CONFIRMED_DROPOFF_ARRIVAL"
-	| "DASHER_DROPPED_OFF"
-	| "DELIVERY_CANCELLED"
-	| "DELIVERY_RETURN_INITIALIZED"
-	| "DASHER_CONFIRMED_RETURN_ARRIVAL"
-	| "DELIVERY_RETURNED"
-	| "DELIVERY_BATCHED";
-
-/** Map DoorDash webhook event names to Drive delivery statuses. */
-const EVENT_TO_STATUS: Record<string, string> = {
-	DASHER_CONFIRMED: "confirmed",
-	DASHER_CONFIRMED_PICKUP_ARRIVAL: "arrived_at_pickup",
-	DASHER_PICKED_UP: "picked_up",
-	DASHER_CONFIRMED_DROPOFF_ARRIVAL: "arrived_at_dropoff",
-	DASHER_DROPPED_OFF: "delivered",
-	DELIVERY_CANCELLED: "cancelled",
-};
-
-interface WebhookPayload {
-	external_delivery_id: string;
-	event_name: DriveWebhookEvent;
-	dasher_id?: number | undefined;
-	dasher_name?: string | undefined;
-	pickup_address?: string | undefined;
-	dropoff_address?: string | undefined;
-	pickup_time_actual?: string | undefined;
-	dropoff_time_actual?: string | undefined;
-	order_value?: number | undefined;
-	currency?: string | undefined;
-	fee?: number | undefined;
-	tip?: number | undefined;
-	created_at?: string | undefined;
-	support_reference?: string | undefined;
-}
-
-/**
- * Create the DoorDash webhook endpoint.
- * Verifies HMAC-SHA256 signature using the signing secret when configured.
- * The signature is sent in the X-DoorDash-Signature header as a hex string.
- */
-export function createDoordashWebhook(signingSecret?: string | undefined) {
+export function createDoordashWebhook(_signingSecret?: string | undefined) {
 	return createStoreEndpoint(
 		"/doordash/webhook",
 		{
 			method: "POST",
 			requireRequest: true,
 		},
-		async (ctx) => {
-			const request = ctx.request;
-
-			let rawBody: string;
-			try {
-				rawBody = await request.text();
-			} catch {
-				return Response.json(
-					{ error: "Failed to read request body." },
-					{ status: 400 },
-				);
-			}
-
-			// Verify signature if signing secret is configured
-			if (signingSecret) {
-				const signature = request.headers.get("x-doordash-signature") ?? "";
-
-				if (!signature) {
-					return Response.json(
-						{ error: "Missing webhook signature." },
-						{ status: 401 },
-					);
-				}
-
-				const valid = await verifyWebhookSignature(
-					rawBody,
-					signature,
-					signingSecret,
-				);
-				if (!valid) {
-					return Response.json(
-						{ error: "Invalid webhook signature." },
-						{ status: 401 },
-					);
-				}
-			}
-
-			let payload: WebhookPayload;
-			try {
-				payload = JSON.parse(rawBody) as WebhookPayload;
-			} catch {
-				return Response.json({ error: "Invalid JSON body." }, { status: 400 });
-			}
-
-			if (!payload.external_delivery_id || !payload.event_name) {
-				return Response.json(
-					{ error: "Missing external_delivery_id or event_name." },
-					{ status: 400 },
-				);
-			}
-
-			const controller = ctx.context?.controllers
-				?.doordash as DoordashController;
-			const events = ctx.context?.events;
-
-			void events?.emit("doordash.webhook.received", {
-				eventName: payload.event_name,
-				externalDeliveryId: payload.external_delivery_id,
-			});
-
-			// Map event to internal status
-			const driveStatus = EVENT_TO_STATUS[payload.event_name];
-			if (!driveStatus || !controller) {
-				return Response.json({
-					received: true,
-					event: payload.event_name,
-					handled: false,
-				});
-			}
-
-			// Find delivery by external ID
-			const deliveries = await controller.listDeliveries();
-			const delivery = deliveries.find(
-				(d) => d.externalDeliveryId === payload.external_delivery_id,
-			);
-
-			if (!delivery) {
-				return Response.json({
-					received: true,
-					event: payload.event_name,
-					handled: false,
-					reason: "delivery_not_found",
-				});
-			}
-
-			// Map Drive status to our internal status and update
-			const internalStatus = mapDriveStatusToInternal(
-				driveStatus as Parameters<typeof mapDriveStatusToInternal>[0],
-			);
-
-			if (internalStatus === "cancelled") {
-				await controller.cancelDelivery(delivery.id);
-			} else {
-				await controller.updateDeliveryStatus(delivery.id, internalStatus);
-			}
-
-			return Response.json({
-				received: true,
-				event: payload.event_name,
-				handled: true,
-				deliveryId: delivery.id,
-			});
-		},
+		async () =>
+			Response.json(
+				{
+					error:
+						"DoorDash webhook ingress is disabled until documented webhook authentication is configured.",
+				},
+				{ status: 503 },
+			),
 	);
 }

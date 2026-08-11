@@ -18,12 +18,13 @@ export const getSettings = createAdminEndpoint(
 		const opts = ctx.context.options as Record<string, unknown>;
 		const apiKey = str(opts.apiKey);
 		const webhookSecret = str(opts.webhookSecret);
+		const webhookVerificationConfigured = webhookSecret.length > 0;
 
 		let status: "connected" | "not_configured" | "error" = "not_configured";
 		let error: string | undefined;
 		let accountName: string | undefined;
 
-		if (apiKey.length > 0) {
+		if (apiKey.length > 0 && webhookVerificationConfigured) {
 			const provider = new StripePaymentProvider(apiKey);
 			const result = await provider.verifyConnection();
 			if (result.ok) {
@@ -37,6 +38,7 @@ export const getSettings = createAdminEndpoint(
 
 		return {
 			status,
+			ready: status === "connected" && webhookVerificationConfigured,
 			error,
 			accountName,
 			apiKeyMasked: apiKey ? maskKey(apiKey) : null,
@@ -45,7 +47,7 @@ export const getSettings = createAdminEndpoint(
 				: apiKey.startsWith("sk_test_")
 					? "test"
 					: "unknown",
-			webhookSecretConfigured: webhookSecret.length > 0,
+			webhookSecretConfigured: webhookVerificationConfigured,
 			webhookSecretMasked: webhookSecret ? maskKey(webhookSecret) : null,
 		};
 	},

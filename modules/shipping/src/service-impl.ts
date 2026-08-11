@@ -581,54 +581,10 @@ export function createShippingController(
 		},
 
 		async purchaseLabel(params): Promise<Shipment> {
-			if (!provider) {
-				throw new Error(
-					"EasyPost API key is not configured. Set easypostApiKey in module options.",
-				);
-			}
-
-			// Buy the shipment via EasyPost
-			const response = await provider.buyShipment({
-				shipmentId: params.easypostShipmentId,
-				rateId: params.easypostRateId,
-				insurance: params.insurance,
-			});
-
-			// Update our local shipment with tracking info
-			const existing = (await data.get(
-				"shipment",
-				params.shipmentId,
-			)) as Shipment | null;
-			if (!existing) {
-				throw new Error(`Shipment not found: ${params.shipmentId}`);
-			}
-
-			const now = new Date();
-			const updated: Shipment = {
-				...existing,
-				trackingNumber: response.tracking_code ?? existing.trackingNumber,
-				externalShipmentId: response.id,
-				labelUrl: response.postage_label?.label_url ?? undefined,
-				publicTrackingUrl: response.tracker?.public_url ?? undefined,
-				status: "shipped",
-				shippedAt: now,
-				updatedAt: now,
-			};
-
-			await data.upsert(
-				"shipment",
-				params.shipmentId,
-				updated as unknown as Record<string, unknown>,
+			void params;
+			throw new Error(
+				"Shipping label purchase is unavailable until a durable, idempotent fulfillment operation is configured.",
 			);
-
-			void events?.emit("shipment.shipped", {
-				shipmentId: params.shipmentId,
-				orderId: existing.orderId,
-				trackingNumber: updated.trackingNumber,
-				labelUrl: updated.labelUrl,
-			});
-
-			return updated;
 		},
 	};
 }

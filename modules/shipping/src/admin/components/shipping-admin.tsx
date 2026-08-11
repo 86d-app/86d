@@ -45,6 +45,8 @@ interface SettingsData {
 	error?: string | undefined;
 	accountName?: string | undefined;
 	configured: boolean;
+	apiConfigured: boolean;
+	webhookConfigured: boolean;
 	testMode: boolean;
 	apiKeyMasked: string | null;
 }
@@ -113,8 +115,9 @@ function ConnectionStatus({ settings }: { settings: SettingsData }) {
 					EasyPost not configured
 				</p>
 				<p className="text-muted-foreground text-xs">
-					Set the <code className="text-xs">easypostApiKey</code> option to
-					enable live rate shopping and label purchases.
+					Set both <code className="text-xs">easypostApiKey</code> and{" "}
+					<code className="text-xs">easypostWebhookSecret</code> to enable live
+					rates and authenticated tracking updates.
 				</p>
 			</div>
 		</div>

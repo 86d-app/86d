@@ -22,7 +22,9 @@ describe("payments endpoint security", () => {
 
 	beforeEach(() => {
 		mockData = createMockDataService();
-		controller = createPaymentController(mockData);
+		controller = createPaymentController(mockData, undefined, {
+			allowOfflineForDevelopment: true,
+		});
 	});
 
 	// ── Customer Isolation ──────────────────────────────────────────
@@ -149,7 +151,7 @@ describe("payments endpoint security", () => {
 			expect(result?.status).toBe("cancelled");
 		});
 
-		it("confirmIntent transitions pending to succeeded without provider", async () => {
+		it("explicit development offline mode can transition a pending intent", async () => {
 			const intent = await controller.createIntent({ amount: 2500 });
 			expect(intent.status).toBe("pending");
 

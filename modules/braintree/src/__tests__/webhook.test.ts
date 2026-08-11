@@ -10,11 +10,12 @@ const PRIVATE_KEY = "braintree-private-key";
 
 const enc = new TextEncoder();
 
-/** Compute HMAC-SHA1 hex digest — matches the implementation under test. */
+/** Compute the SDK-compatible Braintree signature digest. */
 async function hmacSha1Hex(secret: string, data: string): Promise<string> {
+	const derivedKey = await crypto.subtle.digest("SHA-1", enc.encode(secret));
 	const key = await crypto.subtle.importKey(
 		"raw",
-		enc.encode(secret),
+		derivedKey,
 		{ name: "HMAC", hash: "SHA-1" },
 		false,
 		["sign"],

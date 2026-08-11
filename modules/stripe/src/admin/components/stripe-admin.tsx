@@ -198,8 +198,7 @@ export function StripeAdmin() {
 						{!settings?.webhookSecretConfigured && (
 							<div className="mt-3 rounded-md bg-yellow-50 p-3 text-sm text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300">
 								Configure a webhook signing secret to verify incoming Stripe
-								events. Without it, all requests to the webhook endpoint are
-								accepted.
+								events. Until then, the webhook endpoint remains unavailable.
 							</div>
 						)}
 					</SettingsCard>

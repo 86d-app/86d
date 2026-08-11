@@ -3,8 +3,7 @@ import { createAdminEndpointsWithSettings } from "./admin/endpoints";
 import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
 import { doordashSchema } from "./schema";
 import { createDoordashController } from "./service-impl";
-import { createStoreEndpoints, storeEndpoints } from "./store/endpoints";
-import { createDoordashWebhook } from "./store/endpoints/webhook";
+import { storeEndpoints } from "./store/endpoints";
 
 export type {
 	Delivery,
@@ -27,12 +26,6 @@ export interface DoordashOptions extends ModuleConfig {
 }
 
 export default function doordash(options?: DoordashOptions): Module {
-	const hasCredentials = Boolean(
-		options?.developerId && options?.keyId && options?.signingSecret,
-	);
-
-	// Build endpoints — include webhook and settings when credentials are present
-	const webhookEndpoint = createDoordashWebhook(options?.signingSecret);
 	const settingsEndpoint = createGetSettingsEndpoint({
 		developerId: options?.developerId,
 		keyId: options?.keyId,
@@ -57,18 +50,15 @@ export default function doordash(options?: DoordashOptions): Module {
 			],
 		},
 		init: async (ctx: ModuleContext) => {
-			const controller = createDoordashController(ctx.data, ctx.events, {
-				developerId: options?.developerId,
-				keyId: options?.keyId,
-				signingSecret: options?.signingSecret,
-				sandbox: options?.sandbox ?? true,
-			});
+			// DoorDash Drive lifecycle webhooks currently require configured Basic
+			// Auth or OAuth. Until that ingress can be verified, do not construct
+			// the outbound provider client: local delivery management remains
+			// available without creating unmanaged external deliveries.
+			const controller = createDoordashController(ctx.data, ctx.events);
 			return { controllers: { doordash: controller } };
 		},
 		endpoints: {
-			store: hasCredentials
-				? createStoreEndpoints(webhookEndpoint)
-				: storeEndpoints,
+			store: storeEndpoints,
 			admin: createAdminEndpointsWithSettings(settingsEndpoint),
 		},
 		admin: {

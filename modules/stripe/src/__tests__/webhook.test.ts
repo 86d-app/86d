@@ -47,7 +47,14 @@ async function callWebhook(
 	handler: ReturnType<typeof createStripeWebhook>,
 	request: Request,
 	context?: Record<string, unknown>,
+	autoSign = true,
 ): Promise<Response> {
+	if (autoSign && !request.headers.has("stripe-signature")) {
+		const body = await request.clone().text();
+		const headers = new Headers(request.headers);
+		headers.set("stripe-signature", await buildStripeSignature(SECRET, body));
+		request = new Request(request, { headers });
+	}
 	const h = handler as unknown as Record<string, unknown>;
 	const fn = typeof h.handler === "function" ? h.handler : h;
 	return (fn as CallableFunction)({ request, context }) as Promise<Response>;
@@ -80,32 +87,29 @@ async function seedIntent(
 
 const SECRET = "whsec_test_secret_key";
 
-// ── No secret (dev mode) ──────────────────────────────────────────────────────
+// ── Missing verification configuration ───────────────────────────────────────
 
 describe("createStripeWebhook — no secret configured", () => {
 	const handler = createStripeWebhook({});
 
-	it("accepts any request when no webhookSecret is set", async () => {
+	it("returns 503 when no webhookSecret is set", async () => {
 		const body = JSON.stringify({ type: "payment_intent.succeeded" });
 		const req = makeRequest(body);
 		const res = await callWebhook(handler, req);
-		expect(res.status).toBe(200);
-		const json = (await res.json()) as { received: boolean; type: string };
-		expect(json.received).toBe(true);
-		expect(json.type).toBe("payment_intent.succeeded");
+		expect(res.status).toBe(503);
 	});
 
-	it("returns 400 for missing event type", async () => {
+	it("fails closed before checking event type", async () => {
 		const body = JSON.stringify({ id: "evt_123" });
 		const req = makeRequest(body);
 		const res = await callWebhook(handler, req);
-		expect(res.status).toBe(400);
+		expect(res.status).toBe(503);
 	});
 
-	it("returns 400 for invalid JSON body", async () => {
+	it("fails closed before parsing invalid JSON", async () => {
 		const req = makeRequest("not-json");
 		const res = await callWebhook(handler, req);
-		expect(res.status).toBe(400);
+		expect(res.status).toBe(503);
 	});
 });
 
@@ -128,7 +132,7 @@ describe("createStripeWebhook — with webhookSecret", () => {
 	it("rejects a missing Stripe-Signature header (returns 401)", async () => {
 		const body = JSON.stringify({ type: "charge.succeeded" });
 		const req = makeRequest(body); // no signature header
-		const res = await callWebhook(handler, req);
+		const res = await callWebhook(handler, req, undefined, false);
 		expect(res.status).toBe(401);
 	});
 
@@ -169,7 +173,7 @@ describe("createStripeWebhook — with webhookSecret", () => {
 // ── Event handling ────────────────────────────────────────────────────────────
 
 describe("createStripeWebhook — event handling", () => {
-	const handler = createStripeWebhook({});
+	const handler = createStripeWebhook({ webhookSecret: SECRET });
 
 	it("handles payment_intent.succeeded and emits payment.completed", async () => {
 		const { data, payments, context } = createTestContext();

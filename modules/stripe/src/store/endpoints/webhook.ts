@@ -11,8 +11,7 @@ interface StripeEventData {
 }
 
 interface StripeWebhookOptions {
-	/** Stripe webhook signing secret (whsec_...). When provided, incoming requests
-	 *  are rejected if the `Stripe-Signature` header is absent or invalid. */
+	/** Stripe webhook signing secret (whsec_...). Required for webhook readiness. */
 	webhookSecret?: string | undefined;
 }
 
@@ -36,6 +35,13 @@ async function hmacSha256Hex(secret: string, data: string): Promise<string> {
 		.join("");
 }
 
+async function sha256Hex(data: string): Promise<string> {
+	const digest = await crypto.subtle.digest("SHA-256", enc.encode(data));
+	return Array.from(new Uint8Array(digest), (byte) =>
+		byte.toString(16).padStart(2, "0"),
+	).join("");
+}
+
 function timingSafeEqual(a: string, b: string): boolean {
 	if (a.length !== b.length) return false;
 	let result = 0;
@@ -53,17 +59,69 @@ async function verifyStripeSignature(
 	signatureHeader: string,
 	secret: string,
 ): Promise<boolean> {
-	const parts = Object.fromEntries(
-		signatureHeader.split(",").map((s) => s.split("=", 2) as [string, string]),
-	);
-	const timestamp = parts.t;
-	const v1 = parts.v1;
-	if (!timestamp || !v1) return false;
+	let timestamp: string | undefined;
+	const signatures: string[] = [];
+	for (const item of signatureHeader.split(",")) {
+		const separator = item.indexOf("=");
+		if (separator < 1) continue;
+		const key = item.slice(0, separator).trim();
+		const value = item.slice(separator + 1).trim();
+		if (key === "t" && !timestamp) timestamp = value;
+		if (key === "v1" && value) signatures.push(value);
+	}
+	if (!timestamp || signatures.length === 0) return false;
 
-	if (Date.now() - Number(timestamp) * 1000 > TOLERANCE_MS) return false;
+	const timestampMs = Number(timestamp) * 1000;
+	if (
+		!Number.isFinite(timestampMs) ||
+		Math.abs(Date.now() - timestampMs) > TOLERANCE_MS
+	) {
+		return false;
+	}
 
 	const expected = await hmacSha256Hex(secret, `${timestamp}.${rawBody}`);
-	return timingSafeEqual(v1, expected);
+	return signatures.some((signature) => timingSafeEqual(signature, expected));
+}
+
+const MAX_WEBHOOK_RECEIPTS = 10_000;
+
+function createReceiptGuard() {
+	const receipts = new Map<string, "processing" | "processed">();
+
+	return async function withReceipt(
+		key: string,
+		duplicateBody: Record<string, unknown>,
+		work: () => Promise<Response>,
+	): Promise<Response> {
+		const state = receipts.get(key);
+		if (state === "processed") {
+			return Response.json({ ...duplicateBody, duplicate: true });
+		}
+		if (state === "processing") {
+			return Response.json(
+				{ error: "Webhook event is already being processed." },
+				{ status: 409 },
+			);
+		}
+
+		receipts.set(key, "processing");
+		try {
+			const response = await work();
+			if (response.ok) {
+				receipts.set(key, "processed");
+				if (receipts.size > MAX_WEBHOOK_RECEIPTS) {
+					const oldest = receipts.keys().next().value;
+					if (oldest) receipts.delete(oldest);
+				}
+			} else {
+				receipts.delete(key);
+			}
+			return response;
+		} catch (error) {
+			receipts.delete(key);
+			throw error;
+		}
+	};
 }
 
 // ── Stripe event → payment status mapping ────────────────────────────────────
@@ -150,14 +208,13 @@ function extractRefundDetails(event: Record<string, unknown>):
 	if (!obj?.refunds?.data) return undefined;
 
 	const latestRefund = obj.refunds.data[0];
-	if (!latestRefund) return undefined;
+	if (!latestRefund || typeof latestRefund.id !== "string") return undefined;
+	const amount = latestRefund.amount;
+	if (!Number.isSafeInteger(amount) || (amount ?? 0) <= 0) return undefined;
 
 	return {
-		providerRefundId: latestRefund.id ?? `re_unknown_${crypto.randomUUID()}`,
-		amount:
-			typeof latestRefund.amount === "number"
-				? latestRefund.amount
-				: (obj.amount_refunded ?? 0),
+		providerRefundId: latestRefund.id,
+		amount: amount as number,
 	};
 }
 
@@ -165,12 +222,11 @@ function extractRefundDetails(event: Record<string, unknown>):
 
 /**
  * Create the Stripe webhook endpoint.
- * Pass `{ webhookSecret }` from module options to enable signature verification.
- *
- * Without a secret the endpoint still works (useful for local development),
- * but all incoming requests are accepted without verification.
+ * A signing secret is mandatory. The endpoint is unavailable until configured.
  */
 export function createStripeWebhook(opts: StripeWebhookOptions) {
+	const withReceipt = createReceiptGuard();
+
 	return createStoreEndpoint(
 		"/stripe/webhook",
 		{
@@ -178,25 +234,30 @@ export function createStripeWebhook(opts: StripeWebhookOptions) {
 			requireRequest: true,
 		},
 		async (ctx) => {
+			const webhookSecret = opts.webhookSecret?.trim();
+			if (!webhookSecret) {
+				return Response.json(
+					{ error: "Stripe webhook verification is not configured." },
+					{ status: 503 },
+				);
+			}
+
 			const request = ctx.request;
 
 			// Read raw body before any JSON.parse to preserve bytes for HMAC
 			const rawBody = await request.text();
 
-			// Signature verification (skipped if no secret configured)
-			if (opts.webhookSecret) {
-				const sigHeader = request.headers.get("stripe-signature") ?? "";
-				const valid = await verifyStripeSignature(
-					rawBody,
-					sigHeader,
-					opts.webhookSecret,
+			const sigHeader = request.headers.get("stripe-signature") ?? "";
+			const valid = await verifyStripeSignature(
+				rawBody,
+				sigHeader,
+				webhookSecret,
+			);
+			if (!valid) {
+				return Response.json(
+					{ error: "Invalid or expired webhook signature." },
+					{ status: 401 },
 				);
-				if (!valid) {
-					return Response.json(
-						{ error: "Invalid or expired webhook signature." },
-						{ status: 401 },
-					);
-				}
 			}
 
 			let event: Record<string, unknown>;
@@ -210,62 +271,75 @@ export function createStripeWebhook(opts: StripeWebhookOptions) {
 			if (!eventType) {
 				return Response.json({ error: "Missing event type." }, { status: 400 });
 			}
+			const eventId = typeof event.id === "string" ? event.id : undefined;
+			const receiptKey = eventId || (await sha256Hex(rawBody));
 
-			// ── Process payment events ──────────────────────────────────────
-			const providerIntentId = extractProviderIntentId(event);
-			const payments = ctx.context?.controllers?.payments;
-			const events = ctx.context?.events;
+			return withReceipt(
+				receiptKey,
+				{ received: true, type: eventType },
+				async () => {
+					// ── Process payment events ──────────────────────────────────────
+					const providerIntentId = extractProviderIntentId(event);
+					const payments = ctx.context?.controllers?.payments;
+					const events = ctx.context?.events;
 
-			if (providerIntentId && payments) {
-				if (STRIPE_REFUND_EVENTS.has(eventType)) {
-					const refundDetails = extractRefundDetails(event);
-					const result = (await payments.handleWebhookRefund({
-						providerIntentId,
-						providerRefundId:
-							refundDetails?.providerRefundId ?? `re_${crypto.randomUUID()}`,
-						amount: refundDetails?.amount,
-					})) as WebhookRefundResult | null;
-					if (result && events) {
-						await events.emit("payment.refunded", {
-							paymentIntentId: result.intent.id,
-							refundId: result.refund.id,
-							amount: result.refund.amount,
-						});
+					if (providerIntentId && payments) {
+						if (STRIPE_REFUND_EVENTS.has(eventType)) {
+							const refundDetails = extractRefundDetails(event);
+							if (!refundDetails) {
+								return Response.json(
+									{ error: "Missing stable Stripe refund ID." },
+									{ status: 400 },
+								);
+							}
+							const result = (await payments.handleWebhookRefund({
+								providerIntentId,
+								providerRefundId: refundDetails.providerRefundId,
+								amount: refundDetails.amount,
+							})) as WebhookRefundResult | null;
+							if (result && events) {
+								await events.emit("payment.refunded", {
+									paymentIntentId: result.intent.id,
+									refundId: result.refund.id,
+									amount: result.refund.amount,
+								});
+							}
+							return Response.json({
+								received: true,
+								type: eventType,
+								handled: true,
+							});
+						}
+
+						const mapping = STRIPE_EVENT_MAP[eventType];
+						if (mapping) {
+							const updated = (await payments.handleWebhookEvent({
+								providerIntentId,
+								status: mapping.status,
+								providerMetadata: {
+									stripeEventId: event.id,
+									stripeEventType: eventType,
+								},
+							})) as WebhookEventResult | null;
+							if (updated && mapping.domainEvent && events) {
+								await events.emit(mapping.domainEvent, {
+									paymentIntentId: updated.id,
+									amount: updated.amount,
+									currency: updated.currency,
+									orderId: updated.orderId,
+								});
+							}
+							return Response.json({
+								received: true,
+								type: eventType,
+								handled: true,
+							});
+						}
 					}
-					return Response.json({
-						received: true,
-						type: eventType,
-						handled: true,
-					});
-				}
 
-				const mapping = STRIPE_EVENT_MAP[eventType];
-				if (mapping) {
-					const updated = (await payments.handleWebhookEvent({
-						providerIntentId,
-						status: mapping.status,
-						providerMetadata: {
-							stripeEventId: event.id,
-							stripeEventType: eventType,
-						},
-					})) as WebhookEventResult | null;
-					if (updated && mapping.domainEvent && events) {
-						await events.emit(mapping.domainEvent, {
-							paymentIntentId: updated.id,
-							amount: updated.amount,
-							currency: updated.currency,
-							orderId: updated.orderId,
-						});
-					}
-					return Response.json({
-						received: true,
-						type: eventType,
-						handled: true,
-					});
-				}
-			}
-
-			return Response.json({ received: true, type: eventType });
+					return Response.json({ received: true, type: eventType });
+				},
+			);
 		},
 	);
 }

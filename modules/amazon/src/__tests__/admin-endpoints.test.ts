@@ -210,7 +210,7 @@ describe("admin GET /amazon/settings", () => {
 		expect(result.configured).toBe(false);
 	});
 
-	it("returns connected when credentials are valid", async () => {
+	it("reports unavailable when API credentials are valid but notifications are disabled", async () => {
 		mockVerifyConnection.mockResolvedValueOnce({
 			ok: true,
 			sellerId: "SELLER_1",
@@ -221,8 +221,8 @@ describe("admin GET /amazon/settings", () => {
 			body: {},
 			context: { controllers: {} },
 		})) as { status: string; configured: boolean };
-		expect(result.status).toBe("connected");
-		expect(result.configured).toBe(true);
+		expect(result.status).toBe("error");
+		expect(result.configured).toBe(false);
 	});
 
 	it("returns error when verification fails", async () => {

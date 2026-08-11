@@ -46,7 +46,20 @@ async function callWebhook(
 	handler: ReturnType<typeof createPayPalWebhook>,
 	request: Request,
 	context?: Record<string, unknown>,
+	autoVerify = true,
 ): Promise<Response> {
+	if (autoVerify) {
+		if (!request.headers.has("paypal-auth-algo")) {
+			const headers = new Headers(request.headers);
+			for (const [name, value] of Object.entries(PAYPAL_HEADERS)) {
+				headers.set(name, value);
+			}
+			request = new Request(request, { headers });
+		}
+		if (!vi.isMockFunction(globalThis.fetch)) {
+			mockPayPalVerification("SUCCESS");
+		}
+	}
 	const h = handler as unknown as Record<string, unknown>;
 	const fn = typeof h.handler === "function" ? h.handler : h;
 	return (fn as CallableFunction)({ request, context }) as Promise<Response>;
@@ -116,7 +129,7 @@ describe("paypal endpoint security — signature verification", () => {
 		const body = JSON.stringify({
 			event_type: "PAYMENT.CAPTURE.COMPLETED",
 		});
-		const res = await callWebhook(handler, makeRequest(body));
+		const res = await callWebhook(handler, makeRequest(body), undefined, false);
 		expect(res.status).toBe(401);
 	});
 
@@ -131,6 +144,8 @@ describe("paypal endpoint security — signature verification", () => {
 				"paypal-transmission-id": "tx-id-123",
 				"paypal-auth-algo": "SHA256withRSA",
 			}),
+			undefined,
+			false,
 		);
 		expect(res.status).toBe(401);
 	});
@@ -169,6 +184,7 @@ describe("paypal endpoint security — event type filtering", () => {
 	const handler = createPayPalWebhook({
 		clientId: CLIENT_ID,
 		clientSecret: CLIENT_SECRET,
+		webhookId: WEBHOOK_ID,
 	});
 
 	it("rejects payloads with missing event_type", async () => {
@@ -270,6 +286,7 @@ describe("paypal endpoint security — refund amount integrity", () => {
 	const handler = createPayPalWebhook({
 		clientId: CLIENT_ID,
 		clientSecret: CLIENT_SECRET,
+		webhookId: WEBHOOK_ID,
 	});
 
 	it("converts refund dollar amount to cents correctly", async () => {
@@ -330,7 +347,7 @@ describe("paypal endpoint security — refund amount integrity", () => {
 		expect(updated?.status).toBe("refunded");
 	});
 
-	it("defaults refund amount to 0 when amount field is missing", async () => {
+	it("rejects a refund when amount is missing", async () => {
 		const { data, payments, context } = createTestContext();
 		await seedIntent(data, payments, "PP_NO_AMT", 2000, "succeeded");
 
@@ -346,7 +363,9 @@ describe("paypal endpoint security — refund amount integrity", () => {
 
 		const res = await callWebhook(handler, makeRequest(body), context);
 		const json = (await res.json()) as { handled: boolean };
-		expect(json.handled).toBe(true);
+		expect(res.status).toBe(400);
+		expect(json.handled).toBeUndefined();
+		expect(context.events.emit).not.toHaveBeenCalled();
 	});
 });
 
@@ -356,16 +375,17 @@ describe("paypal endpoint security — malformed payloads", () => {
 	const handler = createPayPalWebhook({
 		clientId: CLIENT_ID,
 		clientSecret: CLIENT_SECRET,
+		webhookId: WEBHOOK_ID,
 	});
 
-	it("returns 400 for completely invalid JSON", async () => {
+	it("rejects completely invalid JSON before provider verification", async () => {
 		const res = await callWebhook(handler, makeRequest("{not-valid-json"));
-		expect(res.status).toBe(400);
+		expect(res.status).toBe(401);
 	});
 
-	it("returns 400 for empty string body", async () => {
+	it("rejects an empty body before provider verification", async () => {
 		const res = await callWebhook(handler, makeRequest(""));
-		expect(res.status).toBe(400);
+		expect(res.status).toBe(401);
 	});
 
 	it("does not crash when resource field is missing", async () => {
@@ -480,6 +500,7 @@ describe("paypal endpoint security — idempotency", () => {
 	const handler = createPayPalWebhook({
 		clientId: CLIENT_ID,
 		clientSecret: CLIENT_SECRET,
+		webhookId: WEBHOOK_ID,
 	});
 
 	it("processing the same COMPLETED event twice does not corrupt state", async () => {
@@ -538,6 +559,7 @@ describe("paypal endpoint security — domain event emission", () => {
 	const handler = createPayPalWebhook({
 		clientId: CLIENT_ID,
 		clientSecret: CLIENT_SECRET,
+		webhookId: WEBHOOK_ID,
 	});
 
 	it("PAYMENT.CAPTURE.PENDING does not emit a domain event", async () => {

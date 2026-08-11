@@ -20,13 +20,18 @@ export const getSettings = createAdminEndpoint(
 		const clientSecret = str(opts.clientSecret);
 		const sandbox = str(opts.sandbox);
 		const webhookId = str(opts.webhookId);
+		const webhookVerificationConfigured = webhookId.length > 0;
 
 		const isSandbox = sandbox === "true" || sandbox === "1";
 
 		let status: "connected" | "not_configured" | "error" = "not_configured";
 		let error: string | undefined;
 
-		if (clientId.length > 0 && clientSecret.length > 0) {
+		if (
+			clientId.length > 0 &&
+			clientSecret.length > 0 &&
+			webhookVerificationConfigured
+		) {
 			const provider = new PayPalPaymentProvider(
 				clientId,
 				clientSecret,
@@ -43,11 +48,12 @@ export const getSettings = createAdminEndpoint(
 
 		return {
 			status,
+			ready: status === "connected" && webhookVerificationConfigured,
 			error,
 			clientIdMasked: clientId ? maskKey(clientId) : null,
 			clientSecretMasked: clientSecret ? maskKey(clientSecret) : null,
 			mode: isSandbox ? ("sandbox" as const) : ("live" as const),
-			webhookIdConfigured: webhookId.length > 0,
+			webhookIdConfigured: webhookVerificationConfigured,
 			webhookIdMasked: webhookId ? maskKey(webhookId) : null,
 		};
 	},

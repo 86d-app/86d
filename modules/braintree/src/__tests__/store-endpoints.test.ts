@@ -70,9 +70,13 @@ describe("createStoreEndpoints — braintree", () => {
 		const btPayload = btoa("<notification><kind>check</kind></notification>");
 
 		const enc = new TextEncoder();
+		const derivedKey = await crypto.subtle.digest(
+			"SHA-1",
+			enc.encode(privateKey),
+		);
 		const key = await crypto.subtle.importKey(
 			"raw",
-			enc.encode(privateKey),
+			derivedKey,
 			{ name: "HMAC", hash: "SHA-1" },
 			false,
 			["sign"],

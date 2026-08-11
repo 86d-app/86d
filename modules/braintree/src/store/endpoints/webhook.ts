@@ -3,22 +3,25 @@ import { createStoreEndpoint } from "@86d-app/core";
 interface BraintreeWebhookOptions {
 	/** Braintree public key — used to match the prefix in bt_signature. */
 	publicKey: string;
-	/** Braintree private key — used as the HMAC-SHA1 secret over bt_payload. */
+	/** Braintree private key — used by the SDK-compatible digest derivation. */
 	privateKey: string;
 }
 
 // ── Braintree signature verification ──────────────────────────────────────────
 // Braintree sends webhooks as application/x-www-form-urlencoded with two fields:
-//   bt_signature: "<publicKey>|<hex(HMAC-SHA1(privateKey, bt_payload))>"
+//   bt_signature: one or more "<publicKey>|<signature>" pairs joined by `&`
 //   bt_payload:   base64-encoded XML notification
 // https://developer.paypal.com/braintree/docs/guides/webhooks/parse
 
 const enc = new TextEncoder();
 
-async function hmacSha1Hex(secret: string, data: string): Promise<string> {
+async function hmacSha1Hex(
+	keyBytes: BufferSource,
+	data: string,
+): Promise<string> {
 	const key = await crypto.subtle.importKey(
 		"raw",
-		enc.encode(secret),
+		keyBytes,
 		{ name: "HMAC", hash: "SHA-1" },
 		false,
 		["sign"],
@@ -44,17 +47,86 @@ async function verifyBraintreeSignature(
 	publicKey: string,
 	privateKey: string,
 ): Promise<boolean> {
-	// bt_signature format: "PUBLIC_KEY|HEX_HMAC_SHA1(PRIVATE_KEY, bt_payload)"
-	const pipeIndex = btSignature.indexOf("|");
-	if (pipeIndex === -1) return false;
-	const sigPublicKey = btSignature.slice(0, pipeIndex);
-	const signature = btSignature.slice(pipeIndex + 1);
-	if (!sigPublicKey || !signature) return false;
+	if (!/^[A-Za-z0-9+/=\n]+$/.test(btPayload)) return false;
 
-	if (!timingSafeEqual(sigPublicKey, publicKey)) return false;
+	const signatures = btSignature
+		.split("&")
+		.map((pair) => {
+			const pipeIndex = pair.indexOf("|");
+			if (pipeIndex < 1) return undefined;
+			return {
+				publicKey: pair.slice(0, pipeIndex),
+				signature: pair.slice(pipeIndex + 1),
+			};
+		})
+		.filter(
+			(pair): pair is { publicKey: string; signature: string } =>
+				pair !== undefined &&
+				pair.signature.length > 0 &&
+				timingSafeEqual(pair.publicKey, publicKey),
+		);
+	if (signatures.length === 0) return false;
 
-	const expected = await hmacSha1Hex(privateKey, btPayload);
-	return timingSafeEqual(signature, expected);
+	// Braintree's Node SDK first hashes the private key, then uses the binary
+	// SHA-1 digest as the HMAC-SHA1 key. It accepts payloads signed with or
+	// without the trailing newline used by some gateway versions.
+	const derivedKey = await crypto.subtle.digest(
+		"SHA-1",
+		enc.encode(privateKey),
+	);
+	const expected = await hmacSha1Hex(derivedKey, btPayload);
+	const expectedWithNewline = await hmacSha1Hex(derivedKey, `${btPayload}\n`);
+	return signatures.some(
+		({ signature }) =>
+			timingSafeEqual(signature, expected) ||
+			timingSafeEqual(signature, expectedWithNewline),
+	);
+}
+
+const MAX_WEBHOOK_RECEIPTS = 10_000;
+
+async function sha256Hex(data: string): Promise<string> {
+	const digest = await crypto.subtle.digest("SHA-256", enc.encode(data));
+	return Array.from(new Uint8Array(digest), (byte) =>
+		byte.toString(16).padStart(2, "0"),
+	).join("");
+}
+
+function createReceiptGuard() {
+	const receipts = new Map<string, "processing" | "processed">();
+	return async function withReceipt(
+		key: string,
+		duplicateBody: Record<string, unknown>,
+		work: () => Promise<Response>,
+	): Promise<Response> {
+		const state = receipts.get(key);
+		if (state === "processed") {
+			return Response.json({ ...duplicateBody, duplicate: true });
+		}
+		if (state === "processing") {
+			return Response.json(
+				{ error: "Webhook event is already being processed." },
+				{ status: 409 },
+			);
+		}
+		receipts.set(key, "processing");
+		try {
+			const response = await work();
+			if (response.ok) {
+				receipts.set(key, "processed");
+				if (receipts.size > MAX_WEBHOOK_RECEIPTS) {
+					const oldest = receipts.keys().next().value;
+					if (oldest) receipts.delete(oldest);
+				}
+			} else {
+				receipts.delete(key);
+			}
+			return response;
+		} catch (error) {
+			receipts.delete(key);
+			throw error;
+		}
+	};
 }
 
 /** Extract the `kind` field from the base64-encoded XML payload. */
@@ -85,7 +157,7 @@ function extractAmount(btPayload: string): number | undefined {
 		const xml = atob(btPayload);
 		const match = xml.match(/<amount>([^<]+)<\/amount>/);
 		if (!match?.[1]) return undefined;
-		return Math.round(Number.parseFloat(match[1]) * 100);
+		return Math.round(Number(match[1]) * 100);
 	} catch {
 		return undefined;
 	}
@@ -155,6 +227,8 @@ interface WebhookRefundResult {
  * always enforced (no dev-mode passthrough since credentials are required).
  */
 export function createBraintreeWebhook(opts: BraintreeWebhookOptions) {
+	const withReceipt = createReceiptGuard();
+
 	return createStoreEndpoint(
 		"/braintree/webhook",
 		{
@@ -162,6 +236,15 @@ export function createBraintreeWebhook(opts: BraintreeWebhookOptions) {
 			requireRequest: true,
 		},
 		async (ctx) => {
+			const publicKey = opts.publicKey?.trim();
+			const privateKey = opts.privateKey?.trim();
+			if (!publicKey || !privateKey) {
+				return Response.json(
+					{ error: "Braintree webhook verification is not configured." },
+					{ status: 503 },
+				);
+			}
+
 			const request = ctx.request;
 			const rawBody = await request.text();
 
@@ -180,8 +263,8 @@ export function createBraintreeWebhook(opts: BraintreeWebhookOptions) {
 			const valid = await verifyBraintreeSignature(
 				btSignature,
 				btPayload,
-				opts.publicKey,
-				opts.privateKey,
+				publicKey,
+				privateKey,
 			);
 			if (!valid) {
 				return Response.json(
@@ -197,61 +280,70 @@ export function createBraintreeWebhook(opts: BraintreeWebhookOptions) {
 					{ status: 400 },
 				);
 			}
+			const receiptKey = await sha256Hex(btPayload);
 
-			// ── Process payment events ──────────────────────────────────────
-			const transactionId = extractTransactionId(btPayload);
-			const paymentsCtrl = ctx.context?.controllers?.payments;
-			const events = ctx.context?.events;
+			return withReceipt(receiptKey, { received: true, kind }, async () => {
+				// ── Process payment events ──────────────────────────────────────
+				const transactionId = extractTransactionId(btPayload);
+				const paymentsCtrl = ctx.context?.controllers?.payments;
+				const events = ctx.context?.events;
 
-			if (transactionId && paymentsCtrl) {
-				// Check if this is a refund notification
-				if (isRefundNotification(kind, btPayload)) {
-					const amount = extractAmount(btPayload);
-					const result = (await paymentsCtrl.handleWebhookRefund({
-						providerIntentId: transactionId,
-						providerRefundId: `bt_re_${transactionId}`,
-						amount,
-					})) as WebhookRefundResult | null;
-					if (result && events) {
-						await events.emit("payment.refunded", {
-							paymentIntentId: result.intent.id,
-							refundId: result.refund.id,
-							amount: result.refund.amount,
+				if (transactionId && paymentsCtrl) {
+					// Check if this is a refund notification
+					if (isRefundNotification(kind, btPayload)) {
+						const amount = extractAmount(btPayload);
+						if (!Number.isSafeInteger(amount) || (amount ?? 0) <= 0) {
+							return Response.json(
+								{ error: "Missing or invalid Braintree refund amount." },
+								{ status: 400 },
+							);
+						}
+						const result = (await paymentsCtrl.handleWebhookRefund({
+							providerIntentId: transactionId,
+							providerRefundId: `bt_re_${transactionId}`,
+							amount: amount as number,
+						})) as WebhookRefundResult | null;
+						if (result && events) {
+							await events.emit("payment.refunded", {
+								paymentIntentId: result.intent.id,
+								refundId: result.refund.id,
+								amount: result.refund.amount,
+							});
+						}
+						return Response.json({
+							received: true,
+							kind,
+							handled: true,
 						});
 					}
-					return Response.json({
-						received: true,
-						kind,
-						handled: true,
-					});
-				}
 
-				const mapping = BRAINTREE_EVENT_MAP[kind];
-				if (mapping) {
-					const updated = (await paymentsCtrl.handleWebhookEvent({
-						providerIntentId: transactionId,
-						status: mapping.status,
-						providerMetadata: {
-							braintreeKind: kind,
-						},
-					})) as WebhookEventResult | null;
-					if (updated && mapping.domainEvent && events) {
-						await events.emit(mapping.domainEvent, {
-							paymentIntentId: updated.id,
-							amount: updated.amount,
-							currency: updated.currency,
-							orderId: updated.orderId,
+					const mapping = BRAINTREE_EVENT_MAP[kind];
+					if (mapping) {
+						const updated = (await paymentsCtrl.handleWebhookEvent({
+							providerIntentId: transactionId,
+							status: mapping.status,
+							providerMetadata: {
+								braintreeKind: kind,
+							},
+						})) as WebhookEventResult | null;
+						if (updated && mapping.domainEvent && events) {
+							await events.emit(mapping.domainEvent, {
+								paymentIntentId: updated.id,
+								amount: updated.amount,
+								currency: updated.currency,
+								orderId: updated.orderId,
+							});
+						}
+						return Response.json({
+							received: true,
+							kind,
+							handled: true,
 						});
 					}
-					return Response.json({
-						received: true,
-						kind,
-						handled: true,
-					});
 				}
-			}
 
-			return Response.json({ received: true, kind });
+				return Response.json({ received: true, kind });
+			});
 		},
 	);
 }

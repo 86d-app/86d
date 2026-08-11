@@ -47,11 +47,24 @@ describe("uber-direct events", () => {
 		});
 	});
 
-	it("includes webhook endpoint when credentials are provided", () => {
+	it("does not include webhook endpoint without its dedicated signing key", () => {
 		const mod = uberDirect({
 			clientId: "test-id",
 			clientSecret: "test-secret",
 			customerId: "test-cust",
+		});
+		const storeRoutes = Object.keys(
+			mod.endpoints?.store as Record<string, unknown>,
+		);
+		expect(storeRoutes).not.toContain("/uber-direct/webhook");
+	});
+
+	it("includes webhook endpoint when API and webhook credentials are complete", () => {
+		const mod = uberDirect({
+			clientId: "test-id",
+			clientSecret: "test-secret",
+			customerId: "test-cust",
+			webhookSigningKey: "test-signing-key",
 		});
 		const storeRoutes = Object.keys(
 			mod.endpoints?.store as Record<string, unknown>,

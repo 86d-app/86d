@@ -27,7 +27,7 @@ export interface AmazonOptions extends ModuleConfig {
 	marketplaceId?: string;
 	/** Amazon region: "NA" | "EU" | "FE" (default: "NA") */
 	region?: string;
-	/** Webhook signing secret for HMAC-SHA256 signature verification */
+	/** @deprecated SP-API HTTP webhook ingress is disabled. */
 	webhookSecret?: string;
 }
 
@@ -70,7 +70,7 @@ export default function amazon(options?: AmazonOptions): Module {
 			return { controllers: { amazon: controller } };
 		},
 		endpoints: {
-			store: createStoreEndpoints(options?.webhookSecret),
+			store: createStoreEndpoints(),
 			admin: createAdminEndpointsWithSettings(settingsEndpoint),
 		},
 		admin: {

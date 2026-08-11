@@ -1,6 +1,5 @@
 import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { CheckoutController, TaxCalculateController } from "../../service";
-import { recalculateTax } from "./recalculate-tax";
 
 const addressSchema = z.object({
 	firstName: z.string().min(1).max(200).transform(sanitizeText),
@@ -34,6 +33,15 @@ export const updateSession = createStoreEndpoint(
 		}),
 	},
 	async (ctx) => {
+		if (ctx.body.shippingAmount !== undefined) {
+			return {
+				code: "CHECKOUT_CALLER_TOTALS_REJECTED",
+				error:
+					"Shipping amounts must come from an authoritative Store decision.",
+				status: 422,
+			};
+		}
+
 		const controller = ctx.context.controllers.checkout as CheckoutController;
 		const existing = await controller.getById(ctx.params.id);
 		if (!existing) {
@@ -46,20 +54,76 @@ export const updateSession = createStoreEndpoint(
 			return { error: "Checkout session not found", status: 404 };
 		}
 
-		let session = await controller.update(ctx.params.id, ctx.body);
-		if (!session) {
-			return { error: "Cannot update this checkout session", status: 422 };
-		}
-
-		// Auto-calculate tax when a shipping address is provided (or shipping changes)
-		if (
-			(ctx.body.shippingAddress || ctx.body.shippingAmount !== undefined) &&
-			session.shippingAddress
-		) {
+		let taxAmount: number | undefined;
+		if (ctx.body.shippingAddress) {
 			const taxController = ctx.context.controllers.tax as unknown as
 				| TaxCalculateController
 				| undefined;
-			session = await recalculateTax(session, controller, taxController);
+			if (!taxController?.calculate) {
+				return {
+					code: "CHECKOUT_TAX_UNAVAILABLE",
+					error: "An authoritative tax decision is unavailable.",
+					status: 503,
+				};
+			}
+
+			try {
+				const lineItems = await controller.getLineItems(existing.id);
+				if (lineItems.length === 0) {
+					return {
+						code: "CHECKOUT_TAX_UNAVAILABLE",
+						error: "An authoritative tax decision is unavailable.",
+						status: 503,
+					};
+				}
+				const discountRatio =
+					existing.subtotal > 0 && existing.discountAmount > 0
+						? existing.discountAmount / existing.subtotal
+						: 0;
+				const taxResult = await taxController.calculate({
+					address: {
+						country: ctx.body.shippingAddress.country,
+						state: ctx.body.shippingAddress.state,
+						city: ctx.body.shippingAddress.city,
+						postalCode: ctx.body.shippingAddress.postalCode,
+					},
+					lineItems: lineItems.map((item) => ({
+						productId: item.productId,
+						amount: Math.round(
+							item.price * item.quantity * (1 - discountRatio),
+						),
+						quantity: item.quantity,
+					})),
+					shippingAmount: existing.shippingAmount,
+					customerId: existing.customerId,
+				});
+				if (
+					!taxResult ||
+					!Number.isSafeInteger(taxResult.totalTax) ||
+					taxResult.totalTax < 0
+				) {
+					return {
+						code: "CHECKOUT_TAX_UNAVAILABLE",
+						error: "An authoritative tax decision is unavailable.",
+						status: 503,
+					};
+				}
+				taxAmount = taxResult.totalTax;
+			} catch {
+				return {
+					code: "CHECKOUT_TAX_UNAVAILABLE",
+					error: "An authoritative tax decision is unavailable.",
+					status: 503,
+				};
+			}
+		}
+
+		const session = await controller.update(ctx.params.id, {
+			...ctx.body,
+			...(taxAmount !== undefined ? { taxAmount } : {}),
+		});
+		if (!session) {
+			return { error: "Cannot update this checkout session", status: 422 };
 		}
 
 		return { session };

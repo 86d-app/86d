@@ -12,7 +12,7 @@ interface PayPalResource {
 interface PayPalWebhookOptions {
 	clientId: string;
 	clientSecret: string;
-	/** PayPal webhook ID (from dashboard). When provided, signature verification is enabled. */
+	/** PayPal webhook ID (from dashboard). Required for webhook readiness. */
 	webhookId?: string | undefined;
 	/** Use sandbox environment. Pass "true" to enable. */
 	sandbox?: string | undefined;
@@ -66,9 +66,8 @@ async function verifyPayPalSignature(
 		return false;
 	}
 
-	let webhookEvent: unknown;
 	try {
-		webhookEvent = JSON.parse(rawBody);
+		JSON.parse(rawBody);
 	} catch {
 		return false;
 	}
@@ -84,15 +83,7 @@ async function verifyPayPalSignature(
 					Authorization: `Bearer ${token}`,
 					"Content-Type": "application/json",
 				},
-				body: JSON.stringify({
-					auth_algo: authAlgo,
-					cert_url: certUrl,
-					transmission_id: transmissionId,
-					transmission_sig: transmissionSig,
-					transmission_time: transmissionTime,
-					webhook_id: webhookId,
-					webhook_event: webhookEvent,
-				}),
+				body: `{"auth_algo":${JSON.stringify(authAlgo)},"cert_url":${JSON.stringify(certUrl)},"transmission_id":${JSON.stringify(transmissionId)},"transmission_sig":${JSON.stringify(transmissionSig)},"transmission_time":${JSON.stringify(transmissionTime)},"webhook_id":${JSON.stringify(webhookId)},"webhook_event":${rawBody}}`,
 			},
 		);
 		if (!res.ok) return false;
@@ -101,6 +92,53 @@ async function verifyPayPalSignature(
 	} catch {
 		return false;
 	}
+}
+
+const enc = new TextEncoder();
+const MAX_WEBHOOK_RECEIPTS = 10_000;
+
+async function sha256Hex(data: string): Promise<string> {
+	const digest = await crypto.subtle.digest("SHA-256", enc.encode(data));
+	return Array.from(new Uint8Array(digest), (byte) =>
+		byte.toString(16).padStart(2, "0"),
+	).join("");
+}
+
+function createReceiptGuard() {
+	const receipts = new Map<string, "processing" | "processed">();
+	return async function withReceipt(
+		key: string,
+		duplicateBody: Record<string, unknown>,
+		work: () => Promise<Response>,
+	): Promise<Response> {
+		const state = receipts.get(key);
+		if (state === "processed") {
+			return Response.json({ ...duplicateBody, duplicate: true });
+		}
+		if (state === "processing") {
+			return Response.json(
+				{ error: "Webhook event is already being processed." },
+				{ status: 409 },
+			);
+		}
+		receipts.set(key, "processing");
+		try {
+			const response = await work();
+			if (response.ok) {
+				receipts.set(key, "processed");
+				if (receipts.size > MAX_WEBHOOK_RECEIPTS) {
+					const oldest = receipts.keys().next().value;
+					if (oldest) receipts.delete(oldest);
+				}
+			} else {
+				receipts.delete(key);
+			}
+			return response;
+		} catch (error) {
+			receipts.delete(key);
+			throw error;
+		}
+	};
 }
 
 // ── PayPal event → payment status mapping ────────────────────────────────────
@@ -180,14 +218,14 @@ function extractRefundDetails(event: Record<string, unknown>):
 	  }
 	| undefined {
 	const resource = event.resource as PayPalResource | undefined;
-	if (!resource) return undefined;
+	if (!resource || typeof resource.id !== "string") return undefined;
+	if (typeof resource.amount?.value !== "string") return undefined;
+	const amount = Math.round(Number(resource.amount.value) * 100);
+	if (!Number.isSafeInteger(amount) || amount <= 0) return undefined;
 
 	return {
-		providerRefundId: resource.id ?? `pp_re_${crypto.randomUUID()}`,
-		amount:
-			typeof resource.amount?.value === "string"
-				? Math.round(Number.parseFloat(resource.amount.value) * 100)
-				: 0,
+		providerRefundId: resource.id,
+		amount,
 	};
 }
 
@@ -195,15 +233,15 @@ function extractRefundDetails(event: Record<string, unknown>):
 
 /**
  * Create the PayPal webhook endpoint.
- * Provide `{ webhookId }` (from PayPal dashboard) to enable signature
- * verification via PayPal's REST API. Without a `webhookId`, all requests
- * are accepted (useful for local development).
+ * The PayPal credentials and webhook ID are mandatory. The endpoint is
+ * unavailable until all verification configuration is present.
  */
 export function createPayPalWebhook(opts: PayPalWebhookOptions) {
 	const baseUrl =
 		opts.sandbox === "true"
 			? "https://api-m.sandbox.paypal.com"
 			: "https://api-m.paypal.com";
+	const withReceipt = createReceiptGuard();
 
 	return createStoreEndpoint(
 		"/paypal/webhook",
@@ -212,24 +250,33 @@ export function createPayPalWebhook(opts: PayPalWebhookOptions) {
 			requireRequest: true,
 		},
 		async (ctx) => {
+			if (
+				!opts.clientId?.trim() ||
+				!opts.clientSecret?.trim() ||
+				!opts.webhookId?.trim()
+			) {
+				return Response.json(
+					{ error: "PayPal webhook verification is not configured." },
+					{ status: 503 },
+				);
+			}
+
 			const request = ctx.request;
 			const rawBody = await request.text();
 
-			if (opts.webhookId) {
-				const valid = await verifyPayPalSignature(
-					rawBody,
-					request.headers,
-					opts.webhookId,
-					opts.clientId,
-					opts.clientSecret,
-					baseUrl,
+			const valid = await verifyPayPalSignature(
+				rawBody,
+				request.headers,
+				opts.webhookId,
+				opts.clientId,
+				opts.clientSecret,
+				baseUrl,
+			);
+			if (!valid) {
+				return Response.json(
+					{ error: "Invalid or unverifiable webhook signature." },
+					{ status: 401 },
 				);
-				if (!valid) {
-					return Response.json(
-						{ error: "Invalid or unverifiable webhook signature." },
-						{ status: 401 },
-					);
-				}
 			}
 
 			let event: Record<string, unknown>;
@@ -243,62 +290,75 @@ export function createPayPalWebhook(opts: PayPalWebhookOptions) {
 			if (!eventType) {
 				return Response.json({ error: "Missing event type." }, { status: 400 });
 			}
+			const eventId = typeof event.id === "string" ? event.id : undefined;
+			const receiptKey = eventId || (await sha256Hex(rawBody));
 
-			// ── Process payment events ──────────────────────────────────────
-			const providerIntentId = extractProviderIntentId(event);
-			const payments = ctx.context?.controllers?.payments;
-			const events = ctx.context?.events;
+			return withReceipt(
+				receiptKey,
+				{ received: true, type: eventType },
+				async () => {
+					// ── Process payment events ──────────────────────────────────────
+					const providerIntentId = extractProviderIntentId(event);
+					const payments = ctx.context?.controllers?.payments;
+					const events = ctx.context?.events;
 
-			if (providerIntentId && payments) {
-				if (PAYPAL_REFUND_EVENTS.has(eventType)) {
-					const refundDetails = extractRefundDetails(event);
-					const result = (await payments.handleWebhookRefund({
-						providerIntentId,
-						providerRefundId:
-							refundDetails?.providerRefundId ?? `pp_re_${crypto.randomUUID()}`,
-						amount: refundDetails?.amount,
-					})) as WebhookRefundResult | null;
-					if (result && events) {
-						await events.emit("payment.refunded", {
-							paymentIntentId: result.intent.id,
-							refundId: result.refund.id,
-							amount: result.refund.amount,
-						});
+					if (providerIntentId && payments) {
+						if (PAYPAL_REFUND_EVENTS.has(eventType)) {
+							const refundDetails = extractRefundDetails(event);
+							if (!refundDetails) {
+								return Response.json(
+									{ error: "Missing stable PayPal refund ID." },
+									{ status: 400 },
+								);
+							}
+							const result = (await payments.handleWebhookRefund({
+								providerIntentId,
+								providerRefundId: refundDetails.providerRefundId,
+								amount: refundDetails.amount,
+							})) as WebhookRefundResult | null;
+							if (result && events) {
+								await events.emit("payment.refunded", {
+									paymentIntentId: result.intent.id,
+									refundId: result.refund.id,
+									amount: result.refund.amount,
+								});
+							}
+							return Response.json({
+								received: true,
+								type: eventType,
+								handled: true,
+							});
+						}
+
+						const mapping = PAYPAL_EVENT_MAP[eventType];
+						if (mapping) {
+							const updated = (await payments.handleWebhookEvent({
+								providerIntentId,
+								status: mapping.status,
+								providerMetadata: {
+									paypalEventId: event.id,
+									paypalEventType: eventType,
+								},
+							})) as WebhookEventResult | null;
+							if (updated && mapping.domainEvent && events) {
+								await events.emit(mapping.domainEvent, {
+									paymentIntentId: updated.id,
+									amount: updated.amount,
+									currency: updated.currency,
+									orderId: updated.orderId,
+								});
+							}
+							return Response.json({
+								received: true,
+								type: eventType,
+								handled: true,
+							});
+						}
 					}
-					return Response.json({
-						received: true,
-						type: eventType,
-						handled: true,
-					});
-				}
 
-				const mapping = PAYPAL_EVENT_MAP[eventType];
-				if (mapping) {
-					const updated = (await payments.handleWebhookEvent({
-						providerIntentId,
-						status: mapping.status,
-						providerMetadata: {
-							paypalEventId: event.id,
-							paypalEventType: eventType,
-						},
-					})) as WebhookEventResult | null;
-					if (updated && mapping.domainEvent && events) {
-						await events.emit(mapping.domainEvent, {
-							paymentIntentId: updated.id,
-							amount: updated.amount,
-							currency: updated.currency,
-							orderId: updated.orderId,
-						});
-					}
-					return Response.json({
-						received: true,
-						type: eventType,
-						handled: true,
-					});
-				}
-			}
-
-			return Response.json({ received: true, type: eventType });
+					return Response.json({ received: true, type: eventType });
+				},
+			);
 		},
 	);
 }

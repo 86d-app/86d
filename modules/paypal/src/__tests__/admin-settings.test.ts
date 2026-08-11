@@ -14,9 +14,13 @@ function extractHandler(
 }
 
 const handler = extractHandler(getSettings);
+const DEFAULT_WEBHOOK_ID = "WH-admin-test";
 
 function callGetSettings(opts: Record<string, unknown>) {
-	return handler({ context: { options: opts } });
+	const options = Object.hasOwn(opts, "webhookId")
+		? opts
+		: { ...opts, webhookId: DEFAULT_WEBHOOK_ID };
+	return handler({ context: { options } });
 }
 
 function mockFetchOk(body: Record<string, unknown>) {
@@ -102,6 +106,18 @@ describe("getSettings — status (live verification)", () => {
 	it('returns "not_configured" when both are missing', async () => {
 		const result = await callGetSettings({});
 		expect(result.status).toBe("not_configured");
+	});
+
+	it('returns "not_configured" and does not connect without a webhook ID', async () => {
+		const fetchSpy = vi.spyOn(globalThis, "fetch");
+		const result = await callGetSettings({
+			clientId: "AaBbCcDdEeFf",
+			clientSecret: "secret_12345678",
+			webhookId: "",
+		});
+		expect(result.status).toBe("not_configured");
+		expect(result.ready).toBe(false);
+		expect(fetchSpy).not.toHaveBeenCalled();
 	});
 });
 
@@ -235,6 +251,7 @@ describe("getSettings — webhookId", () => {
 		const result = await callGetSettings({
 			clientId: "AaBbCcDdEeFf",
 			clientSecret: "secret_12345678",
+			webhookId: undefined,
 		});
 		expect(result.webhookIdConfigured).toBe(false);
 	});

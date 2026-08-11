@@ -11,7 +11,11 @@ import type {
 export function createPaymentController(
 	data: ModuleDataService,
 	provider?: PaymentProvider,
+	options?: { allowOfflineForDevelopment?: boolean | undefined },
 ): PaymentController {
+	const allowOffline =
+		options?.allowOfflineForDevelopment === true &&
+		process.env.NODE_ENV !== "production";
 	/** Sum of all succeeded refund amounts for an intent. */
 	async function totalRefunded(intentId: string): Promise<number> {
 		const refunds = await data.findMany("refund", {
@@ -76,6 +80,9 @@ export function createPaymentController(
 			const existing = await data.get("paymentIntent", id);
 			if (!existing) return null;
 			const intent = existing as unknown as PaymentIntent;
+			if ((!provider || !intent.providerIntentId) && !allowOffline) {
+				throw new Error("Payment provider is not configured");
+			}
 			if (intent.status === "succeeded") return intent;
 
 			const terminalStates: PaymentIntentStatus[] = [
@@ -256,13 +263,10 @@ export function createPaymentController(
 				});
 				providerRefundId = result.providerRefundId;
 				refundStatus = result.status;
-			} else if (pi.providerIntentId && !provider) {
-				throw new Error(
-					"Cannot refund: payment was created through a provider but no provider is configured",
-				);
-			} else {
-				// Local-only intent (no external provider was used)
+			} else if (allowOffline) {
 				providerRefundId = `local_re_${crypto.randomUUID()}`;
+			} else {
+				throw new Error("Payment provider is not configured");
 			}
 
 			const id = crypto.randomUUID();
@@ -316,7 +320,7 @@ export function createPaymentController(
 			if (intents.length === 0) return null;
 
 			const intent = intents[0];
-			if (intent.status === params.status) return intent;
+			if (intent.status === params.status) return null;
 
 			const updated: PaymentIntent = {
 				...intent,
@@ -356,7 +360,7 @@ export function createPaymentController(
 			});
 			const existing = existingRefunds as unknown as Refund[];
 			if (existing.length > 0) {
-				return { intent, refund: existing[0] };
+				return null;
 			}
 
 			const refundId = crypto.randomUUID();

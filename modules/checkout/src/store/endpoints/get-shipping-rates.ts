@@ -32,9 +32,11 @@ export const getShippingRates = createStoreEndpoint(
 			| undefined;
 
 		if (!shippingController?.calculateRates) {
-			// Shipping module not installed — return empty rates so the UI
-			// can fall back to free shipping or a manual amount.
-			return { rates: [] };
+			return {
+				code: "CHECKOUT_SHIPPING_UNAVAILABLE",
+				error: "An authoritative shipping decision is unavailable.",
+				status: 503,
+			};
 		}
 
 		const lineItems = await controller.getLineItems(session.id);
@@ -43,10 +45,27 @@ export const getShippingRates = createStoreEndpoint(
 			0,
 		);
 
-		const rates = await shippingController.calculateRates({
-			country: (session.shippingAddress as { country: string }).country,
-			orderAmount,
-		});
+		let rates: Awaited<ReturnType<ShippingRateController["calculateRates"]>>;
+		try {
+			rates = await shippingController.calculateRates({
+				country: (session.shippingAddress as { country: string }).country,
+				orderAmount,
+			});
+		} catch {
+			return {
+				code: "CHECKOUT_SHIPPING_UNAVAILABLE",
+				error: "An authoritative shipping decision is unavailable.",
+				status: 503,
+			};
+		}
+
+		if (rates.length === 0) {
+			return {
+				code: "CHECKOUT_SHIPPING_UNAVAILABLE",
+				error: "No authoritative shipping option is available.",
+				status: 422,
+			};
+		}
 
 		return { rates };
 	},

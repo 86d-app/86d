@@ -1,10 +1,14 @@
-import { createMockDataService } from "@86d-app/core/test-utils";
-import { beforeEach, describe, expect, it } from "vitest";
+import {
+	createMockDataService,
+	createMockModuleContext,
+} from "@86d-app/core/test-utils";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createAdminEndpointsWithSettings } from "../admin/endpoints";
 import { createGetSettingsEndpoint } from "../admin/endpoints/get-settings";
+import doordash from "../index";
+import type { DoordashController } from "../service";
 import { createDoordashController } from "../service-impl";
 import { createStoreEndpoints, storeEndpoints } from "../store/endpoints";
-import { createDoordashWebhook } from "../store/endpoints/webhook";
 
 describe("doordash endpoint security", () => {
 	let mockData: ReturnType<typeof createMockDataService>;
@@ -66,14 +70,53 @@ describe("doordash endpoint security", () => {
 	});
 
 	describe("store endpoints (with credentials)", () => {
-		it("includes quote endpoints and webhook", () => {
-			const webhook = createDoordashWebhook();
-			const endpoints = createStoreEndpoints(webhook);
-			const routes = Object.keys(endpoints);
-			expect(routes).toContain("/doordash/quotes");
-			expect(routes).toContain("/doordash/quotes/:id/accept");
-			expect(routes).toContain("/doordash/webhook");
-			expect(routes).toContain("/doordash/deliveries");
+		it("keeps all provider-mutating routes disabled with credentials", () => {
+			const module = doordash({
+				developerId: "developer",
+				keyId: "key",
+				signingSecret: "secret",
+			});
+			for (const endpoints of [
+				module.endpoints?.store ?? {},
+				createStoreEndpoints(),
+			]) {
+				const routes = Object.keys(endpoints);
+				expect(routes).not.toContain("/doordash/quotes");
+				expect(routes).not.toContain("/doordash/quotes/:id/accept");
+				expect(routes).not.toContain("/doordash/webhook");
+				expect(routes).toContain("/doordash/deliveries");
+			}
+		});
+
+		it("does not construct a provider client or make outbound calls", async () => {
+			const fetchSpy = vi
+				.spyOn(globalThis, "fetch")
+				.mockRejectedValue(new Error("outbound call must remain disabled"));
+			try {
+				const module = doordash({
+					developerId: "developer",
+					keyId: "key",
+					signingSecret: "secret",
+				});
+				const initialized = await module.init?.(createMockModuleContext());
+				const initializedControllers = initialized?.controllers as
+					| { doordash?: DoordashController }
+					| undefined;
+				const initializedController = initializedControllers?.doordash;
+				expect(initializedController).toBeDefined();
+
+				const delivery = await initializedController?.createDelivery({
+					orderId: "order-contained",
+					pickupAddress: { street: "1 Pickup St" },
+					dropoffAddress: { street: "2 Dropoff Ave" },
+					fee: 500,
+				});
+
+				expect(delivery?.status).toBe("pending");
+				expect(fetchSpy).not.toHaveBeenCalled();
+			} finally {
+				fetchSpy.mockRestore();
+			}
 		});
 	});
 

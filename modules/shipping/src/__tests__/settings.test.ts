@@ -14,4 +14,23 @@ describe("shipping — module factory settings wiring", () => {
 
 		expect(mod.endpoints?.store).toHaveProperty("/shipping/calculate");
 	});
+
+	it("does not activate EasyPost routes without webhook verification material", async () => {
+		const { default: shipping } = await import("../index");
+		const mod = shipping({ easypostApiKey: "EZTK_test" });
+
+		expect(mod.endpoints?.store).not.toHaveProperty("/shipping/live-rates");
+		expect(mod.endpoints?.store).not.toHaveProperty("/shipping/webhook");
+	});
+
+	it("activates EasyPost routes when API and webhook credentials are complete", async () => {
+		const { default: shipping } = await import("../index");
+		const mod = shipping({
+			easypostApiKey: "EZTK_test",
+			easypostWebhookSecret: "webhook-secret",
+		});
+
+		expect(mod.endpoints?.store).toHaveProperty("/shipping/live-rates");
+		expect(mod.endpoints?.store).toHaveProperty("/shipping/webhook");
+	});
 });

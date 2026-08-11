@@ -17,8 +17,12 @@ function callSettings(options: {
 	clientId?: string;
 	clientSecret?: string;
 	customerId?: string;
+	webhookSigningKey?: string;
 }) {
-	const endpoint = createGetSettingsEndpoint(options);
+	const endpoint = createGetSettingsEndpoint({
+		webhookSigningKey: "test-webhook-signing-key",
+		...options,
+	});
 	const handler = extractHandler(endpoint);
 	return handler({ context: {} });
 }
@@ -34,6 +38,21 @@ afterEach(() => {
 // ── Connection verification ───────────────────────────────────────────────────
 
 describe("Uber Direct settings — connection verification", () => {
+	it("is unavailable without the dedicated webhook signing key", async () => {
+		const fetchSpy = vi.spyOn(globalThis, "fetch");
+		const result = await callSettings({
+			clientId: "CLIENT_ID_123",
+			clientSecret: "CLIENT_SECRET_XYZ",
+			customerId: "CUSTOMER_ABC456",
+			webhookSigningKey: "",
+		});
+
+		expect(result.status).toBe("not_configured");
+		expect(result.configured).toBe(false);
+		expect(result.webhookConfigured).toBe(false);
+		expect(fetchSpy).not.toHaveBeenCalled();
+	});
+
 	it('returns "connected" when OAuth token is obtained successfully', async () => {
 		vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
 			new Response(

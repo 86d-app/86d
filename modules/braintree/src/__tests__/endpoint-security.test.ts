@@ -23,9 +23,10 @@ const PRIVATE_KEY = "bt_priv_test";
 const enc = new TextEncoder();
 
 async function hmacSha1Hex(secret: string, data: string): Promise<string> {
+	const derivedKey = await crypto.subtle.digest("SHA-1", enc.encode(secret));
 	const key = await crypto.subtle.importKey(
 		"raw",
-		enc.encode(secret),
+		derivedKey,
 		{ name: "HMAC", hash: "SHA-1" },
 		false,
 		["sign"],
@@ -295,7 +296,7 @@ describe("braintree endpoint security", () => {
 			);
 		});
 
-		it("handles webhook with missing amount element gracefully for refunds", async () => {
+		it("rejects a refund webhook with a missing amount", async () => {
 			const { data, payments, context } = createTestContext();
 			await seedIntent(data, payments, "BT_NO_AMT", 4000, "succeeded");
 			// Refund notification with no <amount> tag
@@ -307,9 +308,10 @@ describe("braintree endpoint security", () => {
 				extra,
 			);
 			// Should not crash; the refund handler receives
-			// undefined amount
+			// An amount is required for an idempotent financial mutation.
 			const res = await callWebhook(handler, makeRequest(body), context);
-			expect(res.status).toBe(200);
+			expect(res.status).toBe(400);
+			expect(context.events.emit).not.toHaveBeenCalled();
 		});
 
 		it("transaction_settlement_declined does not modify amount on the intent", async () => {

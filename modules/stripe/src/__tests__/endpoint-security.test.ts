@@ -62,7 +62,14 @@ async function callWebhook(
 	handler: ReturnType<typeof createStripeWebhook>,
 	request: Request,
 	context?: Record<string, unknown>,
+	autoSign = true,
 ): Promise<Response> {
+	if (autoSign && !request.headers.has("stripe-signature")) {
+		const body = await request.clone().text();
+		const headers = new Headers(request.headers);
+		headers.set("stripe-signature", await buildStripeSignature(SECRET, body));
+		request = new Request(request, { headers });
+	}
 	const h = handler as unknown as Record<string, unknown>;
 	const fn = typeof h.handler === "function" ? h.handler : h;
 	return (fn as CallableFunction)({ request, context }) as Promise<Response>;
@@ -104,7 +111,7 @@ describe("stripe endpoint security — signature enforcement", () => {
 
 	it("rejects requests with missing Stripe-Signature header", async () => {
 		const body = JSON.stringify({ type: "payment_intent.succeeded" });
-		const res = await callWebhook(handler, makeRequest(body));
+		const res = await callWebhook(handler, makeRequest(body), undefined, false);
 		expect(res.status).toBe(401);
 		const json = (await res.json()) as { error: string };
 		expect(json.error).toContain("signature");
@@ -185,8 +192,7 @@ describe("stripe endpoint security — replay protection", () => {
 // ── Body parsing safety ──────────────────────────────────────────────
 
 describe("stripe endpoint security — body parsing", () => {
-	// No secret — test pure parsing logic
-	const handler = createStripeWebhook({});
+	const handler = createStripeWebhook({ webhookSecret: SECRET });
 
 	it("returns 400 for non-JSON body", async () => {
 		const req = makeRequest("<xml>bad</xml>");
@@ -217,7 +223,7 @@ describe("stripe endpoint security — body parsing", () => {
 // ── Event type filtering ─────────────────────────────────────────────
 
 describe("stripe endpoint security — event type filtering", () => {
-	const handler = createStripeWebhook({});
+	const handler = createStripeWebhook({ webhookSecret: SECRET });
 
 	it("does not process unmapped event types (customer.created)", async () => {
 		const { context } = createTestContext();
@@ -281,7 +287,7 @@ describe("stripe endpoint security — event type filtering", () => {
 // ── No mutation without payments controller ──────────────────────────
 
 describe("stripe endpoint security — missing context safety", () => {
-	const handler = createStripeWebhook({});
+	const handler = createStripeWebhook({ webhookSecret: SECRET });
 
 	it("does not mutate state when no payments controller in context", async () => {
 		const body = JSON.stringify({
@@ -320,7 +326,7 @@ describe("stripe endpoint security — missing context safety", () => {
 // ── Provider intent ID extraction ────────────────────────────────────
 
 describe("stripe endpoint security — provider intent extraction", () => {
-	const handler = createStripeWebhook({});
+	const handler = createStripeWebhook({ webhookSecret: SECRET });
 
 	it("extracts intent ID from payment_intent events (object.id)", async () => {
 		const { data, payments, context } = createTestContext();
@@ -382,7 +388,7 @@ describe("stripe endpoint security — provider intent extraction", () => {
 // ── Refund event safety ──────────────────────────────────────────────
 
 describe("stripe endpoint security — refund event handling", () => {
-	const handler = createStripeWebhook({});
+	const handler = createStripeWebhook({ webhookSecret: SECRET });
 
 	it("extracts refund details from charge.refunded event", async () => {
 		const { data, payments, context } = createTestContext();
@@ -421,31 +427,32 @@ describe("stripe endpoint security — refund event handling", () => {
 				},
 			},
 		});
-		// Should not throw — falls back to generated refund ID
+		// No stable provider refund ID means the delivery cannot be deduplicated.
 		const res = await callWebhook(handler, makeRequest(body), context);
-		expect(res.status).toBe(200);
+		expect(res.status).toBe(400);
+		expect(context.events.emit).not.toHaveBeenCalled();
 	});
 });
 
-// ── Dev mode (no secret) ─────────────────────────────────────────────
+// ── Missing verification configuration ──────────────────────────────
 
-describe("stripe endpoint security — dev mode (no secret)", () => {
+describe("stripe endpoint security — no secret", () => {
 	const handler = createStripeWebhook({});
 
-	it("accepts any request without signature verification", async () => {
+	it("fails closed without signature verification configuration", async () => {
 		const body = JSON.stringify({ type: "payment_intent.succeeded" });
 		const res = await callWebhook(handler, makeRequest(body));
-		expect(res.status).toBe(200);
+		expect(res.status).toBe(503);
 	});
 
-	it("still validates JSON structure even without signature", async () => {
+	it("fails closed before parsing invalid JSON", async () => {
 		const res = await callWebhook(handler, makeRequest("{{{bad"));
-		expect(res.status).toBe(400);
+		expect(res.status).toBe(503);
 	});
 
-	it("still requires event type even without signature", async () => {
+	it("fails closed before checking event type", async () => {
 		const body = JSON.stringify({ data: { object: {} } });
 		const res = await callWebhook(handler, makeRequest(body));
-		expect(res.status).toBe(400);
+		expect(res.status).toBe(503);
 	});
 });

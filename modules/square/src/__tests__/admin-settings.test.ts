@@ -14,9 +14,20 @@ function extractHandler(
 }
 
 const handler = extractHandler(getSettings);
+const DEFAULT_SIGNATURE_KEY = "square-admin-signature";
+const DEFAULT_NOTIFICATION_URL = "https://example.com/api/store/square/webhook";
 
 function callSettings(opts: Record<string, unknown>) {
-	return handler({ context: { options: opts } });
+	const options = {
+		...(!Object.hasOwn(opts, "webhookSignatureKey")
+			? { webhookSignatureKey: DEFAULT_SIGNATURE_KEY }
+			: {}),
+		...(!Object.hasOwn(opts, "webhookNotificationUrl")
+			? { webhookNotificationUrl: DEFAULT_NOTIFICATION_URL }
+			: {}),
+		...opts,
+	};
+	return handler({ context: { options } });
 }
 
 function mockFetchOk(body: Record<string, unknown>) {
@@ -97,6 +108,18 @@ describe("getSettings — status (live verification)", () => {
 		const result = await callSettings({});
 		expect(result.status).toBe("not_configured");
 	});
+
+	it('returns "not_configured" unless both webhook values are present', async () => {
+		const fetchSpy = vi.spyOn(globalThis, "fetch");
+		const result = await callSettings({
+			accessToken: "sq_token_abc123",
+			webhookSignatureKey: "signature-key",
+			webhookNotificationUrl: "",
+		});
+		expect(result.status).toBe("not_configured");
+		expect(result.ready).toBe(false);
+		expect(fetchSpy).not.toHaveBeenCalled();
+	});
 });
 
 // ── accessTokenMasked ────────────────────────────────────────────────────────
@@ -157,6 +180,7 @@ describe("getSettings — webhookSignatureConfigured", () => {
 		mockFetchOk({ locations: [] });
 		const result = await callSettings({
 			accessToken: "sq_tok_abcdef123",
+			webhookSignatureKey: undefined,
 		});
 		expect(result.webhookSignatureConfigured).toBe(false);
 	});
@@ -169,6 +193,7 @@ describe("getSettings — webhookSignatureKeyMasked", () => {
 		mockFetchOk({ locations: [] });
 		const result = await callSettings({
 			accessToken: "sq_tok_abcdef123",
+			webhookSignatureKey: undefined,
 		});
 		expect(result.webhookSignatureKeyMasked).toBeNull();
 	});
@@ -210,6 +235,7 @@ describe("getSettings — webhookNotificationUrl", () => {
 		mockFetchOk({ locations: [] });
 		const result = await callSettings({
 			accessToken: "sq_tok_abcdef123",
+			webhookNotificationUrl: undefined,
 		});
 		expect(result.webhookNotificationUrl).toBeNull();
 	});

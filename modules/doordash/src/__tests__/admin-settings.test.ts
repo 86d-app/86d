@@ -35,7 +35,7 @@ afterEach(() => {
 // ── Connection verification ───────────────────────────────────────────────────
 
 describe("DoorDash settings — connection verification", () => {
-	it('returns "connected" when DoorDash Drive API responds OK', async () => {
+	it("reports the integration unavailable while webhook ingress is disabled", async () => {
 		vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
 			new Response(JSON.stringify({ list: [], next_offset: null }), {
 				status: 200,
@@ -48,9 +48,11 @@ describe("DoorDash settings — connection verification", () => {
 			signingSecret: "dGVzdC1zaWduaW5nLXNlY3JldA==",
 		});
 
-		expect(result.status).toBe("connected");
-		expect(result.configured).toBe(true);
-		expect(result.error).toBeUndefined();
+		expect(result.status).toBe("error");
+		expect(result.configured).toBe(false);
+		expect(result.apiConfigured).toBe(true);
+		expect(result.webhookConfigured).toBe(false);
+		expect(result.error).toMatch(/webhook.*disabled/i);
 		expect(result.accountName).toContain("dev-abc");
 	});
 
@@ -86,7 +88,8 @@ describe("DoorDash settings — connection verification", () => {
 		});
 
 		expect(result.status).toBe("error");
-		expect(result.configured).toBe(true);
+		expect(result.configured).toBe(false);
+		expect(result.apiConfigured).toBe(true);
 		expect(typeof result.error).toBe("string");
 	});
 

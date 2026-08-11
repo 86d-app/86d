@@ -9,7 +9,9 @@ describe("createPaymentController", () => {
 
 	beforeEach(() => {
 		mockData = createMockDataService();
-		controller = createPaymentController(mockData);
+		controller = createPaymentController(mockData, undefined, {
+			allowOfflineForDevelopment: true,
+		});
 	});
 
 	// ── createIntent ─────────────────────────────────────────────────────
@@ -439,9 +441,7 @@ describe("createPaymentController", () => {
 			const ctrlWithout = createPaymentController(mockData);
 			await expect(
 				ctrlWithout.createRefund({ intentId: intent.id }),
-			).rejects.toThrow(
-				"Cannot refund: payment was created through a provider but no provider is configured",
-			);
+			).rejects.toThrow("Payment provider is not configured");
 		});
 
 		it("rejects refund exceeding intent amount", async () => {
@@ -529,7 +529,7 @@ describe("createPaymentController", () => {
 			expect(result).toBeNull();
 		});
 
-		it("skips update when status already matches", async () => {
+		it("returns null when status already matches", async () => {
 			const mockProvider: PaymentProvider = {
 				createIntent: vi.fn().mockResolvedValue({
 					providerIntentId: "pi_dup",
@@ -547,8 +547,7 @@ describe("createPaymentController", () => {
 				providerIntentId: "pi_dup",
 				status: "succeeded",
 			});
-			// Returns intent as-is without updating
-			expect(result?.status).toBe("succeeded");
+			expect(result).toBeNull();
 		});
 	});
 
@@ -580,6 +579,14 @@ describe("createPaymentController", () => {
 			expect(result?.refund.providerRefundId).toBe("re_hook_1");
 			expect(result?.refund.reason).toBe("Customer request");
 			expect(result?.intent.status).toBe("refunded");
+
+			const duplicate = await ctrl.handleWebhookRefund({
+				providerIntentId: "pi_refhook",
+				providerRefundId: "re_hook_1",
+				amount: 3000,
+			});
+			expect(duplicate).toBeNull();
+			expect(await ctrl.listRefunds(result?.intent.id ?? "")).toHaveLength(1);
 		});
 
 		it("returns null when no matching intent", async () => {
