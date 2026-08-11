@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "resend": {
+      "source": "resend/resend-skills",
+      "sourceType": "github",
+      "skillPath": "skills/resend/SKILL.md",
+      "computedHash": "8935525a4d7fa21298616b7c6150148a7df3afcfffd7ea9dca6fdac155fe0ece"
+    },
     "shadcn": {
       "source": "shadcn/ui",
       "sourceType": "github",

@@ -1,7 +1,10 @@
 {
 	"biome.lsp.bin": "node_modules/@biomejs/biome/bin/biome",
 	"typescript.tsdk": "node_modules/typescript/lib",
-	"biome.requireConfigFile": true,
+	"biome.requireConfiguration": true,
+	"files.associations": {
+		"*.css": "tailwindcss"
+	},
 	"editor.formatOnSave": true,
 	"editor.codeActionsOnSave": {
 		"source.fixAll.biome": "explicit",

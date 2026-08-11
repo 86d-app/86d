@@ -1,13 +1,15 @@
-# 86d — framework (public)
+# 86d.store Store Runtime (public)
 
-Modular, open-source commerce framework. Modules are isolated, interchangeable units, not monolithic plugins. Each store is single-tenant with full data ownership. This repo is the engine that the proprietary 86d platform (sibling `private/` repo) provisions and deploys; it also runs fully standalone via Docker. See the root `AGENTS.md` for how the areas fit together.
+Modular, open-source commerce Store Runtime. Each Store is single-tenant with its own Storefront, Store Admin, and authoritative commerce data. This repo is the product that the 86d.app Control Plane in the sibling `private/` repo provisions and operates; it also runs fully standalone via Docker. See the root `AGENTS.md` for how the areas fit together.
 
 Bun monorepo orchestrated by Turborepo. TypeScript everywhere, strict mode.
 
-## Quick start
+In the full workspace, read `../private/internals/product-context/README.md` before changing product behavior, ownership, payments, Checkout, Fulfillment, managed credentials, Modules, or agent surfaces. It defines target behavior. This file and the code describe current implementation. When they differ, implement an explicit migration and preserve standalone operation.
+
+## Get started
 
 ```bash
-# Docker (recommended — zero config)
+# Docker (recommended, zero configuration)
 docker compose up                  # postgres + store on :3000 (auto-migrates, seeds, creates admin)
 
 # Local development
@@ -62,11 +64,13 @@ Dockerfile           Multi-stage build (deps → build → runtime)
 docker-compose.yml   One-command local deployment (postgres + store)
 ```
 
-All 12 packages are fully implemented. All 100 modules ship with real schema, controllers, service implementations, and endpoints; the registry (`registry.json`) carries metadata and integrity hashes for every one.
+The repository contains 12 packages and 100 first-party Modules. Package presence, generated registry metadata, or an existing endpoint does not establish product maturity. Each capability earns Stable through its versioned contract, failure behavior, tests, documentation, and required production smoke evidence. Unproven capabilities remain Beta or Experimental without blocking public access.
 
 ## Module system
 
-Every module exports a factory → Module object with `id`, `version`, `schema`, `endpoints`, and optional `init`. Modules depend **only** on `@86d-app/core`. All DB access goes through `ModuleDataService` (provided by runtime). Modules cannot import other modules directly — cross-module access uses declared contracts (`requires` / `exports`).
+Every Module currently exports a factory to a Module object with `id`, `version`, `schema`, `endpoints`, and optional `init`. Modules depend **only** on `@86d-app/core`. All database access goes through `ModuleDataService` provided by the runtime. Modules cannot import other Modules directly.
+
+The target cross-Module boundary uses typed synchronous capability calls for immediate business decisions and a durable transactional outbox with versioned, idempotent events for completed changes. The current `requires` and `exports` contracts and in-memory event behavior are migration state where they do not meet that boundary. Cross-Module database access is prohibited.
 
 Admin pages declare a `group` and optional `subgroup` for the 2-level sidebar. Groups: Catalog, Sales, Customers, Fulfillment, Marketing, Content, Finance, Support, System. Subgroup mapping is centralized in `apps/store/lib/admin-registry.ts`.
 
@@ -81,13 +85,13 @@ modules/<name>/src/
   admin/components/     Admin UI components (.tsx + .mdx)
 ```
 
-External-provider modules (Stripe, Square, PayPal, Braintree, Amazon, EasyPost shipping, tax, DoorDash, Uber Direct, etc.) make **real HTTP calls** with proper auth, retries, error mapping, and webhook signature verification — no mocked fetches. When credentials are missing they degrade gracefully: admin shows "not configured" and the store hides the feature without crashing.
+External-provider Modules include real HTTP integrations, but each provider path must be verified independently before it is called Stable. Missing credentials may hide an optional Integration. A required Checkout decision must instead fail closed or enter an explicitly non-binding review path. Never accept an unsigned webhook, shopper-supplied provider result, or silent provider fallback.
 
 ## Template system
 
 Templates live in `templates/<name>/`. The store app resolves them via tsconfig alias `template/*` → `../../templates/brisa/*`. Each template has `config.json` (modules, OKLCH color tokens, logos), `layout.mdx`, `index.mdx`, page MDX files, and `global.css`. Components follow a two-file pattern: `.tsx` (logic) + `.mdx` (presentation); numbered MDX variants (`1.mdx`, `2.mdx`) are alternate designs for the same component.
 
-**Component overrides:** templates override module components via `templates/<name>/components/index.tsx` — exported names replace matching module defaults at render time. `generate:modules` wires this up by spreading `...templateOverrides` last in `generated/components.ts`. **External templates:** `86d template add github:owner/repo`.
+**Component overrides:** templates override Module components through `templates/<name>/components/index.tsx`. Exported names replace matching Module defaults at render time. `generate:modules` wires this up by spreading `...templateOverrides` last in `generated/components.ts`. **External templates:** `86d template add github:owner/repo`.
 
 ## CLI
 
@@ -100,22 +104,35 @@ Templates live in `templates/<name>/`. The store app resolves them via tsconfig 
 
 ## Registry
 
-`registry.json` carries per-module metadata (description, version, category, `requires`, `hasStoreComponents`, `hasAdminComponents`, `hasStorePages`, integrity hash). The resolver loads the manifest locally or from `https://raw.githubusercontent.com/86d-app/86d/main/registry.json` (the canonical source — never assume a local copy is authoritative). The fetcher retries with exponential backoff (max 3, 500–2000ms). A wildcard includes all registry modules plus local workspace modules. `registry.lock.json` caches resolved versions and integrity hashes.
+`registry.json` carries per-Module metadata (description, version, category, `requires`, `hasStoreComponents`, `hasAdminComponents`, `hasStorePages`, integrity hash). The resolver loads the manifest locally or from `https://raw.githubusercontent.com/86d-app/86d/main/registry.json`, which is the canonical source. Never assume a local copy is authoritative. The fetcher retries with exponential backoff (maximum 3 attempts, 500 to 2,000 milliseconds). A wildcard includes all registry Modules plus local workspace Modules. `registry.lock.json` caches resolved versions and integrity hashes.
 
 ## Deployment modes
 
 - **Docker (self-hosted):** `docker compose up` starts PostgreSQL + store, auto-runs migrations, seeds demo data, creates the admin user, uses local-filesystem blob storage. Set `BETTER_AUTH_SECRET` to a secure random string in production.
-- **Managed (Railway or Vercel + Neon):** the 86d platform provisions a dedicated instance with its own database, hosting, and blob storage. It sets `86D_API_KEY` + `STORE_ID`; with `86D_API_KEY` present the store pulls config and billing from `86d.app` and enables 86d.app SSO for admin auth.
+- **Managed (Railway or legacy Vercel + Neon):** the 86d.app Control Plane provisions a dedicated instance with its own database, hosting, and blob storage. The current implementation sets `86D_API_KEY` plus `STORE_ID`; with `86D_API_KEY` present, the Store Runtime pulls managed configuration and enables Control Plane SSO for Store Admin. This static key is migration state. The target uses `86D_STORE_ID`, `86D_API_URL`, and an opaque workload credential exchanged for short-lived scoped tokens.
 - **Storage providers:** `STORAGE_PROVIDER` = `local` (Docker default), `vercel`, or `s3` (MinIO, AWS S3, R2). See `.env.example`.
 
 ## API endpoints
 
-- `GET /api/health` — DB connectivity + store status (Docker HEALTHCHECK).
-- `POST /api/upload` — file upload (admin only; JPEG/PNG/WebP/GIF/SVG/PDF, magic-byte validated, SVG XSS checked).
-- `DELETE /api/upload` — file deletion (admin only, store-isolated).
-- `GET /uploads/[...path]` — serve local-storage files when `STORAGE_PROVIDER=local` (SVGs served with restrictive CSP).
-- `GET/POST /api/auth/[...all]` — Better Auth handlers (sign-in, sign-up, SSO).
-- `ALL /api/[...path]` — module endpoints (rate-limited, session-authenticated).
+- `GET /api/health`: database connectivity and Store status (Docker `HEALTHCHECK`).
+- `POST /api/upload`: file upload (admin only; JPEG, PNG, WebP, GIF, SVG, and PDF; magic-byte validation; SVG XSS checks).
+- `DELETE /api/upload`: file deletion (admin only, Store-isolated).
+- `GET /uploads/[...path]`: serve local-storage files when `STORAGE_PROVIDER=local` (SVGs use restrictive CSP).
+- `GET/POST /api/auth/[...all]`: Better Auth handlers (sign-in, sign-up, SSO).
+- `ALL /api/[...path]`: Module endpoints (rate-limited, session-authenticated).
+
+## Terminology
+
+- **86d.store** or **Store Runtime** means the deployed open-source product.
+- **Storefront** means its shopper experience.
+- **Store Admin** means its merchant operating interface.
+- **86d.app** or **Control Plane** means the separate managed-service product.
+- **Feature** describes merchant-facing product behavior.
+- **Integration** describes a connection to an external provider.
+- **Module** is the technical packaging unit used in this repository.
+- **Connection** is a configured provider relationship used by an Integration.
+
+Do not use bare “dashboard” in product language. Existing internal E2E filenames or code identifiers may remain until an explicit migration.
 
 ## Code conventions
 
@@ -123,7 +140,7 @@ Templates live in `templates/<name>/`. The store app resolves them via tsconfig 
 - No `any`, `@ts-expect-error`, `@ts-ignore`, or `biome-ignore`. Fix the type or the code.
 - Module imports: `@86d-app/core` (main), `@86d-app/core/client` (React Query), `@86d-app/core/state` (MobX).
 - Store app path alias: `~/` for local imports (not bare `lib/`, which conflicts with `packages/lib`).
-- Use the `@86d-app/storage` abstraction — never import `@vercel/blob` directly.
+- Use the `@86d-app/storage` abstraction. Never import `@vercel/blob` directly.
 - Tests use `@86d-app/core/test-utils` mock data services. Never hit a real database.
 
 ## Security conventions
@@ -131,16 +148,18 @@ Templates live in `templates/<name>/`. The store app resolves them via tsconfig 
 - **Sanitize all user text** in store endpoints: `.transform(sanitizeText)` from `@86d-app/core` on every user-provided string (names, descriptions, messages, notes, titles).
 - **Bound string lengths:** add `.max()` to every string field, even optional ones. **Bound arrays:** `.max()` on every user-input array.
 - **Constrain records:** `z.record(z.string().max(100), z.unknown())` with `.refine()` to limit key count on arbitrary metadata.
-- **Admin endpoints** are auth-protected at the framework level via `createAdminEndpoint` — no per-endpoint checks needed.
+- **Admin endpoints** are auth-protected at the framework level through `createAdminEndpoint`; no per-endpoint checks are needed.
 - **Rate limiting** at the route handler: 120 req/min public, 300 req/min admin, stricter on sensitive endpoints.
 - **Rich HTML** fields (page content, blog posts) use `sanitizeHtml()` instead of `sanitizeText()`.
 - **Return errors, don't throw:** store endpoints `return { error: "...", status: 404 }` to avoid stack-trace leakage.
 - **Never trust client identity:** derive `customerId`/email from `ctx.context.session.user`, never the request body. Never accept trust-elevation flags (e.g. `isVerifiedPurchase`) from clients.
 - **Verify ownership** before mutating user-scoped resources (`resource.customerId === session.user.id`); return 404, not 403, to avoid leaking existence.
 
-## Module completeness
+## Module maturity
 
-A module is complete when: schema defines real tables with relations; store endpoints return real data with error handling; admin endpoints cover full CRUD; admin UI renders real data with loading/error/empty states; store UI is wired into the template; external-provider modules make real authenticated HTTP calls with retries, error mapping, webhook signature verification, and an admin config screen showing live connection status; missing credentials degrade gracefully; unit tests cover critical paths with realistic API fixtures; Playwright snapshots cover all screens in light + dark, desktop + mobile; and no `TODO`, `FIXME`, `not implemented`, or stub bodies remain.
+A capability may be **Stable**, **Beta**, **Experimental**, or **Deprecated**. Stable requires a real schema and behavior, bounded and authenticated endpoints, complete failure handling, usable Storefront and Store Admin states where applicable, realistic provider fixtures, verified webhook handling, critical-path tests, relevant visual coverage, accurate documentation, and required production smoke evidence. A clean source tree or complete CRUD surface alone is insufficient.
+
+Beta shows one clear warning on first enablement. Experimental requires explicit advanced opt-in. Deprecated prevents new enablement by default and provides a supported transition. Registry generation must eventually record versioned maturity, compatibility, commit SHA, and a hash of the complete Module subtree. Until that migration lands, inspect evidence rather than inferring maturity from current registry fields.
 
 ## Testing
 
@@ -154,7 +173,7 @@ All modules and published packages share one version. After committing, run `bun
 
 ## Detailed docs
 
-- `apps/store/AGENTS.md` — store app architecture, routes, admin, theme system.
-- `apps/store/EXAMPLES.md` — module usage examples.
-- `templates/brisa/GUIDE.md` — template authoring guide.
-- `tests/e2e/AGENTS.md` — E2E patterns, fixtures, conventions.
+- `apps/store/AGENTS.md`: Store app architecture, routes, Store Admin, and theme system.
+- `apps/store/EXAMPLES.md`: Module usage examples.
+- `templates/brisa/GUIDE.md`: template authoring guide.
+- `tests/e2e/AGENTS.md`: E2E patterns, fixtures, and conventions.
