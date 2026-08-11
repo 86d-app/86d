@@ -21,7 +21,8 @@
 	},
 	"dependencies": {
 		"@86d-app/core": "workspace:*",
-		"better-call": "1.3.5"
+		"better-call": "1.3.5",
+		"zod": "catalog:"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "catalog:",
