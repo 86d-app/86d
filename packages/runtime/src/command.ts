@@ -112,6 +112,7 @@ interface TypedCommandDefinition<TTransaction, TInput, TResult, TFailureDetails>
 	resultSchema: RuntimeSchema<TResult>;
 	failureDetailsSchema?: RuntimeSchema<TFailureDetails> | undefined;
 	sensitiveInputPaths?: readonly string[] | undefined;
+	sensitiveResultPaths?: readonly string[] | undefined;
 	execute(args: {
 		actor: ActorReference;
 		authority: AuthoritySnapshot;
@@ -124,6 +125,7 @@ interface TypedCommandDefinition<TTransaction, TInput, TResult, TFailureDetails>
 export interface DefinedCommand<TTransaction>
 	extends CommandDefinitionReference {
 	sensitiveInputPaths?: readonly string[] | undefined;
+	sensitiveResultPaths: readonly string[];
 	parseInput(value: unknown): ParseResult<JsonValue>;
 	execute(args: {
 		actor: ActorReference;
@@ -152,6 +154,7 @@ export function defineCommand<TTransaction>() {
 		targetType: definition.targetType,
 		actionLevel: definition.actionLevel,
 		sensitiveInputPaths: definition.sensitiveInputPaths,
+		sensitiveResultPaths: definition.sensitiveResultPaths ?? [],
 		parseInput(value) {
 			const parsedInput = definition.inputSchema.safeParse(value);
 			if (!parsedInput.success) {
@@ -814,7 +817,10 @@ export function createCommandExecutor<TTransaction>(options: {
 						transaction,
 					});
 					if (outcome.ok) {
-						const redactedResult = redactInput(outcome.result, new Set());
+						const redactedResult = redactInput(
+							outcome.result,
+							new Set(definition.sensitiveResultPaths),
+						);
 						const finishedAt = clock().toISOString();
 						const succeededAudit = makeAuditEvent({
 							id: createId("audit"),

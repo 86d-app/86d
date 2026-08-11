@@ -91,10 +91,12 @@ function createHarness(options?: {
 				value: z.string().nullable(),
 				actorId: z.string(),
 				targetId: z.string(),
+				key: z.string().optional(),
 			})
 			.strict(),
 		failureDetailsSchema: z.object({ reason: z.string().max(100) }).strict(),
 		sensitiveInputPaths: ["secret"],
+		sensitiveResultPaths: ["key"],
 		execute: async ({ actor, input, target, transaction }) => {
 			executions += 1;
 			if (input.value === "slow") {
@@ -113,6 +115,7 @@ function createHarness(options?: {
 					value: transaction.get("tracer:value"),
 					actorId: actor.id,
 					targetId: target.id,
+					...(input.secret ? { key: "command-result-canary" } : {}),
 				},
 			};
 		},
@@ -271,13 +274,13 @@ describe("Store Runtime Command executor", () => {
 		expect(read.receipt.result).toMatchObject({ value: null });
 	});
 
-	it("stores only keyed digests and redacted summaries for sensitive input", async () => {
+	it("stores only keyed digests and redacted summaries for sensitive input and result", async () => {
 		const harness = createHarness();
 		const response = await harness.executor.execute(
 			request("redaction-001", {
 				mode: "write",
 				value: "alpha",
-				secret: "command-canary-secret",
+				secret: "command-input-canary",
 				authorization: "Bearer authorization-canary",
 				cookie: "cookie-canary",
 				api_key: "api-key-canary",
@@ -294,7 +297,8 @@ describe("Store Runtime Command executor", () => {
 		expect(reconstruction.ok).toBe(true);
 		if (!reconstruction.ok) return;
 		const serialized = JSON.stringify(reconstruction.execution);
-		expect(serialized).not.toContain("command-canary-secret");
+		expect(serialized).not.toContain("command-input-canary");
+		expect(serialized).not.toContain("command-result-canary");
 		expect(serialized).not.toContain("authorization-canary");
 		expect(serialized).not.toContain("cookie-canary");
 		expect(serialized).not.toContain("api-key-canary");
@@ -303,6 +307,9 @@ describe("Store Runtime Command executor", () => {
 			authorization: "[REDACTED]",
 			cookie: "[REDACTED]",
 			api_key: "[REDACTED]",
+		});
+		expect(reconstruction.execution).toMatchObject({
+			result: { key: "[REDACTED]" },
 		});
 		expect(reconstruction.execution.inputDigest).toMatch(/^[a-f0-9]{64}$/);
 		expect(
