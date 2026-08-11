@@ -482,20 +482,6 @@ function definitionKey(command: CommandReference): string {
 	return `${command.name}@${command.version}`;
 }
 
-function authorityScope(authority: AuthoritySnapshot): JsonValue {
-	const scope: Record<string, JsonValue> = {
-		id: authority.id,
-		type: authority.type,
-		permissions: authority.permissions,
-	};
-	if (authority.role !== undefined) scope.role = authority.role;
-	if (authority.businessId !== undefined) {
-		scope.businessId = authority.businessId;
-	}
-	if (authority.storeId !== undefined) scope.storeId = authority.storeId;
-	return scope;
-}
-
 function isCommandPrincipal(value: unknown): value is CommandPrincipal {
 	if (!value || typeof value !== "object") return false;
 	if (
@@ -762,7 +748,6 @@ export function createCommandExecutor<TTransaction>(options: {
 		const scope = canonicalString({
 			plane: options.plane,
 			actor: actor.data,
-			authority: authorityScope(authority.data),
 			target: target.data,
 			command: request.command,
 			idempotencyKey: request.idempotencyKey,

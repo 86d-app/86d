@@ -44,7 +44,7 @@ model CommandExecution {
   auditEvents            AuditEvent[]
   standingPermissionUses StandingPermissionUseReservation[]
 
-  @@unique([plane, actorType, actorId, authorityType, authorityId, targetType, targetId, commandName, commandVersion, idempotencyKey], map: "CommandExecution_scope_idempotency_key")
+  @@unique([plane, actorType, actorId, targetType, targetId, commandName, commandVersion, idempotencyKey], map: "CommandExecution_scope_idempotency_key")
   @@index([actorType, actorId, createdAt])
   @@index([targetType, targetId, createdAt])
   @@index([status, leaseExpiresAt])

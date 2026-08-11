@@ -137,8 +137,6 @@ function scopeWhere(execution: PersistedCommandExecution) {
 		plane: execution.plane,
 		actorType: execution.actor.type,
 		actorId: execution.actor.id,
-		authorityType: execution.authority.type,
-		authorityId: execution.authority.id,
 		targetType: execution.target.type,
 		targetId: execution.target.id,
 		commandName: execution.command.name,

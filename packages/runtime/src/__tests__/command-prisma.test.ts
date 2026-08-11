@@ -255,6 +255,57 @@ describe("Store Runtime Prisma Command persistence", () => {
 		expect(await persistence.runOnce(args)).toEqual({ kind: "conflict" });
 	});
 
+	it("finds the existing principal-scoped execution after authority replacement", async () => {
+		const tx = transaction();
+		tx.commandExecution.create.mockRejectedValue(
+			Object.assign(new Error("unique"), { code: "P2002" }),
+		);
+		tx.commandExecution.findFirst.mockResolvedValue(
+			executionRecord("succeeded"),
+		);
+		const persistence = createPrismaCommandPersistence(clientFor(tx), {
+			databaseNull,
+			jsonNull,
+		});
+
+		const replay = await persistence.runOnce({
+			scope: "opaque-executor-scope",
+			inputDigest: digest,
+			initialExecution: {
+				...initialExecution,
+				authority: {
+					...initialExecution.authority,
+					id: "replacement-role",
+					type: "custom_role",
+				},
+			},
+			run: async () => ({
+				commitTransaction: true,
+				execution: succeededExecution,
+			}),
+		});
+
+		expect(replay).toMatchObject({
+			kind: "execution",
+			replayed: true,
+			execution: {
+				authority: { id: "membership-1" },
+			},
+		});
+		expect(tx.commandExecution.findFirst).toHaveBeenCalledWith({
+			where: {
+				plane: "store_runtime",
+				actorType: "account",
+				actorId: "account-1",
+				targetType: "store",
+				targetId: "store-1",
+				commandName: "store_runtime.tracer.write",
+				commandVersion: 1,
+				idempotencyKey: "idempotency-1",
+			},
+		});
+	});
+
 	it("rolls back handler writes while committing failure and audit", async () => {
 		const tx = transaction();
 		tx.commandExecution.findUnique

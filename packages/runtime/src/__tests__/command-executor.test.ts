@@ -41,6 +41,8 @@ function createHarness(options?: {
 }) {
 	let executions = 0;
 	let ids = 0;
+	let authorityId = "membership-server-derived";
+	let authorityType: "custom_role" | "store_membership" = "store_membership";
 	const persistence = createInMemoryCommandPersistence();
 	const authority: CommandAuthority = {
 		authorize: async ({ principal: serverPrincipal }) => {
@@ -58,8 +60,8 @@ function createHarness(options?: {
 				ok: true,
 				actor: { type: "account", id: "account-server-derived" },
 				authority: {
-					id: "membership-server-derived",
-					type: "store_membership",
+					id: authorityId,
+					type: authorityType,
 					role: "owner",
 					permissions: ["store:update"],
 					storeId: "store-authoritative",
@@ -133,6 +135,13 @@ function createHarness(options?: {
 
 	return {
 		executor,
+		setAuthority(
+			nextAuthorityId: string,
+			nextAuthorityType: "custom_role" | "store_membership",
+		) {
+			authorityId = nextAuthorityId;
+			authorityType = nextAuthorityType;
+		},
 		get executions() {
 			return executions;
 		},
@@ -232,6 +241,36 @@ describe("Store Runtime Command executor", () => {
 		expect(harness.executions).toBe(1);
 	});
 
+	it("replays the same principal request after its satisfying authority changes", async () => {
+		const harness = createHarness();
+		const command = request("authority-change-replay-001", {
+			mode: "write",
+			value: "alpha",
+		});
+
+		const first = await harness.executor.execute(command, principal());
+		harness.setAuthority("replacement-role", "custom_role");
+		const replay = await harness.executor.execute(command, principal());
+
+		expect(first.ok).toBe(true);
+		expect(replay.ok).toBe(true);
+		if (!first.ok || !replay.ok) return;
+		expect(replay.receipt.executionId).toBe(first.receipt.executionId);
+		expect(replay.receipt.replayed).toBe(true);
+		expect(harness.executions).toBe(1);
+
+		const reconstruction = await harness.executor.get(
+			first.receipt.executionId,
+			principal(),
+		);
+		expect(reconstruction).toMatchObject({
+			ok: true,
+			execution: {
+				authority: { id: "membership-server-derived" },
+			},
+		});
+	});
+
 	it("returns an idempotency conflict for the same key and different input", async () => {
 		const harness = createHarness();
 		await harness.executor.execute(
@@ -240,6 +279,32 @@ describe("Store Runtime Command executor", () => {
 		);
 		const response = await harness.executor.execute(
 			request("conflict-001", { mode: "write", value: "beta" }),
+			principal(),
+		);
+
+		expect(response).toMatchObject({
+			ok: false,
+			failure: { code: "idempotency_conflict", retryable: false },
+		});
+		expect(harness.executions).toBe(1);
+	});
+
+	it("conflicts on changed input after the satisfying authority changes", async () => {
+		const harness = createHarness();
+		await harness.executor.execute(
+			request("authority-change-conflict-001", {
+				mode: "write",
+				value: "alpha",
+			}),
+			principal(),
+		);
+		harness.setAuthority("replacement-role", "custom_role");
+
+		const response = await harness.executor.execute(
+			request("authority-change-conflict-001", {
+				mode: "write",
+				value: "beta",
+			}),
 			principal(),
 		);
 
