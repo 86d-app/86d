@@ -71,6 +71,21 @@ export interface CommandAuthority {
 	}): Promise<boolean>;
 }
 
+/** Policy seam for validating approval and fresh-confirmation grants. */
+export interface CommandGrantEvaluator {
+	evaluate(input: {
+		principal: CommandPrincipal;
+		command: CommandReference;
+		actionLevel: ActionLevel;
+		actor: ActorReference;
+		authority: AuthoritySnapshot;
+		target: TargetReference;
+		inputDigest: string;
+		approvalReference?: string | undefined;
+		confirmationReference?: string | undefined;
+	}): Promise<{ ok: true } | { ok: false; failure: CommandFailure }>;
+}
+
 export interface CommandDefinitionReference {
 	command: CommandReference;
 	ownerPlane: AuthoritativePlane;
@@ -220,6 +235,8 @@ export interface PersistedCommandExecution {
 	actor: ActorReference;
 	authority: AuthoritySnapshot;
 	idempotencyKey: string;
+	approvalReference?: string | undefined;
+	confirmationReference?: string | undefined;
 	actionLevel: ActionLevel;
 	status: "running" | "succeeded" | "failed";
 	inputDigest: string;
@@ -350,23 +367,11 @@ export function createInMemoryCommandPersistence(): CommandPersistence<MemoryCom
 	};
 }
 
-const AUTOMATIC_SENSITIVE_KEY_PARTS = [
-	"secret",
-	"token",
-	"credential",
-	"password",
-	"apikey",
-];
-
-function normalizedKey(key: string): string {
-	return key.replace(/[^a-z0-9]/gi, "").toLowerCase();
-}
+const AUTOMATIC_SENSITIVE_KEY =
+	/(?:api[_-]?key|authorization|cookie|credential|password|secret|token)/i;
 
 function isAutomaticallySensitive(key: string): boolean {
-	const normalized = normalizedKey(key);
-	return AUTOMATIC_SENSITIVE_KEY_PARTS.some((part) =>
-		normalized.includes(part),
-	);
+	return AUTOMATIC_SENSITIVE_KEY.test(key);
 }
 
 function redactInput(
@@ -425,6 +430,41 @@ function commandFailure(
 	retryable = false,
 ): CommandFailure {
 	return { code, message, retryable };
+}
+
+function defaultGrantEvaluation(input: {
+	actionLevel: ActionLevel;
+}): { ok: true } | { ok: false; failure: CommandFailure } {
+	if (input.actionLevel === "automatic") return { ok: true };
+	if (input.actionLevel === "approve") {
+		return {
+			ok: false,
+			failure: commandFailure(
+				"approval_required",
+				"A validated approval is required for this Command.",
+			),
+		};
+	}
+	return {
+		ok: false,
+		failure: commandFailure(
+			"confirmation_required",
+			"A fresh validated confirmation is required for this Command.",
+		),
+	};
+}
+
+function hasMismatchedGrantReference(
+	actionLevel: ActionLevel,
+	request: Pick<CommandRequest, "approvalReference" | "confirmationReference">,
+): boolean {
+	if (actionLevel === "automatic") {
+		return Boolean(request.approvalReference || request.confirmationReference);
+	}
+	if (actionLevel === "approve") {
+		return request.confirmationReference !== undefined;
+	}
+	return request.approvalReference !== undefined;
 }
 
 function redactCommandFailure(failure: CommandFailure): CommandFailure {
@@ -574,6 +614,7 @@ export function createCommandExecutor<TTransaction>(options: {
 	definitions: readonly DefinedCommand<TTransaction>[];
 	authority: CommandAuthority;
 	persistence: CommandPersistence<TTransaction>;
+	grants?: CommandGrantEvaluator | undefined;
 	digestKey: string;
 	clock?: (() => Date) | undefined;
 	createId?: ((kind: "execution" | "audit") => string) | undefined;
@@ -651,6 +692,15 @@ export function createCommandExecutor<TTransaction>(options: {
 				failure: commandFailure("invalid_input", "Command input is invalid."),
 			};
 		}
+		if (hasMismatchedGrantReference(definition.actionLevel, request)) {
+			return {
+				ok: false,
+				failure: commandFailure(
+					"invalid_request",
+					"The grant reference does not match the Command action level.",
+				),
+			};
+		}
 
 		const authorization = await options.authority.authorize({
 			principal: context.principal,
@@ -680,31 +730,28 @@ export function createCommandExecutor<TTransaction>(options: {
 			};
 		}
 
-		if (definition.actionLevel === "approve") {
-			return {
-				ok: false,
-				failure: commandFailure(
-					"approval_required",
-					"A validated approval is required for this Command.",
-				),
-			};
-		}
-		if (definition.actionLevel === "confirm_now") {
-			return {
-				ok: false,
-				failure: commandFailure(
-					"confirmation_required",
-					"A fresh validated confirmation is required for this Command.",
-				),
-			};
-		}
-
 		const digestMaterial: JsonValue = {
 			input: parsedInput.data,
 			approvalReference: request.approvalReference ?? null,
 			confirmationReference: request.confirmationReference ?? null,
 		};
 		const inputDigest = keyedDigest(options.digestKey, digestMaterial);
+		const grantInput = {
+			principal: context.principal,
+			command: request.command,
+			actionLevel: definition.actionLevel,
+			actor: actor.data,
+			authority: authority.data,
+			target: target.data,
+			inputDigest,
+			approvalReference: request.approvalReference,
+			confirmationReference: request.confirmationReference,
+		};
+		const grant = options.grants
+			? await options.grants.evaluate(grantInput)
+			: defaultGrantEvaluation(grantInput);
+		if (!grant.ok) return { ok: false, failure: grant.failure };
+
 		const redactedInput = redactInput(
 			parsedInput.data,
 			new Set(definition.sensitiveInputPaths ?? []),
@@ -739,6 +786,12 @@ export function createCommandExecutor<TTransaction>(options: {
 			actor: actor.data,
 			authority: authority.data,
 			idempotencyKey: request.idempotencyKey,
+			...(request.approvalReference
+				? { approvalReference: request.approvalReference }
+				: {}),
+			...(request.confirmationReference
+				? { confirmationReference: request.confirmationReference }
+				: {}),
 			actionLevel: definition.actionLevel,
 			status: "running",
 			inputDigest,

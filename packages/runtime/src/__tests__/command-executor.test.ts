@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import {
 	type CommandAuthority,
+	type CommandGrantEvaluator,
 	createCommandExecutor,
 	createInMemoryCommandPersistence,
 	defineCommand,
@@ -35,6 +36,8 @@ function principal(credentialId = "session-owner") {
 
 function createHarness(options?: {
 	onSlowExecution?: (() => Promise<void>) | undefined;
+	actionLevel?: "automatic" | "approve" | "confirm_now" | undefined;
+	grants?: CommandGrantEvaluator | undefined;
 }) {
 	let executions = 0;
 	let ids = 0;
@@ -72,12 +75,15 @@ function createHarness(options?: {
 		command: { name: "store_runtime.tracer.write", version: 1 },
 		ownerPlane: "store_runtime",
 		targetType: "store",
-		actionLevel: "automatic",
+		actionLevel: options?.actionLevel ?? "automatic",
 		inputSchema: z
 			.object({
 				mode: z.enum(["write", "read", "fail"]),
 				value: z.string().max(100).optional(),
 				secret: z.string().max(100).optional(),
+				authorization: z.string().max(100).optional(),
+				cookie: z.string().max(100).optional(),
+				api_key: z.string().max(100).optional(),
 			})
 			.strict(),
 		resultSchema: z
@@ -119,6 +125,7 @@ function createHarness(options?: {
 		digestKey,
 		clock: () => fixedNow,
 		createId: (kind) => `${kind}-${++ids}`,
+		...(options?.grants ? { grants: options.grants } : {}),
 	});
 
 	return {
@@ -271,6 +278,9 @@ describe("Store Runtime Command executor", () => {
 				mode: "write",
 				value: "alpha",
 				secret: "command-canary-secret",
+				authorization: "Bearer authorization-canary",
+				cookie: "cookie-canary",
+				api_key: "api-key-canary",
 			}),
 			principal(),
 		);
@@ -285,14 +295,155 @@ describe("Store Runtime Command executor", () => {
 		if (!reconstruction.ok) return;
 		const serialized = JSON.stringify(reconstruction.execution);
 		expect(serialized).not.toContain("command-canary-secret");
+		expect(serialized).not.toContain("authorization-canary");
+		expect(serialized).not.toContain("cookie-canary");
+		expect(serialized).not.toContain("api-key-canary");
 		expect(reconstruction.execution.redactedInput).toMatchObject({
 			secret: "[REDACTED]",
+			authorization: "[REDACTED]",
+			cookie: "[REDACTED]",
+			api_key: "[REDACTED]",
 		});
 		expect(reconstruction.execution.inputDigest).toMatch(/^[a-f0-9]{64}$/);
 		expect(
 			reconstruction.execution.auditEvents.map((event) => event.type),
 		).toEqual(["command.started", "command.succeeded"]);
 		expect(Object.keys(harness.executor).sort()).toEqual(["execute", "get"]);
+	});
+
+	it("lets an injected grant evaluator validate approval-gated commands", async () => {
+		let evaluated: Parameters<CommandGrantEvaluator["evaluate"]>[0] | undefined;
+		const grants: CommandGrantEvaluator = {
+			evaluate: async (input) => {
+				evaluated = input;
+				return { ok: true };
+			},
+		};
+		const harness = createHarness({ actionLevel: "approve", grants });
+		const response = await harness.executor.execute(
+			{
+				...request("approval-001", { mode: "write", value: "approved" }),
+				approvalReference: "approval-verified-001",
+			},
+			principal(),
+		);
+
+		expect(response.ok).toBe(true);
+		expect(harness.executions).toBe(1);
+		expect(evaluated).toMatchObject({
+			principal: principal().principal,
+			command: { name: "store_runtime.tracer.write", version: 1 },
+			actionLevel: "approve",
+			actor: { type: "account", id: "account-server-derived" },
+			target: { type: "store", id: "store-authoritative" },
+			approvalReference: "approval-verified-001",
+		});
+		expect(evaluated?.inputDigest).toMatch(/^[a-f0-9]{64}$/);
+		if (!response.ok) return;
+		const reconstruction = await harness.executor.get(
+			response.receipt.executionId,
+			principal(),
+		);
+		expect(reconstruction).toMatchObject({
+			ok: true,
+			execution: { approvalReference: "approval-verified-001" },
+		});
+	});
+
+	it("persists a validated confirmation reference", async () => {
+		const grants: CommandGrantEvaluator = {
+			evaluate: async (input) =>
+				input.confirmationReference === "confirmation-verified-001"
+					? { ok: true }
+					: {
+							ok: false,
+							failure: {
+								code: "confirmation_required",
+								message: "A validated confirmation is required.",
+								retryable: false,
+							},
+						},
+		};
+		const harness = createHarness({ actionLevel: "confirm_now", grants });
+		const response = await harness.executor.execute(
+			{
+				...request("confirmation-granted-001", {
+					mode: "write",
+					value: "confirmed",
+				}),
+				confirmationReference: "confirmation-verified-001",
+			},
+			principal(),
+		);
+
+		expect(response.ok).toBe(true);
+		if (!response.ok) return;
+		const reconstruction = await harness.executor.get(
+			response.receipt.executionId,
+			principal(),
+		);
+		expect(reconstruction).toMatchObject({
+			ok: true,
+			execution: { confirmationReference: "confirmation-verified-001" },
+		});
+	});
+
+	it("rejects references that do not belong to the action level", async () => {
+		const cases = [
+			{
+				actionLevel: "automatic" as const,
+				references: { approvalReference: "approval-wrong-action" },
+			},
+			{
+				actionLevel: "automatic" as const,
+				references: { confirmationReference: "confirmation-wrong-action" },
+			},
+			{
+				actionLevel: "approve" as const,
+				references: { confirmationReference: "confirmation-wrong-action" },
+			},
+			{
+				actionLevel: "confirm_now" as const,
+				references: { approvalReference: "approval-wrong-action" },
+			},
+		];
+
+		for (const [index, testCase] of cases.entries()) {
+			const harness = createHarness({
+				actionLevel: testCase.actionLevel,
+				grants: { evaluate: async () => ({ ok: true }) },
+			});
+			const response = await harness.executor.execute(
+				{
+					...request(`reference-mismatch-${index}`, {
+						mode: "write",
+						value: "must-not-execute",
+					}),
+					...testCase.references,
+				},
+				principal(),
+			);
+
+			expect(response).toMatchObject({
+				ok: false,
+				failure: { code: "invalid_request", retryable: false },
+			});
+			expect(harness.executions).toBe(0);
+		}
+	});
+
+	it("requires a grant by default for non-automatic commands", async () => {
+		const harness = createHarness({ actionLevel: "confirm_now" });
+		const response = await harness.executor.execute(
+			request("confirmation-001", { mode: "write", value: "blocked" }),
+			principal(),
+		);
+
+		expect(response).toMatchObject({
+			ok: false,
+			failure: { code: "confirmation_required", retryable: false },
+		});
+		expect(harness.executions).toBe(0);
 	});
 
 	it("denies unauthorized actors without side effects", async () => {

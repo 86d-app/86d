@@ -20,6 +20,8 @@ interface CommandExecutionRecord {
 	commandVersion: number;
 	actionLevel: string;
 	idempotencyKey: string;
+	approvalId: string | null;
+	confirmationId: string | null;
 	inputDigest: string;
 	redactedInput: unknown;
 	actorType: string;
@@ -107,6 +109,8 @@ export interface PrismaCommandClient<
 }
 
 interface PrismaCommandPersistenceOptions {
+	/** Prisma.DbNull from the Store Runtime generated client. */
+	databaseNull: unknown;
 	/** Prisma.JsonNull from the Store Runtime generated client. */
 	jsonNull: unknown;
 	pollIntervalMs?: number | undefined;
@@ -202,11 +206,13 @@ function parseExecution(
 	}
 	const completedAt = record.completedAt ? iso(record.completedAt) : undefined;
 	const result =
-		record.result === null ? undefined : jsonValueSchema.parse(record.result);
+		parsedStatus === "succeeded"
+			? jsonValueSchema.parse(record.result)
+			: undefined;
 	const failure =
-		record.failure === null
-			? undefined
-			: commandFailureSchema.parse(record.failure);
+		parsedStatus === "failed"
+			? commandFailureSchema.parse(record.failure)
+			: undefined;
 	const actionLevel =
 		record.actionLevel === "automatic" ||
 		record.actionLevel === "approve" ||
@@ -225,6 +231,10 @@ function parseExecution(
 		actor: actorReferenceSchema.parse(record.actor),
 		authority: authoritySnapshotSchema.parse(record.authority),
 		idempotencyKey: record.idempotencyKey,
+		...(record.approvalId ? { approvalReference: record.approvalId } : {}),
+		...(record.confirmationId
+			? { confirmationReference: record.confirmationId }
+			: {}),
 		actionLevel,
 		status: parsedStatus,
 		inputDigest: record.inputDigest,
@@ -301,6 +311,8 @@ export function createPrismaCommandPersistence<
 							commandVersion: execution.command.version,
 							actionLevel: execution.actionLevel,
 							idempotencyKey: execution.idempotencyKey,
+							approvalId: execution.approvalReference,
+							confirmationId: execution.confirmationReference,
 							inputDigest: execution.inputDigest,
 							redactedInput: execution.redactedInput,
 							actorType: execution.actor.type,
@@ -393,12 +405,12 @@ export function createPrismaCommandPersistence<
 							? {
 									status: "succeeded",
 									result: execution.result ?? options.jsonNull,
-									failure: options.jsonNull,
+									failure: options.databaseNull,
 									completedAt: new Date(completedAt),
 								}
 							: {
 									status: "failed",
-									result: options.jsonNull,
+									result: options.databaseNull,
 									failure: execution.failure ?? options.jsonNull,
 									completedAt: new Date(completedAt),
 								},

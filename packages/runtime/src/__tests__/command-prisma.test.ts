@@ -5,6 +5,8 @@ import { createPrismaCommandPersistence } from "../command-prisma";
 const startedAt = "2026-08-11T20:00:00.000Z";
 const completedAt = "2026-08-11T20:00:01.000Z";
 const digest = "a".repeat(64);
+const databaseNull = { prisma: "DbNull" };
+const jsonNull = { prisma: "JsonNull" };
 
 const initialExecution: PersistedCommandExecution = {
 	executionId: "execution-1",
@@ -20,7 +22,8 @@ const initialExecution: PersistedCommandExecution = {
 		storeId: "store-1",
 	},
 	idempotencyKey: "idempotency-1",
-	actionLevel: "automatic",
+	approvalReference: "approval-1",
+	actionLevel: "approve",
 	status: "running",
 	inputDigest: digest,
 	redactedInput: { value: "updated" },
@@ -88,14 +91,25 @@ const succeededExecution: PersistedCommandExecution = {
 function executionRecord(
 	status: "failed" | "running" | "succeeded" = "running",
 	inputDigest = digest,
+	grant: {
+		actionLevel: "automatic" | "approve" | "confirm_now";
+		approvalId: string | null;
+		confirmationId: string | null;
+	} = {
+		actionLevel: "approve",
+		approvalId: "approval-1",
+		confirmationId: null,
+	},
 ) {
 	return {
 		id: "execution-1",
 		plane: "store_runtime",
 		commandName: "store_runtime.tracer.write",
 		commandVersion: 1,
-		actionLevel: "automatic",
+		actionLevel: grant.actionLevel,
 		idempotencyKey: "idempotency-1",
+		approvalId: grant.approvalId,
+		confirmationId: grant.confirmationId,
 		inputDigest,
 		redactedInput: { value: "updated" },
 		actorType: "account",
@@ -169,7 +183,8 @@ describe("Store Runtime Prisma Command persistence", () => {
 		const tx = transaction();
 		const client = clientFor(tx);
 		const persistence = createPrismaCommandPersistence(client, {
-			jsonNull: { prisma: "JsonNull" },
+			databaseNull,
+			jsonNull,
 		});
 
 		const result = await persistence.runOnce({
@@ -192,6 +207,8 @@ describe("Store Runtime Prisma Command persistence", () => {
 				authorityId: "membership-1",
 				targetId: "store-1",
 				commandName: "store_runtime.tracer.write",
+				approvalId: "approval-1",
+				confirmationId: undefined,
 			}),
 		});
 		expect(tx.auditEvent.create).toHaveBeenCalledWith({
@@ -213,7 +230,8 @@ describe("Store Runtime Prisma Command persistence", () => {
 		);
 		tx.auditEvent.findMany.mockResolvedValue([auditRecord()]);
 		const persistence = createPrismaCommandPersistence(clientFor(tx), {
-			jsonNull: { prisma: "JsonNull" },
+			databaseNull,
+			jsonNull,
 		});
 		const args = {
 			scope: "opaque-executor-scope",
@@ -244,7 +262,8 @@ describe("Store Runtime Prisma Command persistence", () => {
 			.mockResolvedValueOnce(executionRecord("failed"));
 		tx.auditEvent.findMany.mockResolvedValue([auditRecord(0), auditRecord(1)]);
 		const persistence = createPrismaCommandPersistence(clientFor(tx), {
-			jsonNull: { prisma: "JsonNull" },
+			databaseNull,
+			jsonNull,
 		});
 
 		const result = await persistence.runOnce({
@@ -269,6 +288,7 @@ describe("Store Runtime Prisma Command persistence", () => {
 			where: { id: "execution-1", status: "running" },
 			data: expect.objectContaining({
 				status: "failed",
+				result: databaseNull,
 				failure: expect.objectContaining({ code: "execution_failed" }),
 			}),
 		});
@@ -276,6 +296,72 @@ describe("Store Runtime Prisma Command persistence", () => {
 			kind: "execution",
 			replayed: false,
 			execution: { status: "failed" },
+		});
+	});
+
+	it("reconstructs durable approval and confirmation references", async () => {
+		const tx = transaction();
+		const persistence = createPrismaCommandPersistence(clientFor(tx), {
+			databaseNull,
+			jsonNull,
+		});
+
+		tx.commandExecution.findUnique.mockResolvedValueOnce(
+			executionRecord("succeeded"),
+		);
+		await expect(persistence.get("execution-1")).resolves.toMatchObject({
+			actionLevel: "approve",
+			approvalReference: "approval-1",
+		});
+
+		tx.commandExecution.findUnique.mockResolvedValueOnce(
+			executionRecord("succeeded", digest, {
+				actionLevel: "confirm_now",
+				approvalId: null,
+				confirmationId: "confirmation-1",
+			}),
+		);
+		await expect(persistence.get("execution-1")).resolves.toMatchObject({
+			actionLevel: "confirm_now",
+			confirmationReference: "confirmation-1",
+		});
+	});
+
+	it("distinguishes a successful JSON null result from SQL NULL", async () => {
+		const tx = transaction();
+		tx.commandExecution.findUnique
+			.mockResolvedValueOnce(executionRecord("running"))
+			.mockResolvedValueOnce({
+				...executionRecord("succeeded"),
+				result: null,
+			});
+		const persistence = createPrismaCommandPersistence(clientFor(tx), {
+			databaseNull,
+			jsonNull,
+		});
+
+		const result = await persistence.runOnce({
+			scope: "opaque-executor-scope",
+			inputDigest: digest,
+			initialExecution,
+			run: async () => ({
+				commitTransaction: true,
+				execution: { ...succeededExecution, result: null },
+			}),
+		});
+
+		expect(tx.commandExecution.updateMany).toHaveBeenCalledWith({
+			where: { id: "execution-1", status: "running" },
+			data: {
+				status: "succeeded",
+				result: jsonNull,
+				failure: databaseNull,
+				completedAt: new Date(completedAt),
+			},
+		});
+		expect(result).toMatchObject({
+			kind: "execution",
+			execution: { status: "succeeded", result: null },
 		});
 	});
 });
