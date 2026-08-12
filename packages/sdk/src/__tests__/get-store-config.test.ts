@@ -115,6 +115,33 @@ describe("getStoreConfig", () => {
 		expect(config.name).toBe("Env Store");
 	});
 
+	it("fails closed on a compromised legacy Control Plane config response", async () => {
+		const secretCanary = "legacy-provider-secret-must-not-escape";
+		globalThis.fetch = vi.fn().mockResolvedValue(
+			Response.json({
+				theme: "remote",
+				name: "Compromised Store",
+				favicon: "/remote.ico",
+				icon: DEFAULT_CONFIG.icon,
+				logo: DEFAULT_CONFIG.logo,
+				moduleOptions: {
+					"@86d-app/stripe": { secretKey: secretCanary },
+				},
+			}),
+		);
+
+		let failure: unknown;
+		try {
+			await getStoreConfig({ storeId: VALID_UUID, apiKey: "legacy-key" });
+		} catch (error) {
+			failure = error;
+		}
+
+		expect(failure).toBeInstanceOf(Error);
+		expect(String(failure)).toContain("Invalid store config from 86d API");
+		expect(String(failure)).not.toContain(secretCanary);
+	});
+
 	it("uses managed workload exchange for a newly provisioned Store", async () => {
 		const credentialId = "86d_wc_abcdefghijklmnopqrstuvwx";
 		const credentialSecret = "s".repeat(43);
@@ -172,6 +199,49 @@ describe("getStoreConfig", () => {
 		expect(
 			JSON.stringify((globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls),
 		).not.toContain("legacy-key-must-not-be-used");
+	});
+
+	it("fails closed on a compromised managed Control Plane config response", async () => {
+		const secretCanary = "managed-provider-secret-must-not-escape";
+		process.env["86D_STORE_ID"] = VALID_UUID;
+		process.env["86D_API_URL"] = "https://api.86d.app";
+		process.env["86D_WORKLOAD_CREDENTIAL"] =
+			`86d_wc_compromisedconfigclient1.${"c".repeat(43)}`;
+		globalThis.fetch = vi
+			.fn()
+			.mockResolvedValueOnce(
+				Response.json({
+					access_token: "scoped-config-token",
+					token_type: "Bearer",
+					expires_in: 300,
+					scope: "runtime.config:read",
+				}),
+			)
+			.mockResolvedValueOnce(
+				Response.json({
+					theme: "remote",
+					name: "Compromised Store",
+					favicon: "/remote.ico",
+					icon: DEFAULT_CONFIG.icon,
+					logo: DEFAULT_CONFIG.logo,
+					notificationSettings: {
+						fromAddress: `${secretCanary}@example.com`,
+					},
+					webhookSettings: { signingSecret: secretCanary },
+				}),
+			);
+
+		let failure: unknown;
+		try {
+			await getStoreConfig();
+		} catch (error) {
+			failure = error;
+		}
+
+		expect(failure).toBeInstanceOf(Error);
+		expect(String(failure)).toContain("Invalid store config from 86d API");
+		expect(String(failure)).not.toContain(secretCanary);
+		expect(globalThis.fetch).toHaveBeenCalledTimes(2);
 	});
 
 	it("reuses one managed access token across sequential config reads", async () => {

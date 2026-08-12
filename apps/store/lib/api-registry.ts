@@ -6,7 +6,7 @@
 import type { Primitive } from "@86d-app/core";
 import { ModuleRegistry } from "@86d-app/runtime/registry";
 import { UniversalDataService } from "@86d-app/runtime/universal-data-service";
-import { getStoreConfig } from "@86d-app/sdk";
+import { type Config, getStoreConfig, loadFromTemplate } from "@86d-app/sdk";
 import { db, Prisma } from "db";
 import env from "env";
 import { logger } from "utils/logger";
@@ -38,6 +38,31 @@ function toPrimitiveRecord(
 let registry: ModuleRegistry | null = null;
 let bootPromise: Promise<void> | null = null;
 let subscribersRegistered = false;
+let storeOwnedConfig: Config | null = null;
+
+function getStoreOwnedConfig(): Config {
+	if (!storeOwnedConfig) {
+		storeOwnedConfig = loadFromTemplate(resolveTemplatePath());
+	}
+	return storeOwnedConfig;
+}
+
+function getStoreOwnedModuleOptions(): Record<
+	string,
+	Record<string, Primitive>
+> {
+	const result: Record<string, Record<string, Primitive>> = {};
+	const moduleOptions = getStoreOwnedConfig().moduleOptions;
+	if (!moduleOptions || typeof moduleOptions !== "object") {
+		return result;
+	}
+	for (const [moduleId, options] of Object.entries(moduleOptions)) {
+		if (options && typeof options === "object" && !Array.isArray(options)) {
+			result[moduleId] = toPrimitiveRecord(options as Record<string, unknown>);
+		}
+	}
+	return result;
+}
 
 function getRegistry(): ModuleRegistry {
 	const storeId = env.STORE_ID;
@@ -45,37 +70,15 @@ function getRegistry(): ModuleRegistry {
 		throw new Error("STORE_ID not configured");
 	}
 	if (!registry) {
-		// Mutable options object shared with the registry. The resolveStoreId
-		// callback merges in platform-configured options before modules init,
-		// allowing dashboard settings to flow into running module instances.
-		const platformOptions: Record<string, Record<string, Primitive>> = {};
+		// Module options are Store-owned runtime configuration. Managed and legacy
+		// Control Plane responses cannot change Module behavior at this seam.
+		const platformOptions = getStoreOwnedModuleOptions();
 
 		registry = new ModuleRegistry(
 			modules,
 			storeId,
 			{
-				resolveStoreId: async (id) => {
-					const config = await getStoreConfig({
-						storeId: id,
-						templatePath: resolveTemplatePath(),
-						fallbackToTemplateOnError: true,
-					});
-					// Merge platform-configured module options in-place so the registry
-					// picks them up before module init() callbacks run.
-					if (
-						config.moduleOptions &&
-						typeof config.moduleOptions === "object"
-					) {
-						for (const [modId, opts] of Object.entries(config.moduleOptions)) {
-							if (opts && typeof opts === "object" && !Array.isArray(opts)) {
-								platformOptions[modId] = toPrimitiveRecord(
-									opts as Record<string, unknown>,
-								);
-							}
-						}
-					}
-					return id;
-				},
+				resolveStoreId: async (id) => id,
 				upsertModuleRecord: async (params) => {
 					const record = await db.module.upsert({
 						where: {
@@ -164,8 +167,10 @@ export async function ensureBooted(): Promise<ModuleRegistry> {
 							fallbackToTemplateOnError: true,
 						});
 						storeName = config.name ?? "Our Store";
-						const settings = config.notificationSettings
-							? parseNotificationSettings(config.notificationSettings)
+						const localNotificationSettings =
+							getStoreOwnedConfig().notificationSettings;
+						const settings = localNotificationSettings
+							? parseNotificationSettings(localNotificationSettings)
 							: {};
 						if (settings.fromAddress) {
 							fromAddress = settings.fromAddress;

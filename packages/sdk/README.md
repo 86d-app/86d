@@ -15,8 +15,8 @@ bun add @86d-app/sdk
 ```ts
 import { getStoreConfig } from "@86d-app/sdk";
 
-// With STORE_ID set (UUID): fetches from 86d API
-// Without STORE_ID: loads from template path
+// Managed deployments use 86D_STORE_ID, 86D_API_URL, and the opaque
+// 86D_WORKLOAD_CREDENTIAL. Standalone deployments load the local template.
 const config = await getStoreConfig({
   templatePath: "/path/to/templates/brisa/config.json",
   fallbackToTemplateOnError: true,
@@ -45,20 +45,54 @@ const config = await fetchFromApi(
 );
 ```
 
+### Report Managed Runtime Diagnostics
+
+Managed Runtime Diagnostics is disabled unless `86D_TELEMETRY` is exactly
+`managed-runtime-diagnostics-v1` and the complete managed workload identity is
+present. Disabled and standalone clients make no Control Plane network call.
+
+```ts
+import { createManagedRuntimeDiagnosticsClient } from "@86d-app/sdk";
+
+const diagnostics = createManagedRuntimeDiagnosticsClient();
+await diagnostics.report({
+  schemaVersion: 1,
+  reportId: crypto.randomUUID(), // reuse this ID when retrying the same report
+  observedAt: new Date().toISOString(),
+  health: "healthy",
+  runtimeVersion: "0.0.4",
+  checks: [
+    { component: "runtime", status: "ok" },
+    { component: "database", status: "ok" },
+  ],
+  errors: [],
+});
+```
+
+The client posts to `POST /api/v1/workloads/diagnostics` with the
+`runtime.telemetry:write` workload scope. The strict v1 body has no Store
+selector or free-form fields; the Control Plane derives Store scope from the
+short-lived workload token.
+
 ## Configuration
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `storeId` | Store UUID | `process.env.STORE_ID` |
+| `storeId` | Legacy migration-only Store UUID | `process.env.STORE_ID` |
 | `apiBaseUrl` | 86d API base URL | `process.env.86D_API_URL` or `https://api.86d.app` |
-| `apiKey` | API key for auth | `process.env.86D_API_KEY` |
+| `apiKey` | Legacy migration-only API key | `process.env.86D_API_KEY` |
 | `templatePath` | Path to config.json | Required when no STORE_ID |
 | `fallbackToTemplateOnError` | Use template if API fails | `false` |
 
 ## Types
 
 ```ts
-import type { Config, IconLogoVariant, ThemeVariables } from "@86d-app/sdk";
+import type {
+  Config,
+  IconLogoVariant,
+  RemoteStoreConfig,
+  ThemeVariables,
+} from "@86d-app/sdk";
 import { DEFAULT_CONFIG } from "@86d-app/sdk";
 ```
 
@@ -71,4 +105,9 @@ GET {apiBaseUrl}/v1/stores/{storeId}
 Authorization: Bearer {apiKey}  # if apiKey provided
 ```
 
-The response must match the `Config` shape (theme, name, favicon, icon, logo, modules, moduleOptions, variables).
+Managed configuration uses a short-lived `runtime.config:read` workload token.
+The response is validated as a strict, fail-closed `RemoteStoreConfig` and
+contains only theme identity, Store name/assets, installed Module names, and
+managed billing status. Unknown fields are rejected. Module settings,
+notification settings, provider secrets, and webhook settings never cross this
+endpoint; standalone template `Config` retains those Store-owned settings.

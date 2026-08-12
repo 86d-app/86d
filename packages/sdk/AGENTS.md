@@ -25,7 +25,7 @@ packages/sdk/
 - `getStoreConfig(options?)` — async; primary entry point
 - `loadFromTemplate(templatePath)` — sync; load from local JSON
 - `fetchFromApi(storeId, apiBaseUrl, apiKey?)` — async; fetch from API
-- `Config`, `DEFAULT_CONFIG`, `GetStoreConfigOptions`
+- `Config`, `RemoteStoreConfig`, `DEFAULT_CONFIG`, `GetStoreConfigOptions`
 
 ## Environment variables
 
@@ -43,6 +43,10 @@ const config = await getStoreConfig({
   fallbackToTemplateOnError: true,
 });
 ```
+
+Remote Control Plane responses use a strict `RemoteStoreConfig` DTO and fail
+closed on unknown fields. Store-owned Module options and notification settings
+exist only in local template `Config`; do not add them to the remote DTO.
 
 ## Dependencies
 

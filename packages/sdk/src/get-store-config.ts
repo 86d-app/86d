@@ -1,6 +1,6 @@
 import { fetchFromApi } from "./fetch-from-api";
 import { loadFromTemplate } from "./load-from-template";
-import type { Config } from "./types";
+import type { Config, RemoteStoreConfig } from "./types";
 import {
 	createWorkloadTokenClient,
 	type ManagedWorkloadConfig,
@@ -60,7 +60,7 @@ function workloadClient(config: ManagedWorkloadConfig): WorkloadTokenClient {
  */
 export async function getStoreConfig(
 	options?: GetStoreConfigOptions,
-): Promise<Config> {
+): Promise<Config | RemoteStoreConfig> {
 	const storeId =
 		options?.storeId ?? (process.env.STORE_ID as string | undefined);
 	const apiBaseUrl =

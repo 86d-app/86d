@@ -37,6 +37,27 @@ describe("env", () => {
 		}
 	});
 
+	it("accepts only the explicit Managed Runtime Diagnostics opt-in", async () => {
+		const previous = process.env["86D_TELEMETRY"];
+		try {
+			process.env["86D_TELEMETRY"] = "managed-runtime-diagnostics-v1";
+			vi.resetModules();
+
+			const mod = await import("../index");
+
+			expect(mod.default["86D_TELEMETRY"]).toBe(
+				"managed-runtime-diagnostics-v1",
+			);
+		} finally {
+			if (previous === undefined) {
+				delete process.env["86D_TELEMETRY"];
+			} else {
+				process.env["86D_TELEMETRY"] = previous;
+			}
+			vi.resetModules();
+		}
+	});
+
 	it("prefers managed Store identity at the shared Runtime boundary", async () => {
 		const legacyStoreId = "784d078d-9202-43e7-9624-63a92f479331";
 		const managedStoreId = "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d";

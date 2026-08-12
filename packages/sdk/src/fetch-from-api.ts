@@ -1,58 +1,55 @@
 import { z } from "zod";
-import type { Config } from "./types";
+import type { RemoteStoreConfig, ThemeVariables } from "./types";
 import { DEFAULT_CONFIG } from "./types";
 
-const iconLogoVariantSchema = z.object({
-	light: z.string(),
-	dark: z.string(),
-});
-
-const themeVariablesSchema = z.object({
-	radius: z.string().optional(),
-	background: z.string(),
-	foreground: z.string(),
-	card: z.string(),
-	"card-foreground": z.string(),
-	popover: z.string(),
-	"popover-foreground": z.string(),
-	primary: z.string(),
-	"primary-foreground": z.string(),
-	secondary: z.string(),
-	"secondary-foreground": z.string(),
-	muted: z.string(),
-	"muted-foreground": z.string(),
-	accent: z.string(),
-	"accent-foreground": z.string(),
-	destructive: z.string(),
-	border: z.string(),
-	input: z.string(),
-	ring: z.string(),
-	"chart-1": z.string(),
-	"chart-2": z.string(),
-	"chart-3": z.string(),
-	"chart-4": z.string(),
-	"chart-5": z.string(),
-	sidebar: z.string(),
-	"sidebar-foreground": z.string(),
-	"sidebar-primary": z.string(),
-	"sidebar-primary-foreground": z.string(),
-	"sidebar-accent": z.string(),
-	"sidebar-accent-foreground": z.string(),
-	"sidebar-border": z.string(),
-	"sidebar-ring": z.string(),
-});
-
-const notificationSettingsSchema = z
+const iconLogoVariantSchema = z
 	.object({
-		fromAddress: z.string().optional(),
-		adminEmail: z.string().optional(),
-		events: z.record(z.string(), z.boolean()).optional(),
+		light: z.string().min(1).max(2048),
+		dark: z.string().min(1).max(2048),
 	})
-	.optional();
+	.strict();
+
+const themeValueSchema = z.string().min(1).max(256);
+const themeVariablesSchema = z
+	.object({
+		radius: themeValueSchema.optional(),
+		background: themeValueSchema,
+		foreground: themeValueSchema,
+		card: themeValueSchema,
+		"card-foreground": themeValueSchema,
+		popover: themeValueSchema,
+		"popover-foreground": themeValueSchema,
+		primary: themeValueSchema,
+		"primary-foreground": themeValueSchema,
+		secondary: themeValueSchema,
+		"secondary-foreground": themeValueSchema,
+		muted: themeValueSchema,
+		"muted-foreground": themeValueSchema,
+		accent: themeValueSchema,
+		"accent-foreground": themeValueSchema,
+		destructive: themeValueSchema,
+		border: themeValueSchema,
+		input: themeValueSchema,
+		ring: themeValueSchema,
+		"chart-1": themeValueSchema,
+		"chart-2": themeValueSchema,
+		"chart-3": themeValueSchema,
+		"chart-4": themeValueSchema,
+		"chart-5": themeValueSchema,
+		sidebar: themeValueSchema,
+		"sidebar-foreground": themeValueSchema,
+		"sidebar-primary": themeValueSchema,
+		"sidebar-primary-foreground": themeValueSchema,
+		"sidebar-accent": themeValueSchema,
+		"sidebar-accent-foreground": themeValueSchema,
+		"sidebar-border": themeValueSchema,
+		"sidebar-ring": themeValueSchema,
+	})
+	.strict();
 
 const billingInfoSchema = z
 	.object({
-		plan: z.string(),
+		plan: z.string().min(1).max(64),
 		status: z.enum([
 			"active",
 			"trialing",
@@ -64,28 +61,43 @@ const billingInfoSchema = z
 			"paused",
 		]),
 		isActive: z.boolean(),
-		periodEnd: z.string().optional(),
+		periodEnd: z.iso.datetime().optional(),
 	})
+	.strict()
 	.optional();
 
-const configSchema = z.object({
-	$schema: z.string().optional(),
-	theme: z.string(),
-	name: z.string(),
-	favicon: z.string(),
-	icon: iconLogoVariantSchema,
-	logo: iconLogoVariantSchema,
-	modules: z.array(z.string()).optional(),
-	moduleOptions: z.record(z.string(), z.unknown()).optional(),
-	notificationSettings: notificationSettingsSchema,
-	billing: billingInfoSchema,
-	variables: z
-		.object({
-			light: themeVariablesSchema.partial(),
-			dark: themeVariablesSchema.partial(),
-		})
-		.optional(),
-});
+const remoteStoreConfigDtoSchema = z
+	.object({
+		theme: z.string().min(1).max(64),
+		name: z.string().min(1).max(200),
+		favicon: z.string().min(1).max(2048),
+		icon: iconLogoVariantSchema,
+		logo: iconLogoVariantSchema,
+		modules: z.array(z.string().min(1).max(128)).max(100).optional(),
+		billing: billingInfoSchema,
+		variables: z
+			.object({
+				light: themeVariablesSchema.partial().strict(),
+				dark: themeVariablesSchema.partial().strict(),
+			})
+			.strict()
+			.optional(),
+	})
+	.strict();
+
+type RemoteStoreConfigDto = z.infer<typeof remoteStoreConfigDtoSchema>;
+
+function mergeThemeVariables(
+	defaults: ThemeVariables,
+	overrides:
+		| Partial<Record<keyof ThemeVariables, string | undefined>>
+		| undefined,
+): ThemeVariables {
+	const definedOverrides = Object.fromEntries(
+		Object.entries(overrides ?? {}).filter(([, value]) => value !== undefined),
+	);
+	return Object.assign({ ...defaults }, definedOverrides);
+}
 
 /**
  * Fetch store config from the 86d hosted API.
@@ -96,7 +108,7 @@ export async function fetchFromApi(
 	apiBaseUrl: string,
 	apiKey?: string,
 	fetcher: typeof globalThis.fetch = globalThis.fetch,
-): Promise<Config> {
+): Promise<RemoteStoreConfig> {
 	const normalizedBase = apiBaseUrl.replace(/\/$/, "");
 	const apiRoot = normalizedBase.endsWith("/api")
 		? normalizedBase
@@ -118,7 +130,7 @@ export async function fetchFromApi(
 	}
 
 	const json = (await res.json()) as unknown;
-	const parsed = configSchema.safeParse(json);
+	const parsed = remoteStoreConfigDtoSchema.safeParse(json);
 
 	if (!parsed.success) {
 		throw new Error(
@@ -126,21 +138,39 @@ export async function fetchFromApi(
 		);
 	}
 
-	return mergeWithDefaults(parsed.data as Record<string, unknown>);
+	return mergeWithDefaults(parsed.data);
 }
 
-function mergeWithDefaults(parsed: Record<string, unknown>): Config {
-	const vars = parsed.variables as
-		| { light?: Record<string, unknown>; dark?: Record<string, unknown> }
-		| undefined;
+function mergeWithDefaults(parsed: RemoteStoreConfigDto): RemoteStoreConfig {
 	return {
-		...DEFAULT_CONFIG,
-		...parsed,
-		icon: { ...DEFAULT_CONFIG.icon, ...(parsed.icon as object) },
-		logo: { ...DEFAULT_CONFIG.logo, ...(parsed.logo as object) },
+		...(DEFAULT_CONFIG.$schema ? { $schema: DEFAULT_CONFIG.$schema } : {}),
+		theme: parsed.theme,
+		name: parsed.name,
+		favicon: parsed.favicon,
+		icon: { ...parsed.icon },
+		logo: { ...parsed.logo },
+		...(parsed.modules ? { modules: [...parsed.modules] } : {}),
+		...(parsed.billing
+			? {
+					billing: {
+						plan: parsed.billing.plan,
+						status: parsed.billing.status,
+						isActive: parsed.billing.isActive,
+						...(parsed.billing.periodEnd
+							? { periodEnd: parsed.billing.periodEnd }
+							: {}),
+					},
+				}
+			: {}),
 		variables: {
-			light: { ...DEFAULT_CONFIG.variables.light, ...vars?.light },
-			dark: { ...DEFAULT_CONFIG.variables.dark, ...vars?.dark },
+			light: mergeThemeVariables(
+				DEFAULT_CONFIG.variables.light,
+				parsed.variables?.light,
+			),
+			dark: mergeThemeVariables(
+				DEFAULT_CONFIG.variables.dark,
+				parsed.variables?.dark,
+			),
 		},
-	} as Config;
+	};
 }

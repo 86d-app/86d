@@ -76,6 +76,15 @@ export interface Config {
 	};
 }
 
+/**
+ * Configuration that may cross the Control Plane-to-Runtime seam.
+ * Store-owned Module and notification settings are deliberately absent.
+ */
+export type RemoteStoreConfig = Config & {
+	moduleOptions?: never;
+	notificationSettings?: never;
+};
+
 export const DEFAULT_CONFIG: Config = {
 	$schema: "https://86d.app/docs.json",
 	theme: "brisa",

@@ -12,6 +12,7 @@ const envSchema = z.object({
 	"86D_API_KEY": z.string().optional(),
 	"86D_STORE_ID": z.string().uuid().optional(),
 	"86D_WORKLOAD_CREDENTIAL": z.string().optional(),
+	"86D_TELEMETRY": z.literal("managed-runtime-diagnostics-v1").optional(),
 	"86D_ADMIN_OAUTH_CLIENT_ID": z.string().optional(),
 	"86D_ADMIN_OAUTH_CLIENT_SECRET": z.string().optional(),
 	DATABASE_URL: z.string().optional(),

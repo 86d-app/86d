@@ -99,6 +99,36 @@ describe("loadFromTemplate", () => {
 		expect(result.logo.light).toBe(DEFAULT_CONFIG.logo.light);
 	});
 
+	it("preserves Store-owned Module and notification settings for standalone templates", () => {
+		const configPath = join(TMP_DIR, "store-owned-settings.json");
+		writeFileSync(
+			configPath,
+			JSON.stringify({
+				theme: "standalone",
+				name: "Standalone Store",
+				moduleOptions: {
+					"@86d-app/cart": { maxItemsPerCart: 25 },
+				},
+				notificationSettings: {
+					fromAddress: "Store <orders@example.com>",
+					adminEmail: "owner@example.com",
+					events: { "order.placed": true },
+				},
+			}),
+		);
+
+		const result = loadFromTemplate(configPath);
+
+		expect(result.moduleOptions).toEqual({
+			"@86d-app/cart": { maxItemsPerCart: 25 },
+		});
+		expect(result.notificationSettings).toEqual({
+			fromAddress: "Store <orders@example.com>",
+			adminEmail: "owner@example.com",
+			events: { "order.placed": true },
+		});
+	});
+
 	it("throws for non-existent file", () => {
 		expect(() => loadFromTemplate("/nonexistent/config.json")).toThrow();
 	});

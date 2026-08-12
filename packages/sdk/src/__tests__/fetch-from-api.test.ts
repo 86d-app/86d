@@ -129,6 +129,35 @@ describe("fetchFromApi", () => {
 		).rejects.toThrow("Invalid store config from 86d API");
 	});
 
+	it.each([
+		[
+			"Module options",
+			{ moduleOptions: { "@86d-app/stripe": { secretKey: "canary" } } },
+		],
+		[
+			"notification settings",
+			{ notificationSettings: { fromAddress: "attacker@example.com" } },
+		],
+		["provider secrets", { providerSecrets: { stripe: "canary" } }],
+		["webhook settings", { webhookSettings: { signingSecret: "canary" } }],
+	])("fails closed when a compromised response includes %s", async (_label, forbiddenField) => {
+		const secretCanary = "sk_live_control_plane_must_not_reach_runtime";
+		globalThis.fetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: () =>
+				Promise.resolve({
+					...createValidApiResponse(),
+					...JSON.parse(
+						JSON.stringify(forbiddenField).replaceAll("canary", secretCanary),
+					),
+				}),
+		});
+
+		await expect(
+			fetchFromApi("abc-123", "https://api.86d.app"),
+		).rejects.toThrow("Invalid store config from 86d API");
+	});
+
 	it("fills in default theme variables when API response omits them", async () => {
 		const responseWithoutVariables = {
 			theme: "brisa",
