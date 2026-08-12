@@ -1,4 +1,9 @@
-import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
+import {
+	createStoreEndpoint,
+	productResolveCapability,
+	sanitizeText,
+	z,
+} from "@86d-app/core";
 import type { CartController } from "../../service";
 import { resolveGuestId } from "./_guest";
 
@@ -52,34 +57,40 @@ export const addToCart = createStoreEndpoint(
 		const context = ctx.context;
 		const cartController = context.controllers.cart as CartController;
 
-		// Server-side price validation: look up the real price from the products module
-		const productsData = context._dataRegistry?.get("products");
-		if (productsData) {
-			let trustedPrice: number | undefined;
-			if (body.variantId) {
-				const variant = (await productsData.get(
-					"productVariant",
-					body.variantId,
-				)) as { price: number } | null;
-				if (variant) trustedPrice = variant.price;
+		const resolved = await context.capabilities.invoke(
+			productResolveCapability,
+			{
+				productId: body.productId,
+				...(body.variantId ? { variantId: body.variantId } : {}),
+			},
+		);
+		if (!resolved.ok) {
+			if (resolved.failure.code === "not_found") {
+				return { error: "Product not found", status: 404 };
 			}
-			if (trustedPrice === undefined) {
-				const product = (await productsData.get("product", body.productId)) as {
-					price: number;
-					status: string;
-				} | null;
-				if (!product) {
-					return { error: "Product not found", status: 404 };
-				}
-				if (product.status !== "active") {
-					return { error: "Product is not available", status: 400 };
-				}
-				trustedPrice = product.price;
+			if (resolved.failure.code === "not_active") {
+				return { error: "Product is not available", status: 400 };
 			}
-			if (body.price !== trustedPrice) {
-				body.price = trustedPrice;
+			if (
+				resolved.failure.code === "variant_not_found" ||
+				resolved.failure.code === "variant_mismatch"
+			) {
+				return { error: "Product variant is not available", status: 400 };
 			}
+			return {
+				code: "CART_CATALOG_UNAVAILABLE",
+				error: "Authoritative product information is unavailable.",
+				status: 503,
+			};
 		}
+		const authoritativeProduct = resolved.decision.product;
+		const authoritativeVariant = resolved.decision.variant;
+		body.price = authoritativeVariant?.price ?? authoritativeProduct.price;
+		body.productName = authoritativeProduct.name;
+		body.productSlug = authoritativeProduct.slug;
+		body.productImage =
+			authoritativeVariant?.images[0] ?? authoritativeProduct.images[0];
+		if (authoritativeVariant) body.variantName = authoritativeVariant.name;
 
 		const customerId = context.session?.user.id;
 		const cart = await cartController.getOrCreateCart(

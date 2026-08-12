@@ -1,9 +1,6 @@
 import { createAdminEndpoint, z } from "@86d-app/core";
-import type {
-	PaymentIntentStatus,
-	RevenueIntent,
-	RevenuePaymentsController,
-} from "../../service";
+import { listRevenueIntents } from "../../payment-source";
+import type { PaymentIntentStatus } from "../../service";
 import { buildCSV } from "../../service-impl";
 
 export const exportTransactions = createAdminEndpoint(
@@ -26,23 +23,22 @@ export const exportTransactions = createAdminEndpoint(
 		}),
 	},
 	async (ctx) => {
-		const controller = ctx.context.controllers.payments as
-			| RevenuePaymentsController
-			| undefined;
-
-		if (!controller) {
-			return { csv: "", count: 0 };
-		}
-
-		const all = (await controller.listIntents({
+		const source = await listRevenueIntents(ctx.context.capabilities, {
 			take: 10000,
-		})) as RevenueIntent[];
+		});
+		if (!source.ok) {
+			return {
+				code: source.code,
+				error: "Authoritative payment export is unavailable.",
+				status: 503,
+			};
+		}
 
 		const from = ctx.query.from ? new Date(ctx.query.from) : null;
 		const to = ctx.query.to ? new Date(ctx.query.to) : null;
 		const statusFilter = ctx.query.status as PaymentIntentStatus | undefined;
 
-		const filtered = all.filter((i) => {
+		const filtered = source.intents.filter((i) => {
 			const t = new Date(i.createdAt);
 			if (from && t < from) return false;
 			if (to && t > to) return false;

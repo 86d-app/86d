@@ -1,5 +1,6 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
 import { adminEndpoints } from "./admin/endpoints";
+import { inventoryCheckoutProvider } from "./capabilities";
 import { inventorySchema } from "./schema";
 import { createInventoryController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints";
@@ -21,6 +22,7 @@ export default function inventory(options?: InventoryOptions): Module {
 		id: "inventory",
 		version: "0.0.1",
 		schema: inventorySchema,
+		capabilities: { provides: [inventoryCheckoutProvider] },
 		exports: {
 			read: ["stockQuantity", "stockAvailability"],
 			readWrite: ["stockReservation"],

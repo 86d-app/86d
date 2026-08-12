@@ -1,4 +1,5 @@
-import type { ModuleDataService } from "@86d-app/core";
+import type { CapabilityInvoker, ModuleDataService } from "@86d-app/core";
+import { notificationCreateCapability } from "@86d-app/core";
 import type {
 	Automation,
 	AutomationAction,
@@ -7,15 +8,6 @@ import type {
 	AutomationExecution,
 	AutomationsController,
 } from "./service";
-
-type NotificationsControllerMin = {
-	create: (params: {
-		customerId: string;
-		title: string;
-		body: string;
-		metadata?: Record<string, unknown> | undefined;
-	}) => Promise<unknown>;
-};
 
 export type ActionExecutorOptions = {
 	resendApiKey?: string | undefined;
@@ -78,7 +70,7 @@ async function executeAction(
 	action: AutomationAction,
 	payload: Record<string, unknown>,
 	options: ActionExecutorOptions,
-	controllers: Record<string, unknown>,
+	capabilities: CapabilityInvoker | undefined,
 	data: ModuleDataService,
 ): Promise<AutomationActionResult & { actionIndex: number }> {
 	switch (action.type) {
@@ -103,10 +95,7 @@ async function executeAction(
 					error: "send_notification requires title and body/message",
 				};
 			}
-			const notificationsCtrl = controllers.notifications as
-				| NotificationsControllerMin
-				| undefined;
-			if (!notificationsCtrl) {
+			if (!capabilities) {
 				return {
 					actionIndex: 0,
 					type: action.type,
@@ -127,25 +116,35 @@ async function executeAction(
 				};
 			}
 			try {
-				await notificationsCtrl.create({
-					customerId,
-					title,
-					body: notifBody,
-					metadata: { automationPayload: payload },
-				});
+				const created = await capabilities.invoke(
+					notificationCreateCapability,
+					{
+						customerId,
+						title,
+						body: notifBody,
+						metadata: { automationPayload: payload },
+					},
+				);
+				if (!created.ok) {
+					return {
+						actionIndex: 0,
+						type: action.type,
+						status: "failed",
+						error: "Notification capability is unavailable",
+					};
+				}
 				return {
 					actionIndex: 0,
 					type: action.type,
 					status: "success",
 					output: { title, body: notifBody, customerId },
 				};
-			} catch (e) {
+			} catch {
 				return {
 					actionIndex: 0,
 					type: action.type,
 					status: "failed",
-					error:
-						e instanceof Error ? e.message : "Failed to create notification",
+					error: "Failed to create notification",
 				};
 			}
 		}
@@ -405,7 +404,7 @@ async function executeAction(
 export function createAutomationsController(
 	data: ModuleDataService,
 	options: ActionExecutorOptions = {},
-	controllers: Record<string, unknown> = {},
+	capabilities?: CapabilityInvoker,
 ): AutomationsController {
 	return {
 		async create(params) {
@@ -580,7 +579,7 @@ export function createAutomationsController(
 					action,
 					triggerPayload,
 					options,
-					controllers,
+					capabilities,
 					data,
 				);
 				result.actionIndex = i;

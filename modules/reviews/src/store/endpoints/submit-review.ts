@@ -1,5 +1,10 @@
-import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
-import type { OrderPurchaseController, ReviewController } from "../../service";
+import {
+	createStoreEndpoint,
+	orderPurchaseVerifyCapability,
+	sanitizeText,
+	z,
+} from "@86d-app/core";
+import type { ReviewController } from "../../service";
 
 const imageSchema = z.object({
 	url: z.string().url().max(2000),
@@ -47,19 +52,16 @@ export const submitReview = createStoreEndpoint(
 		// Best-effort: if orders module is not installed, isVerifiedPurchase stays false.
 		let isVerifiedPurchase = false;
 		if (customerId) {
-			const ordersController = ctx.context.controllers.orders as unknown as
-				| OrderPurchaseController
-				| undefined;
-			if (ordersController) {
-				try {
-					isVerifiedPurchase =
-						await ordersController.hasCustomerPurchasedProduct(
-							customerId,
-							ctx.body.productId,
-						);
-				} catch {
-					// Best-effort: verification failure does not block the review
+			try {
+				const verification = await ctx.context.capabilities.invoke(
+					orderPurchaseVerifyCapability,
+					{ customerId, productId: ctx.body.productId },
+				);
+				if (verification.ok) {
+					isVerifiedPurchase = verification.decision.verified;
 				}
+			} catch {
+				// Best-effort: verification failure does not block the review
 			}
 		}
 

@@ -1,5 +1,6 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
 import { adminEndpoints } from "./admin/endpoints";
+import { discountCodeProvider } from "./capabilities";
 import { discountsSchema } from "./schema";
 import { createDiscountController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints";
@@ -43,6 +44,7 @@ export default function discounts(options?: DiscountsOptions): Module {
 		id: "discounts",
 		version: "0.0.1",
 		schema: discountsSchema,
+		capabilities: { provides: [discountCodeProvider] },
 		exports: {
 			read: ["discountValidation", "discountAmount", "discountCode"],
 		},

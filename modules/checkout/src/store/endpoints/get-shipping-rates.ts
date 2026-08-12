@@ -1,5 +1,5 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
-import type { CheckoutController, ShippingRateController } from "../../service";
+import { createStoreEndpoint, shippingQuoteCapability, z } from "@86d-app/core";
+import type { CheckoutController } from "../../service";
 
 export const getShippingRates = createStoreEndpoint(
 	"/checkout/sessions/:id/shipping-rates",
@@ -27,30 +27,25 @@ export const getShippingRates = createStoreEndpoint(
 			};
 		}
 
-		const shippingController = ctx.context.controllers.shipping as unknown as
-			| ShippingRateController
-			| undefined;
-
-		if (!shippingController?.calculateRates) {
-			return {
-				code: "CHECKOUT_SHIPPING_UNAVAILABLE",
-				error: "An authoritative shipping decision is unavailable.",
-				status: 503,
-			};
-		}
-
-		const lineItems = await controller.getLineItems(session.id);
-		const orderAmount = lineItems.reduce(
-			(sum, item) => sum + item.price * item.quantity,
-			0,
-		);
-
-		let rates: Awaited<ReturnType<ShippingRateController["calculateRates"]>>;
 		try {
-			rates = await shippingController.calculateRates({
-				country: (session.shippingAddress as { country: string }).country,
-				orderAmount,
-			});
+			const result = await ctx.context.capabilities.invoke(
+				shippingQuoteCapability,
+				{
+					country: session.shippingAddress.country,
+					orderAmount: session.subtotal,
+				},
+			);
+			if (!result.ok) {
+				return {
+					code: "CHECKOUT_SHIPPING_UNAVAILABLE",
+					error:
+						result.failure.code === "NO_SHIPPING_OPTION"
+							? result.failure.message
+							: "An authoritative shipping decision is unavailable.",
+					status: result.failure.code === "NO_SHIPPING_OPTION" ? 422 : 503,
+				};
+			}
+			return { rates: result.decision.rates };
 		} catch {
 			return {
 				code: "CHECKOUT_SHIPPING_UNAVAILABLE",
@@ -58,15 +53,5 @@ export const getShippingRates = createStoreEndpoint(
 				status: 503,
 			};
 		}
-
-		if (rates.length === 0) {
-			return {
-				code: "CHECKOUT_SHIPPING_UNAVAILABLE",
-				error: "No authoritative shipping option is available.",
-				status: 422,
-			};
-		}
-
-		return { rates };
 	},
 );

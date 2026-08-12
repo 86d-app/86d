@@ -183,35 +183,28 @@ interface CheckoutSession {
   updatedAt: Date;
 }
 
-// Minimal interface for discount integration via runtime context
-interface DiscountController {
-  validateCode(params: {
-    code: string;
-    subtotal: number;
-    productIds?: string[];
-    categoryIds?: string[];
-  }): Promise<{ valid: boolean; discountAmount: number; freeShipping: boolean; error?: string }>;
-
-  applyCode(params: {
-    code: string;
-    subtotal: number;
-    productIds?: string[];
-    categoryIds?: string[];
-  }): Promise<{ valid: boolean; discountAmount: number; freeShipping: boolean; error?: string }>;
-}
 ```
 
 ## Inter-module Integration
 
-The checkout module accesses the discounts controller through the runtime context — there is no direct import dependency. The `DiscountController` interface uses structural typing, so any module that implements the same shape will work.
+Checkout accepts versioned contracts owned by Products, Orders, Inventory, Tax, Shipping, Discounts, Gift Cards, Store Credits, Payments, Price Lists, and Multi-currency. Product resolution and Order creation are required at admission; the remaining integrations are explicitly optional. Every call is schema-validated and the provider receives only its own data service.
 
 ```ts
-// Runtime context access (inside endpoint handlers)
-const discount = ctx.context.controllers.discount as DiscountController;
-const result = await discount.applyCode({ code, subtotal });
+const result = await ctx.context.capabilities.invoke(
+  discountCodeCapability,
+  { operation: "validate", code, subtotal },
+);
+
+if (!result.ok) {
+  return {
+    code: "CHECKOUT_DISCOUNT_UNAVAILABLE",
+    error: "An authoritative discount decision is unavailable.",
+    status: 503,
+  };
+}
 ```
 
-After completing a checkout session, call `complete(sessionId, orderId)` from your orders module integration to link the session to the created order.
+The Checkout-owned controller remains local to Checkout request paths. Order creation crosses `orderCreateCapability`; on success Checkout links the returned Order ID to the session.
 
 ## Store Components
 

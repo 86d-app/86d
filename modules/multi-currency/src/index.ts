@@ -1,5 +1,6 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
 import { adminEndpoints } from "./admin/endpoints";
+import { productPriceConversionProvider } from "./capabilities";
 import { multiCurrencySchema } from "./schema";
 import { createMultiCurrencyController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints";
@@ -32,6 +33,7 @@ export default function multiCurrency(options?: MultiCurrencyOptions): Module {
 		id: "multi-currency",
 		version: "0.0.1",
 		schema: multiCurrencySchema,
+		capabilities: { provides: [productPriceConversionProvider] },
 		exports: {
 			read: [
 				"currencyCode",

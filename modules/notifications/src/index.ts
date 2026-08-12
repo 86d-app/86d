@@ -1,6 +1,12 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
+import {
+	abandonedCartRecoveryResolveCapability,
+	acceptCapability,
+	customerContactResolveCapability,
+} from "@86d-app/core";
 import { createAdminEndpointsWithSettings } from "./admin/endpoints";
 import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
+import { notificationCreateProvider } from "./capabilities";
 import { buildAffiliateStatusEmail } from "./emails/affiliate-status";
 import { buildAppointmentStatusEmail } from "./emails/appointment-status";
 import { buildAuctionWonEmail } from "./emails/auction-won";
@@ -88,6 +94,15 @@ export default function notifications(options?: NotificationsOptions): Module {
 		id: "notifications",
 		version: "0.1.0",
 		schema: notificationsSchema,
+		capabilities: {
+			provides: [notificationCreateProvider],
+			accepts: [
+				acceptCapability(customerContactResolveCapability, { optional: true }),
+				acceptCapability(abandonedCartRecoveryResolveCapability, {
+					optional: true,
+				}),
+			],
+		},
 		exports: {
 			read: ["unreadCount", "notificationType"],
 		},
@@ -105,21 +120,17 @@ export default function notifications(options?: NotificationsOptions): Module {
 			// Wire customerResolver from the customers module so email/SMS
 			// delivery can look up contact info for in-app notifications,
 			// template-based batch sends, and SMS delivery.
-			const customersCtrl = ctx.controllers.customer as
-				| {
-						getById(id: string): Promise<{
-							email?: string;
-							phone?: string;
-						} | null>;
-				  }
-				| undefined;
-
-			const customerResolver = customersCtrl
-				? async (customerId: string) => {
-						const c = await customersCtrl.getById(customerId).catch(() => null);
-						return { email: c?.email, phone: c?.phone };
-					}
-				: undefined;
+			const customerResolver = async (customerId: string) => {
+				const resolved = await ctx.capabilities.invoke(
+					customerContactResolveCapability,
+					{ customerId },
+				);
+				if (!resolved.ok) return {};
+				return {
+					email: resolved.decision.email,
+					phone: resolved.decision.phone,
+				};
+			};
 
 			const controller = createNotificationsController(ctx.data, ctx.events, {
 				...(maxPerCustomer && !Number.isNaN(maxPerCustomer)
@@ -397,27 +408,12 @@ export default function notifications(options?: NotificationsOptions): Module {
 					const p = event.payload;
 					if (!p || p.channel !== "email" || !emailProvider) return;
 
-					const abandonedCartsCtrl = ctx.controllers.abandonedCarts as
-						| {
-								get(id: string): Promise<{
-									id: string;
-									items: Array<{
-										name: string;
-										quantity: number;
-										price: number;
-										imageUrl?: string | undefined;
-									}>;
-									cartTotal: number;
-									currency: string;
-									recoveryToken: string;
-								} | null>;
-						  }
-						| undefined;
-
-					if (!abandonedCartsCtrl) return;
-
-					const cart = await abandonedCartsCtrl.get(p.cartId).catch(() => null);
-					if (!cart) return;
+					const cartResult = await ctx.capabilities.invoke(
+						abandonedCartRecoveryResolveCapability,
+						{ cartId: p.cartId },
+					);
+					if (!cartResult.ok) return;
+					const cart = cartResult.decision;
 
 					const recoveryUrl = `/abandoned-carts/recover/${cart.recoveryToken}`;
 					const { subject, html, text } = buildCartRecoveryEmail({

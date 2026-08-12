@@ -1,3 +1,4 @@
+import type { CapabilityInvoker } from "@86d-app/core";
 import { createEventBus, createScopedEmitter } from "@86d-app/core";
 import {
 	createMockDataService,
@@ -31,19 +32,50 @@ const mockCart = {
 	updatedAt: new Date(),
 };
 
+type RecoveryResolver = {
+	get: (cartId: string) => Promise<typeof mockCart | null>;
+};
+
+function recoveryCapabilities(resolver: RecoveryResolver): CapabilityInvoker {
+	return {
+		invoke: vi.fn(async (definition: { name: string }, request: unknown) => {
+			if (definition.name !== "abandoned-carts.recovery.resolve") {
+				return { ok: false, failure: { code: "CAPABILITY_NOT_ACCEPTED" } };
+			}
+			try {
+				const cart = await resolver.get((request as { cartId: string }).cartId);
+				if (!cart) {
+					return { ok: false, failure: { code: "cart_not_found" } };
+				}
+				return {
+					ok: true,
+					decision: {
+						items: cart.items,
+						cartTotal: cart.cartTotal,
+						currency: cart.currency,
+						recoveryToken: cart.recoveryToken,
+					},
+				};
+			} catch {
+				return { ok: false, failure: { code: "CAPABILITY_PROVIDER_FAILED" } };
+			}
+		}) as CapabilityInvoker["invoke"],
+	};
+}
+
 async function initModule(
 	mod: ReturnType<typeof notifications>,
 	data: ReturnType<typeof createMockDataService>,
 	events?: ReturnType<typeof createScopedEmitter>,
-	controllers?: Record<string, Record<string, (...args: never) => unknown>>,
+	resolver?: RecoveryResolver,
 ) {
 	const init = mod.init;
 	expect(init).toBeDefined();
 	if (init) {
-		const ctx = createMockModuleContext({ data });
-		if (controllers) {
-			Object.assign(ctx.controllers, controllers);
-		}
+		const ctx = createMockModuleContext({
+			data,
+			...(resolver ? { capabilities: recoveryCapabilities(resolver) } : {}),
+		});
 		await init({ ...ctx, events });
 	}
 }
@@ -59,7 +91,7 @@ describe("cart.recoveryAttempted event listener", () => {
 		vi.restoreAllMocks();
 	});
 
-	it("sends recovery email when email provider and abandonedCarts controller are available", async () => {
+	it("sends recovery email when the recovery capability is available", async () => {
 		const bus = createEventBus();
 		const emitter = createScopedEmitter(bus, "notifications");
 		const cartEmitter = createScopedEmitter(bus, "abandoned-carts");
@@ -82,7 +114,7 @@ describe("cart.recoveryAttempted event listener", () => {
 			}),
 			mockData,
 			emitter,
-			{ abandonedCarts: mockAbandonedCartsController },
+			mockAbandonedCartsController,
 		);
 
 		await cartEmitter.emit("cart.recoveryAttempted", recoveryPayload);
@@ -127,7 +159,7 @@ describe("cart.recoveryAttempted event listener", () => {
 			}),
 			mockData,
 			emitter,
-			{ abandonedCarts: { get: vi.fn().mockResolvedValue(mockCart) } },
+			{ get: vi.fn().mockResolvedValue(mockCart) },
 		);
 
 		await cartEmitter.emit("cart.recoveryAttempted", recoveryPayload);
@@ -166,7 +198,7 @@ describe("cart.recoveryAttempted event listener", () => {
 			}),
 			mockData,
 			emitter,
-			{ abandonedCarts: mockCtrl },
+			mockCtrl,
 		);
 
 		await cartEmitter.emit("cart.recoveryAttempted", {
@@ -193,9 +225,7 @@ describe("cart.recoveryAttempted event listener", () => {
 		const fetchSpy = vi.spyOn(globalThis, "fetch");
 		const mockCtrl = { get: vi.fn() };
 
-		await initModule(notifications(), mockData, emitter, {
-			abandonedCarts: mockCtrl,
-		});
+		await initModule(notifications(), mockData, emitter, mockCtrl);
 
 		await cartEmitter.emit("cart.recoveryAttempted", recoveryPayload);
 		await new Promise((r) => setTimeout(r, 50));
@@ -205,7 +235,7 @@ describe("cart.recoveryAttempted event listener", () => {
 		fetchSpy.mockRestore();
 	});
 
-	it("skips sending when abandonedCarts controller is not available", async () => {
+	it("skips sending when the recovery capability is unavailable", async () => {
 		const bus = createEventBus();
 		const emitter = createScopedEmitter(bus, "notifications");
 		const cartEmitter = createScopedEmitter(bus, "abandoned-carts");
@@ -246,7 +276,7 @@ describe("cart.recoveryAttempted event listener", () => {
 			}),
 			mockData,
 			emitter,
-			{ abandonedCarts: { get: vi.fn().mockResolvedValue(null) } },
+			{ get: vi.fn().mockResolvedValue(null) },
 		);
 
 		await cartEmitter.emit("cart.recoveryAttempted", recoveryPayload);
@@ -276,7 +306,7 @@ describe("cart.recoveryAttempted event listener", () => {
 			}),
 			mockData,
 			emitter,
-			{ abandonedCarts: { get: vi.fn().mockResolvedValue(mockCart) } },
+			{ get: vi.fn().mockResolvedValue(mockCart) },
 		);
 
 		// Should not throw
@@ -300,11 +330,7 @@ describe("cart.recoveryAttempted event listener", () => {
 			}),
 			mockData,
 			emitter,
-			{
-				abandonedCarts: {
-					get: vi.fn().mockRejectedValue(new Error("DB error")),
-				},
-			},
+			{ get: vi.fn().mockRejectedValue(new Error("DB error")) },
 		);
 
 		// Should not throw

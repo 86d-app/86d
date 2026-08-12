@@ -1,4 +1,9 @@
-import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
+import {
+	createAdminEndpoint,
+	inventoryCheckoutCapability,
+	sanitizeText,
+	z,
+} from "@86d-app/core";
 import type { Product } from "../../controllers";
 
 export const createProduct = createAdminEndpoint(
@@ -53,27 +58,16 @@ export const createProduct = createAdminEndpoint(
 		// was provided. This keeps centralized tracking (low-stock alerts,
 		// back-in-stock, reservations) consistent with the products module.
 		if (body.inventory !== undefined) {
-			const inventoryCtrl = ctx.context.controllers.inventory as unknown as
-				| {
-						setStock(p: {
-							productId: string;
-							quantity: number;
-							productName?: string;
-							allowBackorder?: boolean;
-						}): Promise<unknown>;
-				  }
-				| undefined;
-			if (inventoryCtrl) {
-				try {
-					await inventoryCtrl.setStock({
-						productId: product.id,
-						quantity: body.inventory,
-						productName: product.name,
-						allowBackorder: body.allowBackorder ?? false,
-					});
-				} catch {
-					// Best-effort: inventory sync failure never blocks product creation
-				}
+			try {
+				await ctx.context.capabilities.invoke(inventoryCheckoutCapability, {
+					operation: "set",
+					productId: product.id,
+					quantity: body.inventory,
+					productName: product.name,
+					allowBackorder: body.allowBackorder ?? false,
+				});
+			} catch {
+				// Best-effort: inventory sync failure never blocks product creation
 			}
 		}
 

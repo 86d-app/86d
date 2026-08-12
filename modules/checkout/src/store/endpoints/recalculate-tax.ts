@@ -1,8 +1,6 @@
-import type {
-	CheckoutController,
-	CheckoutSession,
-	TaxCalculateController,
-} from "../../service";
+import type { CapabilityInvoker } from "@86d-app/core";
+import { taxQuoteCapability } from "@86d-app/core";
+import type { CheckoutController, CheckoutSession } from "../../service";
 
 /**
  * Recalculates tax for a checkout session, distributing any order-level
@@ -13,9 +11,9 @@ import type {
 export async function recalculateTax(
 	session: CheckoutSession,
 	checkoutController: CheckoutController,
-	taxController: TaxCalculateController | undefined,
-): Promise<CheckoutSession> {
-	if (!taxController?.calculate || !session.shippingAddress) {
+	capabilities: CapabilityInvoker,
+): Promise<CheckoutSession | null> {
+	if (!session.shippingAddress) {
 		return session;
 	}
 
@@ -30,7 +28,7 @@ export async function recalculateTax(
 			? session.discountAmount / session.subtotal
 			: 0;
 
-	const taxResult = await taxController.calculate({
+	const taxResult = await capabilities.invoke(taxQuoteCapability, {
 		address: {
 			country: session.shippingAddress.country,
 			state: session.shippingAddress.state,
@@ -46,17 +44,18 @@ export async function recalculateTax(
 			};
 		}),
 		shippingAmount: session.shippingAmount,
-		customerId: session.customerId,
+		...(session.customerId ? { customerId: session.customerId } : {}),
 	});
 
-	if (taxResult && typeof taxResult.totalTax === "number") {
+	if (!taxResult.ok) return null;
+	if (typeof taxResult.decision.totalTax === "number") {
 		const updated = await checkoutController.update(session.id, {
-			taxAmount: taxResult.totalTax,
+			taxAmount: taxResult.decision.totalTax,
 		});
 		if (updated) {
 			return updated;
 		}
 	}
 
-	return session;
+	return null;
 }

@@ -23,6 +23,7 @@ vi.mock("utils/logger", () => ({
 
 const mockEnsureBooted = vi.hoisted(() => vi.fn());
 vi.mock("~/lib/api-registry", () => ({ ensureBooted: mockEnsureBooted }));
+const mockCreateRequestContext = vi.hoisted(() => vi.fn());
 
 const mockCreateApiRouter = vi.hoisted(() => vi.fn());
 const mockGetModuleIdForPath = vi.hoisted(() => vi.fn());
@@ -91,11 +92,11 @@ beforeEach(() => {
 
 	// Default: registry boots successfully
 	mockEnsureBooted.mockResolvedValue({
-		createRequestContext: vi.fn().mockReturnValue({}),
+		createRequestContext: mockCreateRequestContext.mockReturnValue({}),
 	});
 
-	// Default: no specific module for path
-	mockGetModuleIdForPath.mockReturnValue(undefined);
+	// Default: route belongs to the products module
+	mockGetModuleIdForPath.mockReturnValue("products");
 
 	// Default: router handler returns 200
 	mockCreateApiRouter.mockReturnValue({
@@ -106,6 +107,37 @@ beforeEach(() => {
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe("GET|POST /api/[...path]", () => {
+	describe("module-scoped context", () => {
+		it("creates context for the resolved owner before routing", async () => {
+			mockGetModuleIdForPath.mockReturnValue("orders");
+
+			const response = await GET(
+				makeRequest("/admin/orders"),
+				makeCtx(["admin", "orders"]),
+			);
+
+			expect(response.status).toBe(200);
+			expect(mockCreateRequestContext).toHaveBeenCalledWith(
+				"orders",
+				mockSession,
+			);
+		});
+
+		it("returns 404 without booting when no module owns the path", async () => {
+			mockGetModuleIdForPath.mockReturnValue(undefined);
+
+			const response = await GET(
+				makeRequest("/not-a-module"),
+				makeCtx(["not-a-module"]),
+			);
+			const body = await response.json();
+
+			expect(response.status).toBe(404);
+			expect(body.error.code).toBe("NOT_FOUND");
+			expect(mockEnsureBooted).not.toHaveBeenCalled();
+		});
+	});
+
 	describe("admin route — authentication", () => {
 		it("returns 401 when admin route is accessed without a session", async () => {
 			mockGetSession.mockResolvedValue(null);

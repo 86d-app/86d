@@ -1,4 +1,8 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
+import {
+	acceptCapability,
+	orderCustomerAuthorizeCapability,
+} from "@86d-app/core";
 import { adminEndpoints } from "./admin/endpoints";
 import { tippingSchema } from "./schema";
 import { createTippingController } from "./service-impl";
@@ -28,6 +32,11 @@ export default function tipping(options?: TippingOptions): Module {
 		id: "tipping",
 		version: "0.1.0",
 		schema: tippingSchema,
+		capabilities: {
+			accepts: [
+				acceptCapability(orderCustomerAuthorizeCapability, { optional: true }),
+			],
+		},
 		exports: {
 			read: ["tipTotal", "tipSettings"],
 		},

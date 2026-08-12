@@ -1,9 +1,6 @@
 import { createStoreEndpoint, z } from "@86d-app/core";
-import type {
-	PaymentIntentStatus,
-	RevenueIntent,
-	RevenuePaymentsController,
-} from "../../service";
+import { listRevenueIntents } from "../../payment-source";
+import type { PaymentIntentStatus } from "../../service";
 import { filterAndPageTransactions } from "../../service-impl";
 
 export const listCustomerTransactions = createStoreEndpoint(
@@ -31,19 +28,19 @@ export const listCustomerTransactions = createStoreEndpoint(
 			return { error: "Unauthorized", status: 401 };
 		}
 
-		const controller = ctx.context.controllers.payments as
-			| RevenuePaymentsController
-			| undefined;
-		if (!controller) {
-			return { transactions: [], total: 0 };
-		}
-
-		const all = (await controller.listIntents({
+		const source = await listRevenueIntents(ctx.context.capabilities, {
 			customerId: session.user.id,
 			take: 1000,
-		})) as RevenueIntent[];
+		});
+		if (!source.ok) {
+			return {
+				code: source.code,
+				error: "Authoritative payment history is unavailable.",
+				status: 503,
+			};
+		}
 
-		return filterAndPageTransactions(all, {
+		return filterAndPageTransactions(source.intents, {
 			from: null,
 			to: null,
 			status: ctx.query.status as PaymentIntentStatus | undefined,

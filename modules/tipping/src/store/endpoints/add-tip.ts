@@ -1,4 +1,8 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
+import {
+	createStoreEndpoint,
+	orderCustomerAuthorizeCapability,
+	z,
+} from "@86d-app/core";
 import type { TippingController } from "../../service";
 
 export const addTip = createStoreEndpoint(
@@ -20,14 +24,22 @@ export const addTip = createStoreEndpoint(
 			return { error: "Unauthorized", status: 401 };
 		}
 
-		const orderCtrl = ctx.context.controllers.order as
-			| { getById(id: string): Promise<{ customerId?: string } | null> }
-			| undefined;
-		if (orderCtrl) {
-			const order = await orderCtrl.getById(ctx.body.orderId);
-			if (!order || order.customerId !== userId) {
+		const authorization = await ctx.context.capabilities.invoke(
+			orderCustomerAuthorizeCapability,
+			{ orderId: ctx.body.orderId, customerId: userId },
+		);
+		if (!authorization.ok) {
+			if (
+				authorization.failure.code === "order_not_found" ||
+				authorization.failure.code === "not_owner"
+			) {
 				return { error: "Order not found", status: 404 };
 			}
+			return {
+				code: "ORDER_AUTHORIZATION_UNAVAILABLE",
+				error: "Order authorization is unavailable.",
+				status: 503,
+			};
 		}
 
 		const controller = ctx.context.controllers.tipping as TippingController;

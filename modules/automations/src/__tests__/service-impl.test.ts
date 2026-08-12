@@ -733,11 +733,14 @@ describe("createAutomationsController", () => {
 		});
 
 		it("send_notification succeeds with notifications controller", async () => {
-			const mockCreate = vi.fn().mockResolvedValue({ id: "notif_1" });
+			const mockCreate = vi.fn().mockResolvedValue({
+				ok: true,
+				decision: { notificationId: "notif_1" },
+			});
 			const ctrlWithNotifications = createAutomationsController(
 				mockData,
 				{},
-				{ notifications: { create: mockCreate } },
+				{ invoke: mockCreate },
 			);
 
 			const automation = await ctrlWithNotifications.create({
@@ -762,6 +765,7 @@ describe("createAutomationsController", () => {
 				customerId: "cust_1",
 			});
 			expect(mockCreate).toHaveBeenCalledWith(
+				expect.anything(),
 				expect.objectContaining({
 					customerId: "cust_1",
 					title: "Alert",
@@ -771,11 +775,14 @@ describe("createAutomationsController", () => {
 		});
 
 		it("send_notification uses customerId from payload when not in config", async () => {
-			const mockCreate = vi.fn().mockResolvedValue({ id: "notif_1" });
+			const mockCreate = vi.fn().mockResolvedValue({
+				ok: true,
+				decision: { notificationId: "notif_1" },
+			});
 			const ctrlWithNotifications = createAutomationsController(
 				mockData,
 				{},
-				{ notifications: { create: mockCreate } },
+				{ invoke: mockCreate },
 			);
 
 			const automation = await ctrlWithNotifications.create({
@@ -794,6 +801,7 @@ describe("createAutomationsController", () => {
 			});
 			expect(exec.results[0].status).toBe("success");
 			expect(mockCreate).toHaveBeenCalledWith(
+				expect.anything(),
 				expect.objectContaining({ customerId: "cust_from_payload" }),
 			);
 		});

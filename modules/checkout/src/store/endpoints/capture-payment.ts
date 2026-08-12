@@ -1,8 +1,9 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
-import type {
-	CheckoutController,
-	PaymentProcessController,
-} from "../../service";
+import {
+	createStoreEndpoint,
+	paymentCheckoutCapability,
+	z,
+} from "@86d-app/core";
+import type { CheckoutController } from "../../service";
 
 /**
  * Capture a payment after the customer has approved it on the provider side
@@ -36,23 +37,24 @@ export const capturePayment = createStoreEndpoint(
 			return { error: "No payment intent found for this session", status: 422 };
 		}
 
-		const paymentController = ctx.context.controllers.payments as unknown as
-			| PaymentProcessController
-			| undefined;
-
-		if (!paymentController) {
-			return { error: "Payment module not available", status: 500 };
-		}
-
 		// Confirm (capture) the payment through the payments module,
 		// which delegates to the provider (e.g. PayPal capture order).
-		const confirmed = await paymentController.confirmIntent(
-			existing.paymentIntentId,
+		const confirmation = await ctx.context.capabilities.invoke(
+			paymentCheckoutCapability,
+			{ operation: "confirm", intentId: existing.paymentIntentId },
 		);
 
-		if (!confirmed) {
+		if (!confirmation.ok && confirmation.failure.code === "PAYMENT_NOT_FOUND") {
 			return { error: "Payment intent not found", status: 404 };
 		}
+		if (!confirmation.ok) {
+			return {
+				code: "CHECKOUT_PAYMENT_UNAVAILABLE",
+				error: "The payment could not be confirmed.",
+				status: 503,
+			};
+		}
+		const confirmed = confirmation.decision;
 
 		const updated = await controller.setPaymentIntent(
 			ctx.params.id,

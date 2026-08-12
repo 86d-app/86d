@@ -1,4 +1,8 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
+import {
+	createStoreEndpoint,
+	orderCustomerAuthorizeCapability,
+	z,
+} from "@86d-app/core";
 import type { ShippingController } from "../../service";
 
 export const trackShipment = createStoreEndpoint(
@@ -19,14 +23,22 @@ export const trackShipment = createStoreEndpoint(
 			return { error: "Shipment not found", status: 404 };
 		}
 
-		const orderCtrl = ctx.context.controllers.order as
-			| { getById(id: string): Promise<{ customerId?: string } | null> }
-			| undefined;
-		if (orderCtrl) {
-			const order = await orderCtrl.getById(shipment.orderId);
-			if (!order || order.customerId !== userId) {
+		const authorization = await ctx.context.capabilities.invoke(
+			orderCustomerAuthorizeCapability,
+			{ orderId: shipment.orderId, customerId: userId },
+		);
+		if (!authorization.ok) {
+			if (
+				authorization.failure.code === "order_not_found" ||
+				authorization.failure.code === "not_owner"
+			) {
 				return { error: "Shipment not found", status: 404 };
 			}
+			return {
+				code: "ORDER_AUTHORIZATION_UNAVAILABLE",
+				error: "Order authorization is unavailable.",
+				status: 503,
+			};
 		}
 
 		const trackingUrl = await controller.getTrackingUrl(shipment.id);

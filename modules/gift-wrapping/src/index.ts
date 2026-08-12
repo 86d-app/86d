@@ -1,4 +1,8 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
+import {
+	acceptCapability,
+	orderCustomerAuthorizeCapability,
+} from "@86d-app/core";
 import { adminEndpoints } from "./admin/endpoints";
 import { giftWrappingSchema } from "./schema";
 import { createGiftWrappingController } from "./service-impl";
@@ -15,7 +19,9 @@ export default function giftWrapping(options?: GiftWrappingOptions): Module {
 		version: "0.0.1",
 		schema: giftWrappingSchema,
 
-		requires: ["orders"],
+		capabilities: {
+			accepts: [acceptCapability(orderCustomerAuthorizeCapability)],
+		},
 
 		exports: {
 			read: ["wrapOptions", "orderWrappingTotal", "itemWrapping"],

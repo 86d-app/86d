@@ -1,6 +1,11 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
+import {
+	acceptCapability,
+	orderCustomerAuthorizeCapability,
+} from "@86d-app/core";
 import { createAdminEndpointsWithSettings } from "./admin/endpoints";
 import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
+import { createShippingQuoteProvider } from "./capabilities";
 import { shippingSchema } from "./schema";
 import { createShippingController } from "./service-impl";
 import {
@@ -49,6 +54,17 @@ export default function shipping(options?: ShippingOptions): Module {
 		id: "shipping",
 		version: "0.1.0",
 		schema: shippingSchema,
+		capabilities: {
+			provides: [
+				createShippingQuoteProvider({
+					easypostApiKey: options?.easypostApiKey,
+					easypostTestMode: options?.easypostTestMode ?? true,
+				}),
+			],
+			accepts: [
+				acceptCapability(orderCustomerAuthorizeCapability, { optional: true }),
+			],
+		},
 		exports: {
 			read: [
 				"shippingRates",

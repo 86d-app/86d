@@ -1,6 +1,6 @@
 # Subscriptions Module
 
-Subscription plan and subscriber management. Handles recurring billing cycles, trial periods, and subscription lifecycle — status tracking only. Payment processing is delegated to P3 payment modules.
+Subscription plan and subscriber management. Handles trial and subscription lifecycle status only. Free plans and paid plans with a free trial can be activated through the Store endpoint. Non-trial paid activation remains unavailable until P3 provides purpose-bound, duplicate-safe payment proof consumption.
 
 ## Structure
 
@@ -62,3 +62,4 @@ Types exported: `Subscription`, `SubscriptionPlan`, `SubscriptionController`, `S
 - `findMany` uses spread pattern for optional take/skip
 - `expireSubscriptions` scans up to 10,000 records — callers should invoke periodically (cron)
 - No payment processing — this module is payment-provider agnostic
+- The live subscribe endpoint returns `SUBSCRIPTION_PAYMENT_ACTIVATION_UNAVAILABLE` for a paid plan without a trial; it never trusts or persists a caller-supplied payment intent

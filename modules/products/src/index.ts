@@ -1,5 +1,7 @@
 import type { Module, ModuleConfig } from "@86d-app/core";
+import { acceptCapability, inventoryCheckoutCapability } from "@86d-app/core";
 import { adminEndpoints } from "./admin/endpoints";
+import { productResolveProvider } from "./capabilities";
 import { controllers } from "./controllers";
 import {
 	toMarkdownCollectionDetail,
@@ -49,6 +51,15 @@ export default function products(options?: ProductsOptions): Module {
 			emits: ["product.created", "product.updated", "product.deleted"],
 		},
 		controllers,
+		capabilities: {
+			provides: [productResolveProvider],
+			accepts: [
+				acceptCapability(inventoryCheckoutCapability, {
+					operations: ["set"],
+					optional: true,
+				}),
+			],
+		},
 		options,
 		endpoints: {
 			store: storeEndpoints,

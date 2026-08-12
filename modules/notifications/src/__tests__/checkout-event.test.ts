@@ -1,3 +1,4 @@
+import type { CapabilityInvoker } from "@86d-app/core";
 import { createEventBus, createScopedEmitter } from "@86d-app/core";
 import {
 	createMockDataService,
@@ -35,19 +36,57 @@ const checkoutPayload = {
 	},
 };
 
+type CustomerResolver = {
+	getById: (customerId: string) => Promise<{
+		email: string;
+		phone?: string | undefined;
+		firstName: string;
+		lastName: string;
+	} | null>;
+};
+
+function customerCapabilities(resolver: CustomerResolver): CapabilityInvoker {
+	return {
+		invoke: vi.fn(async (definition: { name: string }, request: unknown) => {
+			if (definition.name !== "customers.contact.resolve") {
+				return { ok: false, failure: { code: "CAPABILITY_NOT_ACCEPTED" } };
+			}
+			try {
+				const customer = await resolver.getById(
+					(request as { customerId: string }).customerId,
+				);
+				if (!customer) {
+					return { ok: false, failure: { code: "customer_not_found" } };
+				}
+				return {
+					ok: true,
+					decision: {
+						email: customer.email,
+						firstName: customer.firstName,
+						lastName: customer.lastName,
+						...(customer.phone ? { phone: customer.phone } : {}),
+					},
+				};
+			} catch {
+				return { ok: false, failure: { code: "CAPABILITY_PROVIDER_FAILED" } };
+			}
+		}) as CapabilityInvoker["invoke"],
+	};
+}
+
 async function initModule(
 	mod: ReturnType<typeof notifications>,
 	data: ReturnType<typeof createMockDataService>,
 	events?: ReturnType<typeof createScopedEmitter>,
-	controllers?: Record<string, Record<string, (...args: never) => unknown>>,
+	resolver?: CustomerResolver,
 ) {
 	const init = mod.init;
 	expect(init).toBeDefined();
 	if (init) {
-		const ctx = createMockModuleContext({ data });
-		if (controllers) {
-			Object.assign(ctx.controllers, controllers);
-		}
+		const ctx = createMockModuleContext({
+			data,
+			...(resolver ? { capabilities: customerCapabilities(resolver) } : {}),
+		});
 		await init({ ...ctx, events });
 	}
 }
@@ -236,7 +275,7 @@ describe("checkout.completed event listener", () => {
 	});
 });
 
-describe("customerResolver wiring from ctx.controllers.customers", () => {
+describe("customerResolver capability wiring", () => {
 	let mockData: ReturnType<typeof createMockDataService>;
 
 	beforeEach(() => {
@@ -247,7 +286,7 @@ describe("customerResolver wiring from ctx.controllers.customers", () => {
 		vi.restoreAllMocks();
 	});
 
-	it("resolves customer email from customers controller for in-app notification delivery", async () => {
+	it("resolves customer email through the Customers capability for delivery", async () => {
 		const bus = createEventBus();
 		const emitter = createScopedEmitter(bus, "notifications");
 		const checkoutEmitter = createScopedEmitter(bus, "checkout");
@@ -277,9 +316,7 @@ describe("customerResolver wiring from ctx.controllers.customers", () => {
 			twilioFromNumber: "+15559999999",
 		});
 
-		await initModule(mod, mockData, emitter, {
-			customer: mockCustomersController,
-		});
+		await initModule(mod, mockData, emitter, mockCustomersController);
 
 		// The controller returned from init should have a working customerResolver.
 		// Trigger checkout.completed — the in-app notification created by controller.create()
@@ -287,7 +324,7 @@ describe("customerResolver wiring from ctx.controllers.customers", () => {
 		await checkoutEmitter.emit("checkout.completed", checkoutPayload);
 		await new Promise((r) => setTimeout(r, 100));
 
-		// The customers controller getById should have been called to resolve contact info
+		// The test resolver is reached only through the capability invoker.
 		expect(mockCustomersController.getById).toHaveBeenCalledWith("cust-001");
 
 		// Verify that the Resend email was sent to the customer's email
@@ -307,7 +344,7 @@ describe("customerResolver wiring from ctx.controllers.customers", () => {
 		fetchSpy.mockRestore();
 	});
 
-	it("degrades gracefully when customers controller is not available", async () => {
+	it("degrades gracefully when the Customers capability is unavailable", async () => {
 		const bus = createEventBus();
 		const emitter = createScopedEmitter(bus, "notifications");
 		const checkoutEmitter = createScopedEmitter(bus, "checkout");
@@ -324,8 +361,7 @@ describe("customerResolver wiring from ctx.controllers.customers", () => {
 			resendFromAddress: "Store <noreply@store.com>",
 		});
 
-		// No customers controller passed
-		await initModule(mod, mockData, emitter, {});
+		await initModule(mod, mockData, emitter);
 
 		await checkoutEmitter.emit("checkout.completed", checkoutPayload);
 		await new Promise((r) => setTimeout(r, 50));

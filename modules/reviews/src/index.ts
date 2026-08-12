@@ -1,4 +1,5 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
+import { acceptCapability, orderPurchaseVerifyCapability } from "@86d-app/core";
 import { adminEndpoints } from "./admin/endpoints";
 import { reviewsSchema } from "./schema";
 import { createReviewController } from "./service-impl";
@@ -29,6 +30,11 @@ export default function reviews(options?: ReviewsOptions): Module {
 		id: "reviews",
 		version: "0.0.2",
 		schema: reviewsSchema,
+		capabilities: {
+			accepts: [
+				acceptCapability(orderPurchaseVerifyCapability, { optional: true }),
+			],
+		},
 		exports: {
 			read: ["productRating", "reviewCount"],
 		},

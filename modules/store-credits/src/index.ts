@@ -1,5 +1,6 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
 import { adminEndpoints } from "./admin/endpoints";
+import { storeCreditCheckoutProvider } from "./capabilities";
 import { storeCreditsSchema } from "./schema";
 import { createStoreCreditController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints";
@@ -39,6 +40,7 @@ export default function storeCredits(options?: StoreCreditsOptions): Module {
 		id: "store-credits",
 		version: "0.0.1",
 		schema: storeCreditsSchema,
+		capabilities: { provides: [storeCreditCheckoutProvider] },
 		exports: {
 			read: ["creditBalance", "creditAccountStatus"],
 		},

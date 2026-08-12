@@ -1,4 +1,9 @@
-import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
+import {
+	createAdminEndpoint,
+	inventoryCheckoutCapability,
+	sanitizeText,
+	z,
+} from "@86d-app/core";
 import type { Product } from "../../controllers";
 
 export const updateProduct = createAdminEndpoint(
@@ -67,28 +72,16 @@ export const updateProduct = createAdminEndpoint(
 
 		// Sync updated inventory count to the inventory module (best-effort).
 		if (body.inventory !== undefined && product) {
-			const inventoryCtrl = ctx.context.controllers.inventory as unknown as
-				| {
-						setStock(p: {
-							productId: string;
-							quantity: number;
-							productName?: string;
-							allowBackorder?: boolean;
-						}): Promise<unknown>;
-				  }
-				| undefined;
-			if (inventoryCtrl) {
-				try {
-					await inventoryCtrl.setStock({
-						productId: existingProduct.id,
-						quantity: body.inventory,
-						...(product?.name ? { productName: product.name } : {}),
-						allowBackorder:
-							body.allowBackorder ?? existingProduct.allowBackorder,
-					});
-				} catch {
-					// Best-effort: inventory sync failure never blocks product update
-				}
+			try {
+				await ctx.context.capabilities.invoke(inventoryCheckoutCapability, {
+					operation: "set",
+					productId: existingProduct.id,
+					quantity: body.inventory,
+					...(product?.name ? { productName: product.name } : {}),
+					allowBackorder: body.allowBackorder ?? existingProduct.allowBackorder,
+				});
+			} catch {
+				// Best-effort: inventory sync failure never blocks product update
 			}
 		}
 

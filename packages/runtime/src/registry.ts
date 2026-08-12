@@ -1,9 +1,17 @@
 import type {
+	AnyCapabilityDefinition,
+	CapabilityDecision,
+	CapabilityFailure,
+	CapabilityInvoker,
+	CapabilityKernelFailure,
+	CapabilityProvider,
+	CapabilityRejected,
+	CapabilityRequest,
+	CapabilityResult,
 	Module,
 	ModuleContext,
 	ModuleControllers,
 	ModuleDataService,
-	ModuleId,
 	ModuleStatus,
 	Primitive,
 	Session,
@@ -30,8 +38,23 @@ export interface ModuleEntry {
 	dbId: string | undefined;
 	/** Module-scoped data service (set after boot) */
 	dataService: ModuleDataService | undefined;
+	/** Controllers owned by this module; never shared with another module context. */
+	controllers: ModuleControllers;
 	/** Error captured during init, if any */
 	error: Error | undefined;
+}
+
+interface RegisteredCapabilityProvider {
+	moduleId: string;
+	provider: CapabilityProvider<AnyCapabilityDefinition>;
+}
+
+/** A configuration error detected before any Store or Module adapter is called. */
+export class CapabilityContractError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = "CapabilityContractError";
+	}
 }
 
 /**
@@ -80,7 +103,10 @@ export interface ModuleRegistryConfig {
  * Topological sort of modules so dependencies are initialized before dependents.
  * Falls back to original order for modules without dependency relationships.
  */
-function topologicalSort(modules: Module[]): Module[] {
+function topologicalSort(
+	modules: Module[],
+	capabilityDependencies: ReadonlyMap<string, ReadonlySet<string>>,
+): Module[] {
 	const moduleMap = new Map<string, Module>();
 	for (const mod of modules) {
 		moduleMap.set(mod.id, mod);
@@ -95,6 +121,9 @@ function topologicalSort(modules: Module[]): Module[] {
 
 		// Visit dependencies first
 		const deps = getRequiredModuleIds(mod.requires);
+		for (const dependencyId of capabilityDependencies.get(mod.id) ?? []) {
+			deps.push(dependencyId);
+		}
 		for (const depId of deps) {
 			const dep = moduleMap.get(depId);
 			if (dep) visit(dep);
@@ -110,6 +139,35 @@ function topologicalSort(modules: Module[]): Module[] {
 	return result;
 }
 
+function capabilityBindingKey(moduleId: string, capability: string): string {
+	return `${moduleId}\u0000${capability}`;
+}
+
+function capabilityFailure(
+	definition: AnyCapabilityDefinition,
+	code: CapabilityKernelFailure["code"],
+): CapabilityRejected<CapabilityKernelFailure> {
+	return {
+		ok: false,
+		failure: {
+			code,
+			capability: definition.name,
+			version: definition.version,
+		},
+	};
+}
+
+function requestOperation(request: unknown): string | undefined {
+	if (
+		typeof request !== "object" ||
+		request === null ||
+		!("operation" in request)
+	) {
+		return undefined;
+	}
+	return typeof request.operation === "string" ? request.operation : undefined;
+}
+
 /**
  * ModuleRegistry — boots modules once and creates cheap per-request contexts.
  *
@@ -117,7 +175,8 @@ function topologicalSort(modules: Module[]): Module[] {
  * 1. `new ModuleRegistry(modules, storeId, config)` — registers modules
  * 2. `await registry.boot()` — resolves store, upserts records, validates contracts,
  *    calls `init()`, wires events. Modules transition pending → ready.
- * 3. `registry.createRequestContext(session)` — returns a ModuleContext per request.
+ * 3. `registry.createRequestContext(moduleId, session)` — returns an isolated
+ *    ModuleContext per request.
  *    No DB calls, no contract validation, no init. Just session injection.
  * 4. `await registry.shutdown()` — calls module `shutdown` hooks, cleans up.
  */
@@ -129,6 +188,8 @@ export class ModuleRegistry {
 
 	private entries: Map<string, ModuleEntry> = new Map();
 	private controllers: ModuleControllers = {};
+	private capabilityBindings = new Map<string, RegisteredCapabilityProvider>();
+	private capabilityDependencies = new Map<string, Set<string>>();
 	private resolvedStoreId: string | undefined;
 	private eventBus: EventBus | undefined;
 	private bootedAt: number | undefined;
@@ -153,8 +214,265 @@ export class ModuleRegistry {
 				status: "pending",
 				dbId: undefined,
 				dataService: undefined,
+				controllers: { ...(mod.controllers ?? {}) },
 				error: undefined,
 			});
+		}
+	}
+
+	private getModuleOptions(moduleId: string): Record<string, Primitive> {
+		const module = this.entries.get(moduleId)?.module;
+		return {
+			...(module?.options ?? {}),
+			...(this.moduleOptions[`@86d-app/${moduleId}`] ?? {}),
+			...(this.moduleOptions[moduleId] ?? {}),
+		};
+	}
+
+	/**
+	 * Resolve all capability contracts without touching Store or Module adapters.
+	 * The resulting bindings are immutable for the lifetime of this boot.
+	 */
+	private preflightCapabilities(): void {
+		this.capabilityBindings.clear();
+		this.capabilityDependencies.clear();
+
+		const providersByName = new Map<string, RegisteredCapabilityProvider[]>();
+		const errors: string[] = [];
+		const moduleIds = new Set<string>();
+
+		for (const mod of this.modules) {
+			if (moduleIds.has(mod.id)) {
+				errors.push(`Module ID "${mod.id}" is declared more than once.`);
+				continue;
+			}
+			moduleIds.add(mod.id);
+			for (const provider of mod.capabilities?.provides ?? []) {
+				const definition = provider.definition;
+				if (definition.owner !== mod.id) {
+					errors.push(
+						`Module "${mod.id}" cannot provide "${definition.name}" owned by "${definition.owner}".`,
+					);
+					continue;
+				}
+				if (!definition.name || !definition.version) {
+					errors.push(`Module "${mod.id}" declares an unnamed capability.`);
+					continue;
+				}
+
+				const registered: RegisteredCapabilityProvider = {
+					moduleId: mod.id,
+					provider,
+				};
+				const providers = providersByName.get(definition.name) ?? [];
+				providers.push(registered);
+				providersByName.set(definition.name, providers);
+			}
+		}
+
+		for (const consumer of this.modules) {
+			const acceptedNames = new Set<string>();
+			for (const acceptance of consumer.capabilities?.accepts ?? []) {
+				if (
+					acceptance.name !== acceptance.definition.name ||
+					acceptance.owner !== acceptance.definition.owner ||
+					!acceptance.versions.includes(acceptance.definition.version)
+				) {
+					errors.push(
+						`Module "${consumer.id}" declares inconsistent metadata for capability "${acceptance.name}".`,
+					);
+					continue;
+				}
+				if (acceptedNames.has(acceptance.name)) {
+					errors.push(
+						`Module "${consumer.id}" accepts "${acceptance.name}" more than once.`,
+					);
+					continue;
+				}
+				acceptedNames.add(acceptance.name);
+
+				const versions = new Set(acceptance.versions);
+				if (
+					versions.size === 0 ||
+					versions.size !== acceptance.versions.length
+				) {
+					errors.push(
+						`Module "${consumer.id}" must accept one or more unique versions of "${acceptance.name}".`,
+					);
+					continue;
+				}
+				if (acceptance.operations) {
+					const operations = new Set(acceptance.operations);
+					if (
+						operations.size === 0 ||
+						operations.size !== acceptance.operations.length ||
+						acceptance.operations.some(
+							(operation) =>
+								typeof operation !== "string" || operation.length === 0,
+						)
+					) {
+						errors.push(
+							`Module "${consumer.id}" must accept one or more unique operations of "${acceptance.name}".`,
+						);
+						continue;
+					}
+				}
+
+				const namedProviders = providersByName.get(acceptance.name) ?? [];
+				const compatible = namedProviders.filter(
+					({ provider }) =>
+						provider.definition.owner === acceptance.owner &&
+						versions.has(provider.definition.version),
+				);
+
+				if (compatible.length === 0) {
+					if (acceptance.optional && namedProviders.length === 0) continue;
+					const reason =
+						namedProviders.length === 0
+							? "is missing"
+							: "has no compatible version";
+					errors.push(
+						`Required capability "${acceptance.name}" for Module "${consumer.id}" ${reason}; accepted versions: ${[...versions].join(", ")}.`,
+					);
+					continue;
+				}
+
+				if (compatible.length > 1) {
+					errors.push(
+						`Required capability "${acceptance.name}" for Module "${consumer.id}" has ${compatible.length} compatible providers; exactly one is required.`,
+					);
+					continue;
+				}
+
+				const provider = compatible[0];
+				if (!provider) continue;
+				this.capabilityBindings.set(
+					capabilityBindingKey(consumer.id, acceptance.name),
+					provider,
+				);
+				const dependencies =
+					this.capabilityDependencies.get(consumer.id) ?? new Set<string>();
+				if (provider.moduleId !== consumer.id) {
+					dependencies.add(provider.moduleId);
+				}
+				this.capabilityDependencies.set(consumer.id, dependencies);
+			}
+		}
+
+		if (errors.length > 0) {
+			throw new CapabilityContractError(
+				`Capability contract violations:\n${errors.map((error) => `  - ${error}`).join("\n")}`,
+			);
+		}
+	}
+
+	private createCapabilityInvoker(moduleId: string): CapabilityInvoker {
+		return {
+			invoke: (definition, request) =>
+				this.invokeCapability(moduleId, definition, request),
+		};
+	}
+
+	private async invokeCapability<D extends AnyCapabilityDefinition>(
+		consumerId: string,
+		definition: D,
+		request: CapabilityRequest<D>,
+	): Promise<
+		CapabilityResult<
+			CapabilityDecision<D>,
+			CapabilityFailure<D> | CapabilityKernelFailure
+		>
+	> {
+		const acceptance = this.entries
+			.get(consumerId)
+			?.module.capabilities?.accepts?.find(
+				(candidate) => candidate.definition === definition,
+			);
+		if (
+			!acceptance ||
+			acceptance.name !== definition.name ||
+			acceptance.owner !== definition.owner ||
+			!acceptance.versions.includes(definition.version)
+		) {
+			return capabilityFailure(definition, "CAPABILITY_NOT_ACCEPTED");
+		}
+
+		const registered = this.capabilityBindings.get(
+			capabilityBindingKey(consumerId, definition.name),
+		);
+		if (
+			!registered ||
+			registered.provider.definition.name !== acceptance.name ||
+			registered.provider.definition.owner !== acceptance.owner ||
+			!acceptance.versions.includes(registered.provider.definition.version)
+		) {
+			return capabilityFailure(definition, "CAPABILITY_UNAVAILABLE");
+		}
+
+		const consumerRequest = definition.request.safeParse(request);
+		if (!consumerRequest.success) {
+			return capabilityFailure(definition, "INVALID_CAPABILITY_REQUEST");
+		}
+		if (
+			acceptance.operations &&
+			!acceptance.operations.includes(
+				requestOperation(consumerRequest.data) ?? "",
+			)
+		) {
+			return capabilityFailure(definition, "CAPABILITY_OPERATION_NOT_ACCEPTED");
+		}
+		const providerRequest = registered.provider.definition.request.safeParse(
+			consumerRequest.data,
+		);
+		if (!providerRequest.success) {
+			return capabilityFailure(definition, "INVALID_CAPABILITY_REQUEST");
+		}
+
+		const providerEntry = this.entries.get(registered.moduleId);
+		if (!providerEntry?.dataService || providerEntry.status !== "ready") {
+			return capabilityFailure(definition, "CAPABILITY_UNAVAILABLE");
+		}
+
+		try {
+			const result = await registered.provider.handle(
+				{
+					data: providerEntry.dataService,
+					events:
+						this.eventBus === undefined
+							? undefined
+							: createScopedEmitter(this.eventBus, registered.moduleId),
+					storeId: this.resolvedStoreId ?? this.storeIdParam,
+					options: this.getModuleOptions(registered.moduleId),
+				},
+				providerRequest.data,
+			);
+
+			if (result.ok) {
+				const providerDecision =
+					registered.provider.definition.decision.safeParse(result.decision);
+				const consumerDecision = definition.decision.safeParse(result.decision);
+				if (!providerDecision.success || !consumerDecision.success) {
+					return capabilityFailure(definition, "INVALID_CAPABILITY_DECISION");
+				}
+				return {
+					ok: true,
+					decision: consumerDecision.data as CapabilityDecision<D>,
+				};
+			}
+
+			const providerFailure = registered.provider.definition.failure.safeParse(
+				result.failure,
+			);
+			const consumerFailure = definition.failure.safeParse(result.failure);
+			if (!providerFailure.success || !consumerFailure.success) {
+				return capabilityFailure(definition, "INVALID_CAPABILITY_FAILURE");
+			}
+			return {
+				ok: false,
+				failure: consumerFailure.data as CapabilityFailure<D>,
+			};
+		} catch {
+			return capabilityFailure(definition, "CAPABILITY_PROVIDER_FAILED");
 		}
 	}
 
@@ -166,6 +484,8 @@ export class ModuleRegistry {
 		if (this.booted) {
 			return;
 		}
+
+		this.preflightCapabilities();
 
 		const pathConflicts = validateUniquePaths(this.modules);
 		if (pathConflicts.length > 0) {
@@ -193,14 +513,13 @@ export class ModuleRegistry {
 		const failedModules = new Set<string>();
 
 		// Topological sort: initialize dependencies before dependents
-		const sorted = topologicalSort(this.modules);
+		const sorted = topologicalSort(this.modules, this.capabilityDependencies);
 
-		// Build the shared context that modules can access during init
+		// Immutable Store-level context values shared by all Modules. Every
+		// resource-bearing value is added to a fresh, owner-scoped context below.
 		const contextBase = {
 			modules: this.modules.map((m) => m.id),
-			options: this.moduleOptions,
 			storeId: this.resolvedStoreId,
-			controllers: this.controllers,
 		};
 
 		for (const mod of sorted) {
@@ -211,7 +530,12 @@ export class ModuleRegistry {
 
 			try {
 				// Check dependencies are initialized
-				const requiredIds = getRequiredModuleIds(mod.requires);
+				const requiredIds = [
+					...new Set([
+						...getRequiredModuleIds(mod.requires),
+						...(this.capabilityDependencies.get(mod.id) ?? []),
+					]),
+				];
 				for (const requiredId of requiredIds) {
 					if (failedModules.has(requiredId)) {
 						throw new Error(
@@ -255,27 +579,26 @@ export class ModuleRegistry {
 
 				// Create scoped emitter for this module
 				const scopedEmitter = createScopedEmitter(this.eventBus, mod.id);
+				const moduleContext: ModuleContext = {
+					...contextBase,
+					data: dataService,
+					options: this.getModuleOptions(mod.id),
+					events: scopedEmitter,
+					controllers: entry.controllers,
+					capabilities: this.createCapabilityInvoker(mod.id),
+				};
 
 				// Call init
 				if (mod.init) {
-					const initResult = await mod.init({
-						...contextBase,
-						data: dataService,
-						events: scopedEmitter,
-					});
+					const initResult = await mod.init(moduleContext);
 
-					if (initResult?.context) {
-						Object.assign(contextBase, initResult.context);
-					}
 					if (initResult?.controllers) {
-						Object.assign(this.controllers, initResult.controllers);
+						Object.assign(entry.controllers, initResult.controllers);
 					}
 				}
 
-				// Merge static controllers
-				if (mod.controllers) {
-					Object.assign(this.controllers, mod.controllers);
-				}
+				// Retain a compatibility inspection surface without exposing it to Modules.
+				Object.assign(this.controllers, entry.controllers);
 
 				entry.status = "ready";
 				initializedModules.push(mod.id);
@@ -303,7 +626,10 @@ export class ModuleRegistry {
 	 * No DB calls, no contract validation, no init — just session injection.
 	 * The registry must be booted first.
 	 */
-	createRequestContext(session?: Session | null | undefined): ModuleContext {
+	createRequestContext(
+		moduleId: string,
+		session?: Session | null | undefined,
+	): ModuleContext {
 		if (!this.booted) {
 			throw new Error("ModuleRegistry has not been booted. Call boot() first.");
 		}
@@ -314,46 +640,22 @@ export class ModuleRegistry {
 			throw new Error("Store ID not resolved. Boot may have failed.");
 		}
 
-		// Build data registry from cached entries
-		const dataRegistry: Map<ModuleId, ModuleDataService> = new Map();
-		for (const [id, entry] of this.entries) {
-			if (entry.dataService) {
-				dataRegistry.set(id, entry.dataService);
-			}
+		const entry = this.entries.get(moduleId);
+		if (entry?.status !== "ready" || !entry.dataService) {
+			throw new Error(`Module "${moduleId}" is not initialized.`);
 		}
-
-		// Default data service and emitter = first module that has a data service
-		let defaultData: ModuleDataService | undefined;
-		let defaultModuleId: string | undefined;
-		for (const mod of this.modules) {
-			const ds = dataRegistry.get(mod.id);
-			if (ds) {
-				defaultData = ds;
-				defaultModuleId = mod.id;
-				break;
-			}
-		}
-
-		if (!defaultData) {
-			throw new Error(
-				"No modules initialized. At least one module is required.",
-			);
-		}
-
-		const defaultEmitter =
-			defaultModuleId && this.eventBus
-				? createScopedEmitter(this.eventBus, defaultModuleId)
-				: undefined;
 
 		return {
-			_dataRegistry: dataRegistry,
-			data: defaultData,
+			data: entry.dataService,
 			modules: this.modules.map((m) => m.id),
-			options: this.moduleOptions,
+			options: this.getModuleOptions(moduleId),
 			session,
-			controllers: this.controllers,
+			controllers: entry.controllers,
+			capabilities: this.createCapabilityInvoker(moduleId),
 			storeId: this.resolvedStoreId,
-			events: defaultEmitter,
+			events: this.eventBus
+				? createScopedEmitter(this.eventBus, moduleId)
+				: undefined,
 		};
 	}
 
@@ -372,7 +674,7 @@ export class ModuleRegistry {
 
 		for (const mod of reversed) {
 			const entry = this.entries.get(mod.id);
-			if (!entry || entry.status !== "ready") continue;
+			if (entry?.status !== "ready") continue;
 
 			if (mod.shutdown && entry.dataService && this.resolvedStoreId) {
 				try {
@@ -383,8 +685,9 @@ export class ModuleRegistry {
 					await mod.shutdown({
 						data: entry.dataService,
 						modules: this.modules.map((m) => m.id),
-						options: this.moduleOptions,
-						controllers: this.controllers,
+						options: this.getModuleOptions(mod.id),
+						controllers: entry.controllers,
+						capabilities: this.createCapabilityInvoker(mod.id),
 						storeId: this.resolvedStoreId,
 						events: scopedEmitter,
 					});

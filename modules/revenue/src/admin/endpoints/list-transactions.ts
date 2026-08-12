@@ -1,9 +1,6 @@
 import { createAdminEndpoint, z } from "@86d-app/core";
-import type {
-	PaymentIntentStatus,
-	RevenueIntent,
-	RevenuePaymentsController,
-} from "../../service";
+import { listRevenueIntents } from "../../payment-source";
+import type { PaymentIntentStatus } from "../../service";
 import { filterAndPageTransactions } from "../../service-impl";
 
 export const listTransactions = createAdminEndpoint(
@@ -29,19 +26,18 @@ export const listTransactions = createAdminEndpoint(
 		}),
 	},
 	async (ctx) => {
-		const controller = ctx.context.controllers.payments as
-			| RevenuePaymentsController
-			| undefined;
-
-		if (!controller) {
-			return { transactions: [], total: 0 };
+		const source = await listRevenueIntents(ctx.context.capabilities, {
+			take: 10000,
+		});
+		if (!source.ok) {
+			return {
+				code: source.code,
+				error: "Authoritative payment history is unavailable.",
+				status: 503,
+			};
 		}
 
-		const all = (await controller.listIntents({
-			take: 10000,
-		})) as RevenueIntent[];
-
-		return filterAndPageTransactions(all, {
+		return filterAndPageTransactions(source.intents, {
 			from: ctx.query.from ? new Date(ctx.query.from) : null,
 			to: ctx.query.to ? new Date(ctx.query.to) : null,
 			status: ctx.query.status as PaymentIntentStatus | undefined,

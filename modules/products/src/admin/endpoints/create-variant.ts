@@ -1,4 +1,9 @@
-import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
+import {
+	createAdminEndpoint,
+	inventoryCheckoutCapability,
+	sanitizeText,
+	z,
+} from "@86d-app/core";
 import type { Product, ProductVariant } from "../../controllers";
 
 export const createVariant = createAdminEndpoint(
@@ -43,29 +48,17 @@ export const createVariant = createAdminEndpoint(
 
 		// Sync variant inventory to the inventory module (best-effort).
 		if (ctx.body.inventory !== undefined) {
-			const inventoryCtrl = ctx.context.controllers.inventory as unknown as
-				| {
-						setStock(p: {
-							productId: string;
-							variantId: string;
-							quantity: number;
-							productName?: string;
-							variantName?: string;
-						}): Promise<unknown>;
-				  }
-				| undefined;
-			if (inventoryCtrl) {
-				try {
-					await inventoryCtrl.setStock({
-						productId: params.productId,
-						variantId: variant.id,
-						quantity: ctx.body.inventory,
-						productName: existingProduct.name,
-						variantName: variant.name,
-					});
-				} catch {
-					// Best-effort: inventory sync failure never blocks variant creation
-				}
+			try {
+				await ctx.context.capabilities.invoke(inventoryCheckoutCapability, {
+					operation: "set",
+					productId: params.productId,
+					variantId: variant.id,
+					quantity: ctx.body.inventory,
+					productName: existingProduct.name,
+					variantName: variant.name,
+				});
+			} catch {
+				// Best-effort: inventory sync failure never blocks variant creation
 			}
 		}
 

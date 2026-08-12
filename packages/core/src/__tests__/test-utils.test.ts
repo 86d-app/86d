@@ -245,9 +245,9 @@ describe("createMockModuleContext", () => {
 
 	it("accepts custom options", () => {
 		const ctx = createMockModuleContext({
-			options: { products: { pageSize: 20 } },
+			options: { pageSize: 20 },
 		});
-		expect(ctx.options).toEqual({ products: { pageSize: 20 } });
+		expect(ctx.options).toEqual({ pageSize: 20 });
 	});
 
 	it("accepts custom session", () => {

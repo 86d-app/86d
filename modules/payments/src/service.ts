@@ -1,5 +1,11 @@
 import type { ModuleController } from "@86d-app/core";
 
+export type {
+	PaymentProvider,
+	ProviderIntentResult,
+	ProviderRefundResult,
+} from "@86d-app/core";
+
 export type PaymentIntentStatus =
 	| "pending"
 	| "processing"
@@ -50,40 +56,6 @@ export type Refund = {
 	status: RefundStatus;
 	createdAt: Date;
 	updatedAt: Date;
-};
-
-// ── Provider interface ────────────────────────────────────────────────────────
-
-export type ProviderIntentResult = {
-	providerIntentId: string;
-	status: "pending" | "processing" | "succeeded" | "failed" | "cancelled";
-	providerMetadata?: Record<string, unknown> | undefined;
-};
-
-export type ProviderRefundResult = {
-	providerRefundId: string;
-	status: "pending" | "succeeded" | "failed";
-	providerMetadata?: Record<string, unknown> | undefined;
-};
-
-/** Implement this interface to connect a payment processor (e.g. Stripe). */
-export type PaymentProvider = {
-	createIntent(params: {
-		amount: number;
-		currency: string;
-		metadata?: Record<string, unknown> | undefined;
-	}): Promise<ProviderIntentResult>;
-
-	confirmIntent(providerIntentId: string): Promise<ProviderIntentResult>;
-
-	cancelIntent(providerIntentId: string): Promise<ProviderIntentResult>;
-
-	createRefund(params: {
-		providerIntentId: string;
-		amount?: number | undefined;
-		currency?: string | undefined;
-		reason?: string | undefined;
-	}): Promise<ProviderRefundResult>;
 };
 
 // ── Controller interface ──────────────────────────────────────────────────────

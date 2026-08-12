@@ -1,5 +1,10 @@
-import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
-import type { CheckoutController, TaxCalculateController } from "../../service";
+import {
+	createStoreEndpoint,
+	sanitizeText,
+	taxQuoteCapability,
+	z,
+} from "@86d-app/core";
+import type { CheckoutController } from "../../service";
 
 const addressSchema = z.object({
 	firstName: z.string().min(1).max(200).transform(sanitizeText),
@@ -56,17 +61,6 @@ export const updateSession = createStoreEndpoint(
 
 		let taxAmount: number | undefined;
 		if (ctx.body.shippingAddress) {
-			const taxController = ctx.context.controllers.tax as unknown as
-				| TaxCalculateController
-				| undefined;
-			if (!taxController?.calculate) {
-				return {
-					code: "CHECKOUT_TAX_UNAVAILABLE",
-					error: "An authoritative tax decision is unavailable.",
-					status: 503,
-				};
-			}
-
 			try {
 				const lineItems = await controller.getLineItems(existing.id);
 				if (lineItems.length === 0) {
@@ -80,27 +74,30 @@ export const updateSession = createStoreEndpoint(
 					existing.subtotal > 0 && existing.discountAmount > 0
 						? existing.discountAmount / existing.subtotal
 						: 0;
-				const taxResult = await taxController.calculate({
-					address: {
-						country: ctx.body.shippingAddress.country,
-						state: ctx.body.shippingAddress.state,
-						city: ctx.body.shippingAddress.city,
-						postalCode: ctx.body.shippingAddress.postalCode,
+				const taxResult = await ctx.context.capabilities.invoke(
+					taxQuoteCapability,
+					{
+						address: {
+							country: ctx.body.shippingAddress.country,
+							state: ctx.body.shippingAddress.state,
+							city: ctx.body.shippingAddress.city,
+							postalCode: ctx.body.shippingAddress.postalCode,
+						},
+						lineItems: lineItems.map((item) => ({
+							productId: item.productId,
+							amount: Math.round(
+								item.price * item.quantity * (1 - discountRatio),
+							),
+							quantity: item.quantity,
+						})),
+						shippingAmount: existing.shippingAmount,
+						...(existing.customerId ? { customerId: existing.customerId } : {}),
 					},
-					lineItems: lineItems.map((item) => ({
-						productId: item.productId,
-						amount: Math.round(
-							item.price * item.quantity * (1 - discountRatio),
-						),
-						quantity: item.quantity,
-					})),
-					shippingAmount: existing.shippingAmount,
-					customerId: existing.customerId,
-				});
+				);
 				if (
-					!taxResult ||
-					!Number.isSafeInteger(taxResult.totalTax) ||
-					taxResult.totalTax < 0
+					!taxResult.ok ||
+					!Number.isSafeInteger(taxResult.decision.totalTax) ||
+					taxResult.decision.totalTax < 0
 				) {
 					return {
 						code: "CHECKOUT_TAX_UNAVAILABLE",
@@ -108,7 +105,7 @@ export const updateSession = createStoreEndpoint(
 						status: 503,
 					};
 				}
-				taxAmount = taxResult.totalTax;
+				taxAmount = taxResult.decision.totalTax;
 			} catch {
 				return {
 					code: "CHECKOUT_TAX_UNAVAILABLE",

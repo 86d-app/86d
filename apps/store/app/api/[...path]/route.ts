@@ -193,13 +193,21 @@ async function handleAuthedRequest(
 	session: Session | null,
 ) {
 	try {
-		const reg = await ensureBooted();
-
-		const context = reg.createRequestContext(session);
 		const resolvedModuleId = getModuleIdForPath(fullPath);
-		if (resolvedModuleId) {
-			(context as { moduleId?: string }).moduleId = resolvedModuleId;
+		if (!resolvedModuleId) {
+			return NextResponse.json(
+				{
+					error: {
+						code: "NOT_FOUND",
+						message: "Module endpoint not found.",
+					},
+				},
+				{ status: 404 },
+			);
 		}
+
+		const reg = await ensureBooted();
+		const context = reg.createRequestContext(resolvedModuleId, session);
 
 		const router = createApiRouter(context, {
 			basePath: "/api",

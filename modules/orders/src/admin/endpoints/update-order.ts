@@ -1,12 +1,15 @@
-import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
+import type { CapabilityInvoker } from "@86d-app/core";
+import {
+	createAdminEndpoint,
+	customerContactResolveCapability,
+	sanitizeText,
+	z,
+} from "@86d-app/core";
 import { performCancellationEffects } from "../../cancel-effects";
 import type {
-	CustomerLookupController,
-	InventoryReleaseController,
 	OrderController,
 	OrderStatus,
 	OrderWithDetails,
-	PaymentRefundController,
 	PaymentStatus,
 } from "../../service";
 
@@ -75,16 +78,10 @@ export const adminUpdateOrder = createAdminEndpoint(
 
 		// Perform cancellation side effects when transitioning to "cancelled"
 		if (status === "cancelled" && previousStatus !== "cancelled") {
-			const paymentRefundController = ctx.context.controllers
-				.payments as unknown as PaymentRefundController | undefined;
-			const inventoryController = ctx.context.controllers
-				.inventory as unknown as InventoryReleaseController | undefined;
-
 			await performCancellationEffects({
 				order,
 				orderController: controller,
-				paymentController: paymentRefundController,
-				inventoryController,
+				capabilities: ctx.context.capabilities,
 				cancelledBy: "admin",
 			});
 		}
@@ -93,9 +90,7 @@ export const adminUpdateOrder = createAdminEndpoint(
 		if (ctx.context.events && status && status !== previousStatus) {
 			const { email, customerName } = await resolveContactInfo(
 				order,
-				ctx.context.controllers.customer as unknown as
-					| CustomerLookupController
-					| undefined,
+				ctx.context.capabilities,
 			);
 
 			if (status === "completed") {
@@ -124,23 +119,28 @@ export const adminUpdateOrder = createAdminEndpoint(
 
 /**
  * Resolve the customer email and display name from the order.
- * For registered customers: look up via the customers controller.
+ * For registered customers: resolve contact data through the customers capability.
  * For guests: use guestEmail and shipping address name.
  */
 async function resolveContactInfo(
 	order: OrderWithDetails,
-	customerController: CustomerLookupController | undefined,
+	capabilities: CapabilityInvoker,
 ): Promise<{ email: string; customerName: string }> {
 	// Try looking up the registered customer
-	if (order.customerId && customerController) {
+	if (order.customerId) {
 		try {
-			const customer = await customerController.getById(order.customerId);
-			if (customer) {
-				const name = [customer.firstName, customer.lastName]
+			const result = await capabilities.invoke(
+				customerContactResolveCapability,
+				{
+					customerId: order.customerId,
+				},
+			);
+			if (result.ok) {
+				const name = [result.decision.firstName, result.decision.lastName]
 					.filter(Boolean)
 					.join(" ");
 				return {
-					email: customer.email,
+					email: result.decision.email,
 					customerName: name || "Customer",
 				};
 			}

@@ -1,4 +1,5 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
+import { acceptCapability, notificationCreateCapability } from "@86d-app/core";
 import { adminEndpoints } from "./admin/endpoints";
 import { automationsSchema } from "./schema";
 import { createAutomationsController } from "./service-impl";
@@ -66,8 +67,10 @@ export default function automations(options?: AutomationsOptions): Module {
 		id: "automations",
 		version: "0.0.1",
 		schema: automationsSchema,
-		requires: {
-			notifications: { optional: true },
+		capabilities: {
+			accepts: [
+				acceptCapability(notificationCreateCapability, { optional: true }),
+			],
 		},
 		exports: {
 			read: [
@@ -94,7 +97,7 @@ export default function automations(options?: AutomationsOptions): Module {
 					resendApiKey: options?.resendApiKey,
 					resendFrom: options?.resendFrom,
 				},
-				ctx.controllers,
+				ctx.capabilities,
 			);
 
 			// Subscribe to cross-module events so automations can trigger on them.

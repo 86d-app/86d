@@ -1,23 +1,18 @@
 # Checkout Module
 
-Checkout session management: cart-to-order conversion flow. Handles session creation, address collection, discount application, and order completion. Customer-facing only — no admin endpoints.
+Checkout session management: cart-to-order conversion flow. Handles session creation, address collection, discount application, payment coordination, and authoritative Order creation. It has customer-facing endpoints plus bounded Store Admin maintenance endpoints.
 
 ## Structure
 
 ```
 src/
-  index.ts          Factory: checkout(options?) => Module
+  index.ts          Factory and accepted capability metadata
   schema.ts         Zod models: checkoutSession, checkoutLineItem
-  service.ts        CheckoutController + DiscountController (local minimal interface) + types
-  service-impl.ts   CheckoutController implementation
-  endpoints/
-    store/          Customer-facing
-      create-session.ts             POST /checkout/sessions
-      get-session.ts                GET  /checkout/sessions/:id
-      update-session.ts             PUT  /checkout/sessions/:id/update
-      apply-discount.ts             POST /checkout/sessions/:id/discount
-  __tests__/
-    service-impl.test.ts    23 tests
+  service.ts        Checkout-owned controller and types
+  service-impl.ts   Checkout-owned controller implementation
+  store/endpoints/  Customer-facing Checkout HTTP surface
+  admin/endpoints/  Store Admin inspection and stale-session expiry
+  __tests__/        Service, endpoint, containment, and capability integration tests
 ```
 
 ## Options
@@ -40,13 +35,16 @@ CheckoutOptions {
 `pending → expired` (via `expireStale()`)
 `pending/processing → abandoned`
 
-## Exports (for inter-module contracts)
+## Capability boundary
 
-Types exported: `CheckoutSession`, `CheckoutController`, `CheckoutAddress`, `CheckoutLineItem`, `CheckoutStatus`, `DiscountController`
+Product and variant resolution plus Order creation are required capabilities. Inventory, Tax, Shipping, Discount, Gift Card, Store Credit, Payment, Price List, and currency conversion are explicit optional integrations whose call sites return bounded unavailability or domain failures. Checkout never receives another Module's data service or controller.
+
+M0 activation containment remains in force: confirm, payment, capture, payment-status, and completion routes return `CHECKOUT_ACTIVATION_UNAVAILABLE`. The consumer operation grants cover only currently reachable decisions (`check`/`release`, validation/balance reads, and payment cancellation); duplicate-sensitive commit, redeem, debit, reserve, deduct, create, get, and confirm operations are not granted to Checkout.
 
 ## Patterns
 
-- **Inter-module isolation**: defines a local minimal `DiscountController` interface (structural typing). Checkout accesses `ctx.context.controllers.discount` at runtime — no direct import from discounts module.
+- **Inter-module isolation**: immediate decisions use `ctx.context.capabilities`; `ctx.context.controllers.checkout` is owner-local compatibility access only.
+- Missing authoritative Product or Order capabilities prevent Module initialization. Optional capability absence is explicit and required decisions fail closed at the endpoint.
 - `getLineItems` strips the internal `sessionId` field before returning results
 - `update` recalculates total when `shippingAmount` changes; blocks on completed/expired sessions
 - `applyDiscount` handles `freeShipping: true` by zeroing `shippingAmount`; clamps total to 0

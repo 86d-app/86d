@@ -31,30 +31,26 @@ bun add @86d-app/core
 
 ## Features
 
-- **Type-safe module definition** - Full TypeScript support for modules, endpoints, and controllers
+- **Type-safe module definition** - Full TypeScript support for modules, endpoints, and capabilities
 - **Endpoint utilities** - Re-exports from `better-call` and `zod` for defining HTTP endpoints
 - **Client API** - Auto-generated React Query hooks for consuming module endpoints
-- **Module dependencies** - Declare required modules with the `requires` field
+- **Capability kernel** - Versioned, schema-validated decisions across isolated modules
+- **Owner-scoped resources** - A module receives only its own data, controllers, and options
 
 ## Creating a Module
 
-A module is a self-contained unit that provides endpoints, controllers, and optionally a database schema.
+A module is a self-contained unit with endpoints, owner-local controllers, and optionally a database schema. Immediate decisions owned by another module cross a typed capability boundary.
 
 ```typescript
 import {
+  acceptCapability,
   createEndpoint,
+  createStoreEndpoint,
+  productResolveCapability,
   z,
   type Module,
   type ModuleContext,
-  type ModuleService,
 } from "@86d-app/core";
-
-// Define your service interface
-interface MyService extends ModuleService {
-  id: "my-module";
-  version: "1.0.0";
-  getData(): Promise<string>;
-}
 
 // Create endpoints
 const getItems = createEndpoint(
@@ -83,66 +79,81 @@ const createItem = createEndpoint(
   }
 );
 
+const getProductPreview = createStoreEndpoint(
+  "/preview/:productId",
+  {
+    method: "GET",
+    params: z.object({ productId: z.string().min(1) }),
+  },
+  async (ctx) => {
+    const result = await ctx.context.capabilities.invoke(
+      productResolveCapability,
+      { productId: ctx.params.productId },
+    );
+
+    if (!result.ok) {
+      return { error: "Product decision unavailable", status: 503 };
+    }
+
+    return { product: result.decision.product };
+  },
+);
+
 // Export module factory
 export default function myModule(): Module {
   return {
     id: "my-module",
-
-    // Declare dependencies (optional)
-    requires: ["auth"],
-
-    // Initialize module and register service
-    init: async (ctx: ModuleContext) => {
-      const service: MyService = {
-        id: "my-module",
-        version: "1.0.0",
-        async getData() {
-          return "Hello from my module!";
-        },
-      };
-      return { service };
+    version: "1.0.0",
+    capabilities: {
+      accepts: [acceptCapability(productResolveCapability)],
     },
-
-    // Define endpoints
     endpoints: {
       store: {
         "/items": createItem,
         "/items/list": getItems,
+        "/preview/:productId": getProductPreview,
       },
-      admin: {
-        // Admin endpoints here
-      },
+      admin: {},
     },
   };
 }
 ```
 
-## Module Dependencies
+## Inter-module Capabilities
 
-Use the `requires` field to declare dependencies on other modules:
+Capability definitions are pure, versioned schemas shared through `@86d-app/core`. The owner provides the decision and each consumer explicitly accepts the exact contract:
 
 ```typescript
-export default function checkout(): Module {
-  return {
-    id: "checkout",
-    requires: ["cart", "products"], // Must be initialized before this module
+// In the owner Module
+capabilities: {
+  provides: [provideCapability(productResolveCapability, resolveProduct)],
+}
 
-    init: async (ctx: ModuleContext) => {
-      // Safe to access - runtime guarantees these exist
-      const cartService = ctx.services.cart as CartService;
-      const productsService = ctx.services.products as ProductsService;
-
-      // No null checks needed!
-      const cart = await cartService.getCart({ customerId: "..." });
-    },
-  };
+// In a consumer Module
+capabilities: {
+  accepts: [acceptCapability(productResolveCapability)],
 }
 ```
 
 The runtime will:
-- Validate required modules are initialized before your module
-- Throw a clear error if dependencies are missing
-- Guarantee services from required modules exist
+
+- Resolve required capabilities before any adapter or module initialization effects
+- Reject missing, duplicate, malformed, owner-mismatched, or incompatible contracts
+- Validate requests, decisions, and failures against both sides of the boundary
+- Invoke providers with only the owner Module's scoped data, events, and options
+
+Pass `{ optional: true }` to `acceptCapability` only when absence is a supported state. The legacy `exports` and `requires` declarations remain migration metadata and never grant cross-Module access.
+
+For a contract with an `operation` discriminant, grant only the operations the consumer needs:
+
+```typescript
+acceptCapability(paymentIntentCapability, {
+  operations: ["list"],
+  optional: true,
+})
+```
+
+The runtime rejects an invocation outside that allowlist before the provider runs.
 
 ## Client API
 
@@ -239,7 +250,11 @@ const cartData = await client.module("cart").store["/cart/get"].fetch();
 |--------|-------------|
 | `Module` | Main module definition interface |
 | `ModuleContext` | Runtime context passed to endpoints and init |
-| `ModuleService` | Base interface for services exposed to other modules |
+| `CapabilityDefinition` | Typed name, version, owner, request, decision, and failure contract |
+| `CapabilityInvoker` | Consumer-scoped capability invocation interface |
+| `defineCapability` | Define an immutable capability contract |
+| `provideCapability` | Bind an owner handler to a capability contract |
+| `acceptCapability` | Declare compatible versions, allowed operations, and optionality |
 | `ModuleSchema` | Database schema definition type |
 | `ModuleDataService` | Interface for scoped data access |
 | `BaseAdapter` | Base interface for module adapters |
@@ -270,24 +285,22 @@ The `ModuleContext` provides access to:
 
 ```typescript
 interface ModuleContext {
-  storeId: string;              // Tenant ID
-  data: ModuleDataService;      // Scoped data access
-  adapter: Record<string, any>; // Module adapters
-  services: Record<string, ModuleService>; // Other modules' services
-  options: Record<string, any>; // Module configuration
-  modules: string[];            // Enabled module IDs
-  session?: {
-    customerId?: string;
-    guestId?: string;
-    isAdmin?: boolean;
-  };
+  storeId: string;                 // Current Store
+  data: ModuleDataService;         // Current Module's data only
+  capabilities: CapabilityInvoker; // Accepted cross-Module decisions
+  controllers: ModuleControllers;  // Current Module's controllers only
+  options: ModuleConfig;           // Current Module's options only
+  modules: string[];               // Enabled Module IDs
+  session?: Session | null;
+  events?: ScopedEventEmitter;
 }
 ```
 
 ## Best Practices
 
-1. **Export service types** - Let other modules import your service interface
-2. **Use `requires`** - Declare dependencies explicitly for better error messages
-3. **Scope data access** - Always use `ctx.data` instead of direct DB access
-4. **Version your services** - Include a version string for compatibility checks
-5. **Keep modules focused** - Each module should have a single responsibility
+1. **Keep contracts pure** - Put shared capability schemas in `@86d-app/core`, without owner business logic
+2. **Declare both sides** - Owners provide capabilities and consumers explicitly accept compatible versions
+3. **Fail closed** - Treat unavailable or rejected authoritative decisions as bounded failures
+4. **Scope data access** - Use `ctx.data` only for the current Module's entities
+5. **Keep controllers local** - Use capabilities, never controller casts, across Module boundaries
+6. **Keep modules focused** - Each Module should have a single authority and responsibility

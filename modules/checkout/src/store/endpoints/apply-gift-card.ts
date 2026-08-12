@@ -1,8 +1,10 @@
-import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
-import type {
-	CheckoutController,
-	GiftCardCheckController,
-} from "../../service";
+import {
+	createStoreEndpoint,
+	giftCardCheckoutCapability,
+	sanitizeText,
+	z,
+} from "@86d-app/core";
+import type { CheckoutController } from "../../service";
 
 export const applyGiftCard = createStoreEndpoint(
 	"/checkout/sessions/:id/gift-card",
@@ -27,38 +29,49 @@ export const applyGiftCard = createStoreEndpoint(
 			return { error: "Checkout session not found", status: 404 };
 		}
 
-		// If gift-cards module is installed, use it to validate balance
-		const giftCardController = ctx.context.controllers.giftCards as unknown as
-			| GiftCardCheckController
-			| undefined;
-
-		let giftCardAmount = 0;
-
-		if (giftCardController) {
-			const result = await giftCardController.checkBalance(ctx.body.code);
-			if (!result) {
+		const result = await ctx.context.capabilities.invoke(
+			giftCardCheckoutCapability,
+			{ operation: "balance", code: ctx.body.code },
+		);
+		if (!result.ok) {
+			if (result.failure.code === "GIFT_CARD_NOT_FOUND") {
 				return { error: "Gift card not found", status: 404 };
 			}
-
-			if (result.status !== "active") {
-				return {
-					error: `Gift card is ${result.status}`,
-					status: 400,
-				};
-			}
-
-			if (result.balance <= 0) {
-				return { error: "Gift card has no balance", status: 400 };
-			}
-
-			// Cap the gift card amount to the remaining total after discounts
-			const remainingTotal =
-				session.subtotal +
-				session.taxAmount +
-				session.shippingAmount -
-				session.discountAmount;
-			giftCardAmount = Math.min(result.balance, Math.max(0, remainingTotal));
+			return {
+				code: "CHECKOUT_GIFT_CARD_UNAVAILABLE",
+				error: "An authoritative gift card decision is unavailable.",
+				status: 503,
+			};
 		}
+		if (result.decision.operation !== "balance") {
+			return {
+				code: "CHECKOUT_GIFT_CARD_UNAVAILABLE",
+				error: "An authoritative gift card decision is unavailable.",
+				status: 503,
+			};
+		}
+
+		if (result.decision.status !== "active") {
+			return {
+				error: `Gift card is ${result.decision.status}`,
+				status: 400,
+			};
+		}
+
+		if (result.decision.balance <= 0) {
+			return { error: "Gift card has no balance", status: 400 };
+		}
+
+		// Cap the gift card amount to the remaining total after discounts
+		const remainingTotal =
+			session.subtotal +
+			session.taxAmount +
+			session.shippingAmount -
+			session.discountAmount;
+		const giftCardAmount = Math.min(
+			result.decision.balance,
+			Math.max(0, remainingTotal),
+		);
 
 		const updated = await checkoutController.applyGiftCard(ctx.params.id, {
 			code: ctx.body.code.toUpperCase(),

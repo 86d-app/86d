@@ -1,4 +1,18 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
+import {
+	acceptCapability,
+	discountCodeCapability,
+	giftCardCheckoutCapability,
+	inventoryCheckoutCapability,
+	orderCreateCapability,
+	paymentCheckoutCapability,
+	priceListResolveCapability,
+	productPriceConversionCapability,
+	productResolveCapability,
+	shippingQuoteCapability,
+	storeCreditCheckoutCapability,
+	taxQuoteCapability,
+} from "@86d-app/core";
 import { adminEndpoints } from "./admin/endpoints";
 import { checkoutSchema } from "./schema";
 import { createCheckoutController } from "./service-impl";
@@ -35,15 +49,46 @@ export interface CheckoutOptions extends ModuleConfig {
  * Orchestrates the checkout flow: session creation → address collection →
  * discount application → inventory reservation → order completion.
  *
- * Integrates with the discounts module (optional) via runtime context.
- * Integrates with the inventory module (optional) for stock validation and reservation.
- * Integrates with the orders module (optional) via the complete() method caller.
+ * Accepts required Product resolution and Order creation capabilities, plus
+ * explicit optional capabilities for Inventory, Tax, Shipping, Discounts,
+ * Gift Cards, Store Credits, Payments, Price Lists, and Multi-currency.
+ * Providers remain authoritative and receive only their owner-scoped context.
  */
 export default function checkout(options?: CheckoutOptions): Module {
 	return {
 		id: "checkout",
 		version: "0.0.1",
 		schema: checkoutSchema,
+		capabilities: {
+			accepts: [
+				acceptCapability(productResolveCapability),
+				acceptCapability(orderCreateCapability),
+				acceptCapability(inventoryCheckoutCapability, {
+					operations: ["check", "release"],
+					optional: true,
+				}),
+				acceptCapability(taxQuoteCapability, { optional: true }),
+				acceptCapability(shippingQuoteCapability, { optional: true }),
+				acceptCapability(discountCodeCapability, {
+					operations: ["validate"],
+					optional: true,
+				}),
+				acceptCapability(giftCardCheckoutCapability, {
+					operations: ["balance"],
+					optional: true,
+				}),
+				acceptCapability(storeCreditCheckoutCapability, {
+					operations: ["balance"],
+					optional: true,
+				}),
+				acceptCapability(paymentCheckoutCapability, {
+					operations: ["cancel"],
+					optional: true,
+				}),
+				acceptCapability(priceListResolveCapability, { optional: true }),
+				acceptCapability(productPriceConversionCapability, { optional: true }),
+			],
+		},
 		exports: {
 			read: ["checkoutStatus", "checkoutTotal", "checkoutLineItems"],
 		},

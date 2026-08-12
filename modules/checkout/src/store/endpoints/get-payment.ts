@@ -1,8 +1,9 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
-import type {
-	CheckoutController,
-	PaymentProcessController,
-} from "../../service";
+import {
+	createStoreEndpoint,
+	paymentCheckoutCapability,
+	z,
+} from "@86d-app/core";
+import type { CheckoutController } from "../../service";
 
 export const getPayment = createStoreEndpoint(
 	"/checkout/sessions/:id/payment/status",
@@ -31,11 +32,8 @@ export const getPayment = createStoreEndpoint(
 			};
 		}
 
-		// Demo/no-payment intents — return stored status
-		if (
-			existing.paymentIntentId === "no_payment_required" ||
-			existing.paymentIntentId.startsWith("demo_")
-		) {
+		// A zero-total Checkout has no external Payment to refresh.
+		if (existing.paymentIntentId === "no_payment_required") {
 			return {
 				payment: {
 					id: existing.paymentIntentId,
@@ -47,37 +45,27 @@ export const getPayment = createStoreEndpoint(
 			};
 		}
 
-		// Fetch latest status from payments module
-		const paymentController = ctx.context.controllers.payments as unknown as
-			| PaymentProcessController
-			| undefined;
-
-		if (paymentController) {
-			const intent = await paymentController.getIntent(
-				existing.paymentIntentId,
-			);
-			if (intent) {
-				// Sync status back to session if changed
-				if (intent.status !== existing.paymentStatus) {
-					await controller.setPaymentIntent(
-						ctx.params.id,
-						intent.id,
-						intent.status,
-					);
-				}
-				return { payment: intent, session: existing };
+		const paymentResult = await ctx.context.capabilities.invoke(
+			paymentCheckoutCapability,
+			{ operation: "get", intentId: existing.paymentIntentId },
+		);
+		if (paymentResult.ok) {
+			const intent = paymentResult.decision;
+			// Sync status back to session if changed
+			if (intent.status !== existing.paymentStatus) {
+				await controller.setPaymentIntent(
+					ctx.params.id,
+					intent.id,
+					intent.status,
+				);
 			}
+			return { payment: intent, session: existing };
+		} else {
+			return {
+				code: "CHECKOUT_PAYMENT_UNAVAILABLE",
+				error: "An authoritative payment status is unavailable.",
+				status: paymentResult.failure.code === "PAYMENT_NOT_FOUND" ? 404 : 503,
+			};
 		}
-
-		// Fallback to stored status
-		return {
-			payment: {
-				id: existing.paymentIntentId,
-				status: existing.paymentStatus ?? "pending",
-				amount: existing.total,
-				currency: existing.currency,
-			},
-			session: existing,
-		};
 	},
 );

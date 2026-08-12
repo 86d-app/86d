@@ -1,10 +1,14 @@
-import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
-import type {
-	CheckoutController,
-	CurrencyConversionController,
-	PriceListResolutionController,
-	TaxCalculateController,
-} from "../../service";
+import {
+	createStoreEndpoint,
+	priceListResolveCapability,
+	productPriceConversionCapability,
+	productResolveCapability,
+	sanitizeText,
+	taxQuoteCapability,
+	z,
+} from "@86d-app/core";
+import { isCapabilityUnavailable } from "../../capability-failures";
+import type { CheckoutController } from "../../service";
 
 const addressSchema = z.object({
 	firstName: z.string().min(1).max(200).transform(sanitizeText),
@@ -22,22 +26,6 @@ const addressSchema = z.object({
 		.optional()
 		.transform((s) => (s === undefined ? undefined : sanitizeText(s))),
 });
-
-type AuthoritativeProduct = {
-	id: string;
-	name: string;
-	price: number;
-	sku?: string | undefined;
-	status: string;
-};
-
-type AuthoritativeVariant = {
-	id: string;
-	productId: string;
-	name: string;
-	price: number;
-	sku?: string | undefined;
-};
 
 function isAuthoritativeAmount(value: unknown): value is number {
 	return Number.isSafeInteger(value) && (value as number) >= 0;
@@ -97,26 +85,37 @@ export const createSession = createStoreEndpoint(
 			};
 		}
 
-		const productsData = ctx.context._dataRegistry?.get("products");
-		if (!productsData) {
-			return {
-				code: "CHECKOUT_PRICING_UNAVAILABLE",
-				error: "Authoritative product pricing is unavailable.",
-				status: 503,
-			};
-		}
-
 		const authoritativeLineItems = [];
 		for (const item of ctx.body.lineItems) {
-			const product = (await productsData.get(
-				"product",
-				item.productId,
-			)) as AuthoritativeProduct | null;
-			if (
-				!product ||
-				product.id !== item.productId ||
-				product.status !== "active"
-			) {
+			const resolved = await ctx.context.capabilities.invoke(
+				productResolveCapability,
+				{
+					productId: item.productId,
+					...(item.variantId ? { variantId: item.variantId } : {}),
+				},
+			);
+			if (!resolved.ok) {
+				if (
+					resolved.failure.code === "not_found" ||
+					resolved.failure.code === "not_active"
+				) {
+					return { error: "Product is not available", status: 400 };
+				}
+				if (
+					resolved.failure.code === "variant_not_found" ||
+					resolved.failure.code === "variant_mismatch"
+				) {
+					return { error: "Product variant is not available", status: 400 };
+				}
+				return {
+					code: "CHECKOUT_PRICING_UNAVAILABLE",
+					error: "Authoritative product pricing is unavailable.",
+					status: 503,
+				};
+			}
+
+			const { product, variant } = resolved.decision;
+			if (product.id !== item.productId) {
 				return { error: "Product is not available", status: 400 };
 			}
 			if (!isAuthoritativeAmount(product.price)) {
@@ -131,10 +130,6 @@ export const createSession = createStoreEndpoint(
 			let price = product.price;
 			let sku = product.sku;
 			if (item.variantId) {
-				const variant = (await productsData.get(
-					"productVariant",
-					item.variantId,
-				)) as AuthoritativeVariant | null;
 				if (
 					!variant ||
 					variant.id !== item.variantId ||
@@ -167,19 +162,20 @@ export const createSession = createStoreEndpoint(
 		// Apply price list overrides when the price-lists module is active.
 		// resolvePrices() returns only products covered by an active price list;
 		// items absent from the map keep their base price (or get currency-converted below).
-		const priceListCtrl = ctx.context.controllers.priceLists as unknown as
-			| PriceListResolutionController
-			| undefined;
-
 		const priceListCoveredIds = new Set<string>();
-		if (priceListCtrl) {
-			const productIds = [
-				...new Set(authoritativeLineItems.map((i) => i.productId)),
-			];
-			try {
-				const resolved = await priceListCtrl.resolvePrices(productIds, {
-					currency: ctx.body.currency,
-				});
+		const productIds = [
+			...new Set(authoritativeLineItems.map((i) => i.productId)),
+		];
+		try {
+			const priceListResult = await ctx.context.capabilities.invoke(
+				priceListResolveCapability,
+				{
+					productIds,
+					...(ctx.body.currency ? { currency: ctx.body.currency } : {}),
+				},
+			);
+			if (priceListResult.ok) {
+				const resolved = priceListResult.decision.prices;
 				for (const item of authoritativeLineItems) {
 					const override = resolved[item.productId];
 					if (override) {
@@ -194,47 +190,47 @@ export const createSession = createStoreEndpoint(
 						priceListCoveredIds.add(item.productId);
 					}
 				}
-			} catch {
+			} else if (!isCapabilityUnavailable(priceListResult)) {
 				return {
 					code: "CHECKOUT_PRICING_UNAVAILABLE",
 					error: "Authoritative price-list resolution is unavailable.",
 					status: 503,
 				};
 			}
+		} catch {
+			return {
+				code: "CHECKOUT_PRICING_UNAVAILABLE",
+				error: "Authoritative price-list resolution is unavailable.",
+				status: 503,
+			};
 		}
 
 		// Apply currency conversion for items not already priced by a price list.
 		// When a non-default currency is requested, convert base prices via exchange
 		// rates (or price overrides set in the multi-currency module).
 		if (ctx.body.currency) {
-			const currencyCtrl = ctx.context.controllers.multiCurrency as unknown as
-				| CurrencyConversionController
-				| undefined;
-
-			if (!currencyCtrl) {
-				return {
-					code: "CHECKOUT_PRICING_UNAVAILABLE",
-					error: "Authoritative currency conversion is unavailable.",
-					status: 503,
-				};
-			}
-
 			for (const item of authoritativeLineItems) {
 				if (priceListCoveredIds.has(item.productId)) continue;
 				try {
-					const converted = await currencyCtrl.getProductPrice({
-						productId: item.productId,
-						basePriceInCents: item.price,
-						currencyCode: ctx.body.currency,
-					});
-					if (!converted || !isAuthoritativeAmount(converted.amount)) {
+					const converted = await ctx.context.capabilities.invoke(
+						productPriceConversionCapability,
+						{
+							productId: item.productId,
+							basePriceInCents: item.price,
+							currencyCode: ctx.body.currency,
+						},
+					);
+					if (
+						!converted.ok ||
+						!isAuthoritativeAmount(converted.decision.amount)
+					) {
 						return {
 							code: "CHECKOUT_PRICING_UNAVAILABLE",
 							error: "Authoritative currency conversion is unavailable.",
 							status: 503,
 						};
 					}
-					item.price = converted.amount;
+					item.price = converted.decision.amount;
 				} catch {
 					return {
 						code: "CHECKOUT_PRICING_UNAVAILABLE",
@@ -253,37 +249,29 @@ export const createSession = createStoreEndpoint(
 		let taxAmount = 0;
 		const shippingAmount = 0;
 		if (ctx.body.shippingAddress) {
-			const taxController = ctx.context.controllers.tax as unknown as
-				| TaxCalculateController
-				| undefined;
-			if (!taxController?.calculate) {
-				return {
-					code: "CHECKOUT_TAX_UNAVAILABLE",
-					error: "An authoritative tax decision is unavailable.",
-					status: 503,
-				};
-			}
-
 			try {
-				const taxResult = await taxController.calculate({
-					address: {
-						country: ctx.body.shippingAddress.country,
-						state: ctx.body.shippingAddress.state,
-						city: ctx.body.shippingAddress.city,
-						postalCode: ctx.body.shippingAddress.postalCode,
+				const taxResult = await ctx.context.capabilities.invoke(
+					taxQuoteCapability,
+					{
+						address: {
+							country: ctx.body.shippingAddress.country,
+							state: ctx.body.shippingAddress.state,
+							city: ctx.body.shippingAddress.city,
+							postalCode: ctx.body.shippingAddress.postalCode,
+						},
+						lineItems: authoritativeLineItems.map((item) => ({
+							productId: item.productId,
+							amount: item.price * item.quantity,
+							quantity: item.quantity,
+						})),
+						shippingAmount,
+						...(customerId ? { customerId } : {}),
 					},
-					lineItems: authoritativeLineItems.map((item) => ({
-						productId: item.productId,
-						amount: item.price * item.quantity,
-						quantity: item.quantity,
-					})),
-					shippingAmount,
-					customerId,
-				});
+				);
 				if (
-					!taxResult ||
-					!Number.isInteger(taxResult.totalTax) ||
-					taxResult.totalTax < 0
+					!taxResult.ok ||
+					!Number.isInteger(taxResult.decision.totalTax) ||
+					taxResult.decision.totalTax < 0
 				) {
 					return {
 						code: "CHECKOUT_TAX_UNAVAILABLE",
@@ -291,7 +279,7 @@ export const createSession = createStoreEndpoint(
 						status: 503,
 					};
 				}
-				taxAmount = taxResult.totalTax;
+				taxAmount = taxResult.decision.totalTax;
 			} catch {
 				return {
 					code: "CHECKOUT_TAX_UNAVAILABLE",

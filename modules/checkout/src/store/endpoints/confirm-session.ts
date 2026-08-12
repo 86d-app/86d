@@ -1,8 +1,9 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
-import type {
-	CheckoutController,
-	InventoryCheckController,
-} from "../../service";
+import {
+	createStoreEndpoint,
+	inventoryCheckoutCapability,
+	z,
+} from "@86d-app/core";
+import type { CheckoutController } from "../../service";
 
 export const confirmSession = createStoreEndpoint(
 	"/checkout/sessions/:id/confirm",
@@ -23,22 +24,29 @@ export const confirmSession = createStoreEndpoint(
 			return { error: "Checkout session not found", status: 404 };
 		}
 
-		// Check inventory availability before confirming (if inventory module installed)
-		const inventoryController = ctx.context.controllers.inventory as unknown as
-			| InventoryCheckController
-			| undefined;
-
-		if (inventoryController) {
+		const inventoryEnabled = ctx.context.modules.includes("inventory");
+		if (inventoryEnabled) {
 			const lineItems = await controller.getLineItems(ctx.params.id);
 			const outOfStock: string[] = [];
 
 			for (const item of lineItems) {
-				const inStock = await inventoryController.isInStock({
-					productId: item.productId,
-					variantId: item.variantId,
-					quantity: item.quantity,
-				});
-				if (!inStock) {
+				const stock = await ctx.context.capabilities.invoke(
+					inventoryCheckoutCapability,
+					{
+						operation: "check",
+						productId: item.productId,
+						...(item.variantId ? { variantId: item.variantId } : {}),
+						quantity: item.quantity,
+					},
+				);
+				if (!stock.ok) {
+					return {
+						code: "CHECKOUT_INVENTORY_UNAVAILABLE",
+						error: "An authoritative inventory decision is unavailable.",
+						status: 503,
+					};
+				}
+				if (!stock.decision.available) {
 					outOfStock.push(item.name);
 				}
 			}
@@ -58,14 +66,25 @@ export const confirmSession = createStoreEndpoint(
 		}
 
 		// Reserve stock for all line items
-		if (inventoryController) {
+		if (inventoryEnabled) {
 			const lineItems = await controller.getLineItems(ctx.params.id);
 			for (const item of lineItems) {
-				await inventoryController.reserve({
-					productId: item.productId,
-					variantId: item.variantId,
-					quantity: item.quantity,
-				});
+				const reserved = await ctx.context.capabilities.invoke(
+					inventoryCheckoutCapability,
+					{
+						operation: "reserve",
+						productId: item.productId,
+						...(item.variantId ? { variantId: item.variantId } : {}),
+						quantity: item.quantity,
+					},
+				);
+				if (!reserved.ok) {
+					return {
+						code: "CHECKOUT_INVENTORY_UNAVAILABLE",
+						error: "Inventory could not reserve the requested quantity.",
+						status: 422,
+					};
+				}
 			}
 		}
 

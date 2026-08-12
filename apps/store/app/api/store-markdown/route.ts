@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
 	if (match?.toMarkdown) {
 		try {
 			const reg = await ensureBooted();
-			const ctx = reg.createRequestContext(null);
+			const ctx = reg.createRequestContext(match.moduleId, null);
 			const markdown = await match.toMarkdown(ctx, match.params);
 			if (markdown) {
 				return new NextResponse(markdown, {

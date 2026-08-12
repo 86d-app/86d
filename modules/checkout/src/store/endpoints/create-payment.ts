@@ -1,8 +1,9 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
-import type {
-	CheckoutController,
-	PaymentProcessController,
-} from "../../service";
+import {
+	createStoreEndpoint,
+	paymentCheckoutCapability,
+	z,
+} from "@86d-app/core";
+import type { CheckoutController } from "../../service";
 
 export const createPayment = createStoreEndpoint(
 	"/checkout/sessions/:id/payment",
@@ -56,52 +57,41 @@ export const createPayment = createStoreEndpoint(
 			existing.paymentIntentId &&
 			existing.paymentIntentId !== "no_payment_required"
 		) {
-			const paymentController = ctx.context.controllers.payments as unknown as
-				| PaymentProcessController
-				| undefined;
-
-			if (paymentController) {
-				const intent = await paymentController.getIntent(
-					existing.paymentIntentId,
-				);
-				if (intent) {
-					const secret =
-						(intent.providerMetadata?.clientSecret as string) ?? undefined;
-					return {
-						payment: {
-							id: intent.id,
-							status: intent.status,
-							amount: intent.amount,
-							currency: intent.currency,
-							...(secret ? { clientSecret: secret } : {}),
-						},
-						session: existing,
-					};
-				}
-			}
-		}
-
-		// Create payment intent via payments module
-		const paymentController = ctx.context.controllers.payments as unknown as
-			| PaymentProcessController
-			| undefined;
-
-		if (!paymentController) {
-			// No payments module installed — auto-succeed (demo mode)
-			const updated = await controller.setPaymentIntent(
-				ctx.params.id,
-				`demo_${crypto.randomUUID()}`,
-				"succeeded",
+			const existingIntent = await ctx.context.capabilities.invoke(
+				paymentCheckoutCapability,
+				{ operation: "get", intentId: existing.paymentIntentId },
 			);
-			return {
-				payment: {
-					id: updated?.paymentIntentId ?? "demo",
-					status: "succeeded",
-					amount: existing.total,
-					currency: existing.currency,
-				},
-				session: updated,
-			};
+			if (existingIntent.ok) {
+				const intent = existingIntent.decision;
+				const action = intent.clientAction;
+				return {
+					payment: {
+						id: intent.id,
+						status: intent.status,
+						amount: intent.amount,
+						currency: intent.currency,
+						...(action?.type === "client_secret"
+							? { clientSecret: action.clientSecret }
+							: {}),
+						...(action?.type === "paypal_approval"
+							? { paypalOrderId: action.orderId }
+							: {}),
+						...(action?.type === "braintree_tokenize"
+							? { braintreeClientToken: action.clientToken }
+							: {}),
+						...(action?.type === "square_tokenize"
+							? { squarePayment: true }
+							: {}),
+					},
+					session: existing,
+				};
+			} else if (existingIntent.failure.code !== "PAYMENT_NOT_FOUND") {
+				return {
+					code: "CHECKOUT_PAYMENT_UNAVAILABLE",
+					error: "An authoritative payment decision is unavailable.",
+					status: 503,
+				};
+			}
 		}
 
 		// Create the intent through the payments module
@@ -113,23 +103,33 @@ export const createPayment = createStoreEndpoint(
 		if (paymentMethodNonce) {
 			intentMetadata.paymentMethodNonce = paymentMethodNonce;
 		}
-		const intent = await paymentController.createIntent({
-			amount: existing.total,
-			currency: existing.currency,
-			customerId: existing.customerId,
-			email: email ?? undefined,
-			checkoutSessionId: ctx.params.id,
-			metadata: intentMetadata,
-		});
+		const paymentResult = await ctx.context.capabilities.invoke(
+			paymentCheckoutCapability,
+			{
+				operation: "create",
+				amount: existing.total,
+				currency: existing.currency,
+				...(existing.customerId ? { customerId: existing.customerId } : {}),
+				...(email ? { email } : {}),
+				checkoutSessionId: ctx.params.id,
+				metadata: intentMetadata,
+			},
+		);
+		if (!paymentResult.ok) {
+			return {
+				code: "CHECKOUT_PAYMENT_UNAVAILABLE",
+				error: "An authoritative payment decision is unavailable.",
+				status: 503,
+			};
+		}
+		const intent = paymentResult.decision;
 
-		// Extract clientSecret from providerMetadata (set by Stripe/other providers)
-		const clientSecret =
-			(intent.providerMetadata?.clientSecret as string) ?? undefined;
+		const action = intent.clientAction;
 
 		// If the provider returned a clientSecret, the frontend will handle
 		// confirmation via provider-specific UI (e.g. Stripe PaymentElement).
 		// Do NOT auto-confirm — store the intent with its initial status.
-		if (clientSecret) {
+		if (action?.type === "client_secret") {
 			const updated = await controller.setPaymentIntent(
 				ctx.params.id,
 				intent.id,
@@ -141,7 +141,7 @@ export const createPayment = createStoreEndpoint(
 					status: intent.status,
 					amount: intent.amount,
 					currency: intent.currency,
-					clientSecret,
+					clientSecret: action.clientSecret,
 				},
 				session: updated,
 			};
@@ -149,12 +149,8 @@ export const createPayment = createStoreEndpoint(
 
 		// Provider-specific client-side flows: return the necessary data
 		// so the frontend can render the appropriate payment UI.
-		const paymentType = intent.providerMetadata?.paymentType as
-			| string
-			| undefined;
-
 		// PayPal: requires customer approval via PayPal buttons before capture.
-		if (paymentType === "paypal") {
+		if (action?.type === "paypal_approval") {
 			const updated = await controller.setPaymentIntent(
 				ctx.params.id,
 				intent.id,
@@ -166,7 +162,7 @@ export const createPayment = createStoreEndpoint(
 					status: intent.status,
 					amount: intent.amount,
 					currency: intent.currency,
-					paypalOrderId: intent.providerMetadata?.paypalOrderId as string,
+					paypalOrderId: action.orderId,
 				},
 				session: updated,
 			};
@@ -174,22 +170,21 @@ export const createPayment = createStoreEndpoint(
 
 		// Braintree: requires client-side tokenization via Drop-in UI.
 		// Return the client token so the frontend can collect a nonce.
-		if (paymentType === "braintree") {
+		if (action?.type === "braintree_tokenize") {
 			return {
 				payment: {
 					id: intent.id,
 					status: intent.status,
 					amount: intent.amount,
 					currency: intent.currency,
-					braintreeClientToken: intent.providerMetadata
-						?.braintreeClientToken as string,
+					braintreeClientToken: action.clientToken,
 				},
 				session: existing,
 			};
 		}
 
 		// Square: requires client-side tokenization via Web Payments SDK.
-		if (paymentType === "square") {
+		if (action?.type === "square_tokenize") {
 			return {
 				payment: {
 					id: intent.id,
@@ -203,8 +198,18 @@ export const createPayment = createStoreEndpoint(
 		}
 
 		// No clientSecret and no provider-specific flow — auto-confirm
-		const confirmed = await paymentController.confirmIntent(intent.id);
-		const finalStatus = confirmed?.status ?? intent.status;
+		const confirmation = await ctx.context.capabilities.invoke(
+			paymentCheckoutCapability,
+			{ operation: "confirm", intentId: intent.id },
+		);
+		if (!confirmation.ok) {
+			return {
+				code: "CHECKOUT_PAYMENT_UNAVAILABLE",
+				error: "The payment could not be confirmed.",
+				status: 503,
+			};
+		}
+		const finalStatus = confirmation.decision.status;
 
 		// Store the intent on the checkout session
 		const updated = await controller.setPaymentIntent(

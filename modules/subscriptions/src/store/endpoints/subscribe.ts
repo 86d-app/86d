@@ -1,8 +1,5 @@
 import { createStoreEndpoint, z } from "@86d-app/core";
-import type {
-	PaymentProcessController,
-	SubscriptionController,
-} from "../../service";
+import type { SubscriptionController } from "../../service";
 
 export const subscribe = createStoreEndpoint(
 	"/subscriptions/subscribe",
@@ -10,9 +7,6 @@ export const subscribe = createStoreEndpoint(
 		method: "POST",
 		body: z.object({
 			planId: z.string().max(200),
-			// Required when subscribing to a paid plan without a trial period.
-			// The payment intent must already be in "succeeded" state.
-			paymentIntentId: z.string().max(200).optional(),
 		}),
 	},
 	async (ctx) => {
@@ -32,41 +26,18 @@ export const subscribe = createStoreEndpoint(
 		const requiresPayment = plan.price > 0 && !hasTrial;
 
 		if (requiresPayment) {
-			if (!ctx.body.paymentIntentId) {
-				return {
-					error:
-						"A completed payment intent is required to subscribe to this plan",
-					status: 400,
-				};
-			}
-
-			const paymentController = ctx.context.controllers.payments as unknown as
-				| PaymentProcessController
-				| undefined;
-
-			if (paymentController) {
-				const intent = await paymentController.getIntent(
-					ctx.body.paymentIntentId,
-				);
-				if (!intent) {
-					return { error: "Payment intent not found", status: 404 };
-				}
-				if (intent.status !== "succeeded") {
-					return {
-						error: `Payment has not been completed (status: ${intent.status})`,
-						status: 422,
-					};
-				}
-			}
+			return {
+				code: "SUBSCRIPTION_PAYMENT_ACTIVATION_UNAVAILABLE",
+				error:
+					"Paid subscription activation is unavailable until payment proofs are purpose-bound and duplicate-safe.",
+				status: 503,
+			};
 		}
 
 		const subscription = await controller.subscribe({
 			planId: ctx.body.planId,
 			email: session.user.email,
 			customerId: session.user.id,
-			...(ctx.body.paymentIntentId
-				? { paymentIntentId: ctx.body.paymentIntentId }
-				: {}),
 		});
 		void ctx.context.events?.emit("subscription.created", {
 			subscriptionId: subscription.id,

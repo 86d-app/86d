@@ -4,6 +4,7 @@ import type {
 	InputContext,
 	Middleware,
 } from "better-call";
+import type { CapabilityInvoker, ModuleCapabilities } from "../capabilities";
 import type { EventHandler, ScopedEventEmitter } from "../events";
 import type { Awaitable, LiteralString, Primitive } from "./helper";
 import type { ModuleSchema } from "./schema";
@@ -21,10 +22,13 @@ export type ModuleStatus =
 	| "stopped";
 
 /**
- * Declares what data fields a module exposes to other modules.
+ * Legacy compatibility metadata describing fields associated with a Module.
+ * The runtime may validate this declaration against `requires`, but it never
+ * grants another Module access to data or controllers. Use typed capabilities
+ * for immediate cross-Module decisions.
  *
- * - `read`: Fields other modules can read (via controller methods)
- * - `readWrite`: Fields other modules can both read and write
+ * - `read`: Fields historically declared as readable
+ * - `readWrite`: Fields historically declared as writable
  *
  * @example
  * ```ts
@@ -40,12 +44,10 @@ export interface ModuleExports {
 }
 
 /**
- * Declares what data a module needs from other modules.
- * Keyed by module ID, each entry specifies which fields are required
- * and what access level is needed (read or readWrite).
- *
- * The runtime validates that every consumer requirement is a subset
- * of what the provider permits.
+ * Legacy compatibility metadata describing another Module's declared fields.
+ * The runtime validates that every consumer requirement is a subset of the
+ * provider declaration, but this metadata does not expose the provider's data,
+ * controllers, or configuration. Use typed capabilities for cross-Module work.
  *
  * @example
  * ```ts
@@ -268,13 +270,11 @@ export type ModuleConfig = Record<string, Primitive>;
 export type ModuleOptions = Record<string, ModuleConfig>;
 
 /**
- * Base interface for module controllers.
+ * Base interface for owner-local compatibility controllers.
  *
- * Module controllers define the public API that a module exposes to other modules.
- * All controller interfaces (e.g., `CartController`, `ProductController`, etc.) should extend this base interface.
- *
- * ## Usage
- * When authoring a module, export a controller interface extending `ModuleController` to describe the API available to consumers:
+ * A Module may use controllers to share implementation between its own init,
+ * request, and shutdown paths. The runtime never exposes them to other Modules;
+ * cross-Module decisions use typed capabilities instead.
  *
  * @example
  * // Define a controller for a cart module:
@@ -283,13 +283,13 @@ export type ModuleOptions = Record<string, ModuleConfig>;
  *   addItem(params: { cartId: string; productId: string; quantity: number }): Promise<CartItem>;
  * }
  *
- * // Access another module's controller from a module context:
+ * // Access the current Module's controller from its own context:
  * const cartController = ctx.controllers.cart as CartController;
  * const cart = await cartController.getOrCreateCart({ customerId: "user_123" });
  *
  * ## Notes
- * - Only methods and properties defined here or in your extending controller interface will be available to other modules at runtime.
- * - Types extending `ModuleController` should only define serializable methods and fields (async methods encouraged).
+ * - Controllers are visible only to the Module that owns them.
+ * - Types extending `ModuleController` should define methods only.
  */
 export interface ModuleController {
 	// biome-ignore lint/suspicious/noExplicitAny: controller methods have varying parameter signatures — any[] is required for assignment compatibility
@@ -315,21 +315,20 @@ export type HookEndpointContext = Partial<
 
 /**
  * The core context object provided to all modules at runtime.
- * Generic parameter C allows typed access to controllers when used with createStoreEndpoint/createAdminEndpoint.
+ * Generic parameter C allows typed access to the current Module's controllers
+ * when used with createStoreEndpoint/createAdminEndpoint.
  *
  * @example
  * const context: ModuleContext = {
  *   data: myDataService,
  *   modules: ["products", "cart"],
- *   options: { products: { foo: true }, cart: { bar: 1 } },
+ *   options: { foo: true },
  *   session: session,
  *   controllers: { product: productController },
  *   storeId: "store_001"
  * };
  */
 export type ModuleContext<C extends ModuleControllers = ModuleControllers> = {
-	_dataRegistry?: Map<ModuleId, ModuleDataService>;
-
 	/**
 	 * Secure data access (replaces direct Prisma access).
 	 * Scoped to current module and store.
@@ -348,10 +347,10 @@ export type ModuleContext<C extends ModuleControllers = ModuleControllers> = {
 	modules: string[];
 
 	/**
-	 * Merged module options from config.
-	 * See ModuleOptions.
+	 * Configuration for the current Module only. Another Module's configuration
+	 * is never exposed through this context.
 	 */
-	options: ModuleOptions;
+	options: ModuleConfig;
 
 	/**
 	 * Session information (if authenticated).
@@ -360,13 +359,17 @@ export type ModuleContext<C extends ModuleControllers = ModuleControllers> = {
 	session?: Session | null | undefined;
 
 	/**
-	 * Registry of all module controllers (keyed by module ID).
-	 * Generic type C allows typed access when passed to createStoreEndpoint/createAdminEndpoint.
+	 * Controllers owned by the current Module, keyed by its local controller name.
+	 * Generic type C allows typed owner-local access when passed to
+	 * createStoreEndpoint/createAdminEndpoint.
 	 *
 	 * @example
 	 * context.controllers.product.getProduct(ctx)
 	 */
 	controllers: C;
+
+	/** Versioned, runtime-validated decisions accepted by this Module. */
+	capabilities: CapabilityInvoker;
 
 	/**
 	 * Store ID for current context.
@@ -453,8 +456,8 @@ export type Module = {
 	version: string;
 
 	/**
-	 * What data this module exposes to other modules.
-	 * Store owners can audit exactly what each module makes accessible.
+	 * Legacy compatibility metadata for declared fields. This never grants
+	 * another Module access to this Module's data or controllers.
 	 *
 	 * @example
 	 * ```ts
@@ -467,14 +470,15 @@ export type Module = {
 	exports?: ModuleExports;
 
 	/**
-	 * Declares dependencies on other modules.
+	 * Legacy compatibility metadata for dependencies on other Modules.
 	 *
-	 * **Simple form** (backward-compatible): array of module IDs.
-	 * Runtime validates these modules are initialized before this one.
+	 * **Simple form**: array of Module IDs. Runtime validates these Modules are
+	 * initialized before this one.
 	 *
 	 * **Contract form**: object keyed by module ID, specifying which fields
 	 * are needed and at what access level. Runtime validates that the
-	 * provider's `exports` satisfy every requirement.
+	 * provider's `exports` satisfy every requirement. Neither form grants data
+	 * or controller access; use `capabilities` for cross-Module decisions.
 	 *
 	 * @example
 	 * // Simple form
@@ -488,36 +492,29 @@ export type Module = {
 	 */
 	requires?: string[] | ModuleRequires;
 
+	/** Versioned decisions this Module provides or accepts. */
+	capabilities?: ModuleCapabilities;
+
 	controllers?: ModuleControllers;
 
 	/**
 	 * The init function is called when the module is initialized.
-	 * You can return a controller, add to context, or override options.
-	 * Later modules can access earlier modules' controllers.
+	 * It may return controllers owned by this Module. The runtime keeps those
+	 * controllers local to the Module's init, request, and shutdown contexts.
 	 *
 	 * @example
 	 * ```ts
 	 * init: async (ctx) => ({
-	 *   controller: {
+	 *   controllers: { local: {
 	 *     doThing: () => ...
 	 *     doAnotherThing: () => ...,
-	 *   },
-	 *   context: { custom: "value" },
-	 *   options: { someSetting: true }
+	 *   } },
 	 * })
 	 * ```
 	 */
 	init?:
 		| ((ctx: ModuleContext) =>
 				| Awaitable<{
-						/**
-						 * Additional context to add
-						 */
-						context?: Record<string, unknown>;
-						/**
-						 * Module options override (merged into global config)
-						 */
-						options?: Partial<ModuleOptions>;
 						/**
 						 * Controllers to register from init (useful when controllers need access to data service)
 						 */

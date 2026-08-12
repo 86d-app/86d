@@ -38,25 +38,11 @@ function createOptionsMiddleware<Ctx>() {
 }
 
 /**
- * Injects the module-scoped data service into the context.
- */
-const dataServiceMiddleware = createMiddleware(async (ctx) => {
-	if (!ctx.context._dataRegistry || !ctx.context.moduleId) {
-		return {};
-	}
-	const dataService = ctx.context._dataRegistry.get(ctx.context.moduleId);
-	if (!dataService) {
-		return {};
-	}
-	return { data: dataService };
-});
-
-/**
  * Creates a middleware factory with the given options middleware and post-hook support.
  */
 function createMiddlewareFactory(optionsMiddleware: Middleware) {
 	return createMiddleware.create({
-		use: [optionsMiddleware, postHookMiddleware, dataServiceMiddleware],
+		use: [optionsMiddleware, postHookMiddleware],
 	});
 }
 
@@ -93,7 +79,7 @@ function createEndpointFactory<Ctx>(optionsMiddleware: Middleware) {
 
 		const mergedOptions = {
 			...options,
-			use: [...(options?.use || []), optionsMiddleware, dataServiceMiddleware],
+			use: [...(options?.use || []), optionsMiddleware],
 		};
 
 		return path

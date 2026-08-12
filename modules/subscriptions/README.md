@@ -21,7 +21,7 @@
 
 📚 **Documentation:** [86d.app/docs/modules/subscriptions](https://86d.app/docs/modules/subscriptions)
 
-Subscription plan and subscriber management for the 86d commerce platform. Handles recurring billing cycles, trial periods, and subscription lifecycle. Payment processing is delegated to your payment provider.
+Subscription plan and subscriber management for the 86d commerce platform. The live Store endpoint activates free plans and paid plans during a free trial. Non-trial paid activation returns `SUBSCRIPTION_PAYMENT_ACTIVATION_UNAVAILABLE` until payment proof consumption is purpose-bound and duplicate-safe.
 
 ![version](https://img.shields.io/badge/version-0.0.1-blue) ![license](https://img.shields.io/badge/license-MIT-green)
 
@@ -75,7 +75,7 @@ renewSubscription()   → active    (advances period dates)
 
 | Method | Path | Description |
 |---|---|---|
-| `POST` | `/subscriptions/subscribe` | Subscribe to a plan |
+| `POST` | `/subscriptions/subscribe` | Subscribe to a free plan or begin a configured free trial; paid activation otherwise returns 503 |
 | `GET` | `/subscriptions/me` | Get subscriptions for an email address |
 | `POST` | `/subscriptions/me/cancel` | Cancel a subscription |
 

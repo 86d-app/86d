@@ -1,0 +1,726 @@
+import { z } from "zod";
+import { defineCapability } from "./capabilities";
+
+/**
+ * Pure, versioned commerce contracts shared by capability owners and consumers.
+ * Business logic and data access remain in the owning Modules.
+ */
+
+export const abandonedCartRecoveryResolveCapability = defineCapability({
+	name: "abandoned-carts.recovery.resolve",
+	version: "1.0.0",
+	owner: "abandoned-carts",
+	request: z.object({ cartId: z.string().min(1).max(200) }).strict(),
+	decision: z
+		.object({
+			items: z.array(
+				z
+					.object({
+						name: z.string(),
+						quantity: z.number().int().positive(),
+						price: z.number().nonnegative(),
+						imageUrl: z.string().optional(),
+					})
+					.strict(),
+			),
+			cartTotal: z.number().nonnegative(),
+			currency: z.string().length(3),
+			recoveryToken: z.string(),
+		})
+		.strict(),
+	failure: z
+		.object({ code: z.enum(["cart_not_found", "lookup_failed"]) })
+		.strict(),
+});
+
+export const customerContactResolveCapability = defineCapability({
+	name: "customers.contact.resolve",
+	version: "1.0.0",
+	owner: "customers",
+	request: z.object({ customerId: z.string().min(1).max(200) }).strict(),
+	decision: z
+		.object({
+			email: z.string().email(),
+			firstName: z.string(),
+			lastName: z.string(),
+			phone: z.string().optional(),
+		})
+		.strict(),
+	failure: z
+		.object({ code: z.enum(["customer_not_found", "lookup_failed"]) })
+		.strict(),
+});
+
+export const discountCodeCapability = defineCapability({
+	name: "discounts.code",
+	version: "1.0.0",
+	owner: "discounts",
+	request: z
+		.object({
+			operation: z.enum(["validate", "commit"]),
+			code: z.string().min(1).max(50),
+			subtotal: z.number().int().nonnegative(),
+			productIds: z.array(z.string().min(1).max(200)).max(100).optional(),
+			categoryIds: z.array(z.string().min(1).max(200)).max(100).optional(),
+		})
+		.strict(),
+	decision: z
+		.object({
+			valid: z.boolean(),
+			discountAmount: z.number().int().nonnegative(),
+			freeShipping: z.boolean(),
+			error: z.string().max(200).optional(),
+		})
+		.strict(),
+	failure: z
+		.object({
+			code: z.literal("DISCOUNT_PROVIDER_FAILED"),
+			message: z.string().min(1).max(200),
+		})
+		.strict(),
+});
+
+export const giftCardCheckoutCapability = defineCapability({
+	name: "gift-cards.checkout",
+	version: "1.0.0",
+	owner: "gift-cards",
+	request: z.discriminatedUnion("operation", [
+		z
+			.object({
+				operation: z.literal("balance"),
+				code: z.string().min(1).max(50),
+			})
+			.strict(),
+		z
+			.object({
+				operation: z.literal("redeem"),
+				code: z.string().min(1).max(50),
+				amount: z.number().int().positive(),
+				orderId: z.string().min(1).max(200).optional(),
+			})
+			.strict(),
+	]),
+	decision: z.discriminatedUnion("operation", [
+		z
+			.object({
+				operation: z.literal("balance"),
+				balance: z.number().int().nonnegative(),
+				currency: z.string().length(3),
+				status: z.string().min(1).max(50),
+			})
+			.strict(),
+		z
+			.object({
+				operation: z.literal("redeem"),
+				transactionId: z.string(),
+				amount: z.number().int().positive(),
+				balanceAfter: z.number().int().nonnegative(),
+			})
+			.strict(),
+	]),
+	failure: z
+		.object({
+			code: z.enum(["GIFT_CARD_NOT_FOUND", "GIFT_CARD_REDEMPTION_FAILED"]),
+			message: z.string().min(1).max(200),
+		})
+		.strict(),
+});
+
+const inventoryItemRequestSchema = z.object({
+	productId: z.string().min(1).max(200),
+	variantId: z.string().min(1).max(200).optional(),
+	locationId: z.string().min(1).max(200).optional(),
+	quantity: z.number().int().positive().max(1_000_000),
+});
+
+export const inventoryCheckoutCapability = defineCapability({
+	name: "inventory.checkout",
+	version: "1.0.0",
+	owner: "inventory",
+	request: z.discriminatedUnion("operation", [
+		inventoryItemRequestSchema
+			.extend({ operation: z.literal("check") })
+			.strict(),
+		inventoryItemRequestSchema
+			.extend({ operation: z.literal("reserve") })
+			.strict(),
+		inventoryItemRequestSchema
+			.extend({ operation: z.literal("release") })
+			.strict(),
+		inventoryItemRequestSchema
+			.extend({ operation: z.literal("deduct") })
+			.strict(),
+		z
+			.object({
+				operation: z.literal("set"),
+				productId: z.string().min(1).max(200),
+				variantId: z.string().min(1).max(200).optional(),
+				locationId: z.string().min(1).max(200).optional(),
+				quantity: z.number().int().nonnegative().max(1_000_000),
+				lowStockThreshold: z.number().int().nonnegative().optional(),
+				allowBackorder: z.boolean().optional(),
+				productName: z.string().max(500).optional(),
+				variantName: z.string().max(500).optional(),
+			})
+			.strict(),
+		z
+			.object({
+				operation: z.literal("adjust"),
+				productId: z.string().min(1).max(200),
+				variantId: z.string().min(1).max(200).optional(),
+				locationId: z.string().min(1).max(200).optional(),
+				delta: z.number().int().min(-1_000_000).max(1_000_000),
+			})
+			.strict(),
+	]),
+	decision: z
+		.object({
+			operation: z.enum([
+				"check",
+				"reserve",
+				"release",
+				"deduct",
+				"set",
+				"adjust",
+			]),
+			available: z.boolean().optional(),
+			stock: z
+				.object({
+					quantity: z.number().int().nonnegative(),
+					reserved: z.number().int().nonnegative(),
+					available: z.number().int().nonnegative(),
+				})
+				.strict()
+				.optional(),
+		})
+		.strict(),
+	failure: z
+		.object({
+			code: z.enum(["INSUFFICIENT_STOCK", "INVENTORY_ITEM_NOT_FOUND"]),
+			message: z.string().min(1).max(200),
+		})
+		.strict(),
+});
+
+export const productPriceConversionCapability = defineCapability({
+	name: "multi-currency.product-price",
+	version: "1.0.0",
+	owner: "multi-currency",
+	request: z
+		.object({
+			productId: z.string().min(1).max(200),
+			basePriceInCents: z.number().int().nonnegative(),
+			currencyCode: z.string().length(3),
+		})
+		.strict(),
+	decision: z.object({ amount: z.number().int().nonnegative() }).strict(),
+	failure: z
+		.object({
+			code: z.literal("CURRENCY_UNAVAILABLE"),
+			message: z.string().min(1).max(200),
+		})
+		.strict(),
+});
+
+export const notificationCreateCapability = defineCapability({
+	name: "notifications.create",
+	version: "1.0.0",
+	owner: "notifications",
+	request: z
+		.object({
+			customerId: z.string().min(1).max(200),
+			title: z.string().min(1).max(500),
+			body: z.string().min(1).max(10_000),
+			metadata: z.record(z.string().max(100), z.unknown()).optional(),
+		})
+		.strict(),
+	decision: z.object({ notificationId: z.string() }).strict(),
+	failure: z.object({ code: z.literal("create_failed") }).strict(),
+});
+
+const orderAddressSchema = z
+	.object({
+		firstName: z.string().max(200),
+		lastName: z.string().max(200),
+		company: z.string().max(300).optional(),
+		line1: z.string().max(500),
+		line2: z.string().max(500).optional(),
+		city: z.string().max(200),
+		state: z.string().max(200),
+		postalCode: z.string().max(50),
+		country: z.string().min(2).max(2),
+		phone: z.string().max(100).optional(),
+	})
+	.strict();
+
+export const orderCreateCapability = defineCapability({
+	name: "orders.create",
+	version: "1.0.0",
+	owner: "orders",
+	request: z
+		.object({
+			id: z.string().min(1).max(200).optional(),
+			customerId: z.string().min(1).max(200).optional(),
+			guestEmail: z.string().email().max(320).optional(),
+			currency: z.string().min(3).max(3).optional(),
+			paymentStatus: z
+				.enum(["unpaid", "paid", "partially_paid", "refunded", "voided"])
+				.optional(),
+			subtotal: z.number().finite().nonnegative(),
+			taxAmount: z.number().finite().nonnegative().optional(),
+			shippingAmount: z.number().finite().nonnegative().optional(),
+			discountAmount: z.number().finite().nonnegative().optional(),
+			giftCardAmount: z.number().finite().nonnegative().optional(),
+			storeCreditAmount: z.number().finite().nonnegative().optional(),
+			total: z.number().finite().nonnegative(),
+			notes: z.string().max(5000).optional(),
+			metadata: z.record(z.string(), z.unknown()).optional(),
+			items: z
+				.array(
+					z
+						.object({
+							productId: z.string().min(1).max(200),
+							variantId: z.string().min(1).max(200).optional(),
+							name: z.string().min(1).max(500),
+							sku: z.string().max(200).optional(),
+							price: z.number().finite().nonnegative(),
+							quantity: z.number().int().positive().max(9999),
+						})
+						.strict(),
+				)
+				.min(1)
+				.max(1000),
+			billingAddress: orderAddressSchema.optional(),
+			shippingAddress: orderAddressSchema.optional(),
+		})
+		.strict(),
+	decision: z.object({ orderId: z.string(), orderNumber: z.string() }).strict(),
+	failure: z.object({ code: z.literal("create_failed") }).strict(),
+});
+
+export const orderCustomerAuthorizeCapability = defineCapability({
+	name: "orders.customer.authorize",
+	version: "1.0.0",
+	owner: "orders",
+	request: z
+		.object({
+			orderId: z.string().min(1).max(200),
+			customerId: z.string().min(1).max(200),
+		})
+		.strict(),
+	decision: z.object({ authorized: z.literal(true) }).strict(),
+	failure: z
+		.object({
+			code: z.enum(["order_not_found", "not_owner", "lookup_failed"]),
+		})
+		.strict(),
+});
+
+export const orderPurchaseVerifyCapability = defineCapability({
+	name: "orders.purchase.verify",
+	version: "1.0.0",
+	owner: "orders",
+	request: z
+		.object({
+			customerId: z.string().min(1).max(200),
+			productId: z.string().min(1).max(200),
+		})
+		.strict(),
+	decision: z.object({ verified: z.boolean() }).strict(),
+	failure: z.object({ code: z.literal("lookup_failed") }).strict(),
+});
+
+const paymentIntentDecisionSchema = z.object({
+	id: z.string(),
+	status: z.enum([
+		"pending",
+		"processing",
+		"succeeded",
+		"failed",
+		"cancelled",
+		"refunded",
+	]),
+	amount: z.number().int().positive(),
+	currency: z.string().length(3),
+	clientAction: z
+		.discriminatedUnion("type", [
+			z
+				.object({
+					type: z.literal("client_secret"),
+					clientSecret: z.string().min(1).max(4096),
+				})
+				.strict(),
+			z
+				.object({
+					type: z.literal("paypal_approval"),
+					orderId: z.string().min(1).max(500),
+				})
+				.strict(),
+			z
+				.object({
+					type: z.literal("braintree_tokenize"),
+					clientToken: z.string().min(1).max(4096),
+				})
+				.strict(),
+			z.object({ type: z.literal("square_tokenize") }).strict(),
+		])
+		.optional(),
+});
+
+export const paymentCheckoutCapability = defineCapability({
+	name: "payments.checkout",
+	version: "1.0.0",
+	owner: "payments",
+	request: z.discriminatedUnion("operation", [
+		z
+			.object({
+				operation: z.literal("create"),
+				amount: z.number().int().positive(),
+				currency: z.string().length(3),
+				customerId: z.string().min(1).max(200).optional(),
+				email: z.string().email().max(320).optional(),
+				checkoutSessionId: z.string().min(1).max(200),
+				metadata: z.record(z.string().max(100), z.unknown()).optional(),
+			})
+			.strict(),
+		z
+			.object({
+				operation: z.literal("get"),
+				intentId: z.string().min(1).max(200),
+			})
+			.strict(),
+		z
+			.object({
+				operation: z.literal("confirm"),
+				intentId: z.string().min(1).max(200),
+			})
+			.strict(),
+		z
+			.object({
+				operation: z.literal("cancel"),
+				intentId: z.string().min(1).max(200),
+			})
+			.strict(),
+	]),
+	decision: paymentIntentDecisionSchema
+		.extend({ operation: z.enum(["create", "get", "confirm", "cancel"]) })
+		.strict(),
+	failure: z
+		.object({
+			code: z.enum(["PAYMENT_NOT_FOUND", "PAYMENT_OPERATION_FAILED"]),
+			message: z.string().min(1).max(200),
+		})
+		.strict(),
+});
+
+const paymentIntentSchema = z
+	.object({
+		id: z.string(),
+		providerIntentId: z.string().optional(),
+		customerId: z.string().optional(),
+		email: z.string().email().optional(),
+		amount: z.number().int().positive(),
+		currency: z.string().length(3),
+		status: z.enum([
+			"pending",
+			"processing",
+			"succeeded",
+			"failed",
+			"cancelled",
+			"refunded",
+		]),
+		orderId: z.string().optional(),
+		createdAt: z.date(),
+		updatedAt: z.date(),
+	})
+	.strict();
+
+export const paymentIntentCapability = defineCapability({
+	name: "payments.intent",
+	version: "1.0.0",
+	owner: "payments",
+	request: z.discriminatedUnion("operation", [
+		z
+			.object({
+				operation: z.literal("get"),
+				intentId: z.string().min(1).max(200),
+			})
+			.strict(),
+		z
+			.object({
+				operation: z.literal("list"),
+				customerId: z.string().min(1).max(200).optional(),
+				status: z
+					.enum([
+						"pending",
+						"processing",
+						"succeeded",
+						"failed",
+						"cancelled",
+						"refunded",
+					])
+					.optional(),
+				orderId: z.string().min(1).max(200).optional(),
+				take: z.number().int().positive().max(10_000).optional(),
+				skip: z.number().int().nonnegative().optional(),
+			})
+			.strict(),
+		z
+			.object({
+				operation: z.literal("refund"),
+				intentId: z.string().min(1).max(200),
+				amount: z.number().int().positive().optional(),
+				reason: z.string().max(500).optional(),
+			})
+			.strict(),
+	]),
+	decision: z.discriminatedUnion("operation", [
+		z
+			.object({ operation: z.literal("get"), intent: paymentIntentSchema })
+			.strict(),
+		z
+			.object({
+				operation: z.literal("list"),
+				intents: z.array(paymentIntentSchema),
+			})
+			.strict(),
+		z
+			.object({
+				operation: z.literal("refund"),
+				refund: z
+					.object({
+						id: z.string(),
+						amount: z.number().int().positive(),
+						status: z.enum(["pending", "succeeded", "failed"]),
+					})
+					.strict(),
+			})
+			.strict(),
+	]),
+	failure: z
+		.object({
+			code: z.enum(["PAYMENT_NOT_FOUND", "PAYMENT_OPERATION_FAILED"]),
+		})
+		.strict(),
+});
+
+export const priceListResolveCapability = defineCapability({
+	name: "price-lists.resolve",
+	version: "1.0.0",
+	owner: "price-lists",
+	request: z
+		.object({
+			productIds: z.array(z.string().min(1).max(200)).min(1).max(100),
+			customerGroupId: z.string().min(1).max(200).optional(),
+			quantity: z.number().int().positive().max(1_000_000).optional(),
+			currency: z.string().length(3).optional(),
+		})
+		.strict(),
+	decision: z
+		.object({
+			prices: z.record(
+				z.string().max(200),
+				z
+					.object({
+						price: z.number().int().nonnegative(),
+						compareAtPrice: z.number().int().nonnegative().nullable(),
+					})
+					.strict(),
+			),
+		})
+		.strict(),
+	failure: z
+		.object({
+			code: z.literal("PRICE_LIST_RESOLUTION_FAILED"),
+			message: z.string().min(1).max(200),
+		})
+		.strict(),
+});
+
+export const productResolveCapability = defineCapability({
+	name: "catalog.product.resolve",
+	version: "1.0.0",
+	owner: "products",
+	request: z
+		.object({
+			productId: z.string().min(1).max(200),
+			variantId: z.string().min(1).max(200).optional(),
+		})
+		.strict(),
+	decision: z
+		.object({
+			product: z
+				.object({
+					id: z.string(),
+					name: z.string(),
+					slug: z.string(),
+					status: z.literal("active"),
+					price: z.number().finite().nonnegative(),
+					sku: z.string().optional(),
+					images: z.array(z.string()),
+				})
+				.strict(),
+			variant: z
+				.object({
+					id: z.string(),
+					productId: z.string(),
+					name: z.string(),
+					price: z.number().finite().nonnegative(),
+					sku: z.string().optional(),
+					images: z.array(z.string()),
+				})
+				.strict()
+				.optional(),
+		})
+		.strict(),
+	failure: z
+		.object({
+			code: z.enum([
+				"not_found",
+				"not_active",
+				"invalid_price",
+				"variant_not_found",
+				"variant_mismatch",
+			]),
+		})
+		.strict(),
+});
+
+export const shippingQuoteCapability = defineCapability({
+	name: "shipping.quote",
+	version: "1.0.0",
+	owner: "shipping",
+	request: z
+		.object({
+			country: z.string().length(2),
+			orderAmount: z.number().int().nonnegative(),
+			weight: z.number().nonnegative().optional(),
+		})
+		.strict(),
+	decision: z
+		.object({
+			rates: z
+				.array(
+					z
+						.object({
+							id: z.string(),
+							name: z.string(),
+							zoneName: z.string(),
+							price: z.number().int().nonnegative(),
+						})
+						.strict(),
+				)
+				.min(1)
+				.max(100),
+		})
+		.strict(),
+	failure: z
+		.object({
+			code: z.literal("NO_SHIPPING_OPTION"),
+			message: z.string().min(1).max(200),
+		})
+		.strict(),
+});
+
+export const storeCreditCheckoutCapability = defineCapability({
+	name: "store-credits.checkout",
+	version: "1.0.0",
+	owner: "store-credits",
+	request: z.discriminatedUnion("operation", [
+		z
+			.object({
+				operation: z.literal("balance"),
+				customerId: z.string().min(1).max(200),
+			})
+			.strict(),
+		z
+			.object({
+				operation: z.literal("debit"),
+				customerId: z.string().min(1).max(200),
+				amount: z.number().int().positive(),
+				description: z.string().min(1).max(500),
+				referenceType: z.string().min(1).max(100).optional(),
+				referenceId: z.string().min(1).max(200).optional(),
+			})
+			.strict(),
+	]),
+	decision: z.discriminatedUnion("operation", [
+		z
+			.object({
+				operation: z.literal("balance"),
+				balance: z.number().int().nonnegative(),
+			})
+			.strict(),
+		z
+			.object({
+				operation: z.literal("debit"),
+				transactionId: z.string(),
+				amount: z.number().int().positive(),
+				balanceAfter: z.number().int().nonnegative(),
+			})
+			.strict(),
+	]),
+	failure: z
+		.object({
+			code: z.literal("STORE_CREDIT_DEBIT_FAILED"),
+			message: z.string().min(1).max(200),
+		})
+		.strict(),
+});
+
+export const taxQuoteCapability = defineCapability({
+	name: "tax.quote",
+	version: "1.0.0",
+	owner: "tax",
+	request: z
+		.object({
+			address: z
+				.object({
+					country: z.string().length(2),
+					state: z.string().min(1).max(100),
+					city: z.string().max(200).optional(),
+					postalCode: z.string().max(20).optional(),
+				})
+				.strict(),
+			lineItems: z
+				.array(
+					z
+						.object({
+							productId: z.string().min(1).max(200),
+							categoryId: z.string().min(1).max(200).optional(),
+							amount: z.number().int().nonnegative(),
+							quantity: z.number().int().positive().max(1_000_000),
+						})
+						.strict(),
+				)
+				.min(1)
+				.max(100),
+			shippingAmount: z.number().int().nonnegative().optional(),
+			customerId: z.string().min(1).max(200).optional(),
+		})
+		.strict(),
+	decision: z
+		.object({
+			totalTax: z.number().int().nonnegative(),
+			shippingTax: z.number().int().nonnegative(),
+			lineItems: z
+				.array(
+					z
+						.object({
+							productId: z.string(),
+							taxableAmount: z.number().nonnegative(),
+							taxAmount: z.number().nonnegative(),
+							rate: z.number().nonnegative(),
+						})
+						.strict(),
+				)
+				.max(100),
+		})
+		.strict(),
+	failure: z
+		.object({
+			code: z.literal("TAX_REVIEW_REQUIRED"),
+			message: z.string().min(1).max(200),
+		})
+		.strict(),
+});

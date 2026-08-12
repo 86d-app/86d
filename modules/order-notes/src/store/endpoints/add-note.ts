@@ -1,6 +1,10 @@
-import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
+import {
+	createStoreEndpoint,
+	orderCustomerAuthorizeCapability,
+	sanitizeText,
+	z,
+} from "@86d-app/core";
 import type { OrderNotesController } from "../../service";
-import { customerOwnsOrder } from "./_order-access";
 
 export const addNote = createStoreEndpoint(
 	"/orders/:orderId/notes/add",
@@ -17,12 +21,22 @@ export const addNote = createStoreEndpoint(
 			return { error: "Unauthorized", status: 401 };
 		}
 
-		const ordersData = ctx.context._dataRegistry?.get("orders");
-		if (
-			ordersData &&
-			!(await customerOwnsOrder(ordersData, ctx.params.orderId, customerId))
-		) {
-			return { error: "Order not found", status: 404 };
+		const authorization = await ctx.context.capabilities.invoke(
+			orderCustomerAuthorizeCapability,
+			{ orderId: ctx.params.orderId, customerId },
+		);
+		if (!authorization.ok) {
+			if (
+				authorization.failure.code === "order_not_found" ||
+				authorization.failure.code === "not_owner"
+			) {
+				return { error: "Order not found", status: 404 };
+			}
+			return {
+				code: "ORDER_AUTHORIZATION_UNAVAILABLE",
+				error: "Order authorization is unavailable.",
+				status: 503,
+			};
 		}
 
 		const customerName =

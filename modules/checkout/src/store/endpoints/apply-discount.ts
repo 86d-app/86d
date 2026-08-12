@@ -1,9 +1,10 @@
-import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
-import type {
-	CheckoutController,
-	DiscountController,
-	TaxCalculateController,
-} from "../../service";
+import {
+	createStoreEndpoint,
+	discountCodeCapability,
+	sanitizeText,
+	z,
+} from "@86d-app/core";
+import type { CheckoutController } from "../../service";
 import { recalculateTax } from "./recalculate-tax";
 
 export const applyDiscount = createStoreEndpoint(
@@ -29,44 +30,48 @@ export const applyDiscount = createStoreEndpoint(
 			return { error: "Checkout session not found", status: 404 };
 		}
 
-		// If discount module is installed, use it to validate
-		const discountController = ctx.context.controllers.discount as unknown as
-			| DiscountController
-			| undefined;
-
-		let discountAmount = 0;
-		let freeShipping = false;
-
-		if (discountController) {
-			const result = await discountController.validateCode({
+		const result = await ctx.context.capabilities.invoke(
+			discountCodeCapability,
+			{
+				operation: "validate",
 				code: ctx.body.code,
 				subtotal: session.subtotal,
-			});
-
-			if (!result.valid) {
-				return { error: result.error ?? "Invalid promo code", status: 400 };
-			}
-
-			discountAmount = result.discountAmount;
-			freeShipping = result.freeShipping;
+			},
+		);
+		if (!result.ok) {
+			return {
+				code: "CHECKOUT_DISCOUNT_UNAVAILABLE",
+				error: "An authoritative discount decision is unavailable.",
+				status: 503,
+			};
+		}
+		if (!result.decision.valid) {
+			return {
+				error: result.decision.error ?? "Invalid promo code",
+				status: 400,
+			};
 		}
 
 		let updated = await checkoutController.applyDiscount(ctx.params.id, {
 			code: ctx.body.code,
-			discountAmount,
-			freeShipping,
+			discountAmount: result.decision.discountAmount,
+			freeShipping: result.decision.freeShipping,
 		});
 
 		// Recalculate tax on post-discount amounts
 		if (updated) {
-			const taxController = ctx.context.controllers.tax as unknown as
-				| TaxCalculateController
-				| undefined;
 			updated = await recalculateTax(
 				updated,
 				checkoutController,
-				taxController,
+				ctx.context.capabilities,
 			);
+			if (!updated) {
+				return {
+					code: "CHECKOUT_TAX_UNAVAILABLE",
+					error: "An authoritative tax decision is unavailable.",
+					status: 503,
+				};
+			}
 		}
 
 		return { session: updated };

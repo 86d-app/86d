@@ -209,7 +209,7 @@ describe("ModuleRegistry", () => {
 			expect(typeof controllers.product.list).toBe("function");
 		});
 
-		it("later modules can access earlier modules controllers during init", async () => {
+		it("does not expose another module's controllers during init", async () => {
 			const cartInit = vi.fn().mockResolvedValue(undefined);
 			const modules = [
 				createMinimalModule("products", {
@@ -228,8 +228,8 @@ describe("ModuleRegistry", () => {
 			await registry.boot();
 
 			const ctx = cartInit.mock.calls[0][0];
-			expect(ctx.controllers.product).toBeDefined();
-			expect(typeof ctx.controllers.product.getProduct).toBe("function");
+			expect(ctx.controllers.product).toBeUndefined();
+			expect(ctx.controllers).toEqual({});
 		});
 
 		it("is a no-op on second call", async () => {
@@ -390,7 +390,9 @@ describe("ModuleRegistry", () => {
 				createMockConfig(),
 			);
 
-			expect(() => registry.createRequestContext()).toThrow("not been booted");
+			expect(() => registry.createRequestContext("products")).toThrow(
+				"not been booted",
+			);
 		});
 
 		it("returns context with session", async () => {
@@ -422,7 +424,7 @@ describe("ModuleRegistry", () => {
 				},
 			};
 
-			const ctx = registry.createRequestContext(session);
+			const ctx = registry.createRequestContext("products", session);
 
 			expect(ctx.session).toBe(session);
 			expect(ctx.storeId).toBe("store-uuid-123");
@@ -441,11 +443,11 @@ describe("ModuleRegistry", () => {
 			);
 			await registry.boot();
 
-			const ctx = registry.createRequestContext(null);
+			const ctx = registry.createRequestContext("products", null);
 			expect(ctx.session).toBeNull();
 		});
 
-		it("includes _dataRegistry with all module data services", async () => {
+		it("exposes only the requested module data service", async () => {
 			const modules = [
 				createMinimalModule("products"),
 				createMinimalModule("cart"),
@@ -457,14 +459,14 @@ describe("ModuleRegistry", () => {
 			);
 			await registry.boot();
 
-			const ctx = registry.createRequestContext();
-			expect(ctx._dataRegistry).toBeDefined();
-			expect(ctx._dataRegistry?.size).toBe(2);
-			expect(ctx._dataRegistry?.has("products")).toBe(true);
-			expect(ctx._dataRegistry?.has("cart")).toBe(true);
+			const products = registry.createRequestContext("products");
+			const cart = registry.createRequestContext("cart");
+			expect(products.data).not.toBe(cart.data);
+			expect("_dataRegistry" in products).toBe(false);
+			expect("_dataRegistry" in cart).toBe(false);
 		});
 
-		it("uses the first module data service as default", async () => {
+		it("uses the requested module data service", async () => {
 			const ds1 = createMockDataService();
 			const ds2 = createMockDataService();
 			let callCount = 0;
@@ -481,8 +483,8 @@ describe("ModuleRegistry", () => {
 			const registry = new ModuleRegistry(modules, "store-1", config);
 			await registry.boot();
 
-			const ctx = registry.createRequestContext();
-			expect(ctx.data).toBe(ds1);
+			const ctx = registry.createRequestContext("cart");
+			expect(ctx.data).toBe(ds2);
 		});
 
 		it("shares controllers across requests", async () => {
@@ -500,8 +502,8 @@ describe("ModuleRegistry", () => {
 			);
 			await registry.boot();
 
-			const ctx1 = registry.createRequestContext();
-			const ctx2 = registry.createRequestContext();
+			const ctx1 = registry.createRequestContext("products");
+			const ctx2 = registry.createRequestContext("products");
 			expect(ctx1.controllers).toBe(ctx2.controllers);
 		});
 
@@ -515,7 +517,7 @@ describe("ModuleRegistry", () => {
 			await registry.boot();
 			await registry.shutdown();
 
-			expect(() => registry.createRequestContext()).toThrow();
+			expect(() => registry.createRequestContext("products")).toThrow();
 		});
 	});
 
@@ -759,7 +761,7 @@ describe("ModuleRegistry", () => {
 	});
 
 	describe("module options", () => {
-		it("passes module options to request context", async () => {
+		it("passes only current module options to request context", async () => {
 			const modules = [createMinimalModule("products")];
 			const opts = { products: { pageSize: 20 } };
 			const registry = new ModuleRegistry(
@@ -770,8 +772,8 @@ describe("ModuleRegistry", () => {
 			);
 			await registry.boot();
 
-			const ctx = registry.createRequestContext();
-			expect(ctx.options).toEqual({ products: { pageSize: 20 } });
+			const ctx = registry.createRequestContext("products");
+			expect(ctx.options).toEqual({ pageSize: 20 });
 		});
 
 		it("defaults to empty options", async () => {
@@ -783,7 +785,7 @@ describe("ModuleRegistry", () => {
 			);
 			await registry.boot();
 
-			const ctx = registry.createRequestContext();
+			const ctx = registry.createRequestContext("products");
 			expect(ctx.options).toEqual({});
 		});
 	});
@@ -810,25 +812,73 @@ describe("ModuleRegistry", () => {
 			await registry.boot();
 
 			expect(registry.getModuleStatus("simple")).toBe("ready");
-			const ctx = registry.createRequestContext();
+			const ctx = registry.createRequestContext("simple");
 			expect(ctx.data).toBeDefined();
 		});
 
-		it("merges init context additions", async () => {
-			const initFn: Module["init"] = async (_ctx: ModuleContext) => ({
-				context: { customFlag: true },
-			});
-			const modules = [createMinimalModule("products", { init: initFn })];
+		it("does not propagate init context additions to another module", async () => {
+			const providerData = createMockDataService();
+			const consumerInit = vi.fn();
+			let dataServiceCall = 0;
+			const maliciousInit = (async (ctx: ModuleContext) => ({
+				context: { canaryDataService: ctx.data },
+			})) as Module["init"];
+			const modules = [
+				createMinimalModule("products", {
+					// Simulate untyped third-party JavaScript returning obsolete metadata.
+					init: maliciousInit,
+				}),
+				createMinimalModule("cart", { init: consumerInit }),
+			];
 			const registry = new ModuleRegistry(
 				modules,
 				"store-1",
-				createMockConfig(),
+				createMockConfig({
+					createDataService: vi.fn().mockImplementation(() => {
+						dataServiceCall += 1;
+						return dataServiceCall === 1
+							? providerData
+							: createMockDataService();
+					}),
+				}),
 			);
 
 			await registry.boot();
-			// The context addition is internal to the boot process —
-			// it's available to subsequent module inits, not exposed on request context directly
-			expect(registry.isReady()).toBe(true);
+
+			const consumerContext = consumerInit.mock
+				.calls[0]?.[0] as ModuleContext & {
+				canaryDataService?: ModuleDataService;
+			};
+			expect(consumerContext.canaryDataService).toBeUndefined();
+			expect(consumerContext.data).not.toBe(providerData);
+		});
+
+		it("scopes options to the owning module in init and request contexts", async () => {
+			const providerInit = vi.fn();
+			const consumerInit = vi.fn();
+			const registry = new ModuleRegistry(
+				[
+					createMinimalModule("provider", { init: providerInit }),
+					createMinimalModule("consumer", { init: consumerInit }),
+				],
+				"store-1",
+				createMockConfig(),
+				{
+					provider: { apiKey: "provider-canary", visible: true },
+					consumer: { pageSize: 20 },
+				},
+			);
+
+			await registry.boot();
+
+			expect(providerInit.mock.calls[0]?.[0].options).toEqual({
+				apiKey: "provider-canary",
+				visible: true,
+			});
+			expect(consumerInit.mock.calls[0]?.[0].options).toEqual({ pageSize: 20 });
+			expect(
+				JSON.stringify(registry.createRequestContext("consumer").options),
+			).not.toContain("provider-canary");
 		});
 	});
 });

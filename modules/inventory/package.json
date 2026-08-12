@@ -18,6 +18,7 @@
 	"homepage": "https://86d.app",
 	"type": "module",
 	"exports": {
+		"./capabilities": "./src/capabilities.ts",
 		"./admin-components": "./src/admin/components",
 		"./components": "./src/store/components",
 		"./*": "./src/*"

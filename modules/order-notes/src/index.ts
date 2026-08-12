@@ -1,4 +1,8 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
+import {
+	acceptCapability,
+	orderCustomerAuthorizeCapability,
+} from "@86d-app/core";
 import { adminEndpoints } from "./admin/endpoints";
 import { orderNotesSchema } from "./schema";
 import { createOrderNotesController } from "./service-impl";
@@ -21,8 +25,10 @@ export default function orderNotes(options?: OrderNotesOptions): Module {
 		id: "order-notes",
 		version: "0.0.1",
 		schema: orderNotesSchema,
-		requires: {
-			orders: { read: ["orderNumber"], optional: true },
+		capabilities: {
+			accepts: [
+				acceptCapability(orderCustomerAuthorizeCapability, { optional: true }),
+			],
 		},
 		exports: {
 			read: ["noteCount"],

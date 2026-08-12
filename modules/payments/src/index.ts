@@ -1,5 +1,9 @@
 import type { Module, ModuleContext } from "@86d-app/core";
 import { adminEndpoints } from "./admin/endpoints";
+import {
+	createPaymentCheckoutProvider,
+	createPaymentIntentProvider,
+} from "./capabilities";
 import { paymentsSchema } from "./schema";
 import type { PaymentProvider } from "./service";
 import { createPaymentController } from "./service-impl";
@@ -29,6 +33,12 @@ export default function payments(options?: PaymentsOptions): Module {
 		id: "payments",
 		version: "0.0.1",
 		schema: paymentsSchema,
+		capabilities: {
+			provides: [
+				createPaymentCheckoutProvider(options?.provider),
+				createPaymentIntentProvider(options?.provider),
+			],
+		},
 		exports: {
 			read: ["paymentStatus", "paymentAmount", "paymentMethod"],
 		},

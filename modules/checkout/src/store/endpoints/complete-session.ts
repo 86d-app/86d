@@ -1,13 +1,14 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
-import type {
-	CheckoutController,
-	DiscountController,
-	GiftCardCheckController,
-	InventoryCheckController,
-	OrderCreateController,
-	PaymentProcessController,
-	StoreCreditCheckController,
-} from "../../service";
+import {
+	createStoreEndpoint,
+	discountCodeCapability,
+	giftCardCheckoutCapability,
+	inventoryCheckoutCapability,
+	orderCreateCapability,
+	paymentCheckoutCapability,
+	storeCreditCheckoutCapability,
+	z,
+} from "@86d-app/core";
+import type { CheckoutController } from "../../service";
 
 export const completeSession = createStoreEndpoint(
 	"/checkout/sessions/:id/complete",
@@ -35,99 +36,96 @@ export const completeSession = createStoreEndpoint(
 
 		// Verify payment has been processed (unless total is zero)
 		if (existing.total > 0) {
-			const paymentOk =
-				existing.paymentStatus === "succeeded" ||
-				existing.paymentIntentId === "no_payment_required";
-
-			if (!paymentOk) {
-				// Try to fetch latest status from payments module
-				const paymentController = ctx.context.controllers.payments as unknown as
-					| PaymentProcessController
-					| undefined;
-
-				if (
-					paymentController &&
-					existing.paymentIntentId &&
-					!existing.paymentIntentId.startsWith("demo_")
-				) {
-					const intent = await paymentController.getIntent(
-						existing.paymentIntentId,
-					);
-					if (intent?.status !== "succeeded") {
-						return {
-							error: "Payment has not been completed",
-							status: 422,
-						};
-					}
-					// Sync the status
-					await controller.setPaymentIntent(
-						ctx.params.id,
-						intent.id,
-						intent.status,
-					);
-				} else if (!existing.paymentIntentId) {
-					return {
-						error: "Payment has not been initiated",
-						status: 422,
-					};
-				}
+			if (
+				!existing.paymentIntentId ||
+				existing.paymentIntentId === "no_payment_required"
+			) {
+				return { error: "Payment has not been initiated", status: 422 };
 			}
+			const payment = await ctx.context.capabilities.invoke(
+				paymentCheckoutCapability,
+				{ operation: "get", intentId: existing.paymentIntentId },
+			);
+			if (!payment.ok) {
+				return {
+					code: "CHECKOUT_PAYMENT_UNAVAILABLE",
+					error: "An authoritative payment status is unavailable.",
+					status: payment.failure.code === "PAYMENT_NOT_FOUND" ? 422 : 503,
+				};
+			}
+			if (payment.decision.status !== "succeeded") {
+				return { error: "Payment has not been completed", status: 422 };
+			}
+			await controller.setPaymentIntent(
+				ctx.params.id,
+				payment.decision.id,
+				payment.decision.status,
+			);
 		}
 
 		// Redeem gift card BEFORE creating the order so the balance is debited
 		// before the discount is committed to the order record.
 		let actualGiftCardAmount = existing.giftCardAmount;
 		if (existing.giftCardCode && existing.giftCardAmount > 0) {
-			const giftCardController = ctx.context.controllers.giftCards as unknown as
-				| GiftCardCheckController
-				| undefined;
-
-			if (giftCardController) {
-				const redeemResult = await giftCardController.redeem(
-					existing.giftCardCode,
-					existing.giftCardAmount,
-				);
-
-				if (!redeemResult) {
-					return {
-						error:
-							"Gift card could not be redeemed. It may be expired, inactive, or have insufficient balance.",
-						status: 422,
-					};
-				}
-
-				// Use the actual debited amount (may be less if balance was partially
-				// used elsewhere between apply and complete)
-				actualGiftCardAmount = redeemResult.transaction.amount;
+			const redemption = await ctx.context.capabilities.invoke(
+				giftCardCheckoutCapability,
+				{
+					operation: "redeem",
+					code: existing.giftCardCode,
+					amount: existing.giftCardAmount,
+				},
+			);
+			if (!redemption.ok) {
+				return {
+					error:
+						"Gift card could not be redeemed. It may be expired, inactive, or have insufficient balance.",
+					status:
+						redemption.failure.code === "GIFT_CARD_REDEMPTION_FAILED"
+							? 422
+							: 503,
+				};
 			}
+			if (redemption.decision.operation !== "redeem") {
+				return {
+					code: "CHECKOUT_GIFT_CARD_UNAVAILABLE",
+					error: "The gift card redemption decision was invalid.",
+					status: 503,
+				};
+			}
+			actualGiftCardAmount = redemption.decision.amount;
 		}
 
 		// Debit store credits BEFORE creating the order so the balance is consumed
 		// before the order record is written.
 		let actualStoreCreditAmount = existing.storeCreditAmount;
 		if (existing.customerId && existing.storeCreditAmount > 0) {
-			const storeCreditsController = ctx.context.controllers
-				.storeCredits as unknown as StoreCreditCheckController | undefined;
-
-			if (storeCreditsController) {
-				try {
-					const debitResult = await storeCreditsController.debit({
-						customerId: existing.customerId,
-						amount: existing.storeCreditAmount,
-						reason: "order_payment",
-						description: `Store credit applied to checkout ${existing.id}`,
-						referenceType: "checkout_session",
-						referenceId: existing.id,
-					});
-					actualStoreCreditAmount = debitResult.amount;
-				} catch {
-					return {
-						error:
-							"Store credit could not be applied. Your balance may be insufficient or your account may be frozen.",
-						status: 422,
-					};
-				}
+			const debit = await ctx.context.capabilities.invoke(
+				storeCreditCheckoutCapability,
+				{
+					operation: "debit",
+					customerId: existing.customerId,
+					amount: existing.storeCreditAmount,
+					description: `Store credit applied to checkout ${existing.id}`,
+					referenceType: "checkout_session",
+					referenceId: existing.id,
+				},
+			);
+			if (!debit.ok) {
+				return {
+					error:
+						"Store credit could not be applied. Your balance may be insufficient or your account may be frozen.",
+					status:
+						debit.failure.code === "STORE_CREDIT_DEBIT_FAILED" ? 422 : 503,
+				};
 			}
+			if (debit.decision.operation !== "debit") {
+				return {
+					code: "CHECKOUT_STORE_CREDIT_UNAVAILABLE",
+					error: "The Store credit debit decision was invalid.",
+					status: 503,
+				};
+			}
+			actualStoreCreditAmount = debit.decision.amount;
 		}
 
 		// Recalculate total if the actual gift card or store credit amounts differ from expected
@@ -145,17 +143,11 @@ export const completeSession = createStoreEndpoint(
 					)
 				: existing.total;
 
-		// Create a real order in the orders module if available
-		let orderId = ctx.body?.orderId;
-		let orderNumber: string | undefined;
+		// Create the authoritative Order through its owner capability.
 		const lineItems = await controller.getLineItems(ctx.params.id);
-
-		const orderController = ctx.context.controllers.order as unknown as
-			| OrderCreateController
-			| undefined;
-
-		if (orderController) {
-			const createdOrder = await orderController.create({
+		const orderResult = await ctx.context.capabilities.invoke(
+			orderCreateCapability,
+			{
 				customerId: existing.customerId,
 				guestEmail: existing.guestEmail ?? ctx.context.session?.user.email,
 				currency: existing.currency,
@@ -207,19 +199,26 @@ export const completeSession = createStoreEndpoint(
 							phone: existing.billingAddress.phone,
 						}
 					: undefined,
-			});
-			orderId = createdOrder.id;
-			orderNumber = createdOrder.orderNumber;
+			},
+		);
+		if (!orderResult.ok) {
+			return {
+				code: "CHECKOUT_ORDER_UNAVAILABLE",
+				error: "The authoritative Order could not be created.",
+				status: 503,
+			};
+		}
+		const orderId = orderResult.decision.orderId;
+		const orderNumber = orderResult.decision.orderNumber;
 
-			// Emit order.placed so listeners (e.g. loyalty) can react
-			if (ctx.context.events) {
-				await ctx.context.events.emit("order.placed", {
-					orderId: createdOrder.id,
-					customerId: existing.customerId,
-					total: adjustedTotal,
-					currency: existing.currency,
-				});
-			}
+		// Emit order.placed so listeners (e.g. loyalty) can react
+		if (ctx.context.events) {
+			await ctx.context.events.emit("order.placed", {
+				orderId,
+				customerId: existing.customerId,
+				total: adjustedTotal,
+				currency: existing.currency,
+			});
 		}
 
 		// Increment discount usage now that payment is confirmed and the order exists.
@@ -229,50 +228,44 @@ export const completeSession = createStoreEndpoint(
 		// we log the warning but still allow the order through (the amount was already
 		// locked in the cart).
 		if (existing.discountCode) {
-			const discountController = ctx.context.controllers.discount as unknown as
-				| DiscountController
-				| undefined;
-
-			if (discountController) {
-				const result = await discountController.applyCode({
+			const discount = await ctx.context.capabilities.invoke(
+				discountCodeCapability,
+				{
+					operation: "commit",
 					code: existing.discountCode,
 					subtotal: existing.subtotal,
 					productIds: lineItems.map((i) => i.productId).filter(Boolean),
-				});
-				if (!result.valid) {
-					// Log but don't block — discount was validated at apply time
-					void ctx.context.events?.emit("discount.apply_failed_at_complete", {
-						code: existing.discountCode,
-						sessionId: existing.id,
-						reason: result.error,
-					});
-				}
+				},
+			);
+			if (!discount.ok || !discount.decision.valid) {
+				return {
+					code: "CHECKOUT_DISCOUNT_UNAVAILABLE",
+					error: "The discount redemption could not be committed.",
+					status: 503,
+				};
 			}
 		}
 
 		// Deduct inventory (convert reservations made at confirm time into actual stock deductions)
-		const inventoryController = ctx.context.controllers.inventory as unknown as
-			| InventoryCheckController
-			| undefined;
-
-		if (inventoryController?.deduct) {
+		if (ctx.context.modules.includes("inventory")) {
 			for (const item of lineItems) {
-				try {
-					await inventoryController.deduct({
+				const deducted = await ctx.context.capabilities.invoke(
+					inventoryCheckoutCapability,
+					{
+						operation: "deduct",
 						productId: item.productId,
-						variantId: item.variantId,
+						...(item.variantId ? { variantId: item.variantId } : {}),
 						quantity: item.quantity,
-					});
-				} catch {
-					// Inventory deduction is best-effort after order creation.
-					// The order is the source of truth; inventory can be reconciled.
+					},
+				);
+				if (!deducted.ok) {
+					return {
+						code: "CHECKOUT_INVENTORY_UNAVAILABLE",
+						error: "Inventory could not commit the checkout deduction.",
+						status: 503,
+					};
 				}
 			}
-		}
-
-		// Fall back to generating an order number if no orders module
-		if (!orderId) {
-			orderId = `ORD-${Date.now().toString(36).toUpperCase()}`;
 		}
 
 		const session = await controller.complete(ctx.params.id, orderId);
@@ -291,7 +284,7 @@ export const completeSession = createStoreEndpoint(
 			await ctx.context.events.emit("checkout.completed", {
 				sessionId: session.id,
 				orderId,
-				orderNumber: orderNumber ?? orderId,
+				orderNumber,
 				customerId: session.customerId ?? undefined,
 				email,
 				customerName,
@@ -314,6 +307,6 @@ export const completeSession = createStoreEndpoint(
 			});
 		}
 
-		return { session, orderId, orderNumber: orderNumber ?? orderId };
+		return { session, orderId, orderNumber };
 	},
 );

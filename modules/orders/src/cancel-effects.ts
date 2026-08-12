@@ -1,3 +1,8 @@
+import type { CapabilityInvoker } from "@86d-app/core";
+import {
+	inventoryCheckoutCapability,
+	paymentIntentCapability,
+} from "@86d-app/core";
 import type {
 	InventoryReleaseController,
 	OrderController,
@@ -8,8 +13,11 @@ import type {
 interface CancelEffectsParams {
 	order: OrderWithDetails;
 	orderController: OrderController;
-	paymentController: PaymentRefundController | undefined;
-	inventoryController: InventoryReleaseController | undefined;
+	capabilities?: CapabilityInvoker | undefined;
+	/** @deprecated Test-only compatibility seam. Runtime callers use capabilities. */
+	paymentController?: PaymentRefundController | undefined;
+	/** @deprecated Test-only compatibility seam. Runtime callers use capabilities. */
+	inventoryController?: InventoryReleaseController | undefined;
 	cancelledBy: string;
 }
 
@@ -32,40 +40,71 @@ export async function performCancellationEffects(
 	const {
 		order,
 		orderController,
+		capabilities,
 		paymentController,
 		inventoryController,
 		cancelledBy,
 	} = params;
 
+	async function createRefund(intentId: string, reason: string) {
+		if (capabilities) {
+			const result = await capabilities.invoke(paymentIntentCapability, {
+				operation: "refund",
+				intentId,
+				reason,
+			});
+			return result.ok && result.decision.operation === "refund"
+				? result.decision.refund
+				: undefined;
+		}
+		return paymentController?.createRefund({ intentId, reason });
+	}
+
+	async function findSucceededIntent() {
+		if (capabilities) {
+			const result = await capabilities.invoke(paymentIntentCapability, {
+				operation: "list",
+				orderId: order.id,
+				status: "succeeded",
+				take: 1,
+			});
+			return result.ok && result.decision.operation === "list"
+				? result.decision.intents[0]
+				: undefined;
+		}
+		return (
+			await paymentController?.listIntents({
+				orderId: order.id,
+				status: "succeeded",
+			})
+		)?.[0];
+	}
+
 	let refundCreated = false;
 	let refundAmount = 0;
 
 	// 1. Refund payment if it was paid
-	if (paymentController && order.paymentStatus === "paid") {
+	if ((capabilities || paymentController) && order.paymentStatus === "paid") {
 		const paymentIntentId = resolvePaymentIntentId(order);
+		const reason = `Order ${order.orderNumber} cancelled by ${cancelledBy}`;
 
 		if (paymentIntentId) {
 			try {
-				const refund = await paymentController.createRefund({
-					intentId: paymentIntentId,
-					reason: `Order ${order.orderNumber} cancelled by ${cancelledBy}`,
-				});
-				refundCreated = true;
-				refundAmount = refund.amount;
+				const refund = await createRefund(paymentIntentId, reason);
+				if (refund) {
+					refundCreated = true;
+					refundAmount = refund.amount;
+				}
 			} catch {
 				// If the direct refund fails, try finding the intent by orderId
-				const intents = await paymentController.listIntents({
-					orderId: order.id,
-					status: "succeeded",
-				});
-				if (intents.length > 0) {
+				const intent = await findSucceededIntent();
+				if (intent) {
 					try {
-						const refund = await paymentController.createRefund({
-							intentId: intents[0].id,
-							reason: `Order ${order.orderNumber} cancelled by ${cancelledBy}`,
-						});
-						refundCreated = true;
-						refundAmount = refund.amount;
+						const refund = await createRefund(intent.id, reason);
+						if (refund) {
+							refundCreated = true;
+							refundAmount = refund.amount;
+						}
 					} catch {
 						// Refund failed — will be noted below
 					}
@@ -73,20 +112,32 @@ export async function performCancellationEffects(
 			}
 		} else {
 			// No direct intent ID in metadata — search by orderId
-			const intents = await paymentController.listIntents({
-				orderId: order.id,
-				status: "succeeded",
-			});
-			if (intents.length > 0) {
+			const intent = await findSucceededIntent();
+			if (intent) {
 				try {
-					const refund = await paymentController.createRefund({
-						intentId: intents[0].id,
-						reason: `Order ${order.orderNumber} cancelled by ${cancelledBy}`,
-					});
-					refundCreated = true;
-					refundAmount = refund.amount;
+					const refund = await createRefund(intent.id, reason);
+					if (refund) {
+						refundCreated = true;
+						refundAmount = refund.amount;
+					}
 				} catch {
 					// Refund failed — will be noted below
+				}
+			}
+		}
+		// Capability failures are values, not exceptions. If the metadata intent
+		// was stale or unavailable, resolve the current succeeded intent by order.
+		if (!refundCreated && paymentIntentId) {
+			const intent = await findSucceededIntent();
+			if (intent && intent.id !== paymentIntentId) {
+				try {
+					const refund = await createRefund(intent.id, reason);
+					if (refund) {
+						refundCreated = true;
+						refundAmount = refund.amount;
+					}
+				} catch {
+					// Refund failed — recorded in the system note below.
 				}
 			}
 		}
@@ -99,15 +150,28 @@ export async function performCancellationEffects(
 
 	// 2. Release reserved inventory for all order items
 	let inventoryReleased = false;
-	if (inventoryController && order.items.length > 0) {
-		for (const item of order.items) {
-			await inventoryController.release({
-				productId: item.productId,
-				variantId: item.variantId,
-				quantity: item.quantity,
-			});
-		}
+	if ((capabilities || inventoryController) && order.items.length > 0) {
 		inventoryReleased = true;
+		for (const item of order.items) {
+			if (capabilities) {
+				const released = await capabilities.invoke(
+					inventoryCheckoutCapability,
+					{
+						operation: "release",
+						productId: item.productId,
+						...(item.variantId ? { variantId: item.variantId } : {}),
+						quantity: item.quantity,
+					},
+				);
+				if (!released.ok) inventoryReleased = false;
+			} else {
+				await inventoryController?.release({
+					productId: item.productId,
+					variantId: item.variantId,
+					quantity: item.quantity,
+				});
+			}
+		}
 	}
 
 	// 3. Add a system note documenting what happened
@@ -116,7 +180,10 @@ export async function performCancellationEffects(
 		noteParts.push(
 			`Refund of ${formatCurrency(refundAmount, order.currency)} initiated.`,
 		);
-	} else if (order.paymentStatus === "paid" && paymentController) {
+	} else if (
+		order.paymentStatus === "paid" &&
+		(capabilities || paymentController)
+	) {
 		noteParts.push("Automatic refund could not be processed.");
 	}
 	if (inventoryReleased) {

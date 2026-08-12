@@ -1,4 +1,5 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
+import { acceptCapability, productResolveCapability } from "@86d-app/core";
 import { adminEndpoints } from "./admin/endpoints";
 import { cartSchema } from "./schema";
 import { createCartControllers } from "./service-impl";
@@ -29,6 +30,9 @@ export default function cart(options?: CartOptions): Module {
 		id: "cart",
 		version: "1.0.0",
 		schema: cartSchema,
+		capabilities: {
+			accepts: [acceptCapability(productResolveCapability)],
+		},
 		exports: {
 			read: ["cartItems", "cartTotal", "cartStatus"],
 		},

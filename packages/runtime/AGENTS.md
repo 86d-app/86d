@@ -15,19 +15,22 @@ src/
 ## Responsibilities
 
 - Implements `ModuleDataService` against real Prisma/database layer
-- Resolves inter-module contracts at init: validates that every consumer's requirements are a subset of what providers expose
-- Mediates all cross-module data access — enforces read vs readWrite permissions
+- Resolves typed capability contracts before adapter or Module initialization effects
+- Invokes each capability provider with only its owner Module's data, events, and options
 - Wires up adapters, authentication, and data services per request
-- Injects module options (including third-party credentials) from platform config — modules never read env vars
+- Injects only the current Module's options from platform config — modules never read env vars or another Module's configuration
 
-## Inter-module contract resolution
+## Capability resolution
 
 At init, the runtime:
-1. Collects all modules' `exports` declarations (what they share)
-2. Collects all modules' `requires` declarations (what they need)
-3. Validates every requirement is satisfied by a provider's exports
-4. Rejects startup if any contract is unsatisfied or exceeds permissions
-5. Creates scoped data access proxies that enforce field-level read/readWrite boundaries
+1. Collects all capability providers and acceptances
+2. Verifies provider ownership and accepted versions
+3. Resolves exactly one compatible provider for each required acceptance
+4. Rejects missing, duplicate, incompatible, or malformed contracts before any Store adapter is called
+5. Restricts discriminated requests to the consumer's accepted operation allowlist
+6. Creates an invoker pinned to each consumer's declared definition and validates both consumer and provider schemas at runtime
+
+`ModuleContext.data`, `controllers`, and `options` are owner-local. There is no Module-visible data registry or aggregate controller registry. The legacy `exports`/`requires` validator remains only as migration compatibility metadata.
 
 ## Graceful degradation
 
@@ -36,7 +39,7 @@ Boot is resilient — individual module failures don't crash the store:
 - Modules depending on a failed module are also marked as "error"
 - Boot only throws if ALL modules fail (zero successful initializations)
 - `getHealth()` returns status "error" when any module has errors (but store still serves)
-- `createRequestContext()` includes only successfully initialized modules in the data registry
+- `createRequestContext(moduleId)` returns only the successfully initialized owner's resources
 
 ## Key details
 

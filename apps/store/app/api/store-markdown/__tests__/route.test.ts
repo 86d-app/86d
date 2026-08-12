@@ -116,6 +116,7 @@ describe("GET /api/store-markdown", () => {
 		it("calls toMarkdown when the route provides it", async () => {
 			const toMarkdown = vi.fn().mockResolvedValue("# Product\n\nDetails.");
 			const mockCtx = {};
+			const createRequestContext = vi.fn().mockReturnValue(mockCtx);
 			mocks.getStoreRoute.mockReturnValue({
 				moduleId: "products",
 				component: "ProductDetail",
@@ -123,7 +124,7 @@ describe("GET /api/store-markdown", () => {
 				toMarkdown,
 			});
 			mocks.ensureBooted.mockResolvedValue({
-				createRequestContext: vi.fn().mockReturnValue(mockCtx),
+				createRequestContext,
 			});
 
 			const response = await GET(makeRequest("/products/sneaker"));
@@ -132,6 +133,7 @@ describe("GET /api/store-markdown", () => {
 			expect(response.headers.get("Content-Type")).toContain("text/markdown");
 			const text = await response.text();
 			expect(text).toBe("# Product\n\nDetails.");
+			expect(createRequestContext).toHaveBeenCalledWith("products", null);
 			expect(toMarkdown).toHaveBeenCalledWith(mockCtx, { slug: "sneaker" });
 		});
 

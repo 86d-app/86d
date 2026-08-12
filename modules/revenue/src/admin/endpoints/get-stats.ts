@@ -1,9 +1,5 @@
 import { createAdminEndpoint, z } from "@86d-app/core";
-import type {
-	RevenueIntent,
-	RevenuePaymentsController,
-	RevenueStats,
-} from "../../service";
+import { listRevenueIntents } from "../../payment-source";
 import { aggregateStats } from "../../service-impl";
 
 export const getStats = createAdminEndpoint(
@@ -16,37 +12,19 @@ export const getStats = createAdminEndpoint(
 		}),
 	},
 	async (ctx) => {
-		const controller = ctx.context.controllers.payments as
-			| RevenuePaymentsController
-			| undefined;
-
-		const empty: RevenueStats = {
-			totalVolume: 0,
-			transactionCount: 0,
-			averageValue: 0,
-			currency: "USD",
-			byStatus: {
-				pending: 0,
-				processing: 0,
-				succeeded: 0,
-				failed: 0,
-				cancelled: 0,
-				refunded: 0,
-			},
-			refundVolume: 0,
-			refundCount: 0,
-		};
-
-		if (!controller) {
-			return empty;
-		}
-
-		const all = (await controller.listIntents({
+		const source = await listRevenueIntents(ctx.context.capabilities, {
 			take: 10000,
-		})) as RevenueIntent[];
+		});
+		if (!source.ok) {
+			return {
+				code: source.code,
+				error: "Authoritative revenue statistics are unavailable.",
+				status: 503,
+			};
+		}
 		const from = ctx.query.from ? new Date(ctx.query.from) : null;
 		const to = ctx.query.to ? new Date(ctx.query.to) : null;
 
-		return aggregateStats(all, from, to);
+		return aggregateStats(source.intents, from, to);
 	},
 );

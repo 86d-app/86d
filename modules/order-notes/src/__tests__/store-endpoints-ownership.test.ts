@@ -1,6 +1,39 @@
+import {
+	orderCustomerAuthorizeCapability,
+	provideCapability,
+} from "@86d-app/core";
 import { createMockDataService } from "@86d-app/core/test-utils";
 import { beforeEach, describe, expect, it } from "vitest";
-import { customerOwnsOrder } from "../store/endpoints/_order-access";
+
+const orderCustomerAuthorizeProvider = provideCapability(
+	orderCustomerAuthorizeCapability,
+	async (ctx, request) => {
+		const order = await ctx.data.get("order", request.orderId);
+		if (!order) {
+			return {
+				ok: false,
+				failure: { code: "order_not_found" as const },
+			};
+		}
+		if (order.customerId !== request.customerId) {
+			return { ok: false, failure: { code: "not_owner" as const } };
+		}
+		return { ok: true, decision: { authorized: true as const } };
+	},
+);
+
+async function customerOwnsOrder(
+	data: ReturnType<typeof createMockDataService>,
+	orderId: string,
+	customerId: string,
+) {
+	if (!customerId) return false;
+	const result = await orderCustomerAuthorizeProvider.handle(
+		{ data, storeId: "store-1", options: {} },
+		{ orderId, customerId },
+	);
+	return result.ok;
+}
 
 describe("customerOwnsOrder", () => {
 	let ordersData: ReturnType<typeof createMockDataService>;

@@ -24,6 +24,27 @@ export {
 	type ZodType,
 	z,
 } from "./api";
+export {
+	type AnyCapabilityDefinition,
+	acceptCapability,
+	type CapabilityAcceptance,
+	type CapabilityDecision,
+	type CapabilityDefinition,
+	type CapabilityFailure,
+	type CapabilityHandler,
+	type CapabilityInvoker,
+	type CapabilityKernelFailure,
+	type CapabilityKernelFailureCode,
+	type CapabilityProvider,
+	type CapabilityProviderContext,
+	type CapabilityRejected,
+	type CapabilityRequest,
+	type CapabilityResult,
+	type CapabilitySuccess,
+	defineCapability,
+	type ModuleCapabilities,
+	provideCapability,
+} from "./capabilities";
 export type {
 	ActionLevel,
 	ActorReference,
@@ -82,6 +103,25 @@ export {
 	workflowStepSchema,
 } from "./commands";
 export {
+	abandonedCartRecoveryResolveCapability,
+	customerContactResolveCapability,
+	discountCodeCapability,
+	giftCardCheckoutCapability,
+	inventoryCheckoutCapability,
+	notificationCreateCapability,
+	orderCreateCapability,
+	orderCustomerAuthorizeCapability,
+	orderPurchaseVerifyCapability,
+	paymentCheckoutCapability,
+	paymentIntentCapability,
+	priceListResolveCapability,
+	productPriceConversionCapability,
+	productResolveCapability,
+	shippingQuoteCapability,
+	storeCreditCheckoutCapability,
+	taxQuoteCapability,
+} from "./commerce-capabilities";
+export {
 	computeInitOrder,
 	formatViolations,
 	getRequiredModuleIds,
@@ -112,6 +152,11 @@ export {
 	type ModulePathSource,
 	validateUniquePaths,
 } from "./paths";
+export type {
+	PaymentProvider,
+	ProviderIntentResult,
+	ProviderRefundResult,
+} from "./payment-provider";
 export {
 	escapeScriptContent,
 	isSafeUrl,

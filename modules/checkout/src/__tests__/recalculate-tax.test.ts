@@ -1,10 +1,15 @@
+import type {
+	CapabilityDecision,
+	CapabilityInvoker,
+	CapabilityRequest,
+	taxQuoteCapability,
+} from "@86d-app/core";
 import { createMockDataService } from "@86d-app/core/test-utils";
 import { describe, expect, it } from "vitest";
 import type {
 	CheckoutAddress,
 	CheckoutLineItem,
 	CheckoutSession,
-	TaxCalculateController,
 } from "../service";
 import { createCheckoutController } from "../service-impl";
 import { recalculateTax } from "../store/endpoints/recalculate-tax";
@@ -29,14 +34,25 @@ interface TaxCalculateParams {
 	customerId?: string | undefined;
 }
 
-function createMockTaxController(taxRate = 0.1) {
+type TaxQuoteInvoker = {
+	invoke(
+		definition: typeof taxQuoteCapability,
+		request: CapabilityRequest<typeof taxQuoteCapability>,
+	): Promise<{
+		ok: true;
+		decision: CapabilityDecision<typeof taxQuoteCapability>;
+	}>;
+};
+
+function createMockTaxCapabilities(taxRate = 0.1) {
 	const calls: TaxCalculateParams[] = [];
 
-	const controller: TaxCalculateController & {
+	const capabilities: TaxQuoteInvoker & {
 		_calls: TaxCalculateParams[];
 	} = {
 		_calls: calls,
-		async calculate(params) {
+		async invoke(_definition, request) {
+			const params = request as TaxCalculateParams;
 			calls.push(params);
 			const subtotal = params.lineItems.reduce(
 				(sum, item) => sum + item.amount,
@@ -44,19 +60,22 @@ function createMockTaxController(taxRate = 0.1) {
 			);
 			const totalTax = Math.round(subtotal * taxRate);
 			return {
-				totalTax,
-				shippingTax: 0,
-				lineItems: params.lineItems.map((item) => ({
-					productId: item.productId,
-					taxableAmount: item.amount,
-					taxAmount: Math.round(item.amount * taxRate),
-					rate: taxRate,
-				})),
+				ok: true as const,
+				decision: {
+					totalTax,
+					shippingTax: 0,
+					lineItems: params.lineItems.map((item) => ({
+						productId: item.productId,
+						taxableAmount: item.amount,
+						taxAmount: Math.round(item.amount * taxRate),
+						rate: taxRate,
+					})),
+				},
 			};
 		},
 	};
 
-	return controller;
+	return capabilities as CapabilityInvoker & { _calls: TaxCalculateParams[] };
 }
 
 // ---------------------------------------------------------------------------
@@ -126,12 +145,22 @@ async function createSessionWithDiscount(
 // ---------------------------------------------------------------------------
 
 describe("recalculateTax", () => {
-	it("returns original session when no tax controller", async () => {
+	it("returns null when the tax capability is unavailable", async () => {
 		const ctrl = createCheckoutController(createMockDataService());
 		const session = await createSessionWithDiscount(ctrl);
+		const unavailable = {
+			invoke: async () => ({
+				ok: false as const,
+				failure: {
+					code: "CAPABILITY_UNAVAILABLE" as const,
+					capability: "tax.quote",
+					version: "1.0.0",
+				},
+			}),
+		} satisfies CapabilityInvoker;
 
-		const result = await recalculateTax(session, ctrl, undefined);
-		expect(result).toBe(session);
+		const result = await recalculateTax(session, ctrl, unavailable);
+		expect(result).toBeNull();
 	});
 
 	it("returns original session when no shipping address", async () => {
@@ -141,7 +170,7 @@ describe("recalculateTax", () => {
 			total: 4000,
 			lineItems: sampleLineItems,
 		});
-		const taxCtrl = createMockTaxController(0.1);
+		const taxCtrl = createMockTaxCapabilities(0.1);
 
 		const result = await recalculateTax(session, ctrl, taxCtrl);
 		expect(result).toBe(session);
@@ -151,12 +180,12 @@ describe("recalculateTax", () => {
 	it("calculates tax on full line item amounts when no discount", async () => {
 		const ctrl = createCheckoutController(createMockDataService());
 		const session = await createSessionWithDiscount(ctrl);
-		const taxCtrl = createMockTaxController(0.1);
+		const taxCtrl = createMockTaxCapabilities(0.1);
 
 		const result = await recalculateTax(session, ctrl, taxCtrl);
 
 		// No discount → full amounts: p1=2000, p2=2000 → subtotal 4000 → tax 400
-		expect(result.taxAmount).toBe(400);
+		expect(result?.taxAmount).toBe(400);
 		expect(taxCtrl._calls[0].lineItems).toEqual([
 			{ productId: "p1", amount: 2000, quantity: 2 },
 			{ productId: "p2", amount: 2000, quantity: 1 },
@@ -169,12 +198,12 @@ describe("recalculateTax", () => {
 		const session = await createSessionWithDiscount(ctrl, {
 			discountAmount: 1000,
 		});
-		const taxCtrl = createMockTaxController(0.1);
+		const taxCtrl = createMockTaxCapabilities(0.1);
 
 		const result = await recalculateTax(session, ctrl, taxCtrl);
 
 		// 25% off: p1=2000*0.75=1500, p2=2000*0.75=1500 → subtotal 3000 → tax 300
-		expect(result.taxAmount).toBe(300);
+		expect(result?.taxAmount).toBe(300);
 		expect(taxCtrl._calls[0].lineItems).toEqual([
 			{ productId: "p1", amount: 1500, quantity: 2 },
 			{ productId: "p2", amount: 1500, quantity: 1 },
@@ -187,12 +216,12 @@ describe("recalculateTax", () => {
 		const session = await createSessionWithDiscount(ctrl, {
 			discountAmount: 2000,
 		});
-		const taxCtrl = createMockTaxController(0.1);
+		const taxCtrl = createMockTaxCapabilities(0.1);
 
 		const result = await recalculateTax(session, ctrl, taxCtrl);
 
 		// 50% off: p1=1000, p2=1000 → subtotal 2000 → tax 200
-		expect(result.taxAmount).toBe(200);
+		expect(result?.taxAmount).toBe(200);
 		expect(taxCtrl._calls[0].lineItems).toEqual([
 			{ productId: "p1", amount: 1000, quantity: 2 },
 			{ productId: "p2", amount: 1000, quantity: 1 },
@@ -204,12 +233,12 @@ describe("recalculateTax", () => {
 		const session = await createSessionWithDiscount(ctrl, {
 			discountAmount: 4000,
 		});
-		const taxCtrl = createMockTaxController(0.1);
+		const taxCtrl = createMockTaxCapabilities(0.1);
 
 		const result = await recalculateTax(session, ctrl, taxCtrl);
 
 		// 100% off → all amounts 0 → tax 0
-		expect(result.taxAmount).toBe(0);
+		expect(result?.taxAmount).toBe(0);
 		expect(taxCtrl._calls[0].lineItems).toEqual([
 			{ productId: "p1", amount: 0, quantity: 2 },
 			{ productId: "p2", amount: 0, quantity: 1 },
@@ -222,14 +251,14 @@ describe("recalculateTax", () => {
 			discountAmount: 1000,
 			shippingAmount: 500,
 		});
-		const taxCtrl = createMockTaxController(0.1);
+		const taxCtrl = createMockTaxCapabilities(0.1);
 
 		const result = await recalculateTax(session, ctrl, taxCtrl);
 
 		// subtotal=4000, tax=300, shipping=500, discount=1000
 		// total = 4000 + 300 + 500 - 1000 = 3800
-		expect(result.taxAmount).toBe(300);
-		expect(result.total).toBe(3800);
+		expect(result?.taxAmount).toBe(300);
+		expect(result?.total).toBe(3800);
 	});
 
 	it("passes shipping amount and customerId to tax controller", async () => {
@@ -242,7 +271,7 @@ describe("recalculateTax", () => {
 			shippingAmount: 800,
 			customerId: "cust-789",
 		});
-		const taxCtrl = createMockTaxController(0.1);
+		const taxCtrl = createMockTaxCapabilities(0.1);
 
 		await recalculateTax(session, ctrl, taxCtrl);
 
@@ -258,15 +287,15 @@ describe("recalculateTax", () => {
 describe("apply/remove discount tax recalculation flow", () => {
 	it("tax decreases when discount is applied", async () => {
 		const ctrl = createCheckoutController(createMockDataService());
-		const taxCtrl = createMockTaxController(0.1);
+		const taxCtrl = createMockTaxCapabilities(0.1);
 
 		// Create session with tax already calculated (no discount)
 		const session = await createSessionWithDiscount(ctrl);
 		const withTax = await recalculateTax(session, ctrl, taxCtrl);
-		expect(withTax.taxAmount).toBe(400); // 10% of 4000
+		expect(withTax?.taxAmount).toBe(400); // 10% of 4000
 
 		// Apply 25% discount
-		const discounted = await ctrl.applyDiscount(withTax.id, {
+		const discounted = await ctrl.applyDiscount(withTax?.id ?? "", {
 			code: "SAVE25",
 			discountAmount: 1000,
 			freeShipping: false,
@@ -280,22 +309,22 @@ describe("apply/remove discount tax recalculation flow", () => {
 		);
 
 		// Tax should be 10% of 3000 (post-discount) = 300
-		expect(afterDiscount.taxAmount).toBe(300);
+		expect(afterDiscount?.taxAmount).toBe(300);
 	});
 
 	it("tax restores when discount is removed", async () => {
 		const ctrl = createCheckoutController(createMockDataService());
-		const taxCtrl = createMockTaxController(0.1);
+		const taxCtrl = createMockTaxCapabilities(0.1);
 
 		// Create session, apply discount, calculate tax
 		const session = await createSessionWithDiscount(ctrl, {
 			discountAmount: 1000,
 		});
 		const withDiscountTax = await recalculateTax(session, ctrl, taxCtrl);
-		expect(withDiscountTax.taxAmount).toBe(300); // 10% of 3000
+		expect(withDiscountTax?.taxAmount).toBe(300); // 10% of 3000
 
 		// Remove discount
-		const noDiscount = await ctrl.removeDiscount(withDiscountTax.id);
+		const noDiscount = await ctrl.removeDiscount(withDiscountTax?.id ?? "");
 
 		// Recalculate tax (simulates what the endpoint now does)
 		const afterRemove = await recalculateTax(
@@ -305,12 +334,12 @@ describe("apply/remove discount tax recalculation flow", () => {
 		);
 
 		// Tax should be restored: 10% of 4000 = 400
-		expect(afterRemove.taxAmount).toBe(400);
+		expect(afterRemove?.taxAmount).toBe(400);
 	});
 
 	it("total is correct through full apply-tax-remove-tax cycle", async () => {
 		const ctrl = createCheckoutController(createMockDataService());
-		const taxCtrl = createMockTaxController(0.1);
+		const taxCtrl = createMockTaxCapabilities(0.1);
 
 		// 1. Create session: subtotal=4000, shipping=500
 		const session = await createSessionWithDiscount(ctrl, {
@@ -319,10 +348,10 @@ describe("apply/remove discount tax recalculation flow", () => {
 
 		// 2. Initial tax: 10% of 4000 = 400
 		const step1 = await recalculateTax(session, ctrl, taxCtrl);
-		expect(step1.total).toBe(4900); // 4000 + 400 + 500
+		expect(step1?.total).toBe(4900); // 4000 + 400 + 500
 
 		// 3. Apply $500 discount
-		const discounted = await ctrl.applyDiscount(step1.id, {
+		const discounted = await ctrl.applyDiscount(step1?.id ?? "", {
 			code: "SAVE5",
 			discountAmount: 500,
 			freeShipping: false,
@@ -334,25 +363,25 @@ describe("apply/remove discount tax recalculation flow", () => {
 			ctrl,
 			taxCtrl,
 		);
-		expect(step2.taxAmount).toBe(350);
+		expect(step2?.taxAmount).toBe(350);
 		// total = 4000 + 350 + 500 - 500 = 4350
-		expect(step2.total).toBe(4350);
+		expect(step2?.total).toBe(4350);
 
 		// 5. Remove discount
-		const removed = await ctrl.removeDiscount(step2.id);
+		const removed = await ctrl.removeDiscount(step2?.id ?? "");
 		const step3 = await recalculateTax(
 			removed as CheckoutSession,
 			ctrl,
 			taxCtrl,
 		);
 		// Back to original: tax=400, total=4900
-		expect(step3.taxAmount).toBe(400);
-		expect(step3.total).toBe(4900);
+		expect(step3?.taxAmount).toBe(400);
+		expect(step3?.total).toBe(4900);
 	});
 
 	it("free shipping discount recalculates tax with zero shipping", async () => {
 		const ctrl = createCheckoutController(createMockDataService());
-		const taxCtrl = createMockTaxController(0.1);
+		const taxCtrl = createMockTaxCapabilities(0.1);
 
 		const session = await createSessionWithDiscount(ctrl, {
 			shippingAmount: 500,
@@ -360,7 +389,7 @@ describe("apply/remove discount tax recalculation flow", () => {
 		const withTax = await recalculateTax(session, ctrl, taxCtrl);
 
 		// Apply free shipping discount
-		const discounted = await ctrl.applyDiscount(withTax.id, {
+		const discounted = await ctrl.applyDiscount(withTax?.id ?? "", {
 			code: "FREESHIP",
 			discountAmount: 0,
 			freeShipping: true,
@@ -373,9 +402,9 @@ describe("apply/remove discount tax recalculation flow", () => {
 		);
 
 		// Shipping set to 0 by freeShipping flag
-		expect(afterDiscount.shippingAmount).toBe(0);
+		expect(afterDiscount?.shippingAmount).toBe(0);
 		// Tax unchanged (no discount amount, just free shipping)
-		expect(afterDiscount.taxAmount).toBe(400);
+		expect(afterDiscount?.taxAmount).toBe(400);
 		// Shipping amount passed to tax controller should be 0
 		const lastCall = taxCtrl._calls[taxCtrl._calls.length - 1];
 		expect(lastCall.shippingAmount).toBe(0);

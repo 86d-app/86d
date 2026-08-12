@@ -1,5 +1,5 @@
 import { createStoreEndpoint, z } from "@86d-app/core";
-import type { CheckoutController, TaxCalculateController } from "../../service";
+import type { CheckoutController } from "../../service";
 import { recalculateTax } from "./recalculate-tax";
 
 export const removeDiscount = createStoreEndpoint(
@@ -27,10 +27,18 @@ export const removeDiscount = createStoreEndpoint(
 		}
 
 		// Recalculate tax now that discount is removed (taxable amount restored)
-		const taxController = ctx.context.controllers.tax as unknown as
-			| TaxCalculateController
-			| undefined;
-		session = await recalculateTax(session, controller, taxController);
+		session = await recalculateTax(
+			session,
+			controller,
+			ctx.context.capabilities,
+		);
+		if (!session) {
+			return {
+				code: "CHECKOUT_TAX_UNAVAILABLE",
+				error: "An authoritative tax decision is unavailable.",
+				status: 503,
+			};
+		}
 
 		return { session };
 	},

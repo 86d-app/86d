@@ -1,4 +1,7 @@
-import { createMockDataService } from "@86d-app/core/test-utils";
+import {
+	createMockDataService,
+	createMockModuleContext,
+} from "@86d-app/core/test-utils";
 import { beforeEach, describe, expect, it } from "vitest";
 import orders from "../index";
 import type { CreateOrderParams } from "../service";
@@ -36,14 +39,7 @@ describe("orders module — controller key contract", () => {
 	it("registers its controller as 'order' (singular)", async () => {
 		const mod = orders();
 		const data = createMockDataService();
-		const result = await mod.init?.({
-			data,
-			modules: [],
-			options: {},
-			session: null,
-			controllers: {},
-			storeId: "test",
-		});
+		const result = await mod.init?.(createMockModuleContext({ data }));
 
 		expect(result?.controllers).toHaveProperty("order");
 		expect(result?.controllers).not.toHaveProperty("orders");

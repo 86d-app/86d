@@ -1,6 +1,7 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
 import { createAdminEndpointsWithSettings } from "./admin/endpoints";
 import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
+import { createTaxQuoteProvider } from "./capabilities";
 import { taxSchema } from "./schema";
 import { createTaxController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints";
@@ -47,6 +48,14 @@ export default function tax(options?: TaxOptions): Module {
 		id: "tax",
 		version: "0.0.1",
 		schema: taxSchema,
+		capabilities: {
+			provides: [
+				createTaxQuoteProvider({
+					taxjarApiKey: options?.taxjarApiKey,
+					taxjarSandbox: options?.taxjarSandbox,
+				}),
+			],
+		},
 		exports: {
 			read: [
 				"taxRate",

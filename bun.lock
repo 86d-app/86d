@@ -366,7 +366,6 @@
       "version": "0.0.41",
       "dependencies": {
         "@86d-app/core": "workspace:*",
-        "@86d-app/payments": "workspace:*",
       },
       "devDependencies": {
         "@biomejs/biome": "catalog:",
@@ -982,7 +981,6 @@
       "version": "0.0.41",
       "dependencies": {
         "@86d-app/core": "workspace:*",
-        "@86d-app/payments": "workspace:*",
       },
       "devDependencies": {
         "@biomejs/biome": "catalog:",
@@ -1355,7 +1353,6 @@
       "version": "0.0.41",
       "dependencies": {
         "@86d-app/core": "workspace:*",
-        "@86d-app/payments": "workspace:*",
       },
       "devDependencies": {
         "@biomejs/biome": "catalog:",
@@ -1410,7 +1407,6 @@
       "version": "0.0.41",
       "dependencies": {
         "@86d-app/core": "workspace:*",
-        "@86d-app/payments": "workspace:*",
       },
       "devDependencies": {
         "@biomejs/biome": "catalog:",

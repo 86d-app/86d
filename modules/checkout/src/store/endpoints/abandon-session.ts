@@ -1,9 +1,10 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
-import type {
-	CheckoutController,
-	InventoryCheckController,
-	PaymentProcessController,
-} from "../../service";
+import {
+	createStoreEndpoint,
+	inventoryCheckoutCapability,
+	paymentCheckoutCapability,
+	z,
+} from "@86d-app/core";
+import type { CheckoutController } from "../../service";
 
 export const abandonSession = createStoreEndpoint(
 	"/checkout/sessions/:id/abandon",
@@ -33,18 +34,24 @@ export const abandonSession = createStoreEndpoint(
 		}
 
 		// Release inventory reservations if stock was reserved
-		if (wasProcessing) {
-			const inventoryController = ctx.context.controllers
-				.inventory as unknown as InventoryCheckController | undefined;
-
-			if (inventoryController) {
-				const lineItems = await controller.getLineItems(ctx.params.id);
-				for (const item of lineItems) {
-					await inventoryController.release({
+		if (wasProcessing && ctx.context.modules.includes("inventory")) {
+			const lineItems = await controller.getLineItems(ctx.params.id);
+			for (const item of lineItems) {
+				const released = await ctx.context.capabilities.invoke(
+					inventoryCheckoutCapability,
+					{
+						operation: "release",
 						productId: item.productId,
-						variantId: item.variantId,
+						...(item.variantId ? { variantId: item.variantId } : {}),
 						quantity: item.quantity,
-					});
+					},
+				);
+				if (!released.ok) {
+					return {
+						code: "CHECKOUT_INVENTORY_UNAVAILABLE",
+						error: "Inventory reservations could not be released.",
+						status: 503,
+					};
 				}
 			}
 		}
@@ -52,15 +59,18 @@ export const abandonSession = createStoreEndpoint(
 		// Cancel payment intent if one was created
 		if (
 			existing.paymentIntentId &&
-			existing.paymentIntentId !== "no_payment_required" &&
-			!existing.paymentIntentId.startsWith("demo_")
+			existing.paymentIntentId !== "no_payment_required"
 		) {
-			const paymentController = ctx.context.controllers.payments as unknown as
-				| PaymentProcessController
-				| undefined;
-
-			if (paymentController) {
-				await paymentController.cancelIntent(existing.paymentIntentId);
+			const cancelled = await ctx.context.capabilities.invoke(
+				paymentCheckoutCapability,
+				{ operation: "cancel", intentId: existing.paymentIntentId },
+			);
+			if (!cancelled.ok) {
+				return {
+					code: "CHECKOUT_PAYMENT_UNAVAILABLE",
+					error: "The checkout payment could not be cancelled.",
+					status: 503,
+				};
 			}
 		}
 

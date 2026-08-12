@@ -1,5 +1,17 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
+import {
+	acceptCapability,
+	customerContactResolveCapability,
+	inventoryCheckoutCapability,
+	paymentIntentCapability,
+	productResolveCapability,
+} from "@86d-app/core";
 import { adminEndpoints } from "./admin/endpoints";
+import {
+	orderCreateProvider,
+	orderCustomerAuthorizeProvider,
+	orderPurchaseVerifyProvider,
+} from "./capabilities";
 import { ordersSchema } from "./schema";
 import { createOrderController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints";
@@ -78,6 +90,25 @@ export default function orders(options?: OrdersOptions): Module {
 				"return.rejected",
 				"return.refunded",
 				"return.completed",
+			],
+		},
+		capabilities: {
+			provides: [
+				orderCreateProvider,
+				orderCustomerAuthorizeProvider,
+				orderPurchaseVerifyProvider,
+			],
+			accepts: [
+				acceptCapability(productResolveCapability, { optional: true }),
+				acceptCapability(paymentIntentCapability, {
+					operations: ["list", "refund"],
+					optional: true,
+				}),
+				acceptCapability(inventoryCheckoutCapability, {
+					operations: ["release"],
+					optional: true,
+				}),
+				acceptCapability(customerContactResolveCapability, { optional: true }),
 			],
 		},
 

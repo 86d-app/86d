@@ -1,8 +1,9 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
-import type {
-	CheckoutController,
-	StoreCreditCheckController,
-} from "../../service";
+import {
+	createStoreEndpoint,
+	storeCreditCheckoutCapability,
+	z,
+} from "@86d-app/core";
+import type { CheckoutController } from "../../service";
 
 export const applyStoreCredit = createStoreEndpoint(
 	"/checkout/sessions/:id/store-credit",
@@ -29,26 +30,39 @@ export const applyStoreCredit = createStoreEndpoint(
 			return { error: "Checkout session not found", status: 404 };
 		}
 
-		const storeCreditsController = ctx.context.controllers
-			.storeCredits as unknown as StoreCreditCheckController | undefined;
-
-		let storeCreditAmount = 0;
-
-		if (storeCreditsController) {
-			const balance = await storeCreditsController.getBalance(userId);
-			if (balance <= 0) {
-				return { error: "No store credit balance available", status: 400 };
-			}
-
-			// Cap the store credit amount to the remaining total after discounts and gift cards
-			const remainingTotal =
-				session.subtotal +
-				session.taxAmount +
-				session.shippingAmount -
-				session.discountAmount -
-				session.giftCardAmount;
-			storeCreditAmount = Math.min(balance, Math.max(0, remainingTotal));
+		const result = await ctx.context.capabilities.invoke(
+			storeCreditCheckoutCapability,
+			{ operation: "balance", customerId: userId },
+		);
+		if (!result.ok) {
+			return {
+				code: "CHECKOUT_STORE_CREDIT_UNAVAILABLE",
+				error: "An authoritative Store credit decision is unavailable.",
+				status: 503,
+			};
 		}
+		if (result.decision.operation !== "balance") {
+			return {
+				code: "CHECKOUT_STORE_CREDIT_UNAVAILABLE",
+				error: "An authoritative Store credit decision is unavailable.",
+				status: 503,
+			};
+		}
+		if (result.decision.balance <= 0) {
+			return { error: "No store credit balance available", status: 400 };
+		}
+
+		// Cap the store credit amount to the remaining total after discounts and gift cards
+		const remainingTotal =
+			session.subtotal +
+			session.taxAmount +
+			session.shippingAmount -
+			session.discountAmount -
+			session.giftCardAmount;
+		const storeCreditAmount = Math.min(
+			result.decision.balance,
+			Math.max(0, remainingTotal),
+		);
 
 		const updated = await checkoutController.applyStoreCredit(ctx.params.id, {
 			storeCreditAmount,

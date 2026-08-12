@@ -1,5 +1,6 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
 import { adminEndpoints } from "./admin/endpoints";
+import { abandonedCartRecoveryResolveProvider } from "./capabilities";
 import { abandonedCartSchema } from "./schema";
 import { createAbandonedCartController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints";
@@ -28,6 +29,7 @@ export default function abandonedCarts(options?: AbandonedCartOptions): Module {
 		id: "abandoned-carts",
 		version: "0.0.1",
 		schema: abandonedCartSchema,
+		capabilities: { provides: [abandonedCartRecoveryResolveProvider] },
 		requires: {
 			cart: { read: ["cartItems", "cartTotal"] },
 			customers: { read: ["customerEmail"] },

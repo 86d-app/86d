@@ -1,4 +1,8 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
+import {
+	createStoreEndpoint,
+	productResolveCapability,
+	z,
+} from "@86d-app/core";
 import type { OrderController } from "../../service";
 
 export const reorder = createStoreEndpoint(
@@ -25,21 +29,22 @@ export const reorder = createStoreEndpoint(
 			return { error: "No items to reorder", status: 422 };
 		}
 
-		// Enrich items with product slug and image from the products module
-		const productsData = ctx.context._dataRegistry?.get("products");
 		const enrichedItems = await Promise.all(
 			items.map(async (item) => {
 				let slug: string | undefined;
 				let image: string | undefined;
-				if (productsData) {
-					const product = (await productsData.get(
-						"product",
-						item.productId,
-					)) as { slug?: string; images?: string[] } | null;
-					if (product) {
-						slug = product.slug;
-						image = product.images?.[0];
-					}
+				const resolved = await ctx.context.capabilities.invoke(
+					productResolveCapability,
+					{
+						productId: item.productId,
+						...(item.variantId ? { variantId: item.variantId } : {}),
+					},
+				);
+				if (resolved.ok) {
+					slug = resolved.decision.product.slug;
+					image =
+						resolved.decision.variant?.images[0] ??
+						resolved.decision.product.images[0];
 				}
 				return {
 					...item,

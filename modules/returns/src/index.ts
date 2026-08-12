@@ -1,4 +1,9 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
+import {
+	acceptCapability,
+	inventoryCheckoutCapability,
+	orderCustomerAuthorizeCapability,
+} from "@86d-app/core";
 import { adminEndpoints } from "./admin/endpoints";
 import { returnsSchema } from "./schema";
 import { createReturnController } from "./service-impl";
@@ -41,6 +46,15 @@ export default function returns(options?: ReturnsOptions): Module {
 		id: "returns",
 		version: "0.0.1",
 		schema: returnsSchema,
+		capabilities: {
+			accepts: [
+				acceptCapability(orderCustomerAuthorizeCapability, { optional: true }),
+				acceptCapability(inventoryCheckoutCapability, {
+					operations: ["adjust"],
+					optional: true,
+				}),
+			],
+		},
 		exports: {
 			read: ["returnStatus", "returnRefundAmount"],
 		},

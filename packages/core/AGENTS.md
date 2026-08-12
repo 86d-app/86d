@@ -1,6 +1,6 @@
 # Core
 
-Module system foundation for 86d. Defines how modules declare endpoints, adapters, controllers, and client hooks.
+Module system foundation for 86d. Defines how modules declare endpoints, typed capabilities, adapters, local controllers, and client hooks.
 
 ## Structure
 
@@ -8,6 +8,8 @@ Module system foundation for 86d. Defines how modules declare endpoints, adapter
 src/
   index.ts          Main exports (adapters, routers, types)
   api.ts            Endpoint creation via better-call
+  capabilities.ts   Typed capability definition/provider/invocation contracts
+  commerce-capabilities.ts Pure versioned schemas shared by owners and consumers
   adapters.ts       Adapter pattern definitions
   client/
     index.ts        Auto-generated React hooks from module endpoints
@@ -24,6 +26,7 @@ src/
 - `Module` interface — the contract every module implements
 - `ModuleContext` — runtime context passed to module init
 - `ModuleDataService` — universal data access (get, findMany, upsert, delete)
+- `defineCapability`, `provideCapability`, `acceptCapability` — versioned, runtime-validated synchronous Module decisions
 - Client hooks auto-derive from endpoints: GET becomes query, POST/PUT/DELETE becomes mutation
 - `sanitizeText(input)` — strip all HTML tags and normalize whitespace (for plain-text fields)
 - `sanitizeHtml(input)` — strip dangerous HTML (script, style, iframe, event handlers, javascript: URLs) while preserving safe markup (for rich-text content rendered via `dangerouslySetInnerHTML`)
@@ -39,28 +42,28 @@ This package defines the sandbox that modules operate within. Modules depend ONL
 
 The runtime (`packages/runtime`) implements these interfaces against the real platform (Prisma, env, etc.), but modules never see that layer.
 
-## Inter-module contracts
+## Inter-module capabilities
 
-Modules access each other's data through explicit, bilateral permission contracts:
+Modules never receive another Module's data service, controller, or configuration. Immediate cross-Module decisions use a versioned capability declared by both sides:
 
-**Provider side** — a module declares what fields it exposes and at what access level:
 ```ts
-exports: {
-  read: ["customerName", "customerEmail", "customerPhone"],
-  readWrite: ["customerMetadata"]
-}
+const availability = defineCapability({
+  name: "inventory.availability",
+  version: "1.0.0",
+  owner: "inventory",
+  request: z.object({ sku: z.string() }),
+  decision: z.object({ available: z.boolean() }),
+  failure: z.object({ code: z.literal("not_found") }),
+})
+
+// Owner Module metadata
+provides: [provideCapability(availability, handler)]
+
+// Consumer Module metadata
+accepts: [acceptCapability(availability)]
 ```
 
-**Consumer side** — a module declares what it requires from other modules:
-```ts
-requires: {
-  "@86d-app/customers": {
-    read: ["customerName", "customerEmail"]
-  }
-}
-```
-
-The runtime validates at init that every consumer requirement is a subset of what the provider permits. Read vs readWrite is enforced. No module can access fields another module hasn't explicitly exposed. Contracts are part of the public API — changing exposed fields is a semver-breaking change.
+For discriminated multi-operation contracts, consumers pass the smallest `operations` allowlist to `acceptCapability`. The runtime resolves exactly one compatible owner before initialization effects, rejects operations outside that consumer grant, and validates the request, decision, and failure at invocation. A provider is invoked only with its own `ModuleDataService`. The older `exports`/`requires` field declarations remain compatibility metadata during migration; they do not grant cross-Module data access.
 
 ## Admin page declarations
 

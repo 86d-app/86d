@@ -1,10 +1,6 @@
 import { createStoreEndpoint, z } from "@86d-app/core";
 import { performCancellationEffects } from "../../cancel-effects";
-import type {
-	InventoryReleaseController,
-	OrderController,
-	PaymentRefundController,
-} from "../../service";
+import type { OrderController } from "../../service";
 
 export const cancelMyOrder = createStoreEndpoint(
 	"/orders/me/:id/cancel",
@@ -34,18 +30,10 @@ export const cancelMyOrder = createStoreEndpoint(
 		}
 
 		// Perform cancellation side effects: refund payment, release inventory
-		const paymentController = ctx.context.controllers.payments as unknown as
-			| PaymentRefundController
-			| undefined;
-		const inventoryController = ctx.context.controllers.inventory as unknown as
-			| InventoryReleaseController
-			| undefined;
-
 		await performCancellationEffects({
 			order,
 			orderController: controller,
-			paymentController,
-			inventoryController,
+			capabilities: ctx.context.capabilities,
 			cancelledBy: "customer",
 		});
 

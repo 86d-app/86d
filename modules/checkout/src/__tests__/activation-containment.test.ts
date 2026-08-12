@@ -24,20 +24,60 @@ const shippingAddress = {
 	country: "US",
 };
 
-function productRegistry() {
-	return new Map([
-		[
-			"products",
-			{
-				get: vi.fn().mockResolvedValue({
-					id: "product-1",
-					name: "Product",
-					price: 1250,
-					status: "active",
-				}),
-			},
-		],
-	]);
+function capabilityInvoker(options?: {
+	product?:
+		| { ok: false; failure: { code: string } }
+		| {
+				ok: true;
+				decision: {
+					product: {
+						id: string;
+						name: string;
+						slug: string;
+						status: "active";
+						price: number;
+						sku?: string;
+						images: string[];
+					};
+					variant?: {
+						id: string;
+						productId: string;
+						name: string;
+						price: number;
+						images: string[];
+					};
+				};
+		  };
+}) {
+	return {
+		invoke: vi.fn(async (definition: { name: string }) => {
+			if (definition.name === "catalog.product.resolve") {
+				return (
+					options?.product ?? {
+						ok: true,
+						decision: {
+							product: {
+								id: "product-1",
+								name: "Product",
+								slug: "product",
+								status: "active",
+								price: 1250,
+								images: [],
+							},
+						},
+					}
+				);
+			}
+			return {
+				ok: false,
+				failure: {
+					code: "CAPABILITY_UNAVAILABLE",
+					capability: definition.name,
+					version: "1.0.0",
+				},
+			};
+		}),
+	};
 }
 
 describe("checkout activation containment", () => {
@@ -49,7 +89,15 @@ describe("checkout activation containment", () => {
 				total: 2,
 				lineItems: [lineItem],
 			},
-			context: { controllers: { checkout: { create } } },
+			context: {
+				controllers: { checkout: { create } },
+				capabilities: capabilityInvoker({
+					product: {
+						ok: false,
+						failure: { code: "CAPABILITY_UNAVAILABLE" },
+					},
+				}),
+			},
 		});
 
 		expect(result).toMatchObject({
@@ -61,21 +109,6 @@ describe("checkout activation containment", () => {
 
 	it("derives product identity and price from authoritative Store data", async () => {
 		const create = vi.fn(async (input) => ({ id: "session-1", ...input }));
-		const productsData = {
-			get: vi.fn(async (entity: string) => {
-				if (entity === "product") {
-					return {
-						id: "product-1",
-						name: "Authoritative Product",
-						price: 1250,
-						sku: "REAL-SKU",
-						status: "active",
-					};
-				}
-				return null;
-			}),
-		};
-
 		const result = await endpoint("/checkout/sessions")({
 			body: {
 				subtotal: 2,
@@ -84,7 +117,22 @@ describe("checkout activation containment", () => {
 			},
 			context: {
 				controllers: { checkout: { create } },
-				_dataRegistry: new Map([["products", productsData]]),
+				capabilities: capabilityInvoker({
+					product: {
+						ok: true,
+						decision: {
+							product: {
+								id: "product-1",
+								name: "Authoritative Product",
+								slug: "authoritative-product",
+								price: 1250,
+								sku: "REAL-SKU",
+								status: "active",
+								images: [],
+							},
+						},
+					},
+				}),
 			},
 		});
 
@@ -114,18 +162,9 @@ describe("checkout activation containment", () => {
 			},
 			context: {
 				controllers: { checkout: { create } },
-				_dataRegistry: new Map([
-					[
-						"products",
-						{
-							get: vi.fn().mockResolvedValue({
-								id: "product-1",
-								name: "Product",
-								status: "active",
-							}),
-						},
-					],
-				]),
+				capabilities: capabilityInvoker({
+					product: { ok: false, failure: { code: "invalid_price" } },
+				}),
 			},
 		});
 
@@ -138,25 +177,6 @@ describe("checkout activation containment", () => {
 
 	it("rejects a variant that does not belong to the selected product", async () => {
 		const create = vi.fn();
-		const productsData = {
-			get: vi.fn(async (entity: string) => {
-				if (entity === "product") {
-					return {
-						id: "product-1",
-						name: "Product",
-						price: 1250,
-						status: "active",
-					};
-				}
-				return {
-					id: "variant-1",
-					productId: "product-2",
-					name: "Other Product Variant",
-					price: 1500,
-				};
-			}),
-		};
-
 		const result = await endpoint("/checkout/sessions")({
 			body: {
 				subtotal: 2,
@@ -165,7 +185,9 @@ describe("checkout activation containment", () => {
 			},
 			context: {
 				controllers: { checkout: { create } },
-				_dataRegistry: new Map([["products", productsData]]),
+				capabilities: capabilityInvoker({
+					product: { ok: false, failure: { code: "variant_mismatch" } },
+				}),
 			},
 		});
 
@@ -175,15 +197,6 @@ describe("checkout activation containment", () => {
 
 	it("rejects caller-supplied tax and shipping amounts before persistence", async () => {
 		const create = vi.fn();
-		const productsData = {
-			get: vi.fn().mockResolvedValue({
-				id: "product-1",
-				name: "Product",
-				price: 1250,
-				status: "active",
-			}),
-		};
-
 		const result = await endpoint("/checkout/sessions")({
 			body: {
 				subtotal: 2,
@@ -194,7 +207,6 @@ describe("checkout activation containment", () => {
 			},
 			context: {
 				controllers: { checkout: { create } },
-				_dataRegistry: new Map([["products", productsData]]),
 			},
 		});
 
@@ -258,7 +270,7 @@ describe("checkout activation containment", () => {
 			},
 			context: {
 				controllers: { checkout: { create } },
-				_dataRegistry: productRegistry(),
+				capabilities: capabilityInvoker(),
 			},
 		});
 
@@ -271,6 +283,7 @@ describe("checkout activation containment", () => {
 
 	it("does not report an empty shipping decision when the shipping service is missing", async () => {
 		const getLineItems = vi.fn();
+		const capabilities = capabilityInvoker();
 		const result = await endpoint("/checkout/sessions/:id/shipping-rates")({
 			params: { id: "session-1" },
 			context: {
@@ -278,11 +291,13 @@ describe("checkout activation containment", () => {
 					checkout: {
 						getById: vi.fn().mockResolvedValue({
 							id: "session-1",
+							subtotal: 2500,
 							shippingAddress,
 						}),
 						getLineItems,
 					},
 				},
+				capabilities,
 			},
 		});
 
@@ -291,6 +306,10 @@ describe("checkout activation containment", () => {
 			status: 503,
 		});
 		expect(getLineItems).not.toHaveBeenCalled();
+		expect(capabilities.invoke).toHaveBeenCalledWith(
+			expect.objectContaining({ name: "shipping.quote" }),
+			{ country: "US", orderAmount: 2500 },
+		);
 	});
 
 	it.each([

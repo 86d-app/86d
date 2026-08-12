@@ -15,11 +15,12 @@
  * ```
  */
 
+import type { CapabilityInvoker } from "./capabilities";
 import type {
+	ModuleConfig,
 	ModuleContext,
 	ModuleControllers,
 	ModuleDataService,
-	ModuleOptions,
 	Session,
 } from "./types/module";
 
@@ -171,13 +172,16 @@ export interface MockModuleContextOptions {
 	modules?: string[] | undefined;
 
 	/** Module options. Defaults to `{}`. */
-	options?: ModuleOptions | undefined;
+	options?: ModuleConfig | undefined;
 
 	/** Authenticated session. Defaults to `null`. */
 	session?: Session | null | undefined;
 
 	/** Controller registry. Defaults to `{}`. */
 	controllers?: ModuleControllers | undefined;
+
+	/** Capability invoker. Defaults to a bounded not-accepted failure. */
+	capabilities?: CapabilityInvoker | undefined;
 
 	/** Store ID. Defaults to `"test-store"`. */
 	storeId?: string | undefined;
@@ -211,6 +215,18 @@ export function createMockModuleContext(
 		options: opts.options ?? {},
 		session: opts.session ?? null,
 		controllers: opts.controllers ?? {},
+		capabilities: opts.capabilities ?? {
+			async invoke(definition) {
+				return {
+					ok: false,
+					failure: {
+						code: "CAPABILITY_NOT_ACCEPTED",
+						capability: definition.name,
+						version: definition.version,
+					},
+				};
+			},
+		},
 		storeId: opts.storeId ?? "test-store",
 	};
 }
