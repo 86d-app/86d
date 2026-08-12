@@ -146,6 +146,22 @@ export {
 	type ScopedEventEmitter,
 } from "./events";
 export {
+	type AnyDurableEventConsumer,
+	type AnyDurableEventDefinition,
+	consumeDurableEvent,
+	defineDurableEvent,
+	type DurableEventConsumer,
+	type DurableEventConsumerContext,
+	type DurableEventDefinition,
+	type DurableEventEnvelope,
+	type DurableEventInput,
+	durableEventKey,
+	type DurableEventPayload,
+	inventoryStockAdjustedV1,
+	type ModuleDataTransaction,
+	type ModuleTransactionRunner,
+} from "./durable-events";
+export {
 	formatPathConflicts,
 	type ModulePathConflict,
 	type ModulePathKind,

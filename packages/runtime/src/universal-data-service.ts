@@ -1,10 +1,40 @@
+import {
+	type AnyDurableEventDefinition,
+	type DurableEventEnvelope,
+	type DurableEventInput,
+	type ModuleDataTransaction,
+} from "@86d-app/core";
 import type { Prisma } from "@86d-app/core/prisma";
 
 export interface DataServiceConfig {
 	// biome-ignore lint/suspicious/noExplicitAny: PrismaClient at runtime
 	db: any;
 	storeId: string;
+	/** Logical Module package ID (for durable event source identity). */
 	moduleId: string;
+	/** Persisted Module UUID. Defaults to moduleId for migration compatibility. */
+	moduleDbId?: string | undefined;
+}
+
+type PrismaLikeTransaction = DataServiceConfig["db"];
+
+function boundedText(value: string, label: string, maximum: number): void {
+	if (value.length === 0 || value.length > maximum) {
+		throw new Error(`${label} must contain between 1 and ${maximum} characters.`);
+	}
+}
+
+function normalizeJson(value: unknown): unknown {
+	let serialized: string | undefined;
+	try {
+		serialized = JSON.stringify(value);
+	} catch {
+		throw new Error("Durable event payload must be JSON serializable.");
+	}
+	if (serialized === undefined || serialized.length > 262_144) {
+		throw new Error("Durable event payload must be bounded JSON.");
+	}
+	return JSON.parse(serialized) as unknown;
 }
 
 /**
@@ -39,6 +69,14 @@ export class UniversalDataService {
 		this.config = config;
 	}
 
+	private get moduleDbId(): string {
+		return this.config.moduleDbId ?? this.config.moduleId;
+	}
+
+	private scoped(db: PrismaLikeTransaction): UniversalDataService {
+		return new UniversalDataService({ ...this.config, db });
+	}
+
 	/**
 	 * Create or update an entity
 	 */
@@ -52,13 +90,13 @@ export class UniversalDataService {
 		const args = {
 			where: {
 				module_entity_unique: {
-					moduleId: this.config.moduleId,
+					moduleId: this.moduleDbId,
 					entityType,
 					entityId,
 				},
 			},
 			create: {
-				moduleId: this.config.moduleId,
+				moduleId: this.moduleDbId,
 				entityType,
 				entityId,
 				data,
@@ -80,7 +118,7 @@ export class UniversalDataService {
 		const args = {
 			where: {
 				module_entity_unique: {
-					moduleId: this.config.moduleId,
+					moduleId: this.moduleDbId,
 					entityType,
 					entityId,
 				},
@@ -110,7 +148,7 @@ export class UniversalDataService {
 	) {
 		// biome-ignore lint/suspicious/noExplicitAny: Prisma where clause built dynamically
 		const whereClause: Record<string, any> = {
-			moduleId: this.config.moduleId,
+			moduleId: this.moduleDbId,
 			entityType,
 		};
 
@@ -149,7 +187,7 @@ export class UniversalDataService {
 	async getChildren(parentInternalId: string) {
 		const args = {
 			where: {
-				moduleId: this.config.moduleId,
+				moduleId: this.moduleDbId,
 				parentId: parentInternalId,
 			},
 		} satisfies Prisma.ModuleDataFindManyArgs;
@@ -171,7 +209,7 @@ export class UniversalDataService {
 		const args = {
 			where: {
 				module_entity_unique: {
-					moduleId: this.config.moduleId,
+					moduleId: this.moduleDbId,
 					entityType,
 					entityId,
 				},
@@ -187,7 +225,7 @@ export class UniversalDataService {
 	async count(entityType: string, where?: Record<string, any>) {
 		// biome-ignore lint/suspicious/noExplicitAny: Prisma where clause built dynamically
 		const whereClause: Record<string, any> = {
-			moduleId: this.config.moduleId,
+			moduleId: this.moduleDbId,
 			entityType,
 		};
 
@@ -218,13 +256,13 @@ export class UniversalDataService {
 			({
 				where: {
 					module_entity_unique: {
-						moduleId: this.config.moduleId,
+						moduleId: this.moduleDbId,
 						entityType: entity.entityType,
 						entityId: entity.entityId,
 					},
 				},
 				create: {
-					moduleId: this.config.moduleId,
+					moduleId: this.moduleDbId,
 					entityType: entity.entityType,
 					entityId: entity.entityId,
 					data: entity.data,
@@ -240,5 +278,106 @@ export class UniversalDataService {
 		);
 
 		return this.config.db.$transaction(operations);
+	}
+
+	/**
+	 * Atomically commit owner-local state and validated durable events.
+	 * Aggregate sequences are allocated by locking a database counter row; callers
+	 * cannot guess or race a sequence.
+	 */
+	async transaction<T>(
+		work: (transaction: ModuleDataTransaction) => Promise<T>,
+	): Promise<T> {
+		return this.config.db.$transaction(async (db: PrismaLikeTransaction) => {
+			const ownerData = this.scoped(db);
+			const transaction: ModuleDataTransaction = Object.assign(ownerData, {
+				emit: <D extends AnyDurableEventDefinition>(
+					definition: D,
+					input: DurableEventInput<D>,
+				): Promise<DurableEventEnvelope<D>> =>
+					this.persistEvent(db, definition, input),
+			});
+			return work(transaction);
+		});
+	}
+
+	private async persistEvent<D extends AnyDurableEventDefinition>(
+		db: PrismaLikeTransaction,
+		definition: D,
+		input: DurableEventInput<D>,
+	): Promise<DurableEventEnvelope<D>> {
+		if (definition.owner !== this.config.moduleId) {
+			throw new Error(
+				`Durable event "${definition.name}" is owned by Module "${definition.owner}", not "${this.config.moduleId}".`,
+			);
+		}
+		boundedText(definition.name, "Durable event name", 200);
+		boundedText(input.aggregate.type, "Aggregate type", 100);
+		boundedText(input.aggregate.id, "Aggregate ID", 255);
+		if (!Number.isSafeInteger(definition.version) || definition.version < 1) {
+			throw new Error("Durable event version must be a positive integer.");
+		}
+		const payload = definition.payload.safeParse(input.payload);
+		if (!payload.success) {
+			throw new Error(`Durable event payload is invalid for ${definition.name}.`);
+		}
+		const normalizedPayload = normalizeJson(payload.data);
+		const normalized = definition.payload.safeParse(normalizedPayload);
+		if (!normalized.success) {
+			throw new Error(`Durable event payload is not stable JSON for ${definition.name}.`);
+		}
+		const eventId = input.id ?? crypto.randomUUID();
+		const occurredAt = input.occurredAt ?? new Date();
+		const sequenceRows = (await db.$queryRawUnsafe(
+			`INSERT INTO "ModuleEventSequence" (
+				"storeId", "sourceModule", "aggregateType", "aggregateId", "lastSequence"
+			) VALUES ($1::uuid, $2, $3, $4, 1)
+			ON CONFLICT ("storeId", "sourceModule", "aggregateType", "aggregateId")
+			DO UPDATE SET "lastSequence" = "ModuleEventSequence"."lastSequence" + 1
+			RETURNING "lastSequence" AS "sequence"`,
+			this.config.storeId,
+			this.config.moduleId,
+			input.aggregate.type,
+			input.aggregate.id,
+		)) as Array<{ sequence: bigint }>;
+		const sequence = sequenceRows[0]?.sequence;
+		if (
+			sequence === undefined ||
+			sequence < 1n ||
+			sequence > BigInt(Number.MAX_SAFE_INTEGER)
+		) {
+			throw new Error("Could not allocate a durable event sequence.");
+		}
+		const persisted = {
+			id: eventId,
+			eventType: definition.name,
+			schemaVersion: definition.version,
+			storeId: this.config.storeId,
+			sourceModule: this.config.moduleId,
+			moduleId: this.moduleDbId,
+			aggregateType: input.aggregate.type,
+			aggregateId: input.aggregate.id,
+			aggregateSequence: sequence,
+			occurredAt,
+			payload: normalized.data,
+			deliveryState: "pending",
+			attempts: 0,
+			nextAttemptAt: occurredAt,
+		};
+		await db.moduleOutboxEvent.create({ data: persisted });
+		return {
+			id: eventId,
+			name: definition.name,
+			version: definition.version,
+			storeId: this.config.storeId,
+			sourceModule: definition.owner,
+			aggregate: {
+				type: input.aggregate.type,
+				id: input.aggregate.id,
+				sequence: Number(sequence),
+			},
+			occurredAt,
+			payload: normalized.data as DurableEventEnvelope<D>["payload"],
+		};
 	}
 }

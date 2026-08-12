@@ -5,6 +5,11 @@ import type {
 	Middleware,
 } from "better-call";
 import type { CapabilityInvoker, ModuleCapabilities } from "../capabilities";
+import type {
+	AnyDurableEventConsumer,
+	AnyDurableEventDefinition,
+	ModuleTransactionRunner,
+} from "../durable-events";
 import type { EventHandler, ScopedEventEmitter } from "../events";
 import type { Awaitable, LiteralString, Primitive } from "./helper";
 import type { ModuleSchema } from "./schema";
@@ -370,6 +375,9 @@ export type ModuleContext<C extends ModuleControllers = ModuleControllers> = {
 
 	/** Versioned, runtime-validated decisions accepted by this Module. */
 	capabilities: CapabilityInvoker;
+
+	/** Owner-local atomic state and durable-event transaction seam. */
+	transactions?: ModuleTransactionRunner | undefined;
 
 	/**
 	 * Store ID for current context.
@@ -787,6 +795,12 @@ export type Module = {
 	events?: {
 		emits?: string[];
 		handles?: Record<string, EventHandler>;
+	};
+
+	/** Versioned durable event contracts. Unlike `events`, these use the outbox. */
+	durableEvents?: {
+		emits?: readonly AnyDurableEventDefinition[] | undefined;
+		handles?: readonly AnyDurableEventConsumer[] | undefined;
 	};
 
 	/**
