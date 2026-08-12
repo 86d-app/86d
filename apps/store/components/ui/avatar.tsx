@@ -8,16 +8,22 @@ import { cn } from "~/lib/utils";
 function Avatar({
 	className,
 	size = "default",
+	shape = "circle",
 	...props
 }: AvatarPrimitive.Root.Props & {
 	size?: "default" | "sm" | "lg";
+	/** `circle` for people; `rounded` for businesses and stores. */
+	shape?: "circle" | "rounded";
 }) {
 	return (
 		<AvatarPrimitive.Root
 			data-slot="avatar"
 			data-size={size}
+			data-shape={shape}
 			className={cn(
-				"group/avatar relative flex size-8 shrink-0 select-none rounded-full after:absolute after:inset-0 after:rounded-full after:border after:border-border after:mix-blend-darken data-[size=lg]:size-10 data-[size=sm]:size-6 dark:after:mix-blend-lighten",
+				"group/avatar relative flex size-8 shrink-0 select-none after:absolute after:inset-0 after:border after:border-border after:mix-blend-darken data-[size=lg]:size-10 data-[size=sm]:size-6 dark:after:mix-blend-lighten",
+				"data-[shape=circle]:rounded-full data-[shape=circle]:after:rounded-full",
+				"data-[shape=rounded]:rounded-lg data-[shape=rounded]:after:rounded-lg",
 				className,
 			)}
 			{...props}
@@ -30,7 +36,7 @@ function AvatarImage({ className, ...props }: AvatarPrimitive.Image.Props) {
 		<AvatarPrimitive.Image
 			data-slot="avatar-image"
 			className={cn(
-				"aspect-square size-full rounded-full object-cover",
+				"aspect-square size-full object-cover group-data-[shape=circle]/avatar:rounded-full group-data-[shape=rounded]/avatar:rounded-lg",
 				className,
 			)}
 			{...props}
@@ -46,7 +52,7 @@ function AvatarFallback({
 		<AvatarPrimitive.Fallback
 			data-slot="avatar-fallback"
 			className={cn(
-				"flex size-full items-center justify-center rounded-full bg-muted text-muted-foreground text-sm group-data-[size=sm]/avatar:text-xs",
+				"flex size-full items-center justify-center bg-muted text-muted-foreground text-sm group-data-[shape=circle]/avatar:rounded-full group-data-[shape=rounded]/avatar:rounded-lg group-data-[size=sm]/avatar:text-xs",
 				className,
 			)}
 			{...props}

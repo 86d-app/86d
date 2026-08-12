@@ -4,13 +4,17 @@
 model CommandExecution {
   id String @id @db.VarChar(255)
 
-  plane          String @db.VarChar(32)
-  commandName    String @db.VarChar(200)
-  commandVersion Int
-  actionLevel    String @db.VarChar(32)
-  idempotencyKey String @db.VarChar(200)
-  inputDigest    String @db.Char(64)
-  redactedInput  Json
+  plane                     String  @db.VarChar(32)
+  commandName               String  @db.VarChar(200)
+  commandVersion            Int
+  actionLevel               String  @db.VarChar(32)
+  idempotencyKey            String  @db.VarChar(200)
+  requestDigestVersion      Int     @default(1)
+  inputDigest               String  @db.Char(64)
+  commandBindingHashVersion Int?
+  commandBindingHash        String? @db.Char(64)
+  grantUse                  Json?
+  redactedInput             Json
 
   actorType String @db.VarChar(64)
   actorId   String @db.VarChar(255)
@@ -24,7 +28,7 @@ model CommandExecution {
   targetId   String @db.VarChar(255)
   target     Json
 
-  approvalId String?   @db.VarChar(255)
+  approvalId String?   @unique @db.VarChar(255)
   approval   Approval? @relation(fields: [approvalId], references: [id], onDelete: Restrict)
 
   confirmationId String?       @unique @db.VarChar(255)
@@ -40,15 +44,14 @@ model CommandExecution {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @default(now()) @updatedAt
 
-  workflows              Workflow[]
-  auditEvents            AuditEvent[]
-  standingPermissionUses StandingPermissionUseReservation[]
+  workflows             Workflow[]
+  auditEvents           AuditEvent[]
+  standingPermissionUse StandingPermissionUseReservation?
 
   @@unique([plane, actorType, actorId, targetType, targetId, commandName, commandVersion, idempotencyKey], map: "CommandExecution_scope_idempotency_key")
   @@index([actorType, actorId, createdAt])
   @@index([targetType, targetId, createdAt])
   @@index([status, leaseExpiresAt])
-  @@index([approvalId])
   @@map("CommandExecution")
 }
 
@@ -162,15 +165,21 @@ model WorkflowAttempt {
 }
 
 model ChangeSet {
-  id         String @id @db.VarChar(255)
-  version    Int
-  ownerPlane String @db.VarChar(32)
-  status     String @default("draft") @db.VarChar(32)
-  reviewHash String @db.Char(64)
+  id                   String @id @db.VarChar(255)
+  version              Int
+  changeSetHashVersion Int    @default(1)
+  ownerPlane           String @db.VarChar(32)
+  status               String @default("draft") @db.VarChar(32)
+  reviewHash           String @db.Char(64)
 
   targetType String @db.VarChar(64)
   targetId   String @db.VarChar(255)
   target     Json
+  proposal   Json
+
+  supersedesChangeSetId String?     @db.VarChar(255)
+  supersedes            ChangeSet?  @relation("ChangeSetLineage", fields: [supersedesChangeSetId], references: [id], onDelete: Restrict)
+  supersededBy          ChangeSet[] @relation("ChangeSetLineage")
 
   baseRevisions       Json
   affectedTargets     Json
@@ -191,6 +200,7 @@ model ChangeSet {
 
   @@index([ownerPlane, targetType, targetId, status])
   @@index([reviewHash])
+  @@index([supersedesChangeSetId])
   @@map("ChangeSet")
 }
 
@@ -212,7 +222,7 @@ model Approval {
   approvedAt    DateTime  @default(now())
   invalidatedAt DateTime?
 
-  commandExecutions CommandExecution[]
+  commandExecution CommandExecution?
 
   @@unique([changeSetId, reviewHash, actorType, actorId])
   @@index([actorType, actorId, approvedAt])
@@ -231,14 +241,17 @@ model Confirmation {
   targetId   String @db.VarChar(255)
   target     Json
 
-  bindingHash String    @db.Char(64)
-  nonceDigest String    @unique @db.Char(64)
-  disclosure  String    @db.Text
-  amount      Decimal?  @db.Decimal(65, 0)
-  currency    String?   @db.Char(3)
-  createdAt   DateTime  @default(now())
-  expiresAt   DateTime
-  consumedAt  DateTime?
+  commandName        String    @db.VarChar(200)
+  commandVersion     Int
+  bindingHashVersion Int
+  bindingHash        String    @db.Char(64)
+  nonceDigest        String    @unique @db.Char(64)
+  disclosure         String    @db.Text
+  amount             Decimal?  @db.Decimal(65, 0)
+  currency           String?   @db.Char(3)
+  createdAt          DateTime  @default(now())
+  expiresAt          DateTime
+  consumedAt         DateTime?
 
   commandExecution CommandExecution?
 
@@ -253,6 +266,10 @@ model StandingPermission {
   granteeType String @db.VarChar(64)
   granteeId   String @db.VarChar(255)
   grantee     Json
+
+  grantorType String @db.VarChar(64)
+  grantorId   String @db.VarChar(255)
+  grantor     Json
 
   authorityType String @db.VarChar(64)
   authorityId   String @db.VarChar(255)
@@ -287,14 +304,13 @@ model StandingPermissionUseReservation {
   commandExecutionId   String             @db.VarChar(255)
   commandExecution     CommandExecution   @relation(fields: [commandExecutionId], references: [id], onDelete: Restrict)
 
-  amount    Decimal  @db.Decimal(65, 0)
-  currency  String   @db.Char(3)
+  amount    Decimal? @db.Decimal(65, 0)
+  currency  String?  @db.Char(3)
   state     String   @default("reserved") @db.VarChar(32)
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  @@unique([standingPermissionId, commandExecutionId], map: "StandingPermissionUseReservation_permission_execution_key")
+  @@unique([commandExecutionId], map: "StandingPermissionUseReservation_commandExecutionId_key")
   @@index([standingPermissionId, state])
-  @@index([commandExecutionId])
   @@map("StandingPermissionUseReservation")
 }

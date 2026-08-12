@@ -113,7 +113,7 @@ describe("getStoreConfig", () => {
 		expect(config.name).toBe("Env Store");
 	});
 
-	it("uses template when valid UUID storeId but no apiKey", async () => {
+	it("uses the local template without a Control Plane call when no managed API key exists", async () => {
 		const configPath = join(TMP_DIR, "no-key-config.json");
 		writeFileSync(
 			configPath,
@@ -126,12 +126,14 @@ describe("getStoreConfig", () => {
 				variables: DEFAULT_CONFIG.variables,
 			}),
 		);
+		globalThis.fetch = vi.fn();
 
 		const config = await getStoreConfig({
 			storeId: VALID_UUID,
 			templatePath: configPath,
 		});
 		expect(config.name).toBe("Local Store");
+		expect(globalThis.fetch).not.toHaveBeenCalled();
 	});
 
 	it("falls back to template on API error when configured", async () => {

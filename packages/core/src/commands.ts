@@ -25,7 +25,7 @@ const digestSchema = z.string().regex(/^[a-f0-9]{64}$/);
 const dateTimeSchema = z.string().datetime();
 const permissionSchema = z.string().min(1).max(200);
 const currencySchema = z.string().regex(/^[A-Z]{3}$/);
-const minorAmountSchema = z.string().regex(/^\d+$/);
+const minorAmountSchema = z.string().regex(/^(?:0|[1-9]\d*)$/);
 
 export const authoritativePlaneSchema = z.enum([
 	"control_plane",
@@ -275,13 +275,26 @@ export const estimatedChargeSchema = z
 	})
 	.strict();
 
+export const changeSetProposalSchema = z
+	.object({
+		command: commandReferenceSchema,
+		target: targetReferenceSchema,
+		inputDigest: digestSchema,
+		opaqueDraftReference: identifierSchema.optional(),
+	})
+	.strict();
+
 export const changeSetSchema = z
 	.object({
 		id: identifierSchema,
 		version: versionSchema,
+		changeSetHashVersion: versionSchema,
 		ownerPlane: authoritativePlaneSchema,
 		status: z.enum(["draft", "approved", "conflicted", "applied", "failed"]),
 		reviewHash: digestSchema,
+		target: targetReferenceSchema,
+		proposal: changeSetProposalSchema,
+		supersedesChangeSetId: identifierSchema.optional(),
 		baseRevisions: z.array(baseRevisionSchema).min(1).max(250),
 		affectedTargets: z.array(targetReferenceSchema).min(1).max(250),
 		beforeSummary: jsonValueSchema,
@@ -296,7 +309,76 @@ export const changeSetSchema = z
 		updatedAt: dateTimeSchema,
 		immutableAt: dateTimeSchema.optional(),
 	})
-	.strict();
+	.strict()
+	.superRefine((changeSet, context) => {
+		if (changeSet.changeSetHashVersion !== 1) {
+			context.addIssue({
+				code: "custom",
+				message: "Unsupported Change Set hash version.",
+				path: ["changeSetHashVersion"],
+			});
+		}
+		if (
+			changeSet.proposal.target.type !== changeSet.target.type ||
+			changeSet.proposal.target.id !== changeSet.target.id
+		) {
+			context.addIssue({
+				code: "custom",
+				message: "Change Set proposal target must match its owning target.",
+				path: ["proposal", "target"],
+			});
+		}
+		if (
+			!changeSet.affectedTargets.some(
+				(target) =>
+					target.type === changeSet.target.type &&
+					target.id === changeSet.target.id,
+			)
+		) {
+			context.addIssue({
+				code: "custom",
+				message: "Change Set affected targets must include its owning target.",
+				path: ["affectedTargets"],
+			});
+		}
+		if (
+			(changeSet.status === "approved" || changeSet.status === "applied") &&
+			changeSet.immutableAt === undefined
+		) {
+			context.addIssue({
+				code: "custom",
+				message: "Approved or applied Change Sets must be immutable.",
+				path: ["immutableAt"],
+			});
+		}
+		if (changeSet.supersedesChangeSetId === changeSet.id) {
+			context.addIssue({
+				code: "custom",
+				message: "A Change Set cannot supersede itself.",
+				path: ["supersedesChangeSetId"],
+			});
+		}
+		const baseTargets = changeSet.baseRevisions.map(
+			(revision) => `${revision.target.type}\0${revision.target.id}`,
+		);
+		if (new Set(baseTargets).size !== baseTargets.length) {
+			context.addIssue({
+				code: "custom",
+				message: "Change Set base revisions must have unique targets.",
+				path: ["baseRevisions"],
+			});
+		}
+		const affectedTargets = changeSet.affectedTargets.map(
+			(target) => `${target.type}\0${target.id}`,
+		);
+		if (new Set(affectedTargets).size !== affectedTargets.length) {
+			context.addIssue({
+				code: "custom",
+				message: "Change Set affected targets must be unique.",
+				path: ["affectedTargets"],
+			});
+		}
+	});
 export type ChangeSet = z.infer<typeof changeSetSchema>;
 
 export const approvalSchema = z
@@ -305,20 +387,48 @@ export const approvalSchema = z
 		changeSetId: identifierSchema,
 		reviewHash: digestSchema,
 		baseRevisions: z.array(baseRevisionSchema).min(1).max(250),
-		actor: actorReferenceSchema,
+		actor: actorReferenceSchema.refine((actor) => actor.type === "account", {
+			message: "Approval requires a human Account actor.",
+		}),
 		authority: authoritySnapshotSchema,
 		approvedAt: dateTimeSchema,
 		invalidatedAt: dateTimeSchema.optional(),
 	})
-	.strict();
+	.strict()
+	.superRefine((approval, context) => {
+		if (
+			approval.invalidatedAt !== undefined &&
+			Date.parse(approval.invalidatedAt) < Date.parse(approval.approvedAt)
+		) {
+			context.addIssue({
+				code: "custom",
+				message: "Approval invalidation cannot predate approval.",
+				path: ["invalidatedAt"],
+			});
+		}
+		const targets = approval.baseRevisions.map(
+			(revision) => `${revision.target.type}\0${revision.target.id}`,
+		);
+		if (new Set(targets).size !== targets.length) {
+			context.addIssue({
+				code: "custom",
+				message: "Approval base revisions must have unique targets.",
+				path: ["baseRevisions"],
+			});
+		}
+	});
 export type Approval = z.infer<typeof approvalSchema>;
 
 export const confirmationSchema = z
 	.object({
 		id: identifierSchema,
-		actor: actorReferenceSchema,
+		actor: actorReferenceSchema.refine((actor) => actor.type === "account", {
+			message: "Confirmation requires a human Account actor.",
+		}),
 		sessionId: identifierSchema,
 		target: targetReferenceSchema,
+		command: commandReferenceSchema,
+		bindingHashVersion: versionSchema,
 		bindingHash: digestSchema,
 		nonceDigest: digestSchema,
 		disclosure: z.string().min(1).max(2_000),
@@ -328,13 +438,55 @@ export const confirmationSchema = z
 		expiresAt: dateTimeSchema,
 		consumedAt: dateTimeSchema.optional(),
 	})
-	.strict();
+	.strict()
+	.superRefine((confirmation, context) => {
+		if (confirmation.bindingHashVersion !== 1) {
+			context.addIssue({
+				code: "custom",
+				message: "Unsupported confirmation binding hash version.",
+				path: ["bindingHashVersion"],
+			});
+		}
+		if (
+			(confirmation.amount === undefined) !==
+			(confirmation.currency === undefined)
+		) {
+			context.addIssue({
+				code: "custom",
+				message: "Confirmation amount and currency must be supplied together.",
+			});
+		}
+		if (
+			Date.parse(confirmation.expiresAt) <= Date.parse(confirmation.createdAt)
+		) {
+			context.addIssue({
+				code: "custom",
+				message: "Confirmation expiry must be after creation.",
+				path: ["expiresAt"],
+			});
+		}
+		if (
+			confirmation.consumedAt !== undefined &&
+			(Date.parse(confirmation.consumedAt) <
+				Date.parse(confirmation.createdAt) ||
+				Date.parse(confirmation.consumedAt) >=
+					Date.parse(confirmation.expiresAt))
+		) {
+			context.addIssue({
+				code: "custom",
+				message: "Confirmation consumption cannot predate creation.",
+				path: ["consumedAt"],
+			});
+		}
+	});
 export type Confirmation = z.infer<typeof confirmationSchema>;
 
 export const standingPermissionSchema = z
 	.object({
 		id: identifierSchema,
 		grantee: actorReferenceSchema,
+		grantor: actorReferenceSchema,
+		authority: authoritySnapshotSchema,
 		businessId: identifierSchema,
 		storeId: identifierSchema.optional(),
 		action: commandReferenceSchema,
@@ -346,7 +498,42 @@ export const standingPermissionSchema = z
 		createdAt: dateTimeSchema,
 		revokedAt: dateTimeSchema.optional(),
 	})
-	.strict();
+	.strict()
+	.superRefine((permission, context) => {
+		if (Date.parse(permission.validUntil) <= Date.parse(permission.validFrom)) {
+			context.addIssue({
+				code: "custom",
+				message: "Standing permission validity must have a positive duration.",
+				path: ["validUntil"],
+			});
+		}
+		const financialFields = [
+			permission.perOperationAmount,
+			permission.aggregateAmount,
+			permission.currency,
+		];
+		const supplied = financialFields.filter(
+			(value) => value !== undefined,
+		).length;
+		if (supplied !== 0 && supplied !== financialFields.length) {
+			context.addIssue({
+				code: "custom",
+				message:
+					"Standing permission financial limits and currency must be supplied together.",
+			});
+		}
+		if (
+			permission.perOperationAmount !== undefined &&
+			permission.aggregateAmount !== undefined &&
+			BigInt(permission.aggregateAmount) < BigInt(permission.perOperationAmount)
+		) {
+			context.addIssue({
+				code: "custom",
+				message: "Aggregate authority cannot be below the per-operation cap.",
+				path: ["aggregateAmount"],
+			});
+		}
+	});
 export type StandingPermission = z.infer<typeof standingPermissionSchema>;
 
 export const standingPermissionUseReservationSchema = z
@@ -354,16 +541,67 @@ export const standingPermissionUseReservationSchema = z
 		id: identifierSchema,
 		standingPermissionId: identifierSchema,
 		commandExecutionId: identifierSchema,
-		amount: minorAmountSchema,
-		currency: currencySchema,
+		amount: minorAmountSchema.optional(),
+		currency: currencySchema.optional(),
 		state: z.enum(["reserved", "committed", "released", "ambiguous"]),
 		createdAt: dateTimeSchema,
 		updatedAt: dateTimeSchema,
 	})
-	.strict();
+	.strict()
+	.superRefine((reservation, context) => {
+		if (
+			(reservation.amount === undefined) !==
+			(reservation.currency === undefined)
+		) {
+			context.addIssue({
+				code: "custom",
+				message: "Reservation amount and currency must be supplied together.",
+			});
+		}
+	});
 export type StandingPermissionUseReservation = z.infer<
 	typeof standingPermissionUseReservationSchema
 >;
+
+const standingPermissionGrantUseSchema = z
+	.object({
+		kind: z.literal("standing_permission"),
+		standingPermissionId: identifierSchema,
+		reservationId: identifierSchema,
+		amount: minorAmountSchema.optional(),
+		currency: currencySchema.optional(),
+	})
+	.strict()
+	.superRefine((grantUse, context) => {
+		if ((grantUse.amount === undefined) !== (grantUse.currency === undefined)) {
+			context.addIssue({
+				code: "custom",
+				message:
+					"Standing grant amount and currency must be supplied together.",
+			});
+		}
+	});
+
+export const grantUseSchema = z.discriminatedUnion("kind", [
+	z.object({ kind: z.literal("automatic") }).strict(),
+	z
+		.object({
+			kind: z.literal("approval"),
+			approvalId: identifierSchema,
+			changeSetId: identifierSchema,
+			reviewHash: digestSchema,
+		})
+		.strict(),
+	z
+		.object({
+			kind: z.literal("confirmation"),
+			confirmationId: identifierSchema,
+			bindingHash: digestSchema,
+		})
+		.strict(),
+	standingPermissionGrantUseSchema,
+]);
+export type GrantUse = z.infer<typeof grantUseSchema>;
 
 export const auditEventSchema = z
 	.object({

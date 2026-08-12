@@ -49,9 +49,6 @@ vi.mock("~/lib/template-path", () => ({
 vi.mock("~/lib/notifications", () => ({
 	registerNotificationHandlers: vi.fn(),
 }));
-vi.mock("~/lib/platform-reporter", () => ({
-	registerPlatformReporter: vi.fn(),
-}));
 
 // ── Import helpers ────────────────────────────────────────────────────────────
 

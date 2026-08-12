@@ -25,7 +25,16 @@ const initialExecution: PersistedCommandExecution = {
 	approvalReference: "approval-1",
 	actionLevel: "approve",
 	status: "running",
+	requestDigestVersion: 2,
 	inputDigest: digest,
+	commandBindingHashVersion: 1,
+	commandBindingHash: digest,
+	grantUse: {
+		kind: "approval",
+		approvalId: "approval-1",
+		changeSetId: "change-set-1",
+		reviewHash: digest,
+	},
 	redactedInput: { value: "updated" },
 	startedAt,
 	auditEvents: [
@@ -108,9 +117,27 @@ function executionRecord(
 		commandVersion: 1,
 		actionLevel: grant.actionLevel,
 		idempotencyKey: "idempotency-1",
+		requestDigestVersion: 2,
 		approvalId: grant.approvalId,
 		confirmationId: grant.confirmationId,
 		inputDigest,
+		commandBindingHashVersion: 1,
+		commandBindingHash: digest,
+		grantUse:
+			grant.actionLevel === "automatic"
+				? { kind: "automatic" }
+				: grant.actionLevel === "approve"
+					? {
+							kind: "approval",
+							approvalId: grant.approvalId,
+							changeSetId: "change-set-1",
+							reviewHash: digest,
+						}
+					: {
+							kind: "confirmation",
+							confirmationId: grant.confirmationId,
+							bindingHash: digest,
+						},
 		redactedInput: { value: "updated" },
 		actorType: "account",
 		actorId: "account-1",
@@ -167,6 +194,9 @@ function transaction() {
 			findMany: vi.fn(async () => [auditRecord()]),
 		},
 		$executeRawUnsafe: vi.fn(async (_query: string) => 0),
+		async $queryRawUnsafe<T>(_query: string): Promise<T> {
+			return [] as T;
+		},
 	};
 }
 
@@ -178,19 +208,104 @@ function clientFor(tx: ReturnType<typeof transaction>) {
 	};
 }
 
+const grants = {
+	admit: async () => ({
+		ok: true as const,
+		grantUse: initialExecution.grantUse,
+	}),
+	settle: async () => undefined,
+	markAmbiguous: async () => undefined,
+};
+
+function grantRequest() {
+	return {
+		executionId: initialExecution.executionId,
+		principal: {
+			type: "session" as const,
+			credentialId: "session-1",
+			sessionId: "session-human-present",
+		},
+		plane: initialExecution.plane,
+		command: initialExecution.command,
+		inputDigest: initialExecution.inputDigest,
+		actor: initialExecution.actor,
+		authority: initialExecution.authority,
+		target: initialExecution.target,
+		policy: { kind: "approval" as const },
+		approvalReference: "approval-1",
+		resolveFacts: async () => ({
+			bindingHashVersion: 1,
+			bindingHash: digest,
+			disclosure: "Apply the reviewed tracer change.",
+			baseRevisions: [{ target: initialExecution.target, revision: "one" }],
+		}),
+	};
+}
+
 describe("Store Runtime Prisma Command persistence", () => {
+	it("claims before admission and rolls back a denied grant without running", async () => {
+		const order: string[] = [];
+		const tx = transaction();
+		tx.commandExecution.create.mockImplementation(async () => {
+			order.push("claim");
+			return executionRecord();
+		});
+		const denyingGrants = {
+			admit: vi.fn(async () => {
+				order.push("admit");
+				return {
+					ok: false as const,
+					failure: {
+						code: "approval_invalid" as const,
+						message: "The approval does not match.",
+						retryable: false,
+					},
+				};
+			}),
+			settle: vi.fn(async () => undefined),
+			markAmbiguous: vi.fn(async () => undefined),
+		};
+		const persistence = createPrismaCommandPersistence(clientFor(tx), {
+			databaseNull,
+			jsonNull,
+			grants: denyingGrants,
+		});
+		const run = vi.fn(async () => ({
+			commitTransaction: true,
+			execution: succeededExecution,
+		}));
+
+		await expect(
+			persistence.runOnce({
+				scope: "opaque-executor-scope",
+				inputDigest: digest,
+				initialExecution,
+				grant: grantRequest(),
+				run,
+			}),
+		).resolves.toMatchObject({
+			kind: "denied",
+			failure: { code: "approval_invalid" },
+		});
+		expect(order).toEqual(["claim", "admit"]);
+		expect(run).not.toHaveBeenCalled();
+		expect(tx.auditEvent.create).not.toHaveBeenCalled();
+	});
+
 	it("atomically claims an execution with its started audit", async () => {
 		const tx = transaction();
 		const client = clientFor(tx);
 		const persistence = createPrismaCommandPersistence(client, {
 			databaseNull,
 			jsonNull,
+			grants,
 		});
 
 		const result = await persistence.runOnce({
 			scope: "opaque-executor-scope",
 			inputDigest: digest,
 			initialExecution,
+			grant: grantRequest(),
 			run: async () => ({
 				commitTransaction: true,
 				execution: succeededExecution,
@@ -207,8 +322,8 @@ describe("Store Runtime Prisma Command persistence", () => {
 				authorityId: "membership-1",
 				targetId: "store-1",
 				commandName: "store_runtime.tracer.write",
-				approvalId: "approval-1",
-				confirmationId: undefined,
+				approvalId: null,
+				confirmationId: null,
 			}),
 		});
 		expect(tx.auditEvent.create).toHaveBeenCalledWith({
@@ -232,11 +347,13 @@ describe("Store Runtime Prisma Command persistence", () => {
 		const persistence = createPrismaCommandPersistence(clientFor(tx), {
 			databaseNull,
 			jsonNull,
+			grants,
 		});
 		const args = {
 			scope: "opaque-executor-scope",
 			inputDigest: digest,
 			initialExecution,
+			grant: grantRequest(),
 			run: async () => ({
 				commitTransaction: true,
 				execution: initialExecution,
@@ -266,6 +383,7 @@ describe("Store Runtime Prisma Command persistence", () => {
 		const persistence = createPrismaCommandPersistence(clientFor(tx), {
 			databaseNull,
 			jsonNull,
+			grants,
 		});
 
 		const replay = await persistence.runOnce({
@@ -279,6 +397,7 @@ describe("Store Runtime Prisma Command persistence", () => {
 					type: "custom_role",
 				},
 			},
+			grant: grantRequest(),
 			run: async () => ({
 				commitTransaction: true,
 				execution: succeededExecution,
@@ -315,12 +434,14 @@ describe("Store Runtime Prisma Command persistence", () => {
 		const persistence = createPrismaCommandPersistence(clientFor(tx), {
 			databaseNull,
 			jsonNull,
+			grants,
 		});
 
 		const result = await persistence.runOnce({
 			scope: "opaque-executor-scope",
 			inputDigest: digest,
 			initialExecution,
+			grant: grantRequest(),
 			run: async (value) => {
 				expect(value).toBe(tx);
 				return {
@@ -350,11 +471,72 @@ describe("Store Runtime Prisma Command persistence", () => {
 		});
 	});
 
+	it("revalidates approval revisions in the handler transaction before running", async () => {
+		const tx = transaction();
+		const driftFailure = {
+			code: "approval_invalid" as const,
+			message: "The Change Set base revisions have changed.",
+			retryable: false,
+		};
+		tx.commandExecution.findUnique
+			.mockResolvedValueOnce(executionRecord("running"))
+			.mockResolvedValueOnce({
+				...executionRecord("failed"),
+				failure: driftFailure,
+			});
+		tx.auditEvent.findMany.mockResolvedValue([auditRecord(0), auditRecord(1)]);
+		const revalidatingGrants = {
+			...grants,
+			revalidate: vi.fn(async () => ({
+				ok: false as const,
+				failure: driftFailure,
+			})),
+			recordDenied: vi.fn(async () => undefined),
+		};
+		const persistence = createPrismaCommandPersistence(clientFor(tx), {
+			databaseNull,
+			jsonNull,
+			grants: revalidatingGrants,
+		});
+		const run = vi.fn(async () => ({
+			commitTransaction: true,
+			execution: succeededExecution,
+		}));
+
+		const result = await persistence.runOnce({
+			scope: "opaque-executor-scope",
+			inputDigest: digest,
+			initialExecution,
+			grant: grantRequest(),
+			run,
+			onGrantDenied: (failure, execution) => ({
+				commitTransaction: false,
+				execution: { ...execution, ...failedExecution, failure },
+			}),
+		});
+
+		expect(revalidatingGrants.revalidate).toHaveBeenCalledWith(
+			tx,
+			expect.any(Object),
+			initialExecution.grantUse,
+		);
+		expect(run).not.toHaveBeenCalled();
+		expect(revalidatingGrants.recordDenied).toHaveBeenCalled();
+		expect(result).toMatchObject({
+			kind: "execution",
+			execution: { status: "failed", failure: driftFailure },
+		});
+		expect(tx.$executeRawUnsafe).not.toHaveBeenCalledWith(
+			'SAVEPOINT "command_handler"',
+		);
+	});
+
 	it("reconstructs durable approval and confirmation references", async () => {
 		const tx = transaction();
 		const persistence = createPrismaCommandPersistence(clientFor(tx), {
 			databaseNull,
 			jsonNull,
+			grants,
 		});
 
 		tx.commandExecution.findUnique.mockResolvedValueOnce(
@@ -389,12 +571,14 @@ describe("Store Runtime Prisma Command persistence", () => {
 		const persistence = createPrismaCommandPersistence(clientFor(tx), {
 			databaseNull,
 			jsonNull,
+			grants,
 		});
 
 		const result = await persistence.runOnce({
 			scope: "opaque-executor-scope",
 			inputDigest: digest,
 			initialExecution,
+			grant: grantRequest(),
 			run: async () => ({
 				commitTransaction: true,
 				execution: { ...succeededExecution, result: null },

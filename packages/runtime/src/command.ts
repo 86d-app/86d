@@ -14,11 +14,20 @@ import {
 	commandFailureSchema,
 	commandReferenceSchema,
 	commandRequestSchema,
+	type GrantUse,
 	type JsonValue,
 	jsonValueSchema,
 	type TargetReference,
 	targetReferenceSchema,
 } from "@86d-app/core";
+import {
+	type CommandAdmissionPolicy,
+	type CommandGrantAdapter,
+	type CommandGrantAdmissionRequest,
+	type CommandGrantFacts,
+	computeCommandBindingHash,
+	validateCommandGrantFacts,
+} from "./grants";
 
 type ParseResult<T> =
 	| { success: true; data: T }
@@ -71,26 +80,12 @@ export interface CommandAuthority {
 	}): Promise<boolean>;
 }
 
-/** Policy seam for validating approval and fresh-confirmation grants. */
-export interface CommandGrantEvaluator {
-	evaluate(input: {
-		principal: CommandPrincipal;
-		command: CommandReference;
-		actionLevel: ActionLevel;
-		actor: ActorReference;
-		authority: AuthoritySnapshot;
-		target: TargetReference;
-		inputDigest: string;
-		approvalReference?: string | undefined;
-		confirmationReference?: string | undefined;
-	}): Promise<{ ok: true } | { ok: false; failure: CommandFailure }>;
-}
-
 export interface CommandDefinitionReference {
 	command: CommandReference;
 	ownerPlane: AuthoritativePlane;
 	targetType: TargetReference["type"];
 	actionLevel: ActionLevel;
+	admissionPolicy: CommandAdmissionPolicy;
 }
 
 type CommandHandlerResult<TResult, TFailureDetails> =
@@ -106,13 +101,32 @@ type NormalizedCommandOutcome =
 	| { ok: true; result: JsonValue }
 	| { ok: false; failure: CommandFailure };
 
-interface TypedCommandDefinition<TTransaction, TInput, TResult, TFailureDetails>
-	extends CommandDefinitionReference {
+interface TypedCommandDefinition<
+	TTransaction,
+	TInput,
+	TResult,
+	TFailureDetails,
+> {
+	command: CommandReference;
+	ownerPlane: AuthoritativePlane;
+	targetType: TargetReference["type"];
+	actionLevel: ActionLevel;
+	admissionPolicy?: CommandAdmissionPolicy | undefined;
 	inputSchema: RuntimeSchema<TInput>;
 	resultSchema: RuntimeSchema<TResult>;
 	failureDetailsSchema?: RuntimeSchema<TFailureDetails> | undefined;
 	sensitiveInputPaths?: readonly string[] | undefined;
 	sensitiveResultPaths?: readonly string[] | undefined;
+	resolveGrantFacts?:
+		| ((args: {
+				actor: ActorReference;
+				authority: AuthoritySnapshot;
+				target: TargetReference;
+				input: TInput;
+				inputDigest: string;
+				transaction: TTransaction;
+		  }) => Promise<CommandGrantFacts> | CommandGrantFacts)
+		| undefined;
 	execute(args: {
 		actor: ActorReference;
 		authority: AuthoritySnapshot;
@@ -127,6 +141,14 @@ export interface DefinedCommand<TTransaction>
 	sensitiveInputPaths?: readonly string[] | undefined;
 	sensitiveResultPaths: readonly string[];
 	parseInput(value: unknown): ParseResult<JsonValue>;
+	resolveGrantFacts(args: {
+		actor: ActorReference;
+		authority: AuthoritySnapshot;
+		target: TargetReference;
+		input: JsonValue;
+		inputDigest: string;
+		transaction: TTransaction;
+	}): Promise<CommandGrantFacts>;
 	execute(args: {
 		actor: ActorReference;
 		authority: AuthoritySnapshot;
@@ -148,86 +170,178 @@ export function defineCommand<TTransaction>() {
 			TResult,
 			TFailureDetails
 		>,
-	): DefinedCommand<TTransaction> => ({
-		command: definition.command,
-		ownerPlane: definition.ownerPlane,
-		targetType: definition.targetType,
-		actionLevel: definition.actionLevel,
-		sensitiveInputPaths: definition.sensitiveInputPaths,
-		sensitiveResultPaths: definition.sensitiveResultPaths ?? [],
-		parseInput(value) {
-			const parsedInput = definition.inputSchema.safeParse(value);
-			if (!parsedInput.success) {
-				return { success: false, error: parsedInput.error };
-			}
-			return jsonValueSchema.safeParse(parsedInput.data);
-		},
-		async execute(args) {
-			const parsedInput = definition.inputSchema.safeParse(args.input);
-			if (!parsedInput.success) {
-				return {
-					ok: false,
-					failure: commandFailure("invalid_input", "Command input is invalid."),
-				};
-			}
-
-			const outcome = await definition.execute({
-				actor: args.actor,
-				authority: args.authority,
-				target: args.target,
-				input: parsedInput.data,
-				transaction: args.transaction,
-			});
-			if (outcome.ok) {
-				const parsedResult = definition.resultSchema.safeParse(outcome.result);
-				if (!parsedResult.success) {
+	): DefinedCommand<TTransaction> => {
+		const admissionPolicy =
+			definition.admissionPolicy ??
+			defaultAdmissionPolicy(definition.actionLevel);
+		if (
+			(definition.actionLevel === "automatic" &&
+				admissionPolicy.kind !== "automatic") ||
+			(definition.actionLevel === "approve" &&
+				admissionPolicy.kind !== "approval") ||
+			(definition.actionLevel === "confirm_now" &&
+				admissionPolicy.kind !== "confirmation")
+		) {
+			throw new Error("Command admission policy must match its action level.");
+		}
+		if (
+			admissionPolicy.kind === "confirmation" &&
+			admissionPolicy.freshOnly &&
+			admissionPolicy.standingPermission !== "forbidden"
+		) {
+			throw new Error("A fresh-only Command must forbid standing permission.");
+		}
+		if (
+			(admissionPolicy.kind === "approval" ||
+				(admissionPolicy.kind === "confirmation" &&
+					admissionPolicy.standingPermission === "allowed")) &&
+			!definition.resolveGrantFacts
+		) {
+			throw new Error(
+				"Approval and standing-permission Commands require plane-local grant facts.",
+			);
+		}
+		return {
+			command: definition.command,
+			ownerPlane: definition.ownerPlane,
+			targetType: definition.targetType,
+			actionLevel: definition.actionLevel,
+			admissionPolicy,
+			sensitiveInputPaths: definition.sensitiveInputPaths,
+			sensitiveResultPaths: definition.sensitiveResultPaths ?? [],
+			parseInput(value) {
+				const parsedInput = definition.inputSchema.safeParse(value);
+				if (!parsedInput.success) {
+					return { success: false, error: parsedInput.error };
+				}
+				return jsonValueSchema.safeParse(parsedInput.data);
+			},
+			async resolveGrantFacts(args) {
+				const parsedInput = definition.inputSchema.safeParse(args.input);
+				if (!parsedInput.success) {
+					throw new Error(
+						"Cannot resolve grant facts for invalid Command input.",
+					);
+				}
+				let facts: CommandGrantFacts;
+				if (definition.resolveGrantFacts) {
+					facts = await definition.resolveGrantFacts({
+						...args,
+						input: parsedInput.data,
+					});
+				} else {
+					const disclosure = `Execute ${definition.command.name} for ${args.target.type} ${args.target.id}.`;
+					facts = {
+						bindingHashVersion: 1,
+						disclosure,
+						bindingHash: computeCommandBindingHash({
+							bindingHashVersion: 1,
+							plane: definition.ownerPlane,
+							command: definition.command,
+							target: args.target,
+							inputDigest: args.inputDigest,
+							disclosure,
+						}),
+						...(args.authority.businessId
+							? { businessId: args.authority.businessId }
+							: {}),
+						...(args.authority.storeId
+							? { storeId: args.authority.storeId }
+							: {}),
+						baseRevisions: undefined,
+					};
+				}
+				return validateCommandGrantFacts(facts, {
+					plane: definition.ownerPlane,
+					command: definition.command,
+					target: args.target,
+					inputDigest: args.inputDigest,
+				});
+			},
+			async execute(args) {
+				const parsedInput = definition.inputSchema.safeParse(args.input);
+				if (!parsedInput.success) {
 					return {
 						ok: false,
 						failure: commandFailure(
-							"invalid_result",
-							"Command returned an invalid result.",
+							"invalid_input",
+							"Command input is invalid.",
 						),
 					};
 				}
-				const jsonResult = jsonValueSchema.safeParse(parsedResult.data);
-				if (!jsonResult.success) {
+
+				const outcome = await definition.execute({
+					actor: args.actor,
+					authority: args.authority,
+					target: args.target,
+					input: parsedInput.data,
+					transaction: args.transaction,
+				});
+				if (outcome.ok) {
+					const parsedResult = definition.resultSchema.safeParse(
+						outcome.result,
+					);
+					if (!parsedResult.success) {
+						return {
+							ok: false,
+							failure: commandFailure(
+								"invalid_result",
+								"Command returned an invalid result.",
+							),
+						};
+					}
+					const jsonResult = jsonValueSchema.safeParse(parsedResult.data);
+					if (!jsonResult.success) {
+						return {
+							ok: false,
+							failure: commandFailure(
+								"invalid_result",
+								"Command returned an invalid result.",
+							),
+						};
+					}
+					return { ok: true, result: jsonResult.data };
+				}
+
+				const parsedFailure = commandFailureSchema.safeParse(outcome.failure);
+				if (!parsedFailure.success) {
 					return {
 						ok: false,
 						failure: commandFailure(
-							"invalid_result",
-							"Command returned an invalid result.",
+							"execution_failed",
+							"Command execution failed.",
 						),
 					};
 				}
-				return { ok: true, result: jsonResult.data };
-			}
+				const detailsAreValid =
+					parsedFailure.data.details === undefined ||
+					definition.failureDetailsSchema?.safeParse(parsedFailure.data.details)
+						.success === true;
+				if (!detailsAreValid) {
+					return {
+						ok: false,
+						failure: commandFailure(
+							"execution_failed",
+							"Command execution failed.",
+						),
+					};
+				}
+				return { ok: false, failure: parsedFailure.data };
+			},
+		};
+	};
+}
 
-			const parsedFailure = commandFailureSchema.safeParse(outcome.failure);
-			if (!parsedFailure.success) {
-				return {
-					ok: false,
-					failure: commandFailure(
-						"execution_failed",
-						"Command execution failed.",
-					),
-				};
-			}
-			const detailsAreValid =
-				parsedFailure.data.details === undefined ||
-				definition.failureDetailsSchema?.safeParse(parsedFailure.data.details)
-					.success === true;
-			if (!detailsAreValid) {
-				return {
-					ok: false,
-					failure: commandFailure(
-						"execution_failed",
-						"Command execution failed.",
-					),
-				};
-			}
-			return { ok: false, failure: parsedFailure.data };
-		},
-	});
+function defaultAdmissionPolicy(
+	actionLevel: ActionLevel,
+): CommandAdmissionPolicy {
+	if (actionLevel === "automatic") return { kind: "automatic" };
+	if (actionLevel === "approve") return { kind: "approval" };
+	return {
+		kind: "confirmation",
+		standingPermission: "forbidden",
+		freshOnly: true,
+	};
 }
 
 export interface PersistedCommandExecution {
@@ -242,7 +356,11 @@ export interface PersistedCommandExecution {
 	confirmationReference?: string | undefined;
 	actionLevel: ActionLevel;
 	status: "running" | "succeeded" | "failed";
+	requestDigestVersion: number;
 	inputDigest: string;
+	commandBindingHashVersion?: number | undefined;
+	commandBindingHash?: string | undefined;
+	grantUse: GrantUse;
 	redactedInput: JsonValue;
 	startedAt: string;
 	completedAt?: string | undefined;
@@ -251,6 +369,15 @@ export interface PersistedCommandExecution {
 	auditEvents: AuditEvent[];
 }
 
+export type CommandExecutionClaim = Omit<
+	PersistedCommandExecution,
+	| "approvalReference"
+	| "confirmationReference"
+	| "commandBindingHashVersion"
+	| "commandBindingHash"
+	| "grantUse"
+>;
+
 type PersistenceCompletion = {
 	execution: PersistedCommandExecution;
 	commitTransaction: boolean;
@@ -258,6 +385,7 @@ type PersistenceCompletion = {
 
 type PersistenceRunResult =
 	| { kind: "conflict" }
+	| { kind: "denied"; failure: CommandFailure }
 	| {
 			kind: "execution";
 			replayed: boolean;
@@ -269,8 +397,17 @@ export interface CommandPersistence<TTransaction> {
 	runOnce(args: {
 		scope: string;
 		inputDigest: string;
-		initialExecution: PersistedCommandExecution;
-		run(transaction: TTransaction): Promise<PersistenceCompletion>;
+		legacyInputDigest?: string | undefined;
+		initialExecution: CommandExecutionClaim;
+		grant: CommandGrantAdmissionRequest<TTransaction>;
+		run(
+			transaction: TTransaction,
+			execution: PersistedCommandExecution,
+		): Promise<PersistenceCompletion>;
+		onGrantDenied?(
+			failure: CommandFailure,
+			execution: PersistedCommandExecution,
+		): PersistenceCompletion;
 	}): Promise<PersistenceRunResult>;
 	get(executionId: string): Promise<PersistedCommandExecution | undefined>;
 }
@@ -278,6 +415,7 @@ export interface CommandPersistence<TTransaction> {
 export interface MemoryCommandTransaction {
 	get(key: string): string | null;
 	set(key: string, value: string): void;
+	delete(key: string): void;
 }
 
 function cloneExecution(
@@ -286,80 +424,245 @@ function cloneExecution(
 	return structuredClone(execution);
 }
 
+function executionWithGrant(
+	execution: CommandExecutionClaim,
+	grantUse: GrantUse,
+	commandBindingHashVersion: number,
+	commandBindingHash: string,
+): PersistedCommandExecution {
+	return {
+		...execution,
+		commandBindingHashVersion,
+		commandBindingHash,
+		grantUse,
+		...(grantUse.kind === "approval"
+			? { approvalReference: grantUse.approvalId }
+			: {}),
+		...(grantUse.kind === "confirmation"
+			? { confirmationReference: grantUse.confirmationId }
+			: {}),
+	};
+}
+
+function defaultCommandGrantAdapter<
+	TTransaction,
+>(): CommandGrantAdapter<TTransaction> {
+	return {
+		async admit(transaction, request) {
+			if (request.policy.kind === "automatic") {
+				const facts = await request.resolveFacts(transaction);
+				if (facts.bindingHashVersion !== 1) {
+					return {
+						ok: false,
+						failure: commandFailure(
+							"invalid_request",
+							"The Command binding hash version is unsupported.",
+						),
+					};
+				}
+				return { ok: true, grantUse: { kind: "automatic" } };
+			}
+			if (request.policy.kind === "approval") {
+				return {
+					ok: false,
+					failure: commandFailure(
+						"approval_required",
+						"A validated approval is required for this Command.",
+					),
+				};
+			}
+			return {
+				ok: false,
+				failure: commandFailure(
+					"confirmation_required",
+					"A fresh validated confirmation is required for this Command.",
+				),
+			};
+		},
+		async settle() {},
+		async markAmbiguous() {},
+	};
+}
+
 /**
  * In-memory adapter used by conformance tests. Its claim is installed before
  * execution begins, so identical concurrent requests share one execution.
  */
-export function createInMemoryCommandPersistence(): CommandPersistence<MemoryCommandTransaction> {
+export function createInMemoryCommandPersistence(options?: {
+	grants?: CommandGrantAdapter<MemoryCommandTransaction> | undefined;
+}): CommandPersistence<MemoryCommandTransaction> {
 	let state = new Map<string, string>();
 	const executions = new Map<string, PersistedCommandExecution>();
 	const claims = new Map<
 		string,
 		{
 			inputDigest: string;
-			completion: Promise<PersistedCommandExecution>;
+			completion: Promise<
+				| { kind: "denied"; failure: CommandFailure }
+				| { kind: "execution"; execution: PersistedCommandExecution }
+			>;
 		}
 	>();
+	const grants = options?.grants ?? defaultCommandGrantAdapter();
+	let transactionTail = Promise.resolve();
+
+	function transactionFor(transactionState: Map<string, string>) {
+		return {
+			get: (key: string) => transactionState.get(key) ?? null,
+			set: (key: string, value: string) => {
+				transactionState.set(key, value);
+			},
+			delete: (key: string) => {
+				transactionState.delete(key);
+			},
+		} satisfies MemoryCommandTransaction;
+	}
 
 	return {
 		async runOnce(args) {
 			const existing = claims.get(args.scope);
 			if (existing) {
-				if (existing.inputDigest !== args.inputDigest) {
+				if (
+					existing.inputDigest !== args.inputDigest &&
+					existing.inputDigest !== args.legacyInputDigest
+				) {
 					return { kind: "conflict" };
 				}
+				const completed = await existing.completion;
+				if (completed.kind === "denied") return completed;
 				return {
 					kind: "execution",
 					replayed: true,
-					execution: cloneExecution(await existing.completion),
+					execution: cloneExecution(completed.execution),
 				};
 			}
 
 			let resolveCompletion:
-				| ((execution: PersistedCommandExecution) => void)
+				| ((
+						result:
+							| { kind: "denied"; failure: CommandFailure }
+							| { kind: "execution"; execution: PersistedCommandExecution },
+				  ) => void)
 				| undefined;
-			let rejectCompletion: ((reason: unknown) => void) | undefined;
-			const completion = new Promise<PersistedCommandExecution>(
-				(resolve, reject) => {
-					resolveCompletion = resolve;
-					rejectCompletion = reject;
-				},
-			);
+			const completion = new Promise<
+				| { kind: "denied"; failure: CommandFailure }
+				| { kind: "execution"; execution: PersistedCommandExecution }
+			>((resolve) => {
+				resolveCompletion = resolve;
+			});
 			claims.set(args.scope, {
 				inputDigest: args.inputDigest,
 				completion,
 			});
-
-			executions.set(
-				args.initialExecution.executionId,
-				cloneExecution(args.initialExecution),
-			);
-			const transactionState = new Map(state);
-			const transaction: MemoryCommandTransaction = {
-				get: (key) => transactionState.get(key) ?? null,
-				set: (key, value) => {
-					transactionState.set(key, value);
-				},
-			};
+			const predecessor = transactionTail;
+			let releaseTransaction: (() => void) | undefined;
+			transactionTail = new Promise<void>((resolve) => {
+				releaseTransaction = resolve;
+			});
+			await predecessor;
 
 			try {
-				const completed = await args.run(transaction);
-				if (completed.commitTransaction) {
-					state = transactionState;
+				const admissionState = new Map(state);
+				const admissionTransaction = transactionFor(admissionState);
+				const facts = await args.grant.resolveFacts(admissionTransaction);
+				const admissionGrant = {
+					...args.grant,
+					resolveFacts: () => facts,
+				};
+				const admission = await grants.admit(
+					admissionTransaction,
+					admissionGrant,
+				);
+				if (!admission.ok) {
+					await grants.recordDenied?.(
+						admissionTransaction,
+						admissionGrant,
+						admission.failure,
+					);
+					state = admissionState;
+					const denied = {
+						kind: "denied" as const,
+						failure: admission.failure,
+					};
+					resolveCompletion?.(denied);
+					claims.delete(args.scope);
+					return denied;
 				}
+
+				const admittedExecution = executionWithGrant(
+					args.initialExecution,
+					admission.grantUse,
+					facts.bindingHashVersion,
+					facts.bindingHash,
+				);
+				executions.set(
+					admittedExecution.executionId,
+					cloneExecution(admittedExecution),
+				);
+				// The claim, normalized GrantUse, and any consumption/reservation become
+				// visible atomically before the handler runs.
+				state = admissionState;
+				const executionState = new Map(admissionState);
+				const executionTransaction = transactionFor(executionState);
+				const revalidation = grants.revalidate
+					? await grants.revalidate(
+							executionTransaction,
+							args.grant,
+							admission.grantUse,
+						)
+					: ({ ok: true, grantUse: admission.grantUse } as const);
+				const completed = revalidation.ok
+					? await args.run(executionTransaction, admittedExecution)
+					: args.onGrantDenied?.(revalidation.failure, admittedExecution);
+				if (!completed) {
+					throw new Error("A revalidated grant denial requires a completion.");
+				}
+				if (!revalidation.ok) {
+					await grants.recordDenied?.(
+						executionTransaction,
+						args.grant,
+						revalidation.failure,
+					);
+				}
+				const settlementState = completed.commitTransaction
+					? executionState
+					: new Map(admissionState);
+				await grants.settle(
+					transactionFor(settlementState),
+					admittedExecution.executionId,
+					completed.commitTransaction ? "succeeded" : "definite_failure",
+				);
+				state = settlementState;
 				const stored = cloneExecution(completed.execution);
 				executions.set(stored.executionId, stored);
-				resolveCompletion?.(cloneExecution(stored));
+				resolveCompletion?.({
+					kind: "execution",
+					execution: cloneExecution(stored),
+				});
 				return {
 					kind: "execution",
 					replayed: false,
 					execution: cloneExecution(stored),
 				};
 			} catch (error) {
-				claims.delete(args.scope);
-				executions.delete(args.initialExecution.executionId);
-				rejectCompletion?.(error);
+				const ambiguousState = new Map(state);
+				await grants.markAmbiguous(
+					transactionFor(ambiguousState),
+					args.initialExecution.executionId,
+				);
+				state = ambiguousState;
+				const running = executions.get(args.initialExecution.executionId);
+				if (running) {
+					resolveCompletion?.({
+						kind: "execution",
+						execution: cloneExecution(running),
+					});
+				} else {
+					claims.delete(args.scope);
+				}
 				throw error;
+			} finally {
+				releaseTransaction?.();
 			}
 		},
 
@@ -423,8 +726,32 @@ function canonicalString(value: JsonValue): string {
 	return JSON.stringify(canonicalize(value));
 }
 
-function keyedDigest(key: string, value: JsonValue): string {
-	return createHmac("sha256", key).update(canonicalString(value)).digest("hex");
+function keyedDigest(
+	key: string,
+	domain: string,
+	version: number,
+	value: JsonValue,
+): string {
+	return createHmac("sha256", key)
+		.update(`${domain}\0v${version}\0`)
+		.update(canonicalString(value))
+		.digest("hex");
+}
+
+/** Stable, secret-keyed digest of validated input; grant references are excluded. */
+export function computeCommandInputDigest(
+	digestKey: string,
+	content: {
+		plane: AuthoritativePlane;
+		command: CommandReference;
+		target: TargetReference;
+		input: JsonValue;
+	},
+): string {
+	if (new TextEncoder().encode(digestKey).byteLength < 32) {
+		throw new Error("Command digest key must be at least 32 bytes.");
+	}
+	return keyedDigest(digestKey, "86d.command.input", 2, content);
 }
 
 function commandFailure(
@@ -433,28 +760,6 @@ function commandFailure(
 	retryable = false,
 ): CommandFailure {
 	return { code, message, retryable };
-}
-
-function defaultGrantEvaluation(input: {
-	actionLevel: ActionLevel;
-}): { ok: true } | { ok: false; failure: CommandFailure } {
-	if (input.actionLevel === "automatic") return { ok: true };
-	if (input.actionLevel === "approve") {
-		return {
-			ok: false,
-			failure: commandFailure(
-				"approval_required",
-				"A validated approval is required for this Command.",
-			),
-		};
-	}
-	return {
-		ok: false,
-		failure: commandFailure(
-			"confirmation_required",
-			"A fresh validated confirmation is required for this Command.",
-		),
-	};
 }
 
 function hasMismatchedGrantReference(
@@ -603,7 +908,6 @@ export function createCommandExecutor<TTransaction>(options: {
 	definitions: readonly DefinedCommand<TTransaction>[];
 	authority: CommandAuthority;
 	persistence: CommandPersistence<TTransaction>;
-	grants?: CommandGrantEvaluator | undefined;
 	digestKey: string;
 	clock?: (() => Date) | undefined;
 	createId?: ((kind: "execution" | "audit") => string) | undefined;
@@ -719,27 +1023,20 @@ export function createCommandExecutor<TTransaction>(options: {
 			};
 		}
 
-		const digestMaterial: JsonValue = {
+		const legacyDigestMaterial: JsonValue = {
 			input: parsedInput.data,
 			approvalReference: request.approvalReference ?? null,
 			confirmationReference: request.confirmationReference ?? null,
 		};
-		const inputDigest = keyedDigest(options.digestKey, digestMaterial);
-		const grantInput = {
-			principal: context.principal,
+		const inputDigest = computeCommandInputDigest(options.digestKey, {
+			plane: options.plane,
 			command: request.command,
-			actionLevel: definition.actionLevel,
-			actor: actor.data,
-			authority: authority.data,
 			target: target.data,
-			inputDigest,
-			approvalReference: request.approvalReference,
-			confirmationReference: request.confirmationReference,
-		};
-		const grant = options.grants
-			? await options.grants.evaluate(grantInput)
-			: defaultGrantEvaluation(grantInput);
-		if (!grant.ok) return { ok: false, failure: grant.failure };
+			input: parsedInput.data,
+		});
+		const legacyInputDigest = createHmac("sha256", options.digestKey)
+			.update(canonicalString(legacyDigestMaterial))
+			.digest("hex");
 
 		const redactedInput = redactInput(
 			parsedInput.data,
@@ -766,7 +1063,7 @@ export function createCommandExecutor<TTransaction>(options: {
 			occurredAt: startedAt,
 			data: { executionId, inputDigest },
 		});
-		const initialExecution: PersistedCommandExecution = {
+		const initialExecution: CommandExecutionClaim = {
 			executionId,
 			plane: options.plane,
 			command: request.command,
@@ -774,91 +1071,143 @@ export function createCommandExecutor<TTransaction>(options: {
 			actor: actor.data,
 			authority: authority.data,
 			idempotencyKey: request.idempotencyKey,
-			...(request.approvalReference
-				? { approvalReference: request.approvalReference }
-				: {}),
-			...(request.confirmationReference
-				? { confirmationReference: request.confirmationReference }
-				: {}),
 			actionLevel: definition.actionLevel,
 			status: "running",
+			requestDigestVersion: 2,
 			inputDigest,
 			redactedInput,
 			startedAt,
 			auditEvents: [startedAudit],
 		};
 
+		const grant: CommandGrantAdmissionRequest<TTransaction> = {
+			executionId,
+			principal: context.principal,
+			plane: options.plane,
+			command: request.command,
+			inputDigest,
+			actor: actor.data,
+			authority: authority.data,
+			target: target.data,
+			policy: definition.admissionPolicy,
+			...(request.approvalReference
+				? { approvalReference: request.approvalReference }
+				: {}),
+			...(request.confirmationReference
+				? { confirmationReference: request.confirmationReference }
+				: {}),
+			async resolveFacts(transaction) {
+				const facts = await definition.resolveGrantFacts({
+					actor: actor.data,
+					authority: authority.data,
+					target: target.data,
+					input: parsedInput.data,
+					inputDigest,
+					transaction,
+				});
+				return validateCommandGrantFacts(facts, {
+					plane: options.plane,
+					command: request.command,
+					target: target.data,
+					inputDigest,
+				});
+			},
+		};
 		const runResult = await options.persistence.runOnce({
 			scope,
 			inputDigest,
+			legacyInputDigest,
 			initialExecution,
-			run: async (transaction) => {
-				try {
-					const outcome = await definition.execute({
-						actor: actor.data,
-						authority: authority.data,
-						target: target.data,
-						input: parsedInput.data,
-						transaction,
-					});
-					if (outcome.ok) {
-						const redactedResult = redactInput(
-							outcome.result,
-							new Set(definition.sensitiveResultPaths),
-						);
-						const finishedAt = clock().toISOString();
-						const succeededAudit = makeAuditEvent({
-							id: createId("audit"),
-							plane: options.plane,
-							type: "command.succeeded",
-							actor: actor.data,
-							authority: authority.data,
-							target: target.data,
-							command: request.command,
-							occurredAt: finishedAt,
-							data: { executionId },
-						});
-						return {
-							commitTransaction: true,
-							execution: {
-								...initialExecution,
-								status: "succeeded",
-								completedAt: finishedAt,
-								result: redactedResult,
-								auditEvents: [startedAudit, succeededAudit],
-							},
-						};
-					}
-
-					throw outcome.failure;
-				} catch (error) {
+			grant,
+			onGrantDenied(failure, admittedExecution) {
+				const finishedAt = clock().toISOString();
+				const redactedFailure = redactCommandFailure(failure);
+				return {
+					commitTransaction: false,
+					execution: {
+						...admittedExecution,
+						status: "failed",
+						completedAt: finishedAt,
+						failure: redactedFailure,
+						auditEvents: [
+							startedAudit,
+							makeAuditEvent({
+								id: createId("audit"),
+								plane: options.plane,
+								type: "command.failed",
+								actor: actor.data,
+								authority: authority.data,
+								target: target.data,
+								command: request.command,
+								occurredAt: finishedAt,
+								data: { executionId, code: redactedFailure.code },
+							}),
+						],
+					},
+				};
+			},
+			run: async (transaction, admittedExecution) => {
+				// A thrown error means the external outcome is unknown. Let persistence
+				// mark the grant ambiguous instead of releasing reserved authority.
+				const outcome = await definition.execute({
+					actor: actor.data,
+					authority: authority.data,
+					target: target.data,
+					input: parsedInput.data,
+					transaction,
+				});
+				if (outcome.ok) {
+					const redactedResult = redactInput(
+						outcome.result,
+						new Set(definition.sensitiveResultPaths),
+					);
 					const finishedAt = clock().toISOString();
-					const parsedFailure = commandFailureSchema.safeParse(error);
-					const failure = parsedFailure.success
-						? redactCommandFailure(parsedFailure.data)
-						: commandFailure("execution_failed", "Command execution failed.");
-					const failedAudit = makeAuditEvent({
+					const succeededAudit = makeAuditEvent({
 						id: createId("audit"),
 						plane: options.plane,
-						type: "command.failed",
+						type: "command.succeeded",
 						actor: actor.data,
 						authority: authority.data,
 						target: target.data,
 						command: request.command,
 						occurredAt: finishedAt,
-						data: { executionId, code: failure.code },
+						data: { executionId },
 					});
 					return {
-						commitTransaction: false,
+						commitTransaction: true,
 						execution: {
-							...initialExecution,
-							status: "failed",
+							...admittedExecution,
+							status: "succeeded",
 							completedAt: finishedAt,
-							failure,
-							auditEvents: [startedAudit, failedAudit],
+							result: redactedResult,
+							auditEvents: [startedAudit, succeededAudit],
 						},
 					};
 				}
+
+				const finishedAt = clock().toISOString();
+				const failure = redactCommandFailure(outcome.failure);
+				const failedAudit = makeAuditEvent({
+					id: createId("audit"),
+					plane: options.plane,
+					type: "command.failed",
+					actor: actor.data,
+					authority: authority.data,
+					target: target.data,
+					command: request.command,
+					occurredAt: finishedAt,
+					data: { executionId, code: failure.code },
+				});
+				return {
+					commitTransaction: false,
+					execution: {
+						...admittedExecution,
+						status: "failed",
+						completedAt: finishedAt,
+						failure,
+						auditEvents: [startedAudit, failedAudit],
+					},
+				};
 			},
 		});
 
@@ -870,6 +1219,9 @@ export function createCommandExecutor<TTransaction>(options: {
 					"The idempotency key was already used with different input.",
 				),
 			};
+		}
+		if (runResult.kind === "denied") {
+			return { ok: false, failure: runResult.failure };
 		}
 		return receiptFromExecution(runResult.execution, runResult.replayed);
 	}

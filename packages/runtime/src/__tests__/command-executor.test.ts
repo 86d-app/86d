@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import {
 	type CommandAuthority,
-	type CommandGrantEvaluator,
 	createCommandExecutor,
 	createInMemoryCommandPersistence,
 	defineCommand,
 	type MemoryCommandTransaction,
 } from "../command";
+import { type CommandGrantAdapter, computeCommandBindingHash } from "../grants";
 
 const fixedNow = new Date("2026-08-11T20:00:00.000Z");
 const digestKey = "command-conformance-digest-key-0001";
@@ -37,13 +37,15 @@ function principal(credentialId = "session-owner") {
 function createHarness(options?: {
 	onSlowExecution?: (() => Promise<void>) | undefined;
 	actionLevel?: "automatic" | "approve" | "confirm_now" | undefined;
-	grants?: CommandGrantEvaluator | undefined;
+	grants?: CommandGrantAdapter<MemoryCommandTransaction> | undefined;
 }) {
 	let executions = 0;
 	let ids = 0;
 	let authorityId = "membership-server-derived";
 	let authorityType: "custom_role" | "store_membership" = "store_membership";
-	const persistence = createInMemoryCommandPersistence();
+	const persistence = createInMemoryCommandPersistence({
+		grants: options?.grants,
+	});
 	const authority: CommandAuthority = {
 		authorize: async ({ principal: serverPrincipal }) => {
 			if (serverPrincipal.credentialId !== "session-owner") {
@@ -78,6 +80,16 @@ function createHarness(options?: {
 		ownerPlane: "store_runtime",
 		targetType: "store",
 		actionLevel: options?.actionLevel ?? "automatic",
+		admissionPolicy:
+			options?.actionLevel === "approve"
+				? { kind: "approval" }
+				: options?.actionLevel === "confirm_now"
+					? {
+							kind: "confirmation",
+							standingPermission: "forbidden",
+							freshOnly: true,
+						}
+					: { kind: "automatic" },
 		inputSchema: z
 			.object({
 				mode: z.enum(["write", "read", "fail"]),
@@ -99,6 +111,24 @@ function createHarness(options?: {
 		failureDetailsSchema: z.object({ reason: z.string().max(100) }).strict(),
 		sensitiveInputPaths: ["secret"],
 		sensitiveResultPaths: ["key"],
+		resolveGrantFacts: async ({ inputDigest, target }) => {
+			const disclosure = "Apply the Store Runtime tracer change.";
+			return {
+				bindingHashVersion: 1,
+				bindingHash: computeCommandBindingHash({
+					bindingHashVersion: 1,
+					plane: "store_runtime",
+					command: { name: "store_runtime.tracer.write", version: 1 },
+					target,
+					inputDigest,
+					disclosure,
+				}),
+				disclosure,
+				businessId: "business-authoritative",
+				storeId: target.id,
+				baseRevisions: [{ target, revision: "revision-001" }],
+			};
+		},
 		execute: async ({ actor, input, target, transaction }) => {
 			executions += 1;
 			if (input.value === "slow") {
@@ -130,7 +160,6 @@ function createHarness(options?: {
 		digestKey,
 		clock: () => fixedNow,
 		createId: (kind) => `${kind}-${++ids}`,
-		...(options?.grants ? { grants: options.grants } : {}),
 	});
 
 	return {
@@ -315,20 +344,17 @@ describe("Store Runtime Command executor", () => {
 		expect(harness.executions).toBe(1);
 	});
 
-	it("rolls back local state when execution fails", async () => {
+	it("keeps an unexpected handler exception ambiguous and rolls back local state", async () => {
 		const harness = createHarness();
-		const failed = await harness.executor.execute(
-			request("rollback-001", {
-				mode: "fail",
-				value: "must-not-commit",
-			}),
-			principal(),
-		);
-		expect(failed).toMatchObject({
-			ok: false,
-			failure: { code: "execution_failed" },
-			receipt: { status: "failed" },
-		});
+		await expect(
+			harness.executor.execute(
+				request("rollback-001", {
+					mode: "fail",
+					value: "must-not-commit",
+				}),
+				principal(),
+			),
+		).rejects.toThrow("internal-canary-error");
 
 		const read = await harness.executor.execute(
 			request("rollback-read-001", { mode: "read" }),
@@ -383,13 +409,25 @@ describe("Store Runtime Command executor", () => {
 		expect(Object.keys(harness.executor).sort()).toEqual(["execute", "get"]);
 	});
 
-	it("lets an injected grant evaluator validate approval-gated commands", async () => {
-		let evaluated: Parameters<CommandGrantEvaluator["evaluate"]>[0] | undefined;
-		const grants: CommandGrantEvaluator = {
-			evaluate: async (input) => {
+	it("lets an injected grant adapter validate approval-gated commands", async () => {
+		let evaluated:
+			| Parameters<CommandGrantAdapter<MemoryCommandTransaction>["admit"]>[1]
+			| undefined;
+		const grants: CommandGrantAdapter<MemoryCommandTransaction> = {
+			admit: async (_transaction, input) => {
 				evaluated = input;
-				return { ok: true };
+				return {
+					ok: true,
+					grantUse: {
+						kind: "approval",
+						approvalId: input.approvalReference ?? "missing",
+						changeSetId: "change-set-001",
+						reviewHash: "a".repeat(64),
+					},
+				};
 			},
+			settle: async () => undefined,
+			markAmbiguous: async () => undefined,
 		};
 		const harness = createHarness({ actionLevel: "approve", grants });
 		const response = await harness.executor.execute(
@@ -405,7 +443,7 @@ describe("Store Runtime Command executor", () => {
 		expect(evaluated).toMatchObject({
 			principal: principal().principal,
 			command: { name: "store_runtime.tracer.write", version: 1 },
-			actionLevel: "approve",
+			policy: { kind: "approval" },
 			actor: { type: "account", id: "account-server-derived" },
 			target: { type: "store", id: "store-authoritative" },
 			approvalReference: "approval-verified-001",
@@ -423,10 +461,17 @@ describe("Store Runtime Command executor", () => {
 	});
 
 	it("persists a validated confirmation reference", async () => {
-		const grants: CommandGrantEvaluator = {
-			evaluate: async (input) =>
+		const grants: CommandGrantAdapter<MemoryCommandTransaction> = {
+			admit: async (_transaction, input) =>
 				input.confirmationReference === "confirmation-verified-001"
-					? { ok: true }
+					? {
+							ok: true,
+							grantUse: {
+								kind: "confirmation",
+								confirmationId: input.confirmationReference,
+								bindingHash: "b".repeat(64),
+							},
+						}
 					: {
 							ok: false,
 							failure: {
@@ -435,6 +480,8 @@ describe("Store Runtime Command executor", () => {
 								retryable: false,
 							},
 						},
+			settle: async () => undefined,
+			markAmbiguous: async () => undefined,
 		};
 		const harness = createHarness({ actionLevel: "confirm_now", grants });
 		const response = await harness.executor.execute(
@@ -483,7 +530,14 @@ describe("Store Runtime Command executor", () => {
 		for (const [index, testCase] of cases.entries()) {
 			const harness = createHarness({
 				actionLevel: testCase.actionLevel,
-				grants: { evaluate: async () => ({ ok: true }) },
+				grants: {
+					admit: async () => ({
+						ok: true,
+						grantUse: { kind: "automatic" },
+					}),
+					settle: async () => undefined,
+					markAmbiguous: async () => undefined,
+				},
 			});
 			const response = await harness.executor.execute(
 				{

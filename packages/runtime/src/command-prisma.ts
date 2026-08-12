@@ -3,13 +3,21 @@ import {
 	auditEventSchema,
 	authoritativePlaneSchema,
 	authoritySnapshotSchema,
+	type CommandFailure,
 	commandFailureSchema,
 	commandReferenceSchema,
 	commandStatusSchema,
+	grantUseSchema,
 	jsonValueSchema,
 	targetReferenceSchema,
 } from "@86d-app/core";
-import type { CommandPersistence, PersistedCommandExecution } from "./command";
+import type {
+	CommandExecutionClaim,
+	CommandPersistence,
+	PersistedCommandExecution,
+} from "./command";
+import type { PrismaCommandGrantTransaction } from "./grant-prisma";
+import type { CommandGrantAdapter, CommandGrantFacts } from "./grants";
 
 type DateValue = Date | string;
 
@@ -20,9 +28,13 @@ interface CommandExecutionRecord {
 	commandVersion: number;
 	actionLevel: string;
 	idempotencyKey: string;
+	requestDigestVersion: number;
 	approvalId: string | null;
 	confirmationId: string | null;
 	inputDigest: string;
+	commandBindingHashVersion: number | null;
+	commandBindingHash: string | null;
+	grantUse: unknown | null;
 	redactedInput: unknown;
 	actorType: string;
 	actorId: string;
@@ -82,7 +94,8 @@ interface AuditEventFindManyArgs {
 }
 
 /** Narrow generated-Prisma surface kept behind Command persistence. */
-export interface PrismaCommandTransaction {
+export interface PrismaCommandTransaction
+	extends PrismaCommandGrantTransaction {
 	commandExecution: {
 		create(args: CommandExecutionCreateArgs): Promise<unknown>;
 		findFirst(
@@ -99,7 +112,7 @@ export interface PrismaCommandTransaction {
 		create(args: AuditEventCreateArgs): Promise<unknown>;
 		findMany(args: AuditEventFindManyArgs): Promise<AuditEventRecord[]>;
 	};
-	$executeRawUnsafe(query: string): Promise<unknown>;
+	$executeRawUnsafe(query: string, ...values: unknown[]): Promise<number>;
 }
 
 export interface PrismaCommandClient<
@@ -108,13 +121,16 @@ export interface PrismaCommandClient<
 	$transaction<T>(run: (transaction: TTransaction) => Promise<T>): Promise<T>;
 }
 
-interface PrismaCommandPersistenceOptions {
+interface PrismaCommandPersistenceOptions<
+	TTransaction extends PrismaCommandTransaction = PrismaCommandTransaction,
+> {
 	/** Prisma.DbNull from the Store Runtime generated client. */
 	databaseNull: unknown;
 	/** Prisma.JsonNull from the Store Runtime generated client. */
 	jsonNull: unknown;
 	pollIntervalMs?: number | undefined;
 	maxPollAttempts?: number | undefined;
+	grants?: CommandGrantAdapter<TTransaction> | undefined;
 }
 
 function iso(value: DateValue): string {
@@ -132,7 +148,7 @@ function isUniqueConstraintError(error: unknown): boolean {
 	);
 }
 
-function scopeWhere(execution: PersistedCommandExecution) {
+function scopeWhere(execution: CommandExecutionClaim) {
 	return {
 		plane: execution.plane,
 		actorType: execution.actor.type,
@@ -235,7 +251,18 @@ function parseExecution(
 			: {}),
 		actionLevel,
 		status: parsedStatus,
+		requestDigestVersion: record.requestDigestVersion,
 		inputDigest: record.inputDigest,
+		...(record.commandBindingHashVersion === null
+			? {}
+			: { commandBindingHashVersion: record.commandBindingHashVersion }),
+		...(record.commandBindingHash === null
+			? {}
+			: { commandBindingHash: record.commandBindingHash }),
+		grantUse: grantUseSchema.parse(
+			record.grantUse ??
+				(record.actionLevel === "automatic" ? { kind: "automatic" } : null),
+		),
 		redactedInput: jsonValueSchema.parse(record.redactedInput),
 		startedAt: iso(record.startedAt),
 		...(completedAt ? { completedAt } : {}),
@@ -264,15 +291,75 @@ function delay(milliseconds: number): Promise<void> {
 	return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
+function executionWithGrant(
+	execution: CommandExecutionClaim,
+	grantUse: PersistedCommandExecution["grantUse"],
+	facts: CommandGrantFacts,
+): PersistedCommandExecution {
+	return {
+		...execution,
+		commandBindingHashVersion: facts.bindingHashVersion,
+		commandBindingHash: facts.bindingHash,
+		grantUse,
+		...(grantUse.kind === "approval"
+			? { approvalReference: grantUse.approvalId }
+			: {}),
+		...(grantUse.kind === "confirmation"
+			? { confirmationReference: grantUse.confirmationId }
+			: {}),
+	};
+}
+
+class GrantAdmissionDenied extends Error {
+	readonly failure: CommandFailure;
+
+	constructor(failure: CommandFailure) {
+		super(failure.message);
+		this.failure = failure;
+	}
+}
+
+function defaultPrismaGrantAdapter<
+	T extends PrismaCommandTransaction,
+>(): CommandGrantAdapter<T> {
+	return {
+		async admit(transaction, request) {
+			const facts = await request.resolveFacts(transaction);
+			if (
+				request.policy.kind === "automatic" &&
+				facts.bindingHashVersion === 1
+			) {
+				return { ok: true, grantUse: { kind: "automatic" } };
+			}
+			return {
+				ok: false,
+				failure: {
+					code:
+						request.policy.kind === "approval"
+							? "approval_required"
+							: request.policy.kind === "confirmation"
+								? "confirmation_required"
+								: "invalid_request",
+					message: "A persisted Command grant is required.",
+					retryable: false,
+				},
+			};
+		},
+		async settle() {},
+		async markAmbiguous() {},
+	};
+}
+
 /** Durable Store-plane adapter with DB-enforced scoped idempotency. */
 export function createPrismaCommandPersistence<
 	TTransaction extends PrismaCommandTransaction,
 >(
 	client: PrismaCommandClient<TTransaction>,
-	options: PrismaCommandPersistenceOptions,
+	options: PrismaCommandPersistenceOptions<TTransaction>,
 ): CommandPersistence<TTransaction> {
 	const pollIntervalMs = options.pollIntervalMs ?? 25;
 	const maxPollAttempts = options.maxPollAttempts ?? 200;
+	const grants = options.grants ?? defaultPrismaGrantAdapter<TTransaction>();
 
 	async function get(
 		executionId: string,
@@ -298,8 +385,10 @@ export function createPrismaCommandPersistence<
 
 	return {
 		async runOnce(args) {
+			let admittedExecution: PersistedCommandExecution;
+			let grantWasAdmitted = false;
 			try {
-				await client.$transaction(async (transaction) => {
+				admittedExecution = await client.$transaction(async (transaction) => {
 					const execution = args.initialExecution;
 					await transaction.commandExecution.create({
 						data: {
@@ -309,9 +398,13 @@ export function createPrismaCommandPersistence<
 							commandVersion: execution.command.version,
 							actionLevel: execution.actionLevel,
 							idempotencyKey: execution.idempotencyKey,
-							approvalId: execution.approvalReference,
-							confirmationId: execution.confirmationReference,
+							requestDigestVersion: execution.requestDigestVersion,
+							approvalId: null,
+							confirmationId: null,
 							inputDigest: execution.inputDigest,
+							commandBindingHashVersion: null,
+							commandBindingHash: null,
+							grantUse: null,
 							redactedInput: execution.redactedInput,
 							actorType: execution.actor.type,
 							actorId: execution.actor.id,
@@ -326,6 +419,41 @@ export function createPrismaCommandPersistence<
 							startedAt: new Date(execution.startedAt),
 						},
 					});
+					const facts = await args.grant.resolveFacts(transaction);
+					const admissionGrant = {
+						...args.grant,
+						resolveFacts: () => facts,
+					};
+					const admission = await grants.admit(transaction, admissionGrant);
+					if (!admission.ok) throw new GrantAdmissionDenied(admission.failure);
+					grantWasAdmitted = true;
+					if (facts.bindingHashVersion !== 1) {
+						throw new Error("Unsupported Command binding hash version.");
+					}
+					const admitted = executionWithGrant(
+						execution,
+						admission.grantUse,
+						facts,
+					);
+					const attached = await transaction.commandExecution.updateMany({
+						where: { id: execution.executionId, status: "running" },
+						data: {
+							commandBindingHashVersion: facts.bindingHashVersion,
+							commandBindingHash: facts.bindingHash,
+							grantUse: admission.grantUse,
+							approvalId:
+								admission.grantUse.kind === "approval"
+									? admission.grantUse.approvalId
+									: null,
+							confirmationId:
+								admission.grantUse.kind === "confirmation"
+									? admission.grantUse.confirmationId
+									: null,
+						},
+					});
+					if (attached.count !== 1) {
+						throw new Error("The Command grant claim was lost.");
+					}
 					const startedAudit = execution.auditEvents[0];
 					if (!startedAudit) {
 						throw new Error("A Command start audit is required.");
@@ -333,9 +461,19 @@ export function createPrismaCommandPersistence<
 					await transaction.auditEvent.create({
 						data: auditCreateData(startedAudit, execution.executionId),
 					});
+					return admitted;
 				});
 			} catch (error) {
-				if (!isUniqueConstraintError(error)) throw error;
+				if (error instanceof GrantAdmissionDenied) {
+					const recordDenied = grants.recordDenied;
+					if (recordDenied) {
+						await client.$transaction(async (transaction) => {
+							await recordDenied(transaction, args.grant, error.failure);
+						});
+					}
+					return { kind: "denied", failure: error.failure };
+				}
+				if (!isUniqueConstraintError(error) || grantWasAdmitted) throw error;
 				const existing = await client.$transaction(async (transaction) => {
 					const record = await transaction.commandExecution.findFirst({
 						where: scopeWhere(args.initialExecution),
@@ -349,7 +487,13 @@ export function createPrismaCommandPersistence<
 					});
 					return parseExecution(record, audits);
 				});
-				if (existing.inputDigest !== args.inputDigest) {
+				if (
+					existing.inputDigest !== args.inputDigest &&
+					!(
+						existing.requestDigestVersion === 1 &&
+						existing.inputDigest === args.legacyInputDigest
+					)
+				) {
 					return { kind: "conflict" };
 				}
 				const terminal =
@@ -359,76 +503,128 @@ export function createPrismaCommandPersistence<
 				return { kind: "execution", replayed: true, execution: terminal };
 			}
 
-			const terminal = await client.$transaction(async (transaction) => {
-				const running = await transaction.commandExecution.findUnique({
-					where: { id: args.initialExecution.executionId },
-				});
-				if (running?.status !== "running") {
-					throw new Error("Only a running Command can be completed.");
-				}
-				await transaction.$executeRawUnsafe('SAVEPOINT "command_handler"');
-				let completed: Awaited<ReturnType<typeof args.run>>;
-				try {
-					completed = await args.run(transaction);
-					if (!completed.commitTransaction) {
-						await transaction.$executeRawUnsafe(
-							'ROLLBACK TO SAVEPOINT "command_handler"',
-						);
+			try {
+				const terminal = await client.$transaction(async (transaction) => {
+					const running = await transaction.commandExecution.findUnique({
+						where: { id: args.initialExecution.executionId },
+					});
+					if (running?.status !== "running") {
+						throw new Error("Only a running Command can be completed.");
 					}
-				} catch (error) {
-					await transaction.$executeRawUnsafe(
-						'ROLLBACK TO SAVEPOINT "command_handler"',
+					const revalidationFacts = await args.grant.resolveFacts(transaction);
+					const revalidationGrant = {
+						...args.grant,
+						resolveFacts: () => revalidationFacts,
+					};
+					const revalidation = grants.revalidate
+						? await grants.revalidate(
+								transaction,
+								revalidationGrant,
+								admittedExecution.grantUse,
+							)
+						: ({ ok: true, grantUse: admittedExecution.grantUse } as const);
+					let completed: Awaited<ReturnType<typeof args.run>>;
+					if (!revalidation.ok) {
+						await grants.recordDenied?.(
+							transaction,
+							revalidationGrant,
+							revalidation.failure,
+						);
+						const deniedCompletion = args.onGrantDenied?.(
+							revalidation.failure,
+							admittedExecution,
+						);
+						if (!deniedCompletion) {
+							throw new Error(
+								"A revalidated grant denial requires a completion.",
+							);
+						}
+						completed = deniedCompletion;
+					} else {
+						await transaction.$executeRawUnsafe('SAVEPOINT "command_handler"');
+						try {
+							completed = await args.run(transaction, admittedExecution);
+							if (!completed.commitTransaction) {
+								await transaction.$executeRawUnsafe(
+									'ROLLBACK TO SAVEPOINT "command_handler"',
+								);
+							}
+						} catch (error) {
+							await transaction.$executeRawUnsafe(
+								'ROLLBACK TO SAVEPOINT "command_handler"',
+							);
+							throw error;
+						} finally {
+							await transaction.$executeRawUnsafe(
+								'RELEASE SAVEPOINT "command_handler"',
+							);
+						}
+					}
+					await grants.settle(
+						transaction,
+						admittedExecution.executionId,
+						completed.commitTransaction ? "succeeded" : "definite_failure",
 					);
-					throw error;
-				} finally {
-					await transaction.$executeRawUnsafe(
-						'RELEASE SAVEPOINT "command_handler"',
+
+					const execution = completed.execution;
+					if (
+						execution.status !== "succeeded" &&
+						execution.status !== "failed"
+					) {
+						throw new Error("A Command completion must be terminal.");
+					}
+					const completedAt = execution.completedAt;
+					if (!completedAt)
+						throw new Error("A completed Command needs a timestamp.");
+					const updated = await transaction.commandExecution.updateMany({
+						where: {
+							id: args.initialExecution.executionId,
+							status: "running",
+						},
+						data:
+							execution.status === "succeeded"
+								? {
+										status: "succeeded",
+										result: execution.result ?? options.jsonNull,
+										failure: options.databaseNull,
+										completedAt: new Date(completedAt),
+									}
+								: {
+										status: "failed",
+										result: options.databaseNull,
+										failure: execution.failure ?? options.jsonNull,
+										completedAt: new Date(completedAt),
+									},
+					});
+					if (updated.count !== 1) {
+						throw new Error("The Command completion claim was lost.");
+					}
+					const finalAudit = execution.auditEvents.at(-1);
+					if (!finalAudit || finalAudit.id === execution.auditEvents[0]?.id) {
+						throw new Error("A terminal Command audit is required.");
+					}
+					await transaction.auditEvent.create({
+						data: auditCreateData(finalAudit, execution.executionId),
+					});
+					const stored = await loadExecution(
+						transaction,
+						execution.executionId,
 					);
-				}
-
-				const execution = completed.execution;
-				if (execution.status !== "succeeded" && execution.status !== "failed") {
-					throw new Error("A Command completion must be terminal.");
-				}
-				const completedAt = execution.completedAt;
-				if (!completedAt)
-					throw new Error("A completed Command needs a timestamp.");
-				const updated = await transaction.commandExecution.updateMany({
-					where: {
-						id: args.initialExecution.executionId,
-						status: "running",
-					},
-					data:
-						execution.status === "succeeded"
-							? {
-									status: "succeeded",
-									result: execution.result ?? options.jsonNull,
-									failure: options.databaseNull,
-									completedAt: new Date(completedAt),
-								}
-							: {
-									status: "failed",
-									result: options.databaseNull,
-									failure: execution.failure ?? options.jsonNull,
-									completedAt: new Date(completedAt),
-								},
+					if (!stored) throw new Error("The completed Command was not found.");
+					return stored;
 				});
-				if (updated.count !== 1) {
-					throw new Error("The Command completion claim was lost.");
-				}
-				const finalAudit = execution.auditEvents.at(-1);
-				if (!finalAudit || finalAudit.id === execution.auditEvents[0]?.id) {
-					throw new Error("A terminal Command audit is required.");
-				}
-				await transaction.auditEvent.create({
-					data: auditCreateData(finalAudit, execution.executionId),
-				});
-				const stored = await loadExecution(transaction, execution.executionId);
-				if (!stored) throw new Error("The completed Command was not found.");
-				return stored;
-			});
 
-			return { kind: "execution", replayed: false, execution: terminal };
+				return { kind: "execution", replayed: false, execution: terminal };
+			} catch (error) {
+				try {
+					await client.$transaction((transaction) =>
+						grants.markAmbiguous(transaction, admittedExecution.executionId),
+					);
+				} catch {
+					// Preserve the original persistence error; recovery can reconcile later.
+				}
+				throw error;
+			}
 		},
 
 		get,

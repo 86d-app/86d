@@ -1,6 +1,6 @@
 # 86d.store Store Runtime (public)
 
-Modular, open-source commerce Store Runtime. Each Store is single-tenant with its own Storefront, Store Admin, and authoritative commerce data. This repo is the product that the 86d.app Control Plane in the sibling `private/` repo provisions and operates; it also runs fully standalone via Docker. See the root `AGENTS.md` for how the areas fit together.
+Modular, open-source commerce Store Runtime. Each Store is single-tenant with its own Storefront, Store Admin, and authoritative commerce data. The Control Plane within 86d.app can provision and operate this product from the sibling `private/` repo; it also runs fully standalone via Docker. See the root `AGENTS.md` for how the areas fit together.
 
 Bun monorepo orchestrated by Turborepo. TypeScript everywhere, strict mode.
 
@@ -109,7 +109,7 @@ Templates live in `templates/<name>/`. The store app resolves them via tsconfig 
 ## Deployment modes
 
 - **Docker (self-hosted):** `docker compose up` starts PostgreSQL + store, auto-runs migrations, seeds demo data, creates the admin user, uses local-filesystem blob storage. Set `BETTER_AUTH_SECRET` to a secure random string in production.
-- **Managed (Railway or legacy Vercel + Neon):** the 86d.app Control Plane provisions a dedicated instance with its own database, hosting, and blob storage. The current implementation sets `86D_API_KEY` plus `STORE_ID`; with `86D_API_KEY` present, the Store Runtime pulls managed configuration and enables Control Plane SSO for Store Admin. This static key is migration state. The target uses `86D_STORE_ID`, `86D_API_URL`, and an opaque workload credential exchanged for short-lived scoped tokens.
+- **Managed (Railway or legacy Vercel + Neon):** the Control Plane within 86d.app provisions a dedicated instance with its own database, hosting, and blob storage. The current implementation sets `86D_API_KEY` plus `STORE_ID`; with `86D_API_KEY` present, the Store Runtime pulls managed configuration and enables 86d.app SSO for Store Admin. This static key is migration state. The target uses `86D_STORE_ID`, `86D_API_URL`, and an opaque workload credential exchanged for short-lived scoped tokens.
 - **Storage providers:** `STORAGE_PROVIDER` = `local` (Docker default), `vercel`, or `s3` (MinIO, AWS S3, R2). See `.env.example`.
 
 ## API endpoints
@@ -126,13 +126,15 @@ Templates live in `templates/<name>/`. The store app resolves them via tsconfig 
 - **86d.store** or **Store Runtime** means the deployed open-source product.
 - **Storefront** means its shopper experience.
 - **Store Admin** means its merchant operating interface.
-- **86d.app** or **Control Plane** means the separate managed-service product.
+- **86d.app** means the optional managed product.
+- **86d Console** means its human-facing interface.
+- **Control Plane** means the architectural authority within 86d.app.
 - **Feature** describes merchant-facing product behavior.
 - **Integration** describes a connection to an external provider.
 - **Module** is the technical packaging unit used in this repository.
 - **Connection** is a configured provider relationship used by an Integration.
 
-Do not use bare “dashboard” in product language. Existing internal E2E filenames or code identifiers may remain until an explicit migration.
+Do not use bare “dashboard” or “console” in product language. Current 86d.app UI strings, internal E2E filenames, and code identifiers that use `dashboard` are migration state.
 
 ## Code conventions
 
