@@ -18,7 +18,7 @@ import {
 	validateCommandGrantFacts,
 } from "./grants";
 
-interface PrismaConfirmationIssueTransaction {
+export interface PrismaConfirmationIssueTransaction {
 	confirmation: {
 		create(args: { data: Record<string, unknown> }): Promise<unknown>;
 	};

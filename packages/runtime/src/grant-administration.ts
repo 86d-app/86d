@@ -28,7 +28,7 @@ import {
 	normalizeBaseRevisions,
 } from "./grants";
 
-interface GrantAdministrationTransaction {
+export interface PrismaGrantAdministrationTransaction {
 	changeSet: {
 		create(args: { data: Record<string, unknown> }): Promise<unknown>;
 		updateMany(args: {
@@ -63,7 +63,7 @@ interface GrantAdministrationTransaction {
 }
 
 export interface PrismaGrantAdministrationClient<
-	TTransaction extends GrantAdministrationTransaction,
+	TTransaction extends PrismaGrantAdministrationTransaction,
 > {
 	$transaction<T>(run: (transaction: TTransaction) => Promise<T>): Promise<T>;
 }
@@ -240,7 +240,7 @@ type GrantOperation =
 	| "standing_permission.resolve_ambiguous";
 
 export interface PrismaStoreGrantAdministrationOptions<
-	TTransaction extends GrantAdministrationTransaction,
+	TTransaction extends PrismaGrantAdministrationTransaction,
 > {
 	createId?:
 		| ((
@@ -436,7 +436,7 @@ function databaseDate(value: unknown): Date {
 	return parsed;
 }
 
-async function databaseNow<T extends GrantAdministrationTransaction>(
+async function databaseNow<T extends PrismaGrantAdministrationTransaction>(
 	transaction: T,
 ): Promise<Date> {
 	const rows = await transaction.$queryRawUnsafe<Array<{ now: Date | string }>>(
@@ -478,7 +478,7 @@ const lockedChangeSetQuery = `SELECT jsonb_build_object(
 
 /** Durable, Store-plane grant lifecycle administration behind one interface. */
 export function createPrismaStoreGrantAdministration<
-	TTransaction extends GrantAdministrationTransaction,
+	TTransaction extends PrismaGrantAdministrationTransaction,
 >(
 	client: PrismaGrantAdministrationClient<TTransaction>,
 	options: PrismaStoreGrantAdministrationOptions<TTransaction>,
