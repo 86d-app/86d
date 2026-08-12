@@ -34,6 +34,8 @@ describe("getStoreConfig", () => {
 		delete process.env.STORE_ID;
 		delete process.env["86D_API_URL"];
 		delete process.env["86D_API_KEY"];
+		delete process.env["86D_STORE_ID"];
+		delete process.env["86D_WORKLOAD_CREDENTIAL"];
 	});
 
 	afterEach(() => {
@@ -113,6 +115,139 @@ describe("getStoreConfig", () => {
 		expect(config.name).toBe("Env Store");
 	});
 
+	it("uses managed workload exchange for a newly provisioned Store", async () => {
+		const credentialId = "86d_wc_abcdefghijklmnopqrstuvwx";
+		const credentialSecret = "s".repeat(43);
+		process.env["86D_STORE_ID"] = VALID_UUID;
+		process.env["86D_API_URL"] = "https://api.86d.app";
+		process.env["86D_WORKLOAD_CREDENTIAL"] =
+			`${credentialId}.${credentialSecret}`;
+		process.env.STORE_ID = "784d078d-9202-43e7-9624-63a92f479331";
+		process.env["86D_API_KEY"] = "legacy-key-must-not-be-used";
+		globalThis.fetch = vi
+			.fn()
+			.mockResolvedValueOnce(
+				Response.json({
+					access_token: "scoped-config-token",
+					token_type: "Bearer",
+					expires_in: 300,
+					scope: "runtime.config:read",
+				}),
+			)
+			.mockResolvedValueOnce(
+				Response.json({
+					theme: "managed",
+					name: "Managed Store",
+					favicon: "/managed.ico",
+					icon: DEFAULT_CONFIG.icon,
+					logo: DEFAULT_CONFIG.logo,
+					variables: DEFAULT_CONFIG.variables,
+				}),
+			);
+
+		const config = await getStoreConfig();
+
+		expect(config.name).toBe("Managed Store");
+		expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+		expect(globalThis.fetch).toHaveBeenNthCalledWith(
+			1,
+			"https://api.86d.app/api/oauth/token",
+			expect.objectContaining({ method: "POST" }),
+		);
+		const configRequest = (globalThis.fetch as ReturnType<typeof vi.fn>).mock
+			.calls[1];
+		expect(configRequest?.[0].toString()).toBe(
+			`https://api.86d.app/api/v1/stores/${VALID_UUID}`,
+		);
+		expect(configRequest?.[1]).toEqual(
+			expect.objectContaining({ headers: expect.any(Headers) }),
+		);
+		const requestHeaders = new Headers(
+			(globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[1]?.[1]
+				?.headers,
+		);
+		expect(requestHeaders.get("Authorization")).toBe(
+			"Bearer scoped-config-token",
+		);
+		expect(
+			JSON.stringify((globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls),
+		).not.toContain("legacy-key-must-not-be-used");
+	});
+
+	it("reuses one managed access token across sequential config reads", async () => {
+		process.env["86D_STORE_ID"] = VALID_UUID;
+		process.env["86D_API_URL"] = "https://api.86d.app";
+		process.env["86D_WORKLOAD_CREDENTIAL"] =
+			`86d_wc_sequentialcacheclient001.${"q".repeat(43)}`;
+		globalThis.fetch = vi.fn(async (input: string | URL | Request) => {
+			const url = input instanceof Request ? input.url : input.toString();
+			if (url.endsWith("/api/oauth/token")) {
+				return Response.json({
+					access_token: "shared-sequential-token",
+					token_type: "Bearer",
+					expires_in: 300,
+					scope: "runtime.config:read",
+				});
+			}
+			return Response.json({
+				theme: "managed",
+				name: "Managed Store",
+				favicon: "/managed.ico",
+				icon: DEFAULT_CONFIG.icon,
+				logo: DEFAULT_CONFIG.logo,
+				variables: DEFAULT_CONFIG.variables,
+			});
+		});
+
+		await getStoreConfig();
+		await getStoreConfig();
+
+		const tokenExchanges = (
+			globalThis.fetch as ReturnType<typeof vi.fn>
+		).mock.calls.filter(([input]) =>
+			input.toString().endsWith("/api/oauth/token"),
+		);
+		expect(tokenExchanges).toHaveLength(1);
+		expect(globalThis.fetch).toHaveBeenCalledTimes(3);
+	});
+
+	it("coalesces concurrent managed config token exchanges", async () => {
+		process.env["86D_STORE_ID"] = VALID_UUID;
+		process.env["86D_API_URL"] = "https://api.86d.app";
+		process.env["86D_WORKLOAD_CREDENTIAL"] =
+			`86d_wc_concurrentcacheclient001.${"r".repeat(43)}`;
+		globalThis.fetch = vi.fn(async (input: string | URL | Request) => {
+			const url = input instanceof Request ? input.url : input.toString();
+			if (url.endsWith("/api/oauth/token")) {
+				await new Promise((resolve) => setTimeout(resolve, 0));
+				return Response.json({
+					access_token: "shared-concurrent-token",
+					token_type: "Bearer",
+					expires_in: 300,
+					scope: "runtime.config:read",
+				});
+			}
+			return Response.json({
+				theme: "managed",
+				name: "Managed Store",
+				favicon: "/managed.ico",
+				icon: DEFAULT_CONFIG.icon,
+				logo: DEFAULT_CONFIG.logo,
+				variables: DEFAULT_CONFIG.variables,
+			});
+		});
+
+		await Promise.all([getStoreConfig(), getStoreConfig()]);
+
+		const tokenExchanges = (
+			globalThis.fetch as ReturnType<typeof vi.fn>
+		).mock.calls.filter(([input]) =>
+			input.toString().endsWith("/api/oauth/token"),
+		);
+		expect(tokenExchanges).toHaveLength(1);
+		expect(globalThis.fetch).toHaveBeenCalledTimes(3);
+	});
+
 	it("uses the local template without a Control Plane call when no managed API key exists", async () => {
 		const configPath = join(TMP_DIR, "no-key-config.json");
 		writeFileSync(
@@ -134,6 +269,43 @@ describe("getStoreConfig", () => {
 		});
 		expect(config.name).toBe("Local Store");
 		expect(globalThis.fetch).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		[
+			"revoked",
+			async () => Response.json({ error: "invalid_client" }, { status: 401 }),
+		],
+		[
+			"network failure",
+			async () => Promise.reject(new Error("control plane unavailable")),
+		],
+	])("fails closed on managed %s instead of loading a local template", async (_label, exchangeResult) => {
+		const configPath = join(TMP_DIR, "managed-fail-closed.json");
+		writeFileSync(
+			configPath,
+			JSON.stringify({
+				theme: "forbidden-fallback",
+				name: "Must Not Load",
+				favicon: "/fallback.ico",
+				icon: DEFAULT_CONFIG.icon,
+				logo: DEFAULT_CONFIG.logo,
+				variables: DEFAULT_CONFIG.variables,
+			}),
+		);
+		process.env["86D_STORE_ID"] = VALID_UUID;
+		process.env["86D_API_URL"] = "https://api.86d.app";
+		process.env["86D_WORKLOAD_CREDENTIAL"] =
+			`86d_wc_abcdefghijklmnopqrstuvwx.${"s".repeat(43)}`;
+		globalThis.fetch = vi.fn(exchangeResult);
+
+		await expect(
+			getStoreConfig({
+				templatePath: configPath,
+				fallbackToTemplateOnError: true,
+			}),
+		).rejects.toThrow();
+		expect(globalThis.fetch).toHaveBeenCalledTimes(1);
 	});
 
 	it("falls back to template on API error when configured", async () => {

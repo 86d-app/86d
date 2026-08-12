@@ -6,7 +6,37 @@ import { admin, genericOAuth } from "better-auth/plugins";
 import { db } from "db";
 
 const apiUrl = process.env["86D_API_URL"] ?? "https://api.86d.app";
-const apiKey = process.env["86D_API_KEY"];
+
+export interface ManagedAdminOAuthEnvironment {
+	apiUrl: string;
+	clientId?: string | undefined;
+	clientSecret?: string | undefined;
+	/** Intentionally ignored: machine credentials can never authenticate people. */
+	legacyApiKey?: string | undefined;
+	/** Intentionally ignored: workload credentials can never authenticate people. */
+	workloadCredential?: string | undefined;
+}
+
+export function resolveManagedAdminOAuthConfig(
+	environment: ManagedAdminOAuthEnvironment,
+): {
+	discoveryUrl: string;
+	clientId: string;
+	clientSecret: string;
+} | null {
+	if (!environment.clientId || !environment.clientSecret) return null;
+	return {
+		discoveryUrl: `${environment.apiUrl.replace(/\/$/, "")}/.well-known/openid-configuration`,
+		clientId: environment.clientId,
+		clientSecret: environment.clientSecret,
+	};
+}
+
+const managedAdminOAuth = resolveManagedAdminOAuthConfig({
+	apiUrl,
+	clientId: process.env["86D_ADMIN_OAUTH_CLIENT_ID"],
+	clientSecret: process.env["86D_ADMIN_OAUTH_CLIENT_SECRET"],
+});
 
 /**
  * Map an IdP profile to a local user record.
@@ -37,19 +67,19 @@ export function mapSsoProfileToUser(
 }
 
 /**
- * When 86D_API_KEY is set, enable 86d.app SSO as a social login provider.
- * This allows store owners to sign in with their 86d.app account
- * and automatically get admin access.
+ * Human Store Admin SSO is deliberately configured with a dedicated OAuth
+ * client. Neither the managed workload credential nor the legacy Store API
+ * key is valid human identity material.
  */
-const socialProviders = apiKey
+const socialProviders = managedAdminOAuth
 	? [
 			genericOAuth({
 				config: [
 					{
 						providerId: "86d",
-						discoveryUrl: `${apiUrl}/.well-known/openid-configuration`,
-						clientId: apiKey,
-						clientSecret: apiKey,
+						discoveryUrl: managedAdminOAuth.discoveryUrl,
+						clientId: managedAdminOAuth.clientId,
+						clientSecret: managedAdminOAuth.clientSecret,
 						scopes: ["openid", "profile", "email", "store:admin"],
 						mapProfileToUser: mapSsoProfileToUser,
 					},

@@ -5,7 +5,10 @@ export const metadata = {
 	title: "Sign in — 86d Store",
 };
 
-const show86dSso = !!process.env["86D_API_KEY"];
+const show86dSso = Boolean(
+	process.env["86D_ADMIN_OAUTH_CLIENT_ID"] &&
+		process.env["86D_ADMIN_OAUTH_CLIENT_SECRET"],
+);
 
 export default function SignInPage() {
 	return (

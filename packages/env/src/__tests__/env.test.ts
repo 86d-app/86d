@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 describe("env", () => {
 	it("exports a validated env object with defaults", async () => {
@@ -23,6 +23,47 @@ describe("env", () => {
 		const env = mod.default;
 
 		expect(env["86D_API_URL"]).toBe("https://api.86d.app");
+	});
+
+	it("keeps managed workload identity distinct from legacy Store identity", async () => {
+		const mod = await import("../index");
+		const env = mod.default;
+
+		if (!process.env["86D_STORE_ID"]) {
+			expect(env["86D_STORE_ID"]).toBeUndefined();
+		}
+		if (!process.env["86D_WORKLOAD_CREDENTIAL"]) {
+			expect(env["86D_WORKLOAD_CREDENTIAL"]).toBeUndefined();
+		}
+	});
+
+	it("prefers managed Store identity at the shared Runtime boundary", async () => {
+		const legacyStoreId = "784d078d-9202-43e7-9624-63a92f479331";
+		const managedStoreId = "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d";
+		const previousLegacy = process.env.STORE_ID;
+		const previousManaged = process.env["86D_STORE_ID"];
+		try {
+			process.env.STORE_ID = legacyStoreId;
+			process.env["86D_STORE_ID"] = managedStoreId;
+			vi.resetModules();
+
+			const mod = await import("../index");
+
+			expect(mod.default.STORE_ID).toBe(managedStoreId);
+			expect(mod.default["86D_STORE_ID"]).toBe(managedStoreId);
+		} finally {
+			if (previousLegacy === undefined) {
+				delete process.env.STORE_ID;
+			} else {
+				process.env.STORE_ID = previousLegacy;
+			}
+			if (previousManaged === undefined) {
+				delete process.env["86D_STORE_ID"];
+			} else {
+				process.env["86D_STORE_ID"] = previousManaged;
+			}
+			vi.resetModules();
+		}
 	});
 
 	it("leaves optional fields as undefined when not set", async () => {

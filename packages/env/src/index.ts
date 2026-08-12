@@ -10,6 +10,10 @@ const envSchema = z.object({
 		.transform((v) => v || "de005b9d-c517-4c65-896e-8edef5cf5a94"),
 	"86D_API_URL": z.url().optional().default("https://api.86d.app"),
 	"86D_API_KEY": z.string().optional(),
+	"86D_STORE_ID": z.string().uuid().optional(),
+	"86D_WORKLOAD_CREDENTIAL": z.string().optional(),
+	"86D_ADMIN_OAUTH_CLIENT_ID": z.string().optional(),
+	"86D_ADMIN_OAUTH_CLIENT_SECRET": z.string().optional(),
 	DATABASE_URL: z.string().optional(),
 	NEXT_PUBLIC_STORE_URL: z.url().optional(),
 	NEXT_PUBLIC_GOOGLE_TAG_MANAGER_ID: z.string().optional(),
@@ -28,7 +32,12 @@ const envSchema = z.object({
 	BETTER_AUTH_SECRET: z.string().optional(),
 });
 
-const parsed = envSchema.safeParse(process.env);
+const parsed = envSchema.safeParse({
+	...process.env,
+	// Managed Runtime identity is canonical at boot. Standalone installs retain
+	// the historical STORE_ID boundary and its local default.
+	STORE_ID: process.env["86D_STORE_ID"] ?? process.env.STORE_ID,
+});
 
 if (!parsed.success) {
 	console.error(

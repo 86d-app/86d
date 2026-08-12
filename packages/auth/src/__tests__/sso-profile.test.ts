@@ -1,5 +1,46 @@
 import { describe, expect, it } from "vitest";
-import { mapSsoProfileToUser } from "../index";
+import { mapSsoProfileToUser, resolveManagedAdminOAuthConfig } from "../index";
+
+describe("resolveManagedAdminOAuthConfig", () => {
+	it("requires distinct human OAuth client credentials", () => {
+		expect(
+			resolveManagedAdminOAuthConfig({
+				apiUrl: "https://api.86d.app",
+				clientId: "store-admin-client",
+				clientSecret: "human-oauth-secret",
+			}),
+		).toEqual({
+			discoveryUrl: "https://api.86d.app/.well-known/openid-configuration",
+			clientId: "store-admin-client",
+			clientSecret: "human-oauth-secret",
+		});
+	});
+
+	it("stays disabled when either human OAuth value is absent", () => {
+		expect(
+			resolveManagedAdminOAuthConfig({
+				apiUrl: "https://api.86d.app",
+				clientId: "store-admin-client",
+			}),
+		).toBeNull();
+		expect(
+			resolveManagedAdminOAuthConfig({
+				apiUrl: "https://api.86d.app",
+				clientSecret: "human-oauth-secret",
+			}),
+		).toBeNull();
+	});
+
+	it("does not accept workload or legacy machine credentials", () => {
+		expect(
+			resolveManagedAdminOAuthConfig({
+				apiUrl: "https://api.86d.app",
+				legacyApiKey: "legacy-machine-key",
+				workloadCredential: "86d_wc_client.secret",
+			}),
+		).toBeNull();
+	});
+});
 
 describe("mapSsoProfileToUser", () => {
 	it("grants admin when profile role is admin", () => {

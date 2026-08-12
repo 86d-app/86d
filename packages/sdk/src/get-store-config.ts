@@ -1,6 +1,12 @@
 import { fetchFromApi } from "./fetch-from-api";
 import { loadFromTemplate } from "./load-from-template";
 import type { Config } from "./types";
+import {
+	createWorkloadTokenClient,
+	type ManagedWorkloadConfig,
+	readManagedWorkloadConfig,
+	type WorkloadTokenClient,
+} from "./workload-token-client";
 
 const UUID_REGEX =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -23,6 +29,30 @@ export interface GetStoreConfigOptions {
 }
 
 const DEFAULT_API_BASE_URL = "https://api.86d.app";
+const STORE_CONFIG_RESOURCE = {
+	audience: "https://86d.app/api/store-runtime",
+	scopes: ["runtime.config:read"],
+} as const;
+
+let managedClient:
+	| {
+			config: ManagedWorkloadConfig;
+			client: WorkloadTokenClient;
+	  }
+	| undefined;
+
+function workloadClient(config: ManagedWorkloadConfig): WorkloadTokenClient {
+	if (
+		managedClient?.config.storeId === config.storeId &&
+		managedClient.config.apiBaseUrl === config.apiBaseUrl &&
+		managedClient.config.credential === config.credential
+	) {
+		return managedClient.client;
+	}
+	const client = createWorkloadTokenClient({ config });
+	managedClient = { config: { ...config }, client };
+	return client;
+}
 
 /**
  * Resolve store configuration from the 86d API (when STORE_ID is set) or from
@@ -41,6 +71,21 @@ export async function getStoreConfig(
 		options?.apiKey ?? (process.env["86D_API_KEY"] as string | undefined);
 	const templatePath = options?.templatePath;
 	const fallbackToTemplate = options?.fallbackToTemplateOnError ?? false;
+	const managedWorkload = readManagedWorkloadConfig();
+
+	if (managedWorkload) {
+		// Once the exact managed identity trio is present, the Control Plane is
+		// authoritative for this Runtime. Falling back to a local template after
+		// revocation or an auth/network failure would silently turn a managed Store
+		// into a different standalone configuration.
+		const client = workloadClient(managedWorkload);
+		return fetchFromApi(
+			managedWorkload.storeId,
+			managedWorkload.apiBaseUrl,
+			undefined,
+			(url, init) => client.request(STORE_CONFIG_RESOURCE, url, init),
+		);
+	}
 
 	if (storeId && isValidUUID(storeId) && apiKey) {
 		try {

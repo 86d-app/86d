@@ -95,8 +95,13 @@ export async function fetchFromApi(
 	storeId: string,
 	apiBaseUrl: string,
 	apiKey?: string,
+	fetcher: typeof globalThis.fetch = globalThis.fetch,
 ): Promise<Config> {
-	const url = `${apiBaseUrl.replace(/\/$/, "")}/v1/stores/${storeId}`;
+	const normalizedBase = apiBaseUrl.replace(/\/$/, "");
+	const apiRoot = normalizedBase.endsWith("/api")
+		? normalizedBase
+		: `${normalizedBase}/api`;
+	const url = `${apiRoot}/v1/stores/${storeId}`;
 	const headers: Record<string, string> = {
 		"Content-Type": "application/json",
 	};
@@ -104,7 +109,7 @@ export async function fetchFromApi(
 		headers.Authorization = `Bearer ${apiKey}`;
 	}
 
-	const res = await fetch(url, { headers });
+	const res = await fetcher(url, { headers });
 
 	if (!res.ok) {
 		throw new Error(

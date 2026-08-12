@@ -39,7 +39,7 @@ describe("fetchFromApi", () => {
 		await fetchFromApi("abc-123", "https://api.86d.app");
 
 		expect(globalThis.fetch).toHaveBeenCalledWith(
-			"https://api.86d.app/v1/stores/abc-123",
+			"https://api.86d.app/api/v1/stores/abc-123",
 			expect.objectContaining({
 				headers: expect.objectContaining({
 					"Content-Type": "application/json",
@@ -57,7 +57,7 @@ describe("fetchFromApi", () => {
 		await fetchFromApi("abc-123", "https://api.86d.app/");
 
 		expect(globalThis.fetch).toHaveBeenCalledWith(
-			"https://api.86d.app/v1/stores/abc-123",
+			"https://api.86d.app/api/v1/stores/abc-123",
 			expect.anything(),
 		);
 	});
