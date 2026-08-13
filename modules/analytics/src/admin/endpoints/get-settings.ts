@@ -1,4 +1,4 @@
-import { createAdminEndpoint } from "@86d-app/core";
+import { createAdminEndpoint } from "@86d-app/core/api";
 import { GA4Provider } from "../../providers/ga4";
 import { SentryProvider } from "../../providers/sentry";
 

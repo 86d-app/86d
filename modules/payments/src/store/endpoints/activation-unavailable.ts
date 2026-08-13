@@ -1,4 +1,5 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
+import { createStoreEndpoint } from "@86d-app/core/api";
+import { z } from "@86d-app/core/zod";
 
 const unavailable = {
 	code: "PAYMENT_METHODS_V2_REQUIRED",

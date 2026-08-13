@@ -1,10 +1,10 @@
-import {
-	type LockingModuleDataTransaction,
-	type ModuleDataTransaction,
-	type ModuleTransactionRunner,
-	sanitizeText,
-	z,
-} from "@86d-app/core";
+import type {
+	LockingModuleDataTransaction,
+	ModuleDataTransaction,
+	ModuleTransactionRunner,
+} from "@86d-app/core/durable-events";
+import { sanitizeText } from "@86d-app/core/sanitize";
+import { z } from "@86d-app/core/zod";
 
 const SHA256_PATTERN = /^[0-9a-f]{64}$/;
 const CHECKOUT_REQUEST_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;

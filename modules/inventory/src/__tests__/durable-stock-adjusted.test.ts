@@ -1,12 +1,12 @@
 import type {
 	AnyDurableEventDefinition,
 	DurableEventInput,
-	ModuleDataService,
 	ModuleDataTransaction,
 	ModuleTransactionRunner,
-} from "@86d-app/core";
-import { inventoryStockAdjustedV1 } from "@86d-app/core";
+} from "@86d-app/core/durable-events";
+import { inventoryStockAdjustedV1 } from "@86d-app/core/durable-events";
 import { createMockDataService } from "@86d-app/core/test-utils";
+import type { ModuleDataService } from "@86d-app/core/types/module";
 import { describe, expect, it, vi } from "vitest";
 import { inventoryCheckoutProvider } from "../capabilities";
 import { createInventoryController } from "../service-impl";

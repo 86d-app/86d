@@ -25,7 +25,7 @@ vi.mock("~/lib/template-path", () => ({
 	resolveTemplatePath: () => "/templates/brisa/config.json",
 }));
 
-vi.mock("@86d-app/sdk", () => ({
+vi.mock("@86d-app/sdk/get-store-config", () => ({
 	getStoreConfig: mocks.getStoreConfig,
 }));
 

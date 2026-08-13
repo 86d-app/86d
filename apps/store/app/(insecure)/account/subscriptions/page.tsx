@@ -1,6 +1,6 @@
 "use client";
 
-import { useModuleClient } from "@86d-app/core/client";
+import { useModuleClient } from "@86d-app/core/client/provider";
 import { useState } from "react";
 import { StatusBadge } from "~/components/status-badge";
 import { Button } from "~/components/ui/button";

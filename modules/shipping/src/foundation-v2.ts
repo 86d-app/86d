@@ -1,11 +1,13 @@
-import {
-	type LockingModuleDataTransaction,
-	type ModuleController,
-	type ModuleDataService,
-	type ModuleDataTransaction,
-	type ModuleTransactionRunner,
-	z,
-} from "@86d-app/core";
+import type {
+	LockingModuleDataTransaction,
+	ModuleDataTransaction,
+	ModuleTransactionRunner,
+} from "@86d-app/core/durable-events";
+import type {
+	ModuleController,
+	ModuleDataService,
+} from "@86d-app/core/types/module";
+import { z } from "@86d-app/core/zod";
 import { EasyPostProvider } from "./provider";
 
 const identifierSchema = z.string().trim().min(1).max(255);

@@ -1,8 +1,8 @@
 import {
-	test,
-	expect,
 	ADMIN_EMAIL,
 	ADMIN_PASSWORD,
+	expect,
+	test,
 } from "./fixtures/test-fixtures";
 
 test.describe("User — Authentication", () => {

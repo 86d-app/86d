@@ -57,6 +57,43 @@ const store = createStore({
 | `privateKey` | `string` | Yes | Braintree private API key |
 | `sandbox` | `string` | No | Pass `"true"` to use the sandbox environment |
 
+## Payment Connection v2 adapter
+
+The module also exports `createBraintreePaymentConnectionProvider`, a GraphQL
+adapter bound to one immutable Connection ID. It is intentionally not registered
+by the legacy module initializer while Checkout migration and durable webhook
+ingress remain contained.
+
+The v2 adapter starts with authorization; it does not advertise or execute an
+`intent` operation because doing so would create an unrecorded financial hold.
+It uses one capture per authorization and routes new authorizations through the
+Connection-owned `merchantAccountIds` mapping. Mutations forward the durable
+idempotency key as `apiRequestKey` and the operation ID as `clientMutationId` and,
+where supported, `orderId`. Reconciliation uses read-only GraphQL queries for the
+exact transaction/refund reference or unique operation order ID. Braintree's
+duplicate-request window is 30 days, so the Store's durable operation envelope
+remains the permanent source of idempotency truth.
+
+Referenced authorization, capture, refund, and void requests must include the
+durable source operation descriptor. The adapter validates its operation type,
+provider reference, amount, and currency before provider I/O. Capture is allowed
+only when its amount exactly equals the source authorization amount, preventing
+a final upstream capture from leaving a locally claimable remainder. Both
+capture and refund are bound by the source transaction and deliberately do not
+reselect a merchant account from mutable current configuration.
+
+A provider-confirmed `AUTHORIZING` response persists as `pending`, not as an
+unknown outcome. It retains the exact transaction reference for later canonical
+reconciliation and does not advance the Payment aggregate.
+
+Capture is a single final operation: partial and incremental capture are not
+supported. The adapter does not yet provide a shopper-facing 3D Secure/SCA
+challenge and return contract, so payment methods that require shopper action
+cannot be activated through this path. These limitations, the Checkout migration
+dependency, and the durable webhook-ingress dependency keep the adapter
+unregistered; the existing webhook continues to verify then return
+`503 PAYMENT_WEBHOOK_DURABILITY_REQUIRED`.
+
 ## Sandbox Mode
 
 ```ts
@@ -106,7 +143,9 @@ Uses HTTP Basic auth: `Authorization: Basic base64(publicKey:privateKey)` with `
 
 ## Amounts
 
-Amounts are passed in cents (integers) and converted to decimal strings for the Braintree API (e.g., `1000` → `"10.00"`).
+Amounts are passed as integer minor units and converted with the currency's
+supported exponent for the Braintree API (for example, USD `1000` → `"10.00"`,
+while JPY, ISK, and LAK `1000` → `"1000"`).
 
 ## Payment Method Nonce
 

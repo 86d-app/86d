@@ -1,4 +1,5 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
+import { createStoreEndpoint } from "@86d-app/core/api";
+import { z } from "@86d-app/core/zod";
 import type { ToastController } from "../../service";
 
 export const syncOrderEndpoint = createStoreEndpoint(

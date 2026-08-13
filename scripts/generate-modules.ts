@@ -28,18 +28,20 @@ import {
 } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
+import { readStoreConfig } from "@86d-app/registry/config";
+import { fetchModule } from "@86d-app/registry/fetcher";
 import {
-	detectCircularDependencies,
-	fetchModule,
 	generateLockfile,
 	isLockfileSatisfied,
 	readLockfile,
-	readStoreConfig,
-	resolveModules,
 	verifyLockfile,
 	writeLockfile,
-} from "@86d-app/registry";
-import type { ResolvedModule } from "@86d-app/registry";
+} from "@86d-app/registry/lockfile";
+import {
+	detectCircularDependencies,
+	resolveModules,
+} from "@86d-app/registry/resolver";
+import type { ResolvedModule } from "@86d-app/registry/types";
 
 interface PackageJson {
 	dependencies?: Record<string, string>;
@@ -121,7 +123,9 @@ const STORE_LOADERS_PATH = join(GENERATED_DIR, "store-loaders.ts");
 const TRANSPILE_PACKAGES_PATH = join(GENERATED_DIR, "transpile-packages.json");
 const PACKAGE_JSON_PATH = join(STORE_ROOT, "package.json");
 
-function validateUniquePaths(sources: ModulePathSource[]): ModulePathConflict[] {
+function validateUniquePaths(
+	sources: ModulePathSource[],
+): ModulePathConflict[] {
 	const collect = (
 		kind: ModulePathKind,
 		getPaths: (source: ModulePathSource) => string[] | undefined,
@@ -183,8 +187,8 @@ function validateModuleClientEndpointReferences(
 		if (reference.moduleId !== source.moduleId) continue;
 		const availablePaths = new Set(
 			reference.surface === "admin"
-				? source.adminEndpoints ?? []
-				: source.storeEndpoints ?? [],
+				? (source.adminEndpoints ?? [])
+				: (source.storeEndpoints ?? []),
 		);
 		if (availablePaths.has(reference.path)) continue;
 		const key = [
@@ -211,7 +215,8 @@ function formatModuleClientEndpointReferenceConflicts(
 	conflicts: ModuleClientEndpointReferenceConflict[],
 ): string[] {
 	return conflicts.map((conflict) => {
-		const surface = conflict.surface === "admin" ? "admin endpoint" : "store endpoint";
+		const surface =
+			conflict.surface === "admin" ? "admin endpoint" : "store endpoint";
 		return `Module "${conflict.moduleId}" references missing ${surface} "${conflict.path}" in "${conflict.filePath}".`;
 	});
 }
@@ -268,14 +273,14 @@ async function resolveModulesFromRegistry(): Promise<ResolvedModule[]> {
 		console.log(`  Fetching ${toFetch.length} missing module(s)...`);
 
 		// Load manifest for fetch operations
-		const { readLocalManifest } = await import("@86d-app/registry");
-		const manifest = readLocalManifest(
-			join(WORKSPACE_ROOT, "registry.json"),
-		);
+		const { readLocalManifest } = await import("@86d-app/registry/resolver");
+		const manifest = readLocalManifest(join(WORKSPACE_ROOT, "registry.json"));
 
 		for (const mod of toFetch) {
 			const { specifier } = mod;
-			console.log(`  ↓ Fetching ${specifier.packageName} (${specifier.source})...`);
+			console.log(
+				`  ↓ Fetching ${specifier.packageName} (${specifier.source})...`,
+			);
 
 			const result = await fetchModule(specifier, WORKSPACE_ROOT, manifest);
 			if (result.success && result.localPath) {
@@ -293,9 +298,7 @@ async function resolveModulesFromRegistry(): Promise<ResolvedModule[]> {
 		}
 	}
 
-	const localCount = found.filter(
-		(m) => m.specifier.source === "local",
-	).length;
+	const localCount = found.filter((m) => m.specifier.source === "local").length;
 	const remoteCount = found.length - localCount;
 	console.log(
 		`  Resolved ${found.length} module(s) (${localCount} local, ${remoteCount} fetched)`,
@@ -337,7 +340,12 @@ async function checkModuleHasComponents(
 	if (moduleType === "workspace") {
 		const moduleShortName = moduleName.replace("@86d-app/", "");
 		const basePath = join(WORKSPACE_ROOT, "modules", moduleShortName, "src");
-		const storeComponentsPath = join(basePath, "store", "components", "index.tsx");
+		const storeComponentsPath = join(
+			basePath,
+			"store",
+			"components",
+			"mdx.tsx",
+		);
 
 		if (existsSync(storeComponentsPath)) {
 			const content = readFileSync(storeComponentsPath, "utf-8");
@@ -349,7 +357,7 @@ async function checkModuleHasComponents(
 	try {
 		const modulePath = join(WORKSPACE_ROOT, "node_modules", moduleName);
 		const paths = [
-			join(modulePath, "src/store/components/index.tsx"),
+			join(modulePath, "src/store/components/mdx.tsx"),
 			join(modulePath, "src/store/components.tsx"),
 		];
 		for (const p of paths) {
@@ -375,9 +383,7 @@ async function ensureModuleDependencies(modules: string[]) {
 		if (moduleType === "workspace") {
 			// Ensure workspace module is in dependencies as workspace:*
 			if (!dependencies[moduleName]) {
-				console.log(
-					`Adding workspace module to dependencies: ${moduleName}`,
-				);
+				console.log(`Adding workspace module to dependencies: ${moduleName}`);
 				dependencies[moduleName] = "workspace:*";
 				modified = true;
 			}
@@ -414,14 +420,14 @@ async function generateModulesFile() {
 		console.log("No modules defined in config.json");
 		// Even with no modules, template component overrides can still provide components
 		const templateDir = join(CONFIG_PATH, "..");
-		const templateOverridePath = join(templateDir, "components", "index.tsx");
+		const templateOverridePath = join(templateDir, "components", "mdx.tsx");
 		const hasOverrides = existsSync(templateOverridePath);
 		const emptyContent = hasOverrides
 			? `// Auto-generated file - do not edit manually
 // Run 'bun run generate:modules' to regenerate
 
 import type { MDXComponents } from "mdx/types";
-import templateOverrides from "template/components";
+import templateOverrides from "template/components/mdx";
 
 export const modules: string[] = [];
 export const components: MDXComponents = { ...templateOverrides };
@@ -445,10 +451,7 @@ export const components: MDXComponents = {};
 			const moduleType = getModuleType(moduleName);
 			return {
 				name: moduleName,
-				hasComponents: await checkModuleHasComponents(
-					moduleName,
-					moduleType,
-				),
+				hasComponents: await checkModuleHasComponents(moduleName, moduleType),
 				type: moduleType,
 			};
 		}),
@@ -467,11 +470,11 @@ export const components: MDXComponents = {};
 
 	// Detect template component overrides
 	const templateDir = join(CONFIG_PATH, "..");
-	const templateOverridePath = join(templateDir, "components", "index.tsx");
+	const templateOverridePath = join(templateDir, "components", "mdx.tsx");
 	const hasTemplateOverrides = existsSync(templateOverridePath);
 
 	const templateImport = hasTemplateOverrides
-		? `import templateOverrides from "template/components";`
+		? `import templateOverrides from "template/components/mdx";`
 		: "";
 
 	// Generate merge logic — template overrides are spread last so they take precedence
@@ -479,7 +482,9 @@ export const components: MDXComponents = {};
 		.map((_, idx) => `...moduleComponents${idx},`)
 		.join("\n    ");
 	const templateSpread = hasTemplateOverrides ? "...templateOverrides," : "";
-	const allSpreads = [moduleSpread, templateSpread].filter(Boolean).join("\n    ");
+	const allSpreads = [moduleSpread, templateSpread]
+		.filter(Boolean)
+		.join("\n    ");
 
 	const componentsMerge =
 		modulesWithComponents.length > 0 || hasTemplateOverrides
@@ -527,9 +532,7 @@ export { components };
 
 	if (modulesWithComponents.length < modules.length) {
 		const skipped = modules.length - modulesWithComponents.length;
-		console.log(
-			`  - ${skipped} module(s) skipped (no components exported)`,
-		);
+		console.log(`  - ${skipped} module(s) skipped (no components exported)`);
 	}
 }
 
@@ -1031,7 +1034,7 @@ if (process.env.UBER_EATS_CLIENT_ID && process.env.UBER_EATS_CLIENT_SECRET && pr
 
 import { createRouter } from "better-call";
 import type { Endpoint, RouterConfig } from "better-call";
-import type { ModuleContext } from "@86d-app/core";
+import type { ModuleContext } from "@86d-app/core/types/module";
 ${moduleImports}
 const moduleOptions: Record<string, Record<string, unknown>> = ${JSON.stringify(moduleOptions, null, 2)};
 ${providerWiringCode}${searchWiringCode}${toastWiringCode}${shippingWiringCode}${taxWiringCode}${notificationsWiringCode}${doordashWiringCode}${uberDirectWiringCode}${recommendationsWiringCode}${analyticsWiringCode}${amazonWiringCode}${tiktokShopWiringCode}${googleShoppingWiringCode}${facebookShopWiringCode}${instagramShopWiringCode}${etsyWiringCode}${ebayWiringCode}${walmartWiringCode}${pinterestShopWiringCode}${xShopWiringCode}${uberEatsWiringCode}
@@ -1113,7 +1116,7 @@ async function generateClient() {
 	// Generate client SDK
 	// The better-call client is not exported here because @better-fetch/fetch types
 	// are not portable under Bun's module layout (TS2742).
-	// Use useModuleClient() from @86d-app/core/client for typed client-side access.
+	// Use useModuleClient() from @86d-app/core/client/provider for typed client access.
 	const clientContent = `// Auto-generated file - do not edit manually
 // Run 'bun run generate:modules' to regenerate
 // Generated from: ${CONFIG_PATH}
@@ -1125,7 +1128,6 @@ export {};
 	writeFileSync(CLIENT_PATH, clientContent);
 	console.log(`✓ Generated client.ts`);
 }
-
 
 function walkTypeScriptFiles(dirPath: string): string[] {
 	if (!existsSync(dirPath)) return [];
@@ -1170,8 +1172,7 @@ function collectModuleClientEndpointReferences(
 			const source = readFileSync(filePath, "utf-8");
 			moduleClientReferenceRegex.lastIndex = 0;
 
-			let match: RegExpExecArray | null;
-			while ((match = moduleClientReferenceRegex.exec(source)) !== null) {
+			for (const match of source.matchAll(moduleClientReferenceRegex)) {
 				const [, , referencedModuleId, surface, , path] = match;
 				if (referencedModuleId !== moduleId) continue;
 
@@ -1236,7 +1237,9 @@ async function loadModuleDefinition(
 	};
 
 	if (typeof imported.default !== "function") {
-		throw new Error(`Module "${moduleName}" does not export a default module factory.`);
+		throw new Error(
+			`Module "${moduleName}" does not export a default module factory.`,
+		);
 	}
 
 	return imported.default(options);
@@ -1272,8 +1275,7 @@ async function collectRoutableEndpointSurface(
 
 	const probe = (value: unknown): Record<string, unknown> =>
 		new Proxy({ ...configOptions } as Record<string, unknown>, {
-			get: (target, prop) =>
-				prop in target ? target[prop as string] : value,
+			get: (target, prop) => (prop in target ? target[prop as string] : value),
 			has: () => true,
 		});
 
@@ -1286,8 +1288,10 @@ async function collectRoutableEndpointSurface(
 	for (const value of [true, "XX", "generator-probe"]) {
 		try {
 			const probed = await loadModuleDefinition(moduleName, probe(value));
-			for (const path of Object.keys(probed.endpoints?.store ?? {})) store.add(path);
-			for (const path of Object.keys(probed.endpoints?.admin ?? {})) admin.add(path);
+			for (const path of Object.keys(probed.endpoints?.store ?? {}))
+				store.add(path);
+			for (const path of Object.keys(probed.endpoints?.admin ?? {}))
+				admin.add(path);
 		} catch {
 			// A factory that cannot survive probe options keeps its configured surface.
 		}
@@ -1351,18 +1355,41 @@ async function collectModulePathSources(
  * Generate admin-loaders.ts: dynamic import loaders for each module's admin-components.
  * Keyed by module id so the catch-all route can load (moduleId, componentName) → Component.
  */
+/**
+ * Resolve `ComponentName -> source file` by scanning a Module's admin component
+ * directory for the file that actually exports each name.
+ *
+ * Deliberately not convention-based: `kebab(ComponentName)` is only the house style
+ * and several Modules predate it. Scanning for the real export is exact, and it
+ * survives the removal of the re-export barrels this used to read.
+ */
+function readAdminComponentFiles(componentsDir: string): Map<string, string> {
+	const out = new Map<string, string>();
+	if (!existsSync(componentsDir)) return out;
+
+	for (const file of readdirSync(componentsDir).sort()) {
+		if (!file.endsWith(".tsx") || file.startsWith("_")) continue;
+		const source = readFileSync(join(componentsDir, file), "utf-8");
+		const base = file.replace(/\.tsx$/, "");
+		for (const match of source.matchAll(
+			/export\s+(?:async\s+)?(?:function|const|class)\s+([A-Z][A-Za-z0-9_]*)/g,
+		)) {
+			const name = match[1];
+			if (name && !out.has(name)) out.set(name, base);
+		}
+	}
+	return out;
+}
+
 async function generateAdminLoaders() {
-	const entries: Array<{ moduleId: string; packageName: string }> = [];
-	const missing: string[] = [];
+	const entries: Array<{ key: string; specifier: string }> = [];
+	const problems: string[] = [];
 
 	for (const source of getCachedPathSources()) {
 		if (!source.isWorkspace) continue;
-		if ((source.adminPageComponents?.length ?? 0) === 0) continue;
+		const components = source.adminPageComponents ?? [];
+		if (components.length === 0) continue;
 
-		// A Module that declares admin.pages MUST have a loadable admin component
-		// bundle. Failing loudly here is the point: the previous existsSync probe
-		// silently dropped such a Module, and its admin routes rendered
-		// "No admin loader for module: <id>" at runtime with every gate green.
 		const shortName = source.packageName.replace("@86d-app/", "");
 		const componentsDir = join(
 			WORKSPACE_ROOT,
@@ -1372,28 +1399,43 @@ async function generateAdminLoaders() {
 			"admin",
 			"components",
 		);
-		if (
-			!existsSync(join(componentsDir, "index.tsx")) &&
-			!existsSync(join(componentsDir, "index.ts"))
-		) {
-			missing.push(
-				`  ${source.packageName} declares admin.pages [${source.adminPageComponents?.join(", ")}] ` +
-					`but has no ${relative(WORKSPACE_ROOT, join(componentsDir, "index.tsx"))}`,
-			);
-			continue;
-		}
+		const fileByComponent = readAdminComponentFiles(componentsDir);
 
-		entries.push({ moduleId: source.moduleId, packageName: source.packageName });
+		for (const component of components) {
+			const file = fileByComponent.get(component);
+			// Hard-fail rather than silently drop: the previous existsSync probe let a
+			// Module with a declared admin page ship without a loader, and the route
+			// rendered "No admin loader for module: <id>" with every gate green.
+			if (!file) {
+				problems.push(
+					`  ${source.packageName} declares admin page component "${component}" ` +
+						`but its component barrel does not re-export it`,
+				);
+				continue;
+			}
+			const target = join(componentsDir, `${file}.tsx`);
+			if (!existsSync(target)) {
+				problems.push(
+					`  ${source.packageName} component "${component}" resolves to ` +
+						`${relative(WORKSPACE_ROOT, target)}, which does not exist`,
+				);
+				continue;
+			}
+			entries.push({
+				key: `${source.moduleId}:${component}`,
+				specifier: `${source.packageName}/admin/components/${file}`,
+			});
+		}
 	}
 
-	if (missing.length > 0) {
+	if (problems.length > 0) {
 		throw new Error(
-			`Admin component bundle missing for ${missing.length} module(s):\n${missing.join("\n")}`,
+			`Admin component resolution failed for ${problems.length} page(s):\n${problems.join("\n")}`,
 		);
 	}
 
 	const loadersEntries = entries
-		.map(({ moduleId, packageName }) => `  "${moduleId}": () => import("${packageName}/admin-components"),`)
+		.map(({ key, specifier }) => `  "${key}": () => import("${specifier}"),`)
 		.join("\n");
 
 	const content = `// Auto-generated file - do not edit manually
@@ -1403,8 +1445,12 @@ async function generateAdminLoaders() {
 type AdminComponentModule = Record<string, unknown>;
 
 /**
- * Lazy loaders for module admin component bundles.
- * Usage: adminComponentLoaders[moduleId]().then((m) => m[componentName])
+ * Lazy loaders for individual admin page components.
+ *
+ * Keyed by \`\${moduleId}:\${componentName}\` so each admin route downloads only the
+ * component it renders, rather than its Module's entire admin surface.
+ *
+ * Usage: adminComponentLoaders[\`\${moduleId}:\${componentName}\`]()
  */
 export const adminComponentLoaders: Record<string, () => Promise<AdminComponentModule>> = {
 ${loadersEntries}
@@ -1413,7 +1459,74 @@ ${loadersEntries}
 
 	ensureDir(GENERATED_DIR);
 	writeFileSync(ADMIN_LOADERS_PATH, content);
-	console.log(`✓ Generated admin-loaders.ts with ${entries.length} module(s)`);
+	console.log(
+		`✓ Generated admin-loaders.ts with ${entries.length} component(s)`,
+	);
+
+	writeAdminComponentExports(entries);
+}
+
+/**
+ * Write an explicit `exports` entry into each Module manifest for every admin
+ * component the loaders import.
+ *
+ * The catch-all `"./*": "./src/*"` pattern is NOT sufficient: TypeScript maps
+ * `./admin/components/x` to `./src/admin/components/x` and then requires that exact
+ * file — it performs no extension substitution for exports patterns, and
+ * `allowImportingTsExtensions` is off, so writing the extension is TS5097. Bundlers
+ * are more forgiving, which is why the gap only shows up under `tsc`.
+ *
+ * These entries are machine-maintained; the idempotency gate covers them.
+ */
+function writeAdminComponentExports(
+	entries: Array<{ key: string; specifier: string }>,
+) {
+	const wanted = new Map<string, Set<string>>();
+	for (const { specifier } of entries) {
+		const match = specifier.match(/^(@86d-app\/[^/]+)\/(.+)$/);
+		if (!match) continue;
+		const [, pkg, subpath] = match;
+		if (!pkg || !subpath) continue;
+		const set = wanted.get(pkg) ?? new Set<string>();
+		set.add(subpath);
+		wanted.set(pkg, set);
+	}
+
+	let updated = 0;
+	for (const [pkg, subpaths] of wanted) {
+		const shortName = pkg.replace("@86d-app/", "");
+		const manifestPath = join(
+			WORKSPACE_ROOT,
+			"modules",
+			shortName,
+			"package.json",
+		);
+		if (!existsSync(manifestPath)) continue;
+		const manifest = JSON.parse(readFileSync(manifestPath, "utf-8")) as {
+			exports?: Record<string, unknown>;
+		};
+		const exportsMap = manifest.exports ?? {};
+		let changed = false;
+		for (const subpath of subpaths) {
+			const key = `./${subpath}`;
+			const target = `./src/${subpath}.tsx`;
+			const existing = exportsMap[key] as { default?: string } | undefined;
+			if (existing?.default === target) continue;
+			exportsMap[key] = { types: target, default: target };
+			changed = true;
+		}
+		if (!changed) continue;
+		manifest.exports = Object.fromEntries(
+			Object.entries(exportsMap).sort(([a], [b]) => a.localeCompare(b)),
+		);
+		writeFileSync(manifestPath, `${JSON.stringify(manifest, null, "\t")}\n`);
+		updated++;
+	}
+	if (updated > 0) {
+		console.log(
+			`✓ Wrote admin component exports into ${updated} module manifest(s)`,
+		);
+	}
 }
 
 /**
@@ -1426,7 +1539,10 @@ async function generateStoreLoaders() {
 	for (const source of getCachedPathSources()) {
 		if (!source.isWorkspace) continue;
 		if ((source.storePages?.length ?? 0) === 0) continue;
-		entries.push({ moduleId: source.moduleId, packageName: source.packageName });
+		entries.push({
+			moduleId: source.moduleId,
+			packageName: source.packageName,
+		});
 	}
 
 	const loadersEntries = entries
@@ -1480,10 +1596,13 @@ function generateTranspilePackages() {
 		const shortName = moduleName.replace("@86d-app/", "");
 		const basePath = join(WORKSPACE_ROOT, "modules", shortName, "src");
 
-		// Include if module has any TSX files (store components, admin components, or pages)
+		// Include if the Module ships any TSX. Checked by directory contents rather
+		// than a fixed filename: admin components no longer funnel through a barrel.
+		const hasTsxIn = (dir: string) =>
+			existsSync(dir) && readdirSync(dir).some((f) => f.endsWith(".tsx"));
 		const hasJsx =
-			existsSync(join(basePath, "store", "components", "index.tsx")) ||
-			existsSync(join(basePath, "admin", "components", "index.tsx"));
+			hasTsxIn(join(basePath, "store", "components")) ||
+			hasTsxIn(join(basePath, "admin", "components"));
 
 		if (hasJsx) {
 			transpile.push(moduleName);
@@ -1505,21 +1624,27 @@ let _cachedPathSources: ModulePathSource[] | undefined;
 
 function getCachedModules(): string[] {
 	if (!_cachedModules) {
-		throw new Error("Modules not resolved yet — call resolveModulesFromRegistry() first");
+		throw new Error(
+			"Modules not resolved yet — call resolveModulesFromRegistry() first",
+		);
 	}
 	return _cachedModules;
 }
 
 function getCachedResolved(): ResolvedModule[] {
 	if (!_cachedResolved) {
-		throw new Error("Modules not resolved yet — call resolveModulesFromRegistry() first");
+		throw new Error(
+			"Modules not resolved yet — call resolveModulesFromRegistry() first",
+		);
 	}
 	return _cachedResolved;
 }
 
 function getCachedPathSources(): ModulePathSource[] {
 	if (!_cachedPathSources) {
-		throw new Error("Module paths not collected yet — call collectModulePathSources() first");
+		throw new Error(
+			"Module paths not collected yet — call collectModulePathSources() first",
+		);
 	}
 	return _cachedPathSources;
 }
@@ -1536,7 +1661,7 @@ async function runGenerators() {
 	const moduleNames = getCachedModules();
 
 	// Check for circular dependencies in the registry manifest
-	const { readLocalManifest } = await import("@86d-app/registry");
+	const { readLocalManifest } = await import("@86d-app/registry/resolver");
 	const manifest = readLocalManifest(join(WORKSPACE_ROOT, "registry.json"));
 	if (manifest) {
 		const cycles = detectCircularDependencies(manifest);
@@ -1567,9 +1692,7 @@ async function runGenerators() {
 				console.error(`  Removed: ${diff.removed.join(", ")}`);
 			if (diff.changed.length > 0)
 				console.error(`  Changed: ${diff.changed.join(", ")}`);
-			console.error(
-				"  Run without --frozen to regenerate the lock file.",
-			);
+			console.error("  Run without --frozen to regenerate the lock file.");
 			process.exit(1);
 		}
 		console.log("✓ registry.lock.json is up to date");

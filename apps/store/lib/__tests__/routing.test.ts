@@ -46,7 +46,7 @@ describe("generated routing", () => {
 describe("generated components", () => {
 	it("imports and spreads template component overrides last so they take precedence", () => {
 		expect(generatedComponents).toContain(
-			'import templateOverrides from "template/components"',
+			'import templateOverrides from "template/components/mdx"',
 		);
 		expect(generatedComponents).toContain("...templateOverrides,");
 		const overrideSpreadIndex = generatedComponents.lastIndexOf(

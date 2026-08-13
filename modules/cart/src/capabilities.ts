@@ -3,10 +3,10 @@ import {
 	type CapabilityFailure,
 	type CapabilityRequest,
 	type CapabilityResult,
-	cartSnapshotCapability,
-	type ModuleDataService,
 	provideCapability,
-} from "@86d-app/core";
+} from "@86d-app/core/capabilities";
+import { cartSnapshotCapability } from "@86d-app/core/commerce-capabilities";
+import type { ModuleDataService } from "@86d-app/core/types/module";
 import { createCartControllers } from "./service-impl";
 
 export { cartSnapshotCapability };

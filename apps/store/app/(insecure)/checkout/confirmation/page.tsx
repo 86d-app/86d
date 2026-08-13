@@ -1,6 +1,6 @@
 "use client";
 
-import { z } from "@86d-app/core";
+import { z } from "@86d-app/core/zod";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { buttonVariants } from "~/components/ui/button";

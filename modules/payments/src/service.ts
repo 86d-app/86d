@@ -1,10 +1,10 @@
-import type { ModuleController } from "@86d-app/core";
+import type { ModuleController } from "@86d-app/core/types/module";
 
 export type {
 	PaymentProvider,
 	ProviderIntentResult,
 	ProviderRefundResult,
-} from "@86d-app/core";
+} from "@86d-app/core/payment-provider";
 
 export type PaymentIntentStatus =
 	| "pending"

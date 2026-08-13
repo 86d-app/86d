@@ -1,4 +1,9 @@
-import { test, expect, ADMIN_EMAIL, ADMIN_PASSWORD } from "./fixtures/test-fixtures";
+import {
+	ADMIN_EMAIL,
+	ADMIN_PASSWORD,
+	expect,
+	test,
+} from "./fixtures/test-fixtures";
 
 test.describe("Storefront — Homepage", () => {
 	test("loads the homepage with hero section", async ({ storefront }) => {
@@ -14,9 +19,7 @@ test.describe("Storefront — Homepage", () => {
 		const logo = storefront.page.locator('header a[href="/"]').first();
 		await expect(logo).toBeVisible();
 		/* On mobile, nav links are behind a hamburger menu */
-		const hamburger = storefront.page.locator(
-			'button[aria-label="Open menu"]',
-		);
+		const hamburger = storefront.page.locator('button[aria-label="Open menu"]');
 		const isMobile = await hamburger.isVisible().catch(() => false);
 		if (isMobile) {
 			await hamburger.click();
@@ -111,9 +114,7 @@ test.describe("Storefront — Product listing", () => {
 		expect(hasEmptyState || cardCount === 0).toBeTruthy();
 	});
 
-	test("category and sort dropdowns are present", async ({
-		storefront,
-	}) => {
+	test("category and sort dropdowns are present", async ({ storefront }) => {
 		await storefront.navigateToProducts();
 		/* Wait for page to fully load */
 		await storefront.page.waitForLoadState("networkidle");
@@ -143,7 +144,7 @@ test.describe("Storefront — Product detail", () => {
 		});
 		/* Click the first product card */
 		const firstCard = storefront.allProductCards.first();
-		const href = await firstCard.getAttribute("href");
+		const _href = await firstCard.getAttribute("href");
 		await firstCard.click();
 		await storefront.page.waitForURL(/\/products\/.+/);
 		/* Product detail page should show the product name */
@@ -189,9 +190,7 @@ test.describe("Storefront — Product detail", () => {
 		await expect(addButton).toBeVisible();
 	});
 
-	test("quantity controls work on product detail", async ({
-		storefront,
-	}) => {
+	test("quantity controls work on product detail", async ({ storefront }) => {
 		await storefront.navigateToProducts();
 		await expect(storefront.allProductCards.first()).toBeVisible({
 			timeout: 15_000,
@@ -256,8 +255,7 @@ test.describe("Storefront — Cart", () => {
 		/* Add to cart — capture the POST response */
 		const cartResponsePromise = storefront.page.waitForResponse(
 			(resp) =>
-				resp.url().includes("/api/cart") &&
-				resp.request().method() === "POST",
+				resp.url().includes("/api/cart") && resp.request().method() === "POST",
 			{ timeout: 10_000 },
 		);
 		await addButton.click();
@@ -296,17 +294,12 @@ test.describe("Storefront — Cart", () => {
 		await addButton.click();
 		/* Wait for mutation success — cart drawer opens automatically */
 		await expect(
-			storefront.page
-				.locator("button")
-				.filter({ hasText: /Added!|Adding/ }),
+			storefront.page.locator("button").filter({ hasText: /Added!|Adding/ }),
 		).toBeVisible({ timeout: 5_000 });
 		await expect(storefront.cartDrawer).toBeVisible({ timeout: 5_000 });
 		/* Checkout link should be visible */
 		await expect(storefront.checkoutLink).toBeVisible();
-		await expect(storefront.checkoutLink).toHaveAttribute(
-			"href",
-			"/checkout",
-		);
+		await expect(storefront.checkoutLink).toHaveAttribute("href", "/checkout");
 	});
 });
 
@@ -315,22 +308,16 @@ test.describe("Storefront — Mobile", () => {
 
 	test("mobile menu button is visible", async ({ storefront }) => {
 		await storefront.goto("/");
-		const menuBtn = storefront.page.locator(
-			'button[aria-label="Open menu"]',
-		);
+		const menuBtn = storefront.page.locator('button[aria-label="Open menu"]');
 		await expect(menuBtn).toBeVisible();
 	});
 
 	test("mobile menu opens and shows nav links", async ({ storefront }) => {
 		await storefront.goto("/");
-		const menuBtn = storefront.page.locator(
-			'button[aria-label="Open menu"]',
-		);
+		const menuBtn = storefront.page.locator('button[aria-label="Open menu"]');
 		await menuBtn.click();
 		/* Mobile nav links should become visible (skip desktop nav which has .hidden) */
-		const mobileNav = storefront.page.locator(
-			"header nav:not(.hidden) a",
-		);
+		const mobileNav = storefront.page.locator("header nav:not(.hidden) a");
 		await expect(mobileNav.first()).toBeVisible({ timeout: 3_000 });
 	});
 

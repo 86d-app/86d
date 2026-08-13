@@ -1,4 +1,5 @@
-import type { ModuleDataService, ScopedEventEmitter } from "@86d-app/core";
+import type { ScopedEventEmitter } from "@86d-app/core/events";
+import type { ModuleDataService } from "@86d-app/core/types/module";
 import type { EmbeddingProvider } from "./embedding-provider";
 import { cosineSimilarity } from "./embedding-provider";
 import type {

@@ -18,8 +18,15 @@
 	"homepage": "https://86d.app",
 	"type": "module",
 	"exports": {
-		"./admin-components": "./src/admin/components",
-		"./*": "./src/*"
+		".": {
+			"types": "./src/index.ts",
+			"default": "./src/index.ts"
+		},
+		"./*": "./src/*",
+		"./admin/components/etsy-admin": {
+			"types": "./src/admin/components/etsy-admin.tsx",
+			"default": "./src/admin/components/etsy-admin.tsx"
+		}
 	},
 	"scripts": {
 		"build": "tsc",

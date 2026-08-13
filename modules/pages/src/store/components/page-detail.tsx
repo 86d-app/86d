@@ -1,6 +1,6 @@
 "use client";
 
-import { sanitizeHtml } from "@86d-app/core";
+import { sanitizeHtml } from "@86d-app/core/sanitize";
 import { useMemo } from "react";
 import { usePagesApi } from "./_hooks";
 import PageDetailTemplate from "./page-detail.mdx";

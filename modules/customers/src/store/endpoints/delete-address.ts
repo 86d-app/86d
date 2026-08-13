@@ -1,4 +1,5 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
+import { createStoreEndpoint } from "@86d-app/core/api";
+import { z } from "@86d-app/core/zod";
 import { resolveAuthenticatedStoreCustomer } from "./customer-context";
 
 export const deleteAddress = createStoreEndpoint(

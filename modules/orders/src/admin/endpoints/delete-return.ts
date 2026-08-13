@@ -1,4 +1,5 @@
-import { createAdminEndpoint, z } from "@86d-app/core";
+import { createAdminEndpoint } from "@86d-app/core/api";
+import { z } from "@86d-app/core/zod";
 
 export const adminDeleteReturn = createAdminEndpoint(
 	"/admin/orders/returns/:id/delete",

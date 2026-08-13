@@ -1,7 +1,8 @@
 "use client";
 
 import { cartState } from "@86d-app/cart/state";
-import { ModuleClientError, useModuleClient } from "@86d-app/core/client";
+import { ModuleClientError } from "@86d-app/core/client/hooks";
+import { useModuleClient } from "@86d-app/core/client/provider";
 import { useParams } from "next/navigation";
 import { useCallback, useState } from "react";
 import { StatusBadge } from "~/components/status-badge";

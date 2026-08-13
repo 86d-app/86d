@@ -1,4 +1,4 @@
-import type { ModuleController } from "@86d-app/core";
+import type { ModuleController } from "@86d-app/core/types/module";
 
 /** An announcement displayed to store visitors */
 export type Announcement = {

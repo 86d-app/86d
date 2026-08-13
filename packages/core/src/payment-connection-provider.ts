@@ -46,6 +46,21 @@ export type PaymentOperationPayload =
 	  }>;
 
 /**
+ * Immutable provider provenance produced by the exact source operation.
+ *
+ * Continuations must use this descriptor to validate the cited provider
+ * resource and money before issuing any upstream request. It is intentionally
+ * derived from the durable operation owner, never from browser input.
+ */
+export type PaymentProviderOperationSource = Readonly<{
+	operationId: string;
+	operation: PaymentConnectionCapability;
+	providerReference: string;
+	amount: number;
+	currency: string;
+}>;
+
+/**
  * Every provider call carries the durable owner record that makes a retry
  * unambiguous. An adapter must forward `idempotencyKey` unchanged when the
  * upstream API supports idempotency.
@@ -56,11 +71,20 @@ export type PaymentProviderOperationRequest = Readonly<{
 	idempotencyKey: string;
 	requestDigest: string;
 	attempt: number;
+	/** Immutable durable-operation creation time, not the provider-call time. */
+	createdAt: Date;
 	payload: PaymentOperationPayload;
+	/** Required at runtime for every referenced continuation. */
+	source?: PaymentProviderOperationSource | undefined;
 }>;
 
 export type PaymentProviderOperationOutcome = Readonly<{
-	state: "succeeded" | "failed" | "ambiguous";
+	/**
+	 * `pending` and `requires_action` are provider-confirmed, nonfinal states.
+	 * They must not be collapsed into `ambiguous`, which means the provider
+	 * outcome itself is unknown.
+	 */
+	state: "succeeded" | "failed" | "pending" | "requires_action" | "ambiguous";
 	providerReference?: string | undefined;
 	/** Bounded normalized facts only; never credentials, client secrets, or raw payloads. */
 	result?: JsonValue | undefined;
@@ -73,7 +97,18 @@ export type PaymentProviderReconciliationRequest = Readonly<{
 	idempotencyKey: string;
 	requestDigest: string;
 	attempt: number;
+	/** Immutable durable-operation creation time, not the reconciliation time. */
+	createdAt: Date;
+	/**
+	 * The immutable payload persisted before the original provider call.
+	 * Reconciliation may inspect canonical provider state or safely repeat an
+	 * idempotent request, but it may never rebuild financial input from a
+	 * browser or from mutable Store configuration.
+	 */
+	payload: PaymentOperationPayload;
 	providerReference?: string | undefined;
+	/** Required at runtime for every referenced continuation. */
+	source?: PaymentProviderOperationSource | undefined;
 }>;
 
 /**

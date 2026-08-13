@@ -1,9 +1,7 @@
-import {
-	createStoreEndpoint,
-	orderPurchaseVerifyCapability,
-	sanitizeText,
-	z,
-} from "@86d-app/core";
+import { createStoreEndpoint } from "@86d-app/core/api";
+import { orderPurchaseVerifyCapability } from "@86d-app/core/commerce-capabilities";
+import { sanitizeText } from "@86d-app/core/sanitize";
+import { z } from "@86d-app/core/zod";
 import type { ReviewController } from "../../service";
 
 const imageSchema = z.object({

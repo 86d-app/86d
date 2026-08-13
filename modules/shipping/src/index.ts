@@ -1,10 +1,12 @@
-import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
-import {
-	acceptCapability,
-	orderCustomerAuthorizeCapability,
-} from "@86d-app/core";
-import { createAdminEndpointsWithSettings } from "./admin/endpoints";
+import { acceptCapability } from "@86d-app/core/capabilities";
+import { orderCustomerAuthorizeCapability } from "@86d-app/core/commerce-capabilities";
+import type {
+	Module,
+	ModuleConfig,
+	ModuleContext,
+} from "@86d-app/core/types/module";
 import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
+import { createAdminEndpointsWithSettings } from "./admin/endpoints/routes";
 import { createShippingQuoteProvider } from "./capabilities";
 import {
 	createEasyPostShippingConnectionProvider,
@@ -16,7 +18,7 @@ import { createShippingController } from "./service-impl";
 import {
 	createStoreEndpointsWithRates,
 	storeEndpoints,
-} from "./store/endpoints";
+} from "./store/endpoints/routes";
 
 export type {
 	CreateShippingConnectionInput,

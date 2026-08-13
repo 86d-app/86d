@@ -1,4 +1,4 @@
-import type { ModuleController } from "@86d-app/core";
+import type { ModuleController } from "@86d-app/core/types/module";
 
 export type SyncEntityType = "menu-item" | "order" | "inventory";
 export type SyncDirection = "inbound" | "outbound";

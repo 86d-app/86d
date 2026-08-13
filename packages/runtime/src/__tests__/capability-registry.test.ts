@@ -1,15 +1,14 @@
-import type {
-	Module,
-	ModuleDataService,
-	ModuleDataTransaction,
-	ModuleTransactionRunner,
-} from "@86d-app/core";
 import {
 	acceptCapability,
 	defineCapability,
 	provideCapability,
-	z,
-} from "@86d-app/core";
+} from "@86d-app/core/capabilities";
+import type {
+	ModuleDataTransaction,
+	ModuleTransactionRunner,
+} from "@86d-app/core/durable-events";
+import type { Module, ModuleDataService } from "@86d-app/core/types/module";
+import { z } from "@86d-app/core/zod";
 import { describe, expect, it, vi } from "vitest";
 import { ModuleRegistry, type ModuleRegistryConfig } from "../registry";
 

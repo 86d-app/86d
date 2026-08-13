@@ -1,4 +1,4 @@
-import type { ModuleSchema } from "@86d-app/core";
+import type { ModuleSchema } from "@86d-app/core/types/schema";
 
 export const paymentsSchema = {
 	paymentConnection: {
@@ -44,10 +44,100 @@ export const paymentsSchema = {
 			id: { type: "string", required: true },
 		},
 	},
+	/** Payment-owned financial aggregate. Checkout and Order remain references. */
+	paymentV2: {
+		fields: {
+			id: { type: "string", required: true },
+			modelVersion: { type: "number", required: true, defaultValue: 2 },
+			checkoutId: { type: "string", required: true, index: true },
+			orderId: { type: "string", required: false, index: true },
+			connectionId: { type: "string", required: true, index: true },
+			paymentOption: {
+				type: ["card", "apple_pay", "google_pay", "paypal"],
+				required: true,
+			},
+			expectedAmount: { type: "number", required: true },
+			eligibleMerchandiseAmount: { type: "number", required: true },
+			currency: { type: "string", required: true },
+			authorizedAmount: { type: "number", required: true, defaultValue: 0 },
+			capturedAmount: { type: "number", required: true, defaultValue: 0 },
+			voidedAmount: { type: "number", required: true, defaultValue: 0 },
+			confirmedRefundedAmount: {
+				type: "number",
+				required: true,
+				defaultValue: 0,
+			},
+			providerReferences: { type: "json", required: true, defaultValue: [] },
+			dispute: { type: "json", required: true },
+			state: {
+				type: [
+					"pending",
+					"authorized",
+					"partially_captured",
+					"captured",
+					"partially_refunded",
+					"refunded",
+					"voided",
+				],
+				required: true,
+				defaultValue: "pending",
+			},
+			terminalState: {
+				type: ["none", "refunded", "voided"],
+				required: true,
+				defaultValue: "none",
+			},
+			creationIdempotencyKey: { type: "string", required: true, index: true },
+			creationDigest: { type: "string", required: true },
+			creationDigestVersion: {
+				type: "number",
+				required: true,
+				defaultValue: 1,
+			},
+			revision: { type: "number", required: true, defaultValue: 1 },
+			terminalAt: { type: "date", required: false },
+			createdAt: {
+				type: "date",
+				required: true,
+				defaultValue: () => new Date(),
+			},
+			updatedAt: {
+				type: "date",
+				required: true,
+				defaultValue: () => new Date(),
+				onUpdate: () => new Date(),
+			},
+		},
+	},
+	/** Owner-local lock row used to serialize every mutation of one Payment. */
+	paymentV2Lock: {
+		fields: {
+			id: { type: "string", required: true },
+			paymentId: { type: "string", required: true, index: true },
+		},
+	},
+	/** Immutable provider dispute facts; the aggregate stores their projection. */
+	paymentDisputeFactV2: {
+		fields: {
+			id: { type: "string", required: true },
+			paymentId: { type: "string", required: true, index: true },
+			connectionId: { type: "string", required: true, index: true },
+			eventId: { type: "string", required: true, index: true },
+			eventDigest: { type: "string", required: true },
+			providerDisputeReference: { type: "string", required: true, index: true },
+			state: {
+				type: ["open", "won", "lost", "reversed"],
+				required: true,
+			},
+			occurredAt: { type: "date", required: true },
+			appliedRevision: { type: "number", required: true },
+		},
+	},
 	/** Durable v2 operation aggregate. Routing and request identity are immutable. */
 	paymentOperationV2: {
 		fields: {
 			id: { type: "string", required: true },
+			modelVersion: { type: "number", required: true, defaultValue: 2 },
 			paymentId: { type: "string", required: true, index: true },
 			connectionId: { type: "string", required: true, index: true },
 			sourceOperationId: { type: "string", required: false, index: true },
@@ -57,6 +147,8 @@ export const paymentsSchema = {
 			},
 			idempotencyKey: { type: "string", required: true, index: true },
 			requestDigest: { type: "string", required: true },
+			/** Canonical financial input persisted before any provider I/O. */
+			payload: { type: "json", required: true },
 			requestDigestVersion: {
 				type: "number",
 				required: true,
@@ -65,20 +157,43 @@ export const paymentsSchema = {
 			state: {
 				type: [
 					"pending",
+					"requires_action",
 					"running",
 					"succeeded",
 					"failed",
 					"ambiguous",
 					"needs_attention",
+					"dead_letter",
 				],
 				required: true,
 				defaultValue: "pending",
 			},
+			revision: { type: "number", required: true, defaultValue: 1 },
 			attempt: { type: "number", required: true, defaultValue: 1 },
+			reconciliationAttempts: {
+				type: "number",
+				required: true,
+				defaultValue: 0,
+			},
+			manualReconciliationCount: {
+				type: "number",
+				required: true,
+				defaultValue: 0,
+			},
 			providerReference: { type: "string", required: false },
 			outcome: { type: "json", required: false },
 			needsAttentionReason: { type: "string", required: false },
 			needsAttentionAt: { type: "date", required: false },
+			leaseExpiresAt: { type: "date", required: false, index: true },
+			nextReconciliationAt: { type: "date", required: false, index: true },
+			lastReconciliationAt: { type: "date", required: false },
+			lastReconciliationTrigger: {
+				type: ["scheduled", "manual"],
+				required: false,
+			},
+			lastManualReconciliationReason: { type: "string", required: false },
+			lastManualReconciliationAt: { type: "date", required: false },
+			deadLetteredAt: { type: "date", required: false },
 			completedAt: { type: "date", required: false },
 			createdAt: {
 				type: "date",
@@ -102,8 +217,21 @@ export const paymentsSchema = {
 			attempt: { type: "number", required: true },
 			idempotencyKey: { type: "string", required: true, index: true },
 			requestDigest: { type: "string", required: true },
+			trigger: {
+				type: ["initial", "scheduled_reconciliation", "manual_reconciliation"],
+				required: true,
+				defaultValue: "initial",
+			},
+			triggerReason: { type: "string", required: false },
 			state: {
-				type: ["running", "succeeded", "failed", "ambiguous"],
+				type: [
+					"running",
+					"pending",
+					"requires_action",
+					"succeeded",
+					"failed",
+					"ambiguous",
+				],
 				required: true,
 			},
 			providerReference: { type: "string", required: false },
@@ -114,6 +242,47 @@ export const paymentsSchema = {
 	},
 	/** Stable row used to serialize one idempotent Payment operation. */
 	paymentOperationLockV2: {
+		fields: {
+			id: { type: "string", required: true },
+		},
+	},
+	/** Verified, Connection-bound provider ingress. Raw payloads are never stored. */
+	paymentWebhookReceiptV2: {
+		fields: {
+			id: { type: "string", required: true },
+			modelVersion: { type: "number", required: true, defaultValue: 2 },
+			storeId: { type: "string", required: true, index: true },
+			connectionId: { type: "string", required: true, index: true },
+			provider: { type: "string", required: true, index: true },
+			providerEventId: { type: "string", required: true, index: true },
+			providerEventType: { type: "string", required: true },
+			payloadDigest: { type: "string", required: true },
+			verificationKeyReference: { type: "string", required: true },
+			fact: { type: "json", required: true },
+			state: {
+				type: [
+					"verified",
+					"processing",
+					"applied",
+					"rejected",
+					"needs_attention",
+				],
+				required: true,
+				defaultValue: "verified",
+			},
+			processingAttempts: { type: "number", required: true, defaultValue: 0 },
+			revision: { type: "number", required: true, defaultValue: 1 },
+			leaseExpiresAt: { type: "date", required: false, index: true },
+			finalDisposition: { type: "string", required: false },
+			lastFailureCode: { type: "string", required: false },
+			verifiedAt: { type: "date", required: true },
+			appliedAt: { type: "date", required: false },
+			createdAt: { type: "date", required: true },
+			updatedAt: { type: "date", required: true },
+		},
+	},
+	/** Stable row used to serialize one provider event identity. */
+	paymentWebhookReceiptLockV2: {
 		fields: {
 			id: { type: "string", required: true },
 		},

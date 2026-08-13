@@ -46,18 +46,16 @@ describe("module create", () => {
 		expect(existsSync(moduleDir)).toBe(true);
 		expect(existsSync(join(moduleDir, "src/index.ts"))).toBe(true);
 		expect(existsSync(join(moduleDir, "src/schema.ts"))).toBe(true);
-		expect(existsSync(join(moduleDir, "src/store/endpoints/index.ts"))).toBe(
+		expect(existsSync(join(moduleDir, "src/store/endpoints/routes.ts"))).toBe(
 			true,
 		);
-		expect(existsSync(join(moduleDir, "src/admin/endpoints/index.ts"))).toBe(
+		expect(existsSync(join(moduleDir, "src/admin/endpoints/routes.ts"))).toBe(
 			true,
 		);
-		expect(existsSync(join(moduleDir, "src/store/components/index.tsx"))).toBe(
+		expect(existsSync(join(moduleDir, "src/store/components/mdx.tsx"))).toBe(
 			true,
 		);
-		expect(existsSync(join(moduleDir, "src/admin/components/index.tsx"))).toBe(
-			true,
-		);
+		expect(existsSync(join(moduleDir, "src/admin/components"))).toBe(true);
 		expect(existsSync(join(moduleDir, "src/__tests__/index.test.ts"))).toBe(
 			true,
 		);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createStoreEndpoints } from "../store/endpoints/index";
+import { createStoreEndpoints } from "../store/endpoints/routes";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

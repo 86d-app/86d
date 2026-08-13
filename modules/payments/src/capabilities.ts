@@ -1,9 +1,9 @@
+import { provideCapability } from "@86d-app/core/capabilities";
 import {
 	paymentCheckoutCapability,
 	paymentIntentCapability,
-	provideCapability,
-	type z,
-} from "@86d-app/core";
+} from "@86d-app/core/commerce-capabilities";
+import type { z } from "@86d-app/core/zod";
 import type { PaymentController, PaymentProvider } from "./service";
 import { createPaymentController } from "./service-impl";
 

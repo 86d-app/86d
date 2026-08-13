@@ -1,4 +1,4 @@
-import type { ModuleController } from "@86d-app/core";
+import type { ModuleController } from "@86d-app/core/types/module";
 
 export type LoyaltyTierSlug = "bronze" | "silver" | "gold" | "platinum";
 export type TransactionType = "earn" | "redeem" | "adjust" | "expire";

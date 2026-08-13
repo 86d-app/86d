@@ -1,8 +1,8 @@
 import { createMockDataService } from "@86d-app/core/test-utils";
 import { beforeEach, describe, expect, it } from "vitest";
-import { adminEndpoints } from "../admin/endpoints";
+import { adminEndpoints } from "../admin/endpoints/routes";
 import { createTippingController } from "../service-impl";
-import { storeEndpoints } from "../store/endpoints";
+import { storeEndpoints } from "../store/endpoints/routes";
 
 /**
  * Security tests for tipping endpoints.

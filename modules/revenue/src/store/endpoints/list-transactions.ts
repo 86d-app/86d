@@ -1,4 +1,5 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
+import { createStoreEndpoint } from "@86d-app/core/api";
+import { z } from "@86d-app/core/zod";
 import { listRevenueIntents } from "../../payment-source";
 import type { PaymentIntentStatus } from "../../service";
 import { filterAndPageTransactions } from "../../service-impl";

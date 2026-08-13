@@ -8,6 +8,7 @@ Braintree payment provider implementing the `PaymentProvider` interface from `@8
 src/
   index.ts              Factory: braintree(options) => Module + admin nav
   provider.ts           BraintreePaymentProvider class (Basic auth)
+  connection-provider.ts  Contained PaymentConnectionProvider v2 GraphQL adapter
   mdx.d.ts              MDX module type declaration
   store/
     endpoints/
@@ -27,7 +28,19 @@ src/
     endpoint-security.test.ts 22 tests (signature security, kind filtering, amount integrity)
     admin-settings.test.ts    22 tests (key masking, mode detection, 3-key config check)
     module-factory.test.ts    18 tests (module identity, options, admin pages, endpoints)
+    connection-provider.test.ts  Durable envelope and reconciliation contracts
 ```
+
+## Payment Connection v2
+
+- `BraintreePaymentConnectionProvider` is bound to one immutable Connection ID.
+- It begins with authorization and deliberately does not advertise `intent`; each authorization permits one capture.
+- Currency routes through Connection-owned merchant-account mappings.
+- Mutations forward the durable key as `apiRequestKey` and use stable operation IDs for reconciliation.
+- Known `AUTHORIZING` responses persist as `pending`, retain the exact transaction, and do not advance the Payment aggregate.
+- Shopper-facing 3D Secure/SCA continuation is not activated.
+- The adapter is exported for migration and contract testing but is not registered by the module initializer.
+- Durable webhook receipt/application is not implemented here; the registered webhook remains contained behind `503 PAYMENT_WEBHOOK_DURABILITY_REQUIRED`.
 
 ## Options
 

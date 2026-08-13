@@ -19,10 +19,24 @@
 	"homepage": "https://86d.app",
 	"type": "module",
 	"exports": {
+		".": {
+			"types": "./src/index.ts",
+			"default": "./src/index.ts"
+		},
+		"./*": "./src/*",
+		"./admin/components/tax-rates": {
+			"types": "./src/admin/components/tax-rates.tsx",
+			"default": "./src/admin/components/tax-rates.tsx"
+		},
+		"./admin/components/tax-reporting": {
+			"types": "./src/admin/components/tax-reporting.tsx",
+			"default": "./src/admin/components/tax-reporting.tsx"
+		},
 		"./capabilities": "./src/capabilities.ts",
-		"./components": "./src/store/components",
-		"./admin-components": "./src/admin/components",
-		"./*": "./src/*"
+		"./components": {
+			"types": "./src/store/components/mdx.tsx",
+			"default": "./src/store/components/mdx.tsx"
+		}
 	},
 	"scripts": {
 		"build": "tsc",

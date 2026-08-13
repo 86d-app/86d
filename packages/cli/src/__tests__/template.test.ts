@@ -100,11 +100,10 @@ describe("template", () => {
 			});
 		}
 
-		vi.doMock("@86d-app/registry", async () => {
-			const actual =
-				await vi.importActual<typeof import("@86d-app/registry")>(
-					"@86d-app/registry",
-				);
+		vi.doMock("@86d-app/registry/template", async () => {
+			const actual = await vi.importActual<
+				typeof import("@86d-app/registry/template")
+			>("@86d-app/registry/template");
 			return {
 				...actual,
 				fetchTemplate: mockFetchTemplate,

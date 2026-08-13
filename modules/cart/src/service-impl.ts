@@ -1,4 +1,5 @@
-import { type ModuleDataService, z } from "@86d-app/core";
+import type { ModuleDataService } from "@86d-app/core/types/module";
+import { z } from "@86d-app/core/zod";
 import type { Cart, CartController, CartItem } from "./service";
 
 const cartRecordSchema = z.object({

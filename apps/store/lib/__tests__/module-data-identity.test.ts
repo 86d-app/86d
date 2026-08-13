@@ -59,8 +59,11 @@ vi.mock("@86d-app/runtime/universal-data-service", () => ({
 	},
 }));
 
-vi.mock("@86d-app/sdk", () => ({
+vi.mock("@86d-app/sdk/get-store-config", () => ({
 	getStoreConfig: vi.fn().mockResolvedValue({ name: "Test Store" }),
+}));
+
+vi.mock("@86d-app/sdk/load-from-template", () => ({
 	loadFromTemplate: vi.fn().mockReturnValue({}),
 }));
 

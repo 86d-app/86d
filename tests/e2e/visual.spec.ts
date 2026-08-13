@@ -1,4 +1,4 @@
-import { test, expect } from "./fixtures/test-fixtures";
+import { expect, test } from "./fixtures/test-fixtures";
 
 /**
  * Visual regression tests — screenshot comparison across viewports.
@@ -28,10 +28,7 @@ const SCREENSHOT_OPTS = {
 };
 
 /** Navigate to a page and wait for it to fully settle. */
-async function stableGoto(
-	page: import("@playwright/test").Page,
-	path: string,
-) {
+async function stableGoto(page: import("@playwright/test").Page, path: string) {
 	await page.goto(path);
 	await page.waitForLoadState("networkidle");
 }
@@ -252,10 +249,7 @@ test.describe("Storefront — Visual", () => {
 	test("support tickets page", async ({ page }) => {
 		await stableGoto(page, "/support/tickets");
 		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
-		await expect(page).toHaveScreenshot(
-			"support-tickets.png",
-			SCREENSHOT_OPTS,
-		);
+		await expect(page).toHaveScreenshot("support-tickets.png", SCREENSHOT_OPTS);
 	});
 
 	test("new support ticket page", async ({ page }) => {
@@ -357,10 +351,7 @@ test.describe("Checkout — Visual", () => {
 	test("checkout page (empty cart)", async ({ page }) => {
 		await stableGoto(page, "/checkout");
 		await expect(page.locator("main")).toBeVisible({ timeout: 10_000 });
-		await expect(page).toHaveScreenshot(
-			"checkout-empty.png",
-			SCREENSHOT_OPTS,
-		);
+		await expect(page).toHaveScreenshot("checkout-empty.png", SCREENSHOT_OPTS);
 	});
 
 	test("order confirmation page", async ({ page }) => {

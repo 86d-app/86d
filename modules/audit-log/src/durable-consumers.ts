@@ -1,4 +1,7 @@
-import { consumeDurableEvent, inventoryStockAdjustedV1 } from "@86d-app/core";
+import {
+	consumeDurableEvent,
+	inventoryStockAdjustedV1,
+} from "@86d-app/core/durable-events";
 import type { AuditEntry } from "./service";
 
 /** Stable identity for this consumer's registration and dedupe receipts. */

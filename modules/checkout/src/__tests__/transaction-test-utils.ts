@@ -3,7 +3,7 @@ import type {
 	DurableEventInput,
 	ModuleDataTransaction,
 	ModuleTransactionRunner,
-} from "@86d-app/core";
+} from "@86d-app/core/durable-events";
 import { createMockDataService } from "@86d-app/core/test-utils";
 
 export type RecordedDurableEvent = Readonly<{

@@ -4,7 +4,7 @@ import type {
 	DurableEventInput,
 	LockingModuleDataTransaction,
 	ModuleDataTransaction,
-} from "@86d-app/core";
+} from "@86d-app/core/durable-events";
 import type { Prisma } from "@86d-app/core/prisma";
 
 export interface DataServiceConfig {

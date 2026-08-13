@@ -21,10 +21,28 @@
 	"homepage": "https://86d.app",
 	"type": "module",
 	"exports": {
+		".": {
+			"types": "./src/index.ts",
+			"default": "./src/index.ts"
+		},
+		"./*": "./src/*",
+		"./admin/components/price-list-admin": {
+			"types": "./src/admin/components/price-list-admin.tsx",
+			"default": "./src/admin/components/price-list-admin.tsx"
+		},
+		"./admin/components/price-list-create": {
+			"types": "./src/admin/components/price-list-create.tsx",
+			"default": "./src/admin/components/price-list-create.tsx"
+		},
+		"./admin/components/price-list-detail": {
+			"types": "./src/admin/components/price-list-detail.tsx",
+			"default": "./src/admin/components/price-list-detail.tsx"
+		},
 		"./capabilities": "./src/capabilities.ts",
-		"./components": "./src/store/components",
-		"./admin-components": "./src/admin/components",
-		"./*": "./src/*"
+		"./components": {
+			"types": "./src/store/components/mdx.tsx",
+			"default": "./src/store/components/mdx.tsx"
+		}
 	},
 	"scripts": {
 		"build": "tsc",

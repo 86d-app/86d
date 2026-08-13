@@ -18,9 +18,19 @@
 	"homepage": "https://86d.app",
 	"type": "module",
 	"exports": {
-		"./components": "./src/store/components",
-		"./admin-components": "./src/admin/components",
-		"./*": "./src/*"
+		".": {
+			"types": "./src/index.ts",
+			"default": "./src/index.ts"
+		},
+		"./*": "./src/*",
+		"./admin/components/pinterest-shop-admin": {
+			"types": "./src/admin/components/pinterest-shop-admin.tsx",
+			"default": "./src/admin/components/pinterest-shop-admin.tsx"
+		},
+		"./components": {
+			"types": "./src/store/components/mdx.tsx",
+			"default": "./src/store/components/mdx.tsx"
+		}
 	},
 	"scripts": {
 		"build": "tsc",

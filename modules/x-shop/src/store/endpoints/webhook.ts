@@ -1,4 +1,4 @@
-import { createStoreEndpoint } from "@86d-app/core";
+import { createStoreEndpoint } from "@86d-app/core/api";
 
 /**
  * X delivers events with a signed payload. No verification material is

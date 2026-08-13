@@ -1,4 +1,4 @@
-import { createAdminEndpoint } from "@86d-app/core";
+import { createAdminEndpoint } from "@86d-app/core/api";
 import type { PreordersController } from "../../service";
 
 export const preorderSummary = createAdminEndpoint(

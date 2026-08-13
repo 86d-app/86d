@@ -1,7 +1,5 @@
-import {
-	inventoryCheckoutV2Capability,
-	provideCapability,
-} from "@86d-app/core";
+import { provideCapability } from "@86d-app/core/capabilities";
+import { inventoryCheckoutV2Capability } from "@86d-app/core/inventory-reservation-capability";
 import { executeInventoryReservation } from "./reservations";
 
 export { inventoryCheckoutV2Capability };

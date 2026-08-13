@@ -1,8 +1,6 @@
-import {
-	inventoryCheckoutCapability,
-	provideCapability,
-	type z,
-} from "@86d-app/core";
+import { provideCapability } from "@86d-app/core/capabilities";
+import { inventoryCheckoutCapability } from "@86d-app/core/commerce-capabilities";
+import type { z } from "@86d-app/core/zod";
 import type { InventoryController } from "./service";
 import { createInventoryController } from "./service-impl";
 

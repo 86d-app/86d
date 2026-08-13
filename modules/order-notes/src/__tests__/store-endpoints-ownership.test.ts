@@ -1,7 +1,5 @@
-import {
-	orderCustomerAuthorizeCapability,
-	provideCapability,
-} from "@86d-app/core";
+import { provideCapability } from "@86d-app/core/capabilities";
+import { orderCustomerAuthorizeCapability } from "@86d-app/core/commerce-capabilities";
 import { createMockDataService } from "@86d-app/core/test-utils";
 import { beforeEach, describe, expect, it } from "vitest";
 

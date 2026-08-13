@@ -1,9 +1,13 @@
-import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
-import { createAdminEndpointsWithSettings } from "./admin/endpoints";
+import type {
+	Module,
+	ModuleConfig,
+	ModuleContext,
+} from "@86d-app/core/types/module";
 import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
+import { createAdminEndpointsWithSettings } from "./admin/endpoints/routes";
 import { uberDirectSchema } from "./schema";
 import { createUberDirectController } from "./service-impl";
-import { createStoreEndpoints, storeEndpoints } from "./store/endpoints";
+import { createStoreEndpoints, storeEndpoints } from "./store/endpoints/routes";
 import { createUberDirectWebhook } from "./store/endpoints/webhook";
 
 export type {

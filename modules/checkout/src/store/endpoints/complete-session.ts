@@ -1,13 +1,13 @@
+import { createStoreEndpoint } from "@86d-app/core/api";
 import {
-	createStoreEndpoint,
 	discountCodeCapability,
 	giftCardCheckoutCapability,
 	inventoryCheckoutCapability,
 	orderCreateCapability,
 	paymentCheckoutCapability,
 	storeCreditCheckoutCapability,
-	z,
-} from "@86d-app/core";
+} from "@86d-app/core/commerce-capabilities";
+import { z } from "@86d-app/core/zod";
 import type { CheckoutController } from "../../service";
 
 export const completeSession = createStoreEndpoint(

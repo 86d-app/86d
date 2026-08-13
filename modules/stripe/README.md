@@ -58,6 +58,39 @@ const client = createModuleClient([
 | `apiKey` | `string` | Yes | Stripe secret key (`sk_live_...` or `sk_test_...`) |
 | `webhookSecret` | `string` | No | Webhook signing secret (`whsec_...`) for signature verification |
 
+## Payment Connection v2 adapter
+
+The module also exports `createStripePaymentConnectionProvider` for the durable
+Payment Connection contract. The factory binds one adapter instance to one
+immutable Connection ID. It is intentionally not registered by the legacy
+module initializer while Checkout migration and durable webhook ingress remain
+contained.
+
+The v2 adapter creates manual-capture PaymentIntents and performs one final
+capture per authorization (`final_capture=true`). Every Stripe mutation receives
+the operation envelope's `Idempotency-Key` unchanged. Unknown mutation outcomes
+remain ambiguous and are reconciled with read-only retrieval or metadata search
+against the exact PaymentIntent or refund. Refund responses are normalized only
+from Stripe `refund` objects; disputes are never treated as refunds.
+
+Referenced authorization, capture, refund, and void requests must include the
+durable source operation descriptor. The adapter validates its operation type,
+provider reference, amount, and currency before provider I/O. Capture is allowed
+only when its amount exactly equals the source authorization amount, preventing
+Stripe's final capture from releasing a remainder that local Payment state could
+still consider claimable.
+
+The adapter accepts only `sk_`/`rk_` keys whose `test` or `live` prefix matches
+the immutable Connection mode, and pins REST requests to Stripe API version
+`2026-02-25.clover`. It does not support incremental or partial capture. Known
+`processing` responses persist as `pending`, while SCA persists distinctly as
+`requires_action`; neither advances the Payment aggregate or consumes the
+short ambiguity budget. The adapter still does not expose a safe shopper
+action/return contract, so an SCA result cannot be completed through this path.
+These limitations, the Checkout migration dependency, and the
+durable webhook-ingress dependency keep the adapter unregistered; the existing
+webhook continues to verify then return `503 PAYMENT_WEBHOOK_DURABILITY_REQUIRED`.
+
 ## Payment Provider
 
 `StripePaymentProvider` implements the `PaymentProvider` interface:

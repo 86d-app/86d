@@ -1,9 +1,13 @@
-import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
-import { adminEndpoints } from "./admin/endpoints";
+import type {
+	Module,
+	ModuleConfig,
+	ModuleContext,
+} from "@86d-app/core/types/module";
+import { adminEndpoints } from "./admin/endpoints/routes";
 import { toMarkdownPageDetail, toMarkdownPageListing } from "./markdown";
 import { pagesSchema } from "./schema";
 import { createPagesController } from "./service-impl";
-import { storeEndpoints } from "./store/endpoints";
+import { storeEndpoints } from "./store/endpoints/routes";
 
 export type { Page, PageStatus, PagesController } from "./service";
 

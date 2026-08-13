@@ -1,5 +1,9 @@
-import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
-import { adminEndpoints } from "./admin/endpoints";
+import type {
+	Module,
+	ModuleConfig,
+	ModuleContext,
+} from "@86d-app/core/types/module";
+import { adminEndpoints } from "./admin/endpoints/routes";
 import { importExportSchema } from "./schema";
 import { createImportExportController } from "./service-impl";
 

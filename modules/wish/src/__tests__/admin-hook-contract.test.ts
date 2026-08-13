@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { adminEndpoints } from "../admin/endpoints";
+import { adminEndpoints } from "../admin/endpoints/routes";
 
 describe("wish admin hook contract", () => {
 	it("binds all required endpoints in the admin component", () => {

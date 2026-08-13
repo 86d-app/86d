@@ -1,4 +1,4 @@
-import type { ModuleController } from "@86d-app/core";
+import type { ModuleController } from "@86d-app/core/types/module";
 
 export type UberOrderStatus =
 	| "pending"
@@ -88,4 +88,10 @@ export type UberEatsController = ModuleController & {
 	}): Promise<MenuSync[]>;
 
 	getOrderStats(): Promise<OrderStats>;
+};
+
+/** Entity map for this Module's data service — keys are schema entity names. */
+export type UberEatsEntities = {
+	uberOrder: UberOrder;
+	menuSync: MenuSync;
 };

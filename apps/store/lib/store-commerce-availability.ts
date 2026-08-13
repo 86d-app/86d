@@ -1,9 +1,9 @@
+import { getStoreConfig } from "@86d-app/sdk/get-store-config";
 import {
 	type Config,
-	getStoreConfig,
 	isRemoteStoreConfigV2,
 	type RemoteStoreConfig,
-} from "@86d-app/sdk";
+} from "@86d-app/sdk/types";
 import { logger } from "utils/logger";
 
 export type StoreCommerceGate =

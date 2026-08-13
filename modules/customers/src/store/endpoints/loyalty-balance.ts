@@ -1,4 +1,4 @@
-import { createStoreEndpoint } from "@86d-app/core";
+import { createStoreEndpoint } from "@86d-app/core/api";
 import type { CustomerController } from "../../service";
 
 export const getLoyaltyBalance = createStoreEndpoint(

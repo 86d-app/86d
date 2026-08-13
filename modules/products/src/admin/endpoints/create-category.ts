@@ -1,4 +1,6 @@
-import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
+import { createAdminEndpoint } from "@86d-app/core/api";
+import { sanitizeText } from "@86d-app/core/sanitize";
+import { z } from "@86d-app/core/zod";
 
 export const createCategory = createAdminEndpoint(
 	"/admin/categories/create",

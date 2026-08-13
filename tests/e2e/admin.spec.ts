@@ -1,4 +1,4 @@
-import { test, expect, ADMIN_EMAIL, ADMIN_PASSWORD } from "./fixtures/test-fixtures";
+import { expect, test } from "./fixtures/test-fixtures";
 
 test.describe("Store Admin — Authentication", () => {
 	test("redirects unauthenticated users to sign-in", async ({ admin }) => {
@@ -15,9 +15,7 @@ test.describe("Store Admin — Authentication", () => {
 
 	test("sign-in page renders correctly", async ({ admin }) => {
 		await admin.page.goto("/auth/signin");
-		const heading = admin.page
-			.locator("h1")
-			.filter({ hasText: /sign in/i });
+		const heading = admin.page.locator("h1").filter({ hasText: /sign in/i });
 		await expect(heading).toBeVisible();
 		/* Should have email and password inputs — scope to main to avoid footer newsletter */
 		const form = admin.page.locator("main form");
@@ -39,9 +37,7 @@ test.describe("Store Admin — Authentication", () => {
 		await expect(admin.heading).toBeVisible({ timeout: 10_000 });
 	});
 
-	test("sign-in with invalid credentials shows error", async ({
-		admin,
-	}) => {
+	test("sign-in with invalid credentials shows error", async ({ admin }) => {
 		await admin.page.goto("/auth/signin");
 		const form = admin.page.locator("main form");
 		await form.locator('input[type="email"]').fill("wrong@example.com");
@@ -60,18 +56,14 @@ test.describe("Store Admin — Dashboard", () => {
 	});
 
 	test("shows dashboard heading and stats", async ({ admin }) => {
-		const heading = admin.page
-			.locator("h1")
-			.filter({ hasText: "Dashboard" });
+		const heading = admin.page.locator("h1").filter({ hasText: "Dashboard" });
 		await expect(heading).toBeVisible();
 		/* Stat cards should appear */
 		const statCards = admin.page.locator("[data-testid='stat-card']");
 		await expect(statCards.first()).toBeVisible({ timeout: 10_000 });
 	});
 
-	test("stat cards show numeric values after loading", async ({
-		admin,
-	}) => {
+	test("stat cards show numeric values after loading", async ({ admin }) => {
 		/* Wait for stat values to render */
 		const statValues = admin.page.locator("[data-testid='stat-value']");
 		await expect(statValues.first()).toBeVisible({ timeout: 10_000 });
@@ -107,17 +99,12 @@ test.describe("Store Admin — Navigation", () => {
 			"Newsletter",
 		];
 		for (const section of expectedSections) {
-			const link = admin.page
-				.locator("a")
-				.filter({ hasText: section })
-				.first();
+			const link = admin.page.locator("a").filter({ hasText: section }).first();
 			await expect(link).toBeVisible();
 		}
 	});
 
-	test("navigating to Products page shows product list", async ({
-		admin,
-	}) => {
+	test("navigating to Products page shows product list", async ({ admin }) => {
 		await admin.navigateTo("Products");
 		await admin.page.waitForURL(/\/admin\/products/);
 		const heading = admin.page
@@ -172,9 +159,7 @@ test.describe("Store Admin — Product Management", () => {
 			.locator("p")
 			.filter({ hasText: /no products|empty/i });
 		const hasRows = (await rows.count()) > 0;
-		const hasEmptyState = await emptyState
-			.isVisible()
-			.catch(() => false);
+		const hasEmptyState = await emptyState.isVisible().catch(() => false);
 		expect(hasRows || hasEmptyState).toBeTruthy();
 	});
 
@@ -348,9 +333,9 @@ test.describe("Store Admin — Named Module Smoke", () => {
 			await expect(
 				admin.page.getByText("Failed to load admin page"),
 			).toHaveCount(0);
-			await expect(
-				admin.page.getByText(/encountered an error/i),
-			).toHaveCount(0);
+			await expect(admin.page.getByText(/encountered an error/i)).toHaveCount(
+				0,
+			);
 
 			expect(pageErrors, pageErrors.join("\n")).toEqual([]);
 			expect(consoleErrors, consoleErrors.join("\n")).toEqual([]);

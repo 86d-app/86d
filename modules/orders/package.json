@@ -18,10 +18,36 @@
 	"homepage": "https://86d.app",
 	"type": "module",
 	"exports": {
+		".": {
+			"types": "./src/index.ts",
+			"default": "./src/index.ts"
+		},
+		"./*": "./src/*",
+		"./admin/components/order-activity": {
+			"types": "./src/admin/components/order-activity.tsx",
+			"default": "./src/admin/components/order-activity.tsx"
+		},
+		"./admin/components/order-detail": {
+			"types": "./src/admin/components/order-detail.tsx",
+			"default": "./src/admin/components/order-detail.tsx"
+		},
+		"./admin/components/order-invoice": {
+			"types": "./src/admin/components/order-invoice.tsx",
+			"default": "./src/admin/components/order-invoice.tsx"
+		},
+		"./admin/components/order-list": {
+			"types": "./src/admin/components/order-list.tsx",
+			"default": "./src/admin/components/order-list.tsx"
+		},
+		"./admin/components/return-list": {
+			"types": "./src/admin/components/return-list.tsx",
+			"default": "./src/admin/components/return-list.tsx"
+		},
 		"./capabilities": "./src/capabilities.ts",
-		"./components": "./src/store/components",
-		"./admin-components": "./src/admin/components",
-		"./*": "./src/*"
+		"./components": {
+			"types": "./src/store/components/mdx.tsx",
+			"default": "./src/store/components/mdx.tsx"
+		}
 	},
 	"scripts": {
 		"build": "tsc",

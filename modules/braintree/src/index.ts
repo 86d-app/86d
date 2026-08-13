@@ -1,7 +1,12 @@
-import type { Module, ModuleConfig } from "@86d-app/core";
-import { adminEndpoints } from "./admin/endpoints";
-import { createStoreEndpoints } from "./store/endpoints";
+import type { Module, ModuleConfig } from "@86d-app/core/types/module";
+import { adminEndpoints } from "./admin/endpoints/routes";
+import { createStoreEndpoints } from "./store/endpoints/routes";
 
+export type { BraintreePaymentConnectionProviderOptions } from "./connection-provider";
+export {
+	BraintreePaymentConnectionProvider,
+	createBraintreePaymentConnectionProvider,
+} from "./connection-provider";
 export { BraintreePaymentProvider } from "./provider";
 
 export interface BraintreeOptions extends ModuleConfig {

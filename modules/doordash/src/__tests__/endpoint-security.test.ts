@@ -3,12 +3,15 @@ import {
 	createMockModuleContext,
 } from "@86d-app/core/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createAdminEndpointsWithSettings } from "../admin/endpoints";
 import { createGetSettingsEndpoint } from "../admin/endpoints/get-settings";
+import { createAdminEndpointsWithSettings } from "../admin/endpoints/routes";
 import doordash from "../index";
 import type { DoordashController } from "../service";
 import { createDoordashController } from "../service-impl";
-import { createStoreEndpoints, storeEndpoints } from "../store/endpoints";
+import {
+	createStoreEndpoints,
+	storeEndpoints,
+} from "../store/endpoints/routes";
 
 describe("doordash endpoint security", () => {
 	let mockData: ReturnType<typeof createMockDataService>;

@@ -1,9 +1,9 @@
 import type {
-	ModuleDataService,
 	ModuleDataTransaction,
 	ModuleTransactionRunner,
-} from "@86d-app/core";
+} from "@86d-app/core/durable-events";
 import { createMockDataService } from "@86d-app/core/test-utils";
+import type { ModuleDataService } from "@86d-app/core/types/module";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
 	executeInventoryReservation,

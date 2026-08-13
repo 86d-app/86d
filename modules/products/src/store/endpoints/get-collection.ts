@@ -1,4 +1,5 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
+import { createStoreEndpoint } from "@86d-app/core/api";
+import { z } from "@86d-app/core/zod";
 import type { Collection, CollectionWithProducts } from "../../controllers";
 
 export const getCollection = createStoreEndpoint(

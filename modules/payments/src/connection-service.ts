@@ -1,15 +1,25 @@
+import { type JsonValue, jsonValueSchema } from "@86d-app/core/commands";
+import type {
+	LockingModuleDataTransaction,
+	ModuleDataTransaction,
+	ModuleTransactionRunner,
+} from "@86d-app/core/durable-events";
+import type {
+	PaymentConnectionCapability,
+	PaymentConnectionProvider,
+	PaymentProviderOperationSource,
+} from "@86d-app/core/payment-connection-provider";
+import type {
+	ModuleController,
+	ModuleDataService,
+} from "@86d-app/core/types/module";
+import { z } from "@86d-app/core/zod";
 import {
-	type JsonValue,
-	jsonValueSchema,
-	type LockingModuleDataTransaction,
-	type ModuleController,
-	type ModuleDataService,
-	type ModuleDataTransaction,
-	type ModuleTransactionRunner,
-	type PaymentConnectionCapability,
-	type PaymentConnectionProvider,
-	z,
-} from "@86d-app/core";
+	assertPaymentOperationClaimableLocked,
+	PaymentAggregateError,
+	type PendingPaymentOperationClaim,
+	recordConfirmedPaymentOperationLocked,
+} from "./payment-service";
 
 const identifierSchema = z.string().trim().min(1).max(255);
 const connectionNameSchema = z.string().trim().min(1).max(100);
@@ -20,7 +30,7 @@ const providerNameSchema = z
 	.max(100)
 	.regex(/^[a-z][a-z0-9_-]*$/);
 const secretReferenceSchema = z.string().trim().min(3).max(500);
-const idempotencyKeySchema = z.string().trim().min(8).max(200);
+const idempotencyKeySchema = z.string().trim().min(8).max(108);
 const digestSchema = z.string().regex(/^[a-f0-9]{64}$/);
 const currencySchema = z.string().regex(/^[A-Z]{3}$/);
 const minorAmountSchema = z
@@ -52,12 +62,40 @@ export const paymentConnectionLifecycleSchema = z.enum([
 ]);
 export const paymentOperationStateSchema = z.enum([
 	"pending",
+	"requires_action",
 	"running",
 	"succeeded",
 	"failed",
 	"ambiguous",
 	"needs_attention",
+	"dead_letter",
 ]);
+
+export const paymentReconciliationTriggerSchema = z.enum([
+	"scheduled",
+	"manual",
+]);
+
+export const PAYMENT_OPERATION_STALE_AFTER_MS = 5 * 60 * 1_000;
+export const PAYMENT_RECONCILIATION_BACKOFF_MS = [
+	1_000, 5_000, 30_000,
+] as const;
+export const PAYMENT_PENDING_RECONCILIATION_BACKOFF_MS = [
+	30_000,
+	2 * 60 * 1_000,
+	10 * 60 * 1_000,
+	30 * 60 * 1_000,
+	2 * 60 * 60 * 1_000,
+	6 * 60 * 60 * 1_000,
+] as const;
+export const PAYMENT_REQUIRES_ACTION_RECONCILIATION_BACKOFF_MS = [
+	15 * 60 * 1_000,
+	60 * 60 * 1_000,
+	6 * 60 * 60 * 1_000,
+	24 * 60 * 60 * 1_000,
+] as const;
+export const PAYMENT_MAX_AUTOMATIC_RECONCILIATIONS =
+	PAYMENT_RECONCILIATION_BACKOFF_MS.length;
 
 const dateSchema = z.coerce.date();
 
@@ -139,11 +177,29 @@ export const paymentOperationPayloadSchema = z.discriminatedUnion("operation", [
 		.strict(),
 ]);
 
+const directAuthorizationPayloadSchema = z
+	.object({
+		operation: z.literal("authorization"),
+		amount: minorAmountSchema,
+		currency: currencySchema,
+		metadata: jsonValueSchema.optional(),
+	})
+	.strict();
+const referencedAuthorizationPayloadSchema = z
+	.object({
+		operation: z.literal("authorization"),
+		amount: minorAmountSchema,
+		currency: currencySchema,
+		providerPaymentReference: providerReferenceSchema,
+		metadata: jsonValueSchema.optional(),
+	})
+	.strict();
 const primaryOperationPayloadSchema = z.discriminatedUnion("operation", [
 	paymentOperationPayloadSchema.options[0],
-	paymentOperationPayloadSchema.options[1],
+	directAuthorizationPayloadSchema,
 ]);
 const continuationOperationPayloadSchema = z.discriminatedUnion("operation", [
+	referencedAuthorizationPayloadSchema,
 	paymentOperationPayloadSchema.options[2],
 	paymentOperationPayloadSchema.options[3],
 	paymentOperationPayloadSchema.options[4],
@@ -175,24 +231,79 @@ export type PaymentOperationExecutionInput = z.infer<
 export const paymentOperationSchema = z
 	.object({
 		id: identifierSchema,
+		modelVersion: z.literal(2).default(2),
 		paymentId: identifierSchema,
 		connectionId: identifierSchema,
 		sourceOperationId: identifierSchema.optional(),
 		operation: paymentConnectionCapabilitySchema,
 		idempotencyKey: idempotencyKeySchema,
 		requestDigest: digestSchema,
+		payload: paymentOperationPayloadSchema,
 		requestDigestVersion: z.literal(1),
 		state: paymentOperationStateSchema,
-		attempt: z.number().int().positive(),
+		revision: z
+			.number()
+			.int()
+			.positive()
+			.max(Number.MAX_SAFE_INTEGER)
+			.default(1),
+		attempt: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
+		reconciliationAttempts: z
+			.number()
+			.int()
+			.nonnegative()
+			.max(Number.MAX_SAFE_INTEGER)
+			.default(0),
+		manualReconciliationCount: z
+			.number()
+			.int()
+			.nonnegative()
+			.max(Number.MAX_SAFE_INTEGER)
+			.default(0),
 		providerReference: providerReferenceSchema.optional(),
 		outcome: jsonValueSchema.optional(),
 		needsAttentionReason: z.string().min(1).max(500).optional(),
 		needsAttentionAt: dateSchema.optional(),
+		leaseExpiresAt: dateSchema.optional(),
+		nextReconciliationAt: dateSchema.optional(),
+		lastReconciliationAt: dateSchema.optional(),
+		lastReconciliationTrigger: paymentReconciliationTriggerSchema.optional(),
+		lastManualReconciliationReason: z.string().min(1).max(500).optional(),
+		lastManualReconciliationAt: dateSchema.optional(),
+		deadLetteredAt: dateSchema.optional(),
 		completedAt: dateSchema.optional(),
 		createdAt: dateSchema,
 		updatedAt: dateSchema,
 	})
-	.strict();
+	.strict()
+	.superRefine((operation, context) => {
+		if (operation.operation !== operation.payload.operation) {
+			context.addIssue({
+				code: "custom",
+				message: "Stored Payment operation and payload kinds must match.",
+				path: ["payload", "operation"],
+			});
+		}
+		const requiresSource = ["capture", "refund", "void"].includes(
+			operation.operation,
+		);
+		const prohibitsSource = operation.operation === "intent";
+		const referencedAuthorization =
+			operation.payload.operation === "authorization" &&
+			operation.payload.providerPaymentReference !== undefined;
+		if (
+			(requiresSource && operation.sourceOperationId === undefined) ||
+			(prohibitsSource && operation.sourceOperationId !== undefined) ||
+			(operation.operation === "authorization" &&
+				referencedAuthorization !== (operation.sourceOperationId !== undefined))
+		) {
+			context.addIssue({
+				code: "custom",
+				message: "Stored Payment continuation identity is invalid.",
+				path: ["sourceOperationId"],
+			});
+		}
+	});
 
 export type PaymentOperation = z.infer<typeof paymentOperationSchema>;
 
@@ -201,10 +312,21 @@ export const paymentOperationAttemptSchema = z
 		id: identifierSchema,
 		paymentOperationId: identifierSchema,
 		connectionId: identifierSchema,
-		attempt: z.number().int().positive(),
+		attempt: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
 		idempotencyKey: idempotencyKeySchema,
 		requestDigest: digestSchema,
-		state: z.enum(["running", "succeeded", "failed", "ambiguous"]),
+		trigger: z
+			.enum(["initial", "scheduled_reconciliation", "manual_reconciliation"])
+			.default("initial"),
+		triggerReason: z.string().min(1).max(500).optional(),
+		state: z.enum([
+			"running",
+			"pending",
+			"requires_action",
+			"succeeded",
+			"failed",
+			"ambiguous",
+		]),
 		providerReference: providerReferenceSchema.optional(),
 		outcome: jsonValueSchema.optional(),
 		startedAt: dateSchema,
@@ -214,6 +336,24 @@ export const paymentOperationAttemptSchema = z
 
 export type PaymentOperationAttempt = z.infer<
 	typeof paymentOperationAttemptSchema
+>;
+
+export const paymentOperationReconciliationOptionsSchema = z
+	.object({
+		trigger: paymentReconciliationTriggerSchema.default("manual"),
+		reason: z.string().trim().min(1).max(500).optional(),
+	})
+	.strict()
+	.default({ trigger: "manual", reason: "manual_reconciliation_requested" })
+	.transform((options) => ({
+		...options,
+		...(options.trigger === "manual" && options.reason === undefined
+			? { reason: "manual_reconciliation_requested" }
+			: {}),
+	}));
+
+export type PaymentOperationReconciliationOptions = z.input<
+	typeof paymentOperationReconciliationOptionsSchema
 >;
 
 export const createPaymentConnectionInputSchema = z
@@ -237,11 +377,30 @@ export type CreatePaymentConnectionInput = z.infer<
 
 const providerOutcomeSchema = z
 	.object({
-		state: z.enum(["succeeded", "failed", "ambiguous"]),
+		state: z.enum([
+			"succeeded",
+			"failed",
+			"pending",
+			"requires_action",
+			"ambiguous",
+		]),
 		providerReference: providerReferenceSchema.optional(),
 		result: jsonValueSchema.optional(),
 	})
-	.strict();
+	.strict()
+	.superRefine((outcome, context) => {
+		if (
+			["pending", "requires_action"].includes(outcome.state) &&
+			outcome.providerReference === undefined
+		) {
+			context.addIssue({
+				code: "custom",
+				message:
+					"A provider-known nonfinal outcome requires an immutable provider reference.",
+				path: ["providerReference"],
+			});
+		}
+	});
 
 export type PaymentConnectionErrorCode =
 	| "connection_name_conflict"
@@ -252,6 +411,7 @@ export type PaymentConnectionErrorCode =
 	| "invalid_operation_state"
 	| "operation_not_found"
 	| "provider_not_bound"
+	| "reconciliation_not_due"
 	| "transaction_unavailable";
 
 export class PaymentConnectionError extends Error {
@@ -284,7 +444,10 @@ export interface PaymentConnectionController extends ModuleController {
 	executeOperation(
 		input: PaymentOperationExecutionInput,
 	): Promise<PaymentOperation>;
-	reconcileOperation(id: string): Promise<PaymentOperation>;
+	reconcileOperation(
+		id: string,
+		options?: PaymentOperationReconciliationOptions,
+	): Promise<PaymentOperation>;
 	markOperationNeedsAttention(
 		id: string,
 		reason: string,
@@ -325,6 +488,46 @@ async function sha256(value: string): Promise<string> {
 		.join("");
 }
 
+function safeIncrement(value: number, message: string): number {
+	const next = value + 1;
+	if (!Number.isSafeInteger(next)) {
+		throw new PaymentConnectionError("invalid_operation_state", message);
+	}
+	return next;
+}
+
+type ScheduledNonfinalState = "ambiguous" | "pending" | "requires_action";
+
+function reconciliationSchedule(state: ScheduledNonfinalState) {
+	if (state === "pending") return PAYMENT_PENDING_RECONCILIATION_BACKOFF_MS;
+	if (state === "requires_action") {
+		return PAYMENT_REQUIRES_ACTION_RECONCILIATION_BACKOFF_MS;
+	}
+	return PAYMENT_RECONCILIATION_BACKOFF_MS;
+}
+
+function nextReconciliationAt(
+	now: Date,
+	reconciliationAttempts: number,
+	state: ScheduledNonfinalState,
+): Date {
+	const schedule = reconciliationSchedule(state);
+	const delayIndex = Math.min(reconciliationAttempts, schedule.length - 1);
+	return new Date(now.getTime() + schedule[delayIndex]);
+}
+
+function isKnownNonfinalState(
+	state: PaymentOperation["state"],
+): state is "pending" | "requires_action" {
+	return state === "pending" || state === "requires_action";
+}
+
+function isScheduledNonfinalState(
+	state: PaymentOperation["state"],
+): state is ScheduledNonfinalState {
+	return state === "ambiguous" || isKnownNonfinalState(state);
+}
+
 function normalizeConnectionName(name: string): string {
 	return name.normalize("NFKC").toLocaleLowerCase("en-US");
 }
@@ -357,7 +560,14 @@ function operationRecord(
 	operation: PaymentOperation,
 	overrides: Partial<PaymentOperation>,
 ) {
-	return paymentOperationSchema.parse({ ...operation, ...overrides });
+	const revision = operation.revision + 1;
+	if (!Number.isSafeInteger(revision)) {
+		throw new PaymentConnectionError(
+			"invalid_operation_state",
+			"Payment operation revision exceeds safe integer bounds.",
+		);
+	}
+	return paymentOperationSchema.parse({ ...operation, ...overrides, revision });
 }
 
 function connectionRecord(
@@ -459,14 +669,15 @@ export function createPaymentConnectionController(
 		transaction: LockingModuleDataTransaction,
 		input: PaymentOperationExecutionInput,
 	): Promise<{
-		connection: PaymentConnection;
+		connection: PaymentConnection | null;
+		connectionId: string;
 		sourceOperationId?: string | undefined;
 	}> {
 		if ("connectionId" in input) {
 			const connection = requireConnection(
-				await transaction.get("paymentConnection", input.connectionId),
+				await transaction.getForUpdate("paymentConnection", input.connectionId),
 			);
-			return { connection };
+			return { connection, connectionId: connection.id };
 		}
 		const source = requireOperation(
 			await transaction.get("paymentOperationV2", input.sourceOperationId),
@@ -488,22 +699,31 @@ export function createPaymentConnectionController(
 			);
 		}
 		const validSource =
+			(input.payload.operation === "authorization" &&
+				source.operation === "intent") ||
 			(input.payload.operation === "capture" &&
 				source.operation === "authorization") ||
 			(input.payload.operation === "refund" &&
-				["intent", "authorization", "capture"].includes(source.operation)) ||
+				source.operation === "capture") ||
 			(input.payload.operation === "void" &&
-				["intent", "authorization"].includes(source.operation));
+				source.operation === "authorization");
 		if (!validSource) {
 			throw new PaymentConnectionError(
 				"invalid_operation_state",
 				`A ${input.payload.operation} cannot continue a ${source.operation} operation.`,
 			);
 		}
-		const connection = requireConnection(
-			await transaction.get("paymentConnection", source.connectionId),
+		const connectionRow = await transaction.getForUpdate(
+			"paymentConnection",
+			source.connectionId,
 		);
-		return { connection, sourceOperationId: source.id };
+		return {
+			connection: connectionRow
+				? paymentConnectionSchema.parse(connectionRow)
+				: null,
+			connectionId: source.connectionId,
+			sourceOperationId: source.id,
+		};
 	}
 
 	async function claimOperation(
@@ -520,97 +740,138 @@ export function createPaymentConnectionController(
 				idempotencyKey: parsed.idempotencyKey,
 			}),
 		)}`;
-		const operationIdempotencyKey = `${parsed.payload.operation}:${operationId}`;
 
 		return transact(async (transaction) => {
 			await lock(transaction, "paymentOperationLockV2", operationId);
-			const { connection, sourceOperationId } = await resolveConnection(
-				transaction,
-				parsed,
-			);
-
-			const requestDigestInput = jsonValueSchema.parse({
-				requestDigestVersion: 1,
-				idempotencyKey: operationIdempotencyKey,
-				paymentId: parsed.paymentId,
-				connectionId: connection.id,
-				sourceOperationId: sourceOperationId ?? null,
-				payload: parsed.payload,
-			});
-			const requestDigest = await sha256(canonicalJson(requestDigestInput));
-			const existingRow = await transaction.get(
+			const existingRow = await transaction.getForUpdate(
 				"paymentOperationV2",
 				operationId,
 			);
+			const requestedSourceOperationId =
+				"sourceOperationId" in parsed ? parsed.sourceOperationId : undefined;
+			const requestedConnectionId =
+				"connectionId" in parsed
+					? parsed.connectionId
+					: existingRow
+						? paymentOperationSchema.parse(existingRow).connectionId
+						: undefined;
 			if (existingRow) {
 				const existing = paymentOperationSchema.parse(existingRow);
+				const replayDigestInput = jsonValueSchema.parse({
+					requestDigestVersion: 1,
+					idempotencyKey: parsed.idempotencyKey,
+					paymentId: parsed.paymentId,
+					connectionId: requestedConnectionId,
+					sourceOperationId: requestedSourceOperationId ?? null,
+					payload: parsed.payload,
+				});
+				const replayDigest = await sha256(canonicalJson(replayDigestInput));
 				if (
 					existing.paymentId !== parsed.paymentId ||
-					existing.connectionId !== connection.id ||
-					existing.sourceOperationId !== sourceOperationId ||
+					existing.connectionId !== requestedConnectionId ||
+					existing.sourceOperationId !== requestedSourceOperationId ||
 					existing.operation !== parsed.payload.operation ||
-					existing.idempotencyKey !== operationIdempotencyKey ||
-					existing.requestDigest !== requestDigest
+					existing.idempotencyKey !== parsed.idempotencyKey ||
+					existing.requestDigest !== replayDigest
 				) {
 					throw new PaymentConnectionError(
 						"idempotency_conflict",
 						"The Payment operation key was already used for a different request.",
 					);
 				}
-				if (existing.state !== "failed") {
-					return { operation: existing, claimed: false };
-				}
-				const now = new Date();
-				const attempt = existing.attempt + 1;
-				const retried = operationRecord(existing, {
-					state: "running",
-					attempt,
-					providerReference: undefined,
-					outcome: undefined,
-					completedAt: undefined,
-					updatedAt: now,
-				});
-				const attemptRecord = paymentOperationAttemptSchema.parse({
-					id: `${operationId}:${attempt}`,
-					paymentOperationId: operationId,
-					connectionId: connection.id,
-					attempt,
-					idempotencyKey: operationIdempotencyKey,
-					requestDigest,
-					state: "running",
-					startedAt: now,
-				});
-				await transaction.upsert("paymentOperationV2", operationId, retried);
-				await transaction.upsert(
-					"paymentOperationAttemptV2",
-					attemptRecord.id,
-					attemptRecord,
-				);
-				return { operation: retried, claimed: true };
+				return { operation: existing, claimed: false };
 			}
 
+			const { connection, connectionId, sourceOperationId } =
+				await resolveConnection(transaction, parsed);
+			if ("connectionId" in parsed) {
+				requireUsable(requireConnection(connection), parsed.payload.operation);
+			}
+			if (
+				requestedConnectionId !== undefined &&
+				requestedConnectionId !== connectionId
+			) {
+				throw new PaymentConnectionError(
+					"idempotency_conflict",
+					"The Payment operation cannot change its immutable Connection.",
+				);
+			}
+			const requestDigestInput = jsonValueSchema.parse({
+				requestDigestVersion: 1,
+				idempotencyKey: parsed.idempotencyKey,
+				paymentId: parsed.paymentId,
+				connectionId,
+				sourceOperationId: sourceOperationId ?? null,
+				payload: parsed.payload,
+			});
+			const requestDigest = await sha256(canonicalJson(requestDigestInput));
+			const pendingRows = await transaction.findMany("paymentOperationV2", {
+				where: { paymentId: parsed.paymentId },
+			});
+			const pending: PendingPaymentOperationClaim[] = pendingRows
+				.map((row) => paymentOperationSchema.parse(row))
+				.filter(
+					(candidate) =>
+						candidate.id !== operationId &&
+						[
+							"pending",
+							"requires_action",
+							"running",
+							"ambiguous",
+							"needs_attention",
+							"dead_letter",
+						].includes(candidate.state),
+				)
+				.map((candidate) => ({
+					operation: candidate.operation,
+					...(candidate.sourceOperationId
+						? { sourceOperationId: candidate.sourceOperationId }
+						: {}),
+					payload: candidate.payload,
+				}));
+			await assertPaymentOperationClaimableLocked(
+				transaction,
+				{
+					paymentId: parsed.paymentId,
+					connectionId,
+					...(sourceOperationId ? { sourceOperationId } : {}),
+					payload: parsed.payload,
+				},
+				pending,
+			);
+
 			const now = new Date();
+			const attemptNumber = 1;
 			const operation = paymentOperationSchema.parse({
 				id: operationId,
+				modelVersion: 2,
 				paymentId: parsed.paymentId,
-				connectionId: connection.id,
+				connectionId,
 				...(sourceOperationId ? { sourceOperationId } : {}),
 				operation: parsed.payload.operation,
-				idempotencyKey: operationIdempotencyKey,
+				idempotencyKey: parsed.idempotencyKey,
 				requestDigest,
+				payload: parsed.payload,
 				requestDigestVersion: 1,
-				state: "running",
-				attempt: 1,
 				createdAt: now,
+				state: "running",
+				revision: 1,
+				attempt: attemptNumber,
+				reconciliationAttempts: 0,
+				manualReconciliationCount: 0,
+				leaseExpiresAt: new Date(
+					now.getTime() + PAYMENT_OPERATION_STALE_AFTER_MS,
+				),
 				updatedAt: now,
 			});
 			const attempt = paymentOperationAttemptSchema.parse({
-				id: `${operationId}:1`,
+				id: `${operationId}:${attemptNumber}`,
 				paymentOperationId: operationId,
-				connectionId: connection.id,
-				attempt: 1,
-				idempotencyKey: operationIdempotencyKey,
+				connectionId,
+				attempt: attemptNumber,
+				idempotencyKey: parsed.idempotencyKey,
 				requestDigest,
+				trigger: "initial",
 				state: "running",
 				startedAt: now,
 			});
@@ -622,6 +883,41 @@ export function createPaymentConnectionController(
 			);
 			return { operation, claimed: true };
 		});
+	}
+
+	async function providerOperationSource(
+		operation: PaymentOperation,
+	): Promise<PaymentProviderOperationSource | undefined> {
+		if (!operation.sourceOperationId) return undefined;
+		const source = requireOperation(
+			await data.get("paymentOperationV2", operation.sourceOperationId),
+		);
+		const sourcePayload = source.payload;
+		const citedReference =
+			"providerPaymentReference" in operation.payload
+				? operation.payload.providerPaymentReference
+				: undefined;
+		if (
+			source.paymentId !== operation.paymentId ||
+			source.connectionId !== operation.connectionId ||
+			source.state !== "succeeded" ||
+			!source.providerReference ||
+			citedReference !== source.providerReference ||
+			!("amount" in sourcePayload) ||
+			!("currency" in sourcePayload)
+		) {
+			throw new PaymentConnectionError(
+				"invalid_operation_state",
+				"The durable source operation cannot produce a provider continuation envelope.",
+			);
+		}
+		return {
+			operationId: source.id,
+			operation: source.operation,
+			providerReference: source.providerReference,
+			amount: sourcePayload.amount,
+			currency: sourcePayload.currency,
+		};
 	}
 
 	async function recordOutcome(
@@ -655,14 +951,62 @@ export function createPaymentConnectionController(
 			}
 			const now = new Date();
 			const result = outcome.result ?? {};
+			const confirmedProviderReference =
+				outcome.providerReference ?? operation.providerReference;
+			let operationState: PaymentOperation["state"] = outcome.state;
+			let needsAttentionReason: string | undefined;
+			if (outcome.state === "succeeded") {
+				if (!confirmedProviderReference) {
+					operationState = "needs_attention";
+					needsAttentionReason =
+						"Provider reported success without an immutable provider reference.";
+				} else {
+					try {
+						await recordConfirmedPaymentOperationLocked(transaction, {
+							paymentId: operation.paymentId,
+							connectionId: operation.connectionId,
+							operationId: operation.id,
+							operation: operation.operation,
+							...(operation.sourceOperationId
+								? { sourceOperationId: operation.sourceOperationId }
+								: {}),
+							...(operation.payload.operation === "void"
+								? {}
+								: {
+										amount: operation.payload.amount,
+										currency: operation.payload.currency,
+									}),
+							requestDigest: operation.requestDigest,
+							providerReference: confirmedProviderReference,
+							confirmedAt: now,
+						});
+					} catch (error) {
+						if (!(error instanceof PaymentAggregateError)) throw error;
+						operationState = "needs_attention";
+						needsAttentionReason = `Provider outcome could not advance the Payment aggregate (${error.code}).`;
+					}
+				}
+			}
 			const updated = operationRecord(operation, {
-				state: outcome.state,
-				providerReference:
-					outcome.providerReference ?? operation.providerReference,
+				state: operationState,
+				providerReference: confirmedProviderReference,
 				outcome: result,
-				needsAttentionReason: undefined,
-				needsAttentionAt: undefined,
-				completedAt: outcome.state === "ambiguous" ? undefined : now,
+				needsAttentionReason,
+				needsAttentionAt:
+					operationState === "needs_attention" ? now : undefined,
+				leaseExpiresAt: undefined,
+				nextReconciliationAt:
+					operationState === "ambiguous" || isKnownNonfinalState(operationState)
+						? nextReconciliationAt(
+								now,
+								operation.reconciliationAttempts,
+								operationState,
+							)
+						: undefined,
+				completedAt:
+					operationState === "succeeded" || operationState === "failed"
+						? now
+						: undefined,
 				updatedAt: now,
 			});
 			const attemptId = `${operation.id}:${attemptNumber}`;
@@ -672,10 +1016,9 @@ export function createPaymentConnectionController(
 			const attempt = paymentOperationAttemptSchema.parse({
 				...currentAttempt,
 				state: outcome.state,
-				...((outcome.providerReference ?? operation.providerReference)
+				...(confirmedProviderReference
 					? {
-							providerReference:
-								outcome.providerReference ?? operation.providerReference,
+							providerReference: confirmedProviderReference,
 						}
 					: {}),
 				outcome: result,
@@ -693,27 +1036,152 @@ export function createPaymentConnectionController(
 
 	async function claimReconciliation(
 		operationId: string,
-	): Promise<PaymentOperation> {
+		options: z.output<typeof paymentOperationReconciliationOptionsSchema>,
+	): Promise<{ operation: PaymentOperation; claimed: boolean }> {
 		return transact(async (transaction) => {
 			await lock(transaction, "paymentOperationLockV2", operationId);
 			const operation = requireOperation(
 				await transaction.getForUpdate("paymentOperationV2", operationId),
 			);
-			if (
-				!["running", "ambiguous", "needs_attention"].includes(operation.state)
-			) {
+			const allowedStates =
+				options.trigger === "manual"
+					? [
+							"pending",
+							"requires_action",
+							"running",
+							"ambiguous",
+							"needs_attention",
+							"dead_letter",
+						]
+					: ["pending", "requires_action", "running", "ambiguous"];
+			if (!allowedStates.includes(operation.state)) {
 				throw new PaymentConnectionError(
 					"invalid_operation_state",
-					"Only a running or ambiguous Payment operation can be reconciled.",
+					"The Payment operation is not eligible for this reconciliation trigger.",
 				);
 			}
 			const now = new Date();
-			const attemptNumber = operation.attempt + 1;
+			if (options.trigger === "scheduled") {
+				const dueAt =
+					operation.state === "running"
+						? (operation.leaseExpiresAt ??
+							new Date(
+								operation.updatedAt.getTime() +
+									PAYMENT_OPERATION_STALE_AFTER_MS,
+							))
+						: operation.nextReconciliationAt;
+				if (dueAt !== undefined && dueAt > now) {
+					throw new PaymentConnectionError(
+						"reconciliation_not_due",
+						"The Payment operation is not due for scheduled reconciliation.",
+					);
+				}
+				const automaticBudget = isScheduledNonfinalState(operation.state)
+					? reconciliationSchedule(operation.state).length
+					: PAYMENT_MAX_AUTOMATIC_RECONCILIATIONS;
+				if (operation.reconciliationAttempts >= automaticBudget) {
+					if (isKnownNonfinalState(operation.state)) {
+						const reason =
+							operation.state === "requires_action"
+								? "Provider action is still required after the automatic reconciliation budget."
+								: "Provider processing is still pending after the automatic reconciliation budget.";
+						if (
+							operation.needsAttentionReason === reason &&
+							operation.nextReconciliationAt === undefined
+						) {
+							return { operation, claimed: false };
+						}
+						const attentionRequired = operationRecord(operation, {
+							needsAttentionReason: reason,
+							needsAttentionAt: now,
+							leaseExpiresAt: undefined,
+							nextReconciliationAt: undefined,
+							updatedAt: now,
+						});
+						await transaction.upsert(
+							"paymentOperationV2",
+							operation.id,
+							attentionRequired,
+						);
+						return { operation: attentionRequired, claimed: false };
+					}
+					const deadLettered = operationRecord(operation, {
+						state: "dead_letter",
+						needsAttentionReason:
+							"Automatic reconciliation budget was exhausted.",
+						needsAttentionAt: now,
+						deadLetteredAt: now,
+						leaseExpiresAt: undefined,
+						nextReconciliationAt: undefined,
+						updatedAt: now,
+					});
+					await transaction.upsert(
+						"paymentOperationV2",
+						operation.id,
+						deadLettered,
+					);
+					return { operation: deadLettered, claimed: false };
+				}
+			}
+			const attemptNumber = safeIncrement(
+				operation.attempt,
+				"Payment operation attempt exceeds safe integer bounds.",
+			);
+			const reconciliationAttempts =
+				options.trigger === "scheduled"
+					? safeIncrement(
+							operation.reconciliationAttempts,
+							"Automatic reconciliation count exceeds safe integer bounds.",
+						)
+					: operation.reconciliationAttempts;
+			const manualReconciliationCount =
+				options.trigger === "manual"
+					? safeIncrement(
+							operation.manualReconciliationCount,
+							"Manual reconciliation count exceeds safe integer bounds.",
+						)
+					: operation.manualReconciliationCount;
+			const previousAttemptId = `${operation.id}:${operation.attempt}`;
+			const previousAttemptRow = await transaction.get(
+				"paymentOperationAttemptV2",
+				previousAttemptId,
+			);
+			if (previousAttemptRow) {
+				const previousAttempt =
+					paymentOperationAttemptSchema.parse(previousAttemptRow);
+				if (previousAttempt.state === "running") {
+					await transaction.upsert(
+						"paymentOperationAttemptV2",
+						previousAttempt.id,
+						paymentOperationAttemptSchema.parse({
+							...previousAttempt,
+							state: "ambiguous",
+							outcome: { reason: "stale_running_recovered" },
+							finishedAt: now,
+						}),
+					);
+				}
+			}
 			const updated = operationRecord(operation, {
 				state: "running",
 				attempt: attemptNumber,
+				reconciliationAttempts,
+				manualReconciliationCount,
 				needsAttentionReason: undefined,
 				needsAttentionAt: undefined,
+				leaseExpiresAt: new Date(
+					now.getTime() + PAYMENT_OPERATION_STALE_AFTER_MS,
+				),
+				nextReconciliationAt: undefined,
+				lastReconciliationAt: now,
+				lastReconciliationTrigger: options.trigger,
+				...(options.trigger === "manual"
+					? {
+							lastManualReconciliationReason: options.reason,
+							lastManualReconciliationAt: now,
+						}
+					: {}),
+				deadLetteredAt: undefined,
 				updatedAt: now,
 			});
 			const attempt = paymentOperationAttemptSchema.parse({
@@ -723,6 +1191,11 @@ export function createPaymentConnectionController(
 				attempt: attemptNumber,
 				idempotencyKey: operation.idempotencyKey,
 				requestDigest: operation.requestDigest,
+				trigger:
+					options.trigger === "manual"
+						? "manual_reconciliation"
+						: "scheduled_reconciliation",
+				...(options.reason ? { triggerReason: options.reason } : {}),
 				state: "running",
 				startedAt: now,
 			});
@@ -732,6 +1205,120 @@ export function createPaymentConnectionController(
 				attempt.id,
 				attempt,
 			);
+			return { operation: updated, claimed: true };
+		});
+	}
+
+	async function deadLetter(
+		operationIdValue: string,
+		reasonValue: string,
+	): Promise<PaymentOperation> {
+		const operationId = identifierSchema.parse(operationIdValue);
+		const reason = z.string().trim().min(1).max(500).parse(reasonValue);
+		return transact(async (transaction) => {
+			await lock(transaction, "paymentOperationLockV2", operationId);
+			const operation = requireOperation(
+				await transaction.getForUpdate("paymentOperationV2", operationId),
+			);
+			if (operation.state === "dead_letter") return operation;
+			if (!["running", "ambiguous"].includes(operation.state)) {
+				throw new PaymentConnectionError(
+					"invalid_operation_state",
+					"Only an unresolved Payment operation can enter dead letter.",
+				);
+			}
+			const now = new Date();
+			const updated = operationRecord(operation, {
+				state: "dead_letter",
+				needsAttentionReason: reason,
+				needsAttentionAt: now,
+				deadLetteredAt: now,
+				leaseExpiresAt: undefined,
+				nextReconciliationAt: undefined,
+				updatedAt: now,
+			});
+			await transaction.upsert("paymentOperationV2", operation.id, updated);
+			return updated;
+		});
+	}
+
+	async function pauseKnownNonfinalReconciliation(
+		operationIdValue: string,
+	): Promise<PaymentOperation> {
+		const operationId = identifierSchema.parse(operationIdValue);
+		return transact(async (transaction) => {
+			await lock(transaction, "paymentOperationLockV2", operationId);
+			const operation = requireOperation(
+				await transaction.getForUpdate("paymentOperationV2", operationId),
+			);
+			if (!isKnownNonfinalState(operation.state)) return operation;
+			const now = new Date();
+			const reason =
+				operation.state === "requires_action"
+					? "Provider action is still required after the automatic reconciliation budget."
+					: "Provider processing is still pending after the automatic reconciliation budget.";
+			const updated = operationRecord(operation, {
+				needsAttentionReason: reason,
+				needsAttentionAt: now,
+				leaseExpiresAt: undefined,
+				nextReconciliationAt: undefined,
+				updatedAt: now,
+			});
+			await transaction.upsert("paymentOperationV2", operation.id, updated);
+			return updated;
+		});
+	}
+
+	async function markNeedsAttention(
+		operationIdValue: string,
+		reasonValue: string,
+	): Promise<PaymentOperation> {
+		const operationId = identifierSchema.parse(operationIdValue);
+		const reason = z.string().trim().min(1).max(500).parse(reasonValue);
+		return transact(async (transaction) => {
+			await lock(transaction, "paymentOperationLockV2", operationId);
+			const operation = requireOperation(
+				await transaction.getForUpdate("paymentOperationV2", operationId),
+			);
+			if (operation.state === "needs_attention") return operation;
+			if (!["running", "ambiguous", "dead_letter"].includes(operation.state)) {
+				throw new PaymentConnectionError(
+					"invalid_operation_state",
+					"Only a running or ambiguous Payment operation can require attention.",
+				);
+			}
+			const now = new Date();
+			const updated = operationRecord(operation, {
+				state: "needs_attention",
+				needsAttentionReason: reason,
+				needsAttentionAt: now,
+				leaseExpiresAt: undefined,
+				nextReconciliationAt: undefined,
+				completedAt: undefined,
+				updatedAt: now,
+			});
+			const attemptId = `${operation.id}:${operation.attempt}`;
+			const attemptRow = await transaction.get(
+				"paymentOperationAttemptV2",
+				attemptId,
+			);
+			if (attemptRow) {
+				const currentAttempt = paymentOperationAttemptSchema.parse(attemptRow);
+				if (currentAttempt.state === "running") {
+					const attempt = paymentOperationAttemptSchema.parse({
+						...currentAttempt,
+						state: "failed",
+						outcome: { reason },
+						finishedAt: now,
+					});
+					await transaction.upsert(
+						"paymentOperationAttemptV2",
+						attempt.id,
+						attempt,
+					);
+				}
+			}
+			await transaction.upsert("paymentOperationV2", operationId, updated);
 			return updated;
 		});
 	}
@@ -931,21 +1518,22 @@ export function createPaymentConnectionController(
 			const claim = await claimOperation(parsed);
 			if (!claim.claimed) return claim.operation;
 			let provider: PaymentConnectionProvider;
+			let source: PaymentProviderOperationSource | undefined;
 			try {
 				const connection = requireConnection(
 					await data.get("paymentConnection", claim.operation.connectionId),
 				);
 				provider = requireUsable(connection, claim.operation.operation);
+				source = await providerOperationSource(claim.operation);
 			} catch (error) {
-				return recordOutcome(claim.operation.id, claim.operation.attempt, {
-					state: "failed",
-					result: {
-						reason:
-							error instanceof PaymentConnectionError
-								? error.code
-								: "connection_unavailable",
-					},
-				});
+				const reason =
+					error instanceof PaymentConnectionError
+						? error.code
+						: "connection_unavailable";
+				return markNeedsAttention(
+					claim.operation.id,
+					`Original Payment Connection is unavailable (${reason}).`,
+				);
 			}
 			try {
 				const outcome = providerOutcomeSchema.parse(
@@ -955,7 +1543,9 @@ export function createPaymentConnectionController(
 						idempotencyKey: claim.operation.idempotencyKey,
 						requestDigest: claim.operation.requestDigest,
 						attempt: claim.operation.attempt,
-						payload: parsed.payload,
+						createdAt: claim.operation.createdAt,
+						payload: claim.operation.payload,
+						...(source ? { source } : {}),
 					}),
 				);
 				return recordOutcome(
@@ -971,17 +1561,36 @@ export function createPaymentConnectionController(
 			}
 		},
 
-		async reconcileOperation(id) {
+		async reconcileOperation(id, optionsInput) {
 			const operationId = identifierSchema.parse(id);
-			const existing = requireOperation(
-				await data.get("paymentOperationV2", operationId),
-			);
-			const connection = requireConnection(
-				await data.get("paymentConnection", existing.connectionId),
-			);
-			const provider = providerFor(connection, existing.operation);
-			const operation = await claimReconciliation(operationId);
+			const options =
+				paymentOperationReconciliationOptionsSchema.parse(optionsInput);
+			const claim = await claimReconciliation(operationId, options);
+			if (!claim.claimed) return claim.operation;
+			const operation = claim.operation;
+			let provider: PaymentConnectionProvider;
+			let source: PaymentProviderOperationSource | undefined;
 			try {
+				const connection = requireConnection(
+					await data.get("paymentConnection", operation.connectionId),
+				);
+				provider = requireUsable(connection, operation.operation);
+				source = await providerOperationSource(operation);
+			} catch (error) {
+				const reason =
+					error instanceof PaymentConnectionError
+						? error.code
+						: "connection_unavailable";
+				return markNeedsAttention(
+					operation.id,
+					`Original Payment Connection is unavailable for reconciliation (${reason}).`,
+				);
+			}
+			try {
+				const currentConnection = requireConnection(
+					await data.get("paymentConnection", operation.connectionId),
+				);
+				provider = requireUsable(currentConnection, operation.operation);
 				const outcome = providerOutcomeSchema.parse(
 					await provider.reconcile({
 						operationId: operation.id,
@@ -990,9 +1599,12 @@ export function createPaymentConnectionController(
 						idempotencyKey: operation.idempotencyKey,
 						requestDigest: operation.requestDigest,
 						attempt: operation.attempt,
+						createdAt: operation.createdAt,
+						payload: operation.payload,
 						...(operation.providerReference
 							? { providerReference: operation.providerReference }
 							: {}),
+						...(source ? { source } : {}),
 					}),
 				);
 				const reconciled = await recordOutcome(
@@ -1000,47 +1612,65 @@ export function createPaymentConnectionController(
 					operation.attempt,
 					outcome,
 				);
+				if (isKnownNonfinalState(reconciled.state)) {
+					if (
+						options.trigger === "scheduled" &&
+						reconciled.reconciliationAttempts >=
+							reconciliationSchedule(reconciled.state).length
+					) {
+						return pauseKnownNonfinalReconciliation(operation.id);
+					}
+					return reconciled;
+				}
 				if (reconciled.state !== "ambiguous") return reconciled;
-				return this.markOperationNeedsAttention(
-					operation.id,
-					"Provider reconciliation did not establish a final outcome.",
-				);
-			} catch {
-				await recordOutcome(operation.id, operation.attempt, {
+				if (options.trigger === "manual") {
+					return markNeedsAttention(
+						operation.id,
+						"Manual provider reconciliation did not establish a final outcome.",
+					);
+				}
+				if (
+					reconciled.reconciliationAttempts >=
+					PAYMENT_MAX_AUTOMATIC_RECONCILIATIONS
+				) {
+					return deadLetter(
+						operation.id,
+						"Automatic provider reconciliation budget was exhausted.",
+					);
+				}
+				return reconciled;
+			} catch (error) {
+				if (error instanceof PaymentConnectionError) {
+					return markNeedsAttention(
+						operation.id,
+						`Original Payment Connection became unavailable during reconciliation (${error.code}).`,
+					);
+				}
+				const ambiguous = await recordOutcome(operation.id, operation.attempt, {
 					state: "ambiguous",
 					result: { reason: "provider_reconciliation_unknown" },
 				});
-				return this.markOperationNeedsAttention(
-					operation.id,
-					"Provider reconciliation failed or returned an invalid outcome.",
-				);
+				if (options.trigger === "manual") {
+					return markNeedsAttention(
+						operation.id,
+						"Manual provider reconciliation failed or returned an invalid outcome.",
+					);
+				}
+				if (
+					ambiguous.reconciliationAttempts >=
+					PAYMENT_MAX_AUTOMATIC_RECONCILIATIONS
+				) {
+					return deadLetter(
+						operation.id,
+						"Automatic provider reconciliation budget was exhausted.",
+					);
+				}
+				return ambiguous;
 			}
 		},
 
 		async markOperationNeedsAttention(id, reason) {
-			const operationId = identifierSchema.parse(id);
-			const parsedReason = z.string().trim().min(1).max(500).parse(reason);
-			return transact(async (transaction) => {
-				await lock(transaction, "paymentOperationLockV2", operationId);
-				const operation = requireOperation(
-					await transaction.getForUpdate("paymentOperationV2", operationId),
-				);
-				if (!["running", "ambiguous"].includes(operation.state)) {
-					throw new PaymentConnectionError(
-						"invalid_operation_state",
-						"Only a running or ambiguous Payment operation can require attention.",
-					);
-				}
-				const now = new Date();
-				const updated = operationRecord(operation, {
-					state: "needs_attention",
-					needsAttentionReason: parsedReason,
-					needsAttentionAt: now,
-					updatedAt: now,
-				});
-				await transaction.upsert("paymentOperationV2", operationId, updated);
-				return updated;
-			});
+			return markNeedsAttention(id, reason);
 		},
 
 		async getOperation(id) {

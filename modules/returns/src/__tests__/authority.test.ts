@@ -1,4 +1,4 @@
-import { orderLineQuantityValidateCapability } from "@86d-app/core";
+import { orderLineQuantityValidateCapability } from "@86d-app/core/commerce-capabilities";
 import { createMockTransactionRunner } from "@86d-app/core/test-utils";
 import { describe, expect, it } from "vitest";
 import {

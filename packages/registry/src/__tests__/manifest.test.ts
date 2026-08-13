@@ -65,7 +65,7 @@ beforeAll(() => {
 			"src",
 			"store",
 			"components",
-			"index.tsx",
+			"mdx.tsx",
 		),
 		"export default {};",
 	);

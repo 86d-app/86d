@@ -1,4 +1,4 @@
-import type { ModuleSchema } from "@86d-app/core";
+import type { ModuleSchema } from "@86d-app/core/types/schema";
 import { storeCustomerAuditBindingSchema } from "./identity-binding";
 
 export const customersSchema = {

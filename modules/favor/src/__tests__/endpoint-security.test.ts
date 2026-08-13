@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { adminEndpoints } from "../admin/endpoints";
-import { storeEndpoints } from "../store/endpoints";
+import { adminEndpoints } from "../admin/endpoints/routes";
+import { storeEndpoints } from "../store/endpoints/routes";
 
 describe("favor endpoint security", () => {
 	describe("store endpoints", () => {

@@ -37,7 +37,7 @@ vi.mock("@86d-app/runtime/universal-data-service", () => ({
 	UniversalDataService: vi.fn(),
 }));
 
-vi.mock("@86d-app/sdk", () => ({
+vi.mock("@86d-app/sdk/get-store-config", () => ({
 	getStoreConfig: vi.fn().mockResolvedValue({ name: "Test Store" }),
 }));
 

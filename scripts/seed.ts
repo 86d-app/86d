@@ -33,8 +33,8 @@ import {
 	blogPosts,
 	categories,
 	collections,
-	customers,
 	customerAddresses,
+	customers,
 	deliverySchedules,
 	demoOrder,
 	discounts,
@@ -52,6 +52,8 @@ import {
 	products,
 	redirects,
 	reviews,
+	type SeedProduct,
+	type SeedVariant,
 	searchSynonyms,
 	seoMeta,
 	shippingRates,
@@ -63,8 +65,6 @@ import {
 	taxCategory,
 	taxRates,
 	trustBadges,
-	type SeedProduct,
-	type SeedVariant,
 } from "./seed/catalog/luxury-house.ts";
 
 const DATABASE_URL = process.env.DATABASE_URL;
@@ -87,9 +87,7 @@ const fallbackModuleVersion = rootPackage.version ?? "0.0.4";
 const pool = new pg.Pool({ connectionString: DATABASE_URL });
 
 function uuid(key: string): string {
-	const hash = createHash("sha256")
-		.update(`86d-seed-v2:${key}`)
-		.digest("hex");
+	const hash = createHash("sha256").update(`86d-seed-v2:${key}`).digest("hex");
 	return [
 		hash.slice(0, 8),
 		hash.slice(8, 12),
@@ -143,7 +141,12 @@ function mimeTypeForPath(relativePath: string): string {
 }
 
 function moduleVersion(moduleName: string): string {
-	const packagePath = resolve(process.cwd(), "modules", moduleName, "package.json");
+	const packagePath = resolve(
+		process.cwd(),
+		"modules",
+		moduleName,
+		"package.json",
+	);
 	if (!existsSync(packagePath)) return fallbackModuleVersion;
 	const pkg = JSON.parse(readFileSync(packagePath, "utf8")) as {
 		version?: string;
@@ -444,9 +447,10 @@ async function ensureStoreRecord(client: pg.PoolClient) {
 	);
 	if (!rows[0]?.exists) return;
 
-	const storeExists = await client.query(`SELECT 1 FROM "Store" WHERE id = $1`, [
-		STORE_ID,
-	]);
+	const storeExists = await client.query(
+		`SELECT 1 FROM "Store" WHERE id = $1`,
+		[STORE_ID],
+	);
 	if (storeExists.rows.length > 0) return;
 
 	const businessId = uuid("seed-business");
@@ -474,12 +478,23 @@ async function insertModuleData(
 ) {
 	const moduleId = moduleIds[moduleName];
 	if (!moduleId) return;
-	const rowId = uuid(`module-data:${STORE_ID}:${moduleName}:${entityType}:${entityId}`);
+	const rowId = uuid(
+		`module-data:${STORE_ID}:${moduleName}:${entityType}:${entityId}`,
+	);
 	await client.query(
 		`INSERT INTO "ModuleData" (id, cuid, "entityType", "entityId", data, "moduleId", "createdAt", "updatedAt")
 		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		 ON CONFLICT ("moduleId", "entityType", "entityId") DO UPDATE SET data = $5, "updatedAt" = $8`,
-		[rowId, cuid(), entityType, entityId, JSON.stringify(data), moduleId, now, now],
+		[
+			rowId,
+			cuid(),
+			entityType,
+			entityId,
+			JSON.stringify(data),
+			moduleId,
+			now,
+			now,
+		],
 	);
 }
 
@@ -492,16 +507,7 @@ async function seedAdminUser(client: pg.PoolClient) {
 		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		 ON CONFLICT (email) DO UPDATE SET role = $6, name = $3
 		 RETURNING id`,
-		[
-			adminUserId,
-			cuid(),
-			"Admin User",
-			ADMIN_EMAIL,
-			true,
-			"admin",
-			now,
-			now,
-		],
+		[adminUserId, cuid(), "Admin User", ADMIN_EMAIL, true, "admin", now, now],
 	);
 	const userId = userResult.rows[0]?.id;
 	if (!userId) {
@@ -578,7 +584,9 @@ async function resetManagedModuleData(client: pg.PoolClient) {
 	);
 }
 
-async function resolveProducts(assets: AssetResolver): Promise<ResolvedProduct[]> {
+async function resolveProducts(
+	assets: AssetResolver,
+): Promise<ResolvedProduct[]> {
 	const resolvedProducts: ResolvedProduct[] = [];
 	for (const product of products) {
 		const images: string[] = [];
@@ -594,7 +602,10 @@ async function resolveProducts(assets: AssetResolver): Promise<ResolvedProduct[]
 			...product,
 			id: productIds[product.key],
 			categoryId: categoryIds[product.categoryKey],
-			inventory: variantRecords.reduce((sum, variant) => sum + variant.inventory, 0),
+			inventory: variantRecords.reduce(
+				(sum, variant) => sum + variant.inventory,
+				0,
+			),
 			images,
 			variantRecords,
 		});
@@ -606,18 +617,24 @@ async function seedProducts(client: pg.PoolClient, assets: AssetResolver) {
 	console.log("  Creating categories...");
 	for (const category of categories) {
 		const image = await assets.resolveUrl(category.imagePath);
-		await insertModuleData(client, "products", "category", categoryIds[category.key], {
-			id: categoryIds[category.key],
-			name: category.name,
-			slug: category.slug,
-			description: category.description,
-			image,
-			position: category.position,
-			isVisible: category.isVisible,
-			metadata: category.metadata ?? {},
-			createdAt: now,
-			updatedAt: now,
-		});
+		await insertModuleData(
+			client,
+			"products",
+			"category",
+			categoryIds[category.key],
+			{
+				id: categoryIds[category.key],
+				name: category.name,
+				slug: category.slug,
+				description: category.description,
+				image,
+				position: category.position,
+				isVisible: category.isVisible,
+				metadata: category.metadata ?? {},
+				createdAt: now,
+				updatedAt: now,
+			},
+		);
 	}
 
 	console.log("  Creating products and variants...");
@@ -666,7 +683,9 @@ async function seedProducts(client: pg.PoolClient, assets: AssetResolver) {
 				images: product.images,
 				weight: variant.weight,
 				weightUnit: variant.weightUnit ?? "kg",
-				position: product.variantRecords.findIndex((item) => item.id === variant.id),
+				position: product.variantRecords.findIndex(
+					(item) => item.id === variant.id,
+				),
 				createdAt: now,
 				updatedAt: now,
 			});
@@ -686,21 +705,29 @@ async function seedCollections(client: pg.PoolClient, assets: AssetResolver) {
 	console.log("  Creating product collections...");
 	for (const collection of collections) {
 		const image = await assets.resolveUrl(collection.imagePath);
-		await insertModuleData(client, "products", "collection", collectionIds[collection.key], {
-			id: collectionIds[collection.key],
-			name: collection.name,
-			slug: collection.slug,
-			description: collection.description,
-			image,
-			isFeatured: collection.isFeatured,
-			isVisible: collection.isVisible,
-			position: collection.position,
-			metadata: collection.metadata ?? {},
-			createdAt: now,
-			updatedAt: now,
-		});
+		await insertModuleData(
+			client,
+			"products",
+			"collection",
+			collectionIds[collection.key],
+			{
+				id: collectionIds[collection.key],
+				name: collection.name,
+				slug: collection.slug,
+				description: collection.description,
+				image,
+				isFeatured: collection.isFeatured,
+				isVisible: collection.isVisible,
+				position: collection.position,
+				metadata: collection.metadata ?? {},
+				createdAt: now,
+				updatedAt: now,
+			},
+		);
 		for (const [position, productKey] of collection.productKeys.entries()) {
-			const linkId = uuid(`products-collection-link:${collection.key}:${productKey}`);
+			const linkId = uuid(
+				`products-collection-link:${collection.key}:${productKey}`,
+			);
 			await insertModuleData(client, "products", "collectionProduct", linkId, {
 				id: linkId,
 				collectionId: collectionIds[collection.key],
@@ -712,7 +739,10 @@ async function seedCollections(client: pg.PoolClient, assets: AssetResolver) {
 	}
 }
 
-async function seedCollectionsModule(client: pg.PoolClient, assets: AssetResolver) {
+async function seedCollectionsModule(
+	client: pg.PoolClient,
+	assets: AssetResolver,
+) {
 	console.log("  Mirroring collections module data...");
 	for (const collection of collections) {
 		const image = await assets.resolveUrl(collection.imagePath);
@@ -744,7 +774,9 @@ async function seedCollectionsModule(client: pg.PoolClient, assets: AssetResolve
 		);
 
 		for (const [position, productKey] of collection.productKeys.entries()) {
-			const linkId = uuid(`collections-module-link:${collection.key}:${productKey}`);
+			const linkId = uuid(
+				`collections-module-link:${collection.key}:${productKey}`,
+			);
 			await insertModuleData(
 				client,
 				"collections",
@@ -796,16 +828,22 @@ async function seedBrands(client: pg.PoolClient, assets: AssetResolver) {
 async function seedCustomers(client: pg.PoolClient) {
 	console.log("  Creating customers...");
 	for (const customer of customers) {
-		await insertModuleData(client, "customers", "customer", customerIds[customer.key], {
-			id: customerIds[customer.key],
-			email: customer.email,
-			firstName: customer.firstName,
-			lastName: customer.lastName,
-			phone: customer.phone,
-			metadata: customer.preferences ?? {},
-			createdAt: now,
-			updatedAt: now,
-		});
+		await insertModuleData(
+			client,
+			"customers",
+			"customer",
+			customerIds[customer.key],
+			{
+				id: customerIds[customer.key],
+				email: customer.email,
+				firstName: customer.firstName,
+				lastName: customer.lastName,
+				phone: customer.phone,
+				metadata: customer.preferences ?? {},
+				createdAt: now,
+				updatedAt: now,
+			},
+		);
 	}
 
 	for (const [index, address] of customerAddresses.entries()) {
@@ -847,7 +885,10 @@ async function seedInventory(client: pg.PoolClient) {
 	console.log("  Creating inventory records...");
 	for (const product of products) {
 		const productId = productIds[product.key];
-		const quantity = product.variants.reduce((sum, variant) => sum + variant.inventory, 0);
+		const quantity = product.variants.reduce(
+			(sum, variant) => sum + variant.inventory,
+			0,
+		);
 		const inventoryId = inventoryItemId(productId);
 		await insertModuleData(client, "inventory", "inventoryItem", inventoryId, {
 			id: inventoryId,
@@ -937,7 +978,10 @@ async function seedDemoOrder(client: pg.PoolClient) {
 	});
 	const subtotal = orderItems.reduce((sum, item) => sum + item.subtotal, 0);
 	const total =
-		subtotal + demoOrder.taxAmount + demoOrder.shippingAmount - demoOrder.discountAmount;
+		subtotal +
+		demoOrder.taxAmount +
+		demoOrder.shippingAmount -
+		demoOrder.discountAmount;
 
 	await insertModuleData(client, "orders", "order", orderId, {
 		id: orderId,
@@ -1050,14 +1094,20 @@ async function seedPages(client: pg.PoolClient, assets: AssetResolver) {
 async function seedShipping(client: pg.PoolClient) {
 	console.log("  Creating shipping zones and rates...");
 	for (const zone of shippingZones) {
-		await insertModuleData(client, "shipping", "shippingZone", shippingZoneIds[zone.key], {
-			id: shippingZoneIds[zone.key],
-			name: zone.name,
-			countries: zone.countries,
-			isActive: zone.isActive,
-			createdAt: now,
-			updatedAt: now,
-		});
+		await insertModuleData(
+			client,
+			"shipping",
+			"shippingZone",
+			shippingZoneIds[zone.key],
+			{
+				id: shippingZoneIds[zone.key],
+				name: zone.name,
+				countries: zone.countries,
+				isActive: zone.isActive,
+				createdAt: now,
+				updatedAt: now,
+			},
+		);
 	}
 
 	for (const rate of shippingRates) {
@@ -1078,23 +1128,29 @@ async function seedShipping(client: pg.PoolClient) {
 async function seedTax(client: pg.PoolClient) {
 	console.log("  Creating tax data...");
 	for (const rate of taxRates) {
-		await insertModuleData(client, "tax", "taxRate", uuid(`tax-rate:${rate.key}`), {
-			id: uuid(`tax-rate:${rate.key}`),
-			name: rate.name,
-			country: rate.country,
-			state: rate.state,
-			city: rate.city,
-			postalCode: rate.postalCode,
-			rate: rate.rate,
-			type: rate.type,
-			categoryId: taxCategory.key,
-			enabled: rate.enabled,
-			priority: rate.priority,
-			compound: rate.compound,
-			inclusive: rate.inclusive,
-			createdAt: now,
-			updatedAt: now,
-		});
+		await insertModuleData(
+			client,
+			"tax",
+			"taxRate",
+			uuid(`tax-rate:${rate.key}`),
+			{
+				id: uuid(`tax-rate:${rate.key}`),
+				name: rate.name,
+				country: rate.country,
+				state: rate.state,
+				city: rate.city,
+				postalCode: rate.postalCode,
+				rate: rate.rate,
+				type: rate.type,
+				categoryId: taxCategory.key,
+				enabled: rate.enabled,
+				priority: rate.priority,
+				compound: rate.compound,
+				inclusive: rate.inclusive,
+				createdAt: now,
+				updatedAt: now,
+			},
+		);
 	}
 
 	await insertModuleData(client, "tax", "taxCategory", taxCategory.key, {
@@ -1142,17 +1198,23 @@ async function seedDiscounts(client: pg.PoolClient) {
 async function seedFaq(client: pg.PoolClient) {
 	console.log("  Creating FAQ...");
 	for (const category of faqCategories) {
-		await insertModuleData(client, "faq", "faqCategory", faqCategoryIds[category.key], {
-			id: faqCategoryIds[category.key],
-			name: category.name,
-			slug: category.slug,
-			description: category.description,
-			position: category.position,
-			isVisible: true,
-			metadata: {},
-			createdAt: now,
-			updatedAt: now,
-		});
+		await insertModuleData(
+			client,
+			"faq",
+			"faqCategory",
+			faqCategoryIds[category.key],
+			{
+				id: faqCategoryIds[category.key],
+				name: category.name,
+				slug: category.slug,
+				description: category.description,
+				position: category.position,
+				isVisible: true,
+				metadata: {},
+				createdAt: now,
+				updatedAt: now,
+			},
+		);
 	}
 
 	for (const item of faqItems) {
@@ -1178,15 +1240,21 @@ async function seedFaq(client: pg.PoolClient) {
 async function seedAnnouncements(client: pg.PoolClient) {
 	console.log("  Creating announcement...");
 	const announcementId = uuid("announcement:atelier");
-	await insertModuleData(client, "announcements", "announcement", announcementId, {
-		id: announcementId,
-		...announcement,
-		impressions: 0,
-		clicks: 0,
-		dismissals: 0,
-		createdAt: now,
-		updatedAt: now,
-	});
+	await insertModuleData(
+		client,
+		"announcements",
+		"announcement",
+		announcementId,
+		{
+			id: announcementId,
+			...announcement,
+			impressions: 0,
+			clicks: 0,
+			dismissals: 0,
+			createdAt: now,
+			updatedAt: now,
+		},
+	);
 }
 
 async function seedSeo(client: pg.PoolClient) {
@@ -1294,19 +1362,25 @@ async function seedSocialProof(client: pg.PoolClient, assets: AssetResolver) {
 async function seedProductLabels(client: pg.PoolClient) {
 	console.log("  Creating product labels...");
 	for (const label of productLabels) {
-		await insertModuleData(client, "product-labels", "label", labelIds[label.key], {
-			id: labelIds[label.key],
-			name: label.name,
-			slug: label.slug,
-			displayText: label.displayText,
-			type: label.type,
-			color: label.color,
-			backgroundColor: label.backgroundColor,
-			priority: label.priority,
-			isActive: label.isActive,
-			createdAt: now,
-			updatedAt: now,
-		});
+		await insertModuleData(
+			client,
+			"product-labels",
+			"label",
+			labelIds[label.key],
+			{
+				id: labelIds[label.key],
+				name: label.name,
+				slug: label.slug,
+				displayText: label.displayText,
+				type: label.type,
+				color: label.color,
+				backgroundColor: label.backgroundColor,
+				priority: label.priority,
+				isActive: label.isActive,
+				createdAt: now,
+				updatedAt: now,
+			},
+		);
 	}
 
 	for (const [labelKey, productKeys] of Object.entries(labelAssignments)) {
@@ -1440,14 +1514,17 @@ async function seedFlashSales(client: pg.PoolClient) {
 	console.log("  Creating flash sale...");
 
 	const saleStartsAt = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
-	const saleEndsAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+	const saleEndsAt = new Date(
+		Date.now() + 30 * 24 * 60 * 60 * 1000,
+	).toISOString();
 
 	const saleId = uuid("flash-sale:weekend-edit");
 	await insertModuleData(client, "flash-sales", "flashSale", saleId, {
 		id: saleId,
 		name: "Atelier Weekend Edit",
 		slug: "weekend-edit",
-		description: "Selected house pieces at exclusive prices, this weekend only.",
+		description:
+			"Selected house pieces at exclusive prices, this weekend only.",
 		status: "active",
 		startsAt: saleStartsAt,
 		endsAt: saleEndsAt,
@@ -1455,7 +1532,11 @@ async function seedFlashSales(client: pg.PoolClient) {
 		updatedAt: now,
 	});
 
-	const saleProducts: Array<{ productKey: string; discountPct: number; order: number }> = [
+	const saleProducts: Array<{
+		productKey: string;
+		discountPct: number;
+		order: number;
+	}> = [
 		{ productKey: "regent-penny-loafer", discountPct: 20, order: 0 },
 		{ productKey: "montclair-chelsea-boot", discountPct: 15, order: 1 },
 	];
@@ -1466,19 +1547,25 @@ async function seedFlashSales(client: pg.PoolClient) {
 		const saleProductId = uuid(`flash-sale-product:weekend-edit:${productKey}`);
 		const originalPrice = product.price;
 		const salePrice = Math.round(originalPrice * (1 - discountPct / 100));
-		await insertModuleData(client, "flash-sales", "flashSaleProduct", saleProductId, {
-			id: saleProductId,
-			flashSaleId: saleId,
-			productId: productIds[productKey],
-			productName: product.name,
-			productSlug: product.slug,
-			salePrice,
-			originalPrice,
-			stockLimit: 20,
-			stockSold: 0,
-			sortOrder: order,
-			createdAt: now,
-		});
+		await insertModuleData(
+			client,
+			"flash-sales",
+			"flashSaleProduct",
+			saleProductId,
+			{
+				id: saleProductId,
+				flashSaleId: saleId,
+				productId: productIds[productKey],
+				productName: product.name,
+				productSlug: product.slug,
+				salePrice,
+				originalPrice,
+				stockLimit: 20,
+				stockSold: 0,
+				sortOrder: order,
+				createdAt: now,
+			},
+		);
 	}
 }
 
@@ -1501,8 +1588,12 @@ async function seedSubscriptions(client: pg.PoolClient) {
 		updatedAt: now,
 	});
 
-	const periodStart = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString();
-	const periodEnd = new Date(Date.now() + 22 * 24 * 60 * 60 * 1000).toISOString();
+	const periodStart = new Date(
+		Date.now() - 8 * 24 * 60 * 60 * 1000,
+	).toISOString();
+	const periodEnd = new Date(
+		Date.now() + 22 * 24 * 60 * 60 * 1000,
+	).toISOString();
 
 	const subscribers = [
 		{ customerKey: "eleanor-vale", email: "eleanor@example.com" },
@@ -1545,7 +1636,11 @@ async function seedBundles(client: pg.PoolClient) {
 		updatedAt: now,
 	});
 
-	const bundleProducts: Array<{ productKey: string; quantity: number; sortOrder: number }> = [
+	const bundleProducts: Array<{
+		productKey: string;
+		quantity: number;
+		sortOrder: number;
+	}> = [
 		{ productKey: "regent-penny-loafer", quantity: 1, sortOrder: 0 },
 		{ productKey: "montclair-chelsea-boot", quantity: 1, sortOrder: 1 },
 	];
@@ -1571,24 +1666,36 @@ async function seedBundles(client: pg.PoolClient) {
 async function seedStoreLocator(client: pg.PoolClient) {
 	console.log("  Creating store locations...");
 	for (const location of storeLocations) {
-		await insertModuleData(client, "store-locator", "location", locationIds[location.key], {
-			id: locationIds[location.key],
-			...location,
-			createdAt: now,
-			updatedAt: now,
-		});
+		await insertModuleData(
+			client,
+			"store-locator",
+			"location",
+			locationIds[location.key],
+			{
+				id: locationIds[location.key],
+				...location,
+				createdAt: now,
+				updatedAt: now,
+			},
+		);
 	}
 }
 
 async function seedStorePickup(client: pg.PoolClient) {
 	console.log("  Creating pickup windows...");
 	const pickupLocationId = uuid("pickup-location:flagship");
-	await insertModuleData(client, "store-pickup", "pickupLocation", pickupLocationId, {
-		id: pickupLocationId,
-		...pickupLocation,
-		createdAt: now,
-		updatedAt: now,
-	});
+	await insertModuleData(
+		client,
+		"store-pickup",
+		"pickupLocation",
+		pickupLocationId,
+		{
+			id: pickupLocationId,
+			...pickupLocation,
+			createdAt: now,
+			updatedAt: now,
+		},
+	);
 
 	for (const [index, window] of pickupWindows.entries()) {
 		const windowId = uuid(`pickup-window:${index}`);
@@ -1606,12 +1713,18 @@ async function seedDeliverySlots(client: pg.PoolClient) {
 	console.log("  Creating delivery schedules...");
 	for (const schedule of deliverySchedules) {
 		const scheduleId = uuid(`delivery-slot:${schedule.name}`);
-		await insertModuleData(client, "delivery-slots", "deliverySchedule", scheduleId, {
-			id: scheduleId,
-			...schedule,
-			createdAt: now,
-			updatedAt: now,
-		});
+		await insertModuleData(
+			client,
+			"delivery-slots",
+			"deliverySchedule",
+			scheduleId,
+			{
+				id: scheduleId,
+				...schedule,
+				createdAt: now,
+				updatedAt: now,
+			},
+		);
 	}
 }
 
@@ -1717,21 +1830,27 @@ async function seedAppointments(client: pg.PoolClient) {
 	const claireId = uuid("appointment-staff:claire-dubois");
 	const antoineId = uuid("appointment-staff:antoine-moreau");
 
-	await insertModuleData(client, "appointments", "service", personalShoppingId, {
-		id: personalShoppingId,
-		name: "Personal Shopping",
-		slug: "personal-shopping",
-		description:
-			"A private session with our in-house stylist. We curate a selection based on your style profile before you arrive.",
-		duration: 60,
-		price: 0,
-		currency: "USD",
-		status: "active",
-		maxCapacity: 1,
-		sortOrder: 0,
-		createdAt: now,
-		updatedAt: now,
-	});
+	await insertModuleData(
+		client,
+		"appointments",
+		"service",
+		personalShoppingId,
+		{
+			id: personalShoppingId,
+			name: "Personal Shopping",
+			slug: "personal-shopping",
+			description:
+				"A private session with our in-house stylist. We curate a selection based on your style profile before you arrive.",
+			duration: 60,
+			price: 0,
+			currency: "USD",
+			status: "active",
+			maxCapacity: 1,
+			sortOrder: 0,
+			createdAt: now,
+			updatedAt: now,
+		},
+	);
 
 	await insertModuleData(client, "appointments", "service", alterationsId, {
 		id: alterationsId,
@@ -1770,18 +1889,30 @@ async function seedAppointments(client: pg.PoolClient) {
 	});
 
 	// Claire handles personal shopping; Antoine handles alterations
-	await insertModuleData(client, "appointments", "staffService", uuid("staff-svc:claire:ps"), {
-		id: uuid("staff-svc:claire:ps"),
-		staffId: claireId,
-		serviceId: personalShoppingId,
-		createdAt: now,
-	});
-	await insertModuleData(client, "appointments", "staffService", uuid("staff-svc:antoine:alt"), {
-		id: uuid("staff-svc:antoine:alt"),
-		staffId: antoineId,
-		serviceId: alterationsId,
-		createdAt: now,
-	});
+	await insertModuleData(
+		client,
+		"appointments",
+		"staffService",
+		uuid("staff-svc:claire:ps"),
+		{
+			id: uuid("staff-svc:claire:ps"),
+			staffId: claireId,
+			serviceId: personalShoppingId,
+			createdAt: now,
+		},
+	);
+	await insertModuleData(
+		client,
+		"appointments",
+		"staffService",
+		uuid("staff-svc:antoine:alt"),
+		{
+			id: uuid("staff-svc:antoine:alt"),
+			staffId: antoineId,
+			serviceId: alterationsId,
+			createdAt: now,
+		},
+	);
 
 	// Weekly schedule: Mon–Fri 10:00–18:00 for Claire
 	const weekdays = [1, 2, 3, 4, 5];
@@ -1813,8 +1944,12 @@ async function seedAppointments(client: pg.PoolClient) {
 
 	// Upcoming confirmed appointment: Eleanor with Claire (personal shopping)
 	const eleanorApptId = uuid("appointment:eleanor:personal-shopping");
-	const eleanorStart = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
-	const eleanorEnd = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000 + 60 * 60 * 1000).toISOString();
+	const eleanorStart = new Date(
+		Date.now() + 3 * 24 * 60 * 60 * 1000,
+	).toISOString();
+	const eleanorEnd = new Date(
+		Date.now() + 3 * 24 * 60 * 60 * 1000 + 60 * 60 * 1000,
+	).toISOString();
 	await insertModuleData(client, "appointments", "appointment", eleanorApptId, {
 		id: eleanorApptId,
 		serviceId: personalShoppingId,
@@ -1833,8 +1968,12 @@ async function seedAppointments(client: pg.PoolClient) {
 
 	// Upcoming confirmed appointment: Marcus with Antoine (alterations)
 	const marcusApptId = uuid("appointment:marcus:alterations");
-	const marcusStart = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString();
-	const marcusEnd = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000 + 45 * 60 * 1000).toISOString();
+	const marcusStart = new Date(
+		Date.now() + 5 * 24 * 60 * 60 * 1000,
+	).toISOString();
+	const marcusEnd = new Date(
+		Date.now() + 5 * 24 * 60 * 60 * 1000 + 45 * 60 * 1000,
+	).toISOString();
 	await insertModuleData(client, "appointments", "appointment", marcusApptId, {
 		id: marcusApptId,
 		serviceId: alterationsId,
@@ -1867,7 +2006,11 @@ async function seedMemberships(client: pg.PoolClient) {
 		price: 9900,
 		billingInterval: "month",
 		trialDays: 0,
-		features: ["10% off all purchases", "Free standard shipping", "Early access to new arrivals"],
+		features: [
+			"10% off all purchases",
+			"Free standard shipping",
+			"Early access to new arrivals",
+		],
 		isActive: true,
 		maxMembers: null,
 		sortOrder: 0,
@@ -1875,92 +2018,158 @@ async function seedMemberships(client: pg.PoolClient) {
 		updatedAt: now,
 	});
 
-	await insertModuleData(client, "memberships", "membershipPlan", maisonPlanId, {
-		id: maisonPlanId,
-		name: "Atelier Maison",
-		slug: "atelier-maison",
-		description:
-			"Annual membership for our most valued clients. Includes all Club benefits plus a personal stylist, bespoke services, and invitations to private previews.",
-		price: 79900,
-		billingInterval: "year",
-		trialDays: 0,
-		features: [
-			"20% off all purchases",
-			"Free express shipping",
-			"Priority personal stylist access",
-			"Exclusive Maison preview events",
-			"Complimentary monogramming",
-		],
-		isActive: true,
-		maxMembers: 50,
-		sortOrder: 1,
-		createdAt: now,
-		updatedAt: now,
-	});
+	await insertModuleData(
+		client,
+		"memberships",
+		"membershipPlan",
+		maisonPlanId,
+		{
+			id: maisonPlanId,
+			name: "Atelier Maison",
+			slug: "atelier-maison",
+			description:
+				"Annual membership for our most valued clients. Includes all Club benefits plus a personal stylist, bespoke services, and invitations to private previews.",
+			price: 79900,
+			billingInterval: "year",
+			trialDays: 0,
+			features: [
+				"20% off all purchases",
+				"Free express shipping",
+				"Priority personal stylist access",
+				"Exclusive Maison preview events",
+				"Complimentary monogramming",
+			],
+			isActive: true,
+			maxMembers: 50,
+			sortOrder: 1,
+			createdAt: now,
+			updatedAt: now,
+		},
+	);
 
 	// Benefits
 	const clubBenefits = [
-		{ type: "discount", value: "10", description: "10% off all full-price items" },
-		{ type: "shipping", value: "free_standard", description: "Free standard shipping on all orders" },
-		{ type: "access", value: "early_access", description: "48-hour early access to new arrivals" },
+		{
+			type: "discount",
+			value: "10",
+			description: "10% off all full-price items",
+		},
+		{
+			type: "shipping",
+			value: "free_standard",
+			description: "Free standard shipping on all orders",
+		},
+		{
+			type: "access",
+			value: "early_access",
+			description: "48-hour early access to new arrivals",
+		},
 	];
 	for (const [i, benefit] of clubBenefits.entries()) {
 		const benefitId = uuid(`membership-benefit:club:${i}`);
-		await insertModuleData(client, "memberships", "membershipBenefit", benefitId, {
-			id: benefitId,
-			planId: clubPlanId,
-			...benefit,
-			isActive: true,
-			createdAt: now,
-		});
+		await insertModuleData(
+			client,
+			"memberships",
+			"membershipBenefit",
+			benefitId,
+			{
+				id: benefitId,
+				planId: clubPlanId,
+				...benefit,
+				isActive: true,
+				createdAt: now,
+			},
+		);
 	}
 
 	const maisonBenefits = [
-		{ type: "discount", value: "20", description: "20% off all full-price items" },
-		{ type: "shipping", value: "free_express", description: "Free express shipping on all orders" },
-		{ type: "stylist", value: "personal_stylist", description: "Access to personal stylist consultations" },
-		{ type: "access", value: "maison_events", description: "Invitations to Maison private previews" },
-		{ type: "service", value: "monogramming", description: "Complimentary monogramming on all orders" },
+		{
+			type: "discount",
+			value: "20",
+			description: "20% off all full-price items",
+		},
+		{
+			type: "shipping",
+			value: "free_express",
+			description: "Free express shipping on all orders",
+		},
+		{
+			type: "stylist",
+			value: "personal_stylist",
+			description: "Access to personal stylist consultations",
+		},
+		{
+			type: "access",
+			value: "maison_events",
+			description: "Invitations to Maison private previews",
+		},
+		{
+			type: "service",
+			value: "monogramming",
+			description: "Complimentary monogramming on all orders",
+		},
 	];
 	for (const [i, benefit] of maisonBenefits.entries()) {
 		const benefitId = uuid(`membership-benefit:maison:${i}`);
-		await insertModuleData(client, "memberships", "membershipBenefit", benefitId, {
-			id: benefitId,
-			planId: maisonPlanId,
-			...benefit,
-			isActive: true,
-			createdAt: now,
-		});
+		await insertModuleData(
+			client,
+			"memberships",
+			"membershipBenefit",
+			benefitId,
+			{
+				id: benefitId,
+				planId: maisonPlanId,
+				...benefit,
+				isActive: true,
+				createdAt: now,
+			},
+		);
 	}
 
 	// Members: Eleanor → Maison, Marcus → Club
-	const membershipStart = new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString();
-	const membershipEnd = new Date(Date.now() + 320 * 24 * 60 * 60 * 1000).toISOString();
+	const membershipStart = new Date(
+		Date.now() - 45 * 24 * 60 * 60 * 1000,
+	).toISOString();
+	const membershipEnd = new Date(
+		Date.now() + 320 * 24 * 60 * 60 * 1000,
+	).toISOString();
 	const clubEnd = new Date(Date.now() + 16 * 24 * 60 * 60 * 1000).toISOString();
 
 	const eleanorMembershipId = uuid("membership:eleanor:maison");
-	await insertModuleData(client, "memberships", "membership", eleanorMembershipId, {
-		id: eleanorMembershipId,
-		customerId: customerIds["eleanor-vale"],
-		planId: maisonPlanId,
-		status: "active",
-		startDate: membershipStart,
-		endDate: membershipEnd,
-		createdAt: now,
-		updatedAt: now,
-	});
+	await insertModuleData(
+		client,
+		"memberships",
+		"membership",
+		eleanorMembershipId,
+		{
+			id: eleanorMembershipId,
+			customerId: customerIds["eleanor-vale"],
+			planId: maisonPlanId,
+			status: "active",
+			startDate: membershipStart,
+			endDate: membershipEnd,
+			createdAt: now,
+			updatedAt: now,
+		},
+	);
 
 	const marcusMembershipId = uuid("membership:marcus:club");
-	await insertModuleData(client, "memberships", "membership", marcusMembershipId, {
-		id: marcusMembershipId,
-		customerId: customerIds["marcus-chen"],
-		planId: clubPlanId,
-		status: "active",
-		startDate: membershipStart,
-		endDate: clubEnd,
-		createdAt: now,
-		updatedAt: now,
-	});
+	await insertModuleData(
+		client,
+		"memberships",
+		"membership",
+		marcusMembershipId,
+		{
+			id: marcusMembershipId,
+			customerId: customerIds["marcus-chen"],
+			planId: clubPlanId,
+			status: "active",
+			startDate: membershipStart,
+			endDate: clubEnd,
+			createdAt: now,
+			updatedAt: now,
+		},
+	);
 }
 
 async function seedWarranties(client: pg.PoolClient) {
@@ -1969,72 +2178,100 @@ async function seedWarranties(client: pg.PoolClient) {
 	const manufacturerPlanId = uuid("warranty-plan:manufacturer-12");
 	const extendedPlanId = uuid("warranty-plan:atelier-protection-24");
 
-	await insertModuleData(client, "warranties", "warrantyPlan", manufacturerPlanId, {
-		id: manufacturerPlanId,
-		name: "Manufacturer Warranty",
-		description: "Standard manufacturer coverage included with every Atelier purchase.",
-		type: "manufacturer",
-		durationMonths: 12,
-		price: 0,
-		coverageDetails:
-			"Covers manufacturing defects in materials and workmanship. Does not cover normal wear or accidental damage.",
-		exclusions: "Wear and tear, accidental damage, water damage, unauthorised repairs.",
-		isActive: true,
-		createdAt: now,
-		updatedAt: now,
-	});
+	await insertModuleData(
+		client,
+		"warranties",
+		"warrantyPlan",
+		manufacturerPlanId,
+		{
+			id: manufacturerPlanId,
+			name: "Manufacturer Warranty",
+			description:
+				"Standard manufacturer coverage included with every Atelier purchase.",
+			type: "manufacturer",
+			durationMonths: 12,
+			price: 0,
+			coverageDetails:
+				"Covers manufacturing defects in materials and workmanship. Does not cover normal wear or accidental damage.",
+			exclusions:
+				"Wear and tear, accidental damage, water damage, unauthorised repairs.",
+			isActive: true,
+			createdAt: now,
+			updatedAt: now,
+		},
+	);
 
 	await insertModuleData(client, "warranties", "warrantyPlan", extendedPlanId, {
 		id: extendedPlanId,
 		name: "Atelier Protection Plan",
-		description: "Extended 24-month protection covering accidental damage and wear on fine leather goods and timepieces.",
+		description:
+			"Extended 24-month protection covering accidental damage and wear on fine leather goods and timepieces.",
 		type: "extended",
 		durationMonths: 24,
 		price: 4999,
 		coverageDetails:
 			"All manufacturer warranty coverage plus accidental damage, stitching failures, hardware defects, and complimentary annual conditioning service.",
-		exclusions: "Loss or theft, intentional damage, alterations by third parties.",
+		exclusions:
+			"Loss or theft, intentional damage, alterations by third parties.",
 		isActive: true,
 		createdAt: now,
 		updatedAt: now,
 	});
 
 	const orderId = uuid("order:demo");
-	const purchaseDate = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
-	const manufacturerExpiry = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000 + 365 * 24 * 60 * 60 * 1000).toISOString();
-	const extendedExpiry = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000 + 2 * 365 * 24 * 60 * 60 * 1000).toISOString();
+	const purchaseDate = new Date(
+		Date.now() - 10 * 24 * 60 * 60 * 1000,
+	).toISOString();
+	const manufacturerExpiry = new Date(
+		Date.now() - 10 * 24 * 60 * 60 * 1000 + 365 * 24 * 60 * 60 * 1000,
+	).toISOString();
+	const extendedExpiry = new Date(
+		Date.now() - 10 * 24 * 60 * 60 * 1000 + 2 * 365 * 24 * 60 * 60 * 1000,
+	).toISOString();
 
 	// Manufacturer warranty on the Grand Tour Passport Folio from the demo order
 	const folioWarrantyId = uuid("warranty-reg:marcus:folio:manufacturer");
-	await insertModuleData(client, "warranties", "warrantyRegistration", folioWarrantyId, {
-		id: folioWarrantyId,
-		warrantyPlanId: manufacturerPlanId,
-		orderId,
-		customerId: customerIds["marcus-chen"],
-		productId: productIds["grand-tour-passport-folio"],
-		productName: "Grand Tour Passport Folio",
-		purchaseDate,
-		expiresAt: manufacturerExpiry,
-		status: "active",
-		createdAt: now,
-		updatedAt: now,
-	});
+	await insertModuleData(
+		client,
+		"warranties",
+		"warrantyRegistration",
+		folioWarrantyId,
+		{
+			id: folioWarrantyId,
+			warrantyPlanId: manufacturerPlanId,
+			orderId,
+			customerId: customerIds["marcus-chen"],
+			productId: productIds["grand-tour-passport-folio"],
+			productName: "Grand Tour Passport Folio",
+			purchaseDate,
+			expiresAt: manufacturerExpiry,
+			status: "active",
+			createdAt: now,
+			updatedAt: now,
+		},
+	);
 
 	// Extended protection on the Silk Twill Wrap from the demo order
 	const wrapWarrantyId = uuid("warranty-reg:marcus:silk-wrap:extended");
-	await insertModuleData(client, "warranties", "warrantyRegistration", wrapWarrantyId, {
-		id: wrapWarrantyId,
-		warrantyPlanId: extendedPlanId,
-		orderId,
-		customerId: customerIds["marcus-chen"],
-		productId: productIds["silk-twill-wrap"],
-		productName: "Silk Twill Wrap",
-		purchaseDate,
-		expiresAt: extendedExpiry,
-		status: "active",
-		createdAt: now,
-		updatedAt: now,
-	});
+	await insertModuleData(
+		client,
+		"warranties",
+		"warrantyRegistration",
+		wrapWarrantyId,
+		{
+			id: wrapWarrantyId,
+			warrantyPlanId: extendedPlanId,
+			orderId,
+			customerId: customerIds["marcus-chen"],
+			productId: productIds["silk-twill-wrap"],
+			productName: "Silk Twill Wrap",
+			purchaseDate,
+			expiresAt: extendedExpiry,
+			status: "active",
+			createdAt: now,
+			updatedAt: now,
+		},
+	);
 }
 
 async function seedAuctions(client: pg.PoolClient) {
@@ -2140,18 +2377,24 @@ async function seedStoreCredits(client: pg.PoolClient) {
 
 	for (const entry of accounts) {
 		const accountId = uuid(`store-credit-account:${entry.customerKey}`);
-		await insertModuleData(client, "store-credits", "creditAccount", accountId, {
-			id: accountId,
-			customerId: customerIds[entry.customerKey],
-			customerEmail: entry.email,
-			balance: entry.balance,
-			lifetimeCredited: entry.lifetimeCredited,
-			lifetimeDebited: entry.lifetimeDebited,
-			currency: "USD",
-			status: "active",
-			createdAt: now,
-			updatedAt: now,
-		});
+		await insertModuleData(
+			client,
+			"store-credits",
+			"creditAccount",
+			accountId,
+			{
+				id: accountId,
+				customerId: customerIds[entry.customerKey],
+				customerEmail: entry.email,
+				balance: entry.balance,
+				lifetimeCredited: entry.lifetimeCredited,
+				lifetimeDebited: entry.lifetimeDebited,
+				currency: "USD",
+				status: "active",
+				createdAt: now,
+				updatedAt: now,
+			},
+		);
 
 		// Initial credit transaction
 		const txId = uuid(`store-credit-tx:${entry.customerKey}:initial`);
@@ -2170,18 +2413,24 @@ async function seedStoreCredits(client: pg.PoolClient) {
 		if (entry.lifetimeDebited > 0) {
 			const debitId = uuid(`store-credit-tx:${entry.customerKey}:debit-1`);
 			const orderId = uuid("order:demo");
-			await insertModuleData(client, "store-credits", "creditTransaction", debitId, {
-				id: debitId,
-				accountId,
-				type: "debit",
-				amount: entry.lifetimeDebited,
-				balanceAfter: entry.balance,
-				reason: "order_payment",
-				description: "Applied to order AT-1001",
-				referenceType: "order",
-				referenceId: orderId,
-				createdAt: now,
-			});
+			await insertModuleData(
+				client,
+				"store-credits",
+				"creditTransaction",
+				debitId,
+				{
+					id: debitId,
+					accountId,
+					type: "debit",
+					amount: entry.lifetimeDebited,
+					balanceAfter: entry.balance,
+					reason: "order_payment",
+					description: "Applied to order AT-1001",
+					referenceType: "order",
+					referenceId: orderId,
+					createdAt: now,
+				},
+			);
 		}
 	}
 }
@@ -2190,9 +2439,15 @@ async function seedPreorders(client: pg.PoolClient) {
 	console.log("  Creating preorder campaigns...");
 
 	const campaignId = uuid("preorder-campaign:cashmere-fringe-scarf");
-	const campaignStart = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-	const campaignEnd = new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString();
-	const estimatedShip = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString();
+	const campaignStart = new Date(
+		Date.now() - 7 * 24 * 60 * 60 * 1000,
+	).toISOString();
+	const campaignEnd = new Date(
+		Date.now() + 21 * 24 * 60 * 60 * 1000,
+	).toISOString();
+	const estimatedShip = new Date(
+		Date.now() + 60 * 24 * 60 * 60 * 1000,
+	).toISOString();
 
 	const cashmereScarf = productByKey["cashmere-fringe-scarf"];
 
@@ -2226,7 +2481,9 @@ async function seedPreorders(client: pg.PoolClient) {
 	];
 
 	for (const entry of preorderItems) {
-		const itemId = uuid(`preorder-item:${entry.customerKey}:cashmere-fringe-scarf`);
+		const itemId = uuid(
+			`preorder-item:${entry.customerKey}:cashmere-fringe-scarf`,
+		);
 		await insertModuleData(client, "preorders", "preorderItem", itemId, {
 			id: itemId,
 			campaignId,
@@ -2262,9 +2519,21 @@ async function seedReferrals(client: pg.PoolClient) {
 
 	// Referral codes for each customer
 	const refCodes = [
-		{ customerKey: "eleanor-vale", email: "eleanor@example.com", code: "ELEANOR-ATELIER" },
-		{ customerKey: "marcus-chen", email: "marcus@example.com", code: "MARCUS-ATELIER" },
-		{ customerKey: "sofia-alvarez", email: "sofia@example.com", code: "SOFIA-ATELIER" },
+		{
+			customerKey: "eleanor-vale",
+			email: "eleanor@example.com",
+			code: "ELEANOR-ATELIER",
+		},
+		{
+			customerKey: "marcus-chen",
+			email: "marcus@example.com",
+			code: "MARCUS-ATELIER",
+		},
+		{
+			customerKey: "sofia-alvarez",
+			email: "sofia@example.com",
+			code: "SOFIA-ATELIER",
+		},
 	];
 
 	const codeIds: Record<string, string> = {};
@@ -2361,18 +2630,24 @@ async function seedAffiliates(client: pg.PoolClient) {
 		// One conversion (latest order)
 		const orderId = uuid("order:demo");
 		const convId = uuid(`affiliate-conversion:${aff.key}:1`);
-		await insertModuleData(client, "affiliates", "affiliateConversion", convId, {
-			id: convId,
-			affiliateId: affId,
-			linkId,
-			orderId,
-			orderAmount: 157000,
-			commissionRate: aff.commissionRate,
-			commissionAmount: Math.round(157000 * aff.commissionRate) / 100,
-			status: "approved",
-			paidAt: now,
-			createdAt: now,
-		});
+		await insertModuleData(
+			client,
+			"affiliates",
+			"affiliateConversion",
+			convId,
+			{
+				id: convId,
+				affiliateId: affId,
+				linkId,
+				orderId,
+				orderAmount: 157000,
+				commissionRate: aff.commissionRate,
+				commissionAmount: Math.round(157000 * aff.commissionRate) / 100,
+				status: "approved",
+				paidAt: now,
+				createdAt: now,
+			},
+		);
 	}
 }
 
@@ -2384,7 +2659,8 @@ async function seedCustomerGroups(client: pg.PoolClient) {
 			key: "vip",
 			name: "VIP",
 			slug: "vip",
-			description: "Top-tier clients with lifetime spend over $10,000 or by direct invitation.",
+			description:
+				"Top-tier clients with lifetime spend over $10,000 or by direct invitation.",
 			type: "manual",
 			priority: 10,
 		},
@@ -2411,14 +2687,20 @@ async function seedCustomerGroups(client: pg.PoolClient) {
 		const groupId = uuid(`customer-group:${group.key}`);
 		groupIds[group.key] = groupId;
 		const { key: _key, ...groupData } = group;
-		await insertModuleData(client, "customer-groups", "customerGroup", groupId, {
-			id: groupId,
-			...groupData,
-			isActive: true,
-			metadata: {},
-			createdAt: now,
-			updatedAt: now,
-		});
+		await insertModuleData(
+			client,
+			"customer-groups",
+			"customerGroup",
+			groupId,
+			{
+				id: groupId,
+				...groupData,
+				isActive: true,
+				metadata: {},
+				createdAt: now,
+				updatedAt: now,
+			},
+		);
 	}
 
 	// Memberships: Eleanor → VIP + Maison Members, Marcus → Maison Members, Sofia → New Customers
@@ -2430,14 +2712,22 @@ async function seedCustomerGroups(client: pg.PoolClient) {
 	];
 
 	for (const entry of memberships) {
-		const membershipId = uuid(`group-membership:${entry.customerKey}:${entry.groupKey}`);
-		await insertModuleData(client, "customer-groups", "groupMembership", membershipId, {
-			id: membershipId,
-			groupId: groupIds[entry.groupKey],
-			customerId: customerIds[entry.customerKey],
-			joinedAt: now,
-			metadata: {},
-		});
+		const membershipId = uuid(
+			`group-membership:${entry.customerKey}:${entry.groupKey}`,
+		);
+		await insertModuleData(
+			client,
+			"customer-groups",
+			"groupMembership",
+			membershipId,
+			{
+				id: membershipId,
+				groupId: groupIds[entry.groupKey],
+				customerId: customerIds[entry.customerKey],
+				joinedAt: now,
+				metadata: {},
+			},
+		);
 	}
 }
 
@@ -2495,7 +2785,9 @@ async function seedAbandonedCarts(client: pg.PoolClient) {
 		status: "recovered",
 		recoveryToken: uuid("recovery-token:sofia:scarf").replace(/-/g, ""),
 		attemptCount: 2,
-		lastActivityAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+		lastActivityAt: new Date(
+			Date.now() - 2 * 24 * 60 * 60 * 1000,
+		).toISOString(),
 		abandonedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
 		recoveredAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
 		recoveredOrderId: uuid("order:demo"),
@@ -2510,40 +2802,54 @@ async function seedDigitalDownloads(client: pg.PoolClient) {
 
 	// Downloadable leather care guide linked to the Grand Tour Passport Folio
 	const fileId = uuid("download-file:leather-care-guide");
-	await insertModuleData(client, "digital-downloads", "downloadableFile", fileId, {
-		id: fileId,
-		productId: productIds["grand-tour-passport-folio"],
-		name: "Atelier Leather Care Guide",
-		url: "/downloads/86d-atelier-leather-care-guide.pdf",
-		fileSize: 2048000,
-		mimeType: "application/pdf",
-		isActive: true,
-		createdAt: now,
-		updatedAt: now,
-	});
+	await insertModuleData(
+		client,
+		"digital-downloads",
+		"downloadableFile",
+		fileId,
+		{
+			id: fileId,
+			productId: productIds["grand-tour-passport-folio"],
+			name: "Atelier Leather Care Guide",
+			url: "/downloads/86d-atelier-leather-care-guide.pdf",
+			fileSize: 2048000,
+			mimeType: "application/pdf",
+			isActive: true,
+			createdAt: now,
+			updatedAt: now,
+		},
+	);
 
 	// Download token for Marcus (purchased via demo order)
 	const tokenId = uuid("download-token:marcus:leather-care-guide");
 	const orderId = uuid("order:demo");
-	await insertModuleData(client, "digital-downloads", "downloadToken", tokenId, {
-		id: tokenId,
-		token: uuid("token:marcus:leather-care-guide").replace(/-/g, ""),
-		fileId,
-		orderId,
-		email: "marcus@example.com",
-		maxDownloads: 5,
-		downloadCount: 1,
-		expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-		createdAt: now,
-		updatedAt: now,
-	});
+	await insertModuleData(
+		client,
+		"digital-downloads",
+		"downloadToken",
+		tokenId,
+		{
+			id: tokenId,
+			token: uuid("token:marcus:leather-care-guide").replace(/-/g, ""),
+			fileId,
+			orderId,
+			email: "marcus@example.com",
+			maxDownloads: 5,
+			downloadCount: 1,
+			expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+			createdAt: now,
+			updatedAt: now,
+		},
+	);
 }
 
 async function seedQuotes(client: pg.PoolClient) {
 	console.log("  Creating quotes...");
 
 	const quoteId = uuid("quote:marcus:chronographs-corp");
-	const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+	const expiresAt = new Date(
+		Date.now() + 14 * 24 * 60 * 60 * 1000,
+	).toISOString();
 	const chronograph = productByKey["observatory-chronograph"];
 
 	await insertModuleData(client, "quotes", "quote", quoteId, {
@@ -2553,7 +2859,8 @@ async function seedQuotes(client: pg.PoolClient) {
 		customerName: "Marcus Chen",
 		companyName: "Chen Capital Partners",
 		status: "under_review",
-		notes: "Corporate gifting — 3 pieces for senior partners. Would like engraving options.",
+		notes:
+			"Corporate gifting — 3 pieces for senior partners. Would like engraving options.",
 		adminNotes: "High-value account. Follow up with bespoke engraving quote.",
 		subtotal: (chronograph?.price ?? 345000) * 3,
 		discount: 25000,
@@ -2598,7 +2905,8 @@ async function seedReturns(client: pg.PoolClient) {
 		refundAmount: silkWrap?.price ?? 28500,
 		currency: "USD",
 		reason: "Colour not as expected",
-		customerNotes: "The Camargue colourway appeared darker in person than online.",
+		customerNotes:
+			"The Camargue colourway appeared darker in person than online.",
 		adminNotes: "Approved. Store credit issued.",
 		createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
 		updatedAt: now,
@@ -2625,7 +2933,9 @@ async function seedBackorders(client: pg.PoolClient) {
 	console.log("  Creating backorders...");
 
 	const loafer = productByKey["regent-penny-loafer"];
-	const estimatedDate = new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString();
+	const estimatedDate = new Date(
+		Date.now() + 21 * 24 * 60 * 60 * 1000,
+	).toISOString();
 
 	// Backorder policy for the loafer
 	const policyId = uuid("backorder-policy:regent-penny-loafer");
@@ -2637,15 +2947,24 @@ async function seedBackorders(client: pg.PoolClient) {
 		maxTotalBackorders: 20,
 		estimatedLeadDays: 21,
 		autoConfirm: true,
-		message: "This style is currently on backorder. Estimated delivery in 3 weeks.",
+		message:
+			"This style is currently on backorder. Estimated delivery in 3 weeks.",
 		createdAt: now,
 		updatedAt: now,
 	});
 
 	// 2 backordered items
 	const backorderCustomers = [
-		{ customerKey: "eleanor-vale", email: "eleanor@example.com", variantKey: "regent-penny-loafer:wnl-40" },
-		{ customerKey: "sofia-alvarez", email: "sofia@example.com", variantKey: "regent-penny-loafer:onx-38" },
+		{
+			customerKey: "eleanor-vale",
+			email: "eleanor@example.com",
+			variantKey: "regent-penny-loafer:wnl-40",
+		},
+		{
+			customerKey: "sofia-alvarez",
+			email: "sofia@example.com",
+			variantKey: "regent-penny-loafer:onx-38",
+		},
 	];
 
 	for (const entry of backorderCustomers) {
@@ -2671,20 +2990,24 @@ async function seedGiftRegistry(client: pg.PoolClient) {
 	console.log("  Creating gift registries...");
 
 	const registryId = uuid("gift-registry:eleanor:wedding");
-	const eventDate = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString();
+	const eventDate = new Date(
+		Date.now() + 180 * 24 * 60 * 60 * 1000,
+	).toISOString();
 
 	await insertModuleData(client, "gift-registry", "registry", registryId, {
 		id: registryId,
 		customerId: customerIds["eleanor-vale"],
 		customerName: "Eleanor Vale",
 		title: "Eleanor & James — Spring Wedding",
-		description: "We are so grateful for your presence. These are a few pieces we love from the Atelier.",
+		description:
+			"We are so grateful for your presence. These are a few pieces we love from the Atelier.",
 		type: "wedding",
 		slug: "eleanor-james-wedding-2026",
 		visibility: "public",
 		status: "active",
 		eventDate,
-		thankYouMessage: "Thank you for thinking of us — every gift means the world.",
+		thankYouMessage:
+			"Thank you for thinking of us — every gift means the world.",
 		itemCount: 3,
 		purchasedCount: 1,
 		createdAt: now,
@@ -2747,7 +3070,8 @@ async function seedBulkPricing(client: pg.PoolClient) {
 	await insertModuleData(client, "bulk-pricing", "pricingRule", ruleId, {
 		id: ruleId,
 		name: "Footwear Volume Discount",
-		description: "Volume discounts on all Atelier footwear styles for wholesale and corporate accounts.",
+		description:
+			"Volume discounts on all Atelier footwear styles for wholesale and corporate accounts.",
 		scope: "collection",
 		targetId: collectionIds["footwear"],
 		priority: 10,
@@ -2757,9 +3081,27 @@ async function seedBulkPricing(client: pg.PoolClient) {
 	});
 
 	const tiers = [
-		{ min: 3, max: 5, type: "percentage", value: 5, label: "Buy 3–5 pairs, save 5%" },
-		{ min: 6, max: 11, type: "percentage", value: 10, label: "Buy 6–11 pairs, save 10%" },
-		{ min: 12, max: null, type: "percentage", value: 15, label: "Buy 12+ pairs, save 15%" },
+		{
+			min: 3,
+			max: 5,
+			type: "percentage",
+			value: 5,
+			label: "Buy 3–5 pairs, save 5%",
+		},
+		{
+			min: 6,
+			max: 11,
+			type: "percentage",
+			value: 10,
+			label: "Buy 6–11 pairs, save 10%",
+		},
+		{
+			min: 12,
+			max: null,
+			type: "percentage",
+			value: 15,
+			label: "Buy 12+ pairs, save 15%",
+		},
 	];
 
 	for (const [i, tier] of tiers.entries()) {
@@ -2785,21 +3127,24 @@ async function seedGiftWrapping(client: pg.PoolClient) {
 		{
 			key: "classic",
 			name: "Classic Tissue Wrap",
-			description: "Our house tissue paper with a satin ribbon. Complimentary with every order.",
+			description:
+				"Our house tissue paper with a satin ribbon. Complimentary with every order.",
 			priceInCents: 0,
 			sortOrder: 0,
 		},
 		{
 			key: "signature-box",
 			name: "Atelier Signature Box",
-			description: "Rigid gift box in Atelier ivory, sealed with wax and a grosgrain ribbon.",
+			description:
+				"Rigid gift box in Atelier ivory, sealed with wax and a grosgrain ribbon.",
 			priceInCents: 1500,
 			sortOrder: 1,
 		},
 		{
 			key: "black-lacquer",
 			name: "Atelier Black Lacquer",
-			description: "Matte-black lacquer box with gold foil monogram, velvet interior, and a hand-tied bow.",
+			description:
+				"Matte-black lacquer box with gold foil monogram, velvet interior, and a hand-tied bow.",
 			priceInCents: 2500,
 			sortOrder: 2,
 		},
@@ -2823,18 +3168,24 @@ async function seedGiftWrapping(client: pg.PoolClient) {
 	const orderId = uuid("order:demo");
 	const orderItemId = uuid("order-item:demo:grand-tour-passport-folio");
 	const selectionId = uuid("wrap-selection:demo-order:folio");
-	await insertModuleData(client, "gift-wrapping", "wrapSelection", selectionId, {
-		id: selectionId,
-		orderId,
-		orderItemId,
-		wrapOptionId: optionIds["signature-box"],
-		wrapOptionName: "Atelier Signature Box",
-		priceInCents: 1500,
-		recipientName: "Eleanor Vale",
-		giftMessage: "With love — Marcus.",
-		customerId: customerIds["marcus-chen"],
-		createdAt: now,
-	});
+	await insertModuleData(
+		client,
+		"gift-wrapping",
+		"wrapSelection",
+		selectionId,
+		{
+			id: selectionId,
+			orderId,
+			orderItemId,
+			wrapOptionId: optionIds["signature-box"],
+			wrapOptionName: "Atelier Signature Box",
+			priceInCents: 1500,
+			recipientName: "Eleanor Vale",
+			giftMessage: "With love — Marcus.",
+			customerId: customerIds["marcus-chen"],
+			createdAt: now,
+		},
+	);
 }
 
 async function seedInvoices(client: pg.PoolClient) {
@@ -2842,7 +3193,9 @@ async function seedInvoices(client: pg.PoolClient) {
 
 	const invoiceId = uuid("invoice:demo-order");
 	const orderId = uuid("order:demo");
-	const issuedAt = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
+	const issuedAt = new Date(
+		Date.now() - 10 * 24 * 60 * 60 * 1000,
+	).toISOString();
 	const dueDate = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
 	const silkWrap = productByKey["silk-twill-wrap"];
 	const folio = productByKey["grand-tour-passport-folio"];
@@ -2969,7 +3322,9 @@ async function seedGamification(client: pg.PoolClient) {
 			id: prizeId,
 			gameId,
 			...prizeData,
-			discountCode: prize.type.startsWith("discount") ? `ATELIER${prize.value}` : undefined,
+			discountCode: prize.type.startsWith("discount")
+				? `ATELIER${prize.value}`
+				: undefined,
 			isActive: true,
 			createdAt: now,
 		});
@@ -3017,10 +3372,40 @@ async function seedMultiCurrency(client: pg.PoolClient) {
 	console.log("  Creating currency configurations...");
 
 	const currencies = [
-		{ code: "USD", name: "US Dollar", symbol: "$", exchangeRate: 1, isBase: true, sortOrder: 0 },
-		{ code: "EUR", name: "Euro", symbol: "€", exchangeRate: 0.92, isBase: false, sortOrder: 1, symbolPosition: "after" as const },
-		{ code: "GBP", name: "British Pound", symbol: "£", exchangeRate: 0.79, isBase: false, sortOrder: 2 },
-		{ code: "JPY", name: "Japanese Yen", symbol: "¥", exchangeRate: 149.5, isBase: false, sortOrder: 3, decimalPlaces: 0 },
+		{
+			code: "USD",
+			name: "US Dollar",
+			symbol: "$",
+			exchangeRate: 1,
+			isBase: true,
+			sortOrder: 0,
+		},
+		{
+			code: "EUR",
+			name: "Euro",
+			symbol: "€",
+			exchangeRate: 0.92,
+			isBase: false,
+			sortOrder: 1,
+			symbolPosition: "after" as const,
+		},
+		{
+			code: "GBP",
+			name: "British Pound",
+			symbol: "£",
+			exchangeRate: 0.79,
+			isBase: false,
+			sortOrder: 2,
+		},
+		{
+			code: "JPY",
+			name: "Japanese Yen",
+			symbol: "¥",
+			exchangeRate: 149.5,
+			isBase: false,
+			sortOrder: 3,
+			decimalPlaces: 0,
+		},
 	];
 
 	for (const currency of currencies) {
@@ -3046,12 +3431,22 @@ async function seedWaitlist(client: pg.PoolClient) {
 	const chronograph = productByKey["observatory-chronograph"];
 
 	const entries = [
-		{ customerKey: "marcus-chen", email: "marcus@example.com", variant: "rose-cocoa" },
-		{ customerKey: "sofia-alvarez", email: "sofia@example.com", variant: "rose-cocoa" },
+		{
+			customerKey: "marcus-chen",
+			email: "marcus@example.com",
+			variant: "rose-cocoa",
+		},
+		{
+			customerKey: "sofia-alvarez",
+			email: "sofia@example.com",
+			variant: "rose-cocoa",
+		},
 	];
 
 	for (const entry of entries) {
-		const entryId = uuid(`waitlist:${entry.customerKey}:observatory-chronograph:${entry.variant}`);
+		const entryId = uuid(
+			`waitlist:${entry.customerKey}:observatory-chronograph:${entry.variant}`,
+		);
 		await insertModuleData(client, "waitlist", "waitlistEntry", entryId, {
 			id: entryId,
 			productId: productIds["observatory-chronograph"],
@@ -3080,7 +3475,9 @@ async function seedCart(client: pg.PoolClient) {
 		createdAt: now,
 		updatedAt: now,
 	});
-	const marcusCartItemId = uuid("cart-item:marcus-chen:observatory-chronograph");
+	const marcusCartItemId = uuid(
+		"cart-item:marcus-chen:observatory-chronograph",
+	);
 	await insertModuleData(client, "cart", "cartItem", marcusCartItemId, {
 		id: marcusCartItemId,
 		cartId: marcusCartId,
@@ -3143,8 +3540,18 @@ async function seedCheckout(client: pg.PoolClient) {
 	});
 
 	const lineItems = [
-		{ productId: productIds["grand-tour-passport-folio"], productName: "Grand Tour Passport Folio", quantity: 1, price: 44500 },
-		{ productId: productIds["silk-twill-wrap"], productName: "Silk Twill Wrap", quantity: 1, price: 45000 },
+		{
+			productId: productIds["grand-tour-passport-folio"],
+			productName: "Grand Tour Passport Folio",
+			quantity: 1,
+			price: 44500,
+		},
+		{
+			productId: productIds["silk-twill-wrap"],
+			productName: "Silk Twill Wrap",
+			quantity: 1,
+			price: 45000,
+		},
 	];
 	for (const item of lineItems) {
 		const lineItemId = uuid(`checkout-line:demo-order:${item.productId}`);
@@ -3180,7 +3587,8 @@ async function seedNotifications(client: pg.PoolClient) {
 			name: "Order Shipped",
 			type: "transactional",
 			titleTemplate: "Your order is on its way",
-			bodyTemplate: "Your order #{{orderNumber}} has shipped. Track it here: {{trackingUrl}}",
+			bodyTemplate:
+				"Your order #{{orderNumber}} has shipped. Track it here: {{trackingUrl}}",
 		},
 		{
 			id: uuid("notif-tpl:promotion"),
@@ -3188,15 +3596,25 @@ async function seedNotifications(client: pg.PoolClient) {
 			name: "New Arrivals",
 			type: "marketing",
 			titleTemplate: "New arrivals at Atelier",
-			bodyTemplate: "Discover our latest pieces crafted for the discerning collector.",
+			bodyTemplate:
+				"Discover our latest pieces crafted for the discerning collector.",
 		},
 	];
 	for (const tpl of templates) {
-		await insertModuleData(client, "notifications", "template", tpl.id, { ...tpl, isActive: true, createdAt: now, updatedAt: now });
+		await insertModuleData(client, "notifications", "template", tpl.id, {
+			...tpl,
+			isActive: true,
+			createdAt: now,
+			updatedAt: now,
+		});
 	}
 
 	// Preferences
-	for (const [key, channel] of [["eleanor-vale", "email"], ["marcus-chen", "email"], ["sofia-alvarez", "sms"]] as const) {
+	for (const [key, channel] of [
+		["eleanor-vale", "email"],
+		["marcus-chen", "email"],
+		["sofia-alvarez", "sms"],
+	] as const) {
 		const prefId = uuid(`notif-pref:${key}`);
 		await insertModuleData(client, "notifications", "preference", prefId, {
 			id: prefId,
@@ -3211,9 +3629,36 @@ async function seedNotifications(client: pg.PoolClient) {
 
 	// Notifications
 	const notifications = [
-		{ key: "eleanor-order-confirmed", customerId: "eleanor-vale", type: "order-confirmed", channel: "email", priority: "high", title: "Your order #ORD-2026-0001 is confirmed", body: "Thank you for your order. We'll notify you when it ships.", read: true },
-		{ key: "eleanor-order-shipped", customerId: "eleanor-vale", type: "order-shipped", channel: "email", priority: "high", title: "Your order is on its way", body: "Your order has shipped with UPS. Track: 1Z999AA10123456784", read: false },
-		{ key: "marcus-new-arrivals", customerId: "marcus-chen", type: "promotion", channel: "email", priority: "normal", title: "New arrivals at Atelier", body: "Discover our latest pieces crafted for the discerning collector.", read: false },
+		{
+			key: "eleanor-order-confirmed",
+			customerId: "eleanor-vale",
+			type: "order-confirmed",
+			channel: "email",
+			priority: "high",
+			title: "Your order #ORD-2026-0001 is confirmed",
+			body: "Thank you for your order. We'll notify you when it ships.",
+			read: true,
+		},
+		{
+			key: "eleanor-order-shipped",
+			customerId: "eleanor-vale",
+			type: "order-shipped",
+			channel: "email",
+			priority: "high",
+			title: "Your order is on its way",
+			body: "Your order has shipped with UPS. Track: 1Z999AA10123456784",
+			read: false,
+		},
+		{
+			key: "marcus-new-arrivals",
+			customerId: "marcus-chen",
+			type: "promotion",
+			channel: "email",
+			priority: "normal",
+			title: "New arrivals at Atelier",
+			body: "Discover our latest pieces crafted for the discerning collector.",
+			read: false,
+		},
 	];
 	for (const n of notifications) {
 		const notifId = uuid(`notification:${n.key}`);
@@ -3237,11 +3682,31 @@ async function seedRecentlyViewed(client: pg.PoolClient) {
 	const now = new Date().toISOString();
 
 	const views = [
-		{ key: "eleanor-loafer", customerKey: "eleanor-vale", productKey: "regent-penny-loafer" },
-		{ key: "marcus-chronograph", customerKey: "marcus-chen", productKey: "observatory-chronograph" },
-		{ key: "sofia-scarf", customerKey: "sofia-alvarez", productKey: "cashmere-fringe-scarf" },
-		{ key: "marcus-folio", customerKey: "marcus-chen", productKey: "grand-tour-passport-folio" },
-		{ key: "eleanor-wrap", customerKey: "eleanor-vale", productKey: "silk-twill-wrap" },
+		{
+			key: "eleanor-loafer",
+			customerKey: "eleanor-vale",
+			productKey: "regent-penny-loafer",
+		},
+		{
+			key: "marcus-chronograph",
+			customerKey: "marcus-chen",
+			productKey: "observatory-chronograph",
+		},
+		{
+			key: "sofia-scarf",
+			customerKey: "sofia-alvarez",
+			productKey: "cashmere-fringe-scarf",
+		},
+		{
+			key: "marcus-folio",
+			customerKey: "marcus-chen",
+			productKey: "grand-tour-passport-folio",
+		},
+		{
+			key: "eleanor-wrap",
+			customerKey: "eleanor-vale",
+			productKey: "silk-twill-wrap",
+		},
 	];
 
 	for (const view of views) {
@@ -3271,7 +3736,10 @@ async function seedRecommendations(client: pg.PoolClient) {
 			name: "Similar Accessories",
 			strategy: "similar",
 			sourceProductId: productIds["silk-twill-wrap"],
-			targetProductIds: [productIds["cashmere-fringe-scarf"], productIds["grand-tour-passport-folio"]],
+			targetProductIds: [
+				productIds["cashmere-fringe-scarf"],
+				productIds["grand-tour-passport-folio"],
+			],
 			weight: 1.0,
 		},
 		{
@@ -3279,19 +3747,36 @@ async function seedRecommendations(client: pg.PoolClient) {
 			name: "Frequently Bought Together",
 			strategy: "frequently_bought_together",
 			sourceProductId: productIds["observatory-chronograph"],
-			targetProductIds: [productIds["grand-tour-passport-folio"], productIds["regent-penny-loafer"]],
+			targetProductIds: [
+				productIds["grand-tour-passport-folio"],
+				productIds["regent-penny-loafer"],
+			],
 			weight: 0.85,
 		},
 	];
 	for (const rule of rules) {
-		await insertModuleData(client, "recommendations", "recommendationRule", rule.id, { ...rule, isActive: true, createdAt: now, updatedAt: now });
+		await insertModuleData(
+			client,
+			"recommendations",
+			"recommendationRule",
+			rule.id,
+			{ ...rule, isActive: true, createdAt: now, updatedAt: now },
+		);
 	}
 
 	// Co-occurrences (products viewed/bought together)
 	const pairs = [
-		[productIds["observatory-chronograph"], productIds["grand-tour-passport-folio"], 12],
+		[
+			productIds["observatory-chronograph"],
+			productIds["grand-tour-passport-folio"],
+			12,
+		],
 		[productIds["silk-twill-wrap"], productIds["cashmere-fringe-scarf"], 9],
-		[productIds["regent-penny-loafer"], productIds["grand-tour-passport-folio"], 7],
+		[
+			productIds["regent-penny-loafer"],
+			productIds["grand-tour-passport-folio"],
+			7,
+		],
 	] as const;
 	for (const [p1, p2, count] of pairs) {
 		const coId = uuid(`co-occurrence:${p1}:${p2}`);
@@ -3306,19 +3791,42 @@ async function seedRecommendations(client: pg.PoolClient) {
 
 	// Product interactions
 	const interactions = [
-		{ key: "eleanor-view-loafer", customerKey: "eleanor-vale", productKey: "regent-penny-loafer", type: "view" },
-		{ key: "marcus-view-chronograph", customerKey: "marcus-chen", productKey: "observatory-chronograph", type: "view" },
-		{ key: "marcus-purchase-folio", customerKey: "marcus-chen", productKey: "grand-tour-passport-folio", type: "purchase" },
+		{
+			key: "eleanor-view-loafer",
+			customerKey: "eleanor-vale",
+			productKey: "regent-penny-loafer",
+			type: "view",
+		},
+		{
+			key: "marcus-view-chronograph",
+			customerKey: "marcus-chen",
+			productKey: "observatory-chronograph",
+			type: "view",
+		},
+		{
+			key: "marcus-purchase-folio",
+			customerKey: "marcus-chen",
+			productKey: "grand-tour-passport-folio",
+			type: "purchase",
+		},
 	];
 	for (const interaction of interactions) {
 		const interactionId = uuid(`rec-interaction:${interaction.key}`);
-		await insertModuleData(client, "recommendations", "productInteraction", interactionId, {
-			id: interactionId,
-			productId: productIds[interaction.productKey as keyof typeof productIds],
-			customerId: customerIds[interaction.customerKey as keyof typeof customerIds],
-			type: interaction.type,
-			createdAt: now,
-		});
+		await insertModuleData(
+			client,
+			"recommendations",
+			"productInteraction",
+			interactionId,
+			{
+				id: interactionId,
+				productId:
+					productIds[interaction.productKey as keyof typeof productIds],
+				customerId:
+					customerIds[interaction.customerKey as keyof typeof customerIds],
+				type: interaction.type,
+				createdAt: now,
+			},
+		);
 	}
 }
 
@@ -3331,15 +3839,48 @@ async function seedForms(client: pg.PoolClient) {
 		id: formId,
 		name: "Contact Us",
 		slug: "contact",
-		description: "Reach out to our client relations team for personalized assistance.",
+		description:
+			"Reach out to our client relations team for personalized assistance.",
 		fields: [
-			{ name: "name", label: "Full Name", type: "text", required: true, position: 0 },
-			{ name: "email", label: "Email Address", type: "email", required: true, position: 1 },
-			{ name: "subject", label: "Subject", type: "select", required: true, position: 2, options: ["Product inquiry", "Order support", "Styling advice", "Partnership"] },
-			{ name: "message", label: "Message", type: "textarea", required: true, position: 3, placeholder: "How can we assist you?" },
+			{
+				name: "name",
+				label: "Full Name",
+				type: "text",
+				required: true,
+				position: 0,
+			},
+			{
+				name: "email",
+				label: "Email Address",
+				type: "email",
+				required: true,
+				position: 1,
+			},
+			{
+				name: "subject",
+				label: "Subject",
+				type: "select",
+				required: true,
+				position: 2,
+				options: [
+					"Product inquiry",
+					"Order support",
+					"Styling advice",
+					"Partnership",
+				],
+			},
+			{
+				name: "message",
+				label: "Message",
+				type: "textarea",
+				required: true,
+				position: 3,
+				placeholder: "How can we assist you?",
+			},
 		],
 		submitLabel: "Send Message",
-		successMessage: "Thank you for reaching out. A member of our client relations team will respond within 24 hours.",
+		successMessage:
+			"Thank you for reaching out. A member of our client relations team will respond within 24 hours.",
 		notifyEmail: "clientrelations@example.com",
 		honeypotEnabled: true,
 		maxSubmissions: 0,
@@ -3357,7 +3898,8 @@ async function seedForms(client: pg.PoolClient) {
 			name: "Sofia Alvarez",
 			email: "sofia@example.com",
 			subject: "Styling advice",
-			message: "I'm looking for a gift for my partner who appreciates fine accessories. Could you suggest pieces that complement the Observatory Chronograph?",
+			message:
+				"I'm looking for a gift for my partner who appreciates fine accessories. Could you suggest pieces that complement the Observatory Chronograph?",
 		},
 		ipAddress: "203.0.113.42",
 		status: "new",
@@ -3409,7 +3951,8 @@ async function seedOrderNotes(client: pg.PoolClient) {
 		orderId,
 		authorId: adminUserId,
 		authorName: "Atelier Team",
-		content: "Customer requested gift wrapping with a handwritten card. Items have been carefully wrapped in signature tissue. Passport folio monogrammed with initials E.V.",
+		content:
+			"Customer requested gift wrapping with a handwritten card. Items have been carefully wrapped in signature tissue. Passport folio monogrammed with initials E.V.",
 		isInternal: true,
 		isPinned: true,
 		createdAt: now,
@@ -3422,7 +3965,8 @@ async function seedOrderNotes(client: pg.PoolClient) {
 		orderId,
 		authorId: customerIds["eleanor-vale"],
 		authorName: "Eleanor Vale",
-		content: "Please monogram the folio with 'E.V.' and include a gift note for my anniversary.",
+		content:
+			"Please monogram the folio with 'E.V.' and include a gift note for my anniversary.",
 		isInternal: false,
 		isPinned: false,
 		createdAt: now,
@@ -3441,8 +3985,16 @@ async function seedFulfillment(client: pg.PoolClient) {
 		orderId,
 		status: "delivered",
 		items: [
-			{ productId: productIds["grand-tour-passport-folio"], productName: "Grand Tour Passport Folio", quantity: 1 },
-			{ productId: productIds["silk-twill-wrap"], productName: "Silk Twill Wrap", quantity: 1 },
+			{
+				productId: productIds["grand-tour-passport-folio"],
+				productName: "Grand Tour Passport Folio",
+				quantity: 1,
+			},
+			{
+				productId: productIds["silk-twill-wrap"],
+				productName: "Silk Twill Wrap",
+				quantity: 1,
+			},
 		],
 		carrier: "UPS",
 		trackingNumber: "1Z999AA10123456784",
@@ -3573,15 +4125,21 @@ async function seedTickets(client: pg.PoolClient) {
 	});
 
 	const stylingCategoryId = uuid("ticket-category:styling-advice");
-	await insertModuleData(client, "tickets", "ticketCategory", stylingCategoryId, {
-		id: stylingCategoryId,
-		name: "Styling Advice",
-		slug: "styling-advice",
-		position: 1,
-		isActive: true,
-		createdAt: now,
-		updatedAt: now,
-	});
+	await insertModuleData(
+		client,
+		"tickets",
+		"ticketCategory",
+		stylingCategoryId,
+		{
+			id: stylingCategoryId,
+			name: "Styling Advice",
+			slug: "styling-advice",
+			position: 1,
+			isActive: true,
+			createdAt: now,
+			updatedAt: now,
+		},
+	);
 
 	const ticketId = uuid("ticket:0001");
 	await insertModuleData(client, "tickets", "ticket", ticketId, {
@@ -3589,7 +4147,8 @@ async function seedTickets(client: pg.PoolClient) {
 		number: 1,
 		categoryId,
 		subject: "Monogram status for order ORD-2026-0001",
-		description: "I placed an order and requested a monogram on the Grand Tour Passport Folio. Could you confirm the initials 'E.V.' have been noted?",
+		description:
+			"I placed an order and requested a monogram on the Grand Tour Passport Folio. Could you confirm the initials 'E.V.' have been noted?",
 		status: "resolved",
 		priority: "high",
 		customerEmail: "eleanor@example.com",
@@ -3707,7 +4266,12 @@ async function seedComparisons(client: pg.PoolClient) {
 			customerKey: "marcus-chen",
 			productKey: "observatory-chronograph",
 			productPrice: 345000,
-			attributes: { material: "Titanium case, sapphire crystal", movement: "In-house AG-7750", waterResistance: "100m", warranty: "5 years" },
+			attributes: {
+				material: "Titanium case, sapphire crystal",
+				movement: "In-house AG-7750",
+				waterResistance: "100m",
+				warranty: "5 years",
+			},
 		},
 		{
 			key: "compare-loafer",
@@ -3715,7 +4279,12 @@ async function seedComparisons(client: pg.PoolClient) {
 			customerKey: "marcus-chen",
 			productKey: "regent-penny-loafer",
 			productPrice: 89500,
-			attributes: { material: "Full-grain Cordovan leather", sole: "Hand-stitched leather", origin: "England", warranty: "1 year" },
+			attributes: {
+				material: "Full-grain Cordovan leather",
+				sole: "Hand-stitched leather",
+				origin: "England",
+				warranty: "1 year",
+			},
 		},
 	];
 
@@ -3770,10 +4339,30 @@ async function seedPriceLists(client: pg.PoolClient) {
 	});
 
 	const entries = [
-		{ listId: priceListId, productKey: "observatory-chronograph", price: 310500, compareAtPrice: 345000 },
-		{ listId: priceListId, productKey: "regent-penny-loafer", price: 80550, compareAtPrice: 89500 },
-		{ listId: vipListId, productKey: "observatory-chronograph", price: 293250, compareAtPrice: 345000 },
-		{ listId: vipListId, productKey: "silk-twill-wrap", price: 32850, compareAtPrice: 36500 },
+		{
+			listId: priceListId,
+			productKey: "observatory-chronograph",
+			price: 310500,
+			compareAtPrice: 345000,
+		},
+		{
+			listId: priceListId,
+			productKey: "regent-penny-loafer",
+			price: 80550,
+			compareAtPrice: 89500,
+		},
+		{
+			listId: vipListId,
+			productKey: "observatory-chronograph",
+			price: 293250,
+			compareAtPrice: 345000,
+		},
+		{
+			listId: vipListId,
+			productKey: "silk-twill-wrap",
+			price: 32850,
+			compareAtPrice: 36500,
+		},
 	];
 	for (const entry of entries) {
 		const entryId = uuid(`price-entry:${entry.listId}:${entry.productKey}`);
@@ -3804,7 +4393,14 @@ async function seedProductFeeds(client: pg.PoolClient) {
 		status: "active",
 		country: "US",
 		currency: "USD",
-		fieldMappings: { id: "sku", title: "name", description: "description", price: "price", link: "url", imageLink: "images[0]" },
+		fieldMappings: {
+			id: "sku",
+			title: "name",
+			description: "description",
+			price: "price",
+			link: "url",
+			imageLink: "images[0]",
+		},
 		filters: { status: "active" },
 		itemCount: 5,
 		lastSyncAt: now,
@@ -3942,11 +4538,51 @@ async function seedMedia(client: pg.PoolClient) {
 	});
 
 	const assets = [
-		{ key: "observatory-chronograph", name: "Observatory Chronograph — Hero", productKey: "observatory-chronograph", mimeType: "image/jpeg", width: 1200, height: 900, size: 312400 },
-		{ key: "regent-penny-loafer", name: "Regent Penny Loafer — Hero", productKey: "regent-penny-loafer", mimeType: "image/jpeg", width: 1200, height: 900, size: 287600 },
-		{ key: "grand-tour-passport-folio", name: "Grand Tour Passport Folio — Hero", productKey: "grand-tour-passport-folio", mimeType: "image/jpeg", width: 1200, height: 900, size: 198300 },
-		{ key: "silk-twill-wrap", name: "Silk Twill Wrap — Hero", productKey: "silk-twill-wrap", mimeType: "image/jpeg", width: 1200, height: 900, size: 241800 },
-		{ key: "cashmere-fringe-scarf", name: "Cashmere Fringe Scarf — Hero", productKey: "cashmere-fringe-scarf", mimeType: "image/jpeg", width: 1200, height: 900, size: 259100 },
+		{
+			key: "observatory-chronograph",
+			name: "Observatory Chronograph — Hero",
+			productKey: "observatory-chronograph",
+			mimeType: "image/jpeg",
+			width: 1200,
+			height: 900,
+			size: 312400,
+		},
+		{
+			key: "regent-penny-loafer",
+			name: "Regent Penny Loafer — Hero",
+			productKey: "regent-penny-loafer",
+			mimeType: "image/jpeg",
+			width: 1200,
+			height: 900,
+			size: 287600,
+		},
+		{
+			key: "grand-tour-passport-folio",
+			name: "Grand Tour Passport Folio — Hero",
+			productKey: "grand-tour-passport-folio",
+			mimeType: "image/jpeg",
+			width: 1200,
+			height: 900,
+			size: 198300,
+		},
+		{
+			key: "silk-twill-wrap",
+			name: "Silk Twill Wrap — Hero",
+			productKey: "silk-twill-wrap",
+			mimeType: "image/jpeg",
+			width: 1200,
+			height: 900,
+			size: 241800,
+		},
+		{
+			key: "cashmere-fringe-scarf",
+			name: "Cashmere Fringe Scarf — Hero",
+			productKey: "cashmere-fringe-scarf",
+			mimeType: "image/jpeg",
+			width: 1200,
+			height: 900,
+			size: 259100,
+		},
 	];
 
 	for (const asset of assets) {
@@ -3990,7 +4626,10 @@ async function seedAutomations(client: pg.PoolClient) {
 			status: "active",
 			triggerEvent: "order.created",
 			conditions: [],
-			actions: [{ type: "send_email", template: "order-confirmed", delay: 0 }, { type: "send_notification", channel: "push", delay: 0 }],
+			actions: [
+				{ type: "send_email", template: "order-confirmed", delay: 0 },
+				{ type: "send_notification", channel: "push", delay: 0 },
+			],
 			priority: 10,
 			runCount: 1,
 		},
@@ -4000,7 +4639,14 @@ async function seedAutomations(client: pg.PoolClient) {
 			status: "active",
 			triggerEvent: "inventory.low_stock",
 			conditions: [{ field: "quantity", operator: "lte", value: 5 }],
-			actions: [{ type: "send_email", template: "low-stock-alert", to: "inventory@example.com", delay: 0 }],
+			actions: [
+				{
+					type: "send_email",
+					template: "low-stock-alert",
+					to: "inventory@example.com",
+					delay: 0,
+				},
+			],
 			priority: 20,
 			runCount: 2,
 		},
@@ -4016,16 +4662,28 @@ async function seedAutomations(client: pg.PoolClient) {
 	}
 
 	const executionId = uuid("automation-exec:order-confirmation:demo-order");
-	await insertModuleData(client, "automations", "automationExecution", executionId, {
-		id: executionId,
-		automationId: uuid("automation:order-confirmation"),
-		triggerEvent: "order.created",
-		triggerPayload: { orderId: uuid("order:demo"), customerId: customerIds["eleanor-vale"] },
-		status: "success",
-		results: [{ action: "send_email", status: "sent", messageId: "re_abc123" }, { action: "send_notification", status: "sent" }],
-		createdAt: now,
-		updatedAt: now,
-	});
+	await insertModuleData(
+		client,
+		"automations",
+		"automationExecution",
+		executionId,
+		{
+			id: executionId,
+			automationId: uuid("automation:order-confirmation"),
+			triggerEvent: "order.created",
+			triggerPayload: {
+				orderId: uuid("order:demo"),
+				customerId: customerIds["eleanor-vale"],
+			},
+			status: "success",
+			results: [
+				{ action: "send_email", status: "sent", messageId: "re_abc123" },
+				{ action: "send_notification", status: "sent" },
+			],
+			createdAt: now,
+			updatedAt: now,
+		},
+	);
 }
 
 async function seedPayments(client: pg.PoolClient) {
@@ -4069,10 +4727,42 @@ async function seedAnalytics(client: pg.PoolClient) {
 	const now = new Date().toISOString();
 
 	const events = [
-		{ key: "pageview-home", type: "page_view", sessionId: uuid("session:anon:1"), productId: null, orderId: null, value: null, data: { path: "/", referrer: "https://google.com" } },
-		{ key: "product-view-chronograph", type: "product_view", sessionId: uuid("session:marcus:1"), productId: productIds["observatory-chronograph"], orderId: null, value: null, data: { path: "/products/observatory-chronograph" } },
-		{ key: "add-to-cart-loafer", type: "add_to_cart", sessionId: uuid("session:eleanor:1"), productId: productIds["regent-penny-loafer"], orderId: null, value: 89500, data: { quantity: 1 } },
-		{ key: "purchase-demo", type: "purchase", sessionId: uuid("session:eleanor:1"), productId: null, orderId: uuid("order:demo"), value: 97197, data: { items: 2, currency: "USD" } },
+		{
+			key: "pageview-home",
+			type: "page_view",
+			sessionId: uuid("session:anon:1"),
+			productId: null,
+			orderId: null,
+			value: null,
+			data: { path: "/", referrer: "https://google.com" },
+		},
+		{
+			key: "product-view-chronograph",
+			type: "product_view",
+			sessionId: uuid("session:marcus:1"),
+			productId: productIds["observatory-chronograph"],
+			orderId: null,
+			value: null,
+			data: { path: "/products/observatory-chronograph" },
+		},
+		{
+			key: "add-to-cart-loafer",
+			type: "add_to_cart",
+			sessionId: uuid("session:eleanor:1"),
+			productId: productIds["regent-penny-loafer"],
+			orderId: null,
+			value: 89500,
+			data: { quantity: 1 },
+		},
+		{
+			key: "purchase-demo",
+			type: "purchase",
+			sessionId: uuid("session:eleanor:1"),
+			productId: null,
+			orderId: uuid("order:demo"),
+			value: 97197,
+			data: { items: 2, currency: "USD" },
+		},
 	];
 
 	for (const event of events) {
@@ -4095,21 +4785,38 @@ async function seedSocialSharing(client: pg.PoolClient) {
 	const now = new Date().toISOString();
 
 	const settingsId = uuid("share-settings:default");
-	await insertModuleData(client, "social-sharing", "shareSettings", settingsId, {
-		id: settingsId,
-		enabledNetworks: ["instagram", "pinterest", "x", "whatsapp", "email"],
-		defaultMessage: "Discover this at Atelier — ",
-		hashtags: ["AtelierStyle", "LuxuryFashion", "CraftsmanshipMatters"],
-		customTemplates: {
-			instagram: "Just discovered this at Atelier 🖤 {{productName}} #AtelierStyle",
+	await insertModuleData(
+		client,
+		"social-sharing",
+		"shareSettings",
+		settingsId,
+		{
+			id: settingsId,
+			enabledNetworks: ["instagram", "pinterest", "x", "whatsapp", "email"],
+			defaultMessage: "Discover this at Atelier — ",
+			hashtags: ["AtelierStyle", "LuxuryFashion", "CraftsmanshipMatters"],
+			customTemplates: {
+				instagram:
+					"Just discovered this at Atelier 🖤 {{productName}} #AtelierStyle",
+			},
+			createdAt: now,
+			updatedAt: now,
 		},
-		createdAt: now,
-		updatedAt: now,
-	});
+	);
 
 	const shareEvents = [
-		{ key: "eleanor-pinterest-loafer", network: "pinterest", targetType: "product", productKey: "regent-penny-loafer" },
-		{ key: "sofia-whatsapp-scarf", network: "whatsapp", targetType: "product", productKey: "cashmere-fringe-scarf" },
+		{
+			key: "eleanor-pinterest-loafer",
+			network: "pinterest",
+			targetType: "product",
+			productKey: "regent-penny-loafer",
+		},
+		{
+			key: "sofia-whatsapp-scarf",
+			network: "whatsapp",
+			targetType: "product",
+			productKey: "cashmere-fringe-scarf",
+		},
 	];
 
 	for (const event of shareEvents) {
@@ -4158,12 +4865,24 @@ async function seedQrCodes(client: pg.PoolClient) {
 	];
 
 	for (const code of codes) {
-		await insertModuleData(client, "qr-code", "qrCode", code.id, { ...code, createdAt: now, updatedAt: now });
+		await insertModuleData(client, "qr-code", "qrCode", code.id, {
+			...code,
+			createdAt: now,
+			updatedAt: now,
+		});
 	}
 
 	const scans = [
-		{ id: uuid("qr-scan:homepage:1"), qrCodeId: uuid("qr:homepage"), userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)" },
-		{ id: uuid("qr-scan:chronograph:1"), qrCodeId: uuid("qr:chronograph-pdp"), userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X)" },
+		{
+			id: uuid("qr-scan:homepage:1"),
+			qrCodeId: uuid("qr:homepage"),
+			userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)",
+		},
+		{
+			id: uuid("qr-scan:chronograph:1"),
+			qrCodeId: uuid("qr:chronograph-pdp"),
+			userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X)",
+		},
 	];
 
 	for (const scan of scans) {
@@ -4189,7 +4908,12 @@ async function seedKiosk(client: pg.PoolClient) {
 		isOnline: true,
 		isActive: true,
 		lastHeartbeat: now,
-		settings: { timeout: 120, theme: "light", allowGuestCheckout: true, showRecommendations: true },
+		settings: {
+			timeout: 120,
+			theme: "light",
+			allowGuestCheckout: true,
+			showRecommendations: true,
+		},
 		createdAt: now,
 		updatedAt: now,
 	});
@@ -4199,7 +4923,14 @@ async function seedKiosk(client: pg.PoolClient) {
 		id: sessionId,
 		stationId,
 		status: "completed",
-		items: [{ productId: productIds["regent-penny-loafer"], productName: "Regent Penny Loafer", quantity: 1, price: 89500 }],
+		items: [
+			{
+				productId: productIds["regent-penny-loafer"],
+				productName: "Regent Penny Loafer",
+				quantity: 1,
+				price: 89500,
+			},
+		],
 		subtotal: 89500,
 		tax: 7697,
 		tip: 0,
@@ -4217,8 +4948,20 @@ async function seedAmazon(client: pg.PoolClient) {
 	const now = new Date().toISOString();
 
 	const listings = [
-		{ productKey: "grand-tour-passport-folio", asin: "B0C1234GTF", sku: "GTF-001", price: 44500, quantity: 12 },
-		{ productKey: "regent-penny-loafer", asin: "B0C5678RPL", sku: "RPL-37-BLACK", price: 89500, quantity: 8 },
+		{
+			productKey: "grand-tour-passport-folio",
+			asin: "B0C1234GTF",
+			sku: "GTF-001",
+			price: 44500,
+			quantity: 12,
+		},
+		{
+			productKey: "regent-penny-loafer",
+			asin: "B0C5678RPL",
+			sku: "RPL-37-BLACK",
+			price: 89500,
+			quantity: 8,
+		},
 	];
 	for (const listing of listings) {
 		const id = uuid(`amazon-listing:${listing.productKey}`);
@@ -4253,7 +4996,12 @@ async function seedAmazon(client: pg.PoolClient) {
 		marketplaceFee: 6675,
 		netProceeds: 37825,
 		buyerName: "A. Richardson",
-		shippingAddress: { city: "New York", state: "NY", postalCode: "10001", country: "US" },
+		shippingAddress: {
+			city: "New York",
+			state: "NY",
+			postalCode: "10001",
+			country: "US",
+		},
 		shipDate: now,
 		trackingNumber: "1Z999AA10123400001",
 		carrier: "UPS",
@@ -4278,7 +5026,11 @@ async function seedEbay(client: pg.PoolClient) {
 
 	const listings = [
 		{ productKey: "silk-twill-wrap", externalId: "123456789012", price: 36500 },
-		{ productKey: "cashmere-fringe-scarf", externalId: "234567890123", price: 49500 },
+		{
+			productKey: "cashmere-fringe-scarf",
+			externalId: "234567890123",
+			price: 49500,
+		},
 	];
 	for (const listing of listings) {
 		const id = uuid(`ebay-listing:${listing.productKey}`);
@@ -4309,7 +5061,12 @@ async function seedEbay(client: pg.PoolClient) {
 		ebayFee: 3650,
 		netProceeds: 32850,
 		buyerUsername: "style_collector_99",
-		shippingAddress: { city: "Chicago", state: "IL", postalCode: "60601", country: "US" },
+		shippingAddress: {
+			city: "Chicago",
+			state: "IL",
+			postalCode: "60601",
+			country: "US",
+		},
 		createdAt: now,
 		updatedAt: now,
 	});
@@ -4320,7 +5077,11 @@ async function seedEtsy(client: pg.PoolClient) {
 	const now = new Date().toISOString();
 
 	const listings = [
-		{ productKey: "cashmere-fringe-scarf", externalId: "1234567890", price: 49500 },
+		{
+			productKey: "cashmere-fringe-scarf",
+			externalId: "1234567890",
+			price: 49500,
+		},
 		{ productKey: "silk-twill-wrap", externalId: "2345678901", price: 36500 },
 	];
 	for (const listing of listings) {
@@ -4361,7 +5122,8 @@ async function seedEtsy(client: pg.PoolClient) {
 		id: etsyReviewId,
 		orderId: etsyOrderId,
 		rating: 5,
-		comment: "Exquisite quality — the cashmere is incredibly soft. Beautifully packaged, arrived promptly.",
+		comment:
+			"Exquisite quality — the cashmere is incredibly soft. Beautifully packaged, arrived promptly.",
 		buyerName: "H. Dupont",
 		createdAt: now,
 	});
@@ -4372,8 +5134,16 @@ async function seedTiktokShop(client: pg.PoolClient) {
 	const now = new Date().toISOString();
 
 	const listings = [
-		{ productKey: "regent-penny-loafer", externalId: "tts_listing_001", price: 89500 },
-		{ productKey: "silk-twill-wrap", externalId: "tts_listing_002", price: 36500 },
+		{
+			productKey: "regent-penny-loafer",
+			externalId: "tts_listing_001",
+			price: 89500,
+		},
+		{
+			productKey: "silk-twill-wrap",
+			externalId: "tts_listing_002",
+			price: 36500,
+		},
 	];
 	for (const listing of listings) {
 		const id = uuid(`tiktok-listing:${listing.productKey}`);
@@ -4392,19 +5162,27 @@ async function seedTiktokShop(client: pg.PoolClient) {
 	}
 
 	const channelOrderId = uuid("tiktok-order:TTS20260513001");
-	await insertModuleData(client, "tiktok-shop", "channelOrder", channelOrderId, {
-		id: channelOrderId,
-		externalOrderId: "TTS20260513001",
-		status: "completed",
-		items: [{ externalProductId: "tts_listing_002", quantity: 1, price: 36500 }],
-		subtotal: 36500,
-		platformFee: 1825,
-		netProceeds: 34675,
-		buyerUsername: "luxe_finds_daily",
-		shippingAddress: { city: "Los Angeles", state: "CA", country: "US" },
-		createdAt: now,
-		updatedAt: now,
-	});
+	await insertModuleData(
+		client,
+		"tiktok-shop",
+		"channelOrder",
+		channelOrderId,
+		{
+			id: channelOrderId,
+			externalOrderId: "TTS20260513001",
+			status: "completed",
+			items: [
+				{ externalProductId: "tts_listing_002", quantity: 1, price: 36500 },
+			],
+			subtotal: 36500,
+			platformFee: 1825,
+			netProceeds: 34675,
+			buyerUsername: "luxe_finds_daily",
+			shippingAddress: { city: "Los Angeles", state: "CA", country: "US" },
+			createdAt: now,
+			updatedAt: now,
+		},
+	);
 
 	const catalogSyncId = uuid("tiktok-catalog-sync:2026-05");
 	await insertModuleData(client, "tiktok-shop", "catalogSync", catalogSyncId, {
@@ -4462,16 +5240,22 @@ async function seedGoogleShopping(client: pg.PoolClient) {
 	}
 
 	const submissionId = uuid("google-shopping-submission:2026-05");
-	await insertModuleData(client, "google-shopping", "feedSubmission", submissionId, {
-		id: submissionId,
-		feedId,
-		status: "success",
-		itemsSubmitted: 5,
-		itemsSucceeded: 5,
-		itemsFailed: 0,
-		submittedAt: now,
-		createdAt: now,
-	});
+	await insertModuleData(
+		client,
+		"google-shopping",
+		"feedSubmission",
+		submissionId,
+		{
+			id: submissionId,
+			feedId,
+			status: "success",
+			itemsSubmitted: 5,
+			itemsSucceeded: 5,
+			itemsFailed: 0,
+			submittedAt: now,
+			createdAt: now,
+		},
+	);
 }
 
 async function seedFacebookShop(client: pg.PoolClient) {
@@ -4494,7 +5278,11 @@ async function seedFacebookShop(client: pg.PoolClient) {
 		id: collectionId,
 		name: "Accessories",
 		externalCollectionId: "fb_col_accessories_001",
-		productIds: [productIds["silk-twill-wrap"], productIds["cashmere-fringe-scarf"], productIds["grand-tour-passport-folio"]],
+		productIds: [
+			productIds["silk-twill-wrap"],
+			productIds["cashmere-fringe-scarf"],
+			productIds["grand-tour-passport-folio"],
+		],
 		isActive: true,
 		createdAt: now,
 		updatedAt: now,
@@ -4520,19 +5308,31 @@ async function seedFacebookShop(client: pg.PoolClient) {
 	}
 
 	const channelOrderId = uuid("fb-order:FB20260513001");
-	await insertModuleData(client, "facebook-shop", "channelOrder", channelOrderId, {
-		id: channelOrderId,
-		externalOrderId: "FB20260513001",
-		status: "completed",
-		items: [{ externalProductId: "fb_regent_penny_loafer", quantity: 1, price: 89500 }],
-		subtotal: 89500,
-		platformFee: 2685,
-		netProceeds: 86815,
-		buyerName: "R. Laurent",
-		shippingAddress: { city: "Miami", state: "FL", country: "US" },
-		createdAt: now,
-		updatedAt: now,
-	});
+	await insertModuleData(
+		client,
+		"facebook-shop",
+		"channelOrder",
+		channelOrderId,
+		{
+			id: channelOrderId,
+			externalOrderId: "FB20260513001",
+			status: "completed",
+			items: [
+				{
+					externalProductId: "fb_regent_penny_loafer",
+					quantity: 1,
+					price: 89500,
+				},
+			],
+			subtotal: 89500,
+			platformFee: 2685,
+			netProceeds: 86815,
+			buyerName: "R. Laurent",
+			shippingAddress: { city: "Miami", state: "FL", country: "US" },
+			createdAt: now,
+			updatedAt: now,
+		},
+	);
 }
 
 async function seedInstagramShop(client: pg.PoolClient) {
@@ -4540,15 +5340,21 @@ async function seedInstagramShop(client: pg.PoolClient) {
 	const now = new Date().toISOString();
 
 	const catalogSyncId = uuid("ig-catalog-sync:atelier");
-	await insertModuleData(client, "instagram-shop", "catalogSync", catalogSyncId, {
-		id: catalogSyncId,
-		catalogId: "ig_catalog_atelier_001",
-		status: "active",
-		itemCount: 5,
-		lastSyncedAt: now,
-		createdAt: now,
-		updatedAt: now,
-	});
+	await insertModuleData(
+		client,
+		"instagram-shop",
+		"catalogSync",
+		catalogSyncId,
+		{
+			id: catalogSyncId,
+			catalogId: "ig_catalog_atelier_001",
+			status: "active",
+			itemCount: 5,
+			lastSyncedAt: now,
+			createdAt: now,
+			updatedAt: now,
+		},
+	);
 
 	const igListings = [
 		{ productKey: "silk-twill-wrap" },
@@ -4570,19 +5376,27 @@ async function seedInstagramShop(client: pg.PoolClient) {
 	}
 
 	const channelOrderId = uuid("ig-order:IG20260513001");
-	await insertModuleData(client, "instagram-shop", "channelOrder", channelOrderId, {
-		id: channelOrderId,
-		externalOrderId: "IG20260513001",
-		status: "completed",
-		items: [{ externalProductId: "ig_silk_twill_wrap", quantity: 1, price: 36500 }],
-		subtotal: 36500,
-		platformFee: 1825,
-		netProceeds: 34675,
-		buyerName: "V. Moreau",
-		shippingAddress: { city: "Toronto", country: "CA" },
-		createdAt: now,
-		updatedAt: now,
-	});
+	await insertModuleData(
+		client,
+		"instagram-shop",
+		"channelOrder",
+		channelOrderId,
+		{
+			id: channelOrderId,
+			externalOrderId: "IG20260513001",
+			status: "completed",
+			items: [
+				{ externalProductId: "ig_silk_twill_wrap", quantity: 1, price: 36500 },
+			],
+			subtotal: 36500,
+			platformFee: 1825,
+			netProceeds: 34675,
+			buyerName: "V. Moreau",
+			shippingAddress: { city: "Toronto", country: "CA" },
+			createdAt: now,
+			updatedAt: now,
+		},
+	);
 }
 
 async function seedWalmart(client: pg.PoolClient) {
@@ -4590,8 +5404,16 @@ async function seedWalmart(client: pg.PoolClient) {
 	const now = new Date().toISOString();
 
 	const items = [
-		{ productKey: "grand-tour-passport-folio", externalId: "WM_GTF_001", price: 44500 },
-		{ productKey: "cashmere-fringe-scarf", externalId: "WM_CFS_001", price: 49500 },
+		{
+			productKey: "grand-tour-passport-folio",
+			externalId: "WM_GTF_001",
+			price: 44500,
+		},
+		{
+			productKey: "cashmere-fringe-scarf",
+			externalId: "WM_CFS_001",
+			price: 49500,
+		},
 	];
 	for (const item of items) {
 		const id = uuid(`walmart-item:${item.productKey}`);
@@ -4627,16 +5449,22 @@ async function seedWalmart(client: pg.PoolClient) {
 	});
 
 	const feedSubmissionId = uuid("walmart-feed-submission:2026-05");
-	await insertModuleData(client, "walmart", "feedSubmission", feedSubmissionId, {
-		id: feedSubmissionId,
-		feedId: "WM_FEED_20260513",
-		status: "processed",
-		itemsSubmitted: 2,
-		itemsSucceeded: 2,
-		itemsFailed: 0,
-		submittedAt: now,
-		createdAt: now,
-	});
+	await insertModuleData(
+		client,
+		"walmart",
+		"feedSubmission",
+		feedSubmissionId,
+		{
+			id: feedSubmissionId,
+			feedId: "WM_FEED_20260513",
+			status: "processed",
+			itemsSubmitted: 2,
+			itemsSucceeded: 2,
+			itemsFailed: 0,
+			submittedAt: now,
+			createdAt: now,
+		},
+	);
 }
 
 async function seedXShop(client: pg.PoolClient) {
@@ -4666,7 +5494,10 @@ async function seedXShop(client: pg.PoolClient) {
 	await insertModuleData(client, "x-shop", "productDrop", productDropId, {
 		id: productDropId,
 		name: "Atelier Spring 2026 Drop",
-		productIds: [productIds["observatory-chronograph"], productIds["regent-penny-loafer"]],
+		productIds: [
+			productIds["observatory-chronograph"],
+			productIds["regent-penny-loafer"],
+		],
 		dropAt: "2026-03-21T12:00:00.000Z",
 		status: "completed",
 		tweetId: "1234567890123456789",
@@ -4681,7 +5512,9 @@ async function seedXShop(client: pg.PoolClient) {
 		id: channelOrderId,
 		externalOrderId: "XS20260513001",
 		status: "completed",
-		items: [{ externalProductId: "x_regent_penny_loafer", quantity: 1, price: 89500 }],
+		items: [
+			{ externalProductId: "x_regent_penny_loafer", quantity: 1, price: 89500 },
+		],
 		subtotal: 89500,
 		platformFee: 2685,
 		netProceeds: 86815,
@@ -4697,15 +5530,21 @@ async function seedPinterestShop(client: pg.PoolClient) {
 	const now = new Date().toISOString();
 
 	const catalogSyncId = uuid("pinterest-catalog-sync:atelier");
-	await insertModuleData(client, "pinterest-shop", "catalogSync", catalogSyncId, {
-		id: catalogSyncId,
-		catalogId: "pin_catalog_atelier_001",
-		status: "active",
-		itemCount: 5,
-		lastSyncedAt: now,
-		createdAt: now,
-		updatedAt: now,
-	});
+	await insertModuleData(
+		client,
+		"pinterest-shop",
+		"catalogSync",
+		catalogSyncId,
+		{
+			id: catalogSyncId,
+			catalogId: "pin_catalog_atelier_001",
+			status: "active",
+			itemCount: 5,
+			lastSyncedAt: now,
+			createdAt: now,
+			updatedAt: now,
+		},
+	);
 
 	const catalogItems = [
 		{ productKey: "silk-twill-wrap" },
@@ -4730,7 +5569,11 @@ async function seedPinterestShop(client: pg.PoolClient) {
 
 	const pins = [
 		{ productKey: "silk-twill-wrap", pinId: "PIN_1234567890", repins: 342 },
-		{ productKey: "cashmere-fringe-scarf", pinId: "PIN_2345678901", repins: 218 },
+		{
+			productKey: "cashmere-fringe-scarf",
+			pinId: "PIN_2345678901",
+			repins: 218,
+		},
 	];
 	for (const pin of pins) {
 		const id = uuid(`shopping-pin:${pin.productKey}`);
@@ -4787,8 +5630,18 @@ async function seedDoordash(client: pg.PoolClient) {
 		orderId,
 		externalDeliveryId: "D_EXT_20260513_001",
 		status: "delivered",
-		pickupAddress: { street: "47 Kensington Park Gardens", city: "London", postalCode: "W11 2PN", country: "GB" },
-		dropoffAddress: { street: "12 Sloane Square", city: "London", postalCode: "SW1W 8EG", country: "GB" },
+		pickupAddress: {
+			street: "47 Kensington Park Gardens",
+			city: "London",
+			postalCode: "W11 2PN",
+			country: "GB",
+		},
+		dropoffAddress: {
+			street: "12 Sloane Square",
+			city: "London",
+			postalCode: "SW1W 8EG",
+			country: "GB",
+		},
 		fee: 799,
 		tip: 200,
 		trackingUrl: "https://doordash.com/track/D_EXT_20260513_001",
@@ -4808,7 +5661,12 @@ async function seedUberDirect(client: pg.PoolClient) {
 		id: serviceAreaId,
 		name: "London Central",
 		isActive: true,
-		polygon: [{ lat: 51.51, lng: -0.13 }, { lat: 51.52, lng: -0.20 }, { lat: 51.50, lng: -0.20 }, { lat: 51.50, lng: -0.13 }],
+		polygon: [
+			{ lat: 51.51, lng: -0.13 },
+			{ lat: 51.52, lng: -0.2 },
+			{ lat: 51.5, lng: -0.2 },
+			{ lat: 51.5, lng: -0.13 },
+		],
 		minOrderAmount: 5000,
 		deliveryFee: 899,
 		estimatedMinutes: 40,
@@ -4834,8 +5692,16 @@ async function seedUberDirect(client: pg.PoolClient) {
 		orderId: uuid("order:demo"),
 		externalDeliveryId: "UBERD_DELIV_001",
 		status: "delivered",
-		pickupAddress: { street: "47 Kensington Park Gardens", city: "London", postalCode: "W11 2PN" },
-		dropoffAddress: { street: "30 Beauchamp Place", city: "London", postalCode: "SW3 1NJ" },
+		pickupAddress: {
+			street: "47 Kensington Park Gardens",
+			city: "London",
+			postalCode: "W11 2PN",
+		},
+		dropoffAddress: {
+			street: "30 Beauchamp Place",
+			city: "London",
+			postalCode: "SW3 1NJ",
+		},
 		fee: 899,
 		tip: 150,
 		trackingUrl: "https://m.uber.com/track/UBERD_DELIV_001",
@@ -4903,8 +5769,16 @@ async function seedFavor(client: pg.PoolClient) {
 		orderId: uuid("order:demo"),
 		externalDeliveryId: "FAVOR_DEL_001",
 		status: "delivered",
-		pickupAddress: { street: "47 Kensington Park Gardens", city: "London", postalCode: "W11 2PN" },
-		dropoffAddress: { street: "5 Ladbroke Grove", city: "London", postalCode: "W11 3BD" },
+		pickupAddress: {
+			street: "47 Kensington Park Gardens",
+			city: "London",
+			postalCode: "W11 2PN",
+		},
+		dropoffAddress: {
+			street: "5 Ladbroke Grove",
+			city: "London",
+			postalCode: "W11 3BD",
+		},
 		fee: 699,
 		tip: 100,
 		runnerName: "Oliver M.",
@@ -4933,7 +5807,10 @@ async function seedToast(client: pg.PoolClient) {
 
 	const mappings = [
 		{ productKey: "regent-penny-loafer", externalMenuItemId: "TOAST_ITEM_001" },
-		{ productKey: "grand-tour-passport-folio", externalMenuItemId: "TOAST_ITEM_002" },
+		{
+			productKey: "grand-tour-passport-folio",
+			externalMenuItemId: "TOAST_ITEM_002",
+		},
 	];
 	for (const mapping of mappings) {
 		const mappingId = uuid(`toast-menu-mapping:${mapping.productKey}`);
@@ -5001,15 +5878,38 @@ async function seedPhotoBooth(client: pg.PoolClient) {
 		photoCount: 3,
 		startedAt: now,
 		endedAt: now,
-		settings: { watermark: true, overlayText: "Atelier Holiday 2026", autoShare: false, filterStyle: "warm" },
+		settings: {
+			watermark: true,
+			overlayText: "Atelier Holiday 2026",
+			autoShare: false,
+			filterStyle: "warm",
+		},
 		createdAt: now,
 		updatedAt: now,
 	});
 
 	const photos = [
-		{ key: "photo-1", email: "eleanor@example.com", caption: "Wearing the Observatory Chronograph at the Atelier event", sendStatus: "sent", isPublic: true },
-		{ key: "photo-2", email: "marcus@example.com", caption: "Grand Tour Passport Folio — the perfect travel companion", sendStatus: "sent", isPublic: true },
-		{ key: "photo-3", email: "sofia@example.com", caption: "Cashmere Fringe Scarf — winter elegance", sendStatus: "pending", isPublic: false },
+		{
+			key: "photo-1",
+			email: "eleanor@example.com",
+			caption: "Wearing the Observatory Chronograph at the Atelier event",
+			sendStatus: "sent",
+			isPublic: true,
+		},
+		{
+			key: "photo-2",
+			email: "marcus@example.com",
+			caption: "Grand Tour Passport Folio — the perfect travel companion",
+			sendStatus: "sent",
+			isPublic: true,
+		},
+		{
+			key: "photo-3",
+			email: "sofia@example.com",
+			caption: "Cashmere Fringe Scarf — winter elegance",
+			sendStatus: "pending",
+			isPublic: false,
+		},
 	];
 
 	for (const photo of photos) {
@@ -5147,12 +6047,18 @@ async function main() {
 		console.log("\n✅ Seed complete!");
 		console.log("\n  Admin credentials:");
 		console.log(`    Email:    ${ADMIN_EMAIL}`);
-		console.log(`    Password: ${ADMIN_PASSWORD === "password123" ? "password123" : "(as entered)"}`);
+		console.log(
+			`    Password: ${ADMIN_PASSWORD === "password123" ? "password123" : "(as entered)"}`,
+		);
 		console.log(
 			`\n  ${summary.productCount} products, ${summary.categoryCount} categories, ${summary.collectionCount} collections`,
 		);
-		console.log(`  ${products.reduce((sum, product) => sum + product.variants.length, 0)} variants`);
-		console.log(`  ${customers.length} customers, 1 demo order, ${blogPosts.length} journal posts`);
+		console.log(
+			`  ${products.reduce((sum, product) => sum + product.variants.length, 0)} variants`,
+		);
+		console.log(
+			`  ${customers.length} customers, 1 demo order, ${blogPosts.length} journal posts`,
+		);
 		console.log(`  ${moduleNames.length} modules registered`);
 		console.log(`  Assets uploaded under ${ASSET_KEY_PREFIX}\n`);
 	} catch (error) {

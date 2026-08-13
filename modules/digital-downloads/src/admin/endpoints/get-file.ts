@@ -1,4 +1,5 @@
-import { createAdminEndpoint, z } from "@86d-app/core";
+import { createAdminEndpoint } from "@86d-app/core/api";
+import { z } from "@86d-app/core/zod";
 import type { DigitalDownloadsController } from "../../service";
 
 export const getFile = createAdminEndpoint(

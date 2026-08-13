@@ -1,6 +1,6 @@
 "use client";
 
-import { escapeScriptContent } from "@86d-app/core";
+import { escapeScriptContent } from "@86d-app/core/sanitize";
 import { observer } from "@86d-app/core/state";
 import type { MetaTag } from "../../service";
 import { useSeoApi } from "./_hooks";

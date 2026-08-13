@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { createAdminEndpointsWithSettings } from "../admin/endpoints";
 import { createGetSettingsEndpoint } from "../admin/endpoints/get-settings";
-import { createStoreEndpoints, storeEndpoints } from "../store/endpoints";
+import { createAdminEndpointsWithSettings } from "../admin/endpoints/routes";
+import {
+	createStoreEndpoints,
+	storeEndpoints,
+} from "../store/endpoints/routes";
 import { createUberDirectWebhook } from "../store/endpoints/webhook";
 
 describe("uber-direct endpoint security", () => {

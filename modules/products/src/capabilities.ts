@@ -1,4 +1,5 @@
-import { productResolveCapability, provideCapability } from "@86d-app/core";
+import { provideCapability } from "@86d-app/core/capabilities";
+import { productResolveCapability } from "@86d-app/core/commerce-capabilities";
 import { createProductController } from "./service-impl";
 
 export { productResolveCapability };

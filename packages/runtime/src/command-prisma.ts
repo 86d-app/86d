@@ -10,7 +10,7 @@ import {
 	grantUseSchema,
 	jsonValueSchema,
 	targetReferenceSchema,
-} from "@86d-app/core";
+} from "@86d-app/core/commands";
 import type {
 	CommandExecutionClaim,
 	CommandPersistence,

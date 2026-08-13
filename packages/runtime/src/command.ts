@@ -19,7 +19,7 @@ import {
 	jsonValueSchema,
 	type TargetReference,
 	targetReferenceSchema,
-} from "@86d-app/core";
+} from "@86d-app/core/commands";
 import {
 	type CommandAdmissionPolicy,
 	type CommandGrantAdapter,

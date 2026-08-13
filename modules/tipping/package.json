@@ -18,9 +18,23 @@
 	"homepage": "https://86d.app",
 	"type": "module",
 	"exports": {
-		"./components": "./src/store/components",
-		"./admin-components": "./src/admin/components",
-		"./*": "./src/*"
+		".": {
+			"types": "./src/index.ts",
+			"default": "./src/index.ts"
+		},
+		"./*": "./src/*",
+		"./admin/components/tip-payouts": {
+			"types": "./src/admin/components/tip-payouts.tsx",
+			"default": "./src/admin/components/tip-payouts.tsx"
+		},
+		"./admin/components/tipping-admin": {
+			"types": "./src/admin/components/tipping-admin.tsx",
+			"default": "./src/admin/components/tipping-admin.tsx"
+		},
+		"./components": {
+			"types": "./src/store/components/mdx.tsx",
+			"default": "./src/store/components/mdx.tsx"
+		}
 	},
 	"scripts": {
 		"build": "tsc",

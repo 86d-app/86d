@@ -3,9 +3,9 @@ import {
 	type LockingModuleDataTransaction,
 	type ModuleDataTransaction,
 	type ModuleTransactionRunner,
-	sanitizeText,
-	z,
-} from "@86d-app/core";
+} from "@86d-app/core/durable-events";
+import { sanitizeText } from "@86d-app/core/sanitize";
+import { z } from "@86d-app/core/zod";
 
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
 

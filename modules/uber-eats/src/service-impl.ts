@@ -1,15 +1,17 @@
-import type { ModuleDataService, ScopedEventEmitter } from "@86d-app/core";
+import type { ScopedEventEmitter } from "@86d-app/core/events";
+import type { ModuleDataService } from "@86d-app/core/types/module";
 import type { UberEatsProvider } from "./provider";
 import type {
 	MenuSync,
 	OrderStats,
 	UberEatsController,
+	UberEatsEntities,
 	UberOrder,
 	UberOrderStatus,
 } from "./service";
 
 export function createUberEatsController(
-	data: ModuleDataService,
+	data: ModuleDataService<UberEatsEntities>,
 	events?: ScopedEventEmitter | undefined,
 	provider?: UberEatsProvider | undefined,
 ): UberEatsController {
@@ -33,7 +35,7 @@ export function createUberEatsController(
 				createdAt: now,
 				updatedAt: now,
 			};
-			await data.upsert("uberOrder", id, order as Record<string, unknown>);
+			await data.upsert("uberOrder", id, order);
 			void events?.emit("ubereats.order.received", {
 				orderId: order.id,
 				externalOrderId: order.externalOrderId,
@@ -46,7 +48,7 @@ export function createUberEatsController(
 			const existing = await data.get("uberOrder", id);
 			if (!existing) return null;
 
-			const order = existing as unknown as UberOrder;
+			const order = existing;
 			if (order.status !== "pending") return null;
 
 			// Call Uber Eats API to accept the order
@@ -68,7 +70,7 @@ export function createUberEatsController(
 				status: "accepted",
 				updatedAt: now,
 			};
-			await data.upsert("uberOrder", id, updated as Record<string, unknown>);
+			await data.upsert("uberOrder", id, updated);
 			void events?.emit("ubereats.order.accepted", {
 				orderId: updated.id,
 				externalOrderId: updated.externalOrderId,
@@ -80,7 +82,7 @@ export function createUberEatsController(
 			const existing = await data.get("uberOrder", id);
 			if (!existing) return null;
 
-			const order = existing as unknown as UberOrder;
+			const order = existing;
 			if (order.status !== "accepted" && order.status !== "preparing") {
 				return null;
 			}
@@ -91,7 +93,7 @@ export function createUberEatsController(
 				status: "ready",
 				updatedAt: now,
 			};
-			await data.upsert("uberOrder", id, updated as Record<string, unknown>);
+			await data.upsert("uberOrder", id, updated);
 			void events?.emit("ubereats.order.ready", {
 				orderId: updated.id,
 				externalOrderId: updated.externalOrderId,
@@ -103,7 +105,7 @@ export function createUberEatsController(
 			const existing = await data.get("uberOrder", id);
 			if (!existing) return null;
 
-			const order = existing as unknown as UberOrder;
+			const order = existing;
 			if (
 				order.status === "delivered" ||
 				order.status === "cancelled" ||
@@ -135,7 +137,7 @@ export function createUberEatsController(
 				status: "cancelled",
 				updatedAt: now,
 			};
-			await data.upsert("uberOrder", id, updated as Record<string, unknown>);
+			await data.upsert("uberOrder", id, updated);
 			void events?.emit("ubereats.order.cancelled", {
 				orderId: updated.id,
 				externalOrderId: updated.externalOrderId,
@@ -146,7 +148,7 @@ export function createUberEatsController(
 		async getOrder(id) {
 			const raw = await data.get("uberOrder", id);
 			if (!raw) return null;
-			return raw as unknown as UberOrder;
+			return raw;
 		},
 
 		async listOrders(params) {
@@ -158,7 +160,7 @@ export function createUberEatsController(
 				...(params?.take !== undefined ? { take: params.take } : {}),
 				...(params?.skip !== undefined ? { skip: params.skip } : {}),
 			});
-			return all as unknown as UberOrder[];
+			return all;
 		},
 
 		async syncMenu(itemCount) {
@@ -172,7 +174,7 @@ export function createUberEatsController(
 				createdAt: now,
 			};
 
-			await data.upsert("menuSync", id, sync as Record<string, unknown>);
+			await data.upsert("menuSync", id, sync);
 
 			if (provider) {
 				try {
@@ -184,11 +186,7 @@ export function createUberEatsController(
 						itemCount: totalItems || itemCount,
 						completedAt: new Date(),
 					};
-					await data.upsert(
-						"menuSync",
-						id,
-						completed as Record<string, unknown>,
-					);
+					await data.upsert("menuSync", id, completed);
 					void events?.emit("ubereats.menu.synced", {
 						menuSyncId: completed.id,
 						itemCount: completed.itemCount,
@@ -203,7 +201,7 @@ export function createUberEatsController(
 						error: message,
 						completedAt: new Date(),
 					};
-					await data.upsert("menuSync", id, failed as Record<string, unknown>);
+					await data.upsert("menuSync", id, failed);
 					return failed;
 				}
 			}
@@ -214,7 +212,7 @@ export function createUberEatsController(
 				status: "synced",
 				completedAt: now,
 			};
-			await data.upsert("menuSync", id, completed as Record<string, unknown>);
+			await data.upsert("menuSync", id, completed);
 			void events?.emit("ubereats.menu.synced", {
 				menuSyncId: completed.id,
 				itemCount,
@@ -224,7 +222,7 @@ export function createUberEatsController(
 
 		async getLastMenuSync() {
 			const all = await data.findMany("menuSync", {});
-			const syncs = all as unknown as MenuSync[];
+			const syncs = all;
 			if (syncs.length === 0) return null;
 
 			let latest: MenuSync | null = null;
@@ -241,12 +239,12 @@ export function createUberEatsController(
 				...(params?.take !== undefined ? { take: params.take } : {}),
 				...(params?.skip !== undefined ? { skip: params.skip } : {}),
 			});
-			return all as unknown as MenuSync[];
+			return all;
 		},
 
 		async getOrderStats() {
 			const all = await data.findMany("uberOrder", {});
-			const orders = all as unknown as UberOrder[];
+			const orders = all;
 
 			const stats: OrderStats = {
 				total: orders.length,

@@ -1,7 +1,7 @@
 "use client";
 
 import type { CheckoutStep } from "@86d-app/checkout/state";
-import { useModuleClient } from "@86d-app/core/client";
+import { useModuleClient } from "@86d-app/core/client/provider";
 import { observer } from "@86d-app/core/state";
 import { useAnalytics } from "hooks/use-analytics";
 import { useStore } from "hooks/use-store";

@@ -1,4 +1,4 @@
-import { createAdminEndpoint } from "@86d-app/core";
+import { createAdminEndpoint } from "@86d-app/core/api";
 
 function maskKey(key: string): string {
 	if (key.length <= 8) return "****";

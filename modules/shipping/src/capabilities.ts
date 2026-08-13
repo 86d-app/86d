@@ -1,8 +1,6 @@
-import {
-	provideCapability,
-	shippingQuoteCapability,
-	type z,
-} from "@86d-app/core";
+import { provideCapability } from "@86d-app/core/capabilities";
+import { shippingQuoteCapability } from "@86d-app/core/commerce-capabilities";
+import type { z } from "@86d-app/core/zod";
 import type { ShippingController } from "./service";
 import { createShippingController } from "./service-impl";
 

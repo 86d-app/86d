@@ -45,7 +45,7 @@ export interface ModuleClientProviderProps {
  *
  * @example
  * ```tsx
- * import { ModuleClientProvider } from "@86d-app/core/client";
+ * import { ModuleClientProvider } from "@86d-app/core/client/provider";
  * import cart from "@86d-app/cart";
  *
  * function App({ children }) {

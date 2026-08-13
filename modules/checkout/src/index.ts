@@ -1,6 +1,5 @@
-import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
+import { acceptCapability } from "@86d-app/core/capabilities";
 import {
-	acceptCapability,
 	cartSnapshotCapability,
 	discountCodeCapability,
 	giftCardCheckoutCapability,
@@ -13,12 +12,17 @@ import {
 	shippingQuoteCapability,
 	storeCreditCheckoutCapability,
 	taxQuoteCapability,
-} from "@86d-app/core";
-import { adminEndpoints } from "./admin/endpoints";
+} from "@86d-app/core/commerce-capabilities";
+import type {
+	Module,
+	ModuleConfig,
+	ModuleContext,
+} from "@86d-app/core/types/module";
+import { adminEndpoints } from "./admin/endpoints/routes";
 import { checkoutFinalizationLifecycleV1 } from "./finalization";
 import { checkoutSchema } from "./schema";
 import { createCheckoutController } from "./service-impl";
-import { storeEndpoints } from "./store/endpoints";
+import { storeEndpoints } from "./store/endpoints/routes";
 
 export type {
 	CheckoutRequest,

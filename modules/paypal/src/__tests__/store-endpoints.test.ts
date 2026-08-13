@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createStoreEndpoints } from "../store/endpoints/index";
+import { createStoreEndpoints } from "../store/endpoints/routes";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

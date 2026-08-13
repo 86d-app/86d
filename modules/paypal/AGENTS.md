@@ -1,12 +1,15 @@
-# PayPal Module
+# PayPal Integration
 
-PayPal payment provider implementing the `PaymentProvider` interface from `@86d-app/payments`.
+PayPal Third-party Payment Integration. The connection-bound adapter implements
+the durable provider-neutral contract; the singleton provider remains migration
+compatibility only.
 
 ## Structure
 
 ```
 src/
   index.ts              Factory: paypal(options) => Module + admin nav
+  connection-provider.ts PaymentConnectionProvider for one immutable Connection
   provider.ts           PayPalPaymentProvider class (OAuth2 + REST API)
   mdx.d.ts              MDX module type declaration
   store/
@@ -38,29 +41,52 @@ PayPalOptions {
   sandbox?: string          // "true" or "1" for sandbox
   webhookId?: string        // Webhook ID for signature verification
 }
+
+PayPalPaymentConnectionProviderOptions {
+  connectionId: string
+  clientId: string
+  clientSecret: string
+  mode: "test" | "live"
+  returnUrl: string       // trusted HTTPS Store callback
+  cancelUrl: string       // trusted HTTPS Store callback
+}
 ```
 
 ## Authentication
 
 OAuth2 client credentials flow. Tokens cached with 60-second expiry buffer.
 
-## API Mapping
+## Connection-bound API mapping
 
-| Method | PayPal endpoint |
+| Operation | PayPal endpoint |
 |---|---|
-| createIntent | POST /v2/checkout/orders (intent: AUTHORIZE) |
-| confirmIntent | POST /v2/checkout/orders/{id}/capture |
-| cancelIntent | GET /v2/checkout/orders/{id} (orders expire naturally) |
-| createRefund | GET order → extract captureId → POST /v2/payments/captures/{id}/refund |
+| intent | POST /v2/checkout/orders (intent: AUTHORIZE) |
+| authorization | POST /v2/checkout/orders/{orderId}/authorize |
+| capture | POST /v2/payments/authorizations/{authorizationId}/capture |
+| void | POST /v2/payments/authorizations/{authorizationId}/void, then GET |
+| refund | POST /v2/payments/captures/{captureId}/refund |
+| reconcile | canonical GET when an exact resource is known; bounded Create Order replay only inside documented retention |
+
+The v2 adapter forwards the durable operation key unchanged as
+`PayPal-Request-Id`, verifies the exact source provenance and returned money,
+and never searches for a different order, authorization, capture, or
+Connection. Equal partial refunds remain distinct through distinct caller
+operation keys. It honors PayPal's HUF/JPY/TWD zero-digit currency exponents;
+all other supported currencies use two digits. Shopper handoff recognizes the
+current `payer-action` relation, and known payer/PENDING states remain
+`requires_action`/`pending` rather than consuming the ambiguity budget.
+
+The legacy `PayPalPaymentProvider` creates `CAPTURE` orders. It is not the
+authorize/capture contract above and must not be used to activate Checkout.
 
 ## Status mapping
 
 | PayPal status | Provider status |
 |---|---|
-| COMPLETED | succeeded |
-| VOIDED | cancelled |
-| APPROVED | processing |
-| CREATED, SAVED, PAYER_ACTION_REQUIRED | pending |
+| COMPLETED, APPROVED | succeeded when valid for the operation |
+| PENDING | pending |
+| CREATED/SAVED with payer link, PAYER_ACTION_REQUIRED | requires_action |
+| CREATED/SAVED without payer link | pending |
 
 ## Webhook
 
@@ -72,7 +98,8 @@ OAuth2 client credentials flow. Tokens cached with 60-second expiry buffer.
 
 ## Patterns
 
-- Amounts: cents in PaymentProvider interface → dollars in PayPal API (formatAmount)
+- Amounts: currency minor units in the provider interface → exponent-aware PayPal values
 - Sandbox URL: `api-m.sandbox.paypal.com` vs `api-m.paypal.com`
 - Admin endpoint masks credentials (first 7 chars visible)
-- Tests mock `globalThis.fetch` — no real PayPal calls
+- Tests use official-shape HTTP fixtures through `globalThis.fetch` — no sandbox
+  or live PayPal calls, so the Integration remains below Stable

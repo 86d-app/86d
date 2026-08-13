@@ -2,7 +2,7 @@ import type {
 	PaymentProvider,
 	ProviderIntentResult,
 	ProviderRefundResult,
-} from "@86d-app/core";
+} from "@86d-app/core/payment-provider";
 
 // Braintree transaction status values
 type BraintreeTransactionStatus =

@@ -4,10 +4,8 @@ import { test as base, expect, type Page } from "@playwright/test";
 /* Constants                                                           */
 /* ------------------------------------------------------------------ */
 
-export const ADMIN_EMAIL =
-	process.env.E2E_ADMIN_EMAIL || "admin@example.com";
-export const ADMIN_PASSWORD =
-	process.env.E2E_ADMIN_PASSWORD || "password123";
+export const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL || "admin@example.com";
+export const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD || "password123";
 
 /* ------------------------------------------------------------------ */
 /* Page-object helpers                                                 */
@@ -30,9 +28,7 @@ export class StorefrontPage {
 	}
 
 	get cartDrawer() {
-		return this.page.locator(
-			'[role="dialog"][aria-label="Shopping cart"]',
-		);
+		return this.page.locator('[role="dialog"][aria-label="Shopping cart"]');
 	}
 
 	get cartItems() {
@@ -113,10 +109,9 @@ export class AdminPage {
 		await form.locator('button[type="submit"]').click();
 		/* Wait for redirect to admin — use pathname check to avoid matching
 		   the query string in /auth/signin?redirect=/admin */
-		await this.page.waitForURL(
-			(url) => url.pathname.startsWith("/admin"),
-			{ timeout: 15_000 },
-		);
+		await this.page.waitForURL((url) => url.pathname.startsWith("/admin"), {
+			timeout: 15_000,
+		});
 	}
 
 	get heading() {
@@ -199,9 +194,7 @@ export class DashboardPage {
 	}
 
 	async navigateToFirstStore() {
-		const storeLink = this.page
-			.locator("a[href*='/stores/']")
-			.first();
+		const storeLink = this.page.locator("a[href*='/stores/']").first();
 		await storeLink.click();
 		await this.page.waitForURL(/\/stores\//);
 	}

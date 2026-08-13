@@ -1,6 +1,6 @@
 "use client";
 
-import { useModuleClient } from "@86d-app/core/client";
+import { useModuleClient } from "@86d-app/core/client/provider";
 
 export function useSearchApi() {
 	const client = useModuleClient();

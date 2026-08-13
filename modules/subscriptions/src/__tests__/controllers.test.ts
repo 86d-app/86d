@@ -1,4 +1,4 @@
-import type { ScopedEventEmitter } from "@86d-app/core";
+import type { ScopedEventEmitter } from "@86d-app/core/events";
 import { createMockDataService } from "@86d-app/core/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createSubscriptionController } from "../service-impl";

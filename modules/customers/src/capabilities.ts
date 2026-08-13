@@ -1,8 +1,8 @@
+import { provideCapability } from "@86d-app/core/capabilities";
 import {
 	customerContactResolveCapability,
 	customerIdentityResolveCapability,
-	provideCapability,
-} from "@86d-app/core";
+} from "@86d-app/core/commerce-capabilities";
 import { createStoreCustomerIdentityService } from "./identity-binding";
 import { createCustomerController } from "./service-impl";
 

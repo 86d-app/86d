@@ -1,10 +1,8 @@
-import type { CapabilityInvoker } from "@86d-app/core";
-import {
-	createAdminEndpoint,
-	customerContactResolveCapability,
-	sanitizeText,
-	z,
-} from "@86d-app/core";
+import { createAdminEndpoint } from "@86d-app/core/api";
+import type { CapabilityInvoker } from "@86d-app/core/capabilities";
+import { customerContactResolveCapability } from "@86d-app/core/commerce-capabilities";
+import { sanitizeText } from "@86d-app/core/sanitize";
+import { z } from "@86d-app/core/zod";
 import type { OrderController, OrderWithDetails } from "../../service";
 
 export const adminUpdateOrder = createAdminEndpoint(

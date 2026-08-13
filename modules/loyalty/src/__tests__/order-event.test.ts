@@ -1,4 +1,4 @@
-import { createEventBus, createScopedEmitter } from "@86d-app/core";
+import { createEventBus, createScopedEmitter } from "@86d-app/core/events";
 import {
 	createMockDataService,
 	createMockModuleContext,

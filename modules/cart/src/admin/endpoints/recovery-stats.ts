@@ -1,4 +1,4 @@
-import { createAdminEndpoint } from "@86d-app/core";
+import { createAdminEndpoint } from "@86d-app/core/api";
 import { createCartControllers } from "../../service-impl";
 
 export const getRecoveryStats = createAdminEndpoint(

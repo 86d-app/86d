@@ -1,4 +1,6 @@
-import { createAdminEndpoint, isSafeUrl, sanitizeText, z } from "@86d-app/core";
+import { createAdminEndpoint } from "@86d-app/core/api";
+import { isSafeUrl, sanitizeText } from "@86d-app/core/sanitize";
+import { z } from "@86d-app/core/zod";
 import type { NavigationController } from "../../service";
 
 export const createItemEndpoint = createAdminEndpoint(

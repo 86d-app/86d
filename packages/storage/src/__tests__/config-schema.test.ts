@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { storageConfigSchema } from "../index.ts";
+import { storageConfigSchema } from "../types.ts";
 
 describe("storageConfigSchema", () => {
 	it("parses minimal config with defaults", () => {

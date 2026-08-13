@@ -1,6 +1,6 @@
 "use client";
 
-import { useModuleClient } from "@86d-app/core/client";
+import { useModuleClient } from "@86d-app/core/client/provider";
 import { useCallback, useEffect, useState } from "react";
 import OrderInvoiceTemplate from "./order-invoice.mdx";
 

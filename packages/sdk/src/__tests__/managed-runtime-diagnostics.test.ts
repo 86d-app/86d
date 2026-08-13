@@ -4,7 +4,7 @@ import {
 	MANAGED_RUNTIME_DIAGNOSTICS_TELEMETRY,
 	type ManagedRuntimeDiagnostics,
 	managedRuntimeDiagnosticsSchema,
-} from "../index";
+} from "../managed-runtime-diagnostics";
 
 const diagnostics: ManagedRuntimeDiagnostics = {
 	schemaVersion: 1,

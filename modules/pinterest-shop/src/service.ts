@@ -1,4 +1,4 @@
-import type { ModuleController } from "@86d-app/core";
+import type { ModuleController } from "@86d-app/core/types/module";
 
 export type CatalogItemStatus = "active" | "inactive" | "disapproved";
 export type Availability = "in-stock" | "out-of-stock" | "preorder";

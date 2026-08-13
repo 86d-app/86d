@@ -2,8 +2,8 @@ import type {
 	CapabilityDecision,
 	CapabilityInvoker,
 	CapabilityRequest,
-	taxQuoteCapability,
-} from "@86d-app/core";
+} from "@86d-app/core/capabilities";
+import type { taxQuoteCapability } from "@86d-app/core/commerce-capabilities";
 import { createMockDataService } from "@86d-app/core/test-utils";
 import { describe, expect, it } from "vitest";
 import type {

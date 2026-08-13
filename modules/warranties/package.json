@@ -19,9 +19,23 @@
 	"homepage": "https://86d.app",
 	"type": "module",
 	"exports": {
-		"./components": "./src/store/components",
-		"./admin-components": "./src/admin/components",
-		"./*": "./src/*"
+		".": {
+			"types": "./src/index.ts",
+			"default": "./src/index.ts"
+		},
+		"./*": "./src/*",
+		"./admin/components/claim-detail": {
+			"types": "./src/admin/components/claim-detail.tsx",
+			"default": "./src/admin/components/claim-detail.tsx"
+		},
+		"./admin/components/warranties-list": {
+			"types": "./src/admin/components/warranties-list.tsx",
+			"default": "./src/admin/components/warranties-list.tsx"
+		},
+		"./components": {
+			"types": "./src/store/components/mdx.tsx",
+			"default": "./src/store/components/mdx.tsx"
+		}
 	},
 	"scripts": {
 		"build": "tsc",

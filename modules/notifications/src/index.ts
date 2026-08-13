@@ -1,11 +1,15 @@
-import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
+import { acceptCapability } from "@86d-app/core/capabilities";
 import {
 	abandonedCartRecoveryResolveCapability,
-	acceptCapability,
 	customerContactResolveCapability,
-} from "@86d-app/core";
-import { createAdminEndpointsWithSettings } from "./admin/endpoints";
+} from "@86d-app/core/commerce-capabilities";
+import type {
+	Module,
+	ModuleConfig,
+	ModuleContext,
+} from "@86d-app/core/types/module";
 import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
+import { createAdminEndpointsWithSettings } from "./admin/endpoints/routes";
 import { notificationCreateProvider } from "./capabilities";
 import { buildAffiliateStatusEmail } from "./emails/affiliate-status";
 import { buildAppointmentStatusEmail } from "./emails/appointment-status";
@@ -19,7 +23,7 @@ import { buildWarrantyRegisteredEmail } from "./emails/warranty-registered";
 import { ResendProvider, TwilioProvider } from "./provider";
 import { notificationsSchema } from "./schema";
 import { createNotificationsController } from "./service-impl";
-import { createStoreEndpoints } from "./store/endpoints";
+import { createStoreEndpoints } from "./store/endpoints/routes";
 
 export type {
 	NotificationIntent,

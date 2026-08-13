@@ -1,4 +1,4 @@
-import { test, expect } from "./fixtures/test-fixtures";
+import { expect, test } from "./fixtures/test-fixtures";
 
 test.describe("Checkout — Full flow", () => {
 	test("complete flow: browse → add to cart → view checkout", async ({
@@ -33,8 +33,7 @@ test.describe("Checkout — Full flow", () => {
 		/* 5. Add to cart — cart drawer auto-opens on success */
 		const cartResponsePromise = storefront.page.waitForResponse(
 			(resp) =>
-				resp.url().includes("/api/cart") &&
-				resp.request().method() === "POST",
+				resp.url().includes("/api/cart") && resp.request().method() === "POST",
 			{ timeout: 10_000 },
 		);
 		await addButton.click();
@@ -151,8 +150,7 @@ test.describe("Checkout — Edge cases", () => {
 			.filter({ hasText: /empty|no items|add items/i })
 			.isVisible()
 			.catch(() => false);
-		const redirected =
-			url.includes("/products") || url.includes("/cart");
+		const redirected = url.includes("/products") || url.includes("/cart");
 		expect(isEmpty || redirected || url.includes("/checkout")).toBeTruthy();
 	});
 

@@ -21,16 +21,23 @@
 
 📚 **Documentation:** [86d.app/docs/modules/paypal](https://86d.app/docs/modules/paypal)
 
-PayPal payment provider implementing the `PaymentProvider` interface from `@86d-app/payments`. Uses PayPal Orders API v2 via raw `fetch()` with OAuth2 client credentials — no PayPal SDK required.
+PayPal Third-party Payment Integration using the PayPal Orders and Payments v2 APIs through raw server-side `fetch()` calls. The connection-bound adapter implements the durable `PaymentConnectionProvider` contract. The older singleton `PaymentProvider` export remains only for migration compatibility.
 
 ## Installation
 
 ```ts
-import { PayPalPaymentProvider } from "@86d-app/paypal";
+import { PayPalPaymentConnectionProvider } from "@86d-app/paypal";
 import payments from "@86d-app/payments";
 
-const provider = new PayPalPaymentProvider("CLIENT_ID", "CLIENT_SECRET");
-const paymentsModule = payments({ currency: "USD", provider });
+const provider = new PayPalPaymentConnectionProvider({
+  connectionId: "paypal-primary",
+  clientId: "CLIENT_ID",
+  clientSecret: "CLIENT_SECRET",
+  mode: "test",
+  returnUrl: "https://store.example/paypal/return",
+  cancelUrl: "https://store.example/paypal/cancel",
+});
+const paymentsModule = payments({ connectionProviders: [provider] });
 ```
 
 ## Options
@@ -62,64 +69,73 @@ Uses OAuth2 client credentials flow automatically. The provider:
 
 No manual token management required.
 
-## API Mapping
+## Connection-bound API mapping
 
-| PaymentProvider method | PayPal API endpoint |
+The versioned contract uses an explicit authorize-then-capture strategy. Each operation stores one immutable Connection and exact source provider reference before any continuation occurs.
+
+| Operation | PayPal API endpoint |
 |---|---|
-| `createIntent` | `POST /v2/checkout/orders` (intent: AUTHORIZE) |
-| `confirmIntent` | `POST /v2/checkout/orders/{id}/capture` |
-| `cancelIntent` | `GET /v2/checkout/orders/{id}` → returns cancelled |
-| `createRefund` | GET order for captureId → `POST /v2/payments/captures/{captureId}/refund` |
+| Create intent | `POST /v2/checkout/orders` (`intent: AUTHORIZE`) |
+| Authorize | `POST /v2/checkout/orders/{orderId}/authorize` |
+| Capture | `POST /v2/payments/authorizations/{authorizationId}/capture` |
+| Void | `POST /v2/payments/authorizations/{authorizationId}/void`, then canonical `GET` confirmation |
+| Refund | `POST /v2/payments/captures/{captureId}/refund` |
+| Reconcile | Canonical resource `GET` when an exact resource is known; otherwise remain ambiguous for operator resolution |
+
+Every supported POST receives the durable operation idempotency key unchanged as `PayPal-Request-Id` and enforces the Orders v2 108-character ceiling. Create Order includes trusted HTTPS return/cancel URLs and uses PayPal's current `payer-action` handoff (with `approve` accepted for compatibility). An unknown Create Order may repeat only within a conservative five-hour window inside PayPal's documented six-hour request-ID retention; later reconciliation never blindly repeats it. Unknown capture and refund outcomes without a returned resource still require operator resolution because the Payments v2 reference does not document an equivalent retention window. Equal-value partial refunds remain distinct because they use distinct operation keys and the exact capture reference. Every continuation validates the durable source operation, provider reference, and money before I/O. Currency comes from the server-owned Payment operation; PayPal's `HUF`, `JPY`, and `TWD` zero-digit exponents are honored and unsupported currencies fail before I/O.
 
 ## Status Mapping
 
 | PayPal status | Provider status |
 |---|---|
-| `COMPLETED` | `succeeded` |
-| `VOIDED` | `cancelled` |
-| `APPROVED` | `processing` |
-| `CREATED`, `SAVED`, `PAYER_ACTION_REQUIRED` | `pending` |
+| `COMPLETED`, `APPROVED` | `succeeded` when valid for that operation |
+| `VOIDED` | `failed` for an Order, `succeeded` for an explicit void |
+| `PENDING` | `pending` |
+| `CREATED`, `SAVED` with a payer link; `PAYER_ACTION_REQUIRED` | `requires_action` |
+| `CREATED`, `SAVED` without a payer link | `pending` |
 
 ## Webhook
 
 The `paypal()` module registers `POST /paypal/webhook` with PayPal's remote signature verification. Missing verification configuration returns `503`, and missing or unverifiable signatures return `401`. A verified event returns `503 PAYMENT_WEBHOOK_DURABILITY_REQUIRED` so PayPal retries; it does not mutate Payment state or emit a commerce outcome. The previous process-local mapper remains deliberately unregistered.
 
-## Usage with payments module
+## Migration compatibility
+
+`PayPalPaymentProvider` is the legacy singleton adapter. It creates a PayPal order with `intent: CAPTURE` and then captures that order. It does not implement the new immutable Connection, exact continuation, or durable reconciliation contract and must not be used to activate Checkout. It is retained so existing stored configuration is not silently stranded while the Store Runtime migration is incomplete.
+
+## Usage with Payments
 
 ```ts
-import { PayPalPaymentProvider } from "@86d-app/paypal";
 import payments from "@86d-app/payments";
-import paypal from "@86d-app/paypal";
-import { createStore } from "@86d-app/core";
+import { PayPalPaymentConnectionProvider } from "@86d-app/paypal";
 
-const provider = new PayPalPaymentProvider(
-  process.env.PAYPAL_CLIENT_ID,
-  process.env.PAYPAL_CLIENT_SECRET,
-  process.env.NODE_ENV !== "production", // sandbox in non-prod
-);
-
-const store = createStore({
-  modules: [
-    payments({ currency: "USD", provider }),
-    paypal({
-      clientId: process.env.PAYPAL_CLIENT_ID,
-      clientSecret: process.env.PAYPAL_CLIENT_SECRET,
-      sandbox: process.env.NODE_ENV !== "production" ? "true" : "",
-    }),
-  ],
+const connection = new PayPalPaymentConnectionProvider({
+  connectionId: "paypal-primary",
+  clientId: process.env.PAYPAL_CLIENT_ID,
+  clientSecret: process.env.PAYPAL_CLIENT_SECRET,
+  mode: process.env.NODE_ENV === "production" ? "live" : "test",
+  returnUrl: "https://store.example/paypal/return",
+  cancelUrl: "https://store.example/paypal/cancel",
 });
+
+const paymentModule = payments({ connectionProviders: [connection] });
 ```
 
 ## Notes
 
-- `createIntent` creates a PayPal order with `intent: AUTHORIZE` (not immediately captured)
-- `confirmIntent` captures the previously authorized order
-- `cancelIntent` does not call a cancel API — PayPal orders that haven't been approved expire naturally. The method returns a `cancelled` status immediately.
-- `createRefund` requires two API calls: first fetches the order to find the capture ID, then issues the refund against that capture
+- The registered webhook verifies PayPal's signature but intentionally returns a retryable `503` until the durable Payment-owned receipt workflow is wired end to end.
+- The connection adapter is exported as contained foundation code but is not registered by the default Store Runtime while the M5 dependency gate remains open.
+- No client secret, access token, or raw provider response is returned as safe browser configuration.
+- The adapter and fetch-mocked official-shape fixtures are implementation evidence, not a live PayPal smoke. This Integration remains below Stable until the required targeted production transaction exists.
 
 ## Types
 
 ```ts
-import type { PayPalOptions } from "@86d-app/paypal";
-import { PayPalPaymentProvider } from "@86d-app/paypal";
+import type {
+  PayPalOptions,
+  PayPalPaymentConnectionProviderOptions,
+} from "@86d-app/paypal";
+import {
+  PayPalPaymentConnectionProvider,
+  PayPalPaymentProvider,
+} from "@86d-app/paypal";
 ```

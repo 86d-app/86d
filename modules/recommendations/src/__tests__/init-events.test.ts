@@ -4,7 +4,7 @@
  * When an embeddingProvider is configured, the module subscribes to
  * product.created and product.updated events and auto-generates embeddings.
  */
-import { createEventBus, createScopedEmitter } from "@86d-app/core";
+import { createEventBus, createScopedEmitter } from "@86d-app/core/events";
 import {
 	createMockDataService,
 	createMockModuleContext,

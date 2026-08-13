@@ -1,4 +1,4 @@
-import { createEventBus } from "@86d-app/core";
+import { createEventBus } from "@86d-app/core/events";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("emails/abandoned-cart", () => ({

@@ -1,10 +1,10 @@
-import {
-	type LockingModuleDataTransaction,
-	type ModuleDataService,
-	type ModuleDataTransaction,
-	type ModuleTransactionRunner,
-	z,
-} from "@86d-app/core";
+import type {
+	LockingModuleDataTransaction,
+	ModuleDataTransaction,
+	ModuleTransactionRunner,
+} from "@86d-app/core/durable-events";
+import type { ModuleDataService } from "@86d-app/core/types/module";
+import { z } from "@86d-app/core/zod";
 import {
 	CheckoutMutationUnavailableError,
 	CheckoutRevisionConflictError,

@@ -1,8 +1,6 @@
-import {
-	discountCodeCapability,
-	provideCapability,
-	type z,
-} from "@86d-app/core";
+import { provideCapability } from "@86d-app/core/capabilities";
+import { discountCodeCapability } from "@86d-app/core/commerce-capabilities";
+import type { z } from "@86d-app/core/zod";
 import type { DiscountController } from "./service";
 import { createDiscountController } from "./service-impl";
 

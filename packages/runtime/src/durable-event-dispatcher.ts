@@ -1,8 +1,8 @@
 import type {
 	AnyDurableEventConsumer,
 	DurableEventEnvelope,
-	ModuleDataService,
-} from "@86d-app/core";
+} from "@86d-app/core/durable-events";
+import type { ModuleDataService } from "@86d-app/core/types/module";
 
 interface ClaimedDelivery {
 	eventId: string;

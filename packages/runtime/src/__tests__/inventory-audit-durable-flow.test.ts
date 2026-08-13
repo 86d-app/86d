@@ -2,10 +2,13 @@ import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import type {
 	AnyDurableEventConsumer,
-	ModuleDataService,
 	ModuleTransactionRunner,
-} from "@86d-app/core";
-import { consumeDurableEvent, inventoryStockAdjustedV1 } from "@86d-app/core";
+} from "@86d-app/core/durable-events";
+import {
+	consumeDurableEvent,
+	inventoryStockAdjustedV1,
+} from "@86d-app/core/durable-events";
+import type { ModuleDataService } from "@86d-app/core/types/module";
 import { PGlite } from "@electric-sql/pglite";
 import { pgcrypto } from "@electric-sql/pglite/contrib/pgcrypto";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";

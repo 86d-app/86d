@@ -1,13 +1,19 @@
-import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
+import type {
+	Module,
+	ModuleConfig,
+	ModuleContext,
+} from "@86d-app/core/types/module";
+import { withEntities } from "@86d-app/core/types/module";
+import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
 import {
 	adminEndpoints,
 	createAdminEndpointsWithSettings,
-} from "./admin/endpoints";
-import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
+} from "./admin/endpoints/routes";
 import { UberEatsProvider } from "./provider";
 import { uberEatsSchema } from "./schema";
+import type { UberEatsEntities } from "./service";
 import { createUberEatsController } from "./service-impl";
-import { createStoreEndpointsWithWebhook } from "./store/endpoints";
+import { createStoreEndpointsWithWebhook } from "./store/endpoints/routes";
 import { createUberEatsWebhook } from "./store/endpoints/webhook";
 
 export { UberEatsProvider } from "./provider";
@@ -73,7 +79,7 @@ export default function uberEats(options?: UberEatsOptions): Module {
 		},
 		init: async (ctx: ModuleContext) => {
 			const controller = createUberEatsController(
-				ctx.data,
+				withEntities<UberEatsEntities>(ctx.data),
 				ctx.events,
 				provider,
 			);

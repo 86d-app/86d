@@ -12,12 +12,7 @@
  *   bun run bump-version 1.2.3    # set explicit version
  */
 
-import {
-	existsSync,
-	readdirSync,
-	readFileSync,
-	writeFileSync,
-} from "node:fs";
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildManifest } from "../packages/registry/src/manifest.js";

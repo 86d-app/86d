@@ -1,14 +1,18 @@
-import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
+import { acceptCapability } from "@86d-app/core/capabilities";
 import {
-	acceptCapability,
 	customerContactResolveCapability,
 	customerIdentityResolveCapability,
 	inventoryCheckoutCapability,
 	paymentIntentCapability,
 	productResolveCapability,
 	storePresentationResolveCapability,
-} from "@86d-app/core";
-import { adminEndpoints } from "./admin/endpoints";
+} from "@86d-app/core/commerce-capabilities";
+import type {
+	Module,
+	ModuleConfig,
+	ModuleContext,
+} from "@86d-app/core/types/module";
+import { adminEndpoints } from "./admin/endpoints/routes";
 import {
 	orderCreateProvider,
 	orderCustomerAuthorizeProvider,
@@ -17,7 +21,7 @@ import {
 } from "./capabilities";
 import { ordersSchema } from "./schema";
 import { createOrderController } from "./service-impl";
-import { storeEndpoints } from "./store/endpoints";
+import { storeEndpoints } from "./store/endpoints/routes";
 
 // Export types for other modules to use via inter-module contracts
 export type {

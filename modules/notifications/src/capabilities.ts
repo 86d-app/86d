@@ -1,4 +1,5 @@
-import { notificationCreateCapability, provideCapability } from "@86d-app/core";
+import { provideCapability } from "@86d-app/core/capabilities";
+import { notificationCreateCapability } from "@86d-app/core/commerce-capabilities";
 import { createNotificationsController } from "./service-impl";
 
 export { notificationCreateCapability };

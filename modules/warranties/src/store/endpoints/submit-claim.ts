@@ -1,4 +1,6 @@
-import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
+import { createStoreEndpoint } from "@86d-app/core/api";
+import { sanitizeText } from "@86d-app/core/sanitize";
+import { z } from "@86d-app/core/zod";
 import type { WarrantyController } from "../../service";
 
 export const submitClaim = createStoreEndpoint(

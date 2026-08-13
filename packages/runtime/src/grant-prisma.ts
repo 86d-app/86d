@@ -5,7 +5,7 @@ import {
 	type CommandFailure,
 	changeSetSchema,
 	type TargetReference,
-} from "@86d-app/core";
+} from "@86d-app/core/commands";
 import {
 	type CommandGrantAdapter,
 	type CommandGrantAdmissionRequest,

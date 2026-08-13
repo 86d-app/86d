@@ -10,8 +10,11 @@ const mocks = vi.hoisted(() => ({
 
 mocks.createBridge.mockImplementation(() => ({ prove: mocks.prove }));
 
-vi.mock("@86d-app/sdk", () => ({
+vi.mock("@86d-app/sdk/workload-token-client", () => ({
 	readManagedWorkloadConfig: mocks.readConfig,
+}));
+
+vi.mock("@86d-app/sdk/workload-identity-proof", () => ({
 	createWorkloadIdentityProofBridge: mocks.createBridge,
 }));
 

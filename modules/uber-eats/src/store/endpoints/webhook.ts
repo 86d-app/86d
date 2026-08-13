@@ -1,4 +1,4 @@
-import { createStoreEndpoint } from "@86d-app/core";
+import { createStoreEndpoint } from "@86d-app/core/api";
 import { UberEatsProvider } from "../../provider";
 import type { UberEatsController } from "../../service";
 

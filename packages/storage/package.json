@@ -8,7 +8,26 @@
 		"check": "biome check src/"
 	},
 	"exports": {
-		".": "./src/index.ts"
+		"./types": {
+			"types": "./src/types.ts",
+			"default": "./src/types.ts"
+		},
+		"./factory": {
+			"types": "./src/factory.ts",
+			"default": "./src/factory.ts"
+		},
+		"./local": {
+			"types": "./src/local.ts",
+			"default": "./src/local.ts"
+		},
+		"./s3": {
+			"types": "./src/s3.ts",
+			"default": "./src/s3.ts"
+		},
+		"./vercel": {
+			"types": "./src/vercel.ts",
+			"default": "./src/vercel.ts"
+		}
 	},
 	"dependencies": {
 		"zod": "catalog:"

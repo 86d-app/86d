@@ -3,7 +3,7 @@ import type {
 	StorageProvider,
 	StorageUploadOptions,
 	StorageUploadResult,
-} from "./index.ts";
+} from "./types.ts";
 
 export class VercelBlobProvider implements StorageProvider {
 	async upload(options: StorageUploadOptions): Promise<StorageUploadResult> {

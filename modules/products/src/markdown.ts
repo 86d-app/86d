@@ -1,4 +1,4 @@
-import type { ModuleContext } from "@86d-app/core";
+import type { ModuleContext } from "@86d-app/core/types/module";
 import type {
 	Collection,
 	CollectionWithProducts,

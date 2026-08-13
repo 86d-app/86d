@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createStoreEndpoints } from "../store/endpoints/index";
+import { createStoreEndpoints } from "../store/endpoints/routes";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 // Braintree sends application/x-www-form-urlencoded with bt_signature + bt_payload

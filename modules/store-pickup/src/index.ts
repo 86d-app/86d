@@ -1,8 +1,12 @@
-import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
-import { adminEndpoints } from "./admin/endpoints";
+import type {
+	Module,
+	ModuleConfig,
+	ModuleContext,
+} from "@86d-app/core/types/module";
+import { adminEndpoints } from "./admin/endpoints/routes";
 import { storePickupSchema } from "./schema";
 import { createStorePickupController } from "./service-impl";
-import { storeEndpoints } from "./store/endpoints";
+import { storeEndpoints } from "./store/endpoints/routes";
 
 export interface StorePickupOptions extends ModuleConfig {
 	/** Default preparation time in minutes when not set on a location. Default: 60. */

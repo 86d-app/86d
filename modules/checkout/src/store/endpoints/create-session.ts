@@ -1,12 +1,12 @@
+import { createStoreEndpoint } from "@86d-app/core/api";
 import {
 	cartSnapshotCapability,
-	createStoreEndpoint,
 	priceListResolveCapability,
 	productPriceConversionCapability,
 	productResolveCapability,
-	sanitizeText,
-	z,
-} from "@86d-app/core";
+} from "@86d-app/core/commerce-capabilities";
+import { sanitizeText } from "@86d-app/core/sanitize";
+import { z } from "@86d-app/core/zod";
 import { isCapabilityUnavailable } from "../../capability-failures";
 import type { CheckoutController } from "../../service";
 import { createGuestProofMetadata, setGuestProofCookie } from "./guest-proof";

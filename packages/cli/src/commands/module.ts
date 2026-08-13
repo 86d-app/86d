@@ -1,15 +1,14 @@
 import { execSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { RegistryManifest, RegistryModule } from "@86d-app/registry";
+import { computeIntegrity, fetchModule } from "@86d-app/registry/fetcher";
 import {
-	computeIntegrity,
-	fetchModule,
 	getLocalModuleNames,
 	getModuleDependencies,
-	parseSpecifier,
 	readLocalManifest,
-} from "@86d-app/registry";
+} from "@86d-app/registry/resolver";
+import { parseSpecifier } from "@86d-app/registry/specifier";
+import type { RegistryManifest, RegistryModule } from "@86d-app/registry/types";
 import {
 	c,
 	error,
@@ -341,10 +340,10 @@ function listModules() {
 		);
 		const version = pkg?.version ? c.dim(` v${pkg.version}`) : "";
 		const hasComponents = existsSync(
-			join(modulesDir, mod, "src/store/components/index.tsx"),
+			join(modulesDir, mod, "src/store/components/mdx.tsx"),
 		);
 		const hasAdmin = existsSync(
-			join(modulesDir, mod, "src/admin/endpoints/index.ts"),
+			join(modulesDir, mod, "src/admin/endpoints/routes.ts"),
 		);
 
 		const tags: string[] = [];
@@ -437,8 +436,8 @@ function moduleInfo(name: string | undefined) {
 	}
 
 	// Count endpoints
-	const storeEndpointsPath = join(moduleDir, "src/store/endpoints/index.ts");
-	const adminEndpointsPath = join(moduleDir, "src/admin/endpoints/index.ts");
+	const storeEndpointsPath = join(moduleDir, "src/store/endpoints/routes.ts");
+	const adminEndpointsPath = join(moduleDir, "src/admin/endpoints/routes.ts");
 	const storeCount = countEndpoints(storeEndpointsPath);
 	const adminCount = countEndpoints(adminEndpointsPath);
 	console.log(
@@ -447,11 +446,9 @@ function moduleInfo(name: string | undefined) {
 
 	// Check for components
 	const storeComponents = existsSync(
-		join(moduleDir, "src/store/components/index.tsx"),
+		join(moduleDir, "src/store/components/mdx.tsx"),
 	);
-	const adminComponents = existsSync(
-		join(moduleDir, "src/admin/components/index.tsx"),
-	);
+	const adminComponents = existsSync(join(moduleDir, "src/admin/components"));
 	console.log(
 		`  ${c.dim("Components:")} ${storeComponents ? c.green("store") : c.dim("none")}${adminComponents ? `, ${c.green("admin")}` : ""}`,
 	);
@@ -656,8 +653,7 @@ function createModule(name: string | undefined) {
 				type: "module",
 				exports: {
 					".": "./src/index.ts",
-					"./components": "./src/store/components/index.tsx",
-					"./admin-components": "./src/admin/components/index.tsx",
+					"./components": "./src/store/components/mdx.tsx",
 				},
 				scripts: {
 					build: "tsc",
@@ -699,10 +695,10 @@ function createModule(name: string | undefined) {
 	// Module entry point
 	writeFileSync(
 		join(moduleDir, "src/index.ts"),
-		`import type { Module } from "@86d-app/core";
+		`import type { Module } from "@86d-app/core/types/module";
 import { schema } from "./schema.js";
-import { storeEndpoints } from "./store/endpoints/index.js";
-import { adminEndpoints } from "./admin/endpoints/index.js";
+import { storeEndpoints } from "./store/endpoints/routes.js";
+import { adminEndpoints } from "./admin/endpoints/routes.js";
 
 export default function ${toCamelCase(moduleName)}(
 	options: Record<string, unknown> = {},
@@ -724,7 +720,7 @@ export default function ${toCamelCase(moduleName)}(
 	// Schema
 	writeFileSync(
 		join(moduleDir, "src/schema.ts"),
-		`import { z } from "zod";
+		`import { z } from "@86d-app/core/zod";
 
 export const schema = z.object({
 	// Define your module's data schema here
@@ -736,7 +732,7 @@ export type ${toPascalCase(moduleName)}Data = z.infer<typeof schema>;
 
 	// Store endpoints
 	writeFileSync(
-		join(moduleDir, "src/store/endpoints/index.ts"),
+		join(moduleDir, "src/store/endpoints/routes.ts"),
 		`// Store (public) endpoints for ${moduleName}
 // biome-ignore lint/suspicious/noExplicitAny: endpoint map
 export const storeEndpoints: Record<string, any> = {};
@@ -745,7 +741,7 @@ export const storeEndpoints: Record<string, any> = {};
 
 	// Admin endpoints
 	writeFileSync(
-		join(moduleDir, "src/admin/endpoints/index.ts"),
+		join(moduleDir, "src/admin/endpoints/routes.ts"),
 		`// Admin (protected) endpoints for ${moduleName}
 // biome-ignore lint/suspicious/noExplicitAny: endpoint map
 export const adminEndpoints: Record<string, any> = {};
@@ -754,7 +750,7 @@ export const adminEndpoints: Record<string, any> = {};
 
 	// Store components
 	writeFileSync(
-		join(moduleDir, "src/store/components/index.tsx"),
+		join(moduleDir, "src/store/components/mdx.tsx"),
 		`import type { MDXComponents } from "mdx/types";
 
 const components = {} satisfies MDXComponents;
@@ -764,12 +760,9 @@ export default components;
 	);
 
 	// Admin components
-	writeFileSync(
-		join(moduleDir, "src/admin/components/index.tsx"),
-		`// Admin components for ${moduleName}
-export {};
-`,
-	);
+	// Admin page components live in one file each, named for the component. The
+	// generator resolves them by scanning this directory — there is no barrel.
+	writeFileSync(join(moduleDir, "src/admin/components/.gitkeep"), "");
 
 	// MDX type declarations
 	writeFileSync(

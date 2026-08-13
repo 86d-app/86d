@@ -1,4 +1,4 @@
-import { storePresentationResolveCapability } from "@86d-app/core";
+import { storePresentationResolveCapability } from "@86d-app/core/commerce-capabilities";
 import { createMockDataService } from "@86d-app/core/test-utils";
 import { describe, expect, it, vi } from "vitest";
 import { adminAddNote } from "../admin/endpoints/add-note";

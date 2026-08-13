@@ -77,9 +77,9 @@ export function AdminModuleRouteClient({
 		setComponent(null);
 		setError(null);
 
-		const loader = adminComponentLoaders[moduleId];
+		const loader = adminComponentLoaders[`${moduleId}:${component}`];
 		if (!loader) {
-			setError(new Error(`No admin loader for module: ${moduleId}`));
+			setError(new Error(`No admin loader for ${moduleId}:${component}`));
 			return;
 		}
 		loader()

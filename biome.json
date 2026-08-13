@@ -10,6 +10,28 @@
 					}
 				}
 			}
+		},
+		{
+			"includes": [
+				"packages/core/src/api.ts",
+				"packages/core/src/zod.ts",
+				"packages/core/src/state.ts",
+				"packages/core/src/charts.ts",
+				"packages/core/src/client/react-query.ts",
+				"packages/runtime/src/commands.ts",
+				"modules/*/src/index.ts",
+				"apps/store/app/**/page.tsx",
+				"apps/store/instrumentation.ts",
+				"apps/store/components/ui/direction.tsx",
+				"tests/e2e/fixtures/test-fixtures.ts"
+			],
+			"linter": {
+				"rules": {
+					"performance": {
+						"noBarrelFile": "off"
+					}
+				}
+			}
 		}
 	],
 	"linter": {
@@ -25,11 +47,47 @@
 				}
 			},
 			"nursery": {
-				"recommended": true,
+				"recommended": false,
 				"useSortedClasses": {
 					"level": "error",
 					"fix": "safe"
-				}
+				},
+				"noUselessTypeConversion": "warn",
+				"useExpect": "error",
+				"noIdenticalTestTitle": "error",
+				"useConsistentTestIt": "off",
+				"useTestHooksOnTop": "error",
+				"useTestHooksInOrder": "warn",
+				"noPlaywrightWaitForTimeout": "error",
+				"noPlaywrightForceOption": "error",
+				"noPlaywrightWaitForSelector": "warn",
+				"noPlaywrightPagePause": "error",
+				"noPlaywrightElementHandle": "error",
+				"noPlaywrightEval": "error"
+			},
+			"performance": {
+				"noBarrelFile": "error",
+				"noReExportAll": "error",
+				"noDelete": "warn"
+			},
+			"style": {
+				"noNonNullAssertion": "warn",
+				"useImportType": "error",
+				"useExportType": "error",
+				"noEnum": "error",
+				"useNodejsImportProtocol": "error"
+			},
+			"suspicious": {
+				"noDoubleEquals": "error",
+				"noSkippedTests": "warn",
+				"noFocusedTests": "error",
+				"noEvolvingTypes": "warn"
+			},
+			"security": {
+				"noDangerouslySetInnerHtml": "warn"
+			},
+			"a11y": {
+				"noSvgWithoutTitle": "warn"
 			}
 		}
 	},
@@ -38,6 +96,10 @@
 			"apps/**/*",
 			"modules/**/*",
 			"packages/**/*",
+			"internals/**/*",
+			"templates/**/*",
+			"tests/**/*",
+			"scripts/**/*",
 			"!**/dist",
 			"!**/.dist",
 			"!**/.turbo",

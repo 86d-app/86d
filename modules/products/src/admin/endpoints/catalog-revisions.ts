@@ -1,11 +1,8 @@
-import {
-	type ActorReference,
-	type AuthoritySnapshot,
-	createAdminEndpoint,
-	type ModuleTransactionRunner,
-	type Session,
-	z,
-} from "@86d-app/core";
+import { createAdminEndpoint } from "@86d-app/core/api";
+import type { ActorReference, AuthoritySnapshot } from "@86d-app/core/commands";
+import type { ModuleTransactionRunner } from "@86d-app/core/durable-events";
+import type { Session } from "@86d-app/core/types/module";
+import { z } from "@86d-app/core/zod";
 import {
 	applyCatalogRevisionOperation,
 	type CatalogRevisionOperationInput,

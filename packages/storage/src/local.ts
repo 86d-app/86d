@@ -5,7 +5,7 @@ import type {
 	StorageProvider,
 	StorageUploadOptions,
 	StorageUploadResult,
-} from "./index.ts";
+} from "./types.ts";
 
 export class LocalStorageProvider implements StorageProvider {
 	private readonly baseDir: string;

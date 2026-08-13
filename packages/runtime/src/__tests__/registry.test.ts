@@ -1,4 +1,8 @@
-import type { Module, ModuleContext, ModuleDataService } from "@86d-app/core";
+import type {
+	Module,
+	ModuleContext,
+	ModuleDataService,
+} from "@86d-app/core/types/module";
 import { describe, expect, it, vi } from "vitest";
 import type { ModuleRegistryConfig } from "../registry";
 import { ModuleRegistry } from "../registry";

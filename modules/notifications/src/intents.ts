@@ -1,9 +1,9 @@
-import {
-	type LockingModuleDataTransaction,
-	type ModuleDataTransaction,
-	type ModuleTransactionRunner,
-	z,
-} from "@86d-app/core";
+import type {
+	LockingModuleDataTransaction,
+	ModuleDataTransaction,
+	ModuleTransactionRunner,
+} from "@86d-app/core/durable-events";
+import { z } from "@86d-app/core/zod";
 
 const identifier = z.string().trim().min(1).max(500);
 const timestamp = z

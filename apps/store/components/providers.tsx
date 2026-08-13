@@ -1,9 +1,7 @@
 "use client";
 
-import {
-	ModuleClientProvider,
-	StoreContextProvider,
-} from "@86d-app/core/client";
+import { ModuleClientProvider } from "@86d-app/core/client/provider";
+import { StoreContextProvider } from "@86d-app/core/client/store-context";
 import { modules } from "generated/api";
 import { store } from "~/lib/store";
 

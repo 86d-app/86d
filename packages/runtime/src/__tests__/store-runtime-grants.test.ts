@@ -3,7 +3,7 @@ import type {
 	ChangeSet,
 	Confirmation,
 	StandingPermission,
-} from "@86d-app/core";
+} from "@86d-app/core/commands";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import {

@@ -1,8 +1,8 @@
-import type { CapabilityInvoker } from "@86d-app/core";
+import type { CapabilityInvoker } from "@86d-app/core/capabilities";
 import {
 	inventoryCheckoutCapability,
 	paymentIntentCapability,
-} from "@86d-app/core";
+} from "@86d-app/core/commerce-capabilities";
 import type {
 	InventoryReleaseController,
 	OrderController,

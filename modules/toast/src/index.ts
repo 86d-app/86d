@@ -1,13 +1,17 @@
-import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
+import type {
+	Module,
+	ModuleConfig,
+	ModuleContext,
+} from "@86d-app/core/types/module";
+import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
 import {
 	adminEndpoints,
 	createAdminEndpointsWithSettings,
-} from "./admin/endpoints";
-import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
+} from "./admin/endpoints/routes";
 import { ToastPosProvider } from "./provider";
 import { toastSchema } from "./schema";
 import { createToastController } from "./service-impl";
-import { createStoreEndpointsWithWebhook } from "./store/endpoints";
+import { createStoreEndpointsWithWebhook } from "./store/endpoints/routes";
 import { createToastWebhook } from "./store/endpoints/webhook";
 
 export { ToastPosProvider } from "./provider";

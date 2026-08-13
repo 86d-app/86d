@@ -52,6 +52,7 @@ const client = createModuleClient([payments({ provider, currency: "USD" })]);
 |---|---|---|---|
 | `currency` | `string` | `"USD"` | Default currency for payment intents |
 | `provider` | `PaymentProvider` | `undefined` | Payment processor implementation |
+| `connectionProviders` | `PaymentConnectionProvider[]` | `undefined` | Server-created v2 adapters, each bound to one immutable Connection |
 
 ## PaymentProvider Interface
 
@@ -86,6 +87,53 @@ interface PaymentProvider {
 The v2 service is intentionally not exposed as a shopper endpoint or wired into the legacy Checkout capability. A host must supply an owner-local locking transaction runner, and every enabled Connection must have an exact provider/mode/capability adapter match. Missing, disabled, revoked, unhealthy, or mismatched Connections fail closed. Capture, refund, and void operations must continue a succeeded source operation and use its original Connection and provider reference.
 
 The opaque `secretReference` is server-side configuration data. It must never be returned by Store or admin endpoints, browser output, logs, or agent output.
+
+### Payment aggregate and recovery
+
+`paymentAggregates` owns the v2 shopper Payment record. Creation freezes the
+Checkout, optional Order, Payment option, Connection, expected integer amount,
+currency, and eligible-merchandise fee basis. Confirmed authorization, capture,
+void, and refund facts cite exact source operations. Owner-local locks reserve
+in-flight totals so distinct idempotency keys cannot bypass cumulative capture
+or refund ceilings. Disputes update a separate projection and never count as
+refunds or settlement.
+
+The state projection is derived from confirmed totals: pending, authorized,
+partially captured, captured, partially refunded, refunded, or voided. Only a
+fully captured and fully refunded accepted amount is terminal `refunded`; a
+full authorization void with no capture is terminal `voided`. Confirmed
+transitions and their Payment snapshots enter the transactional outbox with the
+aggregate update.
+
+Provider-known `pending` and `requires_action` outcomes retain the provider
+reference and normalized result without advancing the Payment aggregate. They
+use longer, state-specific bounded polling schedules and remain distinguishable
+from `ambiguous`, which means the provider outcome itself is unknown. Exhausted
+known-state polling preserves that provider truth for manual attention; it does
+not convert the operation to success or dead letter.
+
+All nonfinal and stale operations retain their original Connection, immutable
+creation time, caller key, and payload. The controller exposes bounded scheduled
+backoff, stale-running recovery, dead-letter state for unresolved ambiguity, and
+audited manual reconciliation. Caller keys are capped at 108 characters so the
+same key can be forwarded to every supported provider. This is the durable
+worker seam; no scheduler or shopper route is activated by the module.
+
+### Durable webhook receipt foundation
+
+`paymentWebhookReceipts` accepts only provider facts that a server-side
+Integration has already signature-verified against the exact Connection. It
+persists a unique Store/Connection/provider/event receipt, payload digest,
+normalized fact, processing lease, attempts, and disposition without storing
+the raw payload or a secret. Exact replays acknowledge the existing result;
+digest or normalized-fact conflicts fail closed. A crash after applying a fact
+is safe because Payment-owner operation/dispute identities replay exactly.
+
+Provider network reconciliation occurs outside the receipt transaction.
+Out-of-order or ambiguous facts remain unacknowledged in `needs_attention` until
+canonical reconciliation completes. PayPal, Stripe, and Braintree registered
+webhooks do not use this controller yet and continue returning the explicit 503
+durability containment response.
 
 ## Store Endpoints
 

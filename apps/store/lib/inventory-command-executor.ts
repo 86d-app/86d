@@ -2,7 +2,7 @@ import type {
 	ActorReference,
 	AuthoritySnapshot,
 	CommandReference,
-} from "@86d-app/core";
+} from "@86d-app/core/commands";
 import {
 	adjustInventoryStockFromCommand,
 	inventoryStockAdjustInputSchema,

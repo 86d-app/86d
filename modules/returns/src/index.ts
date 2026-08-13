@@ -1,13 +1,15 @@
-import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
-import {
-	acceptCapability,
-	orderLineQuantityValidateCapability,
-} from "@86d-app/core";
-import { adminEndpoints } from "./admin/endpoints";
+import { acceptCapability } from "@86d-app/core/capabilities";
+import { orderLineQuantityValidateCapability } from "@86d-app/core/commerce-capabilities";
+import type {
+	Module,
+	ModuleConfig,
+	ModuleContext,
+} from "@86d-app/core/types/module";
+import { adminEndpoints } from "./admin/endpoints/routes";
 import { returnRequestedV1 } from "./events";
 import { returnsSchema } from "./schema";
 import { createReturnController } from "./service-impl";
-import { storeEndpoints } from "./store/endpoints";
+import { storeEndpoints } from "./store/endpoints/routes";
 
 export {
 	type AuthoritativeReturnRequest,

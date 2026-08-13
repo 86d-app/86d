@@ -1,9 +1,13 @@
-import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
-import { createAdminEndpointsWithSettings } from "./admin/endpoints";
+import type {
+	Module,
+	ModuleConfig,
+	ModuleContext,
+} from "@86d-app/core/types/module";
 import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
+import { createAdminEndpointsWithSettings } from "./admin/endpoints/routes";
 import { doordashSchema } from "./schema";
 import { createDoordashController } from "./service-impl";
-import { storeEndpoints } from "./store/endpoints";
+import { storeEndpoints } from "./store/endpoints/routes";
 
 export type {
 	Delivery,

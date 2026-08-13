@@ -12,7 +12,7 @@ import {
 	standingPermissionSchema,
 	standingPermissionUseReservationSchema,
 	type TargetReference,
-} from "@86d-app/core";
+} from "@86d-app/core/commands";
 import type { MemoryCommandTransaction } from "./command";
 import {
 	type CommandGrantAdapter,

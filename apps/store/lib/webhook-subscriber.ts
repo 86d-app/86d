@@ -8,7 +8,7 @@
  * Delivery results are logged to WebhookDelivery for auditability.
  */
 
-import type { EventBus, ModuleEvent } from "@86d-app/core";
+import type { EventBus, ModuleEvent } from "@86d-app/core/events";
 import type { Prisma } from "db";
 import {
 	buildWebhookPayload,

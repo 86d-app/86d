@@ -2,7 +2,7 @@ import type {
 	PaymentProvider,
 	ProviderIntentResult,
 	ProviderRefundResult,
-} from "@86d-app/core";
+} from "@86d-app/core/payment-provider";
 
 // Square's Payment status values
 type SquarePaymentStatus =

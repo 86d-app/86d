@@ -1,16 +1,18 @@
 import {
 	inventoryStockAdjustedV1,
 	inventoryStockAdjustedV2,
-	type Module,
-	type ModuleConfig,
-	type ModuleContext,
-} from "@86d-app/core";
-import { adminEndpoints } from "./admin/endpoints";
+} from "@86d-app/core/durable-events";
+import type {
+	Module,
+	ModuleConfig,
+	ModuleContext,
+} from "@86d-app/core/types/module";
+import { adminEndpoints } from "./admin/endpoints/routes";
 import { inventoryCheckoutProvider } from "./capabilities";
 import { inventoryCheckoutV2Provider } from "./reservation-provider";
 import { inventorySchema } from "./schema";
 import { createInventoryController } from "./service-impl";
-import { storeEndpoints } from "./store/endpoints";
+import { storeEndpoints } from "./store/endpoints/routes";
 
 export { inventoryStockAdjustTransportSchema } from "./admin/endpoints/adjust-stock";
 export {

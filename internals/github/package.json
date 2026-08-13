@@ -1,8 +1,8 @@
 {
-  "name": "github",
-  "version": "0.0.0",
-  "private": true,
-  "scripts": {
-    "clean": "git clean -xdf .cache .turbo dist node_modules"
-  }
+	"name": "github",
+	"version": "0.0.0",
+	"private": true,
+	"scripts": {
+		"clean": "git clean -xdf .cache .turbo dist node_modules"
+	}
 }

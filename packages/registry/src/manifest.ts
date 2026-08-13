@@ -125,7 +125,7 @@ function buildModuleEntry(
 	}
 
 	const hasStoreComponents = existsSync(
-		join(moduleDir, "src", "store", "components", "index.tsx"),
+		join(moduleDir, "src", "store", "components", "mdx.tsx"),
 	);
 	const hasAdminComponents = existsSync(
 		join(moduleDir, "src", "admin", "components", "index.tsx"),

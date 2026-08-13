@@ -25,9 +25,15 @@
 			"import": "./src/index.ts",
 			"default": "./src/index.ts"
 		},
-		"./components": "./src/store/components",
-		"./admin-components": "./src/admin/components",
-		"./*": "./src/*"
+		"./*": "./src/*",
+		"./admin/components/revenue-admin": {
+			"types": "./src/admin/components/revenue-admin.tsx",
+			"default": "./src/admin/components/revenue-admin.tsx"
+		},
+		"./components": {
+			"types": "./src/store/components/mdx.tsx",
+			"default": "./src/store/components/mdx.tsx"
+		}
 	},
 	"scripts": {
 		"build": "tsc",

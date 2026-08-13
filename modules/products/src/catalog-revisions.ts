@@ -3,13 +3,14 @@ import {
 	type AuthoritySnapshot,
 	actorReferenceSchema,
 	authoritySnapshotSchema,
+} from "@86d-app/core/commands";
+import {
 	catalogPublishedV1,
-	isSafeUrl,
 	type LockingModuleDataTransaction,
 	type ModuleDataTransaction,
-	sanitizeText,
-	z,
-} from "@86d-app/core";
+} from "@86d-app/core/durable-events";
+import { isSafeUrl, sanitizeText } from "@86d-app/core/sanitize";
+import { z } from "@86d-app/core/zod";
 
 const resourceIdentifierSchema = z
 	.string()

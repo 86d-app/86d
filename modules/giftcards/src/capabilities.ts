@@ -1,8 +1,6 @@
-import {
-	giftCardCheckoutCapability,
-	provideCapability,
-	type z,
-} from "@86d-app/core";
+import { provideCapability } from "@86d-app/core/capabilities";
+import { giftCardCheckoutCapability } from "@86d-app/core/commerce-capabilities";
+import type { z } from "@86d-app/core/zod";
 import type { GiftCardController } from "./service";
 import { createGiftCardController } from "./service-impl";
 

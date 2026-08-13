@@ -1,7 +1,5 @@
-import {
-	createWorkloadIdentityProofBridge,
-	readManagedWorkloadConfig,
-} from "@86d-app/sdk";
+import { createWorkloadIdentityProofBridge } from "@86d-app/sdk/workload-identity-proof";
+import { readManagedWorkloadConfig } from "@86d-app/sdk/workload-token-client";
 import { type NextRequest, NextResponse } from "next/server";
 import { createRateLimiter } from "utils/rate-limit";
 

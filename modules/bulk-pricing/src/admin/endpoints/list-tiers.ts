@@ -1,4 +1,5 @@
-import { createAdminEndpoint, z } from "@86d-app/core";
+import { createAdminEndpoint } from "@86d-app/core/api";
+import { z } from "@86d-app/core/zod";
 import type { BulkPricingController, ListTiersParams } from "../../service";
 
 export const listTiers = createAdminEndpoint(

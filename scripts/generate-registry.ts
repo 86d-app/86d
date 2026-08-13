@@ -45,7 +45,14 @@ function resolveCommit(): string | undefined {
 function assertTrackedSourceIsClean(): void {
 	const changed = execFileSync(
 		"git",
-		["status", "--porcelain", "--untracked-files=no", "--", "modules", "templates"],
+		[
+			"status",
+			"--porcelain",
+			"--untracked-files=no",
+			"--",
+			"modules",
+			"templates",
+		],
 		{
 			cwd: WORKSPACE_ROOT,
 			encoding: "utf-8",
@@ -90,7 +97,9 @@ async function loadDeclarations(): Promise<Record<string, ModuleDeclarations>> {
 			declarations[name] = {
 				id: mod.id,
 				version: mod.version,
-				category: mod.admin?.pages?.find((page) => page.group)?.group?.toLowerCase(),
+				category: mod.admin?.pages
+					?.find((page) => page.group)
+					?.group?.toLowerCase(),
 				requires: Array.isArray(mod.requires)
 					? mod.requires
 					: Object.keys(mod.requires ?? {}),
@@ -140,7 +149,9 @@ async function loadDeclarations(): Promise<Record<string, ModuleDeclarations>> {
 assertTrackedSourceIsClean();
 const commit = resolveCommit();
 if (!commit) {
-	throw new Error("A resolved git commit is required to generate registry.json.");
+	throw new Error(
+		"A resolved git commit is required to generate registry.json.",
+	);
 }
 const storeRuntime = storeRuntimeVersion();
 const declarations = await loadDeclarations();

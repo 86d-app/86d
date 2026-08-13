@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { storeEndpoints } from "../store/endpoints";
+import { storeEndpoints } from "../store/endpoints/routes";
 
 type Endpoint = (input: Record<string, unknown>) => Promise<unknown>;
 

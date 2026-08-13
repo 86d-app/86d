@@ -1,5 +1,5 @@
-import type { CapabilityInvoker } from "@86d-app/core";
-import { createEventBus, createScopedEmitter } from "@86d-app/core";
+import type { CapabilityInvoker } from "@86d-app/core/capabilities";
+import { createEventBus, createScopedEmitter } from "@86d-app/core/events";
 import {
 	createMockDataService,
 	createMockModuleContext,

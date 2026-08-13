@@ -1,4 +1,4 @@
-import type { BaseAdapter } from "@86d-app/core";
+import type { BaseAdapter } from "@86d-app/core/adapters";
 import { describe, expect, it } from "vitest";
 import { AdapterRegistry, createNoOpAdapter } from "../adapters";
 

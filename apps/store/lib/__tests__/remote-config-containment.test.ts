@@ -46,7 +46,7 @@ vi.mock("@86d-app/runtime/universal-data-service", () => ({
 	UniversalDataService: vi.fn(),
 }));
 
-vi.mock("@86d-app/sdk", () => ({
+vi.mock("@86d-app/sdk/get-store-config", () => ({
 	getStoreConfig: vi.fn().mockResolvedValue({
 		name: "Managed Store",
 		moduleOptions: {
@@ -58,6 +58,22 @@ vi.mock("@86d-app/sdk", () => ({
 			events: { "order.placed": false },
 		},
 	}),
+	loadFromTemplate: vi.fn().mockReturnValue({
+		name: "Standalone Template",
+		moduleOptions: {
+			"@86d-app/cart": { maxItemsPerCart: 25 },
+		},
+		notificationSettings: {
+			fromAddress: "Store <orders@example.com>",
+			adminEmail: "owner@example.com",
+			events: { "payment.failed": false },
+		},
+	}),
+}));
+
+// api-registry.ts:76 also calls loadFromTemplate; the pre-split whole-module mock
+// covered it in the same factory.
+vi.mock("@86d-app/sdk/load-from-template", () => ({
 	loadFromTemplate: vi.fn().mockReturnValue({
 		name: "Standalone Template",
 		moduleOptions: {

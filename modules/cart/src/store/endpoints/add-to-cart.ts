@@ -1,8 +1,6 @@
-import {
-	createStoreEndpoint,
-	productResolveCapability,
-	z,
-} from "@86d-app/core";
+import { createStoreEndpoint } from "@86d-app/core/api";
+import { productResolveCapability } from "@86d-app/core/commerce-capabilities";
+import { z } from "@86d-app/core/zod";
 import type { CartController } from "../../service";
 import { resolveGuestId } from "./_guest";
 

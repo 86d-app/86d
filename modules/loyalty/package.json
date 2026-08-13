@@ -19,8 +19,14 @@
 	"homepage": "https://86d.app",
 	"type": "module",
 	"exports": {
-		"./components": "./src/store/components",
-		"./admin-components": "./src/admin/components",
+		".": {
+			"types": "./src/index.ts",
+			"default": "./src/index.ts"
+		},
+		"./components": {
+			"types": "./src/store/components/mdx.tsx",
+			"default": "./src/store/components/mdx.tsx"
+		},
 		"./*": "./src/*"
 	},
 	"scripts": {

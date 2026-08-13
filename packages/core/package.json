@@ -15,10 +15,6 @@
 		"dist"
 	],
 	"exports": {
-		".": {
-			"types": "./src/index.ts",
-			"default": "./src/index.ts"
-		},
 		"./adapters": {
 			"types": "./src/adapters.ts",
 			"default": "./src/adapters.ts"
@@ -35,9 +31,33 @@
 			"types": "./src/charts.ts",
 			"default": "./src/charts.ts"
 		},
-		"./client": {
-			"types": "./src/client/index.ts",
-			"default": "./src/client/index.ts"
+		"./client/create-client": {
+			"types": "./src/client/create-client.ts",
+			"default": "./src/client/create-client.ts"
+		},
+		"./client/hooks": {
+			"types": "./src/client/hooks.ts",
+			"default": "./src/client/hooks.ts"
+		},
+		"./client/provider": {
+			"types": "./src/client/provider.tsx",
+			"default": "./src/client/provider.tsx"
+		},
+		"./client/query-client": {
+			"types": "./src/client/query-client.ts",
+			"default": "./src/client/query-client.ts"
+		},
+		"./client/react-query": {
+			"types": "./src/client/react-query.ts",
+			"default": "./src/client/react-query.ts"
+		},
+		"./client/store-context": {
+			"types": "./src/client/store-context.tsx",
+			"default": "./src/client/store-context.tsx"
+		},
+		"./client/types": {
+			"types": "./src/client/types.ts",
+			"default": "./src/client/types.ts"
 		},
 		"./commands": {
 			"types": "./src/commands.ts",

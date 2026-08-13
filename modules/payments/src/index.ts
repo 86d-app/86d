@@ -1,18 +1,20 @@
-import type {
-	Module,
-	ModuleContext,
-	PaymentConnectionProvider,
-} from "@86d-app/core";
-import { adminEndpoints } from "./admin/endpoints";
+import type { PaymentConnectionProvider } from "@86d-app/core/payment-connection-provider";
+import type { Module, ModuleContext } from "@86d-app/core/types/module";
+import { adminEndpoints } from "./admin/endpoints/routes";
 import {
 	createPaymentCheckoutProvider,
 	createPaymentIntentProvider,
 } from "./capabilities";
 import { createPaymentConnectionController } from "./connection-service";
+import {
+	createPaymentAggregateStore,
+	paymentTransitionConfirmedV1,
+} from "./payment-service";
 import { paymentsSchema } from "./schema";
 import type { PaymentProvider } from "./service";
 import { createPaymentController } from "./service-impl";
-import { storeEndpoints } from "./store/endpoints";
+import { storeEndpoints } from "./store/endpoints/routes";
+import { createPaymentWebhookReceiptStore } from "./webhook-receipt-service";
 
 export type {
 	PaymentConnectionCapability,
@@ -21,8 +23,9 @@ export type {
 	PaymentOperationPayload,
 	PaymentProviderOperationOutcome,
 	PaymentProviderOperationRequest,
+	PaymentProviderOperationSource,
 	PaymentProviderReconciliationRequest,
-} from "@86d-app/core";
+} from "@86d-app/core/payment-connection-provider";
 export type {
 	CreatePaymentConnectionInput,
 	PaymentConnection,
@@ -33,8 +36,41 @@ export type {
 	PaymentOperation,
 	PaymentOperationAttempt,
 	PaymentOperationExecutionInput,
+	PaymentOperationReconciliationOptions,
 } from "./connection-service";
-export { PaymentConnectionError } from "./connection-service";
+export {
+	PAYMENT_MAX_AUTOMATIC_RECONCILIATIONS,
+	PAYMENT_OPERATION_STALE_AFTER_MS,
+	PAYMENT_PENDING_RECONCILIATION_BACKOFF_MS,
+	PAYMENT_RECONCILIATION_BACKOFF_MS,
+	PAYMENT_REQUIRES_ACTION_RECONCILIATION_BACKOFF_MS,
+	PaymentConnectionError,
+	paymentOperationReconciliationOptionsSchema,
+} from "./connection-service";
+export type {
+	ApplyPaymentDisputeInput,
+	ConfirmedPaymentOperationInput,
+	CreatePaymentAggregateInput,
+	PaymentAggregate,
+	PaymentAggregateErrorCode,
+	PaymentAggregateStore,
+	PaymentOption,
+} from "./payment-service";
+export {
+	applyPaymentDisputeInputSchema,
+	confirmedPaymentOperationInputSchema,
+	createPaymentAggregateInputSchema,
+	createPaymentAggregateStore,
+	PaymentAggregateError,
+	paymentAggregateSchema,
+	paymentDisputeProjectionSchema,
+	paymentDisputeStateSchema,
+	paymentOptionSchema,
+	paymentProviderReferenceSchema,
+	paymentStateSchema,
+	paymentTerminalStateSchema,
+	paymentTransitionConfirmedV1,
+} from "./payment-service";
 export type {
 	PaymentController,
 	PaymentIntent,
@@ -46,6 +82,19 @@ export type {
 	Refund,
 	RefundStatus,
 } from "./service";
+export type {
+	PaymentWebhookReceipt,
+	PaymentWebhookReceiptErrorCode,
+	PaymentWebhookReceiptStore,
+	RecordVerifiedPaymentWebhookInput,
+} from "./webhook-receipt-service";
+export {
+	createPaymentWebhookReceiptStore,
+	PaymentWebhookReceiptError,
+	paymentWebhookNormalizedFactSchema,
+	paymentWebhookReceiptSchema,
+	recordVerifiedPaymentWebhookInputSchema,
+} from "./webhook-receipt-service";
 
 export interface PaymentsOptions {
 	/** Default currency for payment intents */
@@ -76,17 +125,29 @@ export default function payments(options?: PaymentsOptions): Module {
 		events: {
 			emits: ["payment.completed", "payment.failed", "payment.refunded"],
 		},
+		durableEvents: { emits: [paymentTransitionConfirmedV1] },
 		init: async (ctx: ModuleContext) => {
 			const controller = createPaymentController(ctx.data, options?.provider);
+			const aggregates = createPaymentAggregateStore(
+				ctx.data,
+				ctx.transactions,
+			);
 			const connections = createPaymentConnectionController(
 				ctx.data,
 				ctx.transactions,
 				options?.connectionProviders,
 			);
+			const webhookReceipts = createPaymentWebhookReceiptStore(
+				ctx.data,
+				ctx.transactions,
+				aggregates,
+			);
 			return {
 				controllers: {
 					payments: controller,
+					paymentAggregates: aggregates,
 					paymentConnections: connections,
+					paymentWebhookReceipts: webhookReceipts,
 				},
 			};
 		},

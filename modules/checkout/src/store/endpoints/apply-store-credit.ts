@@ -1,8 +1,6 @@
-import {
-	createStoreEndpoint,
-	storeCreditCheckoutCapability,
-	z,
-} from "@86d-app/core";
+import { createStoreEndpoint } from "@86d-app/core/api";
+import { storeCreditCheckoutCapability } from "@86d-app/core/commerce-capabilities";
+import { z } from "@86d-app/core/zod";
 import { checkoutRevisionSchema, runCheckoutMutation } from "../../concurrency";
 import type { CheckoutController } from "../../service";
 import { canAccessCheckout } from "./guest-proof";

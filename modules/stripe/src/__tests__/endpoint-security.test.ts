@@ -390,6 +390,33 @@ describe("stripe endpoint security — provider intent extraction", () => {
 describe("stripe endpoint security — refund event handling", () => {
 	const handler = createStripeWebhook({ webhookSecret: SECRET });
 
+	it("does not treat dispute funds withdrawal as a refund", async () => {
+		const { data, payments, context } = createTestContext();
+		await seedIntent(data, payments, "pi_dispute_sec", 5000, "succeeded");
+		const body = JSON.stringify({
+			id: "evt_dispute_funds_withdrawn",
+			type: "charge.dispute.funds_withdrawn",
+			data: {
+				object: {
+					payment_intent: "pi_dispute_sec",
+					refunds: {
+						data: [{ id: "re_must_not_apply", amount: 5000 }],
+					},
+				},
+			},
+		});
+
+		const res = await callWebhook(handler, makeRequest(body), context);
+		const json = (await res.json()) as {
+			received: boolean;
+			handled?: boolean;
+		};
+		expect(res.status).toBe(200);
+		expect(json.received).toBe(true);
+		expect(json.handled).toBeUndefined();
+		expect(context.events.emit).not.toHaveBeenCalled();
+	});
+
 	it("extracts refund details from charge.refunded event", async () => {
 		const { data, payments, context } = createTestContext();
 		await seedIntent(data, payments, "pi_refund_sec", 5000, "succeeded");

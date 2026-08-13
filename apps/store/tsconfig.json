@@ -8,15 +8,7 @@
 			"*": ["./*"],
 			"~/*": ["./*"],
 			"template/*": ["../../templates/brisa/*"],
-			"@86d-app/runtime/*": ["../../packages/runtime/src/*"],
-			"@86d-app/*/components": [
-				"../../modules/*/src/store/components/index.tsx"
-			],
-			"@86d-app/*/admin-components": [
-				"../../modules/*/src/admin/components/index.tsx"
-			],
-			"@86d-app/*/state": ["../../modules/*/src/state.ts"],
-			"@86d-app/*": ["../../modules/*/src/index.ts"],
+			"@86d-app/*/components": ["../../modules/*/src/store/components/mdx.tsx"],
 			"lib/*": ["../../packages/lib/src/*"]
 		},
 		"plugins": [{ "name": "next" }],

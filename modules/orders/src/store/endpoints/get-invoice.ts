@@ -1,8 +1,6 @@
-import {
-	createStoreEndpoint,
-	storePresentationResolveCapability,
-	z,
-} from "@86d-app/core";
+import { createStoreEndpoint } from "@86d-app/core/api";
+import { storePresentationResolveCapability } from "@86d-app/core/commerce-capabilities";
+import { z } from "@86d-app/core/zod";
 import { resolveOrderCustomerContext } from "./customer-context";
 
 export const getMyInvoice = createStoreEndpoint(

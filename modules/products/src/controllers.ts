@@ -1,4 +1,4 @@
-import type { ModuleControllers } from "@86d-app/core";
+import type { ModuleControllers } from "@86d-app/core/types/module";
 
 /**
  * Product data types

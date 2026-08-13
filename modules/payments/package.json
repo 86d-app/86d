@@ -24,10 +24,16 @@
 			"import": "./src/index.ts",
 			"default": "./src/index.ts"
 		},
+		"./*": "./src/*",
+		"./admin/components/payments-admin": {
+			"types": "./src/admin/components/payments-admin.tsx",
+			"default": "./src/admin/components/payments-admin.tsx"
+		},
 		"./capabilities": "./src/capabilities.ts",
-		"./components": "./src/store/components",
-		"./admin-components": "./src/admin/components",
-		"./*": "./src/*"
+		"./components": {
+			"types": "./src/store/components/mdx.tsx",
+			"default": "./src/store/components/mdx.tsx"
+		}
 	},
 	"scripts": {
 		"build": "tsc",

@@ -1,9 +1,14 @@
-import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
-import { acceptCapability, orderPurchaseVerifyCapability } from "@86d-app/core";
-import { adminEndpoints } from "./admin/endpoints";
+import { acceptCapability } from "@86d-app/core/capabilities";
+import { orderPurchaseVerifyCapability } from "@86d-app/core/commerce-capabilities";
+import type {
+	Module,
+	ModuleConfig,
+	ModuleContext,
+} from "@86d-app/core/types/module";
+import { adminEndpoints } from "./admin/endpoints/routes";
 import { reviewsSchema } from "./schema";
 import { createReviewController } from "./service-impl";
-import { storeEndpoints } from "./store/endpoints";
+import { storeEndpoints } from "./store/endpoints/routes";
 
 export type {
 	RatingSummary,

@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { createStorage, createStorageFromEnv } from "../factory.ts";
-import { storageConfigSchema } from "../index.ts";
 import { LocalStorageProvider } from "../local.ts";
 import { S3StorageProvider } from "../s3.ts";
+import { storageConfigSchema } from "../types.ts";
 import { VercelBlobProvider } from "../vercel.ts";
 
 describe("createStorage", () => {

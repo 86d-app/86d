@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createStoreEndpointsWithRates } from "../store/endpoints";
+import { createStoreEndpointsWithRates } from "../store/endpoints/routes";
 
 const NOW = new Date("2026-08-13T12:00:00.000Z");
 

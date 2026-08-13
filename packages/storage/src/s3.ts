@@ -4,7 +4,7 @@ import type {
 	StorageProvider,
 	StorageUploadOptions,
 	StorageUploadResult,
-} from "./index.ts";
+} from "./types.ts";
 
 interface S3Config {
 	endpoint: string;

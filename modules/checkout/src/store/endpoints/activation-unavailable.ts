@@ -1,4 +1,4 @@
-import { createStoreEndpoint } from "@86d-app/core";
+import { createStoreEndpoint } from "@86d-app/core/api";
 
 export const checkoutActivationUnavailable = {
 	code: "CHECKOUT_ACTIVATION_UNAVAILABLE",

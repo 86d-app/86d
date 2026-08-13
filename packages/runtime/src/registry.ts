@@ -1,6 +1,5 @@
 import type {
 	AnyCapabilityDefinition,
-	AnyDurableEventConsumer,
 	CapabilityDecision,
 	CapabilityFailure,
 	CapabilityInvoker,
@@ -9,29 +8,37 @@ import type {
 	CapabilityRejected,
 	CapabilityRequest,
 	CapabilityResult,
-	EndpointExposureEntry,
+} from "@86d-app/core/capabilities";
+import {
+	formatViolations,
+	getRequiredModuleIds,
+	validateContracts,
+} from "@86d-app/core/contracts";
+import type {
+	AnyDurableEventConsumer,
+	ModuleTransactionRunner,
+} from "@86d-app/core/durable-events";
+import type { EndpointExposureEntry } from "@86d-app/core/endpoint-exposure";
+import {
+	collectEndpointExposures,
+	formatEndpointExposureViolations,
+} from "@86d-app/core/endpoint-exposure";
+import {
+	createEventBus,
+	createScopedEmitter,
+	type EventBus,
+	type EventBusOptions,
+} from "@86d-app/core/events";
+import { formatPathConflicts, validateUniquePaths } from "@86d-app/core/paths";
+import type { Primitive } from "@86d-app/core/types/helper";
+import type {
 	Module,
 	ModuleContext,
 	ModuleControllers,
 	ModuleDataService,
 	ModuleStatus,
-	ModuleTransactionRunner,
-	Primitive,
 	Session,
-} from "@86d-app/core";
-import {
-	collectEndpointExposures,
-	createEventBus,
-	createScopedEmitter,
-	type EventBus,
-	type EventBusOptions,
-	formatEndpointExposureViolations,
-	formatPathConflicts,
-	formatViolations,
-	getRequiredModuleIds,
-	validateContracts,
-	validateUniquePaths,
-} from "@86d-app/core";
+} from "@86d-app/core/types/module";
 
 /**
  * Per-module state tracked by the registry.

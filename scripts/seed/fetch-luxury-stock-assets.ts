@@ -41,7 +41,10 @@ type ManifestEntry = {
 	alt: string;
 };
 
-function targetSizeForPath(relativePath: string): { width: number; height: number } {
+function targetSizeForPath(relativePath: string): {
+	width: number;
+	height: number;
+} {
 	if (relativePath === "brand/logo.webp") return LOGO_SIZE;
 	if (relativePath.startsWith("products/")) return PRODUCT_SIZE;
 	return BANNER_SIZE;
@@ -100,7 +103,9 @@ async function main(): Promise<void> {
 	for (const row of manifest) {
 		const src = byPath.get(row.relativePath);
 		if (!src) {
-			throw new Error(`Missing luxury-stock-sources.json entry for ${row.relativePath}`);
+			throw new Error(
+				`Missing luxury-stock-sources.json entry for ${row.relativePath}`,
+			);
 		}
 	}
 

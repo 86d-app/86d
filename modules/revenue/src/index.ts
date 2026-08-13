@@ -1,8 +1,9 @@
-import type { Module, ModuleConfig } from "@86d-app/core";
-import { acceptCapability, paymentIntentCapability } from "@86d-app/core";
-import { adminEndpoints } from "./admin/endpoints";
+import { acceptCapability } from "@86d-app/core/capabilities";
+import { paymentIntentCapability } from "@86d-app/core/commerce-capabilities";
+import type { Module, ModuleConfig } from "@86d-app/core/types/module";
+import { adminEndpoints } from "./admin/endpoints/routes";
 import { revenueSchema } from "./schema";
-import { storeEndpoints } from "./store/endpoints";
+import { storeEndpoints } from "./store/endpoints/routes";
 
 export type {
 	PaymentIntentStatus,

@@ -1,6 +1,7 @@
 "use client";
 
-import { useModuleClient, useStoreContext } from "@86d-app/core/client";
+import { useModuleClient } from "@86d-app/core/client/provider";
+import { useStoreContext } from "@86d-app/core/client/store-context";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {

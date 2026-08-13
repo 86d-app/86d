@@ -28,6 +28,7 @@ import type {
 	ModuleContext,
 	ModuleControllers,
 	ModuleDataService,
+	ModuleEntityMap,
 	Session,
 } from "./types/module";
 
@@ -46,7 +47,8 @@ import type {
  * data._store.clear(); // reset between tests
  * ```
  */
-export interface MockDataService extends ModuleDataService {
+export interface MockDataService<E extends ModuleEntityMap = ModuleEntityMap>
+	extends ModuleDataService<E> {
 	/**
 	 * Internal store backing the mock. Keys are `${entityType}:${entityId}`.
 	 * Exposed for test assertions and manual manipulation.
@@ -97,9 +99,14 @@ export interface MockDataService extends ModuleDataService {
  * expect(data.size("product")).toBe(2);
  * ```
  */
-export function createMockDataService(): MockDataService {
+export function createMockDataService<
+	E extends ModuleEntityMap = ModuleEntityMap,
+>(): MockDataService<E> {
 	const store = new Map<string, Record<string, unknown>>();
 
+	// The single cast in this file, and the whole cast budget of the entity-typing
+	// change: the backing store is deliberately untyped, and the generic surface is
+	// re-imposed here at the boundary.
 	return {
 		_store: store,
 
@@ -163,7 +170,7 @@ export function createMockDataService(): MockDataService {
 
 			return sliced;
 		},
-	};
+	} as MockDataService<E>;
 }
 
 export type MockDurableEvent = Readonly<{

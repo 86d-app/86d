@@ -3,12 +3,14 @@ import {
 	type CapabilityFailure,
 	type CapabilityRejected,
 	type CapabilitySuccess,
+	provideCapability,
+} from "@86d-app/core/capabilities";
+import {
 	orderCreateCapability,
 	orderCustomerAuthorizeCapability,
 	orderLineQuantityValidateCapability,
 	orderPurchaseVerifyCapability,
-	provideCapability,
-} from "@86d-app/core";
+} from "@86d-app/core/commerce-capabilities";
 import { createOrderController } from "./service-impl";
 
 export {

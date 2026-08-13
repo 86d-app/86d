@@ -1,11 +1,15 @@
-import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
-import { createAdminEndpointsWithSettings } from "./admin/endpoints";
+import type {
+	Module,
+	ModuleConfig,
+	ModuleContext,
+} from "@86d-app/core/types/module";
 import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
+import { createAdminEndpointsWithSettings } from "./admin/endpoints/routes";
 import { GA4Provider } from "./providers/ga4";
 import { analyticsSchema } from "./schema";
 import { createAnalyticsController } from "./service-impl";
-import { storeEndpoints } from "./store/endpoints";
 import { createClientConfigEndpoint } from "./store/endpoints/get-client-config";
+import { storeEndpoints } from "./store/endpoints/routes";
 
 export type {
 	AnalyticsController,

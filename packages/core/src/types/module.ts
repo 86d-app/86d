@@ -130,17 +130,44 @@ export interface StorePage {
  * await dataService.upsert("cart", "cart_343", { ... });
  * const items = await dataService.findMany("cartItem", { where: { cartId: "cart_343" } });
  */
-export interface ModuleDataService {
+/**
+ * Map of a Module's entity name to the shape stored under it.
+ *
+ * A Module declares this once from the domain types it already exports, e.g.
+ * `type CartEntities = { cart: Cart; cartItem: CartItem }`. Threading it through
+ * `ModuleDataService` lets reads and writes INFER instead of asserting.
+ */
+export type ModuleEntityMap = Record<string, Record<string, unknown>>;
+
+/**
+ * Abstraction for CRUD operations on module entities.
+ *
+ * The `E` parameter defaults to the untyped map, so every existing
+ * `data: ModuleDataService` annotation keeps compiling unchanged.
+ *
+ * NOTE ON SAFETY: `get` returns whatever JSONB the database holds. An inferred
+ * return type makes exactly the same unchecked assumption a cast did — it just
+ * stops advertising it. Pair it with a runtime parse (see
+ * `FieldAttributeConfig.validator` in ./schema, and `cartRecordSchema` in
+ * modules/cart/src/service-impl.ts) where the data is not owner-controlled.
+ *
+ * @example
+ * const cart = await data.get("cart", id);        // Cart | null, no cast
+ * await data.upsert("cart", id, cart);            // accepts Cart, no cast
+ */
+export interface ModuleDataService<
+	E extends ModuleEntityMap = ModuleEntityMap,
+> {
 	/**
 	 * Get a single entity by ID.
 	 *
 	 * @example
 	 * const product = await dataService.get("product", "prod_123");
 	 */
-	get(
-		entityType: string,
+	get<K extends keyof E & string>(
+		entityType: K,
 		entityId: string,
-	): Promise<Record<string, unknown> | null>;
+	): Promise<E[K] | null>;
 
 	/**
 	 * Create or update an entity.
@@ -148,10 +175,10 @@ export interface ModuleDataService {
 	 * @example
 	 * await dataService.upsert("product", "prod_new", { title: "New Product" });
 	 */
-	upsert(
-		entityType: string,
+	upsert<K extends keyof E & string>(
+		entityType: K,
 		entityId: string,
-		data: Record<string, unknown>,
+		data: E[K],
 	): Promise<void>;
 
 	/**
@@ -160,7 +187,7 @@ export interface ModuleDataService {
 	 * @example
 	 * await dataService.delete("cartItem", "item_123");
 	 */
-	delete(entityType: string, entityId: string): Promise<void>;
+	delete(entityType: keyof E & string, entityId: string): Promise<void>;
 
 	/**
 	 * Find many entities with optional filtering.
@@ -173,15 +200,40 @@ export interface ModuleDataService {
 	 *   skip: 0
 	 * });
 	 */
-	findMany(
-		entityType: string,
+	findMany<K extends keyof E & string>(
+		entityType: K,
 		options?: {
 			where?: Record<string, unknown>;
 			orderBy?: Record<string, "asc" | "desc">;
 			take?: number;
 			skip?: number;
 		},
-	): Promise<Record<string, unknown>[]>;
+	): Promise<E[K][]>;
+}
+
+/**
+ * Narrow a Module's data service to that Module's entity map.
+ *
+ * The runtime hands every Module the same untyped `ModuleDataService`, and
+ * `Module` cannot be generic over the entity map: `init` takes the context as a
+ * parameter, so a `Module<_, CartEntities>` is not assignable to the `Module[]`
+ * the registry holds.
+ *
+ * So the assertion lives here — once per Module, named and greppable — instead of
+ * being repeated at every read and write. It asserts the same thing those casts
+ * did; it does not verify it. Where the rows are not owner-controlled, pair it with
+ * a runtime parse (see `FieldAttributeConfig.validator` in ./schema).
+ *
+ * @example
+ * init: async (ctx) => {
+ *   const data = withEntities<CartEntities>(ctx.data);
+ *   return { controllers: { cart: createCartControllers(data) } };
+ * }
+ */
+export function withEntities<E extends ModuleEntityMap>(
+	data: ModuleDataService,
+): ModuleDataService<E> {
+	return data as ModuleDataService<E>;
 }
 
 /**
@@ -333,7 +385,10 @@ export type HookEndpointContext = Partial<
  *   storeId: "store_001"
  * };
  */
-export type ModuleContext<C extends ModuleControllers = ModuleControllers> = {
+export type ModuleContext<
+	C extends ModuleControllers = ModuleControllers,
+	E extends ModuleEntityMap = ModuleEntityMap,
+> = {
 	/**
 	 * Secure data access (replaces direct Prisma access).
 	 * Scoped to current module and store.
@@ -341,7 +396,7 @@ export type ModuleContext<C extends ModuleControllers = ModuleControllers> = {
 	 * @example
 	 * await context.data.get("product", "prod_123")
 	 */
-	data: ModuleDataService;
+	data: ModuleDataService<E>;
 
 	/**
 	 * List of enabled module IDs.

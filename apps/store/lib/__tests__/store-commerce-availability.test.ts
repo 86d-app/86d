@@ -2,15 +2,16 @@ import {
 	DEFAULT_CONFIG,
 	type RemoteStoreConfigV2,
 	type StoreCommerceAvailability,
-} from "@86d-app/sdk";
+} from "@86d-app/sdk/types";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const sdkBoundary = vi.hoisted(() => ({
 	getStoreConfig: vi.fn(),
 }));
 
-vi.mock("@86d-app/sdk", async (importOriginal) => {
-	const sdk = await importOriginal<typeof import("@86d-app/sdk")>();
+vi.mock("@86d-app/sdk/get-store-config", async (importOriginal) => {
+	const sdk =
+		await importOriginal<typeof import("@86d-app/sdk/get-store-config")>();
 	return { ...sdk, getStoreConfig: sdkBoundary.getStoreConfig };
 });
 

@@ -1,4 +1,4 @@
-import { sanitizeText } from "@86d-app/core";
+import { sanitizeText } from "@86d-app/core/sanitize";
 import type { Ticket } from "../../service";
 
 type SessionUser = {

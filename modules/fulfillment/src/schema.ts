@@ -1,4 +1,4 @@
-import type { ModuleSchema } from "@86d-app/core";
+import type { ModuleSchema } from "@86d-app/core/types/schema";
 
 export const fulfillmentSchema = {
 	/** One stable owner-local row per Order used to serialize allocations. */

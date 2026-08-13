@@ -1,10 +1,8 @@
-import type { Module, ModuleConfig } from "@86d-app/core";
-import {
-	acceptCapability,
-	catalogPublishedV1,
-	inventoryCheckoutCapability,
-} from "@86d-app/core";
-import { adminEndpoints } from "./admin/endpoints";
+import { acceptCapability } from "@86d-app/core/capabilities";
+import { inventoryCheckoutCapability } from "@86d-app/core/commerce-capabilities";
+import { catalogPublishedV1 } from "@86d-app/core/durable-events";
+import type { Module, ModuleConfig } from "@86d-app/core/types/module";
+import { adminEndpoints } from "./admin/endpoints/routes";
 import { productResolveProvider } from "./capabilities";
 import { controllers } from "./controllers";
 import {
@@ -14,7 +12,7 @@ import {
 	toMarkdownProductListing,
 } from "./markdown";
 import { productsSchema } from "./schema";
-import { storeEndpoints } from "./store/endpoints";
+import { storeEndpoints } from "./store/endpoints/routes";
 
 export {
 	applyCatalogRevisionOperation,

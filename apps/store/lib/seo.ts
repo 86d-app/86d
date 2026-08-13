@@ -1,4 +1,4 @@
-import { getStoreConfig } from "@86d-app/sdk";
+import { getStoreConfig } from "@86d-app/sdk/get-store-config";
 import { db } from "db";
 import env from "env";
 import { cache } from "react";

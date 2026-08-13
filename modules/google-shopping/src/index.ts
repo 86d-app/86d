@@ -1,9 +1,13 @@
-import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
-import { createAdminEndpointsWithSettings } from "./admin/endpoints";
+import type {
+	Module,
+	ModuleConfig,
+	ModuleContext,
+} from "@86d-app/core/types/module";
 import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
+import { createAdminEndpointsWithSettings } from "./admin/endpoints/routes";
 import { googleShoppingSchema } from "./schema";
 import { createGoogleShoppingController } from "./service-impl";
-import { createStoreEndpoints } from "./store/endpoints";
+import { createStoreEndpoints } from "./store/endpoints/routes";
 
 export type {
 	ChannelOrder,

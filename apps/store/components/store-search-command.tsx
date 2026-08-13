@@ -1,6 +1,6 @@
 "use client";
 
-import { useModuleClient } from "@86d-app/core/client";
+import { useModuleClient } from "@86d-app/core/client/provider";
 import { STORE_SEARCH_CONTRIBUTORS } from "generated/api";
 import { useAnalytics } from "hooks/use-analytics";
 import { useRouter } from "next/navigation";

@@ -1,4 +1,4 @@
-import type { ModuleController } from "@86d-app/core";
+import type { ModuleController } from "@86d-app/core/types/module";
 
 export type VendorStatus = "pending" | "active" | "suspended" | "closed";
 export type VendorProductStatus = "active" | "paused";

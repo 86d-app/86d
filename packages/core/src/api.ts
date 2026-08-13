@@ -7,7 +7,12 @@ import {
 	type StrictEndpoint,
 } from "better-call";
 import { type EndpointExposure, isEndpointExposure } from "./endpoint-exposure";
-import type { ModuleContext } from "./types/module";
+import type {
+	ModuleContext,
+	ModuleControllers,
+	ModuleEntityMap,
+	Session,
+} from "./types/module";
 
 type AdminContext = ModuleContext & {
 	session: NonNullable<ModuleContext["session"]>;
@@ -138,6 +143,46 @@ export const createAdminEndpoint = createEndpointFactory<AdminContext>(
 	"admin",
 	true,
 );
+
+/**
+ * Typed endpoint factories.
+ *
+ * `createStoreEndpoint` / `createAdminEndpoint` pin `ModuleContext` to its defaults,
+ * which erases both the Module's controllers and its entity shapes — that erasure is
+ * what forces `ctx.context.controllers.cart as CartController` at every call site.
+ * These curried variants carry both generics, so a Module gets typed controllers AND
+ * typed `ctx.context.data` from a single declaration.
+ *
+ * @example
+ * const createEndpoint = createStoreEndpointFor<
+ *   { cart: CartController },
+ *   CartEntities
+ * >();
+ *
+ * export const getCart = createEndpoint("/cart/get", { method: "GET" }, async (ctx) => {
+ *   const cart = await ctx.context.data.get("cart", id);   // Cart | null
+ *   return ctx.context.controllers.cart.getCartItems(id);  // typed, no cast
+ * });
+ */
+export const createStoreEndpointFor = <
+	C extends ModuleControllers,
+	E extends ModuleEntityMap = ModuleEntityMap,
+>() =>
+	createEndpointFactory<ModuleContext<C, E>>(
+		storeOptionsMiddleware,
+		"shopper",
+		false,
+	);
+
+export const createAdminEndpointFor = <
+	C extends ModuleControllers,
+	E extends ModuleEntityMap = ModuleEntityMap,
+>() =>
+	createEndpointFactory<ModuleContext<C, E> & { session: Session }>(
+		adminOptionsMiddleware,
+		"admin",
+		true,
+	);
 
 export type StoreEndpoint<
 	Path extends string,

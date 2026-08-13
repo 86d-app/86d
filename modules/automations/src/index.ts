@@ -1,9 +1,14 @@
-import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
-import { acceptCapability, notificationCreateCapability } from "@86d-app/core";
-import { adminEndpoints } from "./admin/endpoints";
+import { acceptCapability } from "@86d-app/core/capabilities";
+import { notificationCreateCapability } from "@86d-app/core/commerce-capabilities";
+import type {
+	Module,
+	ModuleConfig,
+	ModuleContext,
+} from "@86d-app/core/types/module";
+import { adminEndpoints } from "./admin/endpoints/routes";
 import { automationsSchema } from "./schema";
 import { createAutomationsController } from "./service-impl";
-import { createStoreEndpoints } from "./store/endpoints";
+import { createStoreEndpoints } from "./store/endpoints/routes";
 
 export type {
 	ActionType,

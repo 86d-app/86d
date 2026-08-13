@@ -8,6 +8,7 @@ Stripe payment provider for @86d-app/payments. Implements the `PaymentProvider` 
 src/
   index.ts              Factory: stripe(options) => Module + admin nav
   provider.ts           StripePaymentProvider class (PaymentProvider interface)
+  connection-provider.ts  Contained PaymentConnectionProvider v2 adapter
   mdx.d.ts              MDX module type declaration
   store/
     endpoints/
@@ -27,7 +28,19 @@ src/
     endpoint-security.test.ts 27 tests (replay protection, payload safety, refund extraction)
     admin-settings.test.ts    20 tests (key masking, mode detection, config status)
     module-factory.test.ts    12 tests (module identity, options, admin pages, endpoints)
+    connection-provider.test.ts  Durable envelope and reconciliation contracts
 ```
+
+## Payment Connection v2
+
+- `StripePaymentConnectionProvider` is bound to one immutable Connection ID.
+- It uses manual authorization and one final capture per authorization.
+- Every mutation forwards the durable operation idempotency key unchanged.
+- Reconciliation is read-only and uses exact provider references or exact operation metadata.
+- Known processing and SCA responses persist as `pending` and `requires_action`; they are not unknown outcomes and never advance the Payment aggregate.
+- No safe shopper SCA continuation transport is activated, so `requires_action` remains contained for manual attention.
+- The adapter is exported for migration and contract testing but is not registered by the module initializer.
+- Durable webhook receipt/application is not implemented here; the registered webhook remains contained behind `503 PAYMENT_WEBHOOK_DURABILITY_REQUIRED`.
 
 ## Options
 

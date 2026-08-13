@@ -1,8 +1,6 @@
-import {
-	provideCapability,
-	storeCreditCheckoutCapability,
-	type z,
-} from "@86d-app/core";
+import { provideCapability } from "@86d-app/core/capabilities";
+import { storeCreditCheckoutCapability } from "@86d-app/core/commerce-capabilities";
+import type { z } from "@86d-app/core/zod";
 import type { StoreCreditController } from "./service";
 import { createStoreCreditController } from "./service-impl";
 

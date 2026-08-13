@@ -220,7 +220,7 @@ describe("uber-eats service-impl with provider", () => {
 			await mockData.upsert("uberOrder", order.id, {
 				...order,
 				status: "delivered",
-			} as Record<string, unknown>);
+			});
 
 			expect(await controller.markReady(order.id)).toBeNull();
 		});
@@ -244,7 +244,7 @@ describe("uber-eats service-impl with provider", () => {
 			await mockData.upsert("uberOrder", order.id, {
 				...order,
 				status: "preparing",
-			} as Record<string, unknown>);
+			});
 
 			const ready = await controller.markReady(order.id);
 			expect(ready?.status).toBe("ready");
@@ -297,7 +297,7 @@ describe("uber-eats service-impl with provider", () => {
 			await mockData.upsert("uberOrder", order.id, {
 				...order,
 				status: "delivered",
-			} as Record<string, unknown>);
+			});
 
 			expect(await controller.cancelOrder(order.id)).toBeNull();
 		});
@@ -315,7 +315,7 @@ describe("uber-eats service-impl with provider", () => {
 			await mockData.upsert("uberOrder", order.id, {
 				...order,
 				status: "picked-up",
-			} as Record<string, unknown>);
+			});
 
 			expect(await controller.cancelOrder(order.id)).toBeNull();
 		});
@@ -694,7 +694,7 @@ describe("uber-eats order state transitions", () => {
 		await mockData.upsert("uberOrder", order.id, {
 			...order,
 			status: "delivered",
-		} as Record<string, unknown>);
+		});
 
 		expect(await controller.cancelOrder(order.id)).toBeNull();
 	});

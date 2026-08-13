@@ -15,7 +15,7 @@ import {
 	XAxis,
 	YAxis,
 } from "@86d-app/core/charts";
-import { useModuleClient } from "@86d-app/core/client";
+import { useModuleClient } from "@86d-app/core/client/provider";
 import { useCallback, useMemo, useState } from "react";
 import AnalyticsAdminTemplate from "./analytics-admin.mdx";
 

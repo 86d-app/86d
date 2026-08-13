@@ -1,12 +1,14 @@
-import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
-import {
-	acceptCapability,
-	orderCustomerAuthorizeCapability,
-} from "@86d-app/core";
-import { adminEndpoints } from "./admin/endpoints";
+import { acceptCapability } from "@86d-app/core/capabilities";
+import { orderCustomerAuthorizeCapability } from "@86d-app/core/commerce-capabilities";
+import type {
+	Module,
+	ModuleConfig,
+	ModuleContext,
+} from "@86d-app/core/types/module";
+import { adminEndpoints } from "./admin/endpoints/routes";
 import { giftWrappingSchema } from "./schema";
 import { createGiftWrappingController } from "./service-impl";
-import { storeEndpoints } from "./store/endpoints";
+import { storeEndpoints } from "./store/endpoints/routes";
 
 export interface GiftWrappingOptions extends ModuleConfig {
 	/** Maximum gift message length in characters. Default: 500. */

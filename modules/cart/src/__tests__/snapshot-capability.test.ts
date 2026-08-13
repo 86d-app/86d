@@ -1,4 +1,4 @@
-import { cartSnapshotCapability } from "@86d-app/core";
+import { cartSnapshotCapability } from "@86d-app/core/commerce-capabilities";
 import { createMockDataService } from "@86d-app/core/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cartSnapshotProvider } from "../capabilities";

@@ -19,10 +19,32 @@
 	"homepage": "https://86d.app",
 	"type": "module",
 	"exports": {
+		".": {
+			"types": "./src/index.ts",
+			"default": "./src/index.ts"
+		},
+		"./*": "./src/*",
+		"./admin/components/notification-composer": {
+			"types": "./src/admin/components/notification-composer.tsx",
+			"default": "./src/admin/components/notification-composer.tsx"
+		},
+		"./admin/components/notification-list": {
+			"types": "./src/admin/components/notification-list.tsx",
+			"default": "./src/admin/components/notification-list.tsx"
+		},
+		"./admin/components/notification-settings": {
+			"types": "./src/admin/components/notification-settings.tsx",
+			"default": "./src/admin/components/notification-settings.tsx"
+		},
+		"./admin/components/notification-template-list": {
+			"types": "./src/admin/components/notification-template-list.tsx",
+			"default": "./src/admin/components/notification-template-list.tsx"
+		},
 		"./capabilities": "./src/capabilities.ts",
-		"./components": "./src/store/components",
-		"./admin-components": "./src/admin/components",
-		"./*": "./src/*"
+		"./components": {
+			"types": "./src/store/components/mdx.tsx",
+			"default": "./src/store/components/mdx.tsx"
+		}
 	},
 	"scripts": {
 		"build": "tsc",

@@ -184,7 +184,7 @@ function pageImagePath(slug: string): string {
 	return `pages/${slug}.webp`;
 }
 
-function totalInventory(variants: SeedVariant[]): number {
+function _totalInventory(variants: SeedVariant[]): number {
 	return variants.reduce((sum, variant) => sum + variant.inventory, 0);
 }
 
@@ -292,8 +292,7 @@ function hatVariants(args: {
 			price: args.price + (color.priceDelta ?? 0),
 			...(args.compareAtPrice != null && {
 				compareAtPrice:
-					args.compareAtPrice +
-					(color.compareAtDelta ?? color.priceDelta ?? 0),
+					args.compareAtPrice + (color.compareAtDelta ?? color.priceDelta ?? 0),
 			}),
 			...(args.costPrice != null && { costPrice: args.costPrice }),
 			inventory: Math.max(color.inventory - sizeIndex - colorIndex, 1),
@@ -451,8 +450,20 @@ const palaisVariants = colorVariants({
 	weight: 0.88,
 	colors: [
 		{ name: "Chestnut", code: "CHT", inventory: 5 },
-		{ name: "Ink", code: "INK", inventory: 4, priceDelta: 5000, compareAtDelta: 5000 },
-		{ name: "Bone", code: "BON", inventory: 3, priceDelta: 8000, compareAtDelta: 8000 },
+		{
+			name: "Ink",
+			code: "INK",
+			inventory: 4,
+			priceDelta: 5000,
+			compareAtDelta: 5000,
+		},
+		{
+			name: "Bone",
+			code: "BON",
+			inventory: 3,
+			priceDelta: 8000,
+			compareAtDelta: 8000,
+		},
 	],
 });
 
@@ -480,8 +491,20 @@ const avenueVariants = colorVariants({
 	weight: 0.46,
 	colors: [
 		{ name: "Sable", code: "SBL", inventory: 5 },
-		{ name: "Merlot", code: "MRL", inventory: 4, priceDelta: 3000, compareAtDelta: 3000 },
-		{ name: "Champagne", code: "CHP", inventory: 3, priceDelta: 6000, compareAtDelta: 6000 },
+		{
+			name: "Merlot",
+			code: "MRL",
+			inventory: 4,
+			priceDelta: 3000,
+			compareAtDelta: 3000,
+		},
+		{
+			name: "Champagne",
+			code: "CHP",
+			inventory: 3,
+			priceDelta: 6000,
+			compareAtDelta: 6000,
+		},
 	],
 });
 
@@ -522,7 +545,13 @@ const passportVariants = colorVariants({
 	weight: 0.18,
 	colors: [
 		{ name: "Cognac", code: "COG", inventory: 9 },
-		{ name: "Midnight", code: "MDN", inventory: 7, priceDelta: 2500, compareAtDelta: 2500 },
+		{
+			name: "Midnight",
+			code: "MDN",
+			inventory: 7,
+			priceDelta: 2500,
+			compareAtDelta: 2500,
+		},
 	],
 });
 
@@ -549,7 +578,13 @@ const silkVariants = colorVariants({
 	weight: 0.12,
 	colors: [
 		{ name: "Cameo Rose", code: "CMR", inventory: 8 },
-		{ name: "Ivory Noir", code: "IVN", inventory: 6, priceDelta: 2500, compareAtDelta: 2500 },
+		{
+			name: "Ivory Noir",
+			code: "IVN",
+			inventory: 6,
+			priceDelta: 2500,
+			compareAtDelta: 2500,
+		},
 	],
 });
 
@@ -657,7 +692,8 @@ export const products: SeedProduct[] = [
 		key: "regent-penny-loafer",
 		name: "Regent Penny Loafer",
 		slug: "regent-penny-loafer",
-		shortDescription: "Hand-burnished calfskin loafer with a refined almond toe.",
+		shortDescription:
+			"Hand-burnished calfskin loafer with a refined almond toe.",
 		description:
 			"A house signature loafer shaped in smooth calfskin with a hand-burnished finish, leather sole, and softly structured heel. Designed to bridge tailoring, denim, and travel wardrobes without visual noise.",
 		price: 89500,
@@ -685,7 +721,8 @@ export const products: SeedProduct[] = [
 		key: "montclair-chelsea-boot",
 		name: "Montclair Chelsea Boot",
 		slug: "montclair-chelsea-boot",
-		shortDescription: "Slim Chelsea boot with tonal gussets and polished edge finish.",
+		shortDescription:
+			"Slim Chelsea boot with tonal gussets and polished edge finish.",
 		description:
 			"A sleek Chelsea boot cut for everyday structure, with tonal elastic gussets, calfskin lining, and a softly squared toe. Built to carry seasonal outerwear and clean knitwear with equal ease.",
 		price: 124500,
@@ -713,7 +750,8 @@ export const products: SeedProduct[] = [
 		key: "sable-slingback-pump",
 		name: "Sable Slingback Pump",
 		slug: "sable-slingback-pump",
-		shortDescription: "Pointed slingback pump with balanced heel and satin lining.",
+		shortDescription:
+			"Pointed slingback pump with balanced heel and satin lining.",
 		description:
 			"A polished evening shoe with a sculpted slingback profile, tapered heel, and softly cushioned insole. The silhouette is designed for long dinners, gallery openings, and black-tie travel.",
 		price: 108500,
@@ -768,7 +806,8 @@ export const products: SeedProduct[] = [
 		key: "meridian-automatic-38",
 		name: "Meridian Automatic 38",
 		slug: "meridian-automatic-38",
-		shortDescription: "Compact automatic watch with domed crystal and brushed lugs.",
+		shortDescription:
+			"Compact automatic watch with domed crystal and brushed lugs.",
 		description:
 			"A restrained 38mm automatic watch with domed crystal, brushed lugs, and a quiet dial layout. It is the sort of piece that reads deliberate rather than loud, and anchors the house timepiece offering.",
 		price: 265000,
@@ -851,7 +890,8 @@ export const products: SeedProduct[] = [
 		key: "palais-top-handle",
 		name: "Palais Top Handle",
 		slug: "palais-top-handle",
-		shortDescription: "Structured top-handle bag with interior gusset organization.",
+		shortDescription:
+			"Structured top-handle bag with interior gusset organization.",
 		description:
 			"A polished top-handle silhouette in smooth leather with a softly rigid frame, interior gussets, and discreet hardware. The Palais anchors the main handbag assortment with a formal, enduring shape.",
 		price: 165000,
@@ -878,7 +918,8 @@ export const products: SeedProduct[] = [
 		key: "galerie-chain-shoulder-bag",
 		name: "Galerie Chain Shoulder Bag",
 		slug: "galerie-chain-shoulder-bag",
-		shortDescription: "Refined shoulder bag with brushed chain strap and soft body.",
+		shortDescription:
+			"Refined shoulder bag with brushed chain strap and soft body.",
 		description:
 			"A compact chain shoulder bag designed for day-to-evening transitions, with a fluid silhouette, magnetic closure, and brushed metal details that stay deliberately understated.",
 		price: 142000,
@@ -904,7 +945,8 @@ export const products: SeedProduct[] = [
 		key: "avenue-crescent-clutch",
 		name: "Avenue Crescent Clutch",
 		slug: "avenue-crescent-clutch",
-		shortDescription: "Compact crescent clutch for evening wear and formal travel.",
+		shortDescription:
+			"Compact crescent clutch for evening wear and formal travel.",
 		description:
 			"A softly curved clutch with tonal lining and a slim profile designed for evening use. The Avenue works as a dress bag without tipping into novelty or trend-driven proportions.",
 		price: 98000,
@@ -931,7 +973,8 @@ export const products: SeedProduct[] = [
 		key: "continental-zip-wallet",
 		name: "Continental Zip Wallet",
 		slug: "continental-zip-wallet",
-		shortDescription: "Long zip wallet with full-length compartments and smooth finish.",
+		shortDescription:
+			"Long zip wallet with full-length compartments and smooth finish.",
 		description:
 			"A travel-ready zip wallet with room for full-length notes, a phone, and organized card storage. Cut from the same smooth leathers used in the handbag collection for a consistent house feel.",
 		price: 52500,
@@ -958,7 +1001,8 @@ export const products: SeedProduct[] = [
 		key: "atelier-card-case",
 		name: "Atelier Card Case",
 		slug: "atelier-card-case",
-		shortDescription: "Slim card case with edge-painted finish and tonal lining.",
+		shortDescription:
+			"Slim card case with edge-painted finish and tonal lining.",
 		description:
 			"A compact card case for light travel and evening use, with a softly structured body and precisely edge-painted seams. It is the quietest entry point into the leather assortment.",
 		price: 28500,
@@ -984,7 +1028,8 @@ export const products: SeedProduct[] = [
 		key: "grand-tour-passport-folio",
 		name: "Grand Tour Passport Folio",
 		slug: "grand-tour-passport-folio",
-		shortDescription: "Travel folio with passport sleeve, boarding pass slot, and pen loop.",
+		shortDescription:
+			"Travel folio with passport sleeve, boarding pass slot, and pen loop.",
 		description:
 			"A compact folio designed for airport movement, hotel check-ins, and desk-side organization. The Grand Tour balances function and polish without adding bulk to a carry-on.",
 		price: 44500,
@@ -1037,7 +1082,8 @@ export const products: SeedProduct[] = [
 		key: "silk-twill-wrap",
 		name: "Silk Twill Wrap",
 		slug: "silk-twill-wrap",
-		shortDescription: "Printed silk twill wrap with fluid drape and polished edge.",
+		shortDescription:
+			"Printed silk twill wrap with fluid drape and polished edge.",
 		description:
 			"A lightweight silk wrap designed for layering, gifting, and travel styling. The palette stays grounded in tonal neutrals, allowing the material and movement to carry the visual interest.",
 		price: 36500,
@@ -1064,7 +1110,8 @@ export const products: SeedProduct[] = [
 		key: "cashmere-fringe-scarf",
 		name: "Cashmere Fringe Scarf",
 		slug: "cashmere-fringe-scarf",
-		shortDescription: "Brushed cashmere scarf with tonal fringe and generous length.",
+		shortDescription:
+			"Brushed cashmere scarf with tonal fringe and generous length.",
 		description:
 			"A generously scaled cashmere scarf with a soft brushed finish and restrained fringe. Intended for winter layering, airport travel, and gift giving without feeling seasonal-only.",
 		price: 49500,
@@ -1107,7 +1154,8 @@ export const collections: SeedCollection[] = [
 		],
 		metadata: { mood: "signature" },
 		seoTitle: "House Icons | 86d Atelier",
-		seoDescription: "Discover the house signatures of the 86d Atelier luxury seed catalog.",
+		seoDescription:
+			"Discover the house signatures of the 86d Atelier luxury seed catalog.",
 	},
 	{
 		key: "leather-atelier",
@@ -1319,7 +1367,8 @@ export const blogPosts: SeedBlogPost[] = [
 		readingTime: 4,
 		tags: ["craftsmanship", "leather", "journal"],
 		metaTitle: "Inside the Atelier",
-		metaDescription: "Discover the materials and craftsmanship behind the 86d Atelier seed collection.",
+		metaDescription:
+			"Discover the materials and craftsmanship behind the 86d Atelier seed collection.",
 	},
 	{
 		key: "packing-the-travel-salon",
@@ -1337,7 +1386,8 @@ export const blogPosts: SeedBlogPost[] = [
 		readingTime: 3,
 		tags: ["travel", "styling", "journal"],
 		metaTitle: "Packing the Travel Salon",
-		metaDescription: "Build a polished travel wardrobe with the 86d Atelier Travel Salon edit.",
+		metaDescription:
+			"Build a polished travel wardrobe with the 86d Atelier Travel Salon edit.",
 	},
 	{
 		key: "the-art-of-gifting",
@@ -1372,7 +1422,8 @@ export const pages: SeedPage[] = [
 		position: 0,
 		featuredImagePath: pageImagePath("about"),
 		metaTitle: "About 86d Atelier",
-		metaDescription: "Learn the point of view behind the 86d Atelier seed storefront.",
+		metaDescription:
+			"Learn the point of view behind the 86d Atelier seed storefront.",
 	},
 	{
 		key: "contact",
@@ -1380,7 +1431,8 @@ export const pages: SeedPage[] = [
 		slug: "contact",
 		content:
 			"Reach the Atelier Concierge at concierge@atelier.86d.app or +1-212-555-0108. Our team handles product questions, gifting guidance, and appointment requests Monday through Saturday from 10am to 7pm Eastern.",
-		excerpt: "Contact the Atelier Concierge for product, gifting, and appointment support.",
+		excerpt:
+			"Contact the Atelier Concierge for product, gifting, and appointment support.",
 		status: "published",
 		showInNavigation: false,
 		position: 1,
@@ -1394,13 +1446,15 @@ export const pages: SeedPage[] = [
 		slug: "concierge",
 		content:
 			"Our concierge offering covers guided gifting, private appointments, travel packing edits, and extended product guidance. For flagship clients we also offer coordinated showroom pickup and premium delivery windows where available.",
-		excerpt: "Appointment booking, guided gifting, and premium support services.",
+		excerpt:
+			"Appointment booking, guided gifting, and premium support services.",
 		status: "published",
 		showInNavigation: true,
 		position: 2,
 		featuredImagePath: pageImagePath("concierge"),
 		metaTitle: "Concierge Services",
-		metaDescription: "Private appointments, guided gifting, and premium support from 86d Atelier.",
+		metaDescription:
+			"Private appointments, guided gifting, and premium support from 86d Atelier.",
 	},
 	{
 		key: "shipping-returns",
@@ -1408,13 +1462,15 @@ export const pages: SeedPage[] = [
 		slug: "shipping-returns",
 		content:
 			"Orders over $750 receive complimentary insured ground shipping in the continental US. Express and premium metro delivery options are available at checkout where applicable. Returns are accepted within 21 days in original condition, with concierge-assisted exchanges for timepieces and leather goods.",
-		excerpt: "Shipping thresholds, insured delivery, and returns for the 86d Atelier seed store.",
+		excerpt:
+			"Shipping thresholds, insured delivery, and returns for the 86d Atelier seed store.",
 		status: "published",
 		showInNavigation: false,
 		position: 3,
 		featuredImagePath: pageImagePath("shipping-returns"),
 		metaTitle: "Shipping & Returns",
-		metaDescription: "Insured shipping and concise returns guidance for 86d Atelier.",
+		metaDescription:
+			"Insured shipping and concise returns guidance for 86d Atelier.",
 	},
 	{
 		key: "care-guide",
@@ -1428,7 +1484,8 @@ export const pages: SeedPage[] = [
 		position: 4,
 		featuredImagePath: pageImagePath("care-guide"),
 		metaTitle: "Care Guide",
-		metaDescription: "How to care for 86d Atelier leather goods, silk, cashmere, and watches.",
+		metaDescription:
+			"How to care for 86d Atelier leather goods, silk, cashmere, and watches.",
 	},
 ];
 
@@ -1440,8 +1497,7 @@ export const reviews: SeedReview[] = [
 		authorEmail: "eleanor@example.com",
 		rating: 5,
 		title: "Exactly the kind of loafer I wanted",
-		body:
-			"The shape feels polished without being rigid, and the leather softened beautifully after two wears. It works with tailoring and denim equally well.",
+		body: "The shape feels polished without being rigid, and the leather softened beautifully after two wears. It works with tailoring and denim equally well.",
 		status: "approved",
 		isVerifiedPurchase: true,
 		merchantResponse:
@@ -1453,8 +1509,7 @@ export const reviews: SeedReview[] = [
 		authorEmail: "marcus@example.com",
 		rating: 5,
 		title: "Substantial but still refined",
-		body:
-			"The chronograph has enough presence to feel special, but the dial is still restrained. It reads much more expensive than it already is.",
+		body: "The chronograph has enough presence to feel special, but the dial is still restrained. It reads much more expensive than it already is.",
 		status: "approved",
 		isVerifiedPurchase: true,
 	},
@@ -1464,8 +1519,7 @@ export const reviews: SeedReview[] = [
 		authorEmail: "sofia@example.com",
 		rating: 5,
 		title: "The structure is beautiful",
-		body:
-			"It stands upright on its own, fits far more than expected, and the interior layout is genuinely useful instead of decorative.",
+		body: "It stands upright on its own, fits far more than expected, and the interior layout is genuinely useful instead of decorative.",
 		status: "approved",
 		isVerifiedPurchase: true,
 	},
@@ -1475,8 +1529,7 @@ export const reviews: SeedReview[] = [
 		authorEmail: "lena@example.com",
 		rating: 4,
 		title: "Elegant evening piece",
-		body:
-			"Beautiful shape and finish. I only wish it came with a slimmer optional chain, but the clutch itself is excellent.",
+		body: "Beautiful shape and finish. I only wish it came with a slimmer optional chain, but the clutch itself is excellent.",
 		status: "approved",
 		isVerifiedPurchase: false,
 	},
@@ -1486,8 +1539,7 @@ export const reviews: SeedReview[] = [
 		authorEmail: "noah@example.com",
 		rating: 5,
 		title: "A great travel companion",
-		body:
-			"It keeps my passport, boarding passes, and pen in one place without looking bulky. Feels extremely well made.",
+		body: "It keeps my passport, boarding passes, and pen in one place without looking bulky. Feels extremely well made.",
 		status: "approved",
 		isVerifiedPurchase: true,
 	},
@@ -1497,8 +1549,7 @@ export const reviews: SeedReview[] = [
 		authorEmail: "amelia@example.com",
 		rating: 5,
 		title: "Soft drape and very polished",
-		body:
-			"The colors are muted in the best way and the silk has a beautiful hand. It instantly makes simple outfits feel considered.",
+		body: "The colors are muted in the best way and the silk has a beautiful hand. It instantly makes simple outfits feel considered.",
 		status: "approved",
 		isVerifiedPurchase: true,
 	},
@@ -1509,7 +1560,8 @@ export const faqCategories = [
 		key: "orders-shipping",
 		name: "Orders & Shipping",
 		slug: "orders-shipping",
-		description: "Shipping timelines, insured delivery, and concierge order support.",
+		description:
+			"Shipping timelines, insured delivery, and concierge order support.",
 		position: 0,
 	},
 	{
@@ -1662,7 +1714,8 @@ export const trustBadges = [
 	},
 	{
 		name: "Craft-First Materials",
-		description: "Calfskin leather, silk twill, cashmere, and automatic movements",
+		description:
+			"Calfskin leather, silk twill, cashmere, and automatic movements",
 		icon: "gem",
 		position: "2",
 		priority: 2,
@@ -1750,7 +1803,12 @@ export const labelAssignments = {
 
 export const shippingZones = [
 	{ key: "domestic", name: "United States", countries: ["US"], isActive: true },
-	{ key: "international", name: "International", countries: [], isActive: true },
+	{
+		key: "international",
+		name: "International",
+		countries: [],
+		isActive: true,
+	},
 ];
 
 export const shippingRates = [
@@ -1855,7 +1913,8 @@ export const discounts = [
 	{
 		key: "private-appointment-credit",
 		name: "Private Appointment Credit",
-		description: "Reserved for concierge-assisted orders following a showroom appointment.",
+		description:
+			"Reserved for concierge-assisted orders following a showroom appointment.",
 		type: "fixed_amount",
 		value: 2500,
 		minimumAmount: 50000,
@@ -2012,11 +2071,46 @@ export const pickupLocation = {
 };
 
 export const pickupWindows = [
-	{ dayOfWeek: 2, startTime: "11:00", endTime: "18:00", capacity: 10, active: true, sortOrder: 0 },
-	{ dayOfWeek: 3, startTime: "11:00", endTime: "18:00", capacity: 10, active: true, sortOrder: 1 },
-	{ dayOfWeek: 4, startTime: "11:00", endTime: "18:00", capacity: 10, active: true, sortOrder: 2 },
-	{ dayOfWeek: 5, startTime: "11:00", endTime: "19:00", capacity: 12, active: true, sortOrder: 3 },
-	{ dayOfWeek: 6, startTime: "11:00", endTime: "19:00", capacity: 12, active: true, sortOrder: 4 },
+	{
+		dayOfWeek: 2,
+		startTime: "11:00",
+		endTime: "18:00",
+		capacity: 10,
+		active: true,
+		sortOrder: 0,
+	},
+	{
+		dayOfWeek: 3,
+		startTime: "11:00",
+		endTime: "18:00",
+		capacity: 10,
+		active: true,
+		sortOrder: 1,
+	},
+	{
+		dayOfWeek: 4,
+		startTime: "11:00",
+		endTime: "18:00",
+		capacity: 10,
+		active: true,
+		sortOrder: 2,
+	},
+	{
+		dayOfWeek: 5,
+		startTime: "11:00",
+		endTime: "19:00",
+		capacity: 12,
+		active: true,
+		sortOrder: 3,
+	},
+	{
+		dayOfWeek: 6,
+		startTime: "11:00",
+		endTime: "19:00",
+		capacity: 12,
+		active: true,
+		sortOrder: 4,
+	},
 ];
 
 export const deliverySchedules = [

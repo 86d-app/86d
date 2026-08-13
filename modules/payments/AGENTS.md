@@ -7,8 +7,10 @@ Provider-neutral payment ownership. The legacy v1 controller tracks payment inte
 ```
 src/
   index.ts              Module definition, PaymentsOptions
-  schema.ts             legacy entities plus v2 Connections and operations
+  schema.ts             legacy entities plus v2 Payment/Connection/operation/receipt records
+  payment-service.ts     Store-owned Payment v2 aggregate and dispute projection
   connection-service.ts Named Connection lifecycle and durable operation service
+  webhook-receipt-service.ts Durable post-verification provider ingress
   service.ts            PaymentController, PaymentProvider, type definitions
   service-impl.ts       createPaymentController(data, provider?) factory
   store/endpoints/      saved-method endpoints; generic intent routes contained
@@ -26,8 +28,12 @@ src/
 
 - **Payment Connection v2**: Store-scoped, named, immutable identity with provider, mode, capabilities, health, lifecycle, and an opaque server-only secret reference.
 - **Explicit routing**: A v2 adapter is bound to exactly one `connectionId`; no default provider or provider fallback exists in the v2 service.
-- **Operation identity**: Every provider operation persists its immutable Connection, operation-specific idempotency key, request digest, attempt history, provider reference, and final/ambiguous state before and after the external call.
+- **Operation identity**: Every provider operation persists its immutable Connection, operation-specific idempotency key (8-108 characters), immutable creation time, request digest, attempt history, provider reference, and final or nonfinal state before and after the external call.
+- **Payment authority**: Payment v2 freezes Checkout/Order references, Connection, option, accepted amount/currency, and fee basis; it alone applies confirmed totals and emits the outbox fact.
 - **Reversal routing**: Capture, refund, and void must cite a succeeded source operation and its provider reference, so they retain the original Connection.
+- **Financial ceilings**: Owner-local locks serialize confirmed plus in-flight authorization, capture, void, and refund totals. Different keys cannot bypass the accepted or exact-source ceilings.
+- **Recovery**: Provider-known `pending`/`requires_action` work uses longer state-specific polling and preserves provider truth when that budget ends; stale/ambiguous work uses short bounded backoff and dead-letter state. All paths support audited manual reconciliation without changing Connection or payload.
+- **Webhook ingress**: The receipt controller accepts only already-verified normalized facts, binds Store/Connection/provider/event identity, rejects digest conflicts, and replays through the Payment owner. Raw provider payloads are not stored.
 - **Containment**: v2 has owner-local production exports only. It is not registered as a shopper endpoint or as the legacy Checkout payment capability. Saved-method routes and the legacy Admin refund route also return explicit v2-required errors.
 - **Transactions**: Connection and operation writes fail closed unless the host supplies an owner-local locking transaction runner.
 
@@ -45,8 +51,10 @@ Legacy v1 migration behavior follows:
 ## Data models
 
 - **paymentConnection**: id, unique normalized name, provider, mode, capabilities, health, lifecycle, opaque secret reference, lifecycle timestamps
+- **paymentV2**: immutable accepted identity and fee basis, confirmed totals, exact provider references, dispute projection, lifecycle and revisions
 - **paymentOperationV2**: payment and source references, immutable connectionId, operation-specific idempotency key, request digest, attempt, provider reference, outcome, ambiguous/needs-attention state
 - **paymentOperationAttemptV2**: immutable per-call attempt history
+- **paymentWebhookReceiptV2**: verified event identity/digest, normalized fact, processing lease/attempts, final disposition
 
 - **paymentIntent**: id, providerIntentId?, customerId?, email?, amount, currency, status, orderId?, checkoutSessionId?, metadata, providerMetadata, timestamps
 - **paymentMethod**: id, customerId, providerMethodId, type, last4?, brand?, expiryMonth?, expiryYear?, isDefault, timestamps

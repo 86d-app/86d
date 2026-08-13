@@ -17,7 +17,13 @@
  *   - Provides MDX usage examples
  */
 
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import {
+	existsSync,
+	mkdirSync,
+	readdirSync,
+	readFileSync,
+	writeFileSync,
+} from "node:fs";
 import { join, resolve } from "node:path";
 
 const WORKSPACE_ROOT = resolve(import.meta.dirname, "..");
@@ -65,8 +71,7 @@ function extractComponentNames(indexPath: string): string[] {
 		const body = defaultExportMatch[1];
 		// Extract top-level keys: either `Name,` or `Name:` patterns
 		const keyPattern = /^\s*([A-Z][a-zA-Z0-9]*)[\s:,]/gm;
-		let m: RegExpExecArray | null;
-		while ((m = keyPattern.exec(body)) !== null) {
+		for (const m of body.matchAll(keyPattern)) {
 			if (m[1] && !names.includes(m[1])) {
 				names.push(m[1]);
 			}
@@ -74,12 +79,13 @@ function extractComponentNames(indexPath: string): string[] {
 	}
 
 	// Also match `satisfies MDXComponents` block — pick all PascalCase keys
-	const satisfiesBlock = source.match(/\{([^}]+)\}\s*satisfies\s*MDXComponents/s);
+	const satisfiesBlock = source.match(
+		/\{([^}]+)\}\s*satisfies\s*MDXComponents/s,
+	);
 	if (satisfiesBlock) {
 		const body = satisfiesBlock[1];
 		const keyPattern = /^\s*([A-Z][a-zA-Z0-9]*)[\s:,]/gm;
-		let m: RegExpExecArray | null;
-		while ((m = keyPattern.exec(body)) !== null) {
+		for (const m of body.matchAll(keyPattern)) {
 			if (m[1] && !names.includes(m[1])) {
 				names.push(m[1]);
 			}
@@ -92,12 +98,17 @@ function extractComponentNames(indexPath: string): string[] {
 /**
  * Find the TSX file for a component (kebab-case filename).
  */
-function findComponentFile(componentDir: string, componentName: string): string | null {
+function findComponentFile(
+	componentDir: string,
+	componentName: string,
+): string | null {
 	if (!existsSync(componentDir)) return null;
 
 	// Convert PascalCase to kebab-case: ProductCard → product-card
 	const kebab = componentName
-		.replace(/([A-Z])/g, (m, letter, offset) => (offset > 0 ? `-${letter.toLowerCase()}` : letter.toLowerCase()))
+		.replace(/([A-Z])/g, (m, letter, offset) =>
+			offset > 0 ? `-${letter.toLowerCase()}` : letter.toLowerCase(),
+		)
 		.replace(/^-/, "");
 
 	const candidates = [
@@ -132,8 +143,7 @@ function extractProps(filePath: string, componentName: string): PropInfo[] {
 
 	// Parse each line: name?: type; or name: type;
 	const linePattern = /^\s*(?:\/\*\*([^*]*)\*\/\s*)?(\w+)(\??):\s*([^;]+);/gm;
-	let m: RegExpExecArray | null;
-	while ((m = linePattern.exec(body)) !== null) {
+	for (const m of body.matchAll(linePattern)) {
 		const [, comment, name, optional, type] = m;
 		if (name && type) {
 			props.push({
@@ -176,14 +186,41 @@ function extractModuleDescription(moduleDir: string): string {
  * Build component doc info for a single directory (store or admin components).
  */
 function buildComponentDocs(componentDir: string): ComponentInfo[] {
-	const indexPath = join(componentDir, "index.tsx");
-	const names = extractComponentNames(indexPath);
+	if (!existsSync(componentDir)) return [];
+
+	// Store components declare a single MDX map; admin components are one file per
+	// component with no barrel, so they are discovered by scanning for real exports.
+	const mapPath = join(componentDir, "mdx.tsx");
+	const names = existsSync(mapPath)
+		? extractComponentNames(mapPath)
+		: exportedComponentNames(componentDir);
 
 	return names.map((name) => {
 		const filePath = findComponentFile(componentDir, name);
 		const props = filePath ? extractProps(filePath, name) : [];
 		return { name, props };
 	});
+}
+
+/**
+ * Component names exported by the files in a directory.
+ *
+ * Used for admin components, which no longer funnel through a re-export barrel.
+ * Files prefixed with `_` are shared internals, not page components.
+ */
+function exportedComponentNames(componentDir: string): string[] {
+	const names = new Set<string>();
+	for (const file of readdirSync(componentDir)) {
+		if (!file.endsWith(".tsx") || file.startsWith("_")) continue;
+		const source = readFileSync(join(componentDir, file), "utf-8");
+		for (const match of source.matchAll(
+			/export\s+(?:async\s+)?(?:function|const|class)\s+([A-Z][A-Za-z0-9_]*)/g,
+		)) {
+			const name = match[1];
+			if (name) names.add(name);
+		}
+	}
+	return [...names].sort();
 }
 
 /**
@@ -364,9 +401,9 @@ async function main() {
 		"",
 		"```mdx",
 		"{/* templates/brisa/index.mdx */}",
-		"<FeaturedProducts limit={4} title=\"Featured\" />",
-		"<CollectionGrid title=\"Shop by collection\" featured />",
-		"<NewsletterInline source=\"homepage\" />",
+		'<FeaturedProducts limit={4} title="Featured" />',
+		'<CollectionGrid title="Shop by collection" featured />',
+		'<NewsletterInline source="homepage" />',
 		"```",
 		"",
 		"---",
@@ -377,15 +414,22 @@ async function main() {
 	sections.push("## Modules");
 	sections.push("");
 	for (const doc of docs) {
-		const anchor = doc.packageName.replace(/[@/]/g, "").replace(/[^a-zA-Z0-9-]/g, "-").toLowerCase();
-		const storePart = doc.storeComponents.length > 0
-			? `${doc.storeComponents.length} store`
-			: "";
-		const adminPart = doc.adminComponents.length > 0
-			? `${doc.adminComponents.length} admin`
-			: "";
+		const anchor = doc.packageName
+			.replace(/[@/]/g, "")
+			.replace(/[^a-zA-Z0-9-]/g, "-")
+			.toLowerCase();
+		const storePart =
+			doc.storeComponents.length > 0
+				? `${doc.storeComponents.length} store`
+				: "";
+		const adminPart =
+			doc.adminComponents.length > 0
+				? `${doc.adminComponents.length} admin`
+				: "";
 		const counts = [storePart, adminPart].filter(Boolean).join(", ");
-		sections.push(`- [\`${doc.packageName}\`](#${anchor}) — ${counts} component${counts.includes(",") || counts.match(/[2-9]/) ? "s" : ""}`);
+		sections.push(
+			`- [\`${doc.packageName}\`](#${anchor}) — ${counts} component${counts.includes(",") || counts.match(/[2-9]/) ? "s" : ""}`,
+		);
 	}
 	sections.push("");
 	sections.push("---");
@@ -393,7 +437,12 @@ async function main() {
 
 	// Module sections
 	for (const doc of docs) {
-		const moduleDir = join(MODULES_DIR, doc.moduleId === doc.packageName.replace("@86d-app/", "") ? doc.moduleId : doc.packageName.replace("@86d-app/", ""));
+		const moduleDir = join(
+			MODULES_DIR,
+			doc.moduleId === doc.packageName.replace("@86d-app/", "")
+				? doc.moduleId
+				: doc.packageName.replace("@86d-app/", ""),
+		);
 		const description = extractModuleDescription(moduleDir);
 		sections.push(renderModuleSection(doc, description));
 		sections.push("");
@@ -411,7 +460,9 @@ async function main() {
 
 	writeFileSync(OUTPUT_PATH, output);
 	console.log(`✓ Generated ${OUTPUT_PATH}`);
-	console.log(`  ${output.split("\n").length} lines, ${Math.round(output.length / 1024)}KB`);
+	console.log(
+		`  ${output.split("\n").length} lines, ${Math.round(output.length / 1024)}KB`,
+	);
 }
 
 main().catch((err) => {

@@ -1,4 +1,4 @@
-import type { ModuleDataService } from "@86d-app/core";
+import type { ModuleDataService } from "@86d-app/core/types/module";
 import type { BlogController, BlogPost, PostStats } from "./service";
 
 function slugify(text: string): string {

@@ -1,6 +1,6 @@
-import type { StorageConfig, StorageProvider } from "./index.ts";
 import { LocalStorageProvider } from "./local.ts";
 import { S3StorageProvider } from "./s3.ts";
+import type { StorageConfig, StorageProvider } from "./types.ts";
 import { VercelBlobProvider } from "./vercel.ts";
 
 /** Create a storage provider from configuration. */

@@ -1,8 +1,12 @@
-import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
-import { createAdminEndpoints } from "./admin/endpoints";
+import type {
+	Module,
+	ModuleConfig,
+	ModuleContext,
+} from "@86d-app/core/types/module";
+import { createAdminEndpoints } from "./admin/endpoints/routes";
 import { favorSchema } from "./schema";
 import { createFavorController } from "./service-impl";
-import { storeEndpoints } from "./store/endpoints";
+import { storeEndpoints } from "./store/endpoints/routes";
 
 export type {
 	FavorController,

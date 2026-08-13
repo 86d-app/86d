@@ -1,4 +1,4 @@
-import type { ModuleController } from "@86d-app/core";
+import type { ModuleController } from "@86d-app/core/types/module";
 
 export type DiscountType = "percentage" | "fixed_amount" | "free_shipping";
 export type DiscountAppliesTo =

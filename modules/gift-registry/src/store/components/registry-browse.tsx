@@ -1,6 +1,6 @@
 "use client";
 
-import { useModuleClient } from "@86d-app/core/client";
+import { useModuleClient } from "@86d-app/core/client/provider";
 import RegistryBrowseTemplate from "./registry-browse.mdx";
 
 interface RegistryListItem {

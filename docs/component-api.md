@@ -2,8 +2,8 @@
 
 Auto-generated from module source files. Run `bun scripts/generate-component-docs.ts` to regenerate.
 
-Generated: 2026-03-16  
-Modules with components: 59
+Generated: 2026-08-13  
+Modules with components: 100
 
 ---
 
@@ -23,65 +23,106 @@ Modules must be listed in `templates/brisa/config.json` to be available.
 
 ## Modules
 
-- [`@86d-app/abandoned-carts`](#86d-appabandoned-carts) — 1 store component
-- [`@86d-app/announcements`](#86d-appannouncements) — 1 store component
-- [`@86d-app/auctions`](#86d-appauctions) — 2 store components
-- [`@86d-app/backorders`](#86d-appbackorders) — 2 store components
-- [`@86d-app/blog`](#86d-appblog) — 2 store components
-- [`@86d-app/brands`](#86d-appbrands) — 2 store components
-- [`@86d-app/bulk-pricing`](#86d-appbulk-pricing) — 1 store component
-- [`@86d-app/bundles`](#86d-appbundles) — 2 store components
-- [`@86d-app/cart`](#86d-appcart) — 4 store components
-- [`@86d-app/checkout`](#86d-appcheckout) — 6 store components
-- [`@86d-app/collections`](#86d-appcollections) — 2 store components
-- [`@86d-app/comparisons`](#86d-appcomparisons) — 2 store components
-- [`@86d-app/customers`](#86d-appcustomers) — 3 store components
-- [`@86d-app/delivery-slots`](#86d-appdelivery-slots) — 1 store component
-- [`@86d-app/digital-downloads`](#86d-appdigital-downloads) — 3 store components
-- [`@86d-app/discounts`](#86d-appdiscounts) — 4 store components
-- [`@86d-app/faq`](#86d-appfaq) — 2 store components
-- [`@86d-app/flash-sales`](#86d-appflash-sales) — 5 store components
-- [`@86d-app/fulfillment`](#86d-appfulfillment) — 3 store components
-- [`@86d-app/giftcards`](#86d-appgiftcards) — 2 store components
-- [`@86d-app/gift-registry`](#86d-appgift-registry) — 2 store components
-- [`@86d-app/gift-wrapping`](#86d-appgift-wrapping) — 1 store component
-- [`@86d-app/inventory`](#86d-appinventory) — 3 store components
-- [`@86d-app/invoices`](#86d-appinvoices) — 2 store components
-- [`@86d-app/loyalty`](#86d-apployalty) — 4 store components
-- [`@86d-app/media`](#86d-appmedia) — 3 store components
-- [`@86d-app/memberships`](#86d-appmemberships) — 3 store components
-- [`@86d-app/multi-currency`](#86d-appmulti-currency) — 2 store components
-- [`@86d-app/navigation`](#86d-appnavigation) — 3 store components
-- [`@86d-app/newsletter`](#86d-appnewsletter) — 3 store components
-- [`@86d-app/notifications`](#86d-appnotifications) — 3 store components
-- [`@86d-app/order-notes`](#86d-apporder-notes) — 1 store component
-- [`@86d-app/orders`](#86d-apporders) — 4 store components
-- [`@86d-app/pages`](#86d-apppages) — 2 store components
-- [`@86d-app/preorders`](#86d-apppreorders) — 2 store components
-- [`@86d-app/product-labels`](#86d-appproduct-labels) — 1 store component
-- [`@86d-app/product-qa`](#86d-appproduct-qa) — 4 store components
-- [`@86d-app/products`](#86d-appproducts) — 1 store component
-- [`@86d-app/quotes`](#86d-appquotes) — 3 store components
-- [`@86d-app/recently-viewed`](#86d-apprecently-viewed) — 2 store components
-- [`@86d-app/recommendations`](#86d-apprecommendations) — 2 store components
-- [`@86d-app/referrals`](#86d-appreferrals) — 3 store components
-- [`@86d-app/returns`](#86d-appreturns) — 2 store components
-- [`@86d-app/reviews`](#86d-appreviews) — 7 store components
-- [`@86d-app/saved-addresses`](#86d-appsaved-addresses) — 1 store component
-- [`@86d-app/search`](#86d-appsearch) — 3 store components
-- [`@86d-app/seo`](#86d-appseo) — 2 store components
-- [`@86d-app/shipping`](#86d-appshipping) — 3 store components
-- [`@86d-app/social-proof`](#86d-appsocial-proof) — 3 store components
-- [`@86d-app/social-sharing`](#86d-appsocial-sharing) — 1 store component
-- [`@86d-app/store-credits`](#86d-appstore-credits) — 3 store components
-- [`@86d-app/store-locator`](#86d-appstore-locator) — 2 store components
-- [`@86d-app/store-pickup`](#86d-appstore-pickup) — 1 store component
-- [`@86d-app/subscriptions`](#86d-appsubscriptions) — 4 store components
-- [`@86d-app/tax`](#86d-apptax) — 2 store components
-- [`@86d-app/tickets`](#86d-apptickets) — 3 store components
-- [`@86d-app/waitlist`](#86d-appwaitlist) — 3 store components
-- [`@86d-app/warranties`](#86d-appwarranties) — 2 store components
-- [`@86d-app/wishlist`](#86d-appwishlist) — 3 store components
+- [`@86d-app/abandoned-carts`](#86d-appabandoned-carts) — 1 store, 1 admin components
+- [`@86d-app/affiliates`](#86d-appaffiliates) — 2 store, 4 admin components
+- [`@86d-app/amazon`](#86d-appamazon) — 2 admin components
+- [`@86d-app/analytics`](#86d-appanalytics) — 2 admin components
+- [`@86d-app/announcements`](#86d-appannouncements) — 3 store, 3 admin components
+- [`@86d-app/appointments`](#86d-appappointments) — 2 store, 4 admin components
+- [`@86d-app/auctions`](#86d-appauctions) — 3 store, 2 admin components
+- [`@86d-app/audit-log`](#86d-appaudit-log) — 2 admin components
+- [`@86d-app/automations`](#86d-appautomations) — 2 admin components
+- [`@86d-app/backorders`](#86d-appbackorders) — 2 store, 2 admin components
+- [`@86d-app/blog`](#86d-appblog) — 2 store, 1 admin components
+- [`@86d-app/braintree`](#86d-appbraintree) — 1 admin component
+- [`@86d-app/brands`](#86d-appbrands) — 2 store, 1 admin components
+- [`@86d-app/bulk-pricing`](#86d-appbulk-pricing) — 1 store, 2 admin components
+- [`@86d-app/bundles`](#86d-appbundles) — 2 store, 1 admin components
+- [`@86d-app/cart`](#86d-appcart) — 5 store, 3 admin components
+- [`@86d-app/checkout`](#86d-appcheckout) — 7 store, 2 admin components
+- [`@86d-app/collections`](#86d-appcollections) — 2 store, 1 admin components
+- [`@86d-app/comparisons`](#86d-appcomparisons) — 2 store, 1 admin components
+- [`@86d-app/customer-groups`](#86d-appcustomer-groups) — 2 store, 2 admin components
+- [`@86d-app/customers`](#86d-appcustomers) — 2 store, 3 admin components
+- [`@86d-app/delivery-slots`](#86d-appdelivery-slots) — 1 store, 4 admin components
+- [`@86d-app/digital-downloads`](#86d-appdigital-downloads) — 3 store, 1 admin components
+- [`@86d-app/discounts`](#86d-appdiscounts) — 4 store, 5 admin components
+- [`@86d-app/doordash`](#86d-appdoordash) — 1 store, 1 admin components
+- [`@86d-app/ebay`](#86d-appebay) — 1 admin component
+- [`@86d-app/etsy`](#86d-appetsy) — 1 admin component
+- [`@86d-app/facebook-shop`](#86d-appfacebook-shop) — 1 admin component
+- [`@86d-app/faq`](#86d-appfaq) — 2 store, 4 admin components
+- [`@86d-app/favor`](#86d-appfavor) — 1 store, 1 admin components
+- [`@86d-app/flash-sales`](#86d-appflash-sales) — 6 store, 2 admin components
+- [`@86d-app/forms`](#86d-appforms) — 2 store, 4 admin components
+- [`@86d-app/fulfillment`](#86d-appfulfillment) — 3 store, 1 admin components
+- [`@86d-app/gamification`](#86d-appgamification) — 1 store, 2 admin components
+- [`@86d-app/gift-registry`](#86d-appgift-registry) — 2 store, 2 admin components
+- [`@86d-app/gift-wrapping`](#86d-appgift-wrapping) — 1 store, 2 admin components
+- [`@86d-app/giftcards`](#86d-appgiftcards) — 3 store, 1 admin components
+- [`@86d-app/google-shopping`](#86d-appgoogle-shopping) — 1 admin component
+- [`@86d-app/import-export`](#86d-appimport-export) — 2 admin components
+- [`@86d-app/instagram-shop`](#86d-appinstagram-shop) — 1 admin component
+- [`@86d-app/inventory`](#86d-appinventory) — 3 store, 2 admin components
+- [`@86d-app/invoices`](#86d-appinvoices) — 2 store, 3 admin components
+- [`@86d-app/kiosk`](#86d-appkiosk) — 1 store, 2 admin components
+- [`@86d-app/loyalty`](#86d-apployalty) — 4 store, 3 admin components
+- [`@86d-app/media`](#86d-appmedia) — 3 store, 1 admin components
+- [`@86d-app/memberships`](#86d-appmemberships) — 3 store, 2 admin components
+- [`@86d-app/multi-currency`](#86d-appmulti-currency) — 2 store, 3 admin components
+- [`@86d-app/navigation`](#86d-appnavigation) — 3 store, 1 admin components
+- [`@86d-app/newsletter`](#86d-appnewsletter) — 3 store, 2 admin components
+- [`@86d-app/notifications`](#86d-appnotifications) — 3 store, 4 admin components
+- [`@86d-app/order-notes`](#86d-apporder-notes) — 1 store, 1 admin components
+- [`@86d-app/orders`](#86d-apporders) — 4 store, 5 admin components
+- [`@86d-app/pages`](#86d-apppages) — 2 store, 1 admin components
+- [`@86d-app/payments`](#86d-apppayments) — 1 store, 1 admin components
+- [`@86d-app/paypal`](#86d-apppaypal) — 1 admin component
+- [`@86d-app/photo-booth`](#86d-appphoto-booth) — 2 store, 2 admin components
+- [`@86d-app/pinterest-shop`](#86d-apppinterest-shop) — 1 admin component
+- [`@86d-app/preorders`](#86d-apppreorders) — 5 store, 2 admin components
+- [`@86d-app/price-lists`](#86d-appprice-lists) — 2 store, 3 admin components
+- [`@86d-app/product-feeds`](#86d-appproduct-feeds) — 2 admin components
+- [`@86d-app/product-labels`](#86d-appproduct-labels) — 1 store, 1 admin components
+- [`@86d-app/product-qa`](#86d-appproduct-qa) — 4 store, 3 admin components
+- [`@86d-app/products`](#86d-appproducts) — 1 store, 8 admin components
+- [`@86d-app/qr-code`](#86d-appqr-code) — 1 store, 2 admin components
+- [`@86d-app/quotes`](#86d-appquotes) — 3 store, 2 admin components
+- [`@86d-app/recently-viewed`](#86d-apprecently-viewed) — 2 store, 1 admin components
+- [`@86d-app/recommendations`](#86d-apprecommendations) — 2 store, 2 admin components
+- [`@86d-app/redirects`](#86d-appredirects) — 1 admin component
+- [`@86d-app/referrals`](#86d-appreferrals) — 3 store, 3 admin components
+- [`@86d-app/returns`](#86d-appreturns) — 1 store, 2 admin components
+- [`@86d-app/revenue`](#86d-apprevenue) — 1 store, 1 admin components
+- [`@86d-app/reviews`](#86d-appreviews) — 8 store, 3 admin components
+- [`@86d-app/saved-addresses`](#86d-appsaved-addresses) — 1 store, 1 admin components
+- [`@86d-app/search`](#86d-appsearch) — 3 store, 1 admin components
+- [`@86d-app/seo`](#86d-appseo) — 3 store, 1 admin components
+- [`@86d-app/settings`](#86d-appsettings) — 5 admin components
+- [`@86d-app/shipping`](#86d-appshipping) — 3 store, 3 admin components
+- [`@86d-app/sitemap`](#86d-appsitemap) — 1 admin component
+- [`@86d-app/social-proof`](#86d-appsocial-proof) — 3 store, 1 admin components
+- [`@86d-app/social-sharing`](#86d-appsocial-sharing) — 1 store, 1 admin components
+- [`@86d-app/square`](#86d-appsquare) — 1 admin component
+- [`@86d-app/store-credits`](#86d-appstore-credits) — 3 store, 2 admin components
+- [`@86d-app/store-locator`](#86d-appstore-locator) — 2 store, 3 admin components
+- [`@86d-app/store-pickup`](#86d-appstore-pickup) — 1 store, 3 admin components
+- [`@86d-app/stripe`](#86d-appstripe) — 1 admin component
+- [`@86d-app/subscriptions`](#86d-appsubscriptions) — 4 store, 1 admin components
+- [`@86d-app/tax`](#86d-apptax) — 2 store, 2 admin components
+- [`@86d-app/tickets`](#86d-apptickets) — 3 store, 4 admin components
+- [`@86d-app/tiktok-shop`](#86d-apptiktok-shop) — 1 admin component
+- [`@86d-app/tipping`](#86d-apptipping) — 1 store, 2 admin components
+- [`@86d-app/toast`](#86d-apptoast) — 1 admin component
+- [`@86d-app/uber-direct`](#86d-appuber-direct) — 1 store, 1 admin components
+- [`@86d-app/uber-eats`](#86d-appuber-eats) — 1 admin component
+- [`@86d-app/vendors`](#86d-appvendors) — 3 store, 2 admin components
+- [`@86d-app/waitlist`](#86d-appwaitlist) — 3 store, 1 admin components
+- [`@86d-app/walmart`](#86d-appwalmart) — 1 admin component
+- [`@86d-app/warranties`](#86d-appwarranties) — 2 store, 2 admin components
+- [`@86d-app/wish`](#86d-appwish) — 1 admin component
+- [`@86d-app/wishlist`](#86d-appwishlist) — 3 store, 1 admin components
+- [`@86d-app/x-shop`](#86d-appx-shop) — 1 admin component
 
 ---
 
@@ -99,6 +140,77 @@ Use in MDX template files:
 <CartRecovery />
 ```
 
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `AbandonedCartOverview`
+
+
+---
+
+## `@86d-app/affiliates`
+
+Affiliate marketing program — partners promote products for commission on sales.
+
+### Store components
+
+Use in MDX template files:
+
+#### `AffiliateApply`
+
+```mdx
+<AffiliateApply />
+```
+
+#### `AffiliateDashboard`
+
+```mdx
+<AffiliateDashboard />
+```
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `AffiliateList`
+
+#### `ApplicationList`
+
+#### `ConversionList`
+
+#### `PayoutList`
+
+
+---
+
+## `@86d-app/amazon`
+
+Amazon Seller Central integration for listing management, order fulfillment, and inventory sync.
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `AmazonAdmin`
+
+#### `AmazonInventory`
+
+
+---
+
+## `@86d-app/analytics`
+
+Event tracking and reporting for the 86d store. Records page views, product views, cart events, purchases, and custom events. Provides admin endpoints for stats, top-product reports, and raw event access.
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `AnalyticsAdmin`
+
+#### `AnalyticsSettings`
+
 
 ---
 
@@ -110,11 +222,68 @@ Site-wide announcement bars, promotional banners, and popup notices with schedul
 
 Use in MDX template files:
 
+#### `AnnouncementBanner`
+
+```mdx
+<AnnouncementBanner />
+```
+
 #### `AnnouncementBar`
 
 ```mdx
 <AnnouncementBar />
 ```
+
+#### `AnnouncementPopup`
+
+```mdx
+<AnnouncementPopup />
+```
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `AnnouncementDetail`
+
+#### `AnnouncementForm`
+
+#### `AnnouncementList`
+
+
+---
+
+## `@86d-app/appointments`
+
+Service-based booking with staff scheduling, time-slot availability, and customer appointment management. Enables stores to offer bookable services (salons, consultations, classes, etc.).
+
+### Store components
+
+Use in MDX template files:
+
+#### `AppointmentBooking`
+
+```mdx
+<AppointmentBooking />
+```
+
+#### `MyAppointments`
+
+```mdx
+<MyAppointments />
+```
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `AppointmentDetail`
+
+#### `AppointmentList`
+
+#### `ServiceList`
+
+#### `StaffList`
 
 
 ---
@@ -139,6 +308,56 @@ Use in MDX template files:
 <AuctionPage />
 ```
 
+#### `AuctionsHomepageSection`
+
+```mdx
+<AuctionsHomepageSection />
+```
+
+**Props**
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `limit` | `number` | No | Max number of auctions to display. Defaults to 4. |
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `AuctionDetail`
+
+#### `AuctionsList`
+
+
+---
+
+## `@86d-app/audit-log`
+
+Records admin actions, system events, and API key usage for security auditing, compliance, and accountability.
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `AuditLogDetail`
+
+#### `AuditLogList`
+
+
+---
+
+## `@86d-app/automations`
+
+Event-driven workflow automation. Rules trigger on platform events, evaluate conditions, and execute configurable actions.
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `AutomationDetail`
+
+#### `AutomationList`
+
 
 ---
 
@@ -161,6 +380,14 @@ Use in MDX template files:
 ```mdx
 <MyBackorders />
 ```
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `BackorderList`
+
+#### `BackorderPolicies`
 
 
 ---
@@ -185,6 +412,25 @@ Use in MDX template files:
 <BlogPostDetail />
 ```
 
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `BlogAdmin`
+
+
+---
+
+## `@86d-app/braintree`
+
+Braintree payment provider implementing the `PaymentProvider` interface from `@86d-app/payments`.
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `BraintreeAdmin`
+
 
 ---
 
@@ -207,6 +453,12 @@ Use in MDX template files:
 ```mdx
 <FeaturedBrands />
 ```
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `BrandAdmin`
 
 
 ---
@@ -234,6 +486,14 @@ Use in MDX template files:
 | `title` | `string \| undefined` | No | Section title |
 | `quantity` | `number \| undefined` | No | Currently selected quantity (highlights the active tier) |
 
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `BulkPricingDetail`
+
+#### `BulkPricingList`
+
 
 ---
 
@@ -256,6 +516,12 @@ Use in MDX template files:
 ```mdx
 <BundleList />
 ```
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `BundleOverview`
 
 
 ---
@@ -292,12 +558,35 @@ Use in MDX template files:
 <CartFloatingPill />
 ```
 
+#### `CartPage`
+
+```mdx
+<CartPage />
+```
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `AbandonedCarts`
+
+#### `CartDetail`
+
+**Props**
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `cartId` | `string` | No |  |
+| `params` | `Record<string, string>` | No |  |
+
+#### `CartList`
+
 
 ---
 
 ## `@86d-app/checkout`
 
-Checkout session management: cart-to-order conversion flow. Handles session creation, address collection, discount application, and order completion. Customer-facing only — no admin endpoints.
+Checkout session management: cart-to-order conversion flow. Handles session creation, address collection, discount application, payment coordination, and authoritative Order creation. It has customer-facing endpoints plus bounded Store Admin maintenance endpoints.
 
 ### Store components
 
@@ -339,6 +628,20 @@ Use in MDX template files:
 <CheckoutSummary />
 ```
 
+#### `OrderConfirmation`
+
+```mdx
+<OrderConfirmation />
+```
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `CheckoutDetail`
+
+#### `CheckoutList`
+
 
 ---
 
@@ -361,6 +664,12 @@ Use in MDX template files:
 ```mdx
 <FeaturedCollections />
 ```
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `CollectionAdmin`
 
 
 ---
@@ -385,6 +694,43 @@ Use in MDX template files:
 <ComparisonTable />
 ```
 
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `ComparisonAdmin`
+
+
+---
+
+## `@86d-app/customer-groups`
+
+Customer segmentation with manual/automatic groups, rule-based membership, and group-specific price adjustments. Enables B2B wholesale, VIP tiers, and targeted pricing.
+
+### Store components
+
+Use in MDX template files:
+
+#### `CustomerGroupMembership`
+
+```mdx
+<CustomerGroupMembership />
+```
+
+#### `CustomerGroupPricing`
+
+```mdx
+<CustomerGroupPricing />
+```
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `CustomerGroupDetail`
+
+#### `CustomerGroupList`
+
 
 ---
 
@@ -408,11 +754,22 @@ Use in MDX template files:
 <AddressBook />
 ```
 
-#### `LoyaltyCard`
+### Admin components
 
-```mdx
-<LoyaltyCard />
-```
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `CustomerDetail`
+
+**Props**
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `customerId` | `string` | No |  |
+| `params` | `Record<string, string>` | No |  |
+
+#### `CustomerList`
+
+#### `CustomerTags`
 
 
 ---
@@ -430,6 +787,18 @@ Use in MDX template files:
 ```mdx
 <SlotPicker />
 ```
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `BlackoutList`
+
+#### `BookingList`
+
+#### `ScheduleDetail`
+
+#### `ScheduleList`
 
 
 ---
@@ -459,6 +828,12 @@ Use in MDX template files:
 ```mdx
 <MyDownloads />
 ```
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `DownloadsAdmin`
 
 
 ---
@@ -495,6 +870,88 @@ Use in MDX template files:
 <DiscountCodeInput />
 ```
 
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `DiscountAnalytics`
+
+#### `DiscountDetail`
+
+#### `DiscountForm`
+
+#### `DiscountList`
+
+#### `PriceRuleAdmin`
+
+
+---
+
+## `@86d-app/doordash`
+
+DoorDash delivery integration with zone-based availability, delivery tracking, and driver info.
+
+### Store components
+
+Use in MDX template files:
+
+#### `DeliveryChecker`
+
+```mdx
+<DeliveryChecker />
+```
+
+**Props**
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `currency` | `string` | No |  |
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `DoorDashAdmin`
+
+
+---
+
+## `@86d-app/ebay`
+
+eBay marketplace integration for fixed-price and auction listings, order management, and channel analytics.
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `EbayAdmin`
+
+
+---
+
+## `@86d-app/etsy`
+
+Etsy marketplace integration for handmade/vintage listing management, orders, reviews, and shop analytics.
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `EtsyAdmin`
+
+
+---
+
+## `@86d-app/facebook-shop`
+
+Facebook/Meta Commerce integration for catalog sync, product listings, order management, and collections.
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `FacebookShopAdmin`
+
 
 ---
 
@@ -517,6 +974,47 @@ Use in MDX template files:
 ```mdx
 <FaqSearch />
 ```
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `FaqCategories`
+
+#### `FaqCategoryDetail`
+
+#### `FaqDetail`
+
+#### `FaqList`
+
+
+---
+
+## `@86d-app/favor`
+
+Favor delivery integration with zip-code-based service areas, runner tracking, and delivery stats.
+
+### Store components
+
+Use in MDX template files:
+
+#### `DeliveryCheck`
+
+```mdx
+<DeliveryCheck />
+```
+
+**Props**
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `currency` | `string` | No |  |
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `FavorAdmin`
 
 
 ---
@@ -573,12 +1071,68 @@ Use in MDX template files:
 <FlashSaleProductCard />
 ```
 
+#### `FlashSalesHomepageSection`
+
+```mdx
+<FlashSalesHomepageSection />
+```
+
+**Props**
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `productLimit` | `number` | No | Max number of products to show per sale. Defaults to 4. |
+| `saleLimit` | `number` | No | Max number of sales to show. Defaults to 1. |
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `FlashSaleDetail`
+
+#### `FlashSaleList`
+
+
+---
+
+## `@86d-app/forms`
+
+Custom forms for contact, surveys, inquiries, and feedback. Merchants create form definitions with configurable fields; customers submit responses via store endpoints.
+
+### Store components
+
+Use in MDX template files:
+
+#### `FormEmbed`
+
+```mdx
+<FormEmbed />
+```
+
+#### `FormList`
+
+```mdx
+<FormList />
+```
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `FormCreate`
+
+#### `FormDetail`
+
+#### `FormSubmissions`
+
+#### `FormsList`
+
 
 ---
 
 ## `@86d-app/fulfillment`
 
-Shipment lifecycle management with a 5-state machine. Handles creation, status transitions, tracking, cancellation, and optional auto-ship on tracking.
+Authoritative delivery-obligation foundation with quantity-validated creation. Shipping owns parcels, labels, and tracking; Orders owns only the accepted commercial lines. Direct status, tracking, and cancellation transport is contained until durable workflows own those transitions.
 
 ### Store components
 
@@ -626,28 +1180,36 @@ Use in MDX template files:
 | `trackingNumber` | `string \| null` | No | Tracking number. |
 | `trackingUrl` | `string \| null` | No | Full tracking URL. |
 
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `FulfillmentAdmin`
+
 
 ---
 
-## `@86d-app/giftcards`
+## `@86d-app/gamification`
 
-Digital gift cards with purchasing, gifting, redemption, balance management, top-ups, and analytics.
+Spin-to-win, scratch-off, and slot-machine games with prize management and play-rate limiting.
 
 ### Store components
 
 Use in MDX template files:
 
-#### `GiftCardBalance`
+#### `GameWidget`
 
 ```mdx
-<GiftCardBalance />
+<GameWidget />
 ```
 
-#### `GiftCardRedeem`
+### Admin components
 
-```mdx
-<GiftCardRedeem />
-```
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `GameList`
+
+#### `GamificationAdmin`
 
 
 ---
@@ -672,6 +1234,14 @@ Use in MDX template files:
 <RegistryPage />
 ```
 
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `RegistriesList`
+
+#### `RegistryDetail`
+
 
 ---
 
@@ -688,6 +1258,90 @@ Use in MDX template files:
 ```mdx
 <WrapOptionBrowse />
 ```
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `WrapOptionDetail`
+
+#### `WrapOptionList`
+
+
+---
+
+## `@86d-app/giftcards`
+
+Digital gift cards with purchasing, gifting, redemption, balance management, top-ups, and analytics.
+
+### Store components
+
+Use in MDX template files:
+
+#### `GiftCardBalance`
+
+```mdx
+<GiftCardBalance />
+```
+
+#### `GiftCardLanding`
+
+```mdx
+<GiftCardLanding />
+```
+
+#### `GiftCardRedeem`
+
+```mdx
+<GiftCardRedeem />
+```
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `GiftCardOverview`
+
+
+---
+
+## `@86d-app/google-shopping`
+
+Integrates with Google Merchant Center for product feed management, feed submissions, order handling, and diagnostics.
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `GoogleShoppingAdmin`
+
+
+---
+
+## `@86d-app/import-export`
+
+Manages bulk data import and export jobs for products, customers, orders, and inventory.
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `ImportDetail`
+
+#### `ImportExportOverview`
+
+
+---
+
+## `@86d-app/instagram-shop`
+
+Instagram Shopping integration for product listings, media tagging, catalog sync, and order management.
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `InstagramShopAdmin`
 
 
 ---
@@ -718,6 +1372,14 @@ Use in MDX template files:
 <StockStatus />
 ```
 
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `BackInStockAdmin`
+
+#### `InventoryList`
+
 
 ---
 
@@ -740,6 +1402,50 @@ Use in MDX template files:
 ```mdx
 <InvoiceTracker />
 ```
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `InvoiceDetail`
+
+#### `InvoiceList`
+
+#### `OverdueList`
+
+
+---
+
+## `@86d-app/kiosk`
+
+Self-service kiosk station management with session-based ordering, item management, and payment tracking.
+
+### Store components
+
+Use in MDX template files:
+
+#### `KioskTerminal`
+
+```mdx
+<KioskTerminal />
+```
+
+**Props**
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `stationId` | `string \| undefined` | No | Station ID this terminal is registered as |
+| `currency` | `string` | No | ISO 4217 currency code (default: "USD") |
+| `idleTimeout` | `number` | No | Idle timeout in seconds before auto-reset (default: 120) |
+| `params` | `Record<string, string> \| undefined` | No |  |
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `KioskAdmin`
+
+#### `KioskStations`
 
 
 ---
@@ -775,6 +1481,16 @@ Use in MDX template files:
 ```mdx
 <TierProgress />
 ```
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `LoyaltyOverview`
+
+#### `LoyaltyRules`
+
+#### `LoyaltyTiers`
 
 
 ---
@@ -831,6 +1547,12 @@ Use in MDX template files:
 | `loop` | `boolean` | No | Loop playback |
 | `className` | `string` | No | Optional CSS class for the container |
 
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `MediaAdmin`
+
 
 ---
 
@@ -859,6 +1581,14 @@ Use in MDX template files:
 ```mdx
 <PlanListing />
 ```
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `MembershipAdmin`
+
+#### `MembershipPlans`
 
 
 ---
@@ -901,6 +1631,16 @@ Use in MDX template files:
 | `compareAtPriceInCents` | `number \| undefined` | No | Compare-at price in cents (for sale display) |
 | `className` | `string \| undefined` | No | Additional CSS class for the container |
 
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `CurrencyDetail`
+
+#### `CurrencyForm`
+
+#### `CurrencyList`
+
 
 ---
 
@@ -929,6 +1669,12 @@ Use in MDX template files:
 ```mdx
 <NavMobileMenu />
 ```
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `NavigationAdmin`
 
 
 ---
@@ -968,6 +1714,14 @@ Use in MDX template files:
 ```mdx
 <NewsletterUnsubscribe />
 ```
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `CampaignAdmin`
+
+#### `NewsletterAdmin`
 
 
 ---
@@ -1011,6 +1765,18 @@ Use in MDX template files:
 <NotificationPreferences />
 ```
 
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `NotificationComposer`
+
+#### `NotificationList`
+
+#### `NotificationSettings`
+
+#### `NotificationTemplateList`
+
 
 ---
 
@@ -1028,12 +1794,18 @@ Use in MDX template files:
 <OrderNotes />
 ```
 
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `OrderNotesOverview`
+
 
 ---
 
 ## `@86d-app/orders`
 
-Order lifecycle management: CRUD, status transitions, fulfillments, returns, invoices, notes, bulk operations, guest tracking, and reordering.
+Order ownership and compatibility reads for the accepted commercial agreement. Competing Fulfillment/Return writers, destructive bulk operations, and identifier-plus-email guest lookup are contained.
 
 ### Store components
 
@@ -1063,6 +1835,20 @@ Use in MDX template files:
 <OrderTracker />
 ```
 
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `OrderActivity`
+
+#### `OrderDetail`
+
+#### `OrderInvoice`
+
+#### `OrderList`
+
+#### `ReturnList`
+
 
 ---
 
@@ -1086,6 +1872,99 @@ Use in MDX template files:
 <PageListing />
 ```
 
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `PagesAdmin`
+
+
+---
+
+## `@86d-app/payments`
+
+Provider-neutral payment ownership. The legacy v1 controller tracks payment intents, saved payment methods, and refunds. The additive v2 boundary owns named Payment Connections and durable connection-bound provider operations without exposing live shopper routes.
+
+### Store components
+
+Use in MDX template files:
+
+#### `SavedPaymentMethods`
+
+```mdx
+<SavedPaymentMethods />
+```
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `PaymentsAdmin`
+
+
+---
+
+## `@86d-app/paypal`
+
+PayPal Third-party Payment Integration. The connection-bound adapter implements
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `PayPalAdmin`
+
+
+---
+
+## `@86d-app/photo-booth`
+
+Event photo capture with sessions, live streams, and email/SMS delivery.
+
+### Store components
+
+Use in MDX template files:
+
+#### `PhotoGallery`
+
+```mdx
+<PhotoGallery />
+```
+
+#### `PhotoStream`
+
+```mdx
+<PhotoStream streamId="..." />
+```
+
+**Props**
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `streamId` | `string` | Yes | Stream ID to display |
+| `refreshInterval` | `number` | No | Auto-refresh interval in milliseconds (0 = no auto-refresh, default: 10000) |
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `PhotoBoothAdmin`
+
+#### `PhotoStreamList`
+
+
+---
+
+## `@86d-app/pinterest-shop`
+
+Integrates with Pinterest for catalog management, shopping pin creation, and pin analytics tracking.
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `PinterestShopAdmin`
+
 
 ---
 
@@ -1096,6 +1975,18 @@ Manages preorder campaigns for upcoming or limited-edition products. Supports fu
 ### Store components
 
 Use in MDX template files:
+
+#### `CampaignDetail`
+
+```mdx
+<CampaignDetail />
+```
+
+#### `CampaignList`
+
+```mdx
+<CampaignList />
+```
 
 #### `MyPreorders`
 
@@ -1108,6 +1999,74 @@ Use in MDX template files:
 ```mdx
 <PreorderButton />
 ```
+
+#### `PreordersHomepageSection`
+
+```mdx
+<PreordersHomepageSection />
+```
+
+**Props**
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `limit` | `number` | No | Max number of campaigns to show. Defaults to 3. |
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `CampaignDetail`
+
+#### `CampaignList`
+
+
+---
+
+## `@86d-app/price-lists`
+
+Tiered and group-specific pricing for products. Supports multiple price lists with priority-based resolution, quantity tiers, currency filtering, and customer group targeting.
+
+### Store components
+
+Use in MDX template files:
+
+#### `PriceDisplay`
+
+```mdx
+<PriceDisplay />
+```
+
+#### `PriceListTable`
+
+```mdx
+<PriceListTable />
+```
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `PriceListAdmin`
+
+#### `PriceListCreate`
+
+#### `PriceListDetail`
+
+
+---
+
+## `@86d-app/product-feeds`
+
+Product feed generation for shopping channels (Google Shopping, Facebook/Meta, Microsoft, Pinterest, TikTok, custom).
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `ProductFeedDetail`
+
+#### `ProductFeedsOverview`
 
 
 ---
@@ -1125,6 +2084,12 @@ Use in MDX template files:
 ```mdx
 <ProductBadges />
 ```
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `LabelAdmin`
 
 
 ---
@@ -1161,12 +2126,22 @@ Use in MDX template files:
 <QuestionForm />
 ```
 
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `QaAnalytics`
+
+#### `QuestionDetail`
+
+#### `QuestionList`
+
 
 ---
 
 ## `@86d-app/products`
 
-Product catalog with variants, hierarchical categories, and collections. Full CRUD for admin, read-only browsing and search for storefront. Includes CSV import, bulk operations, and inventory management.
+Product and Variant catalog with accepted Categories. New price writes use integer
 
 ### Store components
 
@@ -1175,15 +2150,87 @@ Use in MDX template files:
 #### `ProductCard`
 
 ```mdx
-<ProductCard product={...} />
+<ProductCard />
 ```
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `CategoriesAdmin`
+
+#### `CategoryForm`
 
 **Props**
 
 | Prop | Type | Required | Description |
 |------|------|----------|-------------|
-| `product` | `Product` | Yes |  |
-| `showAddToCart` | `boolean` | No |  |
+| `categoryId` | `string` | No |  |
+| `onSuccess` | `() => void` | No |  |
+
+#### `CategoryList`
+
+**Props**
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `onCreateNew` | `() => void` | No |  |
+| `onEdit` | `(categoryId: string) => void` | No |  |
+
+#### `ProductDetail`
+
+**Props**
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `productId` | `string` | No |  |
+| `params` | `Record<string, string>` | No |  |
+
+#### `ProductEdit`
+
+**Props**
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `params` | `Record<string, string>` | No |  |
+
+#### `ProductForm`
+
+**Props**
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `productId` | `string` | No |  |
+| `onNavigate` | `(path: string) => void` | Yes |  |
+
+#### `ProductList`
+
+#### `ProductNew`
+
+
+---
+
+## `@86d-app/qr-code`
+
+Generate and track QR codes for products, collections, pages, orders, or custom URLs.
+
+### Store components
+
+Use in MDX template files:
+
+#### `QrRedirect`
+
+```mdx
+<QrRedirect />
+```
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `QrCodeDetail`
+
+#### `QrCodeList`
 
 
 ---
@@ -1214,6 +2261,14 @@ Use in MDX template files:
 <QuoteRequest />
 ```
 
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `QuoteDetail`
+
+#### `QuoteList`
+
 
 ---
 
@@ -1236,6 +2291,12 @@ Use in MDX template files:
 ```mdx
 <RecentlyViewedGrid />
 ```
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `RecentlyViewedAdmin`
 
 
 ---
@@ -1276,6 +2337,27 @@ Use in MDX template files:
 | `title` | `string \| undefined` | No | Section title |
 | `limit` | `number \| undefined` | No | Max number of products |
 
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `RecommendationAdmin`
+
+#### `RecommendationSettings`
+
+
+---
+
+## `@86d-app/redirects`
+
+URL redirect management for SEO and URL migration. Supports exact-match and regex-based redirects with 301/302/307/308 status codes, hit tracking, and bulk operations.
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `RedirectsAdmin`
+
 
 ---
 
@@ -1305,28 +2387,61 @@ Use in MDX template files:
 <ReferralShare />
 ```
 
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `CodeList`
+
+#### `ReferralList`
+
+#### `RewardRules`
+
 
 ---
 
 ## `@86d-app/returns`
 
-Manages customer return requests with a multi-step approval workflow (requested -> approved -> received -> completed) and line-item tracking.
+The standalone authority for Return state, with a multi-step approval workflow (requested -> approved -> received -> completed) and line-item tracking. Orders-owned Return rows are compatibility reads only; their HTTP writers must remain contained.
 
 ### Store components
 
 Use in MDX template files:
-
-#### `ReturnForm`
-
-```mdx
-<ReturnForm />
-```
 
 #### `ReturnStatus`
 
 ```mdx
 <ReturnStatus />
 ```
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `ReturnDetail`
+
+#### `ReturnsList`
+
+
+---
+
+## `@86d-app/revenue`
+
+### Store components
+
+Use in MDX template files:
+
+#### `TransactionHistory`
+
+```mdx
+<TransactionHistory />
+```
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `RevenueAdmin`
 
 
 ---
@@ -1343,6 +2458,12 @@ Use in MDX template files:
 
 ```mdx
 <DistributionBars />
+```
+
+#### `MyReviewsPage`
+
+```mdx
+<MyReviewsPage />
 ```
 
 #### `ProductReviews`
@@ -1381,6 +2502,16 @@ Use in MDX template files:
 <StarPicker />
 ```
 
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `ReviewAnalytics`
+
+#### `ReviewList`
+
+#### `ReviewModeration`
+
 
 ---
 
@@ -1397,6 +2528,12 @@ Use in MDX template files:
 ```mdx
 <AddressBook />
 ```
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `AddressOverview`
 
 
 ---
@@ -1443,6 +2580,12 @@ Use in MDX template files:
 | `sessionId` | `string \| undefined` | No |  |
 | `limit` | `number \| undefined` | No |  |
 
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `SearchAnalytics`
+
 
 ---
 
@@ -1468,18 +2611,51 @@ Use in MDX template files:
 | `fallbackTitle` | `string` | No | Fallback title if none configured |
 | `fallbackDescription` | `string` | No | Fallback description if none configured |
 
+#### `Sitemap`
+
+```mdx
+<Sitemap />
+```
+
 #### `SitemapPage`
 
 ```mdx
 <SitemapPage />
 ```
 
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `SeoAdmin`
+
+
+---
+
+## `@86d-app/settings`
+
+Settings owns shopper-visible Store presentation. The typed
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `SettingsCommerce`
+
+#### `SettingsContact`
+
+#### `SettingsGeneral`
+
+#### `SettingsLegal`
+
+#### `SettingsSocial`
+
 
 ---
 
 ## `@86d-app/shipping`
 
-Shipping zone/rate management, shipping methods with delivery estimates, carrier definitions with tracking URLs, and shipment lifecycle tracking. Standalone — no dependencies on other modules.
+Shipping zone/rate configuration plus a dormant v2 foundation for Connection-bound, fulfillment-linked quotes, labels, tracking, refunds, and adjustments. Shopper quote/tracking and legacy shipment mutation routes are contained until that foundation is durably activated.
 
 ### Store components
 
@@ -1521,6 +2697,29 @@ Use in MDX template files:
 | `zoneName` | `string` | No | Name of the shipping zone. |
 | `price` | `number` | Yes | Price in cents. |
 
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `ShipmentsAdmin`
+
+#### `ShippingAdmin`
+
+#### `ShippingCarriersAdmin`
+
+
+---
+
+## `@86d-app/sitemap`
+
+XML sitemap generation from products, collections, pages, blog posts, and brands. Supports custom entries, configurable priorities/frequencies, path exclusions, and on-demand regeneration.
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `SitemapAdmin`
+
 
 ---
 
@@ -1550,6 +2749,12 @@ Use in MDX template files:
 <TrustBadges />
 ```
 
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `SocialProofAdmin`
+
 
 ---
 
@@ -1575,6 +2780,25 @@ Use in MDX template files:
 | `targetId` | `string` | Yes |  |
 | `url` | `string` | Yes |  |
 | `message` | `string` | No |  |
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `SocialSharingAdmin`
+
+
+---
+
+## `@86d-app/square`
+
+Square payment provider implementing the `PaymentProvider` interface from `@86d-app/payments`.
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `SquareAdmin`
 
 
 ---
@@ -1605,6 +2829,14 @@ Use in MDX template files:
 <StoreCreditTransactions />
 ```
 
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `StoreCreditDetail`
+
+#### `StoreCreditsDashboard`
+
 
 ---
 
@@ -1628,6 +2860,16 @@ Use in MDX template files:
 <LocationList />
 ```
 
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `LocationDetail`
+
+#### `LocationForm`
+
+#### `LocationList`
+
 
 ---
 
@@ -1645,12 +2887,35 @@ Use in MDX template files:
 <LocationPicker />
 ```
 
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `LocationDetail`
+
+#### `LocationList`
+
+#### `PickupQueue`
+
+
+---
+
+## `@86d-app/stripe`
+
+Stripe payment provider for @86d-app/payments. Implements the `PaymentProvider` interface using raw fetch to Stripe's REST API — no Stripe SDK required.
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `StripeAdmin`
+
 
 ---
 
 ## `@86d-app/subscriptions`
 
-Subscription plan and subscriber management. Handles recurring billing cycles, trial periods, and subscription lifecycle — status tracking only. Payment processing is delegated to P3 payment modules.
+Subscription plan and subscriber management. Handles trial and subscription lifecycle status only. Free plans and paid plans with a free trial can be activated through the Store endpoint. Non-trial paid activation remains unavailable until P3 provides purpose-bound, duplicate-safe payment proof consumption.
 
 ### Store components
 
@@ -1680,6 +2945,12 @@ Use in MDX template files:
 <SubscriptionPlans />
 ```
 
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `SubscriptionsAdmin`
+
 
 ---
 
@@ -1702,6 +2973,14 @@ Use in MDX template files:
 ```mdx
 <TaxEstimate />
 ```
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `TaxRates`
+
+#### `TaxReporting`
 
 
 ---
@@ -1732,6 +3011,156 @@ Use in MDX template files:
 <TicketForm />
 ```
 
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `TicketCategories`
+
+#### `TicketCategoryDetail`
+
+#### `TicketDetail`
+
+#### `TicketList`
+
+
+---
+
+## `@86d-app/tiktok-shop`
+
+Integrates with TikTok Shop for product listing sync, order management, and catalog synchronization.
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `TikTokShopAdmin`
+
+
+---
+
+## `@86d-app/tipping`
+
+Order tipping with preset/custom amounts, tip splitting, payouts, and configurable settings.
+
+### Store components
+
+Use in MDX template files:
+
+#### `TipSelector`
+
+```mdx
+<TipSelector orderId="..." orderTotal={0} />
+```
+
+**Props**
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `orderId` | `string` | Yes | The order ID to attach the tip to |
+| `orderTotal` | `number` | Yes | Order subtotal in smallest currency unit (cents) |
+| `currency` | `string` | No | ISO 4217 currency code (default: "USD") |
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `TipPayouts`
+
+#### `TippingAdmin`
+
+
+---
+
+## `@86d-app/toast`
+
+Toast POS integration with bidirectional sync for menus, orders, and inventory.
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `ToastAdmin`
+
+
+---
+
+## `@86d-app/uber-direct`
+
+Uber Direct delivery integration with quote-based pricing, courier tracking, and delivery stats.
+
+### Store components
+
+Use in MDX template files:
+
+#### `DeliveryChecker`
+
+```mdx
+<DeliveryChecker />
+```
+
+**Props**
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `currency` | `string` | No |  |
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `UberDirectAdmin`
+
+
+---
+
+## `@86d-app/uber-eats`
+
+Uber Eats marketplace integration with order management, menu syncing, and order statistics.
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `UberEatsAdmin`
+
+
+---
+
+## `@86d-app/vendors`
+
+Multi-vendor marketplace support. Vendor profiles, product assignments, commission tracking, and payout management.
+
+### Store components
+
+Use in MDX template files:
+
+#### `VendorApply`
+
+```mdx
+<VendorApply />
+```
+
+#### `VendorDirectory`
+
+```mdx
+<VendorDirectory />
+```
+
+#### `VendorProfile`
+
+```mdx
+<VendorProfile />
+```
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `VendorAdmin`
+
+#### `VendorPayouts`
+
 
 ---
 
@@ -1761,6 +3190,25 @@ Use in MDX template files:
 <WaitlistPage />
 ```
 
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `WaitlistDashboard`
+
+
+---
+
+## `@86d-app/walmart`
+
+Integrates with Walmart Marketplace for item management, feed submissions, order fulfillment, and inventory tracking.
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `WalmartAdmin`
+
 
 ---
 
@@ -1783,6 +3231,27 @@ Use in MDX template files:
 ```mdx
 <WarrantyStatus />
 ```
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `ClaimDetail`
+
+#### `WarrantiesList`
+
+
+---
+
+## `@86d-app/wish`
+
+Integrates with Wish marketplace for product listing, order management, and shipment tracking.
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `WishAdmin`
 
 
 ---
@@ -1812,6 +3281,25 @@ Use in MDX template files:
 ```mdx
 <WishlistPage />
 ```
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `WishlistOverview`
+
+
+---
+
+## `@86d-app/x-shop`
+
+Integrates with X (Twitter) Commerce for product listings, order management, and product drop campaigns.
+
+### Admin components
+
+Registered as admin pages — accessed via the admin sidebar.
+
+#### `XShopAdmin`
 
 
 ---

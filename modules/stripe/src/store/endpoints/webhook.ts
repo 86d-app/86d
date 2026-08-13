@@ -1,4 +1,4 @@
-import { createStoreEndpoint } from "@86d-app/core";
+import { createStoreEndpoint } from "@86d-app/core/api";
 
 /** Minimal typed shape of a Stripe webhook event. */
 interface StripeEventData {
@@ -162,10 +162,7 @@ const STRIPE_EVENT_MAP: Record<string, EventMapping> = {
 	},
 };
 
-const STRIPE_REFUND_EVENTS = new Set([
-	"charge.refunded",
-	"charge.dispute.funds_withdrawn",
-]);
+const STRIPE_REFUND_EVENTS = new Set(["charge.refunded"]);
 
 interface WebhookEventResult {
 	id: string;

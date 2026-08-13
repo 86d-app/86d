@@ -7,12 +7,10 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
-import type { RegistryManifest } from "@86d-app/registry";
-import {
-	fetchTemplate,
-	parseSpecifier,
-	readLocalManifest,
-} from "@86d-app/registry";
+import { readLocalManifest } from "@86d-app/registry/resolver";
+import { parseSpecifier } from "@86d-app/registry/specifier";
+import { fetchTemplate } from "@86d-app/registry/template";
+import type { RegistryManifest } from "@86d-app/registry/types";
 import {
 	c,
 	detectActiveTemplate,

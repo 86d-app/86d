@@ -1,4 +1,4 @@
-import type { ModuleController } from "@86d-app/core";
+import type { ModuleController } from "@86d-app/core/types/module";
 
 /** Built-in event types — any string is also valid for custom events. */
 export type EventType =

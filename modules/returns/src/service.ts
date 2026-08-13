@@ -1,4 +1,4 @@
-import type { ModuleController } from "@86d-app/core";
+import type { ModuleController } from "@86d-app/core/types/module";
 
 /** Subset of the inventory controller used for restocking returned items. */
 export type InventoryRestockController = {

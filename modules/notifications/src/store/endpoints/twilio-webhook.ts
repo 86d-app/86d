@@ -1,4 +1,4 @@
-import { createStoreEndpoint } from "@86d-app/core";
+import { createStoreEndpoint } from "@86d-app/core/api";
 
 /**
  * Twilio callback containment endpoint. It authenticates the exact form body,

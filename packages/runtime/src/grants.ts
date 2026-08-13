@@ -9,7 +9,7 @@ import {
 	type JsonValue,
 	type TargetReference,
 	targetReferenceSchema,
-} from "@86d-app/core";
+} from "@86d-app/core/commands";
 import { z } from "zod";
 import type { CommandPrincipal } from "./command";
 
