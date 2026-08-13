@@ -1,8 +1,8 @@
-import {
-	type AnyDurableEventDefinition,
-	type DurableEventEnvelope,
-	type DurableEventInput,
-	type ModuleDataTransaction,
+import type {
+	AnyDurableEventDefinition,
+	DurableEventEnvelope,
+	DurableEventInput,
+	ModuleDataTransaction,
 } from "@86d-app/core";
 import type { Prisma } from "@86d-app/core/prisma";
 
@@ -20,7 +20,9 @@ type PrismaLikeTransaction = DataServiceConfig["db"];
 
 function boundedText(value: string, label: string, maximum: number): void {
 	if (value.length === 0 || value.length > maximum) {
-		throw new Error(`${label} must contain between 1 and ${maximum} characters.`);
+		throw new Error(
+			`${label} must contain between 1 and ${maximum} characters.`,
+		);
 	}
 }
 
@@ -319,12 +321,16 @@ export class UniversalDataService {
 		}
 		const payload = definition.payload.safeParse(input.payload);
 		if (!payload.success) {
-			throw new Error(`Durable event payload is invalid for ${definition.name}.`);
+			throw new Error(
+				`Durable event payload is invalid for ${definition.name}.`,
+			);
 		}
 		const normalizedPayload = normalizeJson(payload.data);
 		const normalized = definition.payload.safeParse(normalizedPayload);
 		if (!normalized.success) {
-			throw new Error(`Durable event payload is not stable JSON for ${definition.name}.`);
+			throw new Error(
+				`Durable event payload is not stable JSON for ${definition.name}.`,
+			);
 		}
 		const eventId = input.id ?? crypto.randomUUID();
 		const occurredAt = input.occurredAt ?? new Date();

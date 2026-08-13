@@ -1,10 +1,10 @@
-import { describe, expect, it, vi } from "vitest";
-import { z } from "zod";
 import {
 	consumeDurableEvent,
 	defineDurableEvent,
 	type ModuleDataTransaction,
 } from "@86d-app/core";
+import { describe, expect, it, vi } from "vitest";
+import { z } from "zod";
 import { UniversalDataService } from "../universal-data-service";
 
 const inventoryAdjusted = defineDurableEvent({
@@ -161,7 +161,9 @@ describe("UniversalDataService transactional outbox", () => {
 });
 
 function transactionType(_data: {
-	transaction<T>(work: (transaction: ModuleDataTransaction) => Promise<T>): Promise<T>;
+	transaction<T>(
+		work: (transaction: ModuleDataTransaction) => Promise<T>,
+	): Promise<T>;
 }): string {
 	return "module-transaction";
 }

@@ -1,7 +1,4 @@
-import type {
-	AnyDurableEventConsumer,
-	ModuleDataService,
-} from "@86d-app/core";
+import type { AnyDurableEventConsumer, ModuleDataService } from "@86d-app/core";
 import { consumeDurableEvent, defineDurableEvent } from "@86d-app/core";
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
@@ -114,8 +111,10 @@ describe("DurableEventDispatcher", () => {
 
 		const [sql, storeId, consumers, limit] = db.$queryRawUnsafe.mock.calls[0];
 		expect(sql).toMatch(/FOR UPDATE(?: OF delivery)? SKIP LOCKED/);
-		expect(sql).toContain('prior."state" <> \'succeeded\'');
-		expect(sql).toContain('prior_event."aggregateSequence" < event."aggregateSequence"');
+		expect(sql).toContain("prior.\"state\" <> 'succeeded'");
+		expect(sql).toContain(
+			'prior_event."aggregateSequence" < event."aggregateSequence"',
+		);
 		expect(sql).not.toContain('prior."nextAttemptAt"');
 		expect(storeId).toBe(claimed.storeId);
 		expect(consumers).toEqual([claimed.consumer]);
@@ -158,7 +157,9 @@ describe("DurableEventDispatcher", () => {
 
 	it("skips a duplicate receipt while still completing its delivery", async () => {
 		const { db, tx } = createDb();
-		tx.moduleEventConsumption.findUnique.mockResolvedValue({ consumedAt: new Date() });
+		tx.moduleEventConsumption.findUnique.mockResolvedValue({
+			consumedAt: new Date(),
+		});
 		const handler = consumer();
 		const dispatcher = new DurableEventDispatcher({
 			db,

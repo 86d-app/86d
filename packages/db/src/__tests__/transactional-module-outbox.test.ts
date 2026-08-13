@@ -127,7 +127,7 @@ describe("transactional Module outbox migration", () => {
 						9007199254740992, now(), '{}'::jsonb, $2::uuid
 					)`,
 					[storeId, moduleId],
-			),
+				),
 			).rejects.toThrow(/check constraint/i);
 		});
 
@@ -176,7 +176,7 @@ describe("transactional Module outbox migration", () => {
 						1, now(), '{}'::jsonb, $2::uuid
 					)`,
 					[storeId, moduleId],
-			),
+				),
 			).rejects.toThrow(/foreign key constraint/i);
 		});
 
@@ -198,7 +198,7 @@ describe("transactional Module outbox migration", () => {
 						'33333333-3333-4333-8333-333333333333',
 						'audit-log.inventory-adjusted.v1', 'pending', 0, now()
 					)`,
-			),
+				),
 			).rejects.toThrow(/unique|duplicate/i);
 		});
 
@@ -240,7 +240,10 @@ describe("transactional Module outbox migration", () => {
 	});
 
 	it("installs targeted claim, stale-lease, and aggregate-order indexes", async () => {
-		const result = await database.query<{ indexname: string; indexdef: string }>(`
+		const result = await database.query<{
+			indexname: string;
+			indexdef: string;
+		}>(`
 			SELECT indexname, indexdef
 			FROM pg_indexes
 			WHERE schemaname = 'public'

@@ -24,16 +24,17 @@ export type DurableEventPayload<D extends AnyDurableEventDefinition> = z.infer<
 	D["payload"]
 >;
 
-export type DurableEventEnvelope<D extends AnyDurableEventDefinition> = Readonly<{
-	id: string;
-	name: D["name"];
-	version: D["version"];
-	storeId: string;
-	sourceModule: D["owner"];
-	aggregate: Readonly<{ type: string; id: string; sequence: number }>;
-	occurredAt: Date;
-	payload: DurableEventPayload<D>;
-}>;
+export type DurableEventEnvelope<D extends AnyDurableEventDefinition> =
+	Readonly<{
+		id: string;
+		name: D["name"];
+		version: D["version"];
+		storeId: string;
+		sourceModule: D["owner"];
+		aggregate: Readonly<{ type: string; id: string; sequence: number }>;
+		occurredAt: Date;
+		payload: DurableEventPayload<D>;
+	}>;
 
 export type DurableEventInput<D extends AnyDurableEventDefinition> = Readonly<{
 	id?: string | undefined;
@@ -66,15 +67,17 @@ type DurableEventHandler<D extends AnyDurableEventDefinition> = {
 	): Promise<void>;
 }["bivarianceHack"];
 
-export type DurableEventConsumer<D extends AnyDurableEventDefinition> = Readonly<{
-	consumer: string;
-	owner: string;
-	definition: D;
-	optional?: boolean | undefined;
-	handle: DurableEventHandler<D>;
-}>;
+export type DurableEventConsumer<D extends AnyDurableEventDefinition> =
+	Readonly<{
+		consumer: string;
+		owner: string;
+		definition: D;
+		optional?: boolean | undefined;
+		handle: DurableEventHandler<D>;
+	}>;
 
-export type AnyDurableEventConsumer = DurableEventConsumer<AnyDurableEventDefinition>;
+export type AnyDurableEventConsumer =
+	DurableEventConsumer<AnyDurableEventDefinition>;
 
 export function defineDurableEvent<
 	const Name extends string,
@@ -109,7 +112,9 @@ export function durableEventKey(definition: AnyDurableEventDefinition): string {
 
 function assertIdentifier(value: string, label: string, maximum: number): void {
 	if (value.length < 1 || value.length > maximum) {
-		throw new Error(`${label} must contain between 1 and ${maximum} characters.`);
+		throw new Error(
+			`${label} must contain between 1 and ${maximum} characters.`,
+		);
 	}
 }
 

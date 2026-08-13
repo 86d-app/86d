@@ -95,7 +95,9 @@ export class DurableEventDispatcher {
 		this.consumersById = new Map();
 		for (const consumer of config.consumers) {
 			if (this.consumersById.has(consumer.consumer)) {
-				throw new Error(`Duplicate durable event consumer "${consumer.consumer}".`);
+				throw new Error(
+					`Duplicate durable event consumer "${consumer.consumer}".`,
+				);
 			}
 			if (consumer.owner.length === 0 || consumer.consumer.length > 200) {
 				throw new Error("Durable event consumer identity is invalid.");
@@ -154,7 +156,11 @@ export class DurableEventDispatcher {
 	): Promise<"succeeded" | "failed" | "stale"> {
 		const consumer = this.consumersById.get(delivery.consumer);
 		if (!consumer) {
-			await this.fail(delivery, now, new DeliveryFailure("EVENT_CONSUMER_MISSING"));
+			await this.fail(
+				delivery,
+				now,
+				new DeliveryFailure("EVENT_CONSUMER_MISSING"),
+			);
 			return "failed";
 		}
 
@@ -193,7 +199,9 @@ export class DurableEventDispatcher {
 						) {
 							throw new DeliveryFailure("EVENT_CONTRACT_MISMATCH");
 						}
-						const payload = consumer.definition.payload.safeParse(delivery.payload);
+						const payload = consumer.definition.payload.safeParse(
+							delivery.payload,
+						);
 						if (!payload.success) {
 							throw new DeliveryFailure("EVENT_PAYLOAD_INVALID");
 						}
@@ -212,7 +220,9 @@ export class DurableEventDispatcher {
 							payload: payload.data,
 						};
 						await consumer.handle(
-							{ data: this.config.getConsumerData(consumer.owner, transaction) },
+							{
+								data: this.config.getConsumerData(consumer.owner, transaction),
+							},
 							event,
 						);
 						await transaction.moduleEventConsumption.create({
@@ -223,23 +233,25 @@ export class DurableEventDispatcher {
 						});
 					}
 
-					const acknowledged = await transaction.moduleEventDelivery.updateMany({
-						where: {
-							consumer: delivery.consumer,
-							eventId: delivery.eventId,
-							state: "processing",
-							leaseToken: delivery.leaseToken,
-							leaseOwner: delivery.leaseOwner,
+					const acknowledged = await transaction.moduleEventDelivery.updateMany(
+						{
+							where: {
+								consumer: delivery.consumer,
+								eventId: delivery.eventId,
+								state: "processing",
+								leaseToken: delivery.leaseToken,
+								leaseOwner: delivery.leaseOwner,
+							},
+							data: {
+								state: "succeeded",
+								succeededAt: now,
+								leaseToken: null,
+								leaseOwner: null,
+								leaseExpiresAt: null,
+								lastError: null,
+							},
 						},
-						data: {
-							state: "succeeded",
-							succeededAt: now,
-							leaseToken: null,
-							leaseOwner: null,
-							leaseExpiresAt: null,
-							lastError: null,
-						},
-					});
+					);
 					if (acknowledged.count !== 1) {
 						throw new DeliveryFailure("EVENT_LEASE_LOST");
 					}

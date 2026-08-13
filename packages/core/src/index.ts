@@ -129,6 +129,22 @@ export {
 	validateContracts,
 } from "./contracts";
 export {
+	type AnyDurableEventConsumer,
+	type AnyDurableEventDefinition,
+	consumeDurableEvent,
+	type DurableEventConsumer,
+	type DurableEventConsumerContext,
+	type DurableEventDefinition,
+	type DurableEventEnvelope,
+	type DurableEventInput,
+	type DurableEventPayload,
+	defineDurableEvent,
+	durableEventKey,
+	inventoryStockAdjustedV1,
+	type ModuleDataTransaction,
+	type ModuleTransactionRunner,
+} from "./durable-events";
+export {
 	formatModuleClientEndpointReferenceConflicts,
 	type ModuleClientEndpointReference,
 	type ModuleClientEndpointReferenceConflict,
@@ -145,22 +161,6 @@ export {
 	type ModuleEvent,
 	type ScopedEventEmitter,
 } from "./events";
-export {
-	type AnyDurableEventConsumer,
-	type AnyDurableEventDefinition,
-	consumeDurableEvent,
-	defineDurableEvent,
-	type DurableEventConsumer,
-	type DurableEventConsumerContext,
-	type DurableEventDefinition,
-	type DurableEventEnvelope,
-	type DurableEventInput,
-	durableEventKey,
-	type DurableEventPayload,
-	inventoryStockAdjustedV1,
-	type ModuleDataTransaction,
-	type ModuleTransactionRunner,
-} from "./durable-events";
 export {
 	formatPathConflicts,
 	type ModulePathConflict,
