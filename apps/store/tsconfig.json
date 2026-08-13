@@ -8,8 +8,6 @@
 			"*": ["./*"],
 			"~/*": ["./*"],
 			"template/*": ["../../templates/brisa/*"],
-			"@86d-app/core": ["../../packages/core/src/index.ts"],
-			"@86d-app/core/*": ["../../packages/core/src/*"],
 			"@86d-app/runtime/*": ["../../packages/runtime/src/*"],
 			"@86d-app/*/components": [
 				"../../modules/*/src/store/components/index.tsx"

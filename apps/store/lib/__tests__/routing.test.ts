@@ -6,10 +6,6 @@ const generatedApi = readFileSync(
 	resolve(import.meta.dirname, "../../generated/api.ts"),
 	"utf8",
 );
-const generatedHooks = readFileSync(
-	resolve(import.meta.dirname, "../../generated/hooks.ts"),
-	"utf8",
-);
 const generatedComponents = readFileSync(
 	resolve(import.meta.dirname, "../../generated/components.ts"),
 	"utf8",
@@ -37,12 +33,6 @@ describe("generated routing", () => {
 		expect(generatedApi).toContain('moduleId: "products"');
 		expect(generatedApi).toContain('pattern: "/admin/orders/returns"');
 		expect(generatedApi).toContain('moduleId: "orders"');
-		expect(generatedHooks).toContain(
-			'client.module("products").admin["/admin/products/collections/list"]',
-		);
-		expect(generatedHooks).toContain(
-			'client.module("orders").admin["/admin/orders/returns"]',
-		);
 	});
 
 	it("does not emit duplicate top-level admin patterns for collections or returns", () => {

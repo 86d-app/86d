@@ -22,12 +22,30 @@ const sampleAddress = {
 function makeOrderParams(
 	overrides: Partial<CreateOrderParams> = {},
 ): CreateOrderParams {
+	const items = overrides.items ?? [
+		{ productId: "prod_1", name: "Widget", price: 1000, quantity: 1 },
+	];
+	const subtotal =
+		overrides.subtotal ??
+		items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+	const taxAmount = overrides.taxAmount ?? 100;
+	const total =
+		overrides.total ??
+		Math.max(
+			0,
+			subtotal +
+				taxAmount +
+				(overrides.shippingAmount ?? 0) -
+				(overrides.discountAmount ?? 0) -
+				(overrides.giftCardAmount ?? 0) -
+				(overrides.storeCreditAmount ?? 0),
+		);
 	return {
-		subtotal: 1000,
-		total: 1100,
-		taxAmount: 100,
-		items: [{ productId: "prod_1", name: "Widget", price: 1000, quantity: 1 }],
 		...overrides,
+		subtotal,
+		total,
+		taxAmount,
+		items,
 	};
 }
 
@@ -88,14 +106,14 @@ describe("orders controllers — edge cases", () => {
 						{
 							productId: "p1",
 							name: "A",
-							price: 25.5,
+							price: 2550,
 							quantity: 4,
 						},
 					],
 				}),
 			);
 			const items = await controller.getItems(order.id);
-			expect(items[0].subtotal).toBeCloseTo(102, 10);
+			expect(items[0].subtotal).toBe(10_200);
 		});
 
 		it("creates both billing and shipping addresses", async () => {

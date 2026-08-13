@@ -1,18 +1,17 @@
+import { createMockSession } from "@86d-app/core/test-utils";
 import { describe, expect, it, vi } from "vitest";
-import { storeEndpoints } from "../store/endpoints";
-
-type Endpoint = (input: Record<string, unknown>) => Promise<unknown>;
-
-function endpoint(path: keyof typeof storeEndpoints): Endpoint {
-	return storeEndpoints[path] as unknown as Endpoint;
-}
-
-const lineItem = {
-	productId: "product-1",
-	name: "Forged Product Name",
-	price: 1,
-	quantity: 2,
-};
+import type { CheckoutSession } from "../service";
+import {
+	capturePaymentUnavailable,
+	completeSessionUnavailable,
+	confirmSessionUnavailable,
+	createPaymentUnavailable,
+	getPaymentUnavailable,
+} from "../store/endpoints/activation-unavailable";
+import { createSession } from "../store/endpoints/create-session";
+import { getShippingRates } from "../store/endpoints/get-shipping-rates";
+import { createGuestProofMetadata } from "../store/endpoints/guest-proof";
+import { updateSession } from "../store/endpoints/update-session";
 
 const shippingAddress = {
 	firstName: "Ada",
@@ -24,49 +23,80 @@ const shippingAddress = {
 	country: "US",
 };
 
+function checkoutSession(
+	overrides: Partial<CheckoutSession> = {},
+): CheckoutSession {
+	const now = new Date("2026-08-13T12:00:00.000Z");
+	return {
+		id: "session-1",
+		revision: 1,
+		cartId: "cart-1",
+		status: "pending",
+		subtotal: 2_500,
+		taxAmount: 0,
+		shippingAmount: 0,
+		discountAmount: 0,
+		giftCardAmount: 0,
+		storeCreditAmount: 0,
+		total: 2_500,
+		currency: "USD",
+		expiresAt: new Date("2026-08-13T12:30:00.000Z"),
+		createdAt: now,
+		updatedAt: now,
+		...overrides,
+	};
+}
+
 function capabilityInvoker(options?: {
-	product?:
-		| { ok: false; failure: { code: string } }
-		| {
-				ok: true;
-				decision: {
-					product: {
-						id: string;
-						name: string;
-						slug: string;
-						status: "active";
-						price: number;
-						sku?: string;
-						images: string[];
-					};
-					variant?: {
-						id: string;
-						productId: string;
-						name: string;
-						price: number;
-						images: string[];
-					};
-				};
-		  };
+	cartFailure?: string;
+	productFailure?: string;
+	variantId?: string;
 }) {
 	return {
 		invoke: vi.fn(async (definition: { name: string }) => {
-			if (definition.name === "catalog.product.resolve") {
-				return (
-					options?.product ?? {
-						ok: true,
-						decision: {
-							product: {
-								id: "product-1",
-								name: "Product",
-								slug: "product",
-								status: "active",
-								price: 1250,
-								images: [],
+			if (definition.name === "cart.snapshot") {
+				if (options?.cartFailure) {
+					return {
+						ok: false,
+						failure: { code: options.cartFailure },
+					};
+				}
+				return {
+					ok: true,
+					decision: {
+						cartId: "cart-1",
+						revision: "2026-08-13T12:00:00.000Z",
+						items: [
+							{
+								productId: "product-1",
+								...(options?.variantId ? { variantId: options.variantId } : {}),
+								quantity: 2,
 							},
+						],
+					},
+				};
+			}
+			if (definition.name === "catalog.product.resolve") {
+				if (options?.productFailure) {
+					return {
+						ok: false,
+						failure: { code: options.productFailure },
+					};
+				}
+				return {
+					ok: true,
+					decision: {
+						product: {
+							id: "product-1",
+							name: "Authoritative Product",
+							slug: "authoritative-product",
+							status: "active",
+							price: 1_250,
+							sku: "REAL-SKU",
+							images: [],
 						},
-					}
-				);
+					},
+				};
 			}
 			return {
 				ok: false,
@@ -80,25 +110,46 @@ function capabilityInvoker(options?: {
 	};
 }
 
+function guestCreateInput(
+	create: ReturnType<typeof vi.fn>,
+	capabilities = capabilityInvoker(),
+) {
+	return {
+		body: { cartId: "cart-1" },
+		headers: new Headers({ cookie: "cart_guest_id=guest-1" }),
+		context: {
+			controllers: { checkout: { create } },
+			capabilities,
+			session: null,
+		},
+	};
+}
+
 describe("checkout activation containment", () => {
-	it("fails before creating a session when authoritative product data is unavailable", async () => {
+	it("fails before persistence when an authoritative Cart snapshot is unavailable", async () => {
 		const create = vi.fn();
-		const result = await endpoint("/checkout/sessions")({
-			body: {
-				subtotal: 2,
-				total: 2,
-				lineItems: [lineItem],
-			},
-			context: {
-				controllers: { checkout: { create } },
-				capabilities: capabilityInvoker({
-					product: {
-						ok: false,
-						failure: { code: "CAPABILITY_UNAVAILABLE" },
-					},
-				}),
-			},
+		const result = await createSession(
+			guestCreateInput(
+				create,
+				capabilityInvoker({ cartFailure: "CAPABILITY_UNAVAILABLE" }),
+			),
+		);
+
+		expect(result).toMatchObject({
+			code: "CHECKOUT_CART_UNAVAILABLE",
+			status: 503,
 		});
+		expect(create).not.toHaveBeenCalled();
+	});
+
+	it("fails before persistence when authoritative product data is unavailable", async () => {
+		const create = vi.fn();
+		const result = await createSession(
+			guestCreateInput(
+				create,
+				capabilityInvoker({ productFailure: "CAPABILITY_UNAVAILABLE" }),
+			),
+		);
 
 		expect(result).toMatchObject({
 			code: "CHECKOUT_PRICING_UNAVAILABLE",
@@ -107,44 +158,22 @@ describe("checkout activation containment", () => {
 		expect(create).not.toHaveBeenCalled();
 	});
 
-	it("derives product identity and price from authoritative Store data", async () => {
-		const create = vi.fn(async (input) => ({ id: "session-1", ...input }));
-		const result = await endpoint("/checkout/sessions")({
-			body: {
-				subtotal: 2,
-				total: 2,
-				lineItems: [lineItem],
-			},
-			context: {
-				controllers: { checkout: { create } },
-				capabilities: capabilityInvoker({
-					product: {
-						ok: true,
-						decision: {
-							product: {
-								id: "product-1",
-								name: "Authoritative Product",
-								slug: "authoritative-product",
-								price: 1250,
-								sku: "REAL-SKU",
-								status: "active",
-								images: [],
-							},
-						},
-					},
-				}),
-			},
-		});
+	it("derives product identity, quantity, and price from authoritative Store decisions", async () => {
+		const create = vi.fn().mockResolvedValue(checkoutSession());
+		const result = await createSession(guestCreateInput(create));
 
 		expect(result).toHaveProperty("session");
 		expect(create).toHaveBeenCalledWith(
 			expect.objectContaining({
-				subtotal: 2500,
-				total: 2500,
+				cartId: "cart-1",
+				subtotal: 2_500,
+				total: 2_500,
 				lineItems: [
 					expect.objectContaining({
+						productId: "product-1",
 						name: "Authoritative Product",
-						price: 1250,
+						price: 1_250,
+						quantity: 2,
 						sku: "REAL-SKU",
 					}),
 				],
@@ -152,21 +181,14 @@ describe("checkout activation containment", () => {
 		);
 	});
 
-	it("fails before persistence when authoritative product pricing is missing", async () => {
+	it("fails before persistence when authoritative product pricing is invalid", async () => {
 		const create = vi.fn();
-		const result = await endpoint("/checkout/sessions")({
-			body: {
-				subtotal: 2,
-				total: 2,
-				lineItems: [lineItem],
-			},
-			context: {
-				controllers: { checkout: { create } },
-				capabilities: capabilityInvoker({
-					product: { ok: false, failure: { code: "invalid_price" } },
-				}),
-			},
-		});
+		const result = await createSession(
+			guestCreateInput(
+				create,
+				capabilityInvoker({ productFailure: "invalid_price" }),
+			),
+		);
 
 		expect(result).toMatchObject({
 			code: "CHECKOUT_PRICING_UNAVAILABLE",
@@ -175,54 +197,48 @@ describe("checkout activation containment", () => {
 		expect(create).not.toHaveBeenCalled();
 	});
 
-	it("rejects a variant that does not belong to the selected product", async () => {
+	it("rejects a Cart variant that Products cannot bind to its product", async () => {
 		const create = vi.fn();
-		const result = await endpoint("/checkout/sessions")({
-			body: {
-				subtotal: 2,
-				total: 2,
-				lineItems: [{ ...lineItem, variantId: "variant-1" }],
-			},
-			context: {
-				controllers: { checkout: { create } },
-				capabilities: capabilityInvoker({
-					product: { ok: false, failure: { code: "variant_mismatch" } },
+		const result = await createSession(
+			guestCreateInput(
+				create,
+				capabilityInvoker({
+					variantId: "variant-1",
+					productFailure: "variant_mismatch",
 				}),
-			},
-		});
+			),
+		);
 
 		expect(result).toMatchObject({ status: 400 });
 		expect(create).not.toHaveBeenCalled();
 	});
 
-	it("rejects caller-supplied tax and shipping amounts before persistence", async () => {
+	it("contains Checkout creation with a shipping address until Tax v2 is bound", async () => {
 		const create = vi.fn();
-		const result = await endpoint("/checkout/sessions")({
-			body: {
-				subtotal: 2,
-				taxAmount: 1,
-				shippingAmount: 1,
-				total: 4,
-				lineItems: [lineItem],
-			},
+		const capabilities = capabilityInvoker();
+		const result = await createSession({
+			body: { cartId: "cart-1", shippingAddress },
 			context: {
 				controllers: { checkout: { create } },
+				capabilities,
+				session: null,
 			},
 		});
 
 		expect(result).toMatchObject({
-			code: "CHECKOUT_CALLER_TOTALS_REJECTED",
-			status: 422,
+			code: "CHECKOUT_TAX_V2_REQUIRED",
+			status: 503,
 		});
 		expect(create).not.toHaveBeenCalled();
+		expect(capabilities.invoke).not.toHaveBeenCalled();
 	});
 
-	it("rejects a caller-supplied shipping amount on session update", async () => {
+	it("rejects a caller-supplied shipping amount before reading or mutating a session", async () => {
 		const getById = vi.fn();
 		const update = vi.fn();
-		const result = await endpoint("/checkout/sessions/:id/update")({
+		const result = await updateSession({
 			params: { id: "session-1" },
-			body: { shippingAmount: 1 },
+			body: { expectedRevision: 1, shippingAmount: 1 },
 			context: { controllers: { checkout: { getById, update } } },
 		});
 
@@ -234,94 +250,87 @@ describe("checkout activation containment", () => {
 		expect(update).not.toHaveBeenCalled();
 	});
 
-	it("fails before an address update when the required tax decision is unavailable", async () => {
+	it("contains an authorized address update until Tax v2 is bound", async () => {
 		const update = vi.fn();
-		const result = await endpoint("/checkout/sessions/:id/update")({
+		const getById = vi
+			.fn()
+			.mockResolvedValue(checkoutSession({ customerId: "customer-1" }));
+		const result = await updateSession({
 			params: { id: "session-1" },
-			body: { shippingAddress },
+			body: { expectedRevision: 1, shippingAddress },
 			context: {
-				controllers: {
-					checkout: {
-						getById: vi.fn().mockResolvedValue({
-							id: "session-1",
-							customerId: undefined,
-						}),
-						update,
-					},
-				},
+				controllers: { checkout: { getById, update } },
+				session: createMockSession({ userId: "customer-1" }),
 			},
 		});
 
 		expect(result).toMatchObject({
-			code: "CHECKOUT_TAX_UNAVAILABLE",
+			code: "CHECKOUT_TAX_V2_REQUIRED",
 			status: 503,
 		});
 		expect(update).not.toHaveBeenCalled();
 	});
 
-	it("fails before session persistence when a required tax decision is unavailable", async () => {
-		const create = vi.fn();
-		const result = await endpoint("/checkout/sessions")({
-			body: {
-				subtotal: 2,
-				total: 2,
-				lineItems: [lineItem],
-				shippingAddress,
-			},
-			context: {
-				controllers: { checkout: { create } },
-				capabilities: capabilityInvoker(),
-			},
-		});
-
-		expect(result).toMatchObject({
-			code: "CHECKOUT_TAX_UNAVAILABLE",
-			status: 503,
-		});
-		expect(create).not.toHaveBeenCalled();
-	});
-
-	it("does not report an empty shipping decision when the shipping service is missing", async () => {
+	it("contains an authorized guest shipping quote until Shipping v2 is bound", async () => {
+		const proof = await createGuestProofMetadata();
 		const getLineItems = vi.fn();
 		const capabilities = capabilityInvoker();
-		const result = await endpoint("/checkout/sessions/:id/shipping-rates")({
+		const result = await getShippingRates({
 			params: { id: "session-1" },
+			headers: new Headers({
+				cookie: `checkout_guest_session-1=${proof.proof}`,
+			}),
 			context: {
 				controllers: {
 					checkout: {
-						getById: vi.fn().mockResolvedValue({
-							id: "session-1",
-							subtotal: 2500,
-							shippingAddress,
-						}),
+						getById: vi
+							.fn()
+							.mockResolvedValue(checkoutSession({ metadata: proof.metadata })),
 						getLineItems,
 					},
 				},
 				capabilities,
+				session: null,
 			},
 		});
 
 		expect(result).toMatchObject({
-			code: "CHECKOUT_SHIPPING_UNAVAILABLE",
+			code: "CHECKOUT_SHIPPING_QUOTE_V2_REQUIRED",
 			status: 503,
 		});
 		expect(getLineItems).not.toHaveBeenCalled();
-		expect(capabilities.invoke).toHaveBeenCalledWith(
-			expect.objectContaining({ name: "shipping.quote" }),
-			{ country: "US", orderAmount: 2500 },
-		);
+		expect(capabilities.invoke).not.toHaveBeenCalled();
 	});
 
-	it.each([
-		"/checkout/sessions/:id/confirm",
-		"/checkout/sessions/:id/payment",
-		"/checkout/sessions/:id/payment/capture",
-		"/checkout/sessions/:id/payment/status",
-		"/checkout/sessions/:id/complete",
-	] as const)("returns explicit unavailability without downstream effects for %s", async (path) => {
+	it("does not disclose a shipping containment state to an unauthorized guest", async () => {
+		const proof = await createGuestProofMetadata();
+		const result = await getShippingRates({
+			params: { id: "session-1" },
+			headers: new Headers({
+				cookie: "checkout_guest_session-1=wrong-proof",
+			}),
+			context: {
+				controllers: {
+					checkout: {
+						getById: vi
+							.fn()
+							.mockResolvedValue(checkoutSession({ metadata: proof.metadata })),
+					},
+				},
+				session: null,
+			},
+		});
+
+		expect(result).toEqual({
+			error: "Checkout session not found",
+			status: 404,
+		});
+	});
+
+	it("returns explicit activation unavailability without downstream effects", async () => {
 		const getById = vi.fn();
 		const mutate = vi.fn();
-		const result = await endpoint(path)({
+		const input = {
 			params: { id: "session-1" },
 			context: {
 				controllers: {
@@ -332,12 +341,22 @@ describe("checkout activation containment", () => {
 					shipping: { purchaseLabel: mutate },
 				},
 			},
-		});
+		};
 
-		expect(result).toMatchObject({
-			code: "CHECKOUT_ACTIVATION_UNAVAILABLE",
-			status: 503,
-		});
+		const results = await Promise.all([
+			confirmSessionUnavailable(input),
+			createPaymentUnavailable(input),
+			capturePaymentUnavailable(input),
+			getPaymentUnavailable(input),
+			completeSessionUnavailable(input),
+		]);
+
+		for (const result of results) {
+			expect(result).toMatchObject({
+				code: "CHECKOUT_ACTIVATION_UNAVAILABLE",
+				status: 503,
+			});
+		}
 		expect(getById).not.toHaveBeenCalled();
 		expect(mutate).not.toHaveBeenCalled();
 	});
@@ -357,8 +376,8 @@ describe("checkout activation containment", () => {
 			},
 		};
 
-		const first = await endpoint("/checkout/sessions/:id/complete")(input);
-		const retry = await endpoint("/checkout/sessions/:id/complete")(input);
+		const first = await completeSessionUnavailable(input);
+		const retry = await completeSessionUnavailable(input);
 
 		expect(first).toMatchObject({
 			code: "CHECKOUT_ACTIVATION_UNAVAILABLE",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useApi } from "generated/hooks";
+import { useModuleClient } from "@86d-app/core/client";
 import { useCallback, useRef } from "react";
 
 /**
@@ -76,9 +76,11 @@ function pushToDataLayer(params: TrackParams) {
  * ```
  */
 export function useAnalytics() {
-	const api = useApi();
-	const mutationRef = useRef(api.analytics.trackEventEndpoint);
-	mutationRef.current = api.analytics.trackEventEndpoint;
+	const client = useModuleClient();
+	const mutationRef = useRef(
+		client.module("analytics").store["/analytics/events"],
+	);
+	mutationRef.current = client.module("analytics").store["/analytics/events"];
 
 	const track = useCallback((params: TrackParams) => {
 		try {

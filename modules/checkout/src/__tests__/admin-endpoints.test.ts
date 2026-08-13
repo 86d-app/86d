@@ -222,33 +222,16 @@ describe("admin GET /checkout/stats", () => {
 // ── admin POST /checkout/expire-stale ─────────────────────────────────────────
 
 describe("admin POST /checkout/expire-stale", () => {
-	it("returns zero count when no stale sessions", async () => {
-		const result = (await call(expireHandler)) as {
-			expired: number;
-			inventoryReleased: number;
-			paymentsCancelled: number;
-		};
-		expect(result.expired).toBe(0);
-		expect(result.inventoryReleased).toBe(0);
-		expect(result.paymentsCancelled).toBe(0);
-	});
-
-	it("expires stale sessions and returns count", async () => {
-		const ctrl = makeController({
-			expireStale: vi.fn().mockResolvedValue({
-				expired: 5,
-				processingSessions: [],
-			}),
-		});
-		const result = (await call(expireHandler, { controller: ctrl })) as {
-			expired: number;
-		};
-		expect(result.expired).toBe(5);
-	});
-
-	it("calls expireStale on controller", async () => {
+	it("requires the durable expiry workflow without owner-local effects", async () => {
 		const ctrl = makeController();
-		await call(expireHandler, { controller: ctrl });
-		expect(ctrl.expireStale).toHaveBeenCalled();
+		const result = await call(expireHandler, { controller: ctrl });
+
+		expect(result).toEqual({
+			code: "CHECKOUT_EXPIRY_WORKFLOW_REQUIRED",
+			error:
+				"Checkout expiry is unavailable until reservation release and payment reconciliation run as a durable workflow.",
+			status: 503,
+		});
+		expect(ctrl.expireStale).not.toHaveBeenCalled();
 	});
 });

@@ -1,18 +1,14 @@
-import { createMockDataService } from "@86d-app/core/test-utils";
 import { describe, expect, it, vi } from "vitest";
-import type { DeliveryStatus, Notification } from "../service";
-import { createNotificationsController } from "../service-impl";
 import { createResendWebhook } from "../store/endpoints/resend-webhook";
 
-const WEBHOOK_SECRET = "whsec_testwebhooksecret123456789";
+const webhookSecret = "whsec_testwebhooksecret123456789";
 
 async function signSvix(
 	id: string,
 	timestamp: string,
 	body: string,
-	secret: string,
+	secret = webhookSecret,
 ): Promise<string> {
-	const toSign = `${id}.${timestamp}.${body}`;
 	const key = await crypto.subtle.importKey(
 		"raw",
 		new TextEncoder().encode(secret),
@@ -20,408 +16,118 @@ async function signSvix(
 		false,
 		["sign"],
 	);
-	const sig = await crypto.subtle.sign(
+	const signature = await crypto.subtle.sign(
 		"HMAC",
 		key,
-		new TextEncoder().encode(toSign),
+		new TextEncoder().encode(`${id}.${timestamp}.${body}`),
 	);
-	const b64 = btoa(String.fromCharCode(...new Uint8Array(sig)));
-	return `v1,${b64}`;
+	return `v1,${btoa(String.fromCharCode(...new Uint8Array(signature)))}`;
 }
 
-/** Build a request the configured endpoint will accept as authentic. */
-async function makeSignedRequest(
-	body: string,
-	headers: Record<string, string> = {},
-): Promise<Request> {
-	const msgId = "msg_signed_test";
-	const timestamp = String(Math.floor(Date.now() / 1000));
-	return makeRequest(body, {
-		"svix-id": msgId,
-		"svix-timestamp": timestamp,
-		"svix-signature": await signSvix(msgId, timestamp, body, WEBHOOK_SECRET),
-		...headers,
-	});
-}
-
-function makeRequest(
-	body: string,
-	headers: Record<string, string> = {},
-): Request {
-	return new Request("https://store.example.com/notifications/webhook/resend", {
+function request(body: string, headers: HeadersInit = {}): Request {
+	return new Request("https://store.example/notifications/webhook/resend", {
 		method: "POST",
-		headers: { "Content-Type": "application/json", ...headers },
+		headers: { "content-type": "application/json", ...headers },
 		body,
 	});
 }
 
-function makeNotification(overrides: Partial<Notification> = {}): Notification {
+function effects() {
 	return {
-		id: "notif-001",
-		customerId: "cust-001",
-		type: "info",
-		channel: "email",
-		priority: "normal",
-		title: "Test",
-		body: "Test body",
-		metadata: {},
-		read: false,
-		createdAt: new Date(),
-		deliveryExternalId: "email-abc123",
-		deliveryStatus: "sent",
-		...overrides,
+		findByExternalId: vi.fn(),
+		updateDeliveryStatus: vi.fn(),
 	};
 }
 
-function invokeEndpoint(
-	endpoint: unknown,
-	ctx: Record<string, unknown>,
-): Promise<Response> {
-	const h = endpoint as Record<string, unknown>;
-	const fn = (
-		typeof h.handler === "function" ? h.handler : h
-	) as CallableFunction;
-	return fn(ctx) as Promise<Response>;
-}
-
-async function makeCtx(
-	body: string,
-	headers: Record<string, string> = {},
-	controllerOverrides?: Partial<
-		ReturnType<typeof createNotificationsController>
-	>,
+async function invoke(
+	endpoint: ReturnType<typeof createResendWebhook>,
+	webhookRequest: Request,
+	notifications = effects(),
 ) {
-	const data = createMockDataService();
-	const controller = createNotificationsController(data);
-	if (controllerOverrides) {
-		Object.assign(controller, controllerOverrides);
-	}
-	return {
-		query: {},
-		params: {},
-		body: {},
-		// Default to an authentic sender; a test that is about verification
-		// passes its own svix headers and keeps them.
-		request: headers["svix-signature"]
-			? makeRequest(body, headers)
-			: await makeSignedRequest(body, headers),
-		context: { controllers: { notifications: controller } },
-	};
+	const response = await endpoint({
+		request: webhookRequest,
+		context: { controllers: { notifications } },
+	});
+	return { response, notifications };
 }
 
-describe("createResendWebhook", () => {
-	describe("without webhook secret", () => {
-		const webhook = createResendWebhook({});
+const body = JSON.stringify({
+	type: "email.delivered",
+	data: { email_id: "email-1" },
+});
 
-		it("refuses the event instead of trusting an unverifiable sender", async () => {
-			const body = JSON.stringify({
-				type: "email.delivered",
-				data: { email_id: "email-abc" },
-			});
-			const response = await invokeEndpoint(webhook, {
-				query: {},
-				params: {},
-				body: {},
-				request: makeRequest(body),
-				context: { controllers: { notifications: {} } },
-			});
+describe("Resend webhook containment", () => {
+	it("fails closed when verification is not configured", async () => {
+		const { response, notifications } = await invoke(
+			createResendWebhook({}),
+			request(body),
+		);
 
-			expect(response.status).toBe(503);
-			const json = await response.json();
-			expect(json.error).toMatch(/not configured/i);
+		expect(response.status).toBe(503);
+		expect(await response.json()).toMatchObject({
+			error: expect.stringMatching(/not configured/i),
 		});
+		expect(notifications.findByExternalId).not.toHaveBeenCalled();
+		expect(notifications.updateDeliveryStatus).not.toHaveBeenCalled();
 	});
 
-	describe("with the webhook secret configured", () => {
-		const webhook = createResendWebhook({ webhookSecret: WEBHOOK_SECRET });
+	it("rejects missing signature headers before any projection effect", async () => {
+		const { response, notifications } = await invoke(
+			createResendWebhook({ webhookSecret }),
+			request(body),
+		);
 
-		it("accepts email.delivered and updates delivery status", async () => {
-			const notification = makeNotification({
-				deliveryExternalId: "email-abc",
-			});
-			const findSpy = vi.fn().mockResolvedValue(notification);
-			const updateSpy = vi.fn().mockResolvedValue({
-				...notification,
-				deliveryStatus: "delivered",
-			});
-
-			const body = JSON.stringify({
-				type: "email.delivered",
-				data: { email_id: "email-abc" },
-			});
-			const ctx = await makeCtx(
-				body,
-				{},
-				{
-					findByExternalId: findSpy,
-					updateDeliveryStatus: updateSpy,
-				},
-			);
-
-			const res = await invokeEndpoint(webhook, ctx);
-			expect(res.status).toBe(200);
-			const json = await res.json();
-			expect(json.handled).toBe(true);
-			expect(json.deliveryStatus).toBe("delivered");
-			expect(findSpy).toHaveBeenCalledWith("email-abc");
-			expect(updateSpy).toHaveBeenCalledWith("notif-001", "delivered");
-		});
-
-		it("accepts email.bounced and sets deliveryStatus to bounced", async () => {
-			const notification = makeNotification({
-				deliveryExternalId: "email-bounce",
-			});
-			const findSpy = vi.fn().mockResolvedValue(notification);
-			const updateSpy = vi.fn().mockResolvedValue({
-				...notification,
-				deliveryStatus: "bounced" satisfies DeliveryStatus,
-			});
-
-			const body = JSON.stringify({
-				type: "email.bounced",
-				data: { email_id: "email-bounce" },
-			});
-			const ctx = await makeCtx(
-				body,
-				{},
-				{
-					findByExternalId: findSpy,
-					updateDeliveryStatus: updateSpy,
-				},
-			);
-
-			const res = await invokeEndpoint(webhook, ctx);
-			expect(res.status).toBe(200);
-			const json = await res.json();
-			expect(json.handled).toBe(true);
-			expect(json.deliveryStatus).toBe("bounced");
-		});
-
-		it("accepts email.complained and sets deliveryStatus to complained", async () => {
-			const notification = makeNotification({
-				deliveryExternalId: "email-spam",
-			});
-			const findSpy = vi.fn().mockResolvedValue(notification);
-			const updateSpy = vi.fn().mockResolvedValue(notification);
-
-			const body = JSON.stringify({
-				type: "email.complained",
-				data: { email_id: "email-spam" },
-			});
-			const ctx = await makeCtx(
-				body,
-				{},
-				{
-					findByExternalId: findSpy,
-					updateDeliveryStatus: updateSpy,
-				},
-			);
-
-			const res = await invokeEndpoint(webhook, ctx);
-			const json = await res.json();
-			expect(json.handled).toBe(true);
-			expect(json.deliveryStatus).toBe("complained");
-		});
-
-		it("returns handled:false for unknown event types", async () => {
-			const body = JSON.stringify({
-				type: "email.opened",
-				data: { email_id: "email-abc" },
-			});
-			const ctx = await makeCtx(body);
-
-			const res = await invokeEndpoint(webhook, ctx);
-			const json = await res.json();
-			expect(json.handled).toBe(false);
-		});
-
-		it("returns handled:false when notification not found", async () => {
-			const findSpy = vi.fn().mockResolvedValue(null);
-
-			const body = JSON.stringify({
-				type: "email.delivered",
-				data: { email_id: "unknown-id" },
-			});
-			const ctx = await makeCtx(body, {}, { findByExternalId: findSpy });
-
-			const res = await invokeEndpoint(webhook, ctx);
-			const json = await res.json();
-			expect(json.handled).toBe(false);
-		});
-
-		it("returns handled:false when delivery status is already up to date", async () => {
-			const notification = makeNotification({
-				deliveryExternalId: "email-abc",
-				deliveryStatus: "delivered",
-			});
-			const findSpy = vi.fn().mockResolvedValue(notification);
-			const updateSpy = vi.fn();
-
-			const body = JSON.stringify({
-				type: "email.delivered",
-				data: { email_id: "email-abc" },
-			});
-			const ctx = await makeCtx(
-				body,
-				{},
-				{
-					findByExternalId: findSpy,
-					updateDeliveryStatus: updateSpy,
-				},
-			);
-
-			const res = await invokeEndpoint(webhook, ctx);
-			const json = await res.json();
-			expect(json.handled).toBe(false);
-			expect(updateSpy).not.toHaveBeenCalled();
-		});
-
-		it("returns 400 for invalid JSON body", async () => {
-			const ctx = await makeCtx("not-json");
-
-			const res = await invokeEndpoint(webhook, ctx);
-			expect(res.status).toBe(400);
-		});
-
-		it("returns handled:false when email_id is missing", async () => {
-			const body = JSON.stringify({
-				type: "email.delivered",
-				data: {},
-			});
-			const ctx = await makeCtx(body);
-
-			const res = await invokeEndpoint(webhook, ctx);
-			const json = await res.json();
-			expect(json.handled).toBe(false);
-		});
+		expect(response.status).toBe(401);
+		expect(notifications.findByExternalId).not.toHaveBeenCalled();
+		expect(notifications.updateDeliveryStatus).not.toHaveBeenCalled();
 	});
 
-	describe("with webhook secret (production mode)", () => {
-		const webhook = createResendWebhook({ webhookSecret: WEBHOOK_SECRET });
+	it("rejects invalid and expired signatures before any projection effect", async () => {
+		const id = "message-invalid";
+		const expired = String(Math.floor(Date.now() / 1000) - 600);
+		const endpoint = createResendWebhook({ webhookSecret });
+		const invalid = await invoke(
+			endpoint,
+			request(body, {
+				"svix-id": id,
+				"svix-timestamp": String(Math.floor(Date.now() / 1000)),
+				"svix-signature": "v1,invalid",
+			}),
+		);
+		const stale = await invoke(
+			endpoint,
+			request(body, {
+				"svix-id": id,
+				"svix-timestamp": expired,
+				"svix-signature": await signSvix(id, expired, body),
+			}),
+		);
 
-		it("accepts a valid Svix-signed request", async () => {
-			const notification = makeNotification({
-				deliveryExternalId: "email-signed",
-			});
-			const findSpy = vi.fn().mockResolvedValue(notification);
-			const updateSpy = vi.fn().mockResolvedValue(notification);
+		expect(invalid.response.status).toBe(401);
+		expect(stale.response.status).toBe(401);
+		expect(invalid.notifications.findByExternalId).not.toHaveBeenCalled();
+		expect(stale.notifications.updateDeliveryStatus).not.toHaveBeenCalled();
+	});
 
-			const body = JSON.stringify({
-				type: "email.delivered",
-				data: { email_id: "email-signed" },
-			});
-			const msgId = "msg_abc123";
-			const timestamp = String(Math.floor(Date.now() / 1000));
-			const signature = await signSvix(msgId, timestamp, body, WEBHOOK_SECRET);
-
-			const ctx = await makeCtx(
-				body,
-				{
-					"svix-id": msgId,
-					"svix-timestamp": timestamp,
-					"svix-signature": signature,
-				},
-				{ findByExternalId: findSpy, updateDeliveryStatus: updateSpy },
-			);
-
-			const res = await invokeEndpoint(webhook, ctx);
-			expect(res.status).toBe(200);
-			const json = await res.json();
-			expect(json.handled).toBe(true);
-		});
-
-		it("rejects requests with wrong signature", async () => {
-			const body = JSON.stringify({
-				type: "email.delivered",
-				data: { email_id: "email-abc" },
-			});
-			const msgId = "msg_abc123";
-			const timestamp = String(Math.floor(Date.now() / 1000));
-
-			const ctx = await makeCtx(body, {
-				"svix-id": msgId,
+	it("authenticates an official multi-signature header then requests a durable retry", async () => {
+		const id = "message-valid";
+		const timestamp = String(Math.floor(Date.now() / 1000));
+		const valid = await signSvix(id, timestamp, body);
+		const { response, notifications } = await invoke(
+			createResendWebhook({ webhookSecret }),
+			request(body, {
+				"svix-id": id,
 				"svix-timestamp": timestamp,
-				"svix-signature": "v1,invalidsignature==",
-			});
+				"svix-signature": `v1,rotated-invalid ${valid}`,
+			}),
+		);
 
-			const res = await invokeEndpoint(webhook, ctx);
-			expect(res.status).toBe(401);
+		expect(response.status).toBe(503);
+		expect(response.headers.get("Retry-After")).toBe("60");
+		expect(await response.json()).toMatchObject({
+			code: "NOTIFICATION_WEBHOOK_DURABILITY_REQUIRED",
 		});
-
-		it("rejects requests with missing Svix headers", async () => {
-			const body = JSON.stringify({
-				type: "email.delivered",
-				data: { email_id: "email-abc" },
-			});
-			const ctx = {
-				query: {},
-				params: {},
-				body: {},
-				request: makeRequest(body),
-				context: { controllers: { notifications: {} } },
-			};
-
-			const res = await invokeEndpoint(webhook, ctx);
-			expect(res.status).toBe(400);
-		});
-
-		it("rejects replayed events with old timestamp", async () => {
-			const body = JSON.stringify({
-				type: "email.delivered",
-				data: { email_id: "email-abc" },
-			});
-			const msgId = "msg_old";
-			// 10 minutes ago
-			const oldTimestamp = String(Math.floor(Date.now() / 1000) - 600);
-			const signature = await signSvix(
-				msgId,
-				oldTimestamp,
-				body,
-				WEBHOOK_SECRET,
-			);
-
-			const ctx = await makeCtx(body, {
-				"svix-id": msgId,
-				"svix-timestamp": oldTimestamp,
-				"svix-signature": signature,
-			});
-
-			const res = await invokeEndpoint(webhook, ctx);
-			expect(res.status).toBe(401);
-		});
-
-		it("accepts events with multiple valid signatures in svix-signature header", async () => {
-			const notification = makeNotification({
-				deliveryExternalId: "email-multi",
-			});
-			const findSpy = vi.fn().mockResolvedValue(notification);
-			const updateSpy = vi.fn().mockResolvedValue(notification);
-
-			const body = JSON.stringify({
-				type: "email.delivered",
-				data: { email_id: "email-multi" },
-			});
-			const msgId = "msg_multi";
-			const timestamp = String(Math.floor(Date.now() / 1000));
-			const realSig = await signSvix(msgId, timestamp, body, WEBHOOK_SECRET);
-
-			// Multiple signatures: one invalid, one valid
-			const multiSig = `v1,invalidsignature== ${realSig}`;
-
-			const ctx = await makeCtx(
-				body,
-				{
-					"svix-id": msgId,
-					"svix-timestamp": timestamp,
-					"svix-signature": multiSig,
-				},
-				{ findByExternalId: findSpy, updateDeliveryStatus: updateSpy },
-			);
-
-			const res = await invokeEndpoint(webhook, ctx);
-			expect(res.status).toBe(200);
-			const json = await res.json();
-			expect(json.handled).toBe(true);
-		});
+		expect(notifications.findByExternalId).not.toHaveBeenCalled();
+		expect(notifications.updateDeliveryStatus).not.toHaveBeenCalled();
 	});
 });

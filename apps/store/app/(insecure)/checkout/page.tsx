@@ -1,8 +1,8 @@
 "use client";
 
 import type { CheckoutStep } from "@86d-app/checkout/state";
+import { useModuleClient } from "@86d-app/core/client";
 import { observer } from "@86d-app/core/state";
-import { useApi } from "generated/hooks";
 import { useAnalytics } from "hooks/use-analytics";
 import { useStore } from "hooks/use-store";
 import dynamic from "next/dynamic";
@@ -687,20 +687,23 @@ function OrderSummary({
 // ─── Main checkout page ─────────────────────────────────────────────
 
 const CheckoutPage = observer(function CheckoutPage() {
-	const api = useApi();
+	const client = useModuleClient();
 	const { cart: cartStore, checkout: co } = useStore();
 	const { track } = useAnalytics();
 
 	// ── Cart data
-	const { data: cart } = api.cart.getCart.useQuery() as {
+	const { data: cart } = client
+		.module("cart")
+		.store["/cart/get"].useQuery() as {
 		data: CartData | undefined;
 	};
 
 	// ── Store credit balance (only for authenticated users; 401 returns undefined)
-	const { data: storeCreditData } = api.storeCredits.getBalance.useQuery(
-		undefined,
-		{ retry: false },
-	) as { data: { balance: number } | undefined };
+	const { data: storeCreditData } = client
+		.module("store-credits")
+		.store["/store-credits/balance"].useQuery(undefined, { retry: false }) as {
+		data: { balance: number } | undefined;
+	};
 
 	// ── Form state
 	const [email, setEmail] = useState("");
@@ -729,45 +732,69 @@ const CheckoutPage = observer(function CheckoutPage() {
 	const [session, setSession] = useState<CheckoutSessionData | null>(null);
 
 	// ── Mutations
-	const createSessionMut = api.checkout.createSession.useMutation({
-		onError: () => setError("Failed to create checkout session"),
-	});
-	const updateSessionMut = api.checkout.updateSession.useMutation({
-		onError: () => setError("Failed to update checkout session"),
-	});
-	const confirmSessionMut = api.checkout.confirmSession.useMutation({
-		onError: () => setError("Failed to confirm order"),
-	});
-	const completeSessionMut = api.checkout.completeSession.useMutation({
-		onError: () => setError("Failed to complete order"),
-	});
-	const applyDiscountMut = api.checkout.applyDiscount.useMutation({
-		onError: () => setError("Invalid discount code"),
-	});
-	const removeDiscountMut = api.checkout.removeDiscount.useMutation({
-		onError: () => setError("Failed to remove discount"),
-	});
-	const applyGiftCardMut = api.checkout.applyGiftCard.useMutation({
-		onError: () => setError("Invalid gift card code"),
-	});
-	const removeGiftCardMut = api.checkout.removeGiftCard.useMutation({
-		onError: () => setError("Failed to remove gift card"),
-	});
-	const applyStoreCreditMut = api.checkout.applyStoreCredit.useMutation({
-		onError: () => setError("Failed to apply store credit"),
-	});
-	const removeStoreCreditMut = api.checkout.removeStoreCredit.useMutation({
-		onError: () => setError("Failed to remove store credit"),
-	});
-	const createPaymentMut = api.checkout.createPayment.useMutation({
-		onError: () => setError("Failed to process payment"),
-	});
-	const calcShippingMut = api.shipping.calculateRates.useMutation({
-		onError: () => {
-			setShippingRates([]);
-			setError("Unable to calculate shipping rates. Please try again.");
-		},
-	});
+	const createSessionMut = client
+		.module("checkout")
+		.store["/checkout/sessions"].useMutation({
+			onError: () => setError("Failed to create checkout session"),
+		});
+	const updateSessionMut = client
+		.module("checkout")
+		.store["/checkout/sessions/:id/update"].useMutation({
+			onError: () => setError("Failed to update checkout session"),
+		});
+	const confirmSessionMut = client
+		.module("checkout")
+		.store["/checkout/sessions/:id/confirm"].useMutation({
+			onError: () => setError("Failed to confirm order"),
+		});
+	const completeSessionMut = client
+		.module("checkout")
+		.store["/checkout/sessions/:id/complete"].useMutation({
+			onError: () => setError("Failed to complete order"),
+		});
+	const applyDiscountMut = client
+		.module("checkout")
+		.store["/checkout/sessions/:id/discount"].useMutation({
+			onError: () => setError("Invalid discount code"),
+		});
+	const removeDiscountMut = client
+		.module("checkout")
+		.store["/checkout/sessions/:id/discount/remove"].useMutation({
+			onError: () => setError("Failed to remove discount"),
+		});
+	const applyGiftCardMut = client
+		.module("checkout")
+		.store["/checkout/sessions/:id/gift-card"].useMutation({
+			onError: () => setError("Invalid gift card code"),
+		});
+	const removeGiftCardMut = client
+		.module("checkout")
+		.store["/checkout/sessions/:id/gift-card/remove"].useMutation({
+			onError: () => setError("Failed to remove gift card"),
+		});
+	const applyStoreCreditMut = client
+		.module("checkout")
+		.store["/checkout/sessions/:id/store-credit"].useMutation({
+			onError: () => setError("Failed to apply store credit"),
+		});
+	const removeStoreCreditMut = client
+		.module("checkout")
+		.store["/checkout/sessions/:id/store-credit/remove"].useMutation({
+			onError: () => setError("Failed to remove store credit"),
+		});
+	const createPaymentMut = client
+		.module("checkout")
+		.store["/checkout/sessions/:id/payment"].useMutation({
+			onError: () => setError("Failed to process payment"),
+		});
+	const calcShippingMut = client
+		.module("shipping")
+		.store["/shipping/calculate"].useMutation({
+			onError: () => {
+				setShippingRates([]);
+				setError("Unable to calculate shipping rates. Please try again.");
+			},
+		});
 
 	// ── Close cart drawer on mount
 	useEffect(() => {
@@ -1033,9 +1060,11 @@ const CheckoutPage = observer(function CheckoutPage() {
 
 		try {
 			// Sync payment status from the provider
-			const statusResult: SessionResult = await api.checkout.getPayment.fetch({
-				params: { id: co.sessionId },
-			});
+			const statusResult: SessionResult = await client
+				.module("checkout")
+				.store["/checkout/sessions/:id/payment/status"].fetch({
+					params: { id: co.sessionId },
+				});
 
 			const sess = statusResult?.session;
 			if (sess) setSession(sess);
@@ -1048,15 +1077,19 @@ const CheckoutPage = observer(function CheckoutPage() {
 		} finally {
 			co.setProcessing(false);
 		}
-	}, [co, api.checkout.getPayment]);
+	}, [
+		co,
+		client.module("checkout").store["/checkout/sessions/:id/payment/status"],
+	]);
 
 	// ── PayPal approved → capture on server and advance
 	const handlePayPalCapture = useCallback(async () => {
 		if (!co.sessionId) return;
 
 		try {
-			const captureResult: PaymentResult =
-				await api.checkout.capturePayment.mutate({
+			const captureResult: PaymentResult = await client
+				.module("checkout")
+				.store["/checkout/sessions/:id/payment/capture"].mutate({
 					params: { id: co.sessionId },
 				});
 
@@ -1075,7 +1108,10 @@ const CheckoutPage = observer(function CheckoutPage() {
 			setError("Payment capture failed. Please try again.");
 			co.setProcessing(false);
 		}
-	}, [co, api.checkout.capturePayment]);
+	}, [
+		co,
+		client.module("checkout").store["/checkout/sessions/:id/payment/capture"],
+	]);
 
 	// ── Braintree nonce received → create transaction with the nonce
 	const handleBraintreeNonce = useCallback(
@@ -1233,8 +1269,8 @@ const CheckoutPage = observer(function CheckoutPage() {
 			}
 
 			// Clear cart after successful order
-			await api.cart.clearCart.mutate(undefined);
-			void api.cart.getCart.invalidate();
+			await client.module("cart").store["/cart/clear"].mutate(undefined);
+			void client.module("cart").store["/cart/get"].invalidate();
 			cartStore.setItemCount(0);
 
 			// Contact data never belongs in a confirmation URL. The scoped guest
@@ -1258,7 +1294,7 @@ const CheckoutPage = observer(function CheckoutPage() {
 		co,
 		confirmSessionMut,
 		completeSessionMut,
-		api,
+		client,
 		cartStore,
 		email,
 		cart,

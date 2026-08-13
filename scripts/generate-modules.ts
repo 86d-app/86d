@@ -77,10 +77,18 @@ type ModulePathKind =
 
 interface ModulePathSource {
 	moduleId: string;
+	/** Package specifier, e.g. "@86d-app/cart". */
+	packageName: string;
+	/** Workspace modules live in modules/<name>; npm modules are resolved from node_modules. */
+	isWorkspace: boolean;
 	adminPages?: string[];
 	storePages?: string[];
 	adminEndpoints?: string[];
 	storeEndpoints?: string[];
+	/** Component names declared by admin.pages[], e.g. ["CartList", "CartDetail"]. */
+	adminPageComponents?: string[];
+	/** Component names declared by store.pages[]. */
+	storePageComponents?: string[];
 }
 
 interface ModulePathConflict {
@@ -92,8 +100,8 @@ interface ModulePathConflict {
 interface Module {
 	id: string;
 	version: string;
-	admin?: { pages?: Array<{ path: string }> };
-	store?: { pages?: Array<{ path: string }> };
+	admin?: { pages?: Array<{ path: string; component: string }> };
+	store?: { pages?: Array<{ path: string; component: string }> };
 	endpoints?: {
 		admin?: Record<string, unknown>;
 		store?: Record<string, unknown>;
@@ -108,7 +116,6 @@ const GENERATED_DIR = join(STORE_ROOT, "generated");
 const OUTPUT_PATH = join(GENERATED_DIR, "components.ts");
 const API_ROUTER_PATH = join(GENERATED_DIR, "api.ts");
 const CLIENT_PATH = join(GENERATED_DIR, "client.ts");
-const HOOKS_PATH = join(GENERATED_DIR, "hooks.ts");
 const ADMIN_LOADERS_PATH = join(GENERATED_DIR, "admin-loaders.ts");
 const STORE_LOADERS_PATH = join(GENERATED_DIR, "store-loaders.ts");
 const TRANSPILE_PACKAGES_PATH = join(GENERATED_DIR, "transpile-packages.json");
@@ -1106,7 +1113,7 @@ async function generateClient() {
 	// Generate client SDK
 	// The better-call client is not exported here because @better-fetch/fetch types
 	// are not portable under Bun's module layout (TS2742).
-	// Use generated/hooks.ts useApi() for typed client-side access instead.
+	// Use useModuleClient() from @86d-app/core/client for typed client-side access.
 	const clientContent = `// Auto-generated file - do not edit manually
 // Run 'bun run generate:modules' to regenerate
 // Generated from: ${CONFIG_PATH}
@@ -1119,110 +1126,6 @@ export {};
 	console.log(`✓ Generated client.ts`);
 }
 
-/**
- * Get module id from workspace module's index.ts (e.g. "cart", "products").
- */
-function getModuleIdFromWorkspace(moduleName: string): string {
-	const shortName = moduleName.replace("@86d-app/", "");
-	const moduleDir = join(WORKSPACE_ROOT, "modules", shortName, "src");
-	const indexPath = join(moduleDir, "index.ts");
-	if (!existsSync(indexPath)) return shortName;
-	const indexContent = readFileSync(indexPath, "utf-8");
-	const idMatch = indexContent.match(/id:\s*"([^"]+)"/);
-	return idMatch ? idMatch[1] : shortName;
-}
-
-/**
- * Check if a workspace module has admin components (admin/components).
- */
-function moduleHasAdminComponents(moduleName: string): boolean {
-	if (getModuleType(moduleName) !== "workspace") return false;
-	const shortName = moduleName.replace("@86d-app/", "");
-	const componentsDir = join(WORKSPACE_ROOT, "modules", shortName, "src", "admin", "components");
-	return existsSync(join(componentsDir, "index.tsx")) || existsSync(join(componentsDir, "index.ts"));
-}
-
-/**
- * Check if a workspace module has store.pages (for store route registry).
- */
-function moduleHasStorePages(moduleName: string): boolean {
-	if (getModuleType(moduleName) !== "workspace") return false;
-	const shortName = moduleName.replace("@86d-app/", "");
-	const indexPath = join(
-		WORKSPACE_ROOT,
-		"modules",
-		shortName,
-		"src",
-		"index.ts",
-	);
-	if (!existsSync(indexPath)) return false;
-	const content = readFileSync(indexPath, "utf-8");
-	return /store:\s*\{[^}]*pages\s*:/.test(content);
-}
-
-/**
- * Convert a hyphenated name to camelCase.
- * e.g. "digital-downloads" → "digitalDownloads"
- */
-function toCamelCase(name: string): string {
-	return name.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
-}
-
-interface EndpointMapping {
-	path: string;
-	name: string;
-}
-
-/**
- * Extract endpoint path → variable name mappings from a module's source files.
- * Reads from store/endpoints/index.ts and admin/endpoints/index.ts (canonical sources).
- */
-function extractEndpointMappings(moduleName: string): {
-	store: EndpointMapping[];
-	admin: EndpointMapping[];
-} {
-	const moduleShortName = moduleName.replace("@86d-app/", "");
-	const moduleDir = join(WORKSPACE_ROOT, "modules", moduleShortName, "src");
-
-	const result: { store: EndpointMapping[]; admin: EndpointMapping[] } = {
-		store: [],
-		admin: [],
-	};
-
-	// Parse "path": variableName entries (e.g. "/cart": addToCart, "/products/:id": getProduct)
-	const entryRegex = /"(\/[^"]+)":\s*(\w+)/g;
-
-	const storePath = join(moduleDir, "store", "endpoints", "index.ts");
-	const adminPath = join(moduleDir, "admin", "endpoints", "index.ts");
-
-	if (existsSync(storePath)) {
-		const source = readFileSync(storePath, "utf-8");
-		const seen = new Map<string, string>();
-		let match: RegExpExecArray | null;
-		while ((match = entryRegex.exec(source)) !== null) {
-			if (!seen.has(match[1])) {
-				seen.set(match[1], match[2]);
-				result.store.push({ path: match[1], name: match[2] });
-			}
-		}
-	}
-
-	entryRegex.lastIndex = 0;
-
-	if (existsSync(adminPath)) {
-		const source = readFileSync(adminPath, "utf-8");
-		const seen = new Map<string, string>();
-		let match: RegExpExecArray | null;
-		while ((match = entryRegex.exec(source)) !== null) {
-			if (!seen.has(match[1])) {
-				seen.set(match[1], match[2]);
-				result.admin.push({ path: match[1], name: match[2] });
-			}
-		}
-	}
-
-	return result;
-}
 
 function walkTypeScriptFiles(dirPath: string): string[] {
 	if (!existsSync(dirPath)) return [];
@@ -1286,19 +1189,24 @@ function collectModuleClientEndpointReferences(
 }
 
 function validateWorkspaceModuleClientEndpointReferences(
-	moduleNames: string[],
+	_moduleNames: string[],
 	pathSources: ModulePathSource[],
 ) {
 	const conflicts: ModuleClientEndpointReferenceConflict[] = [];
 
-	for (const moduleName of moduleNames) {
-		if (getModuleType(moduleName) !== "workspace") continue;
+	// Driven off the instantiated Modules. The previous version re-derived the id by
+	// regex from index.ts and then looked it up by that id — when the two disagreed
+	// the module was silently skipped and its references went unvalidated.
+	// Validated against the routable superset, so an activation- or credential-gated
+	// Module (loyalty, shipping, uber-direct) is checked against the endpoints it can
+	// actually register rather than the empty surface it instantiates with here.
+	for (const source of pathSources) {
+		if (!source.isWorkspace) continue;
 
-		const moduleId = getModuleIdFromWorkspace(moduleName);
-		const source = pathSources.find((entry) => entry.moduleId === moduleId);
-		if (!source) continue;
-
-		const references = collectModuleClientEndpointReferences(moduleName, moduleId);
+		const references = collectModuleClientEndpointReferences(
+			source.packageName,
+			source.moduleId,
+		);
 		conflicts.push(
 			...validateModuleClientEndpointReferences(source, references),
 		);
@@ -1334,6 +1242,60 @@ async function loadModuleDefinition(
 	return imported.default(options);
 }
 
+/**
+ * Endpoint surface a Module can register under ANY configuration.
+ *
+ * `pathPatterns` in the generated router is a dispatch PRE-FILTER: a path that is
+ * absent is rejected with 404 before the router ever looks at its endpoint table
+ * (apps/store/app/api/[...path]/route.ts). It therefore has to be a superset.
+ *
+ * Several Modules gate their endpoint surface on options the generator does not
+ * have at generate time — `shipping` on EasyPost credentials, `uber-direct` on the
+ * four UBER_* vars, `loyalty` on an explicit `enabled` flag. Those options are
+ * injected by the env-wiring blocks this script EMITS into api.ts, which evaluate at
+ * request time. Instantiating with config options alone therefore under-reports the
+ * routable surface, and the missing paths 404 in exactly the configuration that
+ * matters: production, with credentials present.
+ *
+ * We probe with option objects that satisfy both gate styles — `Boolean(opts?.x &&
+ * opts?.y)` wants truthy, `opts?.enabled === true` wants the literal — and union the
+ * results. Registration itself is still gated at runtime by the real options, so a
+ * permissive pre-filter costs nothing: an unregistered path 404s at dispatch anyway.
+ */
+async function collectRoutableEndpointSurface(
+	moduleName: string,
+	configOptions: Record<string, unknown>,
+	configured: Module,
+): Promise<{ store: Set<string>; admin: Set<string> }> {
+	const store = new Set(Object.keys(configured.endpoints?.store ?? {}));
+	const admin = new Set(Object.keys(configured.endpoints?.admin ?? {}));
+
+	const probe = (value: unknown): Record<string, unknown> =>
+		new Proxy({ ...configOptions } as Record<string, unknown>, {
+			get: (target, prop) =>
+				prop in target ? target[prop as string] : value,
+			has: () => true,
+		});
+
+	// Complementary probe values, unioned. `true` satisfies identity gates
+	// (`opts?.enabled === true`, loyalty); "XX" satisfies truthiness gates whose values
+	// are also length-validated (shipping validates an EasyPost origin country with
+	// `.max(2)` and throws on anything longer); the free-form string covers gates that
+	// need a plausible credential. A factory that rejects one probe keeps whatever the
+	// others produced.
+	for (const value of [true, "XX", "generator-probe"]) {
+		try {
+			const probed = await loadModuleDefinition(moduleName, probe(value));
+			for (const path of Object.keys(probed.endpoints?.store ?? {})) store.add(path);
+			for (const path of Object.keys(probed.endpoints?.admin ?? {})) admin.add(path);
+		} catch {
+			// A factory that cannot survive probe options keeps its configured surface.
+		}
+	}
+
+	return { store, admin };
+}
+
 async function collectModulePathSources(
 	moduleNames: string[],
 	moduleOptions: Record<string, Record<string, unknown>>,
@@ -1345,26 +1307,39 @@ async function collectModulePathSources(
 			moduleName,
 			moduleOptions[moduleName] ?? {},
 		);
-		const mappings =
-			getModuleType(moduleName) === "workspace"
-				? extractEndpointMappings(moduleName)
-				: { store: [], admin: [] };
+
+		// Endpoint paths, admin/store pages and component names are read from the
+		// instantiated Module — never parsed out of source text. Text probes used to
+		// fail silently here: a module whose file layout drifted was dropped from the
+		// generated output with typecheck and unit tests still green.
+		//
+		// Pages come from the CONFIGURED instantiation (a Module that registers no
+		// pages in this configuration must not get a component loader). Endpoints come
+		// from the ROUTABLE superset, because the generated pathPatterns table is a
+		// pre-filter that runs before the router can gate on real options.
+		const routable = await collectRoutableEndpointSurface(
+			moduleName,
+			moduleOptions[moduleName] ?? {},
+			mod,
+		);
 
 		sources.push({
 			moduleId: mod.id,
+			packageName: moduleName,
+			isWorkspace: getModuleType(moduleName) === "workspace",
 			adminPages: mod.admin?.pages?.map((page) => page.path) ?? [],
 			storePages: mod.store?.pages?.map((page) => page.path) ?? [],
-			adminEndpoints: [
-				...new Set([
-					...Object.keys(mod.endpoints?.admin ?? {}),
-					...mappings.admin.map((entry) => entry.path),
-				]),
+			adminEndpoints: [...routable.admin],
+			storeEndpoints: [...routable.store],
+			adminPageComponents: [
+				...new Set(
+					mod.admin?.pages?.map((page) => page.component).filter(Boolean) ?? [],
+				),
 			],
-			storeEndpoints: [
-				...new Set([
-					...Object.keys(mod.endpoints?.store ?? {}),
-					...mappings.store.map((entry) => entry.path),
-				]),
+			storePageComponents: [
+				...new Set(
+					mod.store?.pages?.map((page) => page.component).filter(Boolean) ?? [],
+				),
 			],
 		});
 	}
@@ -1373,143 +1348,48 @@ async function collectModulePathSources(
 }
 
 /**
- * Generate hooks.ts with typed useApi() hook
- *
- * Produces a flat API object where each module's endpoints are accessible
- * by friendly names: api.cart.getCart.useQuery(), api.products.listProducts.useQuery()
- */
-async function generateHooks() {
-	const modules = getCachedModules();
-
-	if (modules.length === 0) {
-		const emptyContent = `// Auto-generated file - do not edit manually
-// Run 'bun run generate:modules' to regenerate
-
-"use client";
-
-import { useModuleClient } from "@86d-app/core/client";
-
-export function useApi() {
-  return useModuleClient();
-}
-`;
-		ensureDir(GENERATED_DIR);
-		writeFileSync(HOOKS_PATH, emptyContent);
-		return;
-	}
-
-	// Extract endpoint mappings for each module
-	const moduleEndpoints: Array<{
-		name: string;
-		shortName: string;
-		moduleId: string;
-		store: EndpointMapping[];
-		admin: EndpointMapping[];
-	}> = [];
-
-	for (const moduleName of modules) {
-		const moduleType = getModuleType(moduleName);
-		if (moduleType !== "workspace") continue;
-
-		const shortName = moduleName.replace("@86d-app/", "");
-		const mappings = extractEndpointMappings(moduleName);
-
-		// Read the module ID from the module's index.ts
-		const moduleDir = join(WORKSPACE_ROOT, "modules", shortName, "src");
-		const indexContent = readFileSync(join(moduleDir, "index.ts"), "utf-8");
-		const idMatch = indexContent.match(/id:\s*"([^"]+)"/);
-		const moduleId = idMatch ? idMatch[1] : shortName;
-
-		moduleEndpoints.push({
-			name: moduleName,
-			shortName,
-			moduleId,
-			store: mappings.store,
-			admin: mappings.admin,
-		});
-	}
-
-	// Generate the hooks file
-	let code = `// Auto-generated file - do not edit manually
-// Run 'bun run generate:modules' to regenerate
-// Generated from: ${CONFIG_PATH}
-
-"use client";
-
-import { useMemo } from "react";
-import { useModuleClient } from "@86d-app/core/client";
-import type { ModuleClient } from "@86d-app/core/client";
-
-/**
- * Hook to access the typed module API with friendly endpoint names.
- *
- * @example
- * \`\`\`tsx
- * const api = useApi();
- * const { data } = api.products.listProducts.useQuery();
- * const addToCart = api.cart.addToCart.useMutation();
- * \`\`\`
- */
-export function useApi() {
-  const client = useModuleClient();
-  return useMemo(() => buildApi(client), [client]);
-}
-
-function buildApi(client: ModuleClient) {
-  return {
-`;
-
-	for (const mod of moduleEndpoints) {
-		const propName = toCamelCase(mod.shortName);
-		code += `    ${propName}: {\n`;
-
-		// Collect store endpoint names for dedup
-		const storeNames = new Set(mod.store.map((ep) => ep.name));
-
-		// Store endpoints
-		for (const ep of mod.store) {
-			code += `      ${ep.name}: client.module("${mod.moduleId}").store["${ep.path}"],\n`;
-		}
-
-		// Admin endpoints — prefix with "admin" if name collides with a store endpoint
-		for (const ep of mod.admin) {
-			const key = storeNames.has(ep.name)
-				? `admin${ep.name.charAt(0).toUpperCase()}${ep.name.slice(1)}`
-				: ep.name;
-			code += `      ${key}: client.module("${mod.moduleId}").admin["${ep.path}"],\n`;
-		}
-
-		code += "    },\n";
-	}
-
-	code += `  };
-}
-
-/**
- * Re-export useModuleClient for advanced use cases (custom hooks, direct access).
- */
-export { useModuleClient } from "@86d-app/core/client";
-`;
-
-	ensureDir(GENERATED_DIR);
-	writeFileSync(HOOKS_PATH, code);
-	console.log(
-		`✓ Generated hooks.ts with ${moduleEndpoints.length} module(s)`,
-	);
-}
-
-/**
  * Generate admin-loaders.ts: dynamic import loaders for each module's admin-components.
  * Keyed by module id so the catch-all route can load (moduleId, componentName) → Component.
  */
 async function generateAdminLoaders() {
-	const modules = getCachedModules();
-
 	const entries: Array<{ moduleId: string; packageName: string }> = [];
-	for (const moduleName of modules) {
-		if (!moduleHasAdminComponents(moduleName)) continue;
-		const moduleId = getModuleIdFromWorkspace(moduleName);
-		entries.push({ moduleId, packageName: moduleName });
+	const missing: string[] = [];
+
+	for (const source of getCachedPathSources()) {
+		if (!source.isWorkspace) continue;
+		if ((source.adminPageComponents?.length ?? 0) === 0) continue;
+
+		// A Module that declares admin.pages MUST have a loadable admin component
+		// bundle. Failing loudly here is the point: the previous existsSync probe
+		// silently dropped such a Module, and its admin routes rendered
+		// "No admin loader for module: <id>" at runtime with every gate green.
+		const shortName = source.packageName.replace("@86d-app/", "");
+		const componentsDir = join(
+			WORKSPACE_ROOT,
+			"modules",
+			shortName,
+			"src",
+			"admin",
+			"components",
+		);
+		if (
+			!existsSync(join(componentsDir, "index.tsx")) &&
+			!existsSync(join(componentsDir, "index.ts"))
+		) {
+			missing.push(
+				`  ${source.packageName} declares admin.pages [${source.adminPageComponents?.join(", ")}] ` +
+					`but has no ${relative(WORKSPACE_ROOT, join(componentsDir, "index.tsx"))}`,
+			);
+			continue;
+		}
+
+		entries.push({ moduleId: source.moduleId, packageName: source.packageName });
+	}
+
+	if (missing.length > 0) {
+		throw new Error(
+			`Admin component bundle missing for ${missing.length} module(s):\n${missing.join("\n")}`,
+		);
 	}
 
 	const loadersEntries = entries
@@ -1541,13 +1421,12 @@ ${loadersEntries}
  * Only modules with store.pages are included (used by the store catch-all route).
  */
 async function generateStoreLoaders() {
-	const modules = getCachedModules();
-
 	const entries: Array<{ moduleId: string; packageName: string }> = [];
-	for (const moduleName of modules) {
-		if (!moduleHasStorePages(moduleName)) continue;
-		const moduleId = getModuleIdFromWorkspace(moduleName);
-		entries.push({ moduleId, packageName: moduleName });
+
+	for (const source of getCachedPathSources()) {
+		if (!source.isWorkspace) continue;
+		if ((source.storePages?.length ?? 0) === 0) continue;
+		entries.push({ moduleId: source.moduleId, packageName: source.packageName });
 	}
 
 	const loadersEntries = entries
@@ -1732,7 +1611,6 @@ async function runGenerators() {
 	await generateModulesFile();
 	await generateApiRouter();
 	await generateClient();
-	await generateHooks();
 	await generateAdminLoaders();
 	await generateStoreLoaders();
 	generateTranspilePackages();

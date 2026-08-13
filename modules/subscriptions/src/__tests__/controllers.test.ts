@@ -118,12 +118,9 @@ describe("subscriptions controllers — edge cases", () => {
 				email: "user@example.com",
 			});
 
-			// 3 months ≈ 89–92 days
-			const diffDays =
-				(sub.currentPeriodEnd.getTime() - sub.currentPeriodStart.getTime()) /
-				(1000 * 60 * 60 * 24);
-			expect(diffDays).toBeGreaterThanOrEqual(89);
-			expect(diffDays).toBeLessThanOrEqual(92);
+			const expectedEnd = new Date(sub.currentPeriodStart);
+			expectedEnd.setMonth(expectedEnd.getMonth() + 3);
+			expect(sub.currentPeriodEnd).toEqual(expectedEnd);
 		});
 
 		it("renewal uses currentPeriodEnd as new start", async () => {

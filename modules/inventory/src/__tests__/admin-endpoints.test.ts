@@ -141,20 +141,15 @@ describe("admin GET /inventory", () => {
 // ── admin POST /inventory/set ─────────────────────────────────────────────────
 
 describe("admin POST /inventory/set", () => {
-	it("sets stock and returns item", async () => {
-		const item = makeItem({ productId: "prod-2", quantity: 50 });
-		const ctrl = makeController({
-			setStock: vi.fn().mockResolvedValue(item),
-		});
+	it("is contained until its Inventory Command is registered", async () => {
 		const result = (await call(setStockHandler, {
 			body: { productId: "prod-2", quantity: 50 },
-			controller: ctrl,
-		})) as { item: InventoryItem };
-		expect(result.item.productId).toBe("prod-2");
-		expect(result.item.quantity).toBe(50);
+		})) as { code: string; error: string; status: number };
+		expect(result.status).toBe(503);
+		expect(result.code).toBe("INVENTORY_SET_COMMAND_UNAVAILABLE");
 	});
 
-	it("calls controller with all provided body fields", async () => {
+	it("never reaches the controller while contained", async () => {
 		const ctrl = makeController();
 		await call(setStockHandler, {
 			body: {
@@ -165,38 +160,46 @@ describe("admin POST /inventory/set", () => {
 			},
 			controller: ctrl,
 		});
-		expect(ctrl.setStock).toHaveBeenCalledWith(
-			expect.objectContaining({
-				productId: "prod-3",
-				quantity: 20,
-				lowStockThreshold: 5,
-				allowBackorder: true,
-			}),
-		);
+		expect(ctrl.setStock).not.toHaveBeenCalled();
 	});
 });
 
 // ── admin POST /inventory/adjust ──────────────────────────────────────────────
 
 describe("admin POST /inventory/adjust", () => {
-	it("returns 404 when inventory item not found", async () => {
-		const result = (await call(adjustStockHandler, {
-			body: { productId: "nonexistent", delta: 5 },
-		})) as { error: string; status: number };
-		expect(result.status).toBe(404);
-		expect(result.error).toBe("Inventory item not found");
+	it("rejects a body without an idempotency key", async () => {
+		await expect(
+			call(adjustStockHandler, {
+				body: { productId: "prod-4", delta: 5 },
+			}),
+		).rejects.toThrow(/idempotencyKey/);
 	});
 
-	it("returns adjusted item on success", async () => {
-		const item = makeItem({ productId: "prod-4", quantity: 105 });
-		const ctrl = makeController({
-			adjustStock: vi.fn().mockResolvedValue(item),
-		});
+	it("requires the authenticated Store Command transport", async () => {
 		const result = (await call(adjustStockHandler, {
-			body: { productId: "prod-4", delta: 5 },
+			body: {
+				productId: "prod-4",
+				delta: 5,
+				idempotencyKey: "3f1a6c2e-9b4d-4c7a-8e5f-1d2b3c4a5e6f",
+			},
+		})) as { code: string; error: string; status: number };
+		expect(result.status).toBe(503);
+		expect(result.code).toBe("INVENTORY_COMMAND_TRANSPORT_REQUIRED");
+	});
+
+	it("never reaches the controller while contained", async () => {
+		const ctrl = makeController({
+			adjustStock: vi.fn().mockResolvedValue(makeItem({ quantity: 105 })),
+		});
+		await call(adjustStockHandler, {
+			body: {
+				productId: "prod-4",
+				delta: 5,
+				idempotencyKey: "7c8d9e0f-1a2b-4c3d-9e8f-0a1b2c3d4e5f",
+			},
 			controller: ctrl,
-		})) as { item: InventoryItem };
-		expect(result.item.quantity).toBe(105);
+		});
+		expect(ctrl.adjustStock).not.toHaveBeenCalled();
 	});
 });
 

@@ -1,7 +1,7 @@
 "use client";
 
+import { useModuleClient } from "@86d-app/core/client";
 import { observer } from "@86d-app/core/state";
-import { useApi } from "generated/hooks";
 import { useStore } from "hooks/use-store";
 import Image from "next/image";
 import Link from "next/link";
@@ -124,10 +124,12 @@ interface TrendingProduct {
 }
 
 function CartRecommendations() {
-	const api = useApi();
-	const { data, isLoading } = api.recommendations.getTrending.useQuery({
-		take: "4",
-	}) as {
+	const client = useModuleClient();
+	const { data, isLoading } = client
+		.module("recommendations")
+		.store["/recommendations/trending"].useQuery({
+			take: "4",
+		}) as {
 		data: { recommendations: TrendingProduct[] } | undefined;
 		isLoading: boolean;
 	};
@@ -360,7 +362,7 @@ function CartItemRow({
 // ─── Main cart page ─────────────────────────────────────────────────
 
 const CartPageClient = observer(function CartPageClient() {
-	const api = useApi();
+	const client = useModuleClient();
 	const { cart: cartStore } = useStore();
 
 	const {
@@ -368,23 +370,29 @@ const CartPageClient = observer(function CartPageClient() {
 		isLoading,
 		isError,
 		refetch,
-	} = api.cart.getCart.useQuery() as {
+	} = client.module("cart").store["/cart/get"].useQuery() as {
 		data: CartData | undefined;
 		isLoading: boolean;
 		isError: boolean;
 		refetch: () => void;
 	};
 
-	const removeMutation = api.cart.removeFromCart.useMutation({
-		onSettled: () => void api.cart.getCart.invalidate(),
-	});
+	const removeMutation = client
+		.module("cart")
+		.store["/cart/items/:id/remove"].useMutation({
+			onSettled: () =>
+				void client.module("cart").store["/cart/get"].invalidate(),
+		});
 
-	const updateMutation = api.cart.updateCartItem.useMutation({
-		onSettled: () => void api.cart.getCart.invalidate(),
-	});
+	const updateMutation = client
+		.module("cart")
+		.store["/cart/items/:id/update"].useMutation({
+			onSettled: () =>
+				void client.module("cart").store["/cart/get"].invalidate(),
+		});
 
-	const clearMutation = api.cart.clearCart.useMutation({
-		onSettled: () => void api.cart.getCart.invalidate(),
+	const clearMutation = client.module("cart").store["/cart/clear"].useMutation({
+		onSettled: () => void client.module("cart").store["/cart/get"].invalidate(),
 	});
 
 	const mutating =

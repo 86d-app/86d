@@ -15,7 +15,7 @@
 		"dev": "dotenv -- turbo run dev --filter=store",
 		"dev:store": "dotenv -- turbo run dev --filter=store",
 		"start": "turbo run start",
-		"test": "turbo run test",
+		"test": "turbo run test -- --exclude='**/dist/**'",
 		"test:coverage": "vitest run --coverage",
 		"test:e2e": "playwright test",
 		"test:e2e:store": "playwright test --project=store-chromium",

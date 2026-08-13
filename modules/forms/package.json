@@ -21,7 +21,6 @@
 	"exports": {
 		"./components": "./src/store/components",
 		"./admin-components": "./src/admin/components",
-		"./store-components": "./src/store/components",
 		"./*": "./src/*"
 	},
 	"scripts": {

@@ -121,6 +121,7 @@ describe("createOrderController", () => {
 				...sampleOrder,
 				items: sampleItems,
 				giftCardAmount: 2500,
+				total: 1498,
 			});
 			expect(order.giftCardAmount).toBe(2500);
 
@@ -692,6 +693,8 @@ describe("createOrderController", () => {
 		it("lists all fulfillments for an order", async () => {
 			const order = await controller.create({
 				...sampleOrder,
+				subtotal: 4997,
+				total: 4997,
 				items: [
 					...sampleItems,
 					{
@@ -917,6 +920,8 @@ describe("createOrderController", () => {
 		it("returns fulfilled with multi-item orders", async () => {
 			const order = await controller.create({
 				...sampleOrder,
+				subtotal: 5498,
+				total: 5498,
 				items: [
 					...sampleItems,
 					{
@@ -2358,6 +2363,8 @@ describe("createOrderController", () => {
 		it("returns multiple items from a multi-item order", async () => {
 			const order = await controller.create({
 				...sampleOrder,
+				subtotal: 8496,
+				total: 8496,
 				items: [
 					{
 						productId: "prod_1",
@@ -2408,6 +2415,8 @@ describe("createOrderController", () => {
 		it("preserves variant information", async () => {
 			const order = await controller.create({
 				...sampleOrder,
+				subtotal: 2999,
+				total: 2999,
 				items: [
 					{
 						productId: "prod_v",
@@ -2426,15 +2435,15 @@ describe("createOrderController", () => {
 			expect(reorderItems?.[0]?.sku).toBe("TS-RED-L");
 		});
 
-		it("returns empty array for order with no items", async () => {
-			const order = await controller.create({
-				...sampleOrder,
-				items: [],
-			});
-
-			const reorderItems = await controller.getReorderItems(order.id);
-			expect(reorderItems).not.toBeNull();
-			expect(reorderItems).toHaveLength(0);
+		it("rejects an Order with no immutable line items", async () => {
+			await expect(
+				controller.create({
+					...sampleOrder,
+					subtotal: 0,
+					total: 0,
+					items: [],
+				}),
+			).rejects.toThrow("Order must contain at least one immutable line item.");
 		});
 	});
 });

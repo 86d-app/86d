@@ -173,5 +173,7 @@ export {
 	type Middleware,
 	type RouterConfig,
 } from "better-call";
-export type { infer as ZodInfer, ZodSchema, ZodType } from "zod";
-export { z } from "zod";
+// Re-exported from ./zod so that a Module's schema.ts can import `z` without
+// pulling better-call and the endpoint factories into its module graph.
+export type { ZodInfer, ZodSchema, ZodType } from "./zod";
+export { z } from "./zod";

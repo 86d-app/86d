@@ -94,6 +94,9 @@ export function createOrderController(
 ): OrderController {
 	return {
 		async create(params: CreateOrderParams): Promise<Order> {
+			if (params.items.length === 0) {
+				throw new Error("Order must contain at least one immutable line item.");
+			}
 			const moneyAmounts = [
 				params.subtotal,
 				params.taxAmount ?? 0,

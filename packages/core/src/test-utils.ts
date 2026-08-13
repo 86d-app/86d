@@ -178,6 +178,9 @@ export type MockDurableEvent = Readonly<{
 export interface MockTransactionRunner extends ModuleTransactionRunner {
 	readonly data: MockDataService;
 	readonly emitted: MockDurableEvent[];
+	transaction<T>(
+		work: (transaction: LockingModuleDataTransaction) => Promise<T>,
+	): Promise<T>;
 }
 
 /**

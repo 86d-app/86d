@@ -698,50 +698,84 @@ describe("admin POST /notifications/templates/:id/delete", () => {
 // ── admin POST /notifications/templates/send ─────────────────────────────────
 
 describe("admin POST /notifications/templates/send", () => {
-	it("returns BatchSendResult directly (not wrapped)", async () => {
-		const sendResult: BatchSendResult = {
-			sent: 3,
-			failed: 0,
-			errors: [],
-		};
+	it("creates one in-app notification per recipient from the stored template", async () => {
 		const ctrl = makeController({
-			sendFromTemplate: vi.fn().mockResolvedValue(sendResult),
+			getTemplate: vi
+				.fn()
+				.mockResolvedValue(makeTemplate({ channel: "in_app" })),
 		});
-		const result = (await call(sendFromTemplateHandler, {
+		const result = await call(sendFromTemplateHandler, {
 			body: {
 				templateId: "tmpl-4",
 				customerIds: ["c1", "c2", "c3"],
 				variables: { name: "World" },
 			},
 			controller: ctrl,
-		})) as BatchSendResult;
-		expect(result.sent).toBe(3);
-		expect(result.failed).toBe(0);
-		expect(ctrl.sendFromTemplate).toHaveBeenCalledWith({
-			templateId: "tmpl-4",
-			customerIds: ["c1", "c2", "c3"],
-			variables: { name: "World" },
 		});
+
+		expect(result).toEqual({ sent: 3, failed: 0, errors: [] });
+		expect(ctrl.create).toHaveBeenCalledTimes(3);
+		expect(ctrl.create).toHaveBeenCalledWith({
+			customerId: "c1",
+			type: "info",
+			channel: "in_app",
+			priority: "normal",
+			title: "Welcome, World!",
+			body: "Thanks for signing up.",
+			actionUrl: undefined,
+			metadata: {
+				templateId: expect.any(String),
+				templateSlug: "welcome-email",
+			},
+		});
+		expect(ctrl.sendFromTemplate).not.toHaveBeenCalled();
 	});
 
-	it("reports failures in errors array", async () => {
+	it("reports each in-app persistence failure without invoking external delivery", async () => {
+		const create = vi
+			.fn()
+			.mockResolvedValueOnce(makeNotification({ customerId: "good" }))
+			.mockRejectedValueOnce(new Error("Invalid recipient"))
+			.mockRejectedValueOnce(new Error("Recipient unavailable"));
 		const ctrl = makeController({
-			sendFromTemplate: vi.fn().mockResolvedValue({
-				sent: 1,
-				failed: 2,
-				errors: [
-					{ customerId: "bad-1", error: "Invalid email" },
-					{ customerId: "bad-2", error: "Unsubscribed" },
-				],
-			} satisfies BatchSendResult),
+			getTemplate: vi
+				.fn()
+				.mockResolvedValue(makeTemplate({ channel: "in_app" })),
+			create,
 		});
-		const result = (await call(sendFromTemplateHandler, {
+		const result = await call(sendFromTemplateHandler, {
 			body: { templateId: "tmpl-5", customerIds: ["good", "bad-1", "bad-2"] },
 			controller: ctrl,
-		})) as BatchSendResult;
-		expect(result.sent).toBe(1);
-		expect(result.failed).toBe(2);
-		expect(result.errors).toHaveLength(2);
+		});
+
+		expect(result).toEqual({
+			sent: 1,
+			failed: 2,
+			errors: [
+				{ customerId: "bad-1", error: "Invalid recipient" },
+				{ customerId: "bad-2", error: "Recipient unavailable" },
+			],
+		});
+		expect(ctrl.sendFromTemplate).not.toHaveBeenCalled();
+	});
+
+	it("contains external templates before creating or dispatching notifications", async () => {
+		const ctrl = makeController({
+			getTemplate: vi
+				.fn()
+				.mockResolvedValue(makeTemplate({ channel: "email" })),
+		});
+		const result = await call(sendFromTemplateHandler, {
+			body: { templateId: "tmpl-email", customerIds: ["c1"] },
+			controller: ctrl,
+		});
+
+		expect(result).toMatchObject({
+			code: "NOTIFICATION_DELIVERY_DURABILITY_REQUIRED",
+			status: 503,
+		});
+		expect(ctrl.create).not.toHaveBeenCalled();
+		expect(ctrl.sendFromTemplate).not.toHaveBeenCalled();
 	});
 });
 

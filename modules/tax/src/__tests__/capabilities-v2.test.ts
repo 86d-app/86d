@@ -254,7 +254,7 @@ describe("Tax v2 native decisions", () => {
 		});
 	});
 
-	const _invalidTaxProviderCases = [
+	const reviewRequiredCases = [
 		[
 			"invalid policy",
 			async (data: ReturnType<typeof createMockDataService>) => {
@@ -337,10 +337,9 @@ describe("Tax v2 native decisions", () => {
 			"EXEMPTION_UNSUPPORTED",
 		],
 	] as const;
-	)(
-		"returns REVIEW_REQUIRED for %s",
-		async (_label, setup, request, reason) =>
-	{
+	it.each(
+		reviewRequiredCases,
+	)("returns REVIEW_REQUIRED for %s", async (_label, setup, request, reason) => {
 		const data = createMockDataService();
 		await setup(data);
 		const result = await handleTaxQuoteV2(data, request, dependencies);
@@ -351,9 +350,7 @@ describe("Tax v2 native decisions", () => {
 			reason,
 			totals: { tax: null, grandTotal: null },
 		});
-	}
-	,
-	)
+	});
 
 	it("rejects duplicate lines, discounts above gross, and unsafe money at the capability boundary", () => {
 		const request = quoteRequest();

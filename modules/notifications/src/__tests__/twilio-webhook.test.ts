@@ -1,383 +1,122 @@
-import { createMockDataService } from "@86d-app/core/test-utils";
 import { describe, expect, it, vi } from "vitest";
-import type { DeliveryStatus, Notification } from "../service";
-import { createNotificationsController } from "../service-impl";
 import { createTwilioWebhook } from "../store/endpoints/twilio-webhook";
 
-const TWILIO_AUTH_TOKEN = "testtwilioauthtoken123456789abc";
-const WEBHOOK_URL = "https://store.example.com/notifications/webhook/twilio";
+const authToken = "testtwilioauthtoken123456789abc";
+const webhookUrl = "https://store.example/notifications/webhook/twilio";
 
-async function computeTwilioSignature(
-	authToken: string,
-	url: string,
+async function signTwilio(
 	params: Record<string, string>,
+	token = authToken,
 ): Promise<string> {
-	const sortedKeys = Object.keys(params).sort();
-	const paramString = sortedKeys.map((k) => `${k}${params[k]}`).join("");
-	const toSign = url + paramString;
+	const sorted = Object.keys(params)
+		.sort()
+		.map((key) => `${key}${params[key]}`)
+		.join("");
 	const key = await crypto.subtle.importKey(
 		"raw",
-		new TextEncoder().encode(authToken),
+		new TextEncoder().encode(token),
 		{ name: "HMAC", hash: "SHA-1" },
 		false,
 		["sign"],
 	);
-	const sig = await crypto.subtle.sign(
+	const signature = await crypto.subtle.sign(
 		"HMAC",
 		key,
-		new TextEncoder().encode(toSign),
+		new TextEncoder().encode(`${webhookUrl}${sorted}`),
 	);
-	return btoa(String.fromCharCode(...new Uint8Array(sig)));
+	return btoa(String.fromCharCode(...new Uint8Array(signature)));
 }
 
-function makeFormBody(params: Record<string, string>): string {
-	return new URLSearchParams(params).toString();
-}
-
-function makeRequest(
-	body: string,
-	headers: Record<string, string> = {},
-): Request {
-	return new Request(WEBHOOK_URL, {
-		method: "POST",
-		headers: {
-			"Content-Type": "application/x-www-form-urlencoded",
-			...headers,
-		},
-		body,
+function request(params: Record<string, string>, signature?: string): Request {
+	const headers = new Headers({
+		"content-type": "application/x-www-form-urlencoded",
 	});
-}
-
-function makeNotification(overrides: Partial<Notification> = {}): Notification {
-	return {
-		id: "notif-001",
-		customerId: "cust-001",
-		type: "info",
-		channel: "both",
-		priority: "normal",
-		title: "Test",
-		body: "Test body",
-		metadata: {},
-		read: false,
-		createdAt: new Date(),
-		deliveryExternalId: "SM-twilio-001",
-		deliveryStatus: "sent",
-		...overrides,
-	};
-}
-
-function invokeEndpoint(
-	endpoint: unknown,
-	ctx: Record<string, unknown>,
-): Promise<Response> {
-	const h = endpoint as Record<string, unknown>;
-	const fn = (
-		typeof h.handler === "function" ? h.handler : h
-	) as CallableFunction;
-	return fn(ctx) as Promise<Response>;
-}
-
-async function makeCtx(
-	formBody: string,
-	headers: Record<string, string> = {},
-	controllerOverrides?: Partial<
-		ReturnType<typeof createNotificationsController>
-	>,
-) {
-	const data = createMockDataService();
-	const controller = createNotificationsController(data);
-	if (controllerOverrides) {
-		Object.assign(controller, controllerOverrides);
+	if (signature !== undefined) {
+		headers.set("x-twilio-signature", signature);
 	}
+	return new Request(webhookUrl, {
+		method: "POST",
+		headers,
+		body: new URLSearchParams(params),
+	});
+}
+
+function effects() {
 	return {
-		query: {},
-		params: {},
-		body: {},
-		// Default to an authentic sender; a test that is about verification
-		// passes its own signature header and keeps it.
-		request: headers["x-twilio-signature"]
-			? makeRequest(formBody, headers)
-			: makeRequest(formBody, {
-					"x-twilio-signature": await computeTwilioSignature(
-						TWILIO_AUTH_TOKEN,
-						WEBHOOK_URL,
-						Object.fromEntries(new URLSearchParams(formBody)),
-					),
-					...headers,
-				}),
-		context: { controllers: { notifications: controller } },
+		findByExternalId: vi.fn(),
+		updateDeliveryStatus: vi.fn(),
 	};
 }
 
-describe("createTwilioWebhook", () => {
-	describe("without auth token", () => {
-		const webhook = createTwilioWebhook({});
+async function invoke(
+	endpoint: ReturnType<typeof createTwilioWebhook>,
+	webhookRequest: Request,
+	notifications = effects(),
+) {
+	const response = await endpoint({
+		request: webhookRequest,
+		context: { controllers: { notifications } },
+	});
+	return { response, notifications };
+}
 
-		it("refuses the event instead of trusting an unverifiable sender", async () => {
-			const body = makeFormBody({
-				MessageSid: "SM-001",
-				MessageStatus: "delivered",
-			});
-			const res = await invokeEndpoint(webhook, {
-				query: {},
-				params: {},
-				body: {},
-				request: makeRequest(body),
-				context: { controllers: { notifications: {} } },
-			});
+const payload = {
+	MessageSid: "SM-1",
+	MessageStatus: "delivered",
+	AccountSid: "AC-test",
+	From: "+15555550100",
+	To: "+15555550200",
+};
 
-			expect(res.status).toBe(503);
-			const json = await res.json();
-			expect(json.error).toMatch(/not configured/i);
+describe("Twilio webhook containment", () => {
+	it("fails closed when verification is not configured", async () => {
+		const { response, notifications } = await invoke(
+			createTwilioWebhook({}),
+			request(payload),
+		);
+
+		expect(response.status).toBe(503);
+		expect(await response.json()).toMatchObject({
+			error: expect.stringMatching(/not configured/i),
 		});
+		expect(notifications.findByExternalId).not.toHaveBeenCalled();
+		expect(notifications.updateDeliveryStatus).not.toHaveBeenCalled();
 	});
 
-	describe("with auth token and webhook URL configured", () => {
-		const webhook = createTwilioWebhook({
-			authToken: TWILIO_AUTH_TOKEN,
-			webhookUrl: WEBHOOK_URL,
-		});
+	it("rejects a missing signature before any projection effect", async () => {
+		const { response, notifications } = await invoke(
+			createTwilioWebhook({ authToken, webhookUrl }),
+			request(payload),
+		);
 
-		it("updates delivery status to delivered", async () => {
-			const notification = makeNotification({ deliveryExternalId: "SM-001" });
-			const findSpy = vi.fn().mockResolvedValue(notification);
-			const updateSpy = vi.fn().mockResolvedValue({
-				...notification,
-				deliveryStatus: "delivered" satisfies DeliveryStatus,
-			});
-
-			const body = makeFormBody({
-				MessageSid: "SM-001",
-				MessageStatus: "delivered",
-				AccountSid: "ACtest",
-				From: "+15555550100",
-				To: "+15555550200",
-			});
-			const ctx = await makeCtx(
-				body,
-				{},
-				{
-					findByExternalId: findSpy,
-					updateDeliveryStatus: updateSpy,
-				},
-			);
-
-			const res = await invokeEndpoint(webhook, ctx);
-			expect(res.status).toBe(204);
-			expect(findSpy).toHaveBeenCalledWith("SM-001");
-			expect(updateSpy).toHaveBeenCalledWith("notif-001", "delivered");
-		});
-
-		it("updates delivery status to failed for undelivered", async () => {
-			const notification = makeNotification({ deliveryExternalId: "SM-002" });
-			const findSpy = vi.fn().mockResolvedValue(notification);
-			const updateSpy = vi.fn().mockResolvedValue(notification);
-
-			const body = makeFormBody({
-				MessageSid: "SM-002",
-				MessageStatus: "undelivered",
-			});
-			const ctx = await makeCtx(
-				body,
-				{},
-				{
-					findByExternalId: findSpy,
-					updateDeliveryStatus: updateSpy,
-				},
-			);
-
-			const res = await invokeEndpoint(webhook, ctx);
-			expect(res.status).toBe(204);
-			expect(updateSpy).toHaveBeenCalledWith("notif-001", "failed");
-		});
-
-		it("updates delivery status to failed for failed status", async () => {
-			const notification = makeNotification({ deliveryExternalId: "SM-003" });
-			const findSpy = vi.fn().mockResolvedValue(notification);
-			const updateSpy = vi.fn().mockResolvedValue(notification);
-
-			const body = makeFormBody({
-				MessageSid: "SM-003",
-				MessageStatus: "failed",
-			});
-			const ctx = await makeCtx(
-				body,
-				{},
-				{
-					findByExternalId: findSpy,
-					updateDeliveryStatus: updateSpy,
-				},
-			);
-
-			const res = await invokeEndpoint(webhook, ctx);
-			expect(res.status).toBe(204);
-			expect(updateSpy).toHaveBeenCalledWith("notif-001", "failed");
-		});
-
-		it("returns handled:false for intermediate statuses (queued/sending)", async () => {
-			const body = makeFormBody({
-				MessageSid: "SM-004",
-				MessageStatus: "queued",
-			});
-			const ctx = await makeCtx(body);
-
-			const res = await invokeEndpoint(webhook, ctx);
-			const json = await res.json();
-			expect(json.handled).toBe(false);
-		});
-
-		it("returns handled:false for sending status", async () => {
-			const body = makeFormBody({
-				MessageSid: "SM-005",
-				MessageStatus: "sending",
-			});
-			const ctx = await makeCtx(body);
-
-			const res = await invokeEndpoint(webhook, ctx);
-			const json = await res.json();
-			expect(json.handled).toBe(false);
-		});
-
-		it("returns 400 when MessageSid is missing", async () => {
-			const body = makeFormBody({ MessageStatus: "delivered" });
-			const ctx = await makeCtx(body);
-
-			const res = await invokeEndpoint(webhook, ctx);
-			expect(res.status).toBe(400);
-		});
-
-		it("returns handled:false when notification not found for SID", async () => {
-			const findSpy = vi.fn().mockResolvedValue(null);
-
-			const body = makeFormBody({
-				MessageSid: "SM-unknown",
-				MessageStatus: "delivered",
-			});
-			const ctx = await makeCtx(body, {}, { findByExternalId: findSpy });
-
-			const res = await invokeEndpoint(webhook, ctx);
-			const json = await res.json();
-			expect(json.handled).toBe(false);
-		});
-
-		it("returns handled:false when delivery status already matches", async () => {
-			const notification = makeNotification({
-				deliveryExternalId: "SM-006",
-				deliveryStatus: "delivered",
-			});
-			const findSpy = vi.fn().mockResolvedValue(notification);
-			const updateSpy = vi.fn();
-
-			const body = makeFormBody({
-				MessageSid: "SM-006",
-				MessageStatus: "delivered",
-			});
-			const ctx = await makeCtx(
-				body,
-				{},
-				{
-					findByExternalId: findSpy,
-					updateDeliveryStatus: updateSpy,
-				},
-			);
-
-			const res = await invokeEndpoint(webhook, ctx);
-			const json = await res.json();
-			expect(json.handled).toBe(false);
-			expect(updateSpy).not.toHaveBeenCalled();
-		});
-
-		it("falls back to SmsStatus field for older Twilio payloads", async () => {
-			const notification = makeNotification({ deliveryExternalId: "SM-007" });
-			const findSpy = vi.fn().mockResolvedValue(notification);
-			const updateSpy = vi.fn().mockResolvedValue(notification);
-
-			const body = makeFormBody({
-				MessageSid: "SM-007",
-				SmsStatus: "delivered",
-			});
-			const ctx = await makeCtx(
-				body,
-				{},
-				{
-					findByExternalId: findSpy,
-					updateDeliveryStatus: updateSpy,
-				},
-			);
-
-			const res = await invokeEndpoint(webhook, ctx);
-			expect(res.status).toBe(204);
-			expect(updateSpy).toHaveBeenCalledWith("notif-001", "delivered");
-		});
+		expect(response.status).toBe(401);
+		expect(notifications.findByExternalId).not.toHaveBeenCalled();
+		expect(notifications.updateDeliveryStatus).not.toHaveBeenCalled();
 	});
 
-	describe("with auth token and webhook URL (production mode)", () => {
-		const webhook = createTwilioWebhook({
-			authToken: TWILIO_AUTH_TOKEN,
-			webhookUrl: WEBHOOK_URL,
+	it("rejects an invalid signature before any projection effect", async () => {
+		const { response, notifications } = await invoke(
+			createTwilioWebhook({ authToken, webhookUrl }),
+			request(payload, "invalid-signature"),
+		);
+
+		expect(response.status).toBe(401);
+		expect(notifications.findByExternalId).not.toHaveBeenCalled();
+		expect(notifications.updateDeliveryStatus).not.toHaveBeenCalled();
+	});
+
+	it("authenticates the official signature then requests a durable retry", async () => {
+		const { response, notifications } = await invoke(
+			createTwilioWebhook({ authToken, webhookUrl }),
+			request(payload, await signTwilio(payload)),
+		);
+
+		expect(response.status).toBe(503);
+		expect(response.headers.get("Retry-After")).toBe("60");
+		expect(await response.json()).toMatchObject({
+			code: "NOTIFICATION_WEBHOOK_DURABILITY_REQUIRED",
 		});
-
-		it("accepts a valid Twilio-signed request", async () => {
-			const notification = makeNotification({
-				deliveryExternalId: "SM-signed",
-			});
-			const findSpy = vi.fn().mockResolvedValue(notification);
-			const updateSpy = vi.fn().mockResolvedValue(notification);
-
-			const params: Record<string, string> = {
-				MessageSid: "SM-signed",
-				MessageStatus: "delivered",
-				AccountSid: "ACtest",
-				From: "+15555550100",
-				To: "+15555550200",
-			};
-			const body = makeFormBody(params);
-			const sig = await computeTwilioSignature(
-				TWILIO_AUTH_TOKEN,
-				WEBHOOK_URL,
-				params,
-			);
-
-			const ctx = await makeCtx(
-				body,
-				{ "x-twilio-signature": sig },
-				{ findByExternalId: findSpy, updateDeliveryStatus: updateSpy },
-			);
-
-			const res = await invokeEndpoint(webhook, ctx);
-			expect(res.status).toBe(204);
-			expect(updateSpy).toHaveBeenCalledWith("notif-001", "delivered");
-		});
-
-		it("rejects requests with wrong signature", async () => {
-			const params: Record<string, string> = {
-				MessageSid: "SM-bad",
-				MessageStatus: "delivered",
-			};
-			const body = makeFormBody(params);
-
-			const ctx = await makeCtx(body, { "x-twilio-signature": "invalidsig" });
-
-			const res = await invokeEndpoint(webhook, ctx);
-			expect(res.status).toBe(401);
-		});
-
-		it("rejects requests missing X-Twilio-Signature header", async () => {
-			const params: Record<string, string> = {
-				MessageSid: "SM-nosig",
-				MessageStatus: "delivered",
-			};
-			const body = makeFormBody(params);
-			const ctx = {
-				query: {},
-				params: {},
-				body: {},
-				request: makeRequest(body),
-				context: { controllers: { notifications: {} } },
-			};
-
-			const res = await invokeEndpoint(webhook, ctx);
-			expect(res.status).toBe(400);
-		});
+		expect(notifications.findByExternalId).not.toHaveBeenCalled();
+		expect(notifications.updateDeliveryStatus).not.toHaveBeenCalled();
 	});
 });

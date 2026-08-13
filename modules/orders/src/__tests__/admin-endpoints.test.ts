@@ -1,3 +1,5 @@
+import { storePresentationResolveCapability } from "@86d-app/core";
+import { createMockDataService } from "@86d-app/core/test-utils";
 import { describe, expect, it, vi } from "vitest";
 import { adminAddNote } from "../admin/endpoints/add-note";
 import { adminBulkAction } from "../admin/endpoints/bulk-action";
@@ -18,7 +20,6 @@ import type {
 	Fulfillment,
 	FulfillmentItem,
 	FulfillmentWithItems,
-	InvoiceData,
 	Order,
 	OrderController,
 	OrderItem,
@@ -166,31 +167,6 @@ function makeReturnWithItems(
 	};
 }
 
-function makeInvoiceData(overrides: Partial<InvoiceData> = {}): InvoiceData {
-	return {
-		invoiceNumber: "INV-001",
-		orderNumber: "ORD-001",
-		orderId: "order-1",
-		issueDate: "2026-05-01",
-		dueDate: "2026-05-15",
-		status: "issued",
-		customerName: "Alice Smith",
-		lineItems: [
-			{ name: "Widget", quantity: 2, unitPrice: 2500, subtotal: 5000 },
-		],
-		subtotal: 5000,
-		taxAmount: 400,
-		shippingAmount: 500,
-		discountAmount: 0,
-		giftCardAmount: 0,
-		storeCreditAmount: 0,
-		total: 5900,
-		currency: "USD",
-		storeName: "Test Store",
-		...overrides,
-	};
-}
-
 function makeController(
 	overrides: Partial<OrderController> = {},
 ): OrderController {
@@ -245,6 +221,8 @@ function call(
 		body?: Record<string, unknown>;
 		controller?: OrderController;
 		emitFn?: ReturnType<typeof vi.fn>;
+		data?: ReturnType<typeof createMockDataService>;
+		capabilityInvoke?: ReturnType<typeof vi.fn>;
 	} = {},
 ) {
 	const emit = opts.emitFn ?? vi.fn().mockResolvedValue(undefined);
@@ -253,8 +231,20 @@ function call(
 		params: opts.params ?? {},
 		body: opts.body ?? {},
 		context: {
+			data: opts.data ?? createMockDataService(),
 			controllers: { order: opts.controller ?? makeController() },
 			events: { emit },
+			capabilities: {
+				invoke:
+					opts.capabilityInvoke ??
+					vi.fn().mockResolvedValue({
+						ok: false,
+						failure: {
+							code: "SETTINGS_UNAVAILABLE",
+							message: "Store presentation is unavailable.",
+						},
+					}),
+			},
 		},
 	});
 }
@@ -366,26 +356,35 @@ describe("admin PUT /admin/orders/:id/update", () => {
 // ── admin DELETE /admin/orders/:id/delete ──────────────────────────────────────
 
 describe("admin DELETE /admin/orders/:id/delete", () => {
-	it("returns 404 when order not found", async () => {
-		const result = (await call(deleteOrderHandler, {
+	it("rejects deletion without revealing whether the Order exists", async () => {
+		const ctrl = makeController();
+		const result = await call(deleteOrderHandler, {
 			params: { id: "missing" },
-		})) as { error: string; status: number };
-		expect(result.error).toBe("Order not found");
-		expect(result.status).toBe(404);
+			controller: ctrl,
+		});
+		expect(result).toMatchObject({
+			code: "ORDER_HISTORY_IMMUTABLE",
+			status: 422,
+		});
+		expect(ctrl.getById).not.toHaveBeenCalled();
+		expect(ctrl.delete).not.toHaveBeenCalled();
 	});
 
-	it("deletes the order and returns success", async () => {
-		const existing = makeOrderWithDetails({ id: "order-1" });
+	it("preserves accepted Order history instead of invoking the legacy delete writer", async () => {
 		const ctrl = makeController({
-			getById: vi.fn().mockResolvedValue(existing),
+			getById: vi.fn().mockResolvedValue(makeOrderWithDetails()),
 			delete: vi.fn().mockResolvedValue(undefined),
 		});
-		const result = (await call(deleteOrderHandler, {
+		const result = await call(deleteOrderHandler, {
 			params: { id: "order-1" },
 			controller: ctrl,
-		})) as { success: boolean };
-		expect(result.success).toBe(true);
-		expect(ctrl.delete).toHaveBeenCalledWith("order-1");
+		});
+		expect(result).toMatchObject({
+			code: "ORDER_HISTORY_IMMUTABLE",
+			status: 422,
+		});
+		expect(ctrl.getById).not.toHaveBeenCalled();
+		expect(ctrl.delete).not.toHaveBeenCalled();
 	});
 });
 
@@ -487,27 +486,46 @@ describe("admin POST /admin/orders/notes/:id/delete", () => {
 
 describe("admin GET /admin/orders/:id/invoice", () => {
 	it("returns 404 when order not found", async () => {
-		const result = (await call(getInvoiceHandler, {
+		const capabilityInvoke = vi.fn().mockResolvedValue({
+			ok: true,
+			decision: { storeName: "Authoritative Store" },
+		});
+		const result = await call(getInvoiceHandler, {
 			params: { id: "missing" },
 			query: {},
-		})) as { error: string; status: number };
-		expect(result.error).toBe("Order not found");
-		expect(result.status).toBe(404);
+			capabilityInvoke,
+		});
+		expect(result).toEqual({ error: "Order not found", status: 404 });
+		expect(capabilityInvoke).toHaveBeenCalledWith(
+			storePresentationResolveCapability,
+			{},
+		);
 	});
 
-	it("returns invoice data when order exists", async () => {
-		const invoice = makeInvoiceData({ orderId: "order-1" });
-		const ctrl = makeController({
-			getInvoiceData: vi.fn().mockResolvedValue(invoice),
+	it("derives invoice branding from Settings instead of caller input", async () => {
+		const data = createMockDataService();
+		await data.upsert("order", "order-1", { ...makeOrder() });
+		await data.upsert("orderItem", "item-1", { ...makeOrderItem() });
+		const capabilityInvoke = vi.fn().mockResolvedValue({
+			ok: true,
+			decision: { storeName: "Authoritative Store" },
 		});
-		const result = (await call(getInvoiceHandler, {
+		const result = await call(getInvoiceHandler, {
 			params: { id: "order-1" },
-			query: { storeName: "Test Store" },
-			controller: ctrl,
-		})) as { invoice: InvoiceData };
-		expect(result.invoice.orderId).toBe("order-1");
-		expect(result.invoice.storeName).toBe("Test Store");
-		expect(ctrl.getInvoiceData).toHaveBeenCalledWith("order-1", "Test Store");
+			query: { storeName: "Caller Controlled Store" },
+			data,
+			capabilityInvoke,
+		});
+		expect(result).toMatchObject({
+			invoice: {
+				orderId: "order-1",
+				storeName: "Authoritative Store",
+			},
+		});
+		expect(capabilityInvoke).toHaveBeenCalledWith(
+			storePresentationResolveCapability,
+			{},
+		);
 	});
 });
 
@@ -548,24 +566,28 @@ describe("admin GET /admin/orders/:id/fulfillments", () => {
 // ── admin POST /admin/orders/:id/fulfillments/create ─────────────────────────
 
 describe("admin POST /admin/orders/:id/fulfillments/create", () => {
-	it("returns 404 when order not found", async () => {
-		const result = (await call(createFulfillmentHandler, {
+	it("routes missing-order requests to the Fulfillment owner without probing Orders", async () => {
+		const ctrl = makeController();
+		const result = await call(createFulfillmentHandler, {
 			params: { id: "missing" },
 			body: { items: [{ orderItemId: "item-1", quantity: 1 }] },
-		})) as { error: string; status: number };
-		expect(result.error).toBe("Order not found");
-		expect(result.status).toBe(404);
+			controller: ctrl,
+		});
+		expect(result).toMatchObject({
+			code: "FULFILLMENT_OWNER_OPERATION_REQUIRED",
+			status: 503,
+		});
+		expect(ctrl.getById).not.toHaveBeenCalled();
+		expect(ctrl.createFulfillment).not.toHaveBeenCalled();
 	});
 
-	it("creates fulfillment and returns it with fulfillment status", async () => {
-		const existing = makeOrderWithDetails({ id: "order-1" });
-		const fulfillment = makeFulfillment({ id: "ful-1", orderId: "order-1" });
+	it("does not invoke the retired Order-owned Fulfillment writer", async () => {
 		const ctrl = makeController({
-			getById: vi.fn().mockResolvedValue(existing),
-			createFulfillment: vi.fn().mockResolvedValue(fulfillment),
+			getById: vi.fn().mockResolvedValue(makeOrderWithDetails()),
+			createFulfillment: vi.fn().mockResolvedValue(makeFulfillment()),
 			getOrderFulfillmentStatus: vi.fn().mockResolvedValue("fulfilled"),
 		});
-		const result = (await call(createFulfillmentHandler, {
+		const result = await call(createFulfillmentHandler, {
 			params: { id: "order-1" },
 			body: {
 				carrier: "UPS",
@@ -573,16 +595,14 @@ describe("admin POST /admin/orders/:id/fulfillments/create", () => {
 				items: [{ orderItemId: "item-1", quantity: 1 }],
 			},
 			controller: ctrl,
-		})) as { fulfillment: Fulfillment; fulfillmentStatus: string };
-		expect(result.fulfillment.id).toBe("ful-1");
-		expect(result.fulfillmentStatus).toBe("fulfilled");
-		expect(ctrl.createFulfillment).toHaveBeenCalledWith(
-			expect.objectContaining({
-				orderId: "order-1",
-				carrier: "UPS",
-				trackingNumber: "1Z999AA1",
-			}),
-		);
+		});
+		expect(result).toMatchObject({
+			code: "FULFILLMENT_OWNER_OPERATION_REQUIRED",
+			status: 503,
+		});
+		expect(ctrl.getById).not.toHaveBeenCalled();
+		expect(ctrl.createFulfillment).not.toHaveBeenCalled();
+		expect(ctrl.getOrderFulfillmentStatus).not.toHaveBeenCalled();
 	});
 });
 
@@ -658,107 +678,115 @@ describe("admin GET /admin/orders/returns/:id", () => {
 // ── admin PUT /admin/orders/returns/:id/update ────────────────────────────────
 
 describe("admin PUT /admin/orders/returns/:id/update", () => {
-	it("returns 404 when return not found", async () => {
-		const result = (await call(updateReturnHandler, {
+	it("routes missing-return requests to the Returns owner without probing Orders", async () => {
+		const ctrl = makeController();
+		const result = await call(updateReturnHandler, {
 			params: { id: "missing" },
 			body: { status: "approved" },
-		})) as { error: string; status: number };
-		expect(result.error).toBe("Return request not found");
-		expect(result.status).toBe(404);
+			controller: ctrl,
+		});
+		expect(result).toMatchObject({
+			code: "RETURN_OWNER_OPERATION_REQUIRED",
+			status: 503,
+		});
+		expect(ctrl.getReturn).not.toHaveBeenCalled();
+		expect(ctrl.updateReturn).not.toHaveBeenCalled();
 	});
 
-	it("approves the return and emits return.approved event", async () => {
-		const existing = makeReturnWithItems({
-			id: "ret-1",
-			orderId: "order-1",
-			status: "requested",
-		});
-		const updated = makeReturnRequest({ id: "ret-1", status: "approved" });
-		const order = makeOrderWithDetails({ id: "order-1" });
+	it("does not invoke or emit from the retired Order-owned Return writer", async () => {
 		const emit = vi.fn().mockResolvedValue(undefined);
 		const ctrl = makeController({
-			getReturn: vi.fn().mockResolvedValue(existing),
-			updateReturn: vi.fn().mockResolvedValue(updated),
-			getById: vi.fn().mockResolvedValue(order),
+			getReturn: vi.fn().mockResolvedValue(makeReturnWithItems()),
+			updateReturn: vi.fn().mockResolvedValue(makeReturnRequest()),
 		});
-		const result = (await call(updateReturnHandler, {
+		const result = await call(updateReturnHandler, {
 			params: { id: "ret-1" },
 			body: { status: "approved" },
 			controller: ctrl,
 			emitFn: emit,
-		})) as { returnRequest: ReturnRequest };
-		expect(result.returnRequest.status).toBe("approved");
-		expect(ctrl.updateReturn).toHaveBeenCalledWith(
-			"ret-1",
-			expect.objectContaining({ status: "approved" }),
-		);
-		expect(emit).toHaveBeenCalledWith(
-			"return.approved",
-			expect.objectContaining({ returnId: "ret-1" }),
-		);
+		});
+		expect(result).toMatchObject({
+			code: "RETURN_OWNER_OPERATION_REQUIRED",
+			status: 503,
+		});
+		expect(ctrl.getReturn).not.toHaveBeenCalled();
+		expect(ctrl.updateReturn).not.toHaveBeenCalled();
+		expect(emit).not.toHaveBeenCalled();
 	});
 });
 
 // ── admin DELETE /admin/orders/returns/:id/delete ─────────────────────────────
 
 describe("admin DELETE /admin/orders/returns/:id/delete", () => {
-	it("returns 404 when return not found", async () => {
-		const result = (await call(deleteReturnHandler, {
+	it("routes missing-return deletion to the Returns owner without probing Orders", async () => {
+		const ctrl = makeController();
+		const result = await call(deleteReturnHandler, {
 			params: { id: "missing" },
-		})) as { error: string; status: number };
-		expect(result.error).toBe("Return request not found");
-		expect(result.status).toBe(404);
+			controller: ctrl,
+		});
+		expect(result).toMatchObject({
+			code: "RETURN_OWNER_OPERATION_REQUIRED",
+			status: 503,
+		});
+		expect(ctrl.getReturn).not.toHaveBeenCalled();
+		expect(ctrl.deleteReturn).not.toHaveBeenCalled();
 	});
 
-	it("deletes the return and returns success", async () => {
-		const existing = makeReturnWithItems({ id: "ret-1" });
+	it("does not invoke the retired Order-owned Return delete writer", async () => {
 		const ctrl = makeController({
-			getReturn: vi.fn().mockResolvedValue(existing),
+			getReturn: vi.fn().mockResolvedValue(makeReturnWithItems()),
 			deleteReturn: vi.fn().mockResolvedValue(undefined),
 		});
-		const result = (await call(deleteReturnHandler, {
+		const result = await call(deleteReturnHandler, {
 			params: { id: "ret-1" },
 			controller: ctrl,
-		})) as { success: boolean };
-		expect(result.success).toBe(true);
-		expect(ctrl.deleteReturn).toHaveBeenCalledWith("ret-1");
+		});
+		expect(result).toMatchObject({
+			code: "RETURN_OWNER_OPERATION_REQUIRED",
+			status: 503,
+		});
+		expect(ctrl.getReturn).not.toHaveBeenCalled();
+		expect(ctrl.deleteReturn).not.toHaveBeenCalled();
 	});
 });
 
 // ── admin POST /admin/orders/bulk ─────────────────────────────────────────────
 
 describe("admin POST /admin/orders/bulk", () => {
-	it("bulk updateStatus returns updated count", async () => {
+	it("contains bulk status mutation before invoking legacy writers", async () => {
 		const ctrl = makeController({
 			bulkUpdateStatus: vi.fn().mockResolvedValue({ updated: 3 }),
 		});
-		const result = (await call(bulkActionHandler, {
+		const result = await call(bulkActionHandler, {
 			body: {
 				action: "updateStatus",
 				ids: ["order-1", "order-2", "order-3"],
 				status: "completed",
 			},
 			controller: ctrl,
-		})) as { updated: number };
-		expect(result.updated).toBe(3);
-		expect(ctrl.bulkUpdateStatus).toHaveBeenCalledWith(
-			["order-1", "order-2", "order-3"],
-			"completed",
-		);
+		});
+		expect(result).toMatchObject({
+			code: "ORDER_BULK_OPERATION_UNAVAILABLE",
+			status: 503,
+		});
+		expect(ctrl.bulkUpdateStatus).not.toHaveBeenCalled();
 	});
 
-	it("bulk delete returns deleted count", async () => {
+	it("contains bulk deletion before invoking legacy writers", async () => {
 		const ctrl = makeController({
 			bulkDelete: vi.fn().mockResolvedValue({ deleted: 2 }),
 		});
-		const result = (await call(bulkActionHandler, {
+		const result = await call(bulkActionHandler, {
 			body: {
 				action: "delete",
 				ids: ["order-1", "order-2"],
 			},
 			controller: ctrl,
-		})) as { deleted: number };
-		expect(result.deleted).toBe(2);
-		expect(ctrl.bulkDelete).toHaveBeenCalledWith(["order-1", "order-2"]);
+		});
+		expect(result).toMatchObject({
+			code: "ORDER_BULK_OPERATION_UNAVAILABLE",
+			status: 503,
+		});
+		expect(ctrl.bulkDelete).not.toHaveBeenCalled();
 	});
 });
