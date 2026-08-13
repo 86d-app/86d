@@ -183,7 +183,7 @@ describe("sitemap controller", () => {
 		});
 
 		it("returns correct entry among many", async () => {
-			const entries = [];
+			const entries: Awaited<ReturnType<typeof controller.addEntry>>[] = [];
 			for (let i = 0; i < 15; i++) {
 				entries.push(await controller.addEntry({ path: `/item-${i}` }));
 			}

@@ -249,7 +249,7 @@ describe("checkout controller edge cases", () => {
 		});
 
 		it("returns the correct session among many", async () => {
-			const sessions = [];
+			const sessions: Awaited<ReturnType<typeof controller.create>>[] = [];
 			for (let i = 0; i < 10; i++) {
 				const s = await controller.create({
 					subtotal: i * 100,

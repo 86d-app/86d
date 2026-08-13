@@ -31,6 +31,7 @@ import payments from "@86d-app/payments";
 
 const provider = new PayPalPaymentConnectionProvider({
   connectionId: "paypal-primary",
+  providerAccountId: "PAYPAL_PAYER_ID",
   clientId: "CLIENT_ID",
   clientSecret: "CLIENT_SECRET",
   mode: "test",
@@ -80,9 +81,16 @@ The versioned contract uses an explicit authorize-then-capture strategy. Each op
 | Capture | `POST /v2/payments/authorizations/{authorizationId}/capture` |
 | Void | `POST /v2/payments/authorizations/{authorizationId}/void`, then canonical `GET` confirmation |
 | Refund | `POST /v2/payments/captures/{captureId}/refund` |
-| Reconcile | Canonical resource `GET` when an exact resource is known; otherwise remain ambiguous for operator resolution |
+| Reconcile | Canonical resource `GET` when an exact resource is known; bounded exact-request replay where PayPal idempotency permits it; otherwise remain ambiguous |
 
-Every supported POST receives the durable operation idempotency key unchanged as `PayPal-Request-Id` and enforces the Orders v2 108-character ceiling. Create Order includes trusted HTTPS return/cancel URLs and uses PayPal's current `payer-action` handoff (with `approve` accepted for compatibility). An unknown Create Order may repeat only within a conservative five-hour window inside PayPal's documented six-hour request-ID retention; later reconciliation never blindly repeats it. Unknown capture and refund outcomes without a returned resource still require operator resolution because the Payments v2 reference does not document an equivalent retention window. Equal-value partial refunds remain distinct because they use distinct operation keys and the exact capture reference. Every continuation validates the durable source operation, provider reference, and money before I/O. Currency comes from the server-owned Payment operation; PayPal's `HUF`, `JPY`, and `TWD` zero-digit exponents are honored and unsupported currencies fail before I/O.
+Every supported POST receives the durable operation idempotency key unchanged as `PayPal-Request-Id` and enforces the Orders v2 108-character ceiling. Create Order includes trusted HTTPS return/cancel URLs and uses PayPal's current `payer-action` handoff (with `approve` accepted for compatibility). An unknown Create Order may repeat only within a conservative five-hour window inside PayPal's documented six-hour request-ID retention. PayPal explicitly documents replaying an unclear capture with the same request ID and body, but does not publish a capture retention floor; this adapter therefore uses a deliberately short five-minute operational recovery bound and does not claim that as provider retention. PayPal documents refund request IDs for up to 45 days, and the adapter stays one day inside that bound at 44 days. After any bound expires, reconciliation remains ambiguous and does not call PayPal. Equal-value partial refunds remain distinct because they use distinct operation keys and the exact capture reference. Every continuation validates the durable source operation, provider reference, and money before I/O. Currency comes from the server-owned Payment operation; PayPal's `HUF`, `JPY`, and `TWD` zero-digit exponents are honored and unsupported currencies fail before I/O.
+
+The adapter also freezes the server-provisioned PayPal payer/merchant identity
+as `providerAccountId`. The host must verify that its credential authorizes that
+account before binding the adapter; this local assertion is not sandbox or live
+evidence. The Payment owner compares the value to its durable Connection on
+enablement and every operation, so rotating credentials cannot silently route
+historical work to another PayPal account.
 
 ## Status Mapping
 
@@ -110,6 +118,7 @@ import { PayPalPaymentConnectionProvider } from "@86d-app/paypal";
 
 const connection = new PayPalPaymentConnectionProvider({
   connectionId: "paypal-primary",
+  providerAccountId: process.env.PAYPAL_PAYER_ID,
   clientId: process.env.PAYPAL_CLIENT_ID,
   clientSecret: process.env.PAYPAL_CLIENT_SECRET,
   mode: process.env.NODE_ENV === "production" ? "live" : "test",

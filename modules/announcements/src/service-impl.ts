@@ -98,9 +98,12 @@ export function createAnnouncementsControllers(
 				if (!isInScheduleWindow(a, now)) return false;
 
 				// Check audience targeting
-				if (audience && a.targetAudience !== "all") {
-					if (a.targetAudience !== audience) return false;
-				}
+				if (
+					audience &&
+					a.targetAudience !== "all" &&
+					a.targetAudience !== audience
+				)
+					return false;
 
 				return true;
 			});

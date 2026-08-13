@@ -6,6 +6,7 @@ import type {
 import { adminEndpoints } from "./admin/endpoints/routes";
 import { storePresentationResolveProvider } from "./capabilities";
 import { settingsSchema } from "./schema";
+import { SETTING_KEYS } from "./service";
 import { createSettingsController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints/routes";
 
@@ -16,7 +17,7 @@ export type {
 	StoreSetting,
 } from "./service";
 
-export { SETTING_KEYS } from "./service";
+export { SETTING_KEYS };
 
 export interface SettingsOptions extends ModuleConfig {
 	/** Default store name shown before settings are configured */

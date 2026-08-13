@@ -50,7 +50,7 @@ describe("env", () => {
 			);
 		} finally {
 			if (previous === undefined) {
-				delete process.env["86D_TELEMETRY"];
+				Reflect.deleteProperty(process.env, "86D_TELEMETRY");
 			} else {
 				process.env["86D_TELEMETRY"] = previous;
 			}
@@ -74,12 +74,12 @@ describe("env", () => {
 			expect(mod.default["86D_STORE_ID"]).toBe(managedStoreId);
 		} finally {
 			if (previousLegacy === undefined) {
-				delete process.env.STORE_ID;
+				Reflect.deleteProperty(process.env, "STORE_ID");
 			} else {
 				process.env.STORE_ID = previousLegacy;
 			}
 			if (previousManaged === undefined) {
-				delete process.env["86D_STORE_ID"];
+				Reflect.deleteProperty(process.env, "86D_STORE_ID");
 			} else {
 				process.env["86D_STORE_ID"] = previousManaged;
 			}

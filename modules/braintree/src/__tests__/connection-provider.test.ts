@@ -1,6 +1,22 @@
 import type { PaymentProviderOperationRequest } from "@86d-app/core/payment-connection-provider";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createBraintreePaymentConnectionProvider } from "../connection-provider";
+import {
+	type BraintreePaymentConnectionProviderOptions,
+	createBraintreePaymentConnectionProvider as createProvider,
+} from "../connection-provider";
+
+function createBraintreePaymentConnectionProvider(
+	options: Omit<
+		BraintreePaymentConnectionProviderOptions,
+		"providerAccountId"
+	> & {
+		providerAccountId?: string;
+	},
+) {
+	const { providerAccountId = "merchant_primary", ...connectionOptions } =
+		options;
+	return createProvider({ ...connectionOptions, providerAccountId });
+}
 
 function response(body: unknown, status = 200): Response {
 	return new Response(JSON.stringify(body), {
@@ -29,6 +45,29 @@ describe("BraintreePaymentConnectionProvider", () => {
 
 	afterEach(() => {
 		globalThis.fetch = originalFetch;
+	});
+
+	it("freezes the verified Braintree merchant identity at adapter binding", () => {
+		const provider = createBraintreePaymentConnectionProvider({
+			connectionId: authorizationRequest.connectionId,
+			providerAccountId: "merchant_verified_primary",
+			publicKey: "public_key",
+			privateKey: "private_key",
+			mode: "test",
+			merchantAccountIds: { EUR: "merchant_account_eur" },
+		});
+
+		expect(provider.providerAccountId).toBe("merchant_verified_primary");
+		expect(() =>
+			createBraintreePaymentConnectionProvider({
+				connectionId: authorizationRequest.connectionId,
+				providerAccountId: " ",
+				publicKey: "public_key",
+				privateKey: "private_key",
+				mode: "test",
+				merchantAccountIds: { EUR: "merchant_account_eur" },
+			}),
+		).toThrow("Braintree provider account ID is required");
 	});
 
 	it("forwards the same durable authorization envelope to Braintree GraphQL", async () => {
@@ -218,64 +257,64 @@ describe("BraintreePaymentConnectionProvider", () => {
 		});
 	});
 
-	it.each([
-		"ISK",
-		"LAK",
-	] as const)("uses the zero-decimal exponent for a %s authorization", async (currency) => {
-		const request = {
-			...authorizationRequest,
-			operationId: `payop_braintree_authorization_${currency.toLowerCase()}`,
-			idempotencyKey: `authorization:payop_braintree_authorization_${currency.toLowerCase()}`,
-			payload: {
-				operation: "authorization",
-				amount: 1_200,
-				currency,
-				metadata: {
-					paymentMethodId: `payment_method_${currency.toLowerCase()}`,
-				},
-			},
-		} as const satisfies PaymentProviderOperationRequest;
-		const fetchMock = vi.fn().mockResolvedValue(
-			response({
-				data: {
-					authorizePaymentMethod: {
-						clientMutationId: request.operationId,
-						transaction: {
-							id: `bt_${currency.toLowerCase()}_transaction`,
-							status: "AUTHORIZED",
-							orderId: request.operationId,
-							amount: { value: "1200", currencyIsoCode: currency },
-						},
+	it.each(["ISK", "LAK"] as const)(
+		"uses the zero-decimal exponent for a %s authorization",
+		async (currency) => {
+			const request = {
+				...authorizationRequest,
+				operationId: `payop_braintree_authorization_${currency.toLowerCase()}`,
+				idempotencyKey: `authorization:payop_braintree_authorization_${currency.toLowerCase()}`,
+				payload: {
+					operation: "authorization",
+					amount: 1_200,
+					currency,
+					metadata: {
+						paymentMethodId: `payment_method_${currency.toLowerCase()}`,
 					},
 				},
-			}),
-		);
-		globalThis.fetch = fetchMock;
-		const provider = createBraintreePaymentConnectionProvider({
-			connectionId: request.connectionId,
-			publicKey: "public_key",
-			privateKey: "private_key",
-			mode: "test",
-			merchantAccountIds: {
-				[currency]: `merchant_account_${currency.toLowerCase()}`,
-			},
-		});
+			} as const satisfies PaymentProviderOperationRequest;
+			const fetchMock = vi.fn().mockResolvedValue(
+				response({
+					data: {
+						authorizePaymentMethod: {
+							clientMutationId: request.operationId,
+							transaction: {
+								id: `bt_${currency.toLowerCase()}_transaction`,
+								status: "AUTHORIZED",
+								orderId: request.operationId,
+								amount: { value: "1200", currencyIsoCode: currency },
+							},
+						},
+					},
+				}),
+			);
+			globalThis.fetch = fetchMock;
+			const provider = createBraintreePaymentConnectionProvider({
+				connectionId: request.connectionId,
+				publicKey: "public_key",
+				privateKey: "private_key",
+				mode: "test",
+				merchantAccountIds: {
+					[currency]: `merchant_account_${currency.toLowerCase()}`,
+				},
+			});
 
-		const outcome = await provider.execute(request);
+			const outcome = await provider.execute(request);
 
-		expect(outcome).toMatchObject({
-			state: "succeeded",
-			result: { amount: 1_200, currency },
-		});
-		const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
-		const body = JSON.parse(String(init.body)) as {
-			variables: { input: { transaction: Record<string, unknown> } };
-		};
-		expect(body.variables.input.transaction).toMatchObject({
-			amount: "1200",
-			merchantAccountId: `merchant_account_${currency.toLowerCase()}`,
-		});
-	});
+			expect(outcome).toMatchObject({
+				state: "succeeded",
+				result: { amount: 1_200, currency },
+			});
+			const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
+			const body = JSON.parse(String(init.body)) as {
+				variables: { input: { transaction: Record<string, unknown> } };
+			};
+			expect(body.variables.input.transaction).toMatchObject({
+				amount: "1200",
+				merchantAccountId: `merchant_account_${currency.toLowerCase()}`,
+			});
+		},
+	);
 
 	it("keeps MGA at its supported two-decimal exponent", async () => {
 		const request = {
@@ -414,32 +453,33 @@ describe("BraintreePaymentConnectionProvider", () => {
 				providerPaymentReference: "bt_authorization_source",
 			},
 		},
-	])("requires durable source provenance for $operation", async ({
-		payload,
-	}) => {
-		const fetchMock = vi.fn();
-		globalThis.fetch = fetchMock;
-		const provider = createBraintreePaymentConnectionProvider({
-			connectionId: authorizationRequest.connectionId,
-			publicKey: "public_key",
-			privateKey: "private_key",
-			mode: "test",
-			merchantAccountIds: { USD: "merchant_account_usd" },
-		});
+	])(
+		"requires durable source provenance for $operation",
+		async ({ payload }) => {
+			const fetchMock = vi.fn();
+			globalThis.fetch = fetchMock;
+			const provider = createBraintreePaymentConnectionProvider({
+				connectionId: authorizationRequest.connectionId,
+				publicKey: "public_key",
+				privateKey: "private_key",
+				mode: "test",
+				merchantAccountIds: { USD: "merchant_account_usd" },
+			});
 
-		const outcome = await provider.execute({
-			...authorizationRequest,
-			operationId: `payop_missing_source_${payload.operation}`,
-			idempotencyKey: `missing-source:${payload.operation}`,
-			payload,
-		});
+			const outcome = await provider.execute({
+				...authorizationRequest,
+				operationId: `payop_missing_source_${payload.operation}`,
+				idempotencyKey: `missing-source:${payload.operation}`,
+				payload,
+			});
 
-		expect(outcome).toEqual({
-			state: "failed",
-			result: { reason: "source_provenance_required" },
-		});
-		expect(fetchMock).not.toHaveBeenCalled();
-	});
+			expect(outcome).toEqual({
+				state: "failed",
+				result: { reason: "source_provenance_required" },
+			});
+			expect(fetchMock).not.toHaveBeenCalled();
+		},
+	);
 
 	it("rejects partial final capture before calling Braintree", async () => {
 		const fetchMock = vi.fn();

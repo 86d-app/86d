@@ -115,14 +115,12 @@ export function createImportExportController(
 
 			await data.upsert("importJob", id, updated as Record<string, unknown>);
 
-			if (events) {
-				if (status === "validating" || status === "processing") {
-					void events.emit("import.started", {
-						jobId: id,
-						type: job.type,
-						status,
-					});
-				}
+			if (events && (status === "validating" || status === "processing")) {
+				void events.emit("import.started", {
+					jobId: id,
+					type: job.type,
+					status,
+				});
 			}
 
 			return updated;

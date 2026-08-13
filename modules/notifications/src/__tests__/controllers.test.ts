@@ -739,7 +739,7 @@ describe("notifications controller edge cases", () => {
 		});
 
 		it("bulkDelete all items leaves store empty", async () => {
-			const notifications = [];
+			const notifications: Awaited<ReturnType<typeof controller.create>>[] = [];
 			for (let i = 0; i < 10; i++) {
 				const n = await controller.create({
 					customerId: "cust-1",

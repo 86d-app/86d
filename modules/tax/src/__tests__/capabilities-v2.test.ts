@@ -188,23 +188,26 @@ describe("Tax v2 native decisions", () => {
 			"MARKETPLACE_POLICY",
 			"MARKETPLACE_COLLECTED",
 		],
-	] as const)("returns an explicit versioned zero for %s", async (_label, configuredPolicy, request, reason, status) => {
-		const data = createMockDataService();
-		await seedRateDecision(data, { policy: configuredPolicy });
-		const result = await handleTaxQuoteV2(data, request, dependencies);
+	] as const)(
+		"returns an explicit versioned zero for %s",
+		async (_label, configuredPolicy, request, reason, status) => {
+			const data = createMockDataService();
+			await seedRateDecision(data, { policy: configuredPolicy });
+			const result = await handleTaxQuoteV2(data, request, dependencies);
 
-		expect(result.decision).toMatchObject({
-			status,
-			reason,
-			policyVersion: "policy-v1",
-			totals: {
-				lineTax: 0,
-				shippingTax: 0,
-				tax: 0,
-				grandTotal: 25,
-			},
-		});
-	});
+			expect(result.decision).toMatchObject({
+				status,
+				reason,
+				policyVersion: "policy-v1",
+				totals: {
+					lineTax: 0,
+					shippingTax: 0,
+					tax: 0,
+					grandTotal: 25,
+				},
+			});
+		},
+	);
 
 	it("returns an explicit versioned zero only for an effective full exemption", async () => {
 		const data = createMockDataService();
@@ -337,20 +340,21 @@ describe("Tax v2 native decisions", () => {
 			"EXEMPTION_UNSUPPORTED",
 		],
 	] as const;
-	it.each(
-		reviewRequiredCases,
-	)("returns REVIEW_REQUIRED for %s", async (_label, setup, request, reason) => {
-		const data = createMockDataService();
-		await setup(data);
-		const result = await handleTaxQuoteV2(data, request, dependencies);
+	it.each(reviewRequiredCases)(
+		"returns REVIEW_REQUIRED for %s",
+		async (_label, setup, request, reason) => {
+			const data = createMockDataService();
+			await setup(data);
+			const result = await handleTaxQuoteV2(data, request, dependencies);
 
-		expect(result.decision).toMatchObject({
-			jurisdictionDecision: "BLOCKED",
-			status: "REVIEW_REQUIRED",
-			reason,
-			totals: { tax: null, grandTotal: null },
-		});
-	});
+			expect(result.decision).toMatchObject({
+				jurisdictionDecision: "BLOCKED",
+				status: "REVIEW_REQUIRED",
+				reason,
+				totals: { tax: null, grandTotal: null },
+			});
+		},
+	);
 
 	it("rejects duplicate lines, discounts above gross, and unsafe money at the capability boundary", () => {
 		const request = quoteRequest();
@@ -463,27 +467,28 @@ describe("Tax v2 provider decisions", () => {
 		],
 	] satisfies Array<[string, TaxProviderV2Result, string]>;
 
-	it.each(
-		invalidTaxProviderCases,
-	)("rejects %s", async (_label, providerResult, reason) => {
-		const data = await taxJarPolicyData();
-		const provider = {
-			kind: "TAXJAR",
-			connectionId: "tax-connection-1",
-			name: "TaxJar",
-			quote: async () => providerResult,
-		} satisfies TaxQuoteProviderV2;
-		const result = await handleTaxQuoteV2(data, quoteRequest(), {
-			...dependencies,
-			provider,
-		});
+	it.each(invalidTaxProviderCases)(
+		"rejects %s",
+		async (_label, providerResult, reason) => {
+			const data = await taxJarPolicyData();
+			const provider = {
+				kind: "TAXJAR",
+				connectionId: "tax-connection-1",
+				name: "TaxJar",
+				quote: async () => providerResult,
+			} satisfies TaxQuoteProviderV2;
+			const result = await handleTaxQuoteV2(data, quoteRequest(), {
+				...dependencies,
+				provider,
+			});
 
-		expect(result.decision).toMatchObject({
-			status: "REVIEW_REQUIRED",
-			reason,
-			totals: { tax: null, grandTotal: null },
-		});
-	});
+			expect(result.decision).toMatchObject({
+				status: "REVIEW_REQUIRED",
+				reason,
+				totals: { tax: null, grandTotal: null },
+			});
+		},
+	);
 
 	it("persists a complete canonical provider decision", async () => {
 		const data = await taxJarPolicyData();

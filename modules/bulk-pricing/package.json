@@ -10,13 +10,13 @@
 		"wholesale",
 		"quantity-breaks"
 	],
-	"license": "MIT",
-	"author": "86d <chat@86d.app>",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/86d-app/86d.git",
 		"directory": "modules/bulk-pricing"
 	},
+	"license": "MIT",
+	"author": "86d <chat@86d.app>",
 	"type": "module",
 	"exports": {
 		".": {

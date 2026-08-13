@@ -179,9 +179,9 @@ describe("XApiProvider", () => {
 				"https://api.twitter.com/2/users/me?user.fields=name,username",
 			);
 			expect(call[1]?.method).toBe("GET");
-			expect((call[1]?.headers as Record<string, string>).Authorization).toBe(
-				"Bearer at-test-mno345pqr678",
-			);
+			expect(
+				(call[1]?.headers as Record<string, string> | undefined)?.Authorization,
+			).toBe("Bearer at-test-mno345pqr678");
 		});
 
 		it("returns error with detail message on 401", async () => {

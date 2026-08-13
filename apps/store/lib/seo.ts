@@ -3,6 +3,11 @@ import { db } from "db";
 import env from "env";
 import { cache } from "react";
 import { getBaseUrl } from "utils/url";
+import type {
+	LlmsBlogPost,
+	LlmsCollection,
+	LlmsProduct,
+} from "../../../packages/lib/src/llms-content";
 import { resolveTemplatePath } from "./template-path";
 
 const getStoreConfigCached = cache(async () =>
@@ -480,18 +485,12 @@ export async function fetchPreorderCampaignIdsForSitemap(): Promise<
 
 // ── llms-full.txt content fetchers ──────────────────────────────────────────
 
-export type {
-	LlmsBlogPost,
-	LlmsCollection,
-	LlmsProduct,
-} from "lib/llms-content";
+export type { LlmsBlogPost, LlmsCollection, LlmsProduct };
 
 /**
  * Fetch all active products for llms-full.txt.
  */
-export async function fetchProductsForLlms(): Promise<
-	import("lib/llms-content").LlmsProduct[]
-> {
+export async function fetchProductsForLlms(): Promise<LlmsProduct[]> {
 	const moduleId = await getProductsModuleId();
 	if (!moduleId) return [];
 
@@ -526,9 +525,7 @@ export async function fetchProductsForLlms(): Promise<
 /**
  * Fetch all visible collections for llms-full.txt.
  */
-export async function fetchCollectionsForLlms(): Promise<
-	import("lib/llms-content").LlmsCollection[]
-> {
+export async function fetchCollectionsForLlms(): Promise<LlmsCollection[]> {
 	const moduleId = await getProductsModuleId();
 	if (!moduleId) return [];
 
@@ -561,9 +558,7 @@ export async function fetchCollectionsForLlms(): Promise<
 /**
  * Fetch all published blog posts for llms-full.txt.
  */
-export async function fetchBlogPostsForLlms(): Promise<
-	import("lib/llms-content").LlmsBlogPost[]
-> {
+export async function fetchBlogPostsForLlms(): Promise<LlmsBlogPost[]> {
 	const moduleId = await getModuleIdByName("blog");
 	if (!moduleId) return [];
 

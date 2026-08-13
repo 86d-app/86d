@@ -3,7 +3,7 @@
  * Modules depend only on @86d-app/core — this export path gives them
  * chart components without adding recharts to each module individually.
  */
-export {
+import {
 	Area,
 	AreaChart,
 	Bar,
@@ -20,3 +20,21 @@ export {
 	XAxis,
 	YAxis,
 } from "recharts";
+
+export {
+	Area,
+	AreaChart,
+	Bar,
+	BarChart,
+	CartesianGrid,
+	Cell,
+	Legend,
+	Line,
+	LineChart,
+	Pie,
+	PieChart,
+	ResponsiveContainer,
+	Tooltip,
+	XAxis,
+	YAxis,
+};

@@ -65,6 +65,8 @@ const STRIPE_API_VERSION = "2026-02-25.clover";
 export interface StripePaymentConnectionProviderOptions {
 	/** Immutable Store-owned Payment Connection identity. */
 	connectionId: string;
+	/** Stripe account ID the credential was verified to authorize. */
+	providerAccountId: string;
 	/** Server-side Stripe secret key. */
 	apiKey: string;
 	mode: PaymentConnectionMode;
@@ -182,6 +184,7 @@ export class StripePaymentConnectionProvider
 		"refund",
 	] as const;
 	readonly connectionId: string;
+	readonly providerAccountId: string;
 	readonly mode: PaymentConnectionMode;
 
 	private readonly apiKey: string;
@@ -190,6 +193,12 @@ export class StripePaymentConnectionProvider
 	constructor(options: StripePaymentConnectionProviderOptions) {
 		if (options.connectionId.trim().length === 0) {
 			throw new Error("Stripe Payment Connection ID is required");
+		}
+		if (
+			options.providerAccountId.trim().length === 0 ||
+			options.providerAccountId.trim().length > 255
+		) {
+			throw new Error("Stripe provider account ID is required");
 		}
 		if (options.apiKey.trim().length === 0) {
 			throw new Error("Stripe API key is required");
@@ -204,6 +213,7 @@ export class StripePaymentConnectionProvider
 			);
 		}
 		this.connectionId = options.connectionId;
+		this.providerAccountId = options.providerAccountId.trim();
 		this.apiKey = options.apiKey;
 		this.mode = options.mode;
 	}

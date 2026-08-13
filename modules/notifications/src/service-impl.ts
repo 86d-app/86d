@@ -95,52 +95,54 @@ export function createNotificationsController(
 			() => ({ email: undefined, phone: undefined }),
 		);
 
-		if (channel === "email" || channel === "both") {
-			if (emailProvider && contact.email) {
-				const htmlBody = `<div><h2>${escapeHtml(notification.title)}</h2><p>${escapeHtml(notification.body)}</p>${
-					notification.actionUrl
-						? `<p><a href="${escapeHtml(notification.actionUrl)}">View details</a></p>`
-						: ""
-				}</div>`;
+		if (
+			(channel === "email" || channel === "both") &&
+			emailProvider &&
+			contact.email
+		) {
+			const htmlBody = `<div><h2>${escapeHtml(notification.title)}</h2><p>${escapeHtml(notification.body)}</p>${
+				notification.actionUrl
+					? `<p><a href="${escapeHtml(notification.actionUrl)}">View details</a></p>`
+					: ""
+			}</div>`;
 
-				const result = await emailProvider
-					.sendEmail({
-						to: contact.email,
-						subject: notification.title,
-						html: htmlBody,
-						text: `${notification.title}\n\n${notification.body}${notification.actionUrl ? `\n\n${notification.actionUrl}` : ""}`,
-						tags: [
-							{ name: "type", value: notification.type },
-							{ name: "notification_id", value: notification.id },
-						],
-					})
-					.catch(
-						(err: Error): DeliveryResult => ({
-							success: false,
-							error: err.message,
-						}),
-					);
+			const result = await emailProvider
+				.sendEmail({
+					to: contact.email,
+					subject: notification.title,
+					html: htmlBody,
+					text: `${notification.title}\n\n${notification.body}${notification.actionUrl ? `\n\n${notification.actionUrl}` : ""}`,
+					tags: [
+						{ name: "type", value: notification.type },
+						{ name: "notification_id", value: notification.id },
+					],
+				})
+				.catch(
+					(err: Error): DeliveryResult => ({
+						success: false,
+						error: err.message,
+					}),
+				);
 
-				// Record delivery attempt — store external ID for webhook lookup
-				await data.upsert("notification", notification.id, {
-					...notification,
-					deliveryExternalId: result.messageId ?? null,
-					deliveryStatus: result.success
-						? ("sent" satisfies DeliveryStatus)
-						: ("failed" satisfies DeliveryStatus),
-					metadata: {
-						...notification.metadata,
-						emailDelivery: {
-							success: result.success,
-							messageId: result.messageId,
-							error: result.error,
-							sentAt: new Date().toISOString(),
-						},
+			// Record delivery attempt — store external ID for webhook lookup
+			await data.upsert("notification", notification.id, {
+				...notification,
+				deliveryExternalId: result.messageId ?? null,
+				deliveryStatus: result.success
+					? ("sent" satisfies DeliveryStatus)
+					: ("failed" satisfies DeliveryStatus),
+				metadata: {
+					...notification.metadata,
+					emailDelivery: {
+						success: result.success,
+						messageId: result.messageId,
+						error: result.error,
+						sentAt: new Date().toISOString(),
 					},
-				} as Record<string, unknown>);
+				},
+			} as Record<string, unknown>);
 
-				if (channel === "email") return result;
-			}
+			if (channel === "email") return result;
 		}
 
 		if (channel === "both" && smsProvider && contact.phone) {

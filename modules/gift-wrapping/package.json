@@ -10,14 +10,14 @@
 		"packaging",
 		"gift-message"
 	],
-	"license": "MIT",
-	"author": "86d <chat@86d.app>",
+	"homepage": "https://86d.app",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/86d-app/86d.git",
 		"directory": "modules/gift-wrapping"
 	},
-	"homepage": "https://86d.app",
+	"license": "MIT",
+	"author": "86d <chat@86d.app>",
 	"type": "module",
 	"exports": {
 		".": {

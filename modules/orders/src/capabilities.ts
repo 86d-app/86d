@@ -111,7 +111,7 @@ export const orderLineQuantityValidateProvider = provideCapability(
 				requestedQuantities.set(item.orderItemId, requested);
 			}
 
-			const items = [];
+			const items: OrderLineValidationDecision["items"] = [];
 			for (const [orderItemId, requestedQuantity] of requestedQuantities) {
 				const orderedQuantity = orderedQuantities.get(orderItemId);
 				if (orderedQuantity === undefined) {

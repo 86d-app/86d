@@ -6,29 +6,26 @@ import type {
 import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
 import { createAdminEndpointsWithSettings } from "./admin/endpoints/routes";
 import { createTaxQuoteProvider } from "./capabilities";
-import { createTaxQuoteV2Provider } from "./capabilities-v2";
-import { TaxJarQuoteProviderV2 } from "./provider-v2";
+import {
+	createTaxQuoteV2Provider,
+	handleTaxQuoteV2,
+	taxQuoteV2Capability,
+} from "./capabilities-v2";
+import {
+	minorUnitsToTaxJarMajorUnits,
+	TaxJarQuoteProviderV2,
+	taxJarMajorUnitsToMinorUnits,
+} from "./provider-v2";
 import { taxSchema } from "./schema";
 import { createTaxController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints/routes";
 
 export type { TaxQuoteV2Dependencies } from "./capabilities-v2";
-export {
-	createTaxQuoteV2Provider,
-	handleTaxQuoteV2,
-	taxQuoteV2Capability,
-} from "./capabilities-v2";
 export type {
 	TaxJarQuoteProviderV2Options,
 	TaxProviderV2Result,
 	TaxQuoteProviderV2,
 } from "./provider-v2";
-export {
-	minorUnitsToTaxJarMajorUnits,
-	TaxJarQuoteProviderV2,
-	taxJarMajorUnitsToMinorUnits,
-} from "./provider-v2";
-
 export type {
 	CreateTaxCategoryParams,
 	CreateTaxExemptionParams,
@@ -51,6 +48,14 @@ export type {
 	TaxTransaction,
 	UpdateTaxRateParams,
 } from "./service";
+export {
+	createTaxQuoteV2Provider,
+	handleTaxQuoteV2,
+	minorUnitsToTaxJarMajorUnits,
+	TaxJarQuoteProviderV2,
+	taxJarMajorUnitsToMinorUnits,
+	taxQuoteV2Capability,
+};
 
 export interface TaxOptions extends ModuleConfig {
 	/** Whether to tax shipping by default. @default false */

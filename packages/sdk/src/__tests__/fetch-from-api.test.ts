@@ -140,23 +140,26 @@ describe("fetchFromApi", () => {
 		],
 		["provider secrets", { providerSecrets: { stripe: "canary" } }],
 		["webhook settings", { webhookSettings: { signingSecret: "canary" } }],
-	])("fails closed when a compromised response includes %s", async (_label, forbiddenField) => {
-		const secretCanary = "sk_live_control_plane_must_not_reach_runtime";
-		globalThis.fetch = vi.fn().mockResolvedValue({
-			ok: true,
-			json: () =>
-				Promise.resolve({
-					...createValidApiResponse(),
-					...JSON.parse(
-						JSON.stringify(forbiddenField).replaceAll("canary", secretCanary),
-					),
-				}),
-		});
+	])(
+		"fails closed when a compromised response includes %s",
+		async (_label, forbiddenField) => {
+			const secretCanary = "sk_live_control_plane_must_not_reach_runtime";
+			globalThis.fetch = vi.fn().mockResolvedValue({
+				ok: true,
+				json: () =>
+					Promise.resolve({
+						...createValidApiResponse(),
+						...JSON.parse(
+							JSON.stringify(forbiddenField).replaceAll("canary", secretCanary),
+						),
+					}),
+			});
 
-		await expect(
-			fetchFromApi("abc-123", "https://api.86d.app"),
-		).rejects.toThrow("Invalid store config from 86d API");
-	});
+			await expect(
+				fetchFromApi("abc-123", "https://api.86d.app"),
+			).rejects.toThrow("Invalid store config from 86d API");
+		},
+	);
 
 	it("fills in default theme variables when API response omits them", async () => {
 		const responseWithoutVariables = {
@@ -411,40 +414,40 @@ describe("fetchFromApi", () => {
 			recheckAt: "2026-09-13T12:00:01.000Z",
 			currentPeriodEndsAt: "2026-09-13T12:00:00.000Z",
 		},
-	])("rejects an availability recheck that $label", async ({
-		recheckAt,
-		currentPeriodEndsAt,
-	}) => {
-		globalThis.fetch = vi.fn().mockResolvedValue({
-			ok: true,
-			json: () =>
-				Promise.resolve({
-					...createValidApiResponse(),
-					theme: "brisa",
-					favicon: "/assets/favicon.svg",
-					variables: undefined,
-					contractVersion: 2,
-					entitlement: {
-						version: 1,
-						catalogVersion: 1,
-						plan: "launch",
-						lifecycle: "active",
-						currentPeriodEndsAt,
-					},
-					commerceAvailability: {
-						version: 1,
-						available: true,
-						reason: "entitlement_active",
-						evaluatedAt: "2026-08-13T12:00:00.000Z",
-						recheckAt,
-					},
-				}),
-		});
+	])(
+		"rejects an availability recheck that $label",
+		async ({ recheckAt, currentPeriodEndsAt }) => {
+			globalThis.fetch = vi.fn().mockResolvedValue({
+				ok: true,
+				json: () =>
+					Promise.resolve({
+						...createValidApiResponse(),
+						theme: "brisa",
+						favicon: "/assets/favicon.svg",
+						variables: undefined,
+						contractVersion: 2,
+						entitlement: {
+							version: 1,
+							catalogVersion: 1,
+							plan: "launch",
+							lifecycle: "active",
+							currentPeriodEndsAt,
+						},
+						commerceAvailability: {
+							version: 1,
+							available: true,
+							reason: "entitlement_active",
+							evaluatedAt: "2026-08-13T12:00:00.000Z",
+							recheckAt,
+						},
+					}),
+			});
 
-		await expect(
-			fetchFromApi("abc-123", "https://api.86d.app"),
-		).rejects.toThrow("Invalid store config from 86d API");
-	});
+			await expect(
+				fetchFromApi("abc-123", "https://api.86d.app"),
+			).rejects.toThrow("Invalid store config from 86d API");
+		},
+	);
 
 	it("bounds an active commerce cache to an earlier scheduled suspension", async () => {
 		globalThis.fetch = vi.fn().mockResolvedValue({

@@ -34,13 +34,14 @@ async function callWebhook(
 	context?: Record<string, unknown>,
 	autoVerify = true,
 ): Promise<Response> {
+	let nextRequest = request;
 	if (autoVerify) {
 		if (!request.headers.has("paypal-auth-algo")) {
 			const headers = new Headers(request.headers);
 			for (const [name, value] of Object.entries(PAYPAL_HEADERS)) {
 				headers.set(name, value);
 			}
-			request = new Request(request, { headers });
+			nextRequest = new Request(request, { headers });
 		}
 		if (!vi.isMockFunction(globalThis.fetch)) {
 			mockPayPalVerification("SUCCESS");
@@ -48,7 +49,10 @@ async function callWebhook(
 	}
 	const h = handler as unknown as Record<string, unknown>;
 	const fn = typeof h.handler === "function" ? h.handler : h;
-	return (fn as CallableFunction)({ request, context }) as Promise<Response>;
+	return (fn as CallableFunction)({
+		request: nextRequest,
+		context,
+	}) as Promise<Response>;
 }
 
 /** Mock fetch to return an OAuth token response and then a verification response. */

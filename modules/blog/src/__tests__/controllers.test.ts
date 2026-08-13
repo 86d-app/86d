@@ -332,7 +332,7 @@ describe("blog controller edge cases", () => {
 
 	describe("getPost / getPostBySlug edge cases", () => {
 		it("returns correct post when many posts exist", async () => {
-			const posts = [];
+			const posts: Awaited<ReturnType<typeof controller.createPost>>[] = [];
 			for (let i = 0; i < 20; i++) {
 				const post = await controller.createPost({
 					title: `Post ${i}`,
@@ -900,7 +900,7 @@ describe("blog controller edge cases", () => {
 
 	describe("data store consistency", () => {
 		it("store is empty after deleting all posts", async () => {
-			const posts = [];
+			const posts: Awaited<ReturnType<typeof controller.createPost>>[] = [];
 			for (let i = 0; i < 3; i++) {
 				const post = await controller.createPost({
 					title: `Post ${i}`,

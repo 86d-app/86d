@@ -447,7 +447,7 @@ describe("subscriptions controllers — edge cases", () => {
 		it("expires multiple past-due subscriptions at once", async () => {
 			const plan = await ctrl.createPlan(planParams({ interval: "day" }));
 
-			const subs = [];
+			const subs: Awaited<ReturnType<typeof ctrl.subscribe>>[] = [];
 			for (let i = 0; i < 3; i++) {
 				subs.push(
 					await ctrl.subscribe({

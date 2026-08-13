@@ -6,22 +6,20 @@ import type {
 	ModuleContext,
 } from "@86d-app/core/types/module";
 import { adminEndpoints } from "./admin/endpoints/routes";
+import { FulfillmentAuthorityError } from "./authority";
 import { fulfillmentCreatedV1 } from "./events";
 import { fulfillmentSchema } from "./schema";
 import { createFulfillmentController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints/routes";
 
-export {
-	FulfillmentAuthorityError,
-	type FulfillmentAuthorityErrorCode,
-} from "./authority";
-export { fulfillmentCreatedV1 } from "./events";
+export type { FulfillmentAuthorityErrorCode } from "./authority";
 export type {
 	Fulfillment,
 	FulfillmentController,
 	FulfillmentItem,
 	FulfillmentStatus,
 } from "./service";
+export { FulfillmentAuthorityError, fulfillmentCreatedV1 };
 
 export interface FulfillmentOptions extends ModuleConfig {
 	/** Auto-transition to "shipped" when tracking is added */

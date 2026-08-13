@@ -9,6 +9,7 @@ async function harness() {
 	const transactions = createMockTransactionRunner({ storeId: "store-1" });
 	await transactions.data.upsert("paymentConnection", "connection-1", {
 		id: "connection-1",
+		providerAccountId: "PAYPAL-MERCHANT-1",
 		name: "Merchant PayPal",
 		normalizedName: "merchant paypal",
 		provider: "paypal",

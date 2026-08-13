@@ -1,8 +1,104 @@
 {
-	"$schema": "https://biomejs.dev/schemas/2.5.0/schema.json",
+	"$schema": "https://biomejs.dev/schemas/2.5.6/schema.json",
+	"linter": {
+		"domains": {
+			"next": "all",
+			"react": "recommended",
+			"tailwind": "all",
+			"turborepo": "all",
+			"types": "all"
+		},
+		"rules": {
+			"complexity": {
+				"useMaxParams": "warn"
+			},
+			"correctness": {
+				"noPrivateImports": "error",
+				"noUnusedImports": {
+					"level": "error",
+					"fix": "safe"
+				},
+				"noUnusedVariables": {
+					"level": "warn",
+					"fix": "safe"
+				},
+				"useExhaustiveDependencies": "warn",
+				"useHookAtTopLevel": "warn"
+			},
+			"nursery": {
+				"recommended": true,
+				"useSortedClasses": {
+					"level": "error",
+					"fix": "safe"
+				}
+			},
+			"performance": {
+				"noAccumulatingSpread": "error",
+				"noBarrelFile": "error",
+				"noDelete": "error",
+				"noImgElement": "warn",
+				"noNamespaceImport": "warn",
+				"noReExportAll": "error"
+			},
+			"security": {
+				"noDangerouslySetInnerHtml": "warn",
+				"noGlobalEval": "error"
+			},
+			"style": {
+				"noEnum": "error",
+				"noExportedImports": "warn",
+				"noInferrableTypes": "error",
+				"noNamespace": "error",
+				"noNonNullAssertion": "error",
+				"noParameterAssign": "error",
+				"noProcessEnv": "warn",
+				"noYodaExpression": "error",
+				"useCollapsedIf": "error",
+				"useFilenamingConvention": {
+					"level": "error",
+					"options": {
+						"filenameCases": [
+							"kebab-case"
+						]
+					}
+				},
+				"useThrowOnlyError": "error"
+			},
+			"suspicious": {
+				"noConsole": {
+					"level": "warn",
+					"options": {
+						"allow": [
+							"error",
+							"warn"
+						]
+					}
+				},
+				"noArrayIndexKey": "warn",
+				"noEvolvingTypes": "error",
+				"noFocusedTests": "off",
+				"noImplicitAnyLet": "error",
+				"noImportCycles": "error",
+				"noTsIgnore": "error",
+				"noUndeclaredEnvVars": "warn",
+				"useErrorMessage": "error"
+			}
+		}
+	},
+	"assist": {
+		"actions": {
+			"source": {
+				"noDuplicateClasses": "on",
+				"organizeImports": "on",
+				"useSortedPackageJson": "on"
+			}
+		}
+	},
 	"overrides": [
 		{
-			"includes": ["apps/store/components/**/*.tsx"],
+			"includes": [
+				"apps/store/components/ui/**"
+			],
 			"linter": {
 				"rules": {
 					"a11y": {
@@ -13,93 +109,64 @@
 		},
 		{
 			"includes": [
-				"packages/core/src/api.ts",
-				"packages/core/src/zod.ts",
-				"packages/core/src/state.ts",
-				"packages/core/src/charts.ts",
-				"packages/core/src/client/react-query.ts",
-				"packages/runtime/src/commands.ts",
-				"modules/*/src/index.ts",
-				"apps/store/app/**/page.tsx",
-				"apps/store/instrumentation.ts",
-				"apps/store/components/ui/direction.tsx",
-				"tests/e2e/fixtures/test-fixtures.ts"
+				"**/__tests__/**",
+				"**/*.test.ts",
+				"**/*.test.tsx",
+				"**/e2e/**"
+			],
+			"linter": {
+				"domains": {
+					"test": "all",
+					"playwright": "all"
+				},
+				"rules": {
+					"nursery": {
+						"noConditionalExpect": "warn",
+						"noPlaywrightNetworkidle": "warn",
+						"noPlaywrightWaitForSelector": "warn",
+						"noPlaywrightWaitForTimeout": "warn",
+						"useConsistentTestIt": "off",
+						"useExpect": "warn"
+					},
+					"style": {
+						"noProcessEnv": "off"
+					},
+					"suspicious": {
+						"noConsole": "off",
+						"noFocusedTests": "error",
+						"noSkippedTests": "warn"
+					}
+				}
+			}
+		},
+		{
+			"includes": [
+				"scripts/**",
+				"**/*.config.ts",
+				"packages/env/**",
+				"packages/utils/src/logger.ts"
 			],
 			"linter": {
 				"rules": {
-					"performance": {
-						"noBarrelFile": "off"
+					"style": {
+						"noProcessEnv": "off"
+					},
+					"suspicious": {
+						"noConsole": "off"
 					}
 				}
 			}
 		}
 	],
-	"linter": {
-		"rules": {
-			"correctness": {
-				"noUnusedVariables": {
-					"level": "warn",
-					"fix": "safe"
-				},
-				"noUnusedImports": {
-					"level": "error",
-					"fix": "safe"
-				}
-			},
-			"nursery": {
-				"recommended": false,
-				"useSortedClasses": {
-					"level": "error",
-					"fix": "safe"
-				},
-				"noUselessTypeConversion": "warn",
-				"useExpect": "error",
-				"noIdenticalTestTitle": "error",
-				"useConsistentTestIt": "off",
-				"useTestHooksOnTop": "error",
-				"useTestHooksInOrder": "warn",
-				"noPlaywrightWaitForTimeout": "error",
-				"noPlaywrightForceOption": "error",
-				"noPlaywrightWaitForSelector": "warn",
-				"noPlaywrightPagePause": "error",
-				"noPlaywrightElementHandle": "error",
-				"noPlaywrightEval": "error"
-			},
-			"performance": {
-				"noBarrelFile": "error",
-				"noReExportAll": "error",
-				"noDelete": "warn"
-			},
-			"style": {
-				"noNonNullAssertion": "warn",
-				"useImportType": "error",
-				"useExportType": "error",
-				"noEnum": "error",
-				"useNodejsImportProtocol": "error"
-			},
-			"suspicious": {
-				"noDoubleEquals": "error",
-				"noSkippedTests": "warn",
-				"noFocusedTests": "error",
-				"noEvolvingTypes": "warn"
-			},
-			"security": {
-				"noDangerouslySetInnerHtml": "warn"
-			},
-			"a11y": {
-				"noSvgWithoutTitle": "warn"
-			}
-		}
-	},
 	"files": {
 		"includes": [
 			"apps/**/*",
 			"modules/**/*",
 			"packages/**/*",
-			"internals/**/*",
-			"templates/**/*",
-			"tests/**/*",
 			"scripts/**/*",
+			"tests/**/*",
+			"templates/**/*",
+			"internals/**/*",
 			"!**/dist",
 			"!**/.dist",
 			"!**/.turbo",
@@ -107,7 +174,10 @@
 			"!**/.next",
 			"!**/.cache",
 			"!**/node_modules",
-			"!**/src/prisma"
+			"!**/src/prisma",
+			"!**/src/prisma-edge",
+			"!**/e2e/.results",
+			"!**/e2e/.auth"
 		]
 	},
 	"css": {

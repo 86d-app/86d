@@ -4,6 +4,7 @@ export const paymentsSchema = {
 	paymentConnection: {
 		fields: {
 			id: { type: "string", required: true },
+			providerAccountId: { type: "string", required: true },
 			name: { type: "string", required: true },
 			normalizedName: { type: "string", required: true, index: true },
 			provider: { type: "string", required: true },

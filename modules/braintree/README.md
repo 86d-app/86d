@@ -60,9 +60,13 @@ const store = createStore({
 ## Payment Connection v2 adapter
 
 The module also exports `createBraintreePaymentConnectionProvider`, a GraphQL
-adapter bound to one immutable Connection ID. It is intentionally not registered
-by the legacy module initializer while Checkout migration and durable webhook
-ingress remain contained.
+adapter bound to one immutable Connection ID and server-provisioned Braintree
+merchant ID (`providerAccountId`). The host must verify that its credential
+authorizes that merchant before binding the adapter. Credential rotation cannot
+rebind historical work to another merchant because the Payment owner requires
+that identity to match its durable Connection. It is intentionally not registered by the legacy module
+initializer while Checkout migration and durable webhook ingress remain
+contained.
 
 The v2 adapter starts with authorization; it does not advertise or execute an
 `intent` operation because doing so would create an unrecorded financial hold.

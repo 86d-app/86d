@@ -190,7 +190,7 @@ describe("wishlist controller edge cases", () => {
 
 	describe("getItem edge cases", () => {
 		it("returns correct item when many items exist", async () => {
-			const items = [];
+			const items: Awaited<ReturnType<typeof controller.addItem>>[] = [];
 			for (let i = 0; i < 10; i++) {
 				const item = await controller.addItem({
 					customerId: `cust_${i}`,

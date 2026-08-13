@@ -3,9 +3,6 @@
 	"version": "0.0.4",
 	"private": true,
 	"type": "module",
-	"files": [
-		"dist"
-	],
 	"exports": {
 		"./adapters": {
 			"types": "./src/adapters.ts",
@@ -68,6 +65,9 @@
 			"default": "./src/universal-data-service.ts"
 		}
 	},
+	"files": [
+		"dist"
+	],
 	"scripts": {
 		"build": "tsc",
 		"check": "biome check src",

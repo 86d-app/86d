@@ -6,28 +6,28 @@ import type {
 	ModuleContext,
 } from "@86d-app/core/types/module";
 import { adminEndpoints } from "./admin/endpoints/routes";
-import { returnRequestedV1 } from "./events";
-import { returnsSchema } from "./schema";
-import { createReturnController } from "./service-impl";
-import { storeEndpoints } from "./store/endpoints/routes";
-
-export {
-	type AuthoritativeReturnRequest,
+import {
 	authoritativeReturnRequestSchema,
-	type RequestReturnInput,
-	type RequestReturnResult,
 	ReturnAuthorityError,
-	type ReturnAuthorityErrorCode,
 	requestAuthoritativeReturn,
 	requestReturnInputSchema,
 } from "./authority";
-export {
+import {
 	returnConditionSnapshotSchema,
 	returnReasonSnapshotSchema,
 	returnRequestedV1,
 	returnResolutionSchema,
 } from "./events";
+import { returnsSchema } from "./schema";
+import { createReturnController } from "./service-impl";
+import { storeEndpoints } from "./store/endpoints/routes";
 
+export type {
+	AuthoritativeReturnRequest,
+	RequestReturnInput,
+	RequestReturnResult,
+	ReturnAuthorityErrorCode,
+} from "./authority";
 export type {
 	CreateReturnItemParams,
 	CreateReturnParams,
@@ -41,6 +41,16 @@ export type {
 	ReturnStatus,
 	ReturnSummary,
 } from "./service";
+export {
+	authoritativeReturnRequestSchema,
+	ReturnAuthorityError,
+	requestAuthoritativeReturn,
+	requestReturnInputSchema,
+	returnConditionSnapshotSchema,
+	returnReasonSnapshotSchema,
+	returnRequestedV1,
+	returnResolutionSchema,
+};
 
 export interface ReturnsOptions extends ModuleConfig {
 	/**

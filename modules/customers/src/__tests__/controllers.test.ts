@@ -1123,7 +1123,7 @@ describe("customer controllers — edge cases & interactions", () => {
 		});
 
 		it("topCustomers sorted by balance desc, limited to 10", async () => {
-			const customers = [];
+			const customers: Awaited<ReturnType<typeof createTestCustomer>>[] = [];
 			for (let i = 0; i < 12; i++) {
 				const c = await createTestCustomer({
 					email: `top${i}@test.com`,

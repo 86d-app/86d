@@ -167,7 +167,7 @@ describe("pages controller edge cases", () => {
 		});
 
 		it("returns correct page when many pages exist", async () => {
-			const pages = [];
+			const pages: Awaited<ReturnType<typeof controller.createPage>>[] = [];
 			for (let i = 0; i < 20; i++) {
 				const page = await controller.createPage({
 					title: `Page ${i}`,
@@ -785,7 +785,7 @@ describe("pages controller edge cases", () => {
 		});
 
 		it("handles concurrent publish operations on different pages", async () => {
-			const pages = [];
+			const pages: Awaited<ReturnType<typeof controller.createPage>>[] = [];
 			for (let i = 0; i < 5; i++) {
 				const page = await controller.createPage({
 					title: `Page ${i}`,
@@ -803,7 +803,7 @@ describe("pages controller edge cases", () => {
 		});
 
 		it("handles concurrent deletes on different pages", async () => {
-			const pages = [];
+			const pages: Awaited<ReturnType<typeof controller.createPage>>[] = [];
 			for (let i = 0; i < 5; i++) {
 				const page = await controller.createPage({
 					title: `Page ${i}`,
@@ -825,7 +825,7 @@ describe("pages controller edge cases", () => {
 
 	describe("data store consistency", () => {
 		it("store count matches expected after create/delete cycle", async () => {
-			const pages = [];
+			const pages: Awaited<ReturnType<typeof controller.createPage>>[] = [];
 			for (let i = 0; i < 5; i++) {
 				const page = await controller.createPage({
 					title: `Page ${i}`,

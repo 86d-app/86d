@@ -4,15 +4,14 @@ import type {
 	ModuleContext,
 } from "@86d-app/core/types/module";
 import { adminEndpoints } from "./admin/endpoints/routes";
-import { inventoryStockAdjustedAudit } from "./durable-consumers";
+import {
+	INVENTORY_STOCK_ADJUSTED_CONSUMER,
+	inventoryStockAdjustedAudit,
+} from "./durable-consumers";
 import { auditLogSchema } from "./schema";
 import { createAuditLogController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints/routes";
 
-export {
-	INVENTORY_STOCK_ADJUSTED_CONSUMER,
-	inventoryStockAdjustedAudit,
-} from "./durable-consumers";
 export type {
 	ActorType,
 	AuditAction,
@@ -22,6 +21,7 @@ export type {
 	AuditSummary,
 	CreateAuditEntryParams,
 } from "./service";
+export { INVENTORY_STOCK_ADJUSTED_CONSUMER, inventoryStockAdjustedAudit };
 
 export interface AuditLogOptions extends ModuleConfig {
 	/**

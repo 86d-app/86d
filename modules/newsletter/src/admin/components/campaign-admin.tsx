@@ -1,7 +1,7 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client/provider";
-import { useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import CampaignAdminTemplate from "./campaign-admin.mdx";
 
 interface Campaign {
@@ -496,7 +496,7 @@ export function CampaignAdmin() {
 
 	const subtitle = `${stats?.total ?? 0} campaign${stats?.total === 1 ? "" : "s"}`;
 
-	let modalContent = null;
+	let modalContent: ReactNode = null;
 	if (modal?.type === "create") {
 		modalContent = (
 			<CreateCampaignModal

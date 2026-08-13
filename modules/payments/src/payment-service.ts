@@ -658,11 +658,15 @@ export async function assertPaymentOperationClaimableLocked(
 		payload: PaymentOperationPayload;
 		sourceOperationId?: string | undefined;
 	}>,
-	pending: readonly PendingPaymentOperationClaim[],
+	loadPending: () => Promise<readonly PendingPaymentOperationClaim[]>,
 ): Promise<PaymentAggregate> {
 	const payment = requirePayment(
 		await lockPayment(transaction, input.paymentId),
 	);
+	// Read reservations only after the Payment owner row is locked. Otherwise two
+	// distinct caller keys can both observe an empty sibling set before they
+	// serialize, allowing both provider calls to escape the transaction.
+	const pending = await loadPending();
 	assertIdentity(
 		payment,
 		input.connectionId,

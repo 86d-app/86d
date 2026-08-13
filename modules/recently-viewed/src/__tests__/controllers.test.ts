@@ -550,7 +550,7 @@ describe("createRecentlyViewedController – edge cases", () => {
 		});
 
 		it("delete reduces popular product view count", async () => {
-			const views = [];
+			const views: Awaited<ReturnType<typeof controller.trackView>>[] = [];
 			for (let i = 0; i < 3; i++) {
 				views.push(
 					await controller.trackView(

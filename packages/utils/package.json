@@ -23,17 +23,17 @@
 	},
 	"scripts": {
 		"build": "tsc",
-		"test": "vitest run",
 		"check": "biome check src",
 		"check:fix": "biome check --write --unsafe src",
 		"clean": "git clean -xdf .cache .turbo dist node_modules",
+		"test": "vitest run",
 		"typecheck": "tsc --noEmit --emitDeclarationOnly false"
+	},
+	"dependencies": {
+		"winston": "3.19.0"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "catalog:",
 		"typescript": "catalog:"
-	},
-	"dependencies": {
-		"winston": "3.19.0"
 	}
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getStoreName } from "~/lib/seo";
+import CollectionsPageClient from "./collections-page-client";
 
 export async function generateMetadata(): Promise<Metadata> {
 	const storeName = await getStoreName();
@@ -9,4 +10,6 @@ export async function generateMetadata(): Promise<Metadata> {
 	};
 }
 
-export { default } from "./collections-page-client";
+export default function CollectionsPage() {
+	return <CollectionsPageClient />;
+}

@@ -8,7 +8,7 @@ import {
 import { sanitizeText } from "@86d-app/core/sanitize";
 import { z } from "@86d-app/core/zod";
 import { isCapabilityUnavailable } from "../../capability-failures";
-import type { CheckoutController } from "../../service";
+import type { CheckoutController, CheckoutLineItem } from "../../service";
 import { createGuestProofMetadata, setGuestProofCookie } from "./guest-proof";
 
 const addressSchema = z.object({
@@ -96,7 +96,7 @@ export const createSession = createStoreEndpoint(
 			return { error: "Cart is empty", status: 400 };
 		}
 
-		const authoritativeLineItems = [];
+		const authoritativeLineItems: CheckoutLineItem[] = [];
 		for (const item of snapshot.decision.items) {
 			const resolved = await ctx.context.capabilities.invoke(
 				productResolveCapability,

@@ -287,7 +287,7 @@ describe("notifications — maxPerCustomer enforcement", () => {
 		});
 
 		// Create 5 notifications with staggered timestamps
-		const notifications = [];
+		const notifications: Awaited<ReturnType<typeof controller.create>>[] = [];
 		for (let i = 0; i < 5; i++) {
 			const n = await controller.create({
 				customerId: "cust-1",

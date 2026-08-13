@@ -82,7 +82,7 @@ if (publishableVersions.length === 0) {
 }
 
 // Use the highest version as the canonical version
-const canonical = publishableVersions
+const [canonical] = publishableVersions
 	.sort((a, b) => {
 		const [ma, mi, pa] = a.split(".").map(Number);
 		const [mb, mib, pb] = b.split(".").map(Number);
@@ -90,7 +90,11 @@ const canonical = publishableVersions
 		if (mi !== mib) return mi - mib;
 		return pa - pb;
 	})
-	.at(-1)!;
+	.slice(-1);
+if (!canonical) {
+	console.error("No publishable packages found");
+	process.exit(1);
+}
 
 // Determine target version
 let targetVersion: string;

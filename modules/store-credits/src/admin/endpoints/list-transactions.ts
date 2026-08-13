@@ -1,6 +1,6 @@
 import { createAdminEndpoint } from "@86d-app/core/api";
 import { z } from "@86d-app/core/zod";
-import type { StoreCreditController } from "../../service";
+import type { CreditTransaction, StoreCreditController } from "../../service";
 
 export const listAllTransactions = createAdminEndpoint(
 	"/admin/store-credits/transactions",
@@ -44,7 +44,7 @@ export const listAllTransactions = createAdminEndpoint(
 
 		// List all accounts and gather recent transactions
 		const accounts = await controller.listAccounts({ take: 100 });
-		const allTransactions = [];
+		const allTransactions: CreditTransaction[] = [];
 		for (const account of accounts) {
 			const txns = await controller.listTransactions(account.id, {
 				type: ctx.query.type,

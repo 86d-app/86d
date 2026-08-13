@@ -10,8 +10,27 @@ import { createAdminEndpointsWithSettings } from "./admin/endpoints/routes";
 import { createShippingQuoteProvider } from "./capabilities";
 import {
 	createEasyPostShippingConnectionProvider,
+	createShippingConnectionInputSchema,
 	createShippingFoundationController,
+	createShippingQuoteInputSchema,
+	recordShippingLabelInputSchema,
+	recordShippingLabelRefundInputSchema,
+	recordShippingPostageAdjustmentInputSchema,
+	recordShippingTrackingInputSchema,
 	shippingAddressSchema,
+	shippingConnectionCapabilitySchema,
+	shippingConnectionHealthSchema,
+	shippingConnectionLifecycleSchema,
+	shippingConnectionModeSchema,
+	shippingConnectionSchema,
+	shippingLabelRefundSchema,
+	shippingLabelSchema,
+	shippingOptionSchema,
+	shippingParcelPlanSchema,
+	shippingParcelSchema,
+	shippingPostageAdjustmentSchema,
+	shippingQuoteSchema,
+	shippingTrackingSchema,
 } from "./foundation-v2";
 import { shippingSchema } from "./schema";
 import { createShippingController } from "./service-impl";
@@ -40,7 +59,19 @@ export type {
 	ShippingQuote,
 	ShippingTracking,
 } from "./foundation-v2";
-
+export type {
+	CalculatedRate,
+	LiveRate,
+	LiveRateAddress,
+	LiveRateParcel,
+	Shipment,
+	ShipmentStatus,
+	ShippingCarrier,
+	ShippingController,
+	ShippingMethod,
+	ShippingRate,
+	ShippingZone,
+} from "./service";
 export {
 	createEasyPostShippingConnectionProvider,
 	createShippingConnectionInputSchema,
@@ -64,20 +95,7 @@ export {
 	shippingPostageAdjustmentSchema,
 	shippingQuoteSchema,
 	shippingTrackingSchema,
-} from "./foundation-v2";
-export type {
-	CalculatedRate,
-	LiveRate,
-	LiveRateAddress,
-	LiveRateParcel,
-	Shipment,
-	ShipmentStatus,
-	ShippingCarrier,
-	ShippingController,
-	ShippingMethod,
-	ShippingRate,
-	ShippingZone,
-} from "./service";
+};
 
 export interface ShippingOptions extends ModuleConfig {
 	/** Default currency for shipping prices */

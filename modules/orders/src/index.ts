@@ -20,6 +20,7 @@ import {
 	orderPurchaseVerifyProvider,
 } from "./capabilities";
 import { ordersSchema } from "./schema";
+import { RETURN_REASONS } from "./service";
 import { createOrderController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints/routes";
 
@@ -54,7 +55,7 @@ export type {
 	UpdateReturnParams,
 } from "./service";
 
-export { RETURN_REASONS } from "./service";
+export { RETURN_REASONS };
 
 export interface OrdersOptions extends ModuleConfig {
 	/**

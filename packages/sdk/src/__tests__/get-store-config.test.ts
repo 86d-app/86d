@@ -31,11 +31,15 @@ describe("getStoreConfig", () => {
 	const originalEnv = { ...process.env };
 
 	beforeEach(() => {
-		delete process.env.STORE_ID;
-		delete process.env["86D_API_URL"];
-		delete process.env["86D_API_KEY"];
-		delete process.env["86D_STORE_ID"];
-		delete process.env["86D_WORKLOAD_CREDENTIAL"];
+		for (const key of [
+			"STORE_ID",
+			"86D_API_URL",
+			"86D_API_KEY",
+			"86D_STORE_ID",
+			"86D_WORKLOAD_CREDENTIAL",
+		] as const) {
+			Reflect.deleteProperty(process.env, key);
+		}
 	});
 
 	afterEach(() => {
@@ -350,33 +354,36 @@ describe("getStoreConfig", () => {
 			"network failure",
 			async () => Promise.reject(new Error("control plane unavailable")),
 		],
-	])("fails closed on managed %s instead of loading a local template", async (_label, exchangeResult) => {
-		const configPath = join(TMP_DIR, "managed-fail-closed.json");
-		writeFileSync(
-			configPath,
-			JSON.stringify({
-				theme: "forbidden-fallback",
-				name: "Must Not Load",
-				favicon: "/fallback.ico",
-				icon: DEFAULT_CONFIG.icon,
-				logo: DEFAULT_CONFIG.logo,
-				variables: DEFAULT_CONFIG.variables,
-			}),
-		);
-		process.env["86D_STORE_ID"] = VALID_UUID;
-		process.env["86D_API_URL"] = "https://api.86d.app";
-		process.env["86D_WORKLOAD_CREDENTIAL"] =
-			`86d_wc_abcdefghijklmnopqrstuvwx.${"s".repeat(43)}`;
-		globalThis.fetch = vi.fn(exchangeResult);
+	])(
+		"fails closed on managed %s instead of loading a local template",
+		async (_label, exchangeResult) => {
+			const configPath = join(TMP_DIR, "managed-fail-closed.json");
+			writeFileSync(
+				configPath,
+				JSON.stringify({
+					theme: "forbidden-fallback",
+					name: "Must Not Load",
+					favicon: "/fallback.ico",
+					icon: DEFAULT_CONFIG.icon,
+					logo: DEFAULT_CONFIG.logo,
+					variables: DEFAULT_CONFIG.variables,
+				}),
+			);
+			process.env["86D_STORE_ID"] = VALID_UUID;
+			process.env["86D_API_URL"] = "https://api.86d.app";
+			process.env["86D_WORKLOAD_CREDENTIAL"] =
+				`86d_wc_abcdefghijklmnopqrstuvwx.${"s".repeat(43)}`;
+			globalThis.fetch = vi.fn(exchangeResult);
 
-		await expect(
-			getStoreConfig({
-				templatePath: configPath,
-				fallbackToTemplateOnError: true,
-			}),
-		).rejects.toThrow();
-		expect(globalThis.fetch).toHaveBeenCalledTimes(1);
-	});
+			await expect(
+				getStoreConfig({
+					templatePath: configPath,
+					fallbackToTemplateOnError: true,
+				}),
+			).rejects.toThrow();
+			expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+		},
+	);
 
 	it("falls back to template on API error when configured", async () => {
 		const configPath = join(TMP_DIR, "fallback-config.json");

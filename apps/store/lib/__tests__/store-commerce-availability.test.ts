@@ -125,26 +125,25 @@ describe("Store-scoped commerce availability", () => {
 		{ status: "trialing", isActive: true, expected: true },
 		{ status: "past_due", isActive: true, expected: false },
 		{ status: "active", isActive: false, expected: false },
-	] as const)("contains legacy billing unless active and current: $status/$isActive", ({
-		status,
-		isActive,
-		expected,
-	}) => {
-		const result = evaluateManagedCommerceConfig(
-			{
-				...DEFAULT_CONFIG,
-				billing: {
-					plan: "legacy",
-					status,
-					isActive,
-					periodEnd: "2026-08-14T12:00:00.000Z",
+	] as const)(
+		"contains legacy billing unless active and current: $status/$isActive",
+		({ status, isActive, expected }) => {
+			const result = evaluateManagedCommerceConfig(
+				{
+					...DEFAULT_CONFIG,
+					billing: {
+						plan: "legacy",
+						status,
+						isActive,
+						periodEnd: "2026-08-14T12:00:00.000Z",
+					},
 				},
-			},
-			NOW,
-		);
+				NOW,
+			);
 
-		expect(result.available).toBe(expected);
-	});
+			expect(result.available).toBe(expected);
+		},
+	);
 });
 
 describe("Store Runtime commerce gate resolution", () => {

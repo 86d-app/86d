@@ -251,25 +251,27 @@ async function simulateCompleteWithStoreCredit(
 	if (!existing) return { error: "Not found", status: 404 };
 
 	let actualStoreCreditAmount = existing.storeCreditAmount;
-	if (existing.customerId && existing.storeCreditAmount > 0) {
-		if (opts?.storeCreditCtrl) {
-			try {
-				const debitResult = await opts.storeCreditCtrl.debit({
-					customerId: existing.customerId,
-					amount: existing.storeCreditAmount,
-					reason: "order_payment",
-					description: `Store credit applied to checkout ${existing.id}`,
-					referenceType: "checkout_session",
-					referenceId: existing.id,
-				});
-				actualStoreCreditAmount = debitResult.amount;
-			} catch {
-				return {
-					error:
-						"Store credit could not be applied. Your balance may be insufficient or your account may be frozen.",
-					status: 422,
-				};
-			}
+	if (
+		existing.customerId &&
+		existing.storeCreditAmount > 0 &&
+		opts?.storeCreditCtrl
+	) {
+		try {
+			const debitResult = await opts.storeCreditCtrl.debit({
+				customerId: existing.customerId,
+				amount: existing.storeCreditAmount,
+				reason: "order_payment",
+				description: `Store credit applied to checkout ${existing.id}`,
+				referenceType: "checkout_session",
+				referenceId: existing.id,
+			});
+			actualStoreCreditAmount = debitResult.amount;
+		} catch {
+			return {
+				error:
+					"Store credit could not be applied. Your balance may be insufficient or your account may be frozen.",
+				status: 422,
+			};
 		}
 	}
 

@@ -137,19 +137,20 @@ describe("ModuleRegistry capability admission", () => {
 				}),
 			],
 		},
-	])("rejects a $name required capability before initialization effects", async ({
-		modules,
-	}) => {
-		const adapters = config();
-		const registry = new ModuleRegistry(modules, "store-1", adapters);
+	])(
+		"rejects a $name required capability before initialization effects",
+		async ({ modules }) => {
+			const adapters = config();
+			const registry = new ModuleRegistry(modules, "store-1", adapters);
 
-		await expect(registry.boot()).rejects.toMatchObject({
-			name: "CapabilityContractError",
-		});
-		expect(adapters.resolveStoreId).not.toHaveBeenCalled();
-		expect(adapters.upsertModuleRecord).not.toHaveBeenCalled();
-		expect(adapters.createDataService).not.toHaveBeenCalled();
-	});
+			await expect(registry.boot()).rejects.toMatchObject({
+				name: "CapabilityContractError",
+			});
+			expect(adapters.resolveStoreId).not.toHaveBeenCalled();
+			expect(adapters.upsertModuleRecord).not.toHaveBeenCalled();
+			expect(adapters.createDataService).not.toHaveBeenCalled();
+		},
+	);
 
 	it("allows an absent optional capability and returns explicit unavailability", async () => {
 		const registry = new ModuleRegistry(

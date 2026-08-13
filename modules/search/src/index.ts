@@ -11,7 +11,6 @@ import { createSearchController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints/routes";
 
 export type { EmbeddingProvider } from "./embedding-provider";
-export { OpenAIEmbeddingProvider } from "./embedding-provider";
 export type { MeiliSearchProvider } from "./meilisearch-provider";
 export type {
 	SearchClick,
@@ -24,6 +23,7 @@ export type {
 	SearchSortField,
 	SearchSynonym,
 } from "./service";
+export { OpenAIEmbeddingProvider };
 
 export interface SearchOptions extends ModuleConfig {
 	/** Maximum number of search results per query */

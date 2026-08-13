@@ -120,22 +120,19 @@ function createFetchFn(options: HookOptions) {
 		const headers = await getHeaders(config);
 		const isBodyMethod = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
 
-		// Extract params and body/query from input
+		// Extract params and body/query from input, omitting an undefined params key
 		const params = input?.params;
+		const withoutUndefinedParams = (value: typeof input) => {
+			if (value == null || value.params !== undefined) return value;
+			const { params: _params, ...rest } = value;
+			return rest;
+		};
 		const body = isBodyMethod
-			? params
-				? { ...input, params: undefined }
-				: input
+			? withoutUndefinedParams(params ? { ...input, params: undefined } : input)
 			: undefined;
 		const query = !isBodyMethod
-			? params
-				? { ...input, params: undefined }
-				: input
+			? withoutUndefinedParams(params ? { ...input, params: undefined } : input)
 			: undefined;
-
-		// Clean up undefined params
-		if (body?.params === undefined) delete body?.params;
-		if (query?.params === undefined) delete query?.params;
 
 		const url = buildUrl(config.baseURL, path, params, query);
 

@@ -269,27 +269,30 @@ describe("Checkout Finalization attempts", () => {
 			"needs_attention",
 			{ type: "needs_attention", reason: { code: "MANUAL_REVIEW" } },
 		],
-	] as const)("persists a %s outcome without reporting success", async (_label, outcome) => {
-		const storage = createTransactionTestStore();
-		await seedCheckout(storage);
-		const store = createCheckoutFinalizationStore(storage.transactions);
-		const admitted = await store.admit(admission());
-		const result = await store.recordAttempt({
-			finalizationId: admitted.finalization.id,
-			attemptKey: `attempt-${outcome.type}`,
-			expectedAttemptCount: 0,
-			expectedState: "pending",
-			expectedStep: "checkout_revision",
-			outcome,
-		});
+	] as const)(
+		"persists a %s outcome without reporting success",
+		async (_label, outcome) => {
+			const storage = createTransactionTestStore();
+			await seedCheckout(storage);
+			const store = createCheckoutFinalizationStore(storage.transactions);
+			const admitted = await store.admit(admission());
+			const result = await store.recordAttempt({
+				finalizationId: admitted.finalization.id,
+				attemptKey: `attempt-${outcome.type}`,
+				expectedAttemptCount: 0,
+				expectedState: "pending",
+				expectedStep: "checkout_revision",
+				outcome,
+			});
 
-		expect(result.finalization).toMatchObject({
-			state: "needs_attention",
-			currentStep: "checkout_revision",
-			needsAttention: outcome.reason,
-		});
-		expect(result.finalization.state).not.toBe("completed");
-	});
+			expect(result.finalization).toMatchObject({
+				state: "needs_attention",
+				currentStep: "checkout_revision",
+				needsAttention: outcome.reason,
+			});
+			expect(result.finalization.state).not.toBe("completed");
+		},
+	);
 
 	it("replays an attempt once and rejects stale state or changed operation input", async () => {
 		const storage = createTransactionTestStore();

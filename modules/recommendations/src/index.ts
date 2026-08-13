@@ -10,7 +10,6 @@ import { createRecommendationController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints/routes";
 
 export type { EmbeddingProvider } from "./embedding-provider";
-export { OpenAIEmbeddingProvider } from "./embedding-provider";
 export type {
 	CoOccurrence,
 	ProductEmbedding,
@@ -19,6 +18,7 @@ export type {
 	RecommendationRule,
 	RecommendedProduct,
 } from "./service";
+export { OpenAIEmbeddingProvider };
 
 export interface RecommendationsOptions extends ModuleConfig {
 	/** Default number of recommendations to return. Default: 10. */

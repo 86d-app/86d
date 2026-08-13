@@ -246,7 +246,7 @@ describe("seo controller edge cases", () => {
 		});
 
 		it("returns correct tag when many exist", async () => {
-			const tags = [];
+			const tags: Awaited<ReturnType<typeof controller.upsertMetaTag>>[] = [];
 			for (let i = 0; i < 10; i++) {
 				tags.push(
 					await controller.upsertMetaTag({
@@ -776,7 +776,7 @@ describe("seo controller edge cases", () => {
 		});
 
 		it("store is empty after removing all meta tags", async () => {
-			const tags = [];
+			const tags: Awaited<ReturnType<typeof controller.upsertMetaTag>>[] = [];
 			for (let i = 0; i < 3; i++) {
 				tags.push(
 					await controller.upsertMetaTag({ path: `/p-${i}`, title: `T ${i}` }),
@@ -787,7 +787,8 @@ describe("seo controller edge cases", () => {
 		});
 
 		it("store is empty after removing all redirects", async () => {
-			const redirects = [];
+			const redirects: Awaited<ReturnType<typeof controller.createRedirect>>[] =
+				[];
 			for (let i = 0; i < 3; i++) {
 				redirects.push(
 					await controller.createRedirect({

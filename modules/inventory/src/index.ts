@@ -7,30 +7,34 @@ import type {
 	ModuleConfig,
 	ModuleContext,
 } from "@86d-app/core/types/module";
+import { inventoryStockAdjustTransportSchema } from "./admin/endpoints/adjust-stock";
 import { adminEndpoints } from "./admin/endpoints/routes";
 import { inventoryCheckoutProvider } from "./capabilities";
-import { inventoryCheckoutV2Provider } from "./reservation-provider";
+import {
+	adjustInventoryStockFromCommand,
+	inventoryStockAdjustInputSchema,
+	inventoryStockAdjustOutcomeSchema,
+} from "./commands";
+import {
+	inventoryCheckoutV2Capability,
+	inventoryCheckoutV2Provider,
+} from "./reservation-provider";
+import { executeInventoryReservation } from "./reservations";
 import { inventorySchema } from "./schema";
 import { createInventoryController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints/routes";
 
-export { inventoryStockAdjustTransportSchema } from "./admin/endpoints/adjust-stock";
-export {
-	adjustInventoryStockFromCommand,
-	type InventoryStockAdjustContext,
-	type InventoryStockAdjustInput,
-	type InventoryStockAdjustOutcome,
-	type InventoryStockAdjustResult,
-	inventoryStockAdjustInputSchema,
-	inventoryStockAdjustOutcomeSchema,
+export type {
+	InventoryStockAdjustContext,
+	InventoryStockAdjustInput,
+	InventoryStockAdjustOutcome,
+	InventoryStockAdjustResult,
 } from "./commands";
-export { inventoryCheckoutV2Capability } from "./reservation-provider";
-export {
-	executeInventoryReservation,
-	type InventoryReservationDecision,
-	type InventoryReservationFailure,
-	type InventoryReservationRequest,
-	type InventoryReservationResult,
+export type {
+	InventoryReservationDecision,
+	InventoryReservationFailure,
+	InventoryReservationRequest,
+	InventoryReservationResult,
 } from "./reservations";
 export type {
 	BackInStockStats,
@@ -38,6 +42,14 @@ export type {
 	InventoryController,
 	InventoryItem,
 } from "./service";
+export {
+	adjustInventoryStockFromCommand,
+	executeInventoryReservation,
+	inventoryCheckoutV2Capability,
+	inventoryStockAdjustInputSchema,
+	inventoryStockAdjustOutcomeSchema,
+	inventoryStockAdjustTransportSchema,
+};
 
 export interface InventoryOptions extends ModuleConfig {
 	/** Default low-stock threshold applied to all items without explicit threshold */

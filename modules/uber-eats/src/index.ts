@@ -16,7 +16,6 @@ import { createUberEatsController } from "./service-impl";
 import { createStoreEndpointsWithWebhook } from "./store/endpoints/routes";
 import { createUberEatsWebhook } from "./store/endpoints/webhook";
 
-export { UberEatsProvider } from "./provider";
 export type {
 	MenuSync,
 	MenuSyncStatus,
@@ -25,6 +24,7 @@ export type {
 	UberOrder,
 	UberOrderStatus,
 } from "./service";
+export { UberEatsProvider };
 
 export interface UberEatsOptions extends ModuleConfig {
 	/** Uber Eats OAuth client ID */

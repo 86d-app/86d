@@ -445,7 +445,7 @@ describe("media endpoint security", () => {
 			const fetched = await controller.getAsset(asset.id);
 			expect(fetched?.metadata).toEqual({ newKey: "newValue" });
 			expect(
-				(fetched?.metadata as Record<string, unknown>).oldKey,
+				(fetched?.metadata as Record<string, unknown> | undefined)?.oldKey,
 			).toBeUndefined();
 		});
 	});

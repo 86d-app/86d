@@ -26,7 +26,7 @@ src/
 
 ## Key patterns
 
-- **Payment Connection v2**: Store-scoped, named, immutable identity with provider, mode, capabilities, health, lifecycle, and an opaque server-only secret reference.
+- **Payment Connection v2**: Store-scoped, named, immutable identity with provider, server-provisioned upstream provider account ID, mode, capabilities, health, lifecycle, and an opaque server-only secret reference. The host must verify that its credential authorizes that account before binding the adapter.
 - **Explicit routing**: A v2 adapter is bound to exactly one `connectionId`; no default provider or provider fallback exists in the v2 service.
 - **Operation identity**: Every provider operation persists its immutable Connection, operation-specific idempotency key (8-108 characters), immutable creation time, request digest, attempt history, provider reference, and final or nonfinal state before and after the external call.
 - **Payment authority**: Payment v2 freezes Checkout/Order references, Connection, option, accepted amount/currency, and fee basis; it alone applies confirmed totals and emits the outbox fact.

@@ -44,6 +44,7 @@ PayPalOptions {
 
 PayPalPaymentConnectionProviderOptions {
   connectionId: string
+  providerAccountId: string // server-provisioned immutable PayPal payer/merchant ID
   clientId: string
   clientSecret: string
   mode: "test" | "live"

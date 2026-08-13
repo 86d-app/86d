@@ -141,6 +141,8 @@ type PayPalOrder = z.infer<typeof paypalOrderSchema>;
 
 export interface PayPalPaymentConnectionProviderOptions {
 	connectionId: string;
+	/** PayPal merchant/payer ID the credential was verified to authorize. */
+	providerAccountId: string;
 	clientId: string;
 	clientSecret: string;
 	mode: "test" | "live";
@@ -191,6 +193,14 @@ const PAYPAL_SUPPORTED_CURRENCIES = new Set([
 const PAYPAL_ZERO_DIGIT_CURRENCIES = new Set(["HUF", "JPY", "TWD"]);
 /** Orders v2 documents six-hour retention; stay one hour inside that bound. */
 const PAYPAL_ORDER_REPLAY_WINDOW_MS = 5 * 60 * 60 * 1_000;
+/**
+ * PayPal documents exact-key capture replay but not a capture retention floor.
+ * Five minutes is our deliberately short operational recovery bound, not a
+ * provider-published retention guarantee.
+ */
+const PAYPAL_CAPTURE_REPLAY_WINDOW_MS = 5 * 60 * 1_000;
+/** PayPal publishes 45-day refund retention; stay one day inside that bound. */
+const PAYPAL_REFUND_REPLAY_WINDOW_MS = 44 * 24 * 60 * 60 * 1_000;
 
 function paypalCurrency(currency: string): string {
 	const parsed = currencySchema.parse(currency);
@@ -303,9 +313,9 @@ function trustedCallbackUrl(value: string): string {
 	return url.toString();
 }
 
-function orderReplayIsWithinRetention(createdAt: Date): boolean {
+function replayIsWithinWindow(createdAt: Date, windowMs: number): boolean {
 	const age = Date.now() - createdAt.getTime();
-	return age >= 0 && age <= PAYPAL_ORDER_REPLAY_WINDOW_MS;
+	return age >= 0 && age <= windowMs;
 }
 
 function onlyAuthorization(order: PayPalOrder): PayPalAuthorization {
@@ -407,6 +417,7 @@ export class PayPalPaymentConnectionProvider
 	implements PaymentConnectionProvider
 {
 	readonly connectionId: string;
+	readonly providerAccountId: string;
 	readonly provider = "paypal";
 	readonly mode: "test" | "live";
 	readonly capabilities = Object.freeze([
@@ -427,6 +438,7 @@ export class PayPalPaymentConnectionProvider
 
 	constructor(options: PayPalPaymentConnectionProviderOptions) {
 		this.connectionId = identifierSchema.parse(options.connectionId);
+		this.providerAccountId = identifierSchema.parse(options.providerAccountId);
 		this.clientId = secretSchema.parse(options.clientId);
 		this.clientSecret = secretSchema.parse(options.clientSecret);
 		this.returnUrl = trustedCallbackUrl(options.returnUrl);
@@ -502,17 +514,21 @@ export class PayPalPaymentConnectionProvider
 			}
 			if (
 				request.payload.operation === "intent" &&
-				orderReplayIsWithinRetention(request.createdAt)
+				replayIsWithinWindow(request.createdAt, PAYPAL_ORDER_REPLAY_WINDOW_MS)
 			) {
-				return this.execute({
-					operationId: request.operationId,
-					connectionId: request.connectionId,
-					idempotencyKey: request.idempotencyKey,
-					requestDigest: request.requestDigest,
-					attempt: request.attempt,
-					createdAt: request.createdAt,
-					payload: request.payload,
-				});
+				return this.replayExactRequest(request);
+			}
+			if (
+				request.payload.operation === "capture" &&
+				replayIsWithinWindow(request.createdAt, PAYPAL_CAPTURE_REPLAY_WINDOW_MS)
+			) {
+				return this.replayExactRequest(request);
+			}
+			if (
+				request.payload.operation === "refund" &&
+				replayIsWithinWindow(request.createdAt, PAYPAL_REFUND_REPLAY_WINDOW_MS)
+			) {
+				return this.replayExactRequest(request);
 			}
 			if (request.payload.operation === "authorization" && request.source) {
 				const order = await this.getOrder(request.source.providerReference);
@@ -581,6 +597,21 @@ export class PayPalPaymentConnectionProvider
 			case "void":
 				return this.getVoidOutcome(request.payload);
 		}
+	}
+
+	private replayExactRequest(
+		request: PaymentProviderReconciliationRequest,
+	): Promise<PaymentProviderOperationOutcome> {
+		return this.execute({
+			operationId: request.operationId,
+			connectionId: request.connectionId,
+			idempotencyKey: request.idempotencyKey,
+			requestDigest: request.requestDigest,
+			attempt: request.attempt,
+			createdAt: request.createdAt,
+			payload: request.payload,
+			...(request.source ? { source: request.source } : {}),
+		});
 	}
 
 	private async createOrder(

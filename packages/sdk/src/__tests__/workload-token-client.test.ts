@@ -62,25 +62,28 @@ describe("workload token client", () => {
 	it.each([
 		["https://control.example", "https://control.example/api"],
 		["https://control.example/api/", "https://control.example/api"],
-	])("normalizes Control Plane base %s without duplicating the API prefix", async (apiBaseUrl, expectedApiRoot) => {
-		const fetch = vi
-			.fn()
-			.mockResolvedValueOnce(tokenResponse())
-			.mockResolvedValueOnce(Response.json({ status: "ok" }));
-		const client = createWorkloadTokenClient({
-			config: { ...managedConfig, apiBaseUrl },
-			fetch,
-		});
+	])(
+		"normalizes Control Plane base %s without duplicating the API prefix",
+		async (apiBaseUrl, expectedApiRoot) => {
+			const fetch = vi
+				.fn()
+				.mockResolvedValueOnce(tokenResponse())
+				.mockResolvedValueOnce(Response.json({ status: "ok" }));
+			const client = createWorkloadTokenClient({
+				config: { ...managedConfig, apiBaseUrl },
+				fetch,
+			});
 
-		await client.request(resource, "v1/workloads/proof", { method: "POST" });
+			await client.request(resource, "v1/workloads/proof", { method: "POST" });
 
-		expect(fetch.mock.calls[0]?.[0].toString()).toBe(
-			`${expectedApiRoot}/oauth/token`,
-		);
-		expect(fetch.mock.calls[1]?.[0].toString()).toBe(
-			`${expectedApiRoot}/v1/workloads/proof`,
-		);
-	});
+			expect(fetch.mock.calls[0]?.[0].toString()).toBe(
+				`${expectedApiRoot}/oauth/token`,
+			);
+			expect(fetch.mock.calls[1]?.[0].toString()).toBe(
+				`${expectedApiRoot}/v1/workloads/proof`,
+			);
+		},
+	);
 
 	it("caches tokens by audience and canonical scope set", async () => {
 		const fetch = vi
@@ -244,14 +247,14 @@ describe("workload token client", () => {
 		expect(response.status).toBe(200);
 		expect(fetch).toHaveBeenCalledTimes(4);
 		expect(
-			new Headers((fetch.mock.calls[1]?.[1] as RequestInit).headers).get(
-				"Authorization",
-			),
+			new Headers(
+				(fetch.mock.calls[1]?.[1] as RequestInit | undefined)?.headers,
+			).get("Authorization"),
 		).toBe("Bearer stale-token");
 		expect(
-			new Headers((fetch.mock.calls[3]?.[1] as RequestInit).headers).get(
-				"Authorization",
-			),
+			new Headers(
+				(fetch.mock.calls[3]?.[1] as RequestInit | undefined)?.headers,
+			).get("Authorization"),
 		).toBe("Bearer fresh-token");
 	});
 

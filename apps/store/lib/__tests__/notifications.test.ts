@@ -226,30 +226,25 @@ describe("registerNotificationHandlers", () => {
 		expect(bus.listenerCount("checkout.completed")).toBe(0);
 	});
 
-	it.each(
-		NON_CRITICAL_CASES,
-	)("keeps $event as a best-effort local notification", async ({
-		event,
-		source,
-		payload,
-		to,
-		subject,
-	}) => {
-		const bus = createEventBus();
-		const resend = createMockResend();
-		registerNotificationHandlers(bus, resend, CONFIG);
+	it.each(NON_CRITICAL_CASES)(
+		"keeps $event as a best-effort local notification",
+		async ({ event, source, payload, to, subject }) => {
+			const bus = createEventBus();
+			const resend = createMockResend();
+			registerNotificationHandlers(bus, resend, CONFIG);
 
-		await bus.emit(event, source, payload);
+			await bus.emit(event, source, payload);
 
-		expect(resend.emails.send).toHaveBeenCalledOnce();
-		expect(resend.emails.send).toHaveBeenCalledWith(
-			expect.objectContaining({
-				from: CONFIG.fromAddress,
-				to: [to],
-				subject,
-			}),
-		);
-	});
+			expect(resend.emails.send).toHaveBeenCalledOnce();
+			expect(resend.emails.send).toHaveBeenCalledWith(
+				expect.objectContaining({
+					from: CONFIG.fromAddress,
+					to: [to],
+					subject,
+				}),
+			);
+		},
+	);
 
 	it("has zero local effects for commerce-critical events", async () => {
 		const bus = createEventBus();

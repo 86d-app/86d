@@ -9,8 +9,8 @@
 		"build:packages": "turbo run build --filter=./packages/*",
 		"build:store": "turbo run build --filter=./apps/store",
 		"typecheck": "turbo run typecheck",
-		"check": "turbo run check && biome check .",
-		"check:fix": "turbo run check:fix && biome check --write .",
+		"check": "biome check .",
+		"check:fix": "biome check --write --unsafe .",
 		"clean": "turbo run clean && git clean -xdf .turbo .next node_modules coverage logs playwright-report",
 		"dev": "dotenv -- turbo run dev --filter=store",
 		"dev:store": "dotenv -- turbo run dev --filter=store",
@@ -71,7 +71,7 @@
 		"packages/*"
 	],
 	"catalog": {
-		"@biomejs/biome": "2.5.0",
+		"@biomejs/biome": "2.5.6",
 		"@tsconfig/node-ts": "23.6.4",
 		"@tsconfig/node24": "24.0.4",
 		"@tsconfig/strictest": "2.0.8",

@@ -19,13 +19,20 @@ import {
 } from "../connection-service";
 import { createPaymentAggregateStore } from "../payment-service";
 
-function transactionRunner(data: ModuleDataService, locking = true) {
+function transactionRunner(
+	data: ModuleDataService,
+	locking = true,
+	onAccess?: (method: "findMany" | "getForUpdate", entity: string) => void,
+) {
 	let queue = Promise.resolve();
 	const transaction: ModuleDataTransaction = {
 		get: data.get.bind(data),
 		upsert: data.upsert.bind(data),
 		delete: data.delete.bind(data),
-		findMany: data.findMany.bind(data),
+		findMany: async (entity, query) => {
+			onAccess?.("findMany", entity);
+			return data.findMany(entity, query);
+		},
 		async emit(definition, input) {
 			return {
 				id: crypto.randomUUID(),
@@ -41,7 +48,10 @@ function transactionRunner(data: ModuleDataService, locking = true) {
 	};
 	const lockingTransaction = {
 		...transaction,
-		getForUpdate: data.get.bind(data),
+		getForUpdate: async (entity: string, id: string) => {
+			onAccess?.("getForUpdate", entity);
+			return data.get(entity, id);
+		},
 	};
 	const active = locking ? lockingTransaction : transaction;
 	const transactions: ModuleTransactionRunner = {
@@ -59,6 +69,7 @@ function transactionRunner(data: ModuleDataService, locking = true) {
 
 function providerAdapter(options?: {
 	connectionId?: string;
+	providerAccountId?: string;
 	provider?: string;
 	capabilities?: PaymentConnectionProvider["capabilities"];
 	execute?:
@@ -91,6 +102,7 @@ function providerAdapter(options?: {
 	);
 	const adapter = {
 		connectionId,
+		providerAccountId: options?.providerAccountId ?? "merchant-account-1",
 		provider: options?.provider ?? "test-provider",
 		mode: "test" as const,
 		capabilities: options?.capabilities ?? [
@@ -118,6 +130,7 @@ function connectionInput(
 ) {
 	return {
 		id,
+		providerAccountId: "merchant-account-1",
 		name: id === "connection-1" ? "Primary Cards" : `Connection ${id}`,
 		provider: "test-provider",
 		mode: "test" as const,
@@ -296,10 +309,45 @@ describe("Payment Connections", () => {
 		);
 
 		expect(rotated).toMatchObject({
+			providerAccountId: "merchant-account-1",
 			lifecycle: "disabled",
 			health: "unknown",
 			secretReference: "secret://rotated",
 		});
+	});
+
+	it("rejects a rotated adapter for another provider account after restart", async () => {
+		const data = createMockDataService();
+		const transactions = transactionRunner(data);
+		const original = providerAdapter();
+		const firstController = createPaymentConnectionController(
+			data,
+			transactions,
+			[original.adapter],
+		);
+		await enableConnection(firstController);
+		await firstController.rotateSecretReference(
+			"connection-1",
+			"secret://rotated",
+		);
+
+		const wrongAccount = providerAdapter({
+			providerAccountId: "merchant-account-2",
+		});
+		const restarted = createPaymentConnectionController(data, transactions, [
+			wrongAccount.adapter,
+		]);
+		await restarted.setConnectionHealth("connection-1", "healthy");
+
+		await expect(
+			restarted.enableConnection("connection-1"),
+		).rejects.toMatchObject({ code: "provider_not_bound" });
+		expect(await restarted.getConnection("connection-1")).toMatchObject({
+			providerAccountId: "merchant-account-1",
+			secretReference: "secret://rotated",
+			lifecycle: "disabled",
+		});
+		expect(wrongAccount.execute).not.toHaveBeenCalled();
 	});
 
 	it("rejects multiple provider adapters bound to the same Connection", () => {
@@ -317,6 +365,28 @@ describe("Payment Connections", () => {
 });
 
 describe("connection-bound Payment operations", () => {
+	it("locks the Payment owner before reading sibling reservations", async () => {
+		const data = createMockDataService();
+		const access: string[] = [];
+		const provider = providerAdapter();
+		const transactions = transactionRunner(data, true, (method, entity) => {
+			access.push(`${method}:${entity}`);
+		});
+		const controller = createPaymentConnectionController(data, transactions, [
+			provider.adapter,
+		]);
+		await enableConnection(controller);
+		await createPayment(data, transactions);
+		access.length = 0;
+
+		await controller.executeOperation(intentInput());
+
+		const ownerLock = access.indexOf("getForUpdate:paymentV2Lock");
+		const siblingRead = access.indexOf("findMany:paymentOperationV2");
+		expect(ownerLock).toBeGreaterThanOrEqual(0);
+		expect(siblingRead).toBeGreaterThan(ownerLock);
+	});
+
 	it("replays the same operation after restart and rejects changed same-key input", async () => {
 		const data = createMockDataService();
 		const provider = providerAdapter();
@@ -423,63 +493,63 @@ describe("connection-bound Payment operations", () => {
 		);
 	});
 
-	it.each([
-		"pending",
-		"requires_action",
-	] as const)("persists provider-known %s without advancing Payment or repeating an exact caller key", async (state) => {
-		const data = createMockDataService();
-		const provider = providerAdapter({
-			execute: async () => ({
-				state,
-				providerReference: "provider-payment-1",
-				result: { providerStatus: state },
-			}),
-		});
-		const transactions = transactionRunner(data);
-		const controller = createPaymentConnectionController(data, transactions, [
-			provider.adapter,
-		]);
-		await enableConnection(controller);
-		const payments = await createPayment(data, transactions);
+	it.each(["pending", "requires_action"] as const)(
+		"persists provider-known %s without advancing Payment or repeating an exact caller key",
+		async (state) => {
+			const data = createMockDataService();
+			const provider = providerAdapter({
+				execute: async () => ({
+					state,
+					providerReference: "provider-payment-1",
+					result: { providerStatus: state },
+				}),
+			});
+			const transactions = transactionRunner(data);
+			const controller = createPaymentConnectionController(data, transactions, [
+				provider.adapter,
+			]);
+			await enableConnection(controller);
+			const payments = await createPayment(data, transactions);
 
-		const first = await controller.executeOperation(intentInput());
-		const replay = await controller.executeOperation(intentInput());
-		const payment = await payments.get("payment-1");
-		const attempts = await controller.listOperationAttempts(first.id);
+			const first = await controller.executeOperation(intentInput());
+			const replay = await controller.executeOperation(intentInput());
+			const payment = await payments.get("payment-1");
+			const attempts = await controller.listOperationAttempts(first.id);
 
-		expect(first).toMatchObject({
-			state,
-			providerReference: "provider-payment-1",
-			outcome: { providerStatus: state },
-			reconciliationAttempts: 0,
-		});
-		expect(first.nextReconciliationAt).toBeInstanceOf(Date);
-		const expectedDelay =
-			state === "pending"
-				? PAYMENT_PENDING_RECONCILIATION_BACKOFF_MS[0]
-				: PAYMENT_REQUIRES_ACTION_RECONCILIATION_BACKOFF_MS[0];
-		expect(
-			(first.nextReconciliationAt as Date).getTime() -
-				first.updatedAt.getTime(),
-		).toBe(expectedDelay);
-		expect(first.deadLetteredAt).toBeUndefined();
-		expect(replay).toEqual(first);
-		expect(provider.execute).toHaveBeenCalledTimes(1);
-		expect(payment).toMatchObject({
-			state: "pending",
-			authorizedAmount: 0,
-			capturedAmount: 0,
-			providerReferences: [],
-			revision: 1,
-		});
-		expect(attempts).toMatchObject([
-			{
+			expect(first).toMatchObject({
 				state,
 				providerReference: "provider-payment-1",
 				outcome: { providerStatus: state },
-			},
-		]);
-	});
+				reconciliationAttempts: 0,
+			});
+			expect(first.nextReconciliationAt).toBeInstanceOf(Date);
+			const expectedDelay =
+				state === "pending"
+					? PAYMENT_PENDING_RECONCILIATION_BACKOFF_MS[0]
+					: PAYMENT_REQUIRES_ACTION_RECONCILIATION_BACKOFF_MS[0];
+			expect(
+				(first.nextReconciliationAt as Date).getTime() -
+					first.updatedAt.getTime(),
+			).toBe(expectedDelay);
+			expect(first.deadLetteredAt).toBeUndefined();
+			expect(replay).toEqual(first);
+			expect(provider.execute).toHaveBeenCalledTimes(1);
+			expect(payment).toMatchObject({
+				state: "pending",
+				authorizedAmount: 0,
+				capturedAmount: 0,
+				providerReferences: [],
+				revision: 1,
+			});
+			expect(attempts).toMatchObject([
+				{
+					state,
+					providerReference: "provider-payment-1",
+					outcome: { providerStatus: state },
+				},
+			]);
+		},
+	);
 
 	it("keeps action-required provider truth after its bounded automatic polling budget", async () => {
 		const data = createMockDataService();

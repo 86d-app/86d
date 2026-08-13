@@ -2,6 +2,11 @@
 	"name": "@86d-app/registry",
 	"version": "0.0.41",
 	"description": "Module registry for 86d — resolve, fetch, and cache modules from local, GitHub, or npm sources",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/86d-app/86d.git",
+		"directory": "packages/registry"
+	},
 	"license": "MIT",
 	"type": "module",
 	"exports": {
@@ -62,10 +67,5 @@
 		"@types/node": "catalog:node",
 		"typescript": "catalog:",
 		"vitest": "catalog:vite"
-	},
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/86d-app/86d.git",
-		"directory": "packages/registry"
 	}
 }

@@ -64,15 +64,19 @@ async function callWebhook(
 	context?: Record<string, unknown>,
 	autoSign = true,
 ): Promise<Response> {
+	let nextRequest = request;
 	if (autoSign && !request.headers.has("stripe-signature")) {
 		const body = await request.clone().text();
 		const headers = new Headers(request.headers);
 		headers.set("stripe-signature", await buildStripeSignature(SECRET, body));
-		request = new Request(request, { headers });
+		nextRequest = new Request(request, { headers });
 	}
 	const h = handler as unknown as Record<string, unknown>;
 	const fn = typeof h.handler === "function" ? h.handler : h;
-	return (fn as CallableFunction)({ request, context }) as Promise<Response>;
+	return (fn as CallableFunction)({
+		request: nextRequest,
+		context,
+	}) as Promise<Response>;
 }
 
 function createTestContext() {

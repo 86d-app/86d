@@ -76,7 +76,7 @@ Admin pages declare a `group` and optional `subgroup` for the 2-level sidebar. G
 
 ```
 modules/<name>/src/
-  index.ts              Factory + types + admin nav
+  index.ts              Factory + types + admin nav (no `export { … } from` barrels)
   schema.ts             Zod schemas
   controllers.ts        Business logic
   store/endpoints/      Public endpoints
@@ -138,8 +138,9 @@ Do not use bare “dashboard” or “console” in product language. Use **86d 
 
 ## Code conventions
 
-- Biome handles formatting and linting; Tailwind class sorting enforced via `useSortedClasses`.
+- Biome handles formatting and linting in one repo-root pass (`bun run check`). Domains: `next` (all), `react` (recommended), `tailwind`, `turborepo`, `types`; test files also enable `test` and `playwright`. Tailwind class sorting is enforced via `useSortedClasses`.
 - No `any`, `@ts-expect-error`, `@ts-ignore`, or `biome-ignore`. Fix the type or the code.
+- Module `src/index.ts` must not use `export { … } from` (Biome `noBarrelFile`). Keep the factory and its own declarations in the entry; named package-root exports use import-then-export. Type-only `export type { … } from` is allowed. Consumers still import from `@86d-app/<module>` or the existing `"./*"` subpath map.
 - Module imports: `@86d-app/core` (main), `@86d-app/core/client` (React Query), `@86d-app/core/state` (MobX).
 - Store app path alias: `~/` for local imports (not bare `lib/`, which conflicts with `packages/lib`).
 - Use the `@86d-app/storage` abstraction. Never import `@vercel/blob` directly.
@@ -168,6 +169,17 @@ Beta shows one clear warning on first enablement. Experimental requires explicit
 **Unit (Vitest):** `bun run test`, with `@86d-app/core/test-utils` mocks. External-provider fixtures must match the real API JSON shape so a broken integration cannot pass.
 
 **E2E (Playwright):** config at `playwright.config.ts`; specs `storefront`, `checkout`, `admin`, `dashboard`, `accessibility`, `performance`, `visual`. Visual regression runs across viewport projects `visual-desktop` (1280×720), `visual-tablet` (768×1024), `visual-mobile` (375×667), in light and dark. Import from `./fixtures/test-fixtures`, not `@playwright/test`. Selectors are always `data-testid`; always `waitForLoadState('networkidle')`, never `waitForTimeout()`. Coverage target: every page route, admin screen, store-facing screen, empty state, and error state.
+
+## Health gates
+
+All five must pass before committing:
+1. `bun run typecheck`: zero errors
+2. `bun run check`: zero Biome errors. This lints the whole repo in one pass so `scripts/`, `tests/`, `templates/`, `internals/`, and root config files are covered, not just package `src/`.
+3. `bun run test`: all unit tests pass
+4. `bun run build`: successful build
+5. `bun run test:e2e`: Playwright E2E against an already running, seeded store
+
+CI (`.github/workflows/ci.yml`) runs `bun check` at the repository root.
 
 ## Version policy
 

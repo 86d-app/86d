@@ -299,19 +299,21 @@ async function simulateCompleteSession(
 	}
 
 	// Gift card redemption
-	if (existing.giftCardCode && existing.giftCardAmount > 0) {
-		if (opts.giftCardController) {
-			const redeemResult = await opts.giftCardController.redeem(
-				existing.giftCardCode,
-				existing.giftCardAmount,
-			);
-			if (!redeemResult) {
-				return {
-					error:
-						"Gift card could not be redeemed. It may be expired, inactive, or have insufficient balance.",
-					status: 422,
-				};
-			}
+	if (
+		existing.giftCardCode &&
+		existing.giftCardAmount > 0 &&
+		opts.giftCardController
+	) {
+		const redeemResult = await opts.giftCardController.redeem(
+			existing.giftCardCode,
+			existing.giftCardAmount,
+		);
+		if (!redeemResult) {
+			return {
+				error:
+					"Gift card could not be redeemed. It may be expired, inactive, or have insufficient balance.",
+				status: 422,
+			};
 		}
 	}
 

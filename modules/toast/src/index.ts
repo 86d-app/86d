@@ -14,7 +14,6 @@ import { createToastController } from "./service-impl";
 import { createStoreEndpointsWithWebhook } from "./store/endpoints/routes";
 import { createToastWebhook } from "./store/endpoints/webhook";
 
-export { ToastPosProvider } from "./provider";
 export type {
 	MenuMapping,
 	SyncDirection,
@@ -23,6 +22,7 @@ export type {
 	SyncStats,
 	ToastController,
 } from "./service";
+export { ToastPosProvider };
 
 export interface ToastOptions extends ModuleConfig {
 	/** Toast API access token */

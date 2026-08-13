@@ -338,63 +338,63 @@ describe("Catalog revision publication", () => {
 	it.each([
 		{ reviewed: false, revisionId: "revision-failed-draft" },
 		{ reviewed: true, revisionId: "revision-failed-reviewed" },
-	])("persists and replays a failed revision from its current state ($revisionId)", async ({
-		reviewed,
-		revisionId,
-	}) => {
-		const transactions = createMockTransactionRunner({ storeId: "store-1" });
-		const digest = await digestCatalogRevisionContent(content);
-		await applyAt(
-			transactions,
-			{
-				action: "create_draft",
-				operationId: `catalog-create-${revisionId}`,
-				revisionId,
-				content,
-			},
-			"2026-08-13T13:00:00.000Z",
-		);
-		if (reviewed) {
+	])(
+		"persists and replays a failed revision from its current state ($revisionId)",
+		async ({ reviewed, revisionId }) => {
+			const transactions = createMockTransactionRunner({ storeId: "store-1" });
+			const digest = await digestCatalogRevisionContent(content);
 			await applyAt(
 				transactions,
 				{
-					action: "review",
-					operationId: `catalog-review-${revisionId}`,
+					action: "create_draft",
+					operationId: `catalog-create-${revisionId}`,
 					revisionId,
-					expectedContentDigest: digest,
+					content,
 				},
-				"2026-08-13T13:01:00.000Z",
+				"2026-08-13T13:00:00.000Z",
 			);
-		}
-		const failure = {
-			action: "fail",
-			operationId: `catalog-fail-${revisionId}`,
-			revisionId,
-			expectedContentDigest: digest,
-			reason: "Provider validation rejected the revision.",
-		} satisfies CatalogRevisionOperationInput;
+			if (reviewed) {
+				await applyAt(
+					transactions,
+					{
+						action: "review",
+						operationId: `catalog-review-${revisionId}`,
+						revisionId,
+						expectedContentDigest: digest,
+					},
+					"2026-08-13T13:01:00.000Z",
+				);
+			}
+			const failure = {
+				action: "fail",
+				operationId: `catalog-fail-${revisionId}`,
+				revisionId,
+				expectedContentDigest: digest,
+				reason: "Provider validation rejected the revision.",
+			} satisfies CatalogRevisionOperationInput;
 
-		expect(
-			await applyAt(transactions, failure, "2026-08-13T13:02:00.000Z"),
-		).toMatchObject({
-			ok: true,
-			decision: { state: "failed", replayed: false },
-		});
-		expect(
-			await applyAt(transactions, failure, "2026-08-13T13:03:00.000Z"),
-		).toMatchObject({
-			ok: true,
-			decision: { state: "failed", replayed: true },
-		});
-		expect(
-			await transactions.data.get("catalogRevision", revisionId),
-		).toMatchObject({
-			state: "failed",
-			failedFromState: reviewed ? "reviewed" : "draft",
-			failureReason: "Provider validation rejected the revision.",
-		});
-		expect(transactions.emitted).toHaveLength(0);
-	});
+			expect(
+				await applyAt(transactions, failure, "2026-08-13T13:02:00.000Z"),
+			).toMatchObject({
+				ok: true,
+				decision: { state: "failed", replayed: false },
+			});
+			expect(
+				await applyAt(transactions, failure, "2026-08-13T13:03:00.000Z"),
+			).toMatchObject({
+				ok: true,
+				decision: { state: "failed", replayed: true },
+			});
+			expect(
+				await transactions.data.get("catalogRevision", revisionId),
+			).toMatchObject({
+				state: "failed",
+				failedFromState: reviewed ? "reviewed" : "draft",
+				failureReason: "Provider validation rejected the revision.",
+			});
+			expect(transactions.emitted).toHaveLength(0);
+		},
+	);
 
 	it("rejects invalid transitions without changing the draft", async () => {
 		const transactions = createMockTransactionRunner({ storeId: "store-1" });

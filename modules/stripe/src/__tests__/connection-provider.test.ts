@@ -1,6 +1,18 @@
 import type { PaymentProviderOperationRequest } from "@86d-app/core/payment-connection-provider";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createStripePaymentConnectionProvider } from "../connection-provider";
+import {
+	createStripePaymentConnectionProvider as createProvider,
+	type StripePaymentConnectionProviderOptions,
+} from "../connection-provider";
+
+function createStripePaymentConnectionProvider(
+	options: Omit<StripePaymentConnectionProviderOptions, "providerAccountId"> & {
+		providerAccountId?: string;
+	},
+) {
+	const { providerAccountId = "acct_primary", ...connectionOptions } = options;
+	return createProvider({ ...connectionOptions, providerAccountId });
+}
 
 function response(body: unknown, status = 200): Response {
 	return new Response(JSON.stringify(body), {
@@ -31,25 +43,44 @@ describe("StripePaymentConnectionProvider", () => {
 		globalThis.fetch = originalFetch;
 	});
 
-	it.each([
-		{ apiKey: "sk_live_secret", mode: "test" as const },
-		{ apiKey: "rk_test_secret", mode: "live" as const },
-	])("rejects a $apiKey connection configured for $mode mode before any provider call", ({
-		apiKey,
-		mode,
-	}) => {
-		const fetchMock = vi.fn();
-		globalThis.fetch = fetchMock;
+	it("freezes the verified Stripe account identity at adapter binding", () => {
+		const provider = createStripePaymentConnectionProvider({
+			connectionId: authorizationRequest.connectionId,
+			providerAccountId: "acct_verified_primary",
+			apiKey: "sk_test_secret",
+			mode: "test",
+		});
 
+		expect(provider.providerAccountId).toBe("acct_verified_primary");
 		expect(() =>
 			createStripePaymentConnectionProvider({
 				connectionId: authorizationRequest.connectionId,
-				apiKey,
-				mode,
+				providerAccountId: " ",
+				apiKey: "sk_test_secret",
+				mode: "test",
 			}),
-		).toThrow("Stripe API key mode does not match Payment Connection mode");
-		expect(fetchMock).not.toHaveBeenCalled();
+		).toThrow("Stripe provider account ID is required");
 	});
+
+	it.each([
+		{ apiKey: "sk_live_secret", mode: "test" as const },
+		{ apiKey: "rk_test_secret", mode: "live" as const },
+	])(
+		"rejects a $apiKey connection configured for $mode mode before any provider call",
+		({ apiKey, mode }) => {
+			const fetchMock = vi.fn();
+			globalThis.fetch = fetchMock;
+
+			expect(() =>
+				createStripePaymentConnectionProvider({
+					connectionId: authorizationRequest.connectionId,
+					apiKey,
+					mode,
+				}),
+			).toThrow("Stripe API key mode does not match Payment Connection mode");
+			expect(fetchMock).not.toHaveBeenCalled();
+		},
+	);
 
 	it("binds a durable authorization envelope to a manual-capture PaymentIntent", async () => {
 		const fetchMock = vi.fn().mockImplementation(() =>
@@ -305,30 +336,31 @@ describe("StripePaymentConnectionProvider", () => {
 				providerPaymentReference: "pi_authorization_source",
 			},
 		},
-	])("requires durable source provenance for $operation", async ({
-		payload,
-	}) => {
-		const fetchMock = vi.fn();
-		globalThis.fetch = fetchMock;
-		const provider = createStripePaymentConnectionProvider({
-			connectionId: authorizationRequest.connectionId,
-			apiKey: "sk_test_secret",
-			mode: "test",
-		});
+	])(
+		"requires durable source provenance for $operation",
+		async ({ payload }) => {
+			const fetchMock = vi.fn();
+			globalThis.fetch = fetchMock;
+			const provider = createStripePaymentConnectionProvider({
+				connectionId: authorizationRequest.connectionId,
+				apiKey: "sk_test_secret",
+				mode: "test",
+			});
 
-		const outcome = await provider.execute({
-			...authorizationRequest,
-			operationId: `payop_missing_source_${payload.operation}`,
-			idempotencyKey: `missing-source:${payload.operation}`,
-			payload,
-		});
+			const outcome = await provider.execute({
+				...authorizationRequest,
+				operationId: `payop_missing_source_${payload.operation}`,
+				idempotencyKey: `missing-source:${payload.operation}`,
+				payload,
+			});
 
-		expect(outcome).toEqual({
-			state: "failed",
-			result: { reason: "source_provenance_required" },
-		});
-		expect(fetchMock).not.toHaveBeenCalled();
-	});
+			expect(outcome).toEqual({
+				state: "failed",
+				result: { reason: "source_provenance_required" },
+			});
+			expect(fetchMock).not.toHaveBeenCalled();
+		},
+	);
 
 	it("rejects partial final capture before calling Stripe", async () => {
 		const fetchMock = vi.fn();

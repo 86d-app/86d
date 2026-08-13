@@ -118,31 +118,33 @@ async function simulateCreateWithTax(
 	let session = await ctrl.create(createParams);
 
 	// Mirror create-session endpoint: auto-calculate tax when address provided and no explicit taxAmount
-	if (createParams.shippingAddress && createParams.taxAmount === undefined) {
-		if (taxController?.calculate) {
-			const taxResult = await taxController.calculate({
-				address: {
-					country: createParams.shippingAddress.country,
-					state: createParams.shippingAddress.state,
-					city: createParams.shippingAddress.city,
-					postalCode: createParams.shippingAddress.postalCode,
-				},
-				lineItems: createParams.lineItems.map((item) => ({
-					productId: item.productId,
-					amount: item.price * item.quantity,
-					quantity: item.quantity,
-				})),
-				shippingAmount: session.shippingAmount,
-				customerId: createParams.customerId,
-			});
+	if (
+		createParams.shippingAddress &&
+		createParams.taxAmount === undefined &&
+		taxController?.calculate
+	) {
+		const taxResult = await taxController.calculate({
+			address: {
+				country: createParams.shippingAddress.country,
+				state: createParams.shippingAddress.state,
+				city: createParams.shippingAddress.city,
+				postalCode: createParams.shippingAddress.postalCode,
+			},
+			lineItems: createParams.lineItems.map((item) => ({
+				productId: item.productId,
+				amount: item.price * item.quantity,
+				quantity: item.quantity,
+			})),
+			shippingAmount: session.shippingAmount,
+			customerId: createParams.customerId,
+		});
 
-			if (taxResult && typeof taxResult.totalTax === "number") {
-				const updated = await ctrl.update(session.id, {
-					taxAmount: taxResult.totalTax,
-				});
-				if (updated) {
-					session = updated;
-				}
+		if (taxResult && typeof taxResult.totalTax === "number") {
+			const updated = await ctrl.update(session.id, {
+				taxAmount: taxResult.totalTax,
+			});
+			if (updated) {
+				session = updated;
 			}
 		}
 	}
@@ -172,36 +174,35 @@ async function simulateUpdateWithTax(
 	// Mirror the endpoint logic: auto-calculate tax when address or shipping changes
 	if (
 		(updates.shippingAddress || updates.shippingAmount !== undefined) &&
-		session.shippingAddress
+		session.shippingAddress &&
+		taxController?.calculate
 	) {
-		if (taxController?.calculate) {
-			const lineItems = await ctrl.getLineItems(session.id);
-			const taxResult = await taxController.calculate({
-				address: {
-					country: session.shippingAddress.country,
-					state: session.shippingAddress.state,
-					city: session.shippingAddress.city,
-					postalCode: session.shippingAddress.postalCode,
-				},
-				lineItems: lineItems.map(
-					(item: { productId: string; price: number; quantity: number }) => ({
-						productId: item.productId,
-						amount: item.price * item.quantity,
-						quantity: item.quantity,
-					}),
-				),
-				shippingAmount: session.shippingAmount,
-				customerId: session.customerId,
-			});
+		const lineItems = await ctrl.getLineItems(session.id);
+		const taxResult = await taxController.calculate({
+			address: {
+				country: session.shippingAddress.country,
+				state: session.shippingAddress.state,
+				city: session.shippingAddress.city,
+				postalCode: session.shippingAddress.postalCode,
+			},
+			lineItems: lineItems.map(
+				(item: { productId: string; price: number; quantity: number }) => ({
+					productId: item.productId,
+					amount: item.price * item.quantity,
+					quantity: item.quantity,
+				}),
+			),
+			shippingAmount: session.shippingAmount,
+			customerId: session.customerId,
+		});
 
-			if (taxResult && typeof taxResult.totalTax === "number") {
-				// Use the controller's update method with taxAmount support
-				const updated = await ctrl.update(session.id, {
-					taxAmount: taxResult.totalTax,
-				});
-				if (updated) {
-					session = updated;
-				}
+		if (taxResult && typeof taxResult.totalTax === "number") {
+			// Use the controller's update method with taxAmount support
+			const updated = await ctrl.update(session.id, {
+				taxAmount: taxResult.totalTax,
+			});
+			if (updated) {
+				session = updated;
 			}
 		}
 	}

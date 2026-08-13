@@ -3,9 +3,9 @@
  * Delegates pure rendering to lib/llms-content for testability.
  */
 
-import type { LlmsFullContent } from "lib/llms-content";
-import { renderLlmsFullMarkdown } from "lib/llms-content";
 import { getBaseUrl } from "utils/url";
+import type { LlmsFullContent } from "../../../packages/lib/src/llms-content";
+import { renderLlmsFullMarkdown } from "../../../packages/lib/src/llms-content";
 import {
 	fetchBlogPostsForLlms,
 	fetchCollectionsForLlms,

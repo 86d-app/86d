@@ -6,13 +6,20 @@ import type {
 import { adminEndpoints } from "./admin/endpoints/routes";
 import {
 	customerContactResolveProvider,
+	customerIdentityResolveCapability,
 	customerIdentityResolveProvider,
 } from "./capabilities";
+import {
+	createStoreCustomerIdentityService,
+	storeCustomerAuditBindingSchema,
+	storeCustomerAuthBindingSchema,
+	storeCustomerIdentityInputSchema,
+} from "./identity-binding";
 import { customersSchema } from "./schema";
+import { DEFAULT_LOYALTY_RULES } from "./service";
 import { createCustomerController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints/routes";
 
-export { customerIdentityResolveCapability } from "./capabilities";
 export type {
 	StoreCustomer,
 	StoreCustomerAuditBinding,
@@ -20,12 +27,6 @@ export type {
 	StoreCustomerIdentityInput,
 	StoreCustomerIdentityService,
 	StoreCustomerResolutionResult,
-} from "./identity-binding";
-export {
-	createStoreCustomerIdentityService,
-	storeCustomerAuditBindingSchema,
-	storeCustomerAuthBindingSchema,
-	storeCustomerIdentityInputSchema,
 } from "./identity-binding";
 // Export types for other modules to use via inter-module contracts
 export type {
@@ -39,7 +40,14 @@ export type {
 	LoyaltyStats,
 	LoyaltyTransaction,
 } from "./service";
-export { DEFAULT_LOYALTY_RULES } from "./service";
+export {
+	createStoreCustomerIdentityService,
+	customerIdentityResolveCapability,
+	DEFAULT_LOYALTY_RULES,
+	storeCustomerAuditBindingSchema,
+	storeCustomerAuthBindingSchema,
+	storeCustomerIdentityInputSchema,
+};
 
 export interface CustomersOptions extends ModuleConfig {
 	/**

@@ -19,20 +19,7 @@ import type {
 	ModuleContext,
 } from "@86d-app/core/types/module";
 import { adminEndpoints } from "./admin/endpoints/routes";
-import { checkoutFinalizationLifecycleV1 } from "./finalization";
-import { checkoutSchema } from "./schema";
-import { createCheckoutController } from "./service-impl";
-import { storeEndpoints } from "./store/endpoints/routes";
-
-export type {
-	CheckoutRequest,
-	CheckoutRequestCreateInput,
-	CheckoutRequestCreateResult,
-	CheckoutRequestInvitationState,
-	CheckoutRequestReadResult,
-	CheckoutRequestStore,
-} from "./checkout-request";
-export {
+import {
 	checkoutRequestAuditActorSchema,
 	checkoutRequestCartSnapshotSchema,
 	checkoutRequestContactSchema,
@@ -40,18 +27,7 @@ export {
 	checkoutRequestReasonSchema,
 	createCheckoutRequestStore,
 } from "./checkout-request";
-export type {
-	AdmitCheckoutFinalizationInput,
-	CheckoutFinalization,
-	CheckoutFinalizationAttempt,
-	CheckoutFinalizationCompensation,
-	CheckoutFinalizationErrorCode,
-	CheckoutFinalizationSnapshot,
-	CheckoutFinalizationStore,
-	RecordCheckoutFinalizationAttemptInput,
-	RecordCheckoutFinalizationCompensationInput,
-} from "./finalization";
-export {
+import {
 	admitCheckoutFinalizationInputSchema,
 	CheckoutFinalizationError,
 	checkoutFinalizationAcceptedInputSchema,
@@ -71,6 +47,29 @@ export {
 	storedCheckoutFinalizationCompensationSchema,
 	storedCheckoutFinalizationSchema,
 } from "./finalization";
+import { checkoutSchema } from "./schema";
+import { createCheckoutController } from "./service-impl";
+import { storeEndpoints } from "./store/endpoints/routes";
+
+export type {
+	CheckoutRequest,
+	CheckoutRequestCreateInput,
+	CheckoutRequestCreateResult,
+	CheckoutRequestInvitationState,
+	CheckoutRequestReadResult,
+	CheckoutRequestStore,
+} from "./checkout-request";
+export type {
+	AdmitCheckoutFinalizationInput,
+	CheckoutFinalization,
+	CheckoutFinalizationAttempt,
+	CheckoutFinalizationCompensation,
+	CheckoutFinalizationErrorCode,
+	CheckoutFinalizationSnapshot,
+	CheckoutFinalizationStore,
+	RecordCheckoutFinalizationAttemptInput,
+	RecordCheckoutFinalizationCompensationInput,
+} from "./finalization";
 export type {
 	CheckoutAddress,
 	CheckoutController,
@@ -83,6 +82,32 @@ export type {
 	PaymentProcessController,
 	ShippingRateController,
 } from "./service";
+export {
+	admitCheckoutFinalizationInputSchema,
+	CheckoutFinalizationError,
+	checkoutFinalizationAcceptedInputSchema,
+	checkoutFinalizationAttemptOutcomeSchema,
+	checkoutFinalizationAttentionSchema,
+	checkoutFinalizationCompensationActionSchema,
+	checkoutFinalizationCompensationOutcomeSchema,
+	checkoutFinalizationCompensationTargetSchema,
+	checkoutFinalizationLifecycleV1,
+	checkoutFinalizationResultSchema,
+	checkoutFinalizationStateSchema,
+	checkoutFinalizationStepSchema,
+	checkoutRequestAuditActorSchema,
+	checkoutRequestCartSnapshotSchema,
+	checkoutRequestContactSchema,
+	checkoutRequestCreateInputSchema,
+	checkoutRequestReasonSchema,
+	createCheckoutFinalizationStore,
+	createCheckoutRequestStore,
+	recordCheckoutFinalizationAttemptInputSchema,
+	recordCheckoutFinalizationCompensationInputSchema,
+	storedCheckoutFinalizationAttemptSchema,
+	storedCheckoutFinalizationCompensationSchema,
+	storedCheckoutFinalizationSchema,
+};
 
 export interface CheckoutOptions extends ModuleConfig {
 	/**

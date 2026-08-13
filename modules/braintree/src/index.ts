@@ -1,13 +1,18 @@
 import type { Module, ModuleConfig } from "@86d-app/core/types/module";
 import { adminEndpoints } from "./admin/endpoints/routes";
+import {
+	BraintreePaymentConnectionProvider,
+	createBraintreePaymentConnectionProvider,
+} from "./connection-provider";
+import { BraintreePaymentProvider } from "./provider";
 import { createStoreEndpoints } from "./store/endpoints/routes";
 
 export type { BraintreePaymentConnectionProviderOptions } from "./connection-provider";
 export {
 	BraintreePaymentConnectionProvider,
+	BraintreePaymentProvider,
 	createBraintreePaymentConnectionProvider,
-} from "./connection-provider";
-export { BraintreePaymentProvider } from "./provider";
+};
 
 export interface BraintreeOptions extends ModuleConfig {
 	merchantId: string;

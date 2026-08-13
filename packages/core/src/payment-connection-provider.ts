@@ -119,6 +119,11 @@ export type PaymentProviderReconciliationRequest = Readonly<{
  */
 export interface PaymentConnectionProvider {
 	readonly connectionId: string;
+	/**
+	 * Immutable provider-owned merchant/account identity authorized by the
+	 * credentials inside this adapter. Credential rotation must never change it.
+	 */
+	readonly providerAccountId: string;
 	readonly provider: string;
 	readonly mode: PaymentConnectionMode;
 	readonly capabilities: readonly PaymentConnectionCapability[];

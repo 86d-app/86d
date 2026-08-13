@@ -84,6 +84,7 @@ export function AnswerList({ questionId }: { questionId: string }) {
 
 		const upvoteButton = (
 			<button
+				key={answer.id}
 				type="button"
 				disabled={voted || isUpvoting}
 				onClick={() => void handleUpvote(answer.id)}

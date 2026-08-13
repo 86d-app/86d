@@ -6,5 +6,7 @@
  * into server-side bundles (it requires React hooks at eval time).
  */
 
-export { action, makeAutoObservable, runInAction } from "mobx";
-export { observer } from "mobx-react-lite";
+import { action, makeAutoObservable, runInAction } from "mobx";
+import { observer } from "mobx-react-lite";
+
+export { action, makeAutoObservable, observer, runInAction };

@@ -36,6 +36,7 @@ function installPayPalFetch(
 function provider() {
 	return new PayPalPaymentConnectionProvider({
 		connectionId: "paypal-connection-1",
+		providerAccountId: "PAYPAL-MERCHANT-1",
 		clientId: "client-id",
 		clientSecret: "client-secret",
 		mode: "test",
@@ -84,6 +85,21 @@ afterEach(() => {
 });
 
 describe("PayPal Payment Connection provider", () => {
+	it("freezes the verified PayPal merchant identity at adapter binding", () => {
+		expect(provider().providerAccountId).toBe("PAYPAL-MERCHANT-1");
+		expect(
+			() =>
+				new PayPalPaymentConnectionProvider({
+					connectionId: "paypal-connection-1",
+					providerAccountId: " ",
+					clientId: "client-id",
+					clientSecret: "client-secret",
+					mode: "test",
+					returnUrl: "https://store.example/paypal/return",
+					cancelUrl: "https://store.example/paypal/cancel",
+				}),
+		).toThrow();
+	});
 	it("creates an AUTHORIZE order with server money and the stable operation key", async () => {
 		const fetchMock = installPayPalFetch(async (url) => {
 			expect(url).toContain("api-m.sandbox.paypal.com/v2/checkout/orders");
@@ -169,6 +185,7 @@ describe("PayPal Payment Connection provider", () => {
 			() =>
 				new PayPalPaymentConnectionProvider({
 					connectionId: "paypal-untrusted",
+					providerAccountId: "PAYPAL-MERCHANT-1",
 					clientId: "client-id",
 					clientSecret: "client-secret",
 					mode: "test",
@@ -396,9 +413,8 @@ describe("PayPal Payment Connection provider", () => {
 		let refund = 0;
 		installPayPalFetch(async (url, init) => {
 			expect(url).toContain("/v2/payments/captures/CAPTURE-5/refund");
-			requestIds.push(
-				(init?.headers as Record<string, string>)["PayPal-Request-Id"] ?? "",
-			);
+			const headers = init?.headers as Record<string, string> | undefined;
+			requestIds.push(headers?.["PayPal-Request-Id"] ?? "");
 			refund += 1;
 			return jsonResponse({
 				id: `REFUND-${refund}`,
@@ -475,6 +491,131 @@ describe("PayPal Payment Connection provider", () => {
 			"PayPal-Request-Id": "create-order-window-key",
 		});
 	});
+
+	it("replays an unclear capture with the exact durable request inside the recovery bound", async () => {
+		const fetchMock = installPayPalFetch(async (url) => {
+			expect(url).toContain("/v2/payments/authorizations/AUTH-REPLAY/capture");
+			return jsonResponse({
+				id: "CAPTURE-REPLAY",
+				status: "COMPLETED",
+				amount: { currency_code: "USD", value: "7.50" },
+			});
+		});
+		const payload = {
+			operation: "capture" as const,
+			amount: 750,
+			currency: "USD",
+			providerPaymentReference: "AUTH-REPLAY",
+		};
+		const durable = request(payload, "capture-replay-stable-key");
+
+		const outcome = await provider().reconcile({
+			...durable,
+			operation: "capture",
+			attempt: 2,
+			createdAt: new Date(Date.now() - 60_000),
+		});
+
+		expect(outcome).toMatchObject({
+			state: "succeeded",
+			providerReference: "CAPTURE-REPLAY",
+		});
+		const call = fetchMock.mock.calls.find(([url]) =>
+			String(url).includes("/capture"),
+		);
+		expect(call?.[1]?.headers).toMatchObject({
+			"PayPal-Request-Id": "capture-replay-stable-key",
+		});
+		expect(JSON.parse(String(call?.[1]?.body))).toEqual({
+			amount: { currency_code: "USD", value: "7.50" },
+			final_capture: false,
+		});
+	});
+
+	it("replays an unclear refund with the exact durable request inside 44 days", async () => {
+		const fetchMock = installPayPalFetch(async (url) => {
+			expect(url).toContain("/v2/payments/captures/CAPTURE-REPLAY/refund");
+			return jsonResponse({
+				id: "REFUND-REPLAY",
+				status: "COMPLETED",
+				amount: { currency_code: "USD", value: "2.50" },
+			});
+		});
+		const payload = {
+			operation: "refund" as const,
+			amount: 250,
+			currency: "USD",
+			providerPaymentReference: "CAPTURE-REPLAY",
+			reason: "Duplicate item",
+		};
+		const durable = request(payload, "refund-replay-stable-key");
+
+		const outcome = await provider().reconcile({
+			...durable,
+			operation: "refund",
+			attempt: 2,
+			createdAt: new Date(Date.now() - 43 * 24 * 60 * 60 * 1_000),
+		});
+
+		expect(outcome).toMatchObject({
+			state: "succeeded",
+			providerReference: "REFUND-REPLAY",
+		});
+		const call = fetchMock.mock.calls.find(([url]) =>
+			String(url).includes("/refund"),
+		);
+		expect(call?.[1]?.headers).toMatchObject({
+			"PayPal-Request-Id": "refund-replay-stable-key",
+		});
+		expect(JSON.parse(String(call?.[1]?.body))).toEqual({
+			amount: { currency_code: "USD", value: "2.50" },
+			note_to_payer: "Duplicate item",
+		});
+	});
+
+	it.each([
+		{
+			operation: "capture" as const,
+			createdAt: new Date(Date.now() - 6 * 60 * 1_000),
+			payload: {
+				operation: "capture" as const,
+				amount: 750,
+				currency: "USD",
+				providerPaymentReference: "AUTH-EXPIRED",
+			},
+		},
+		{
+			operation: "refund" as const,
+			createdAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1_000),
+			payload: {
+				operation: "refund" as const,
+				amount: 250,
+				currency: "USD",
+				providerPaymentReference: "CAPTURE-EXPIRED",
+			},
+		},
+	])(
+		"keeps an unclear $operation ambiguous after its replay bound",
+		async ({ operation, createdAt, payload }) => {
+			const fetchMock = installPayPalFetch(async () => {
+				throw new Error("must not be called");
+			});
+			const durable = request(payload, `${operation}-expired-stable-key`);
+
+			const outcome = await provider().reconcile({
+				...durable,
+				operation,
+				attempt: 2,
+				createdAt,
+			});
+
+			expect(outcome).toEqual({
+				state: "ambiguous",
+				result: { reason: "provider_reference_required_for_reconciliation" },
+			});
+			expect(fetchMock).not.toHaveBeenCalled();
+		},
+	);
 
 	it("reconciles a known refund using canonical GET without another refund", async () => {
 		const fetchMock = installPayPalFetch(async (url, init) => {

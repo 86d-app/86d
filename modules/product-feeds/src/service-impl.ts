@@ -125,26 +125,26 @@ function passesFilters(product: ProductData, filters: FeedFilters): boolean {
 	if (
 		filters.includeStatuses &&
 		filters.includeStatuses.length > 0 &&
-		product.availability
-	) {
-		if (!filters.includeStatuses.includes(product.availability)) return false;
-	}
+		product.availability &&
+		!filters.includeStatuses.includes(product.availability)
+	)
+		return false;
 
 	if (
 		filters.excludeCategories &&
 		filters.excludeCategories.length > 0 &&
-		product.category
-	) {
-		if (filters.excludeCategories.includes(product.category)) return false;
-	}
+		product.category &&
+		filters.excludeCategories.includes(product.category)
+	)
+		return false;
 
 	if (
 		filters.includeCategories &&
 		filters.includeCategories.length > 0 &&
-		product.category
-	) {
-		if (!filters.includeCategories.includes(product.category)) return false;
-	}
+		product.category &&
+		!filters.includeCategories.includes(product.category)
+	)
+		return false;
 
 	if (filters.minPrice !== undefined && product.price < filters.minPrice) {
 		return false;

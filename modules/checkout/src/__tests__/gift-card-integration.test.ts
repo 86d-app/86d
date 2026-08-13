@@ -343,23 +343,25 @@ async function simulateCompleteWithGiftCard(
 
 	// Step 1: Redeem gift card BEFORE creating the order
 	let actualGiftCardAmount = existing.giftCardAmount;
-	if (existing.giftCardCode && existing.giftCardAmount > 0) {
-		if (opts?.giftCardCtrl) {
-			const redeemResult = await opts.giftCardCtrl.redeem(
-				existing.giftCardCode,
-				existing.giftCardAmount,
-			);
+	if (
+		existing.giftCardCode &&
+		existing.giftCardAmount > 0 &&
+		opts?.giftCardCtrl
+	) {
+		const redeemResult = await opts.giftCardCtrl.redeem(
+			existing.giftCardCode,
+			existing.giftCardAmount,
+		);
 
-			if (!redeemResult) {
-				return {
-					error:
-						"Gift card could not be redeemed. It may be expired, inactive, or have insufficient balance.",
-					status: 422,
-				};
-			}
-
-			actualGiftCardAmount = redeemResult.transaction.amount;
+		if (!redeemResult) {
+			return {
+				error:
+					"Gift card could not be redeemed. It may be expired, inactive, or have insufficient balance.",
+				status: 422,
+			};
 		}
+
+		actualGiftCardAmount = redeemResult.transaction.amount;
 	}
 
 	// Step 2: Recalculate total if needed

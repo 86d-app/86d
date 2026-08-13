@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getStoreName } from "~/lib/seo";
+import GiftCardsPageClient from "./gift-cards-page-client";
 
 export async function generateMetadata(): Promise<Metadata> {
 	const storeName = await getStoreName();
@@ -9,4 +10,6 @@ export async function generateMetadata(): Promise<Metadata> {
 	};
 }
 
-export { default } from "./gift-cards-page-client";
+export default function GiftCardsPage() {
+	return <GiftCardsPageClient />;
+}

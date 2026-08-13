@@ -74,13 +74,10 @@ function validateSubmission(
 		if (
 			(field.type === "select" || field.type === "radio") &&
 			field.options &&
-			field.options.length > 0
+			field.options.length > 0 &&
+			!field.options.includes(strValue)
 		) {
-			if (!field.options.includes(strValue)) {
-				errors.push(
-					`${field.label} must be one of: ${field.options.join(", ")}`,
-				);
-			}
+			errors.push(`${field.label} must be one of: ${field.options.join(", ")}`);
 		}
 	}
 

@@ -223,7 +223,7 @@ describe("gift-wrapping controller edge cases", () => {
 
 	describe("getOption edge cases", () => {
 		it("returns correct option when many exist", async () => {
-			const options = [];
+			const options: Awaited<ReturnType<typeof controller.createOption>>[] = [];
 			for (let i = 0; i < 10; i++) {
 				options.push(
 					await controller.createOption(
@@ -632,7 +632,7 @@ describe("gift-wrapping controller edge cases", () => {
 		});
 
 		it("handles many options and selections with correct revenue", async () => {
-			const options = [];
+			const options: Awaited<ReturnType<typeof controller.createOption>>[] = [];
 			for (let i = 0; i < 20; i++) {
 				options.push(
 					await controller.createOption(

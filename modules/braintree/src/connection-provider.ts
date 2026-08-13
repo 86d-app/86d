@@ -188,6 +188,8 @@ const GET_REFUND = `
 export interface BraintreePaymentConnectionProviderOptions {
 	/** Immutable Store-owned Payment Connection identity. */
 	connectionId: string;
+	/** Braintree merchant ID the credential was verified to authorize. */
+	providerAccountId: string;
 	publicKey: string;
 	privateKey: string;
 	mode: PaymentConnectionMode;
@@ -338,6 +340,7 @@ export class BraintreePaymentConnectionProvider
 		"refund",
 	] as const;
 	readonly connectionId: string;
+	readonly providerAccountId: string;
 	readonly mode: PaymentConnectionMode;
 
 	private readonly publicKey: string;
@@ -348,6 +351,12 @@ export class BraintreePaymentConnectionProvider
 	constructor(options: BraintreePaymentConnectionProviderOptions) {
 		if (options.connectionId.trim().length === 0) {
 			throw new Error("Braintree Payment Connection ID is required");
+		}
+		if (
+			options.providerAccountId.trim().length === 0 ||
+			options.providerAccountId.trim().length > 255
+		) {
+			throw new Error("Braintree provider account ID is required");
 		}
 		if (
 			options.publicKey.trim().length === 0 ||
@@ -369,6 +378,7 @@ export class BraintreePaymentConnectionProvider
 		}
 
 		this.connectionId = options.connectionId;
+		this.providerAccountId = options.providerAccountId.trim();
 		this.publicKey = options.publicKey;
 		this.privateKey = options.privateKey;
 		this.mode = options.mode;

@@ -62,7 +62,11 @@ const client = createModuleClient([
 
 The module also exports `createStripePaymentConnectionProvider` for the durable
 Payment Connection contract. The factory binds one adapter instance to one
-immutable Connection ID. It is intentionally not registered by the legacy
+immutable Connection ID and server-provisioned Stripe account ID
+(`providerAccountId`). The host must verify that its credential authorizes that
+account before binding the adapter. Credential rotation cannot rebind historical
+work to another account because the Payment owner requires that identity to
+match its durable Connection. The adapter is intentionally not registered by the legacy
 module initializer while Checkout migration and durable webhook ingress remain
 contained.
 

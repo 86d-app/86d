@@ -65,18 +65,18 @@ const eventBody = JSON.stringify({
 });
 
 describe("Square webhook containment", () => {
-	it.each([
-		{ webhookSignatureKey: signatureKey },
-		{ notificationUrl },
-	])("fails closed with incomplete verification config", async (options) => {
-		const { response, fx } = await invoke(
-			createSquareWebhook(options),
-			request(eventBody),
-		);
-		expect(response.status).toBe(503);
-		expect(fx.payments.handleWebhookEvent).not.toHaveBeenCalled();
-		expect(fx.events.emit).not.toHaveBeenCalled();
-	});
+	it.each([{ webhookSignatureKey: signatureKey }, { notificationUrl }])(
+		"fails closed with incomplete verification config",
+		async (options) => {
+			const { response, fx } = await invoke(
+				createSquareWebhook(options),
+				request(eventBody),
+			);
+			expect(response.status).toBe(503);
+			expect(fx.payments.handleWebhookEvent).not.toHaveBeenCalled();
+			expect(fx.events.emit).not.toHaveBeenCalled();
+		},
+	);
 
 	it("rejects an invalid signature before any effects", async () => {
 		const { response, fx } = await invoke(

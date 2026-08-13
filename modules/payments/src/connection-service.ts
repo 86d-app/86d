@@ -39,6 +39,7 @@ const minorAmountSchema = z
 	.positive()
 	.max(Number.MAX_SAFE_INTEGER);
 const providerReferenceSchema = z.string().min(1).max(500);
+const providerAccountIdSchema = z.string().trim().min(1).max(255);
 
 export const paymentConnectionCapabilitySchema = z.enum([
 	"intent",
@@ -102,6 +103,7 @@ const dateSchema = z.coerce.date();
 export const paymentConnectionSchema = z
 	.object({
 		id: identifierSchema,
+		providerAccountId: providerAccountIdSchema,
 		name: connectionNameSchema,
 		normalizedName: z.string().min(1).max(100),
 		provider: providerNameSchema,
@@ -359,6 +361,7 @@ export type PaymentOperationReconciliationOptions = z.input<
 export const createPaymentConnectionInputSchema = z
 	.object({
 		id: identifierSchema.optional(),
+		providerAccountId: providerAccountIdSchema,
 		name: connectionNameSchema,
 		provider: providerNameSchema,
 		mode: paymentConnectionModeSchema,
@@ -585,6 +588,7 @@ export function createPaymentConnectionController(
 	const providersByConnection = new Map<string, PaymentConnectionProvider>();
 	for (const provider of providers) {
 		identifierSchema.parse(provider.connectionId);
+		providerAccountIdSchema.parse(provider.providerAccountId);
 		providerNameSchema.parse(provider.provider);
 		paymentConnectionModeSchema.parse(provider.mode);
 		z.array(paymentConnectionCapabilitySchema)
@@ -627,6 +631,7 @@ export function createPaymentConnectionController(
 		const provider = providersByConnection.get(connection.id);
 		if (
 			!provider ||
+			provider.providerAccountId !== connection.providerAccountId ||
 			provider.provider !== connection.provider ||
 			provider.mode !== connection.mode ||
 			!provider.capabilities.includes(capability)
@@ -805,30 +810,6 @@ export function createPaymentConnectionController(
 				payload: parsed.payload,
 			});
 			const requestDigest = await sha256(canonicalJson(requestDigestInput));
-			const pendingRows = await transaction.findMany("paymentOperationV2", {
-				where: { paymentId: parsed.paymentId },
-			});
-			const pending: PendingPaymentOperationClaim[] = pendingRows
-				.map((row) => paymentOperationSchema.parse(row))
-				.filter(
-					(candidate) =>
-						candidate.id !== operationId &&
-						[
-							"pending",
-							"requires_action",
-							"running",
-							"ambiguous",
-							"needs_attention",
-							"dead_letter",
-						].includes(candidate.state),
-				)
-				.map((candidate) => ({
-					operation: candidate.operation,
-					...(candidate.sourceOperationId
-						? { sourceOperationId: candidate.sourceOperationId }
-						: {}),
-					payload: candidate.payload,
-				}));
 			await assertPaymentOperationClaimableLocked(
 				transaction,
 				{
@@ -837,7 +818,34 @@ export function createPaymentConnectionController(
 					...(sourceOperationId ? { sourceOperationId } : {}),
 					payload: parsed.payload,
 				},
-				pending,
+				async () => {
+					const pendingRows = await transaction.findMany("paymentOperationV2", {
+						where: { paymentId: parsed.paymentId },
+					});
+					return pendingRows
+						.map((row) => paymentOperationSchema.parse(row))
+						.filter(
+							(candidate) =>
+								candidate.id !== operationId &&
+								[
+									"pending",
+									"requires_action",
+									"running",
+									"ambiguous",
+									"needs_attention",
+									"dead_letter",
+								].includes(candidate.state),
+						)
+						.map(
+							(candidate): PendingPaymentOperationClaim => ({
+								operation: candidate.operation,
+								...(candidate.sourceOperationId
+									? { sourceOperationId: candidate.sourceOperationId }
+									: {}),
+								payload: candidate.payload,
+							}),
+						);
+				},
 			);
 
 			const now = new Date();
@@ -1355,6 +1363,7 @@ export function createPaymentConnectionController(
 				const now = new Date();
 				const connection = paymentConnectionSchema.parse({
 					id,
+					providerAccountId: parsed.providerAccountId,
 					name: parsed.name,
 					normalizedName,
 					provider: parsed.provider,

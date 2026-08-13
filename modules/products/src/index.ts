@@ -4,26 +4,8 @@ import { catalogPublishedV1 } from "@86d-app/core/durable-events";
 import type { Module, ModuleConfig } from "@86d-app/core/types/module";
 import { adminEndpoints } from "./admin/endpoints/routes";
 import { productResolveProvider } from "./capabilities";
-import { controllers } from "./controllers";
 import {
-	toMarkdownCollectionDetail,
-	toMarkdownCollectionListing,
-	toMarkdownProductDetail,
-	toMarkdownProductListing,
-} from "./markdown";
-import { productsSchema } from "./schema";
-import { storeEndpoints } from "./store/endpoints/routes";
-
-export {
 	applyCatalogRevisionOperation,
-	type CatalogRevisionContent,
-	type CatalogRevisionOperationContext,
-	type CatalogRevisionOperationDecision,
-	type CatalogRevisionOperationFailureCode,
-	type CatalogRevisionOperationInput,
-	type CatalogRevisionOperationResult,
-	type CatalogRevisionRecord,
-	type CatalogRevisionState,
 	catalogRevisionCategorySchema,
 	catalogRevisionContentSchema,
 	catalogRevisionOperationDecisionSchema,
@@ -35,6 +17,39 @@ export {
 	catalogRevisionVariantSchema,
 	digestCatalogRevisionContent,
 } from "./catalog-revisions";
+import { controllers } from "./controllers";
+import {
+	toMarkdownCollectionDetail,
+	toMarkdownCollectionListing,
+	toMarkdownProductDetail,
+	toMarkdownProductListing,
+} from "./markdown";
+import { productsSchema } from "./schema";
+import { storeEndpoints } from "./store/endpoints/routes";
+
+export type {
+	CatalogRevisionContent,
+	CatalogRevisionOperationContext,
+	CatalogRevisionOperationDecision,
+	CatalogRevisionOperationFailureCode,
+	CatalogRevisionOperationInput,
+	CatalogRevisionOperationResult,
+	CatalogRevisionRecord,
+	CatalogRevisionState,
+} from "./catalog-revisions";
+export {
+	applyCatalogRevisionOperation,
+	catalogRevisionCategorySchema,
+	catalogRevisionContentSchema,
+	catalogRevisionOperationDecisionSchema,
+	catalogRevisionOperationFailureCodeSchema,
+	catalogRevisionOperationInputSchema,
+	catalogRevisionProductSchema,
+	catalogRevisionRecordSchema,
+	catalogRevisionStateSchema,
+	catalogRevisionVariantSchema,
+	digestCatalogRevisionContent,
+};
 
 export interface ProductsOptions extends ModuleConfig {
 	/**

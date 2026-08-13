@@ -405,7 +405,7 @@ describe("createSettingsController – edge cases", () => {
 		});
 
 		it("handles large number of settings efficiently", async () => {
-			const items = [];
+			const items: Array<{ key: string; value: string }> = [];
 			for (let i = 0; i < 100; i++) {
 				const group = i % 2 === 0 ? "general" : "commerce";
 				items.push({

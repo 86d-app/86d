@@ -115,7 +115,7 @@ describe("payment controller edge cases", () => {
 		});
 
 		it("returns correct intent among many", async () => {
-			const intents = [];
+			const intents: Awaited<ReturnType<typeof controller.createIntent>>[] = [];
 			for (let i = 1; i <= 15; i++) {
 				const intent = await controller.createIntent({ amount: i * 100 });
 				intents.push(intent);

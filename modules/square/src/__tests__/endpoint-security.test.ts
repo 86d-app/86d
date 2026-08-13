@@ -57,6 +57,7 @@ async function callWebhook(
 	context?: Record<string, unknown>,
 	autoSign = true,
 ): Promise<Response> {
+	let nextRequest = request;
 	if (autoSign && !request.headers.has("x-square-hmacsha256-signature")) {
 		const body = await request.clone().text();
 		const headers = new Headers(request.headers);
@@ -64,11 +65,14 @@ async function callWebhook(
 			"x-square-hmacsha256-signature",
 			await buildSignature(SIG_KEY, NOTIFICATION_URL, body),
 		);
-		request = new Request(request, { headers });
+		nextRequest = new Request(request, { headers });
 	}
 	const h = handler as unknown as Record<string, unknown>;
 	const fn = typeof h.handler === "function" ? h.handler : h;
-	return (fn as CallableFunction)({ request, context }) as Promise<Response>;
+	return (fn as CallableFunction)({
+		request: nextRequest,
+		context,
+	}) as Promise<Response>;
 }
 
 function mockFetchResponse(data: unknown, ok = true, status = 200) {

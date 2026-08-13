@@ -10,4 +10,6 @@
  * boundary into a server component's module graph.
  */
 
-export { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+
+export { dehydrate, HydrationBoundary };
