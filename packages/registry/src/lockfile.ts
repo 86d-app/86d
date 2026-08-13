@@ -13,7 +13,7 @@ const lockedModuleSchema = z.object({
 	packageName: z.string(),
 	/** Module version from package.json (if available). */
 	version: z.string().optional(),
-	/** SHA-256 integrity hash of the module's package.json. */
+	/** SHA-256 integrity hash of the module's complete source subtree. */
 	integrity: z.string().optional(),
 	/** Relative path to the module directory (from project root). */
 	localPath: z.string().optional(),
@@ -167,12 +167,20 @@ export function verifyLockfile(
 			continue;
 		}
 
-		// Check integrity
-		if (locked.integrity && mod.localPath) {
-			const currentIntegrity = computeIntegrity(mod.localPath);
-			if (currentIntegrity && currentIntegrity !== locked.integrity) {
-				diff.changed.push(name);
-			}
+		// Compare integrity, failing closed. An entry with no recorded hash, or a
+		// Module whose source can no longer be hashed, counts as drift: treating
+		// either as "nothing to compare" is what let unverified source pass.
+		if (!mod.localPath) {
+			diff.changed.push(name);
+			continue;
+		}
+		const currentIntegrity = computeIntegrity(mod.localPath);
+		if (!locked.integrity || !currentIntegrity) {
+			diff.changed.push(name);
+			continue;
+		}
+		if (currentIntegrity !== locked.integrity) {
+			diff.changed.push(name);
 		}
 	}
 

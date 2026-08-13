@@ -196,6 +196,7 @@ export function createSquareWebhook(opts: SquareWebhookOptions) {
 	return createStoreEndpoint(
 		"/square/webhook",
 		{
+			exposure: "provider_webhook",
 			method: "POST",
 			requireRequest: true,
 		},

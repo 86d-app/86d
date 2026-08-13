@@ -29,6 +29,21 @@ async function signSvix(
 	return `v1,${b64}`;
 }
 
+/** Build a request the configured endpoint will accept as authentic. */
+async function makeSignedRequest(
+	body: string,
+	headers: Record<string, string> = {},
+): Promise<Request> {
+	const msgId = "msg_signed_test";
+	const timestamp = String(Math.floor(Date.now() / 1000));
+	return makeRequest(body, {
+		"svix-id": msgId,
+		"svix-timestamp": timestamp,
+		"svix-signature": await signSvix(msgId, timestamp, body, WEBHOOK_SECRET),
+		...headers,
+	});
+}
+
 function makeRequest(
 	body: string,
 	headers: Record<string, string> = {},
@@ -69,7 +84,7 @@ function invokeEndpoint(
 	return fn(ctx) as Promise<Response>;
 }
 
-function makeCtx(
+async function makeCtx(
 	body: string,
 	headers: Record<string, string> = {},
 	controllerOverrides?: Partial<
@@ -85,14 +100,40 @@ function makeCtx(
 		query: {},
 		params: {},
 		body: {},
-		request: makeRequest(body, headers),
+		// Default to an authentic sender; a test that is about verification
+		// passes its own svix headers and keeps them.
+		request: headers["svix-signature"]
+			? makeRequest(body, headers)
+			: await makeSignedRequest(body, headers),
 		context: { controllers: { notifications: controller } },
 	};
 }
 
 describe("createResendWebhook", () => {
-	describe("without webhook secret (dev mode)", () => {
+	describe("without webhook secret", () => {
 		const webhook = createResendWebhook({});
+
+		it("refuses the event instead of trusting an unverifiable sender", async () => {
+			const body = JSON.stringify({
+				type: "email.delivered",
+				data: { email_id: "email-abc" },
+			});
+			const response = await invokeEndpoint(webhook, {
+				query: {},
+				params: {},
+				body: {},
+				request: makeRequest(body),
+				context: { controllers: { notifications: {} } },
+			});
+
+			expect(response.status).toBe(503);
+			const json = await response.json();
+			expect(json.error).toMatch(/not configured/i);
+		});
+	});
+
+	describe("with the webhook secret configured", () => {
+		const webhook = createResendWebhook({ webhookSecret: WEBHOOK_SECRET });
 
 		it("accepts email.delivered and updates delivery status", async () => {
 			const notification = makeNotification({
@@ -108,7 +149,7 @@ describe("createResendWebhook", () => {
 				type: "email.delivered",
 				data: { email_id: "email-abc" },
 			});
-			const ctx = makeCtx(
+			const ctx = await makeCtx(
 				body,
 				{},
 				{
@@ -140,7 +181,7 @@ describe("createResendWebhook", () => {
 				type: "email.bounced",
 				data: { email_id: "email-bounce" },
 			});
-			const ctx = makeCtx(
+			const ctx = await makeCtx(
 				body,
 				{},
 				{
@@ -167,7 +208,7 @@ describe("createResendWebhook", () => {
 				type: "email.complained",
 				data: { email_id: "email-spam" },
 			});
-			const ctx = makeCtx(
+			const ctx = await makeCtx(
 				body,
 				{},
 				{
@@ -187,7 +228,7 @@ describe("createResendWebhook", () => {
 				type: "email.opened",
 				data: { email_id: "email-abc" },
 			});
-			const ctx = makeCtx(body);
+			const ctx = await makeCtx(body);
 
 			const res = await invokeEndpoint(webhook, ctx);
 			const json = await res.json();
@@ -201,7 +242,7 @@ describe("createResendWebhook", () => {
 				type: "email.delivered",
 				data: { email_id: "unknown-id" },
 			});
-			const ctx = makeCtx(body, {}, { findByExternalId: findSpy });
+			const ctx = await makeCtx(body, {}, { findByExternalId: findSpy });
 
 			const res = await invokeEndpoint(webhook, ctx);
 			const json = await res.json();
@@ -220,7 +261,7 @@ describe("createResendWebhook", () => {
 				type: "email.delivered",
 				data: { email_id: "email-abc" },
 			});
-			const ctx = makeCtx(
+			const ctx = await makeCtx(
 				body,
 				{},
 				{
@@ -236,7 +277,7 @@ describe("createResendWebhook", () => {
 		});
 
 		it("returns 400 for invalid JSON body", async () => {
-			const ctx = makeCtx("not-json");
+			const ctx = await makeCtx("not-json");
 
 			const res = await invokeEndpoint(webhook, ctx);
 			expect(res.status).toBe(400);
@@ -247,7 +288,7 @@ describe("createResendWebhook", () => {
 				type: "email.delivered",
 				data: {},
 			});
-			const ctx = makeCtx(body);
+			const ctx = await makeCtx(body);
 
 			const res = await invokeEndpoint(webhook, ctx);
 			const json = await res.json();
@@ -273,7 +314,7 @@ describe("createResendWebhook", () => {
 			const timestamp = String(Math.floor(Date.now() / 1000));
 			const signature = await signSvix(msgId, timestamp, body, WEBHOOK_SECRET);
 
-			const ctx = makeCtx(
+			const ctx = await makeCtx(
 				body,
 				{
 					"svix-id": msgId,
@@ -297,7 +338,7 @@ describe("createResendWebhook", () => {
 			const msgId = "msg_abc123";
 			const timestamp = String(Math.floor(Date.now() / 1000));
 
-			const ctx = makeCtx(body, {
+			const ctx = await makeCtx(body, {
 				"svix-id": msgId,
 				"svix-timestamp": timestamp,
 				"svix-signature": "v1,invalidsignature==",
@@ -312,7 +353,13 @@ describe("createResendWebhook", () => {
 				type: "email.delivered",
 				data: { email_id: "email-abc" },
 			});
-			const ctx = makeCtx(body);
+			const ctx = {
+				query: {},
+				params: {},
+				body: {},
+				request: makeRequest(body),
+				context: { controllers: { notifications: {} } },
+			};
 
 			const res = await invokeEndpoint(webhook, ctx);
 			expect(res.status).toBe(400);
@@ -333,7 +380,7 @@ describe("createResendWebhook", () => {
 				WEBHOOK_SECRET,
 			);
 
-			const ctx = makeCtx(body, {
+			const ctx = await makeCtx(body, {
 				"svix-id": msgId,
 				"svix-timestamp": oldTimestamp,
 				"svix-signature": signature,
@@ -361,7 +408,7 @@ describe("createResendWebhook", () => {
 			// Multiple signatures: one invalid, one valid
 			const multiSig = `v1,invalidsignature== ${realSig}`;
 
-			const ctx = makeCtx(
+			const ctx = await makeCtx(
 				body,
 				{
 					"svix-id": msgId,

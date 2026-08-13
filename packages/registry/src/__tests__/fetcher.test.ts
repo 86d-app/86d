@@ -1,6 +1,6 @@
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { computeIntegrity, ensureCacheDir, fetchModule } from "../fetcher.js";
 import type { ModuleSpecifier, RegistryManifest } from "../types.js";
 
@@ -107,14 +107,91 @@ describe("ensureCacheDir", () => {
 });
 
 describe("computeIntegrity", () => {
-	it("computes sha256 hash for module with package.json", () => {
+	it("computes sha256 hash over the Module subtree", () => {
 		const hash = computeIntegrity(join(TMP_ROOT, "modules", "products"));
 		expect(hash).toBeDefined();
 		expect(hash).toMatch(/^sha256-[a-f0-9]{64}$/);
 	});
 
-	it("returns undefined for module without package.json", () => {
+	it("returns undefined for a missing module directory", () => {
 		const hash = computeIntegrity("/non/existent/module");
 		expect(hash).toBeUndefined();
+	});
+});
+
+describe("registry fetch verification", () => {
+	// A failed verification deletes the unverified source, so each case
+	// restores the fixture rather than inheriting the previous one.
+	beforeEach(() => {
+		mkdirSync(join(TMP_ROOT, "modules", "products", "src"), {
+			recursive: true,
+		});
+		writeFileSync(
+			join(TMP_ROOT, "modules", "products", "package.json"),
+			JSON.stringify({ name: "@86d-app/products", version: "0.0.1" }),
+		);
+	});
+
+	function manifestWith(entry: Record<string, unknown>) {
+		return {
+			version: 1 as const,
+			baseUrl: "https://github.com/86d-app/86d",
+			defaultRef: "main",
+			templates: {},
+			modules: {
+				products: {
+					name: "@86d-app/products",
+					description: "",
+					version: "1.0.0",
+					category: "general",
+					path: "modules/products",
+					requires: [],
+					hasStoreComponents: false,
+					hasAdminComponents: false,
+					hasStorePages: false,
+					maturity: "experimental" as const,
+					maturityEvidence: [],
+					providesCapabilities: [],
+					acceptsCapabilities: [],
+					emitsDurableEvents: [],
+					handlesDurableEvents: [],
+					...entry,
+				},
+			},
+		};
+	}
+
+	it("refuses a registry entry that records no subtree hash", async () => {
+		// The Module is already present locally, so the fetch short-circuits to
+		// the existing directory and goes straight to verification.
+		const spec = {
+			raw: "products",
+			source: "registry" as const,
+			name: "products",
+			packageName: "@86d-app/products",
+		};
+
+		const result = await fetchModule(spec, TMP_ROOT, manifestWith({}));
+
+		expect(result.success).toBe(false);
+		expect(result.error).toMatch(/unverified source/i);
+	});
+
+	it("refuses a registry entry whose subtree hash does not match", async () => {
+		const spec = {
+			raw: "products",
+			source: "registry" as const,
+			name: "products",
+			packageName: "@86d-app/products",
+		};
+
+		const result = await fetchModule(
+			spec,
+			TMP_ROOT,
+			manifestWith({ subtreeIntegrity: `sha256-${"0".repeat(64)}` }),
+		);
+
+		expect(result.success).toBe(false);
+		expect(result.error).toMatch(/Integrity check failed/);
 	});
 });

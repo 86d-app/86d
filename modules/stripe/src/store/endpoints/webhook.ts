@@ -230,6 +230,7 @@ export function createStripeWebhook(opts: StripeWebhookOptions) {
 	return createStoreEndpoint(
 		"/stripe/webhook",
 		{
+			exposure: "provider_webhook",
 			method: "POST",
 			requireRequest: true,
 		},

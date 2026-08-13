@@ -246,6 +246,7 @@ export function createPayPalWebhook(opts: PayPalWebhookOptions) {
 	return createStoreEndpoint(
 		"/paypal/webhook",
 		{
+			exposure: "provider_webhook",
 			method: "POST",
 			requireRequest: true,
 		},

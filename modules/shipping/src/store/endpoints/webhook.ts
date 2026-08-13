@@ -200,6 +200,7 @@ export function createShippingWebhook(opts: {
 	return createStoreEndpoint(
 		"/shipping/webhook",
 		{
+			exposure: "provider_webhook",
 			method: "POST",
 			requireRequest: true,
 		},

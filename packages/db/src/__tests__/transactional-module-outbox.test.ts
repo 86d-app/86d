@@ -239,6 +239,79 @@ describe("transactional Module outbox migration", () => {
 		});
 	});
 
+	it("accepts a terminal dead letter only with a released lease and a reason", async () => {
+		await inRollback(async () => {
+			await insertEvent();
+			await database.query(
+				`INSERT INTO "ModuleEventDelivery" (
+					"eventId", "consumer", "state", "attempts", "nextAttemptAt", "lastError"
+				) VALUES (
+					'33333333-3333-4333-8333-333333333333',
+					'audit-log.inventory-adjusted.v1', 'dead_letter', 3, now(),
+					'EVENT_ATTEMPTS_EXHAUSTED'
+				)`,
+			);
+			const stored = await database.query<{ state: string; attempts: number }>(
+				`SELECT "state", "attempts" FROM "ModuleEventDelivery"`,
+			);
+			expect(stored.rows[0]).toMatchObject({
+				state: "dead_letter",
+				attempts: 3,
+			});
+		});
+
+		// A terminal delivery must carry its reason.
+		await inRollback(async () => {
+			await insertEvent();
+			await expect(
+				database.query(
+					`INSERT INTO "ModuleEventDelivery" (
+						"eventId", "consumer", "state", "attempts", "nextAttemptAt"
+					) VALUES (
+						'33333333-3333-4333-8333-333333333333',
+						'audit-log.inventory-adjusted.v1', 'dead_letter', 3, now()
+					)`,
+				),
+			).rejects.toThrow(/check constraint/i);
+		});
+
+		// A terminal delivery must not still hold a lease.
+		await inRollback(async () => {
+			await insertEvent();
+			await expect(
+				database.query(
+					`INSERT INTO "ModuleEventDelivery" (
+						"eventId", "consumer", "state", "attempts", "nextAttemptAt",
+						"lastError", "leaseToken", "leaseOwner", "leaseExpiresAt"
+					) VALUES (
+						'33333333-3333-4333-8333-333333333333',
+						'audit-log.inventory-adjusted.v1', 'dead_letter', 3, now(),
+						'EVENT_ATTEMPTS_EXHAUSTED',
+						'66666666-6666-4666-8666-666666666666', 'worker-1',
+						now() + interval '30 seconds'
+					)`,
+				),
+			).rejects.toThrow(/check constraint/i);
+		});
+
+		// A terminal delivery never reads as delivered.
+		await inRollback(async () => {
+			await insertEvent();
+			await expect(
+				database.query(
+					`INSERT INTO "ModuleEventDelivery" (
+						"eventId", "consumer", "state", "attempts", "nextAttemptAt",
+						"lastError", "succeededAt"
+					) VALUES (
+						'33333333-3333-4333-8333-333333333333',
+						'audit-log.inventory-adjusted.v1', 'dead_letter', 3, now(),
+						'EVENT_ATTEMPTS_EXHAUSTED', now()
+					)`,
+				),
+			).rejects.toThrow(/check constraint/i);
+		});
+	});
+
 	it("installs targeted claim, stale-lease, and aggregate-order indexes", async () => {
 		const result = await database.query<{
 			indexname: string;

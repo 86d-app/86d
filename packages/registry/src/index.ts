@@ -36,7 +36,25 @@ export {
 
 // ── Types ─────────────────────────────────────────────────────────────
 
+export {
+	computeSubtreeIntegrity,
+	INTEGRITY_PREFIX,
+	type IntegrityVerdict,
+	moduleSourceFiles,
+	verifySubtreeIntegrity,
+} from "./integrity.js";
 export type { LockedModule, Lockfile, LockfileDiff } from "./lockfile.js";
+export {
+	DEFAULT_MATURITY,
+	MATURITY_FILE,
+	MATURITY_LEVELS,
+	type MaturityEvidence,
+	type MaturityRecord,
+	type ModuleMaturity,
+	maturityRecordSchema,
+	type ResolvedMaturity,
+	resolveModuleMaturity,
+} from "./maturity.js";
 export type { ResolvedTemplate } from "./template.js";
 export type {
 	FetchResult,
@@ -49,7 +67,6 @@ export type {
 	ResolvedModule,
 	StoreConfig,
 } from "./types.js";
-
 export {
 	registryManifestSchema,
 	registryModuleSchema,

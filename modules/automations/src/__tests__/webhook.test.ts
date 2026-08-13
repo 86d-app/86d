@@ -48,9 +48,32 @@ function makeWebhookRequest(
 describe("automations webhook endpoint — no secret configured", () => {
 	const endpoint = createWebhookEndpoint();
 
-	it("accepts any event without auth when no secret is configured", async () => {
+	it("refuses every event, because it cannot authenticate the caller", async () => {
 		const { context } = createTestContext();
 		const request = makeWebhookRequest({
+			eventType: "order.placed",
+			payload: { orderId: "ord-1" },
+		});
+
+		const response = await callWebhook(endpoint, request, context);
+
+		expect(response.status).toBe(503);
+		const body = await response.json();
+		expect(body.error).toMatch(/not configured/i);
+	});
+});
+
+describe("automations webhook endpoint — authenticated caller", () => {
+	const AUTHED_SECRET = "test-webhook-secret-authed";
+	const endpoint = createWebhookEndpoint({ webhookSecret: AUTHED_SECRET });
+
+	function makeAuthedRequest(body: Record<string, unknown>): Request {
+		return makeWebhookRequest(body, { "x-webhook-secret": AUTHED_SECRET });
+	}
+
+	it("accepts an authenticated event", async () => {
+		const { context } = createTestContext();
+		const request = makeAuthedRequest({
 			eventType: "order.placed",
 			payload: { orderId: "ord-1" },
 		});
@@ -76,7 +99,7 @@ describe("automations webhook endpoint — no secret configured", () => {
 			status: "active",
 		});
 
-		const request = makeWebhookRequest({
+		const request = makeAuthedRequest({
 			eventType: "order.placed",
 			payload: { orderId: "ord-1" },
 		});
@@ -103,7 +126,7 @@ describe("automations webhook endpoint — no secret configured", () => {
 			status: "draft",
 		});
 
-		const request = makeWebhookRequest({
+		const request = makeAuthedRequest({
 			eventType: "order.placed",
 			payload: { orderId: "ord-2" },
 		});
@@ -116,7 +139,7 @@ describe("automations webhook endpoint — no secret configured", () => {
 
 	it("handles missing payload gracefully (defaults to {})", async () => {
 		const { context } = createTestContext();
-		const request = makeWebhookRequest({ eventType: "product.created" });
+		const request = makeAuthedRequest({ eventType: "product.created" });
 
 		const response = await callWebhook(endpoint, request, context);
 
@@ -136,7 +159,7 @@ describe("automations webhook endpoint — no secret configured", () => {
 			status: "active",
 		});
 
-		const request = makeWebhookRequest({
+		const request = makeAuthedRequest({
 			eventType: "custom.event",
 			payload: { source: "zapier" },
 		});

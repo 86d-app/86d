@@ -16,6 +16,7 @@ export function createInstagramShopWebhook(appSecret?: string | undefined) {
 	return createStoreEndpoint(
 		"/instagram-shop/webhooks",
 		{
+			exposure: "provider_webhook",
 			method: "POST",
 			requireRequest: true,
 		},
@@ -33,6 +34,15 @@ export function createInstagramShopWebhook(appSecret?: string | undefined) {
 			}
 
 			// Verify signature if app secret is configured
+			// An unconfigured Integration must not accept a provider event.
+			// Skipping verification here would let anyone post one.
+			if (!appSecret) {
+				return Response.json(
+					{ error: "Instagram Shop webhook verification is not configured." },
+					{ status: 503 },
+				);
+			}
+
 			if (appSecret) {
 				const signature = request.headers.get("x-hub-signature-256") ?? "";
 

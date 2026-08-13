@@ -64,6 +64,7 @@ export function createTwilioWebhook(opts: {
 	return createStoreEndpoint(
 		"/notifications/webhook/twilio",
 		{
+			exposure: "provider_webhook",
 			method: "POST",
 			requireRequest: true,
 		},
@@ -75,6 +76,15 @@ export function createTwilioWebhook(opts: {
 			const params: Record<string, string> = {};
 			for (const [k, v] of new URLSearchParams(rawBody)) {
 				params[k] = v;
+			}
+
+			// An unconfigured Integration must not accept a provider event.
+			// Skipping verification here would let anyone post one.
+			if (!opts.authToken || !opts.webhookUrl) {
+				return Response.json(
+					{ error: "Twilio webhook verification is not configured." },
+					{ status: 503 },
+				);
 			}
 
 			if (opts.authToken && opts.webhookUrl) {

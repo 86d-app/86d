@@ -18,6 +18,7 @@ export function createGoogleShoppingWebhook(
 	return createStoreEndpoint(
 		"/google-shopping/webhooks",
 		{
+			exposure: "provider_webhook",
 			method: "POST",
 			requireRequest: true,
 		},
@@ -35,6 +36,15 @@ export function createGoogleShoppingWebhook(
 			}
 
 			// Verify HMAC-SHA256 signature if webhook secret is configured
+			// An unconfigured Integration must not accept a provider event.
+			// Skipping verification here would let anyone post one.
+			if (!webhookSecret) {
+				return Response.json(
+					{ error: "Google Shopping webhook verification is not configured." },
+					{ status: 503 },
+				);
+			}
+
 			if (webhookSecret) {
 				const signature = request.headers.get("x-goog-signature") ?? "";
 

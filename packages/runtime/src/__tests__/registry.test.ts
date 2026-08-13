@@ -115,12 +115,16 @@ describe("ModuleRegistry", () => {
 			await registry.boot();
 
 			expect(config.createDataService).toHaveBeenCalledTimes(2);
+			// The logical Module ID and the persisted row UUID are distinct values
+			// and both are supplied; the durable-event source identity depends on it.
 			expect(config.createDataService).toHaveBeenCalledWith({
 				storeId: "store-uuid-123",
+				moduleId: "products",
 				moduleDbId: "mod-db-1",
 			});
 			expect(config.createDataService).toHaveBeenCalledWith({
 				storeId: "store-uuid-123",
+				moduleId: "cart",
 				moduleDbId: "mod-db-2",
 			});
 		});

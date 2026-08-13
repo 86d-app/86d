@@ -92,6 +92,7 @@ export function createUberDirectWebhook(signingKey?: string | undefined) {
 	return createStoreEndpoint(
 		"/uber-direct/webhook",
 		{
+			exposure: "provider_webhook",
 			method: "POST",
 			requireRequest: true,
 		},

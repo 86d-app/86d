@@ -94,12 +94,22 @@ export function createResendWebhook(opts: {
 	return createStoreEndpoint(
 		"/notifications/webhook/resend",
 		{
+			exposure: "provider_webhook",
 			method: "POST",
 			requireRequest: true,
 		},
 		async (ctx) => {
 			const request = ctx.request;
 			const rawBody = await request.text();
+
+			// An unconfigured Integration must not accept a provider event.
+			// Skipping verification here would let anyone post one.
+			if (!opts.webhookSecret) {
+				return Response.json(
+					{ error: "Resend webhook verification is not configured." },
+					{ status: 503 },
+				);
+			}
 
 			if (opts.webhookSecret) {
 				const svixId = request.headers.get("svix-id") ?? "";

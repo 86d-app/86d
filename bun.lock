@@ -1770,6 +1770,7 @@
       },
       "devDependencies": {
         "@biomejs/biome": "catalog:",
+        "@electric-sql/pglite": "0.4.1",
         "@prisma/client": "catalog:prisma",
         "type-fest": "catalog:",
         "typescript": "catalog:",

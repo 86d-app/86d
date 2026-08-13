@@ -10,6 +10,7 @@ export function createAmazonWebhook(_webhookSecret?: string | undefined) {
 	return createStoreEndpoint(
 		"/amazon/webhooks",
 		{
+			exposure: "provider_webhook",
 			method: "POST",
 			requireRequest: true,
 		},

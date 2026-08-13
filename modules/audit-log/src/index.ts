@@ -1,9 +1,14 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
 import { adminEndpoints } from "./admin/endpoints";
+import { inventoryStockAdjustedAudit } from "./durable-consumers";
 import { auditLogSchema } from "./schema";
 import { createAuditLogController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints";
 
+export {
+	INVENTORY_STOCK_ADJUSTED_CONSUMER,
+	inventoryStockAdjustedAudit,
+} from "./durable-consumers";
 export type {
 	ActorType,
 	AuditAction,
@@ -42,6 +47,10 @@ export default function auditLog(options?: AuditLogOptions): Module {
 		events: {
 			emits: ["audit-log.entry.created", "audit-log.purged"],
 		},
+		// Delivered from the Inventory outbox, not the in-memory bus: the audit
+		// record and its dedupe receipt commit in the delivery transaction, so a
+		// crash between the stock change and the audit entry cannot lose it.
+		durableEvents: { handles: [inventoryStockAdjustedAudit] },
 
 		init: async (ctx: ModuleContext) => {
 			const controller = createAuditLogController(ctx.data);

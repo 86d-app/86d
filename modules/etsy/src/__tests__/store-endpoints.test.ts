@@ -39,18 +39,18 @@ describe("createStoreEndpoints — etsy", () => {
 		expect(endpoints).toHaveProperty("/etsy/webhooks");
 	});
 
-	it("endpoint returns 400 for invalid JSON body", async () => {
+	it("endpoint refuses an unverifiable body before parsing it", async () => {
 		const endpoints = createStoreEndpoints();
 		const req = makeRequest("not-json");
 		const res = await callEndpoint(endpoints, "/etsy/webhooks", req);
-		expect(res.status).toBe(400);
+		expect(res.status).toBe(503);
 	});
 
-	it("endpoint returns 400 for missing type and payload fields", async () => {
+	it("endpoint refuses an unverifiable payload before validating it", async () => {
 		const endpoints = createStoreEndpoints();
 		const req = makeRequest(JSON.stringify({ id: "receipt_123" }));
 		const res = await callEndpoint(endpoints, "/etsy/webhooks", req);
-		expect(res.status).toBe(400);
+		expect(res.status).toBe(503);
 	});
 
 	it("endpoint returns 401 when secret is set but signature header is missing", async () => {
@@ -65,14 +65,14 @@ describe("createStoreEndpoints — etsy", () => {
 		expect(res.status).toBe(401);
 	});
 
-	it("endpoint accepts events when no secret is configured", async () => {
+	it("endpoint refuses events when no verification material is configured", async () => {
 		const endpoints = createStoreEndpoints();
 		const req = makeRequest(
 			JSON.stringify({ type: "unknown.event", payload: {} }),
 		);
 		const res = await callEndpoint(endpoints, "/etsy/webhooks", req);
-		expect(res.status).toBe(200);
-		const json = (await res.json()) as { received: boolean };
-		expect(json.received).toBe(true);
+		expect(res.status).toBe(503);
+		const json = (await res.json()) as { error: string };
+		expect(json.error).toMatch(/not configured/i);
 	});
 });

@@ -61,10 +61,21 @@ function createDb(rows = [claimed]) {
 			updateMany: vi.fn().mockResolvedValue({ count: 1 }),
 		},
 	};
+	// A drain issues three statements in order: materialize, retire exhausted,
+	// then claim. Only the claim yields deliveries to process.
+	const statements: string[] = [];
 	return {
 		tx,
+		statements,
 		db: {
-			$queryRawUnsafe: vi.fn().mockResolvedValue(rows),
+			$queryRawUnsafe: vi
+				.fn()
+				.mockImplementation(async (sql: string, ..._params: unknown[]) => {
+					statements.push(sql);
+					if (sql.includes('INSERT INTO "ModuleEventDelivery"')) return [];
+					if (sql.includes("'dead_letter'")) return [];
+					return rows;
+				}),
 			$transaction: vi.fn(
 				async (work: (transaction: typeof tx) => Promise<unknown>) => work(tx),
 			),
@@ -76,6 +87,13 @@ function createDb(rows = [claimed]) {
 			},
 		},
 	};
+}
+
+/** The claim is the last of the three statements a drain issues. */
+function claimStatement(statements: readonly string[]): string {
+	const claim = statements.at(-1);
+	if (!claim) throw new Error("No claim statement was issued.");
+	return claim;
 }
 
 function consumer(handle?: AnyDurableEventConsumer["handle"]) {
@@ -95,11 +113,12 @@ function consumer(handle?: AnyDurableEventConsumer["handle"]) {
 
 describe("DurableEventDispatcher", () => {
 	it("claims a bounded batch with lease fencing and aggregate-local head-of-line", async () => {
-		const { db } = createDb([]);
+		const { db, statements } = createDb([]);
 		const dispatcher = new DurableEventDispatcher({
 			db,
 			consumers: [consumer()],
 			storeId: claimed.storeId,
+			maxAttempts: 5,
 			getConsumerData: (_moduleId, _transaction) => dataService(),
 		});
 
@@ -109,16 +128,93 @@ describe("DurableEventDispatcher", () => {
 			now: new Date("2026-08-12T12:00:00.000Z"),
 		});
 
-		const [sql, storeId, consumers, limit] = db.$queryRawUnsafe.mock.calls[0];
+		// Materialization must not share a statement with the claim: CTEs read the
+		// snapshot taken when the statement began, so a combined statement could
+		// never claim a delivery it had just created.
+		expect(statements).toHaveLength(3);
+		const sql = claimStatement(statements);
 		expect(sql).toMatch(/FOR UPDATE(?: OF delivery)? SKIP LOCKED/);
 		expect(sql).toContain("prior.\"state\" <> 'succeeded'");
 		expect(sql).toContain(
 			'prior_event."aggregateSequence" < event."aggregateSequence"',
 		);
 		expect(sql).not.toContain('prior."nextAttemptAt"');
-		expect(storeId).toBe(claimed.storeId);
-		expect(consumers).toEqual([claimed.consumer]);
-		expect(limit).toBe(7);
+		expect(sql).toContain('delivery."attempts" < $7');
+
+		const claimCall = db.$queryRawUnsafe.mock.calls.at(-1);
+		expect(claimCall?.[1]).toBe(claimed.storeId);
+		expect(claimCall?.[2]).toEqual([claimed.consumer]);
+		expect(claimCall?.[3]).toBe(7);
+		expect(claimCall?.[7]).toBe(5);
+	});
+
+	it("never claims a delivery whose attempt budget is spent", async () => {
+		const { db, statements } = createDb([]);
+		const dispatcher = new DurableEventDispatcher({
+			db,
+			consumers: [consumer()],
+			storeId: claimed.storeId,
+			maxAttempts: 3,
+			getConsumerData: (_moduleId, _transaction) => dataService(),
+		});
+
+		await dispatcher.drain({ limit: 5 });
+
+		const retire = statements[1];
+		expect(retire).toContain("'dead_letter'");
+		expect(retire).toContain('candidate."attempts" >= $5');
+		expect(claimStatement(statements)).toContain('delivery."attempts" < $7');
+	});
+
+	it("rejects an attempt budget outside its bounds", () => {
+		const { db } = createDb([]);
+		const build = (maxAttempts: number) =>
+			new DurableEventDispatcher({
+				db,
+				consumers: [consumer()],
+				storeId: claimed.storeId,
+				maxAttempts,
+				getConsumerData: (_moduleId, _transaction) => dataService(),
+			});
+
+		expect(() => build(0)).toThrow(/attempt budget/i);
+		expect(() => build(51)).toThrow(/attempt budget/i);
+		expect(() => build(1.5)).toThrow(/attempt budget/i);
+	});
+
+	it("retires a delivery that exhausts its budget instead of retrying it", async () => {
+		const { db } = createDb();
+		db.$transaction.mockRejectedValueOnce(new Error("poison"));
+		const now = new Date("2026-08-12T12:00:00.000Z");
+		const dispatcher = new DurableEventDispatcher({
+			db,
+			consumers: [consumer()],
+			storeId: claimed.storeId,
+			// The claimed fixture already carries attempts: 1.
+			maxAttempts: 1,
+			getConsumerData: (_moduleId, _transaction) => dataService(),
+		});
+
+		const result = await dispatcher.drain({ limit: 1, now });
+
+		expect(result).toEqual({
+			claimed: 1,
+			succeeded: 0,
+			failed: 1,
+			deadLettered: 1,
+		});
+		const terminal = db.moduleEventDelivery.updateMany.mock.calls[0][0];
+		expect(terminal.data.state).toBe("dead_letter");
+		// Terminal, so no further retry is scheduled.
+		expect(terminal.data.nextAttemptAt).toEqual(now);
+		expect(db.moduleOutboxEvent.updateMany).toHaveBeenCalledWith(
+			expect.objectContaining({
+				data: expect.objectContaining({
+					deliveryState: "dead_letter",
+					deliveredAt: null,
+				}),
+			}),
+		);
 	});
 
 	it("commits the consumer effect, dedupe receipt, and fenced success together", async () => {
@@ -137,7 +233,12 @@ describe("DurableEventDispatcher", () => {
 
 		const result = await dispatcher.drain({ limit: 1 });
 
-		expect(result).toEqual({ claimed: 1, succeeded: 1, failed: 0 });
+		expect(result).toEqual({
+			claimed: 1,
+			succeeded: 1,
+			failed: 0,
+			deadLettered: 0,
+		});
 		expect(db.$transaction).toHaveBeenCalledOnce();
 		expect(handler.handle).toHaveBeenCalledOnce();
 		expect(tx.moduleEventConsumption.create).toHaveBeenCalledWith({
@@ -188,7 +289,12 @@ describe("DurableEventDispatcher", () => {
 
 		const result = await dispatcher.drain({ limit: 1 });
 
-		expect(result).toEqual({ claimed: 1, succeeded: 0, failed: 0 });
+		expect(result).toEqual({
+			claimed: 1,
+			succeeded: 0,
+			failed: 0,
+			deadLettered: 0,
+		});
 		expect(handler.handle).not.toHaveBeenCalled();
 		expect(tx.moduleEventConsumption.create).not.toHaveBeenCalled();
 		expect(db.moduleEventDelivery.updateMany).not.toHaveBeenCalled();
@@ -211,7 +317,12 @@ describe("DurableEventDispatcher", () => {
 			now: new Date("2026-08-12T12:00:00.000Z"),
 		});
 
-		expect(result).toEqual({ claimed: 1, succeeded: 0, failed: 1 });
+		expect(result).toEqual({
+			claimed: 1,
+			succeeded: 0,
+			failed: 1,
+			deadLettered: 0,
+		});
 		const failure = db.moduleEventDelivery.updateMany.mock.calls[0][0];
 		expect(failure.where.leaseToken).toBe(claimed.leaseToken);
 		expect(failure.where.leaseOwner).toBe(claimed.leaseOwner);

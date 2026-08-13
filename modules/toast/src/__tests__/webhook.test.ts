@@ -18,6 +18,20 @@ async function hmacSha256Hex(secret: string, data: string): Promise<string> {
 		.join("");
 }
 
+const TEST_WEBHOOK_SECRET = "toast-test-webhook-secret";
+
+/** Build a request the configured endpoint will accept as authentic. */
+async function signedRequest(rawBody: string): Promise<Request> {
+	return new Request("http://localhost/toast/webhook", {
+		method: "POST",
+		body: rawBody,
+		headers: {
+			"Content-Type": "application/json",
+			"x-toast-signature": await hmacSha256Hex(TEST_WEBHOOK_SECRET, rawBody),
+		},
+	});
+}
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function invokeEndpoint(
@@ -54,13 +68,9 @@ describe("Toast webhook handler", () => {
 
 	it("rejects requests with invalid JSON", async () => {
 		const factory = await getWebhookFactory();
-		const endpoint = factory({});
+		const endpoint = factory({ webhookSecret: TEST_WEBHOOK_SECRET });
 
-		const request = new Request("http://localhost/toast/webhook", {
-			method: "POST",
-			body: "not json",
-			headers: { "Content-Type": "application/json" },
-		});
+		const request = await signedRequest("not json");
 
 		const ctx = { request, context: { controllers: {}, events: null } };
 		const res = await invokeEndpoint(endpoint, ctx);
@@ -71,13 +81,9 @@ describe("Toast webhook handler", () => {
 
 	it("rejects requests with missing eventType", async () => {
 		const factory = await getWebhookFactory();
-		const endpoint = factory({});
+		const endpoint = factory({ webhookSecret: TEST_WEBHOOK_SECRET });
 
-		const request = new Request("http://localhost/toast/webhook", {
-			method: "POST",
-			body: JSON.stringify({ entityGuid: "abc" }),
-			headers: { "Content-Type": "application/json" },
-		});
+		const request = await signedRequest(JSON.stringify({ entityGuid: "abc" }));
 
 		const ctx = { request, context: { controllers: {}, events: null } };
 		const res = await invokeEndpoint(endpoint, ctx);
@@ -86,9 +92,9 @@ describe("Toast webhook handler", () => {
 		expect(body.error).toBe("Missing eventType.");
 	});
 
-	it("accepts valid webhook with known event type and no signature verification", async () => {
+	it("accepts a verified webhook with a known event type", async () => {
 		const factory = await getWebhookFactory();
-		const endpoint = factory({});
+		const endpoint = factory({ webhookSecret: TEST_WEBHOOK_SECRET });
 
 		const syncMenuCalls: unknown[] = [];
 		const emittedEvents: unknown[] = [];
@@ -106,15 +112,13 @@ describe("Toast webhook handler", () => {
 			}),
 		};
 
-		const request = new Request("http://localhost/toast/webhook", {
-			method: "POST",
-			body: JSON.stringify({
+		const request = await signedRequest(
+			JSON.stringify({
 				eventType: "menu.item.updated",
 				entityGuid: "item-guid-123",
 				restaurantGuid: "rest-guid-456",
 			}),
-			headers: { "Content-Type": "application/json" },
-		});
+		);
 
 		const ctx = {
 			request,
@@ -142,7 +146,7 @@ describe("Toast webhook handler", () => {
 
 	it("routes order events to syncOrder", async () => {
 		const factory = await getWebhookFactory();
-		const endpoint = factory({});
+		const endpoint = factory({ webhookSecret: TEST_WEBHOOK_SECRET });
 
 		const mockController = {
 			syncOrder: vi.fn(async () => ({
@@ -152,14 +156,12 @@ describe("Toast webhook handler", () => {
 			})),
 		};
 
-		const request = new Request("http://localhost/toast/webhook", {
-			method: "POST",
-			body: JSON.stringify({
+		const request = await signedRequest(
+			JSON.stringify({
 				eventType: "order.created",
 				entityGuid: "order-guid-789",
 			}),
-			headers: { "Content-Type": "application/json" },
-		});
+		);
 
 		const ctx = {
 			request,
@@ -177,7 +179,7 @@ describe("Toast webhook handler", () => {
 
 	it("routes stock events to syncInventory", async () => {
 		const factory = await getWebhookFactory();
-		const endpoint = factory({});
+		const endpoint = factory({ webhookSecret: TEST_WEBHOOK_SECRET });
 
 		const mockController = {
 			syncInventory: vi.fn(async () => ({
@@ -187,14 +189,12 @@ describe("Toast webhook handler", () => {
 			})),
 		};
 
-		const request = new Request("http://localhost/toast/webhook", {
-			method: "POST",
-			body: JSON.stringify({
+		const request = await signedRequest(
+			JSON.stringify({
 				eventType: "stock.updated",
 				entityGuid: "stock-guid-001",
 			}),
-			headers: { "Content-Type": "application/json" },
-		});
+		);
 
 		const ctx = {
 			request,
@@ -270,16 +270,14 @@ describe("Toast webhook handler", () => {
 
 	it("accepts unknown event types without routing to controllers", async () => {
 		const factory = await getWebhookFactory();
-		const endpoint = factory({});
+		const endpoint = factory({ webhookSecret: TEST_WEBHOOK_SECRET });
 
-		const request = new Request("http://localhost/toast/webhook", {
-			method: "POST",
-			body: JSON.stringify({
+		const request = await signedRequest(
+			JSON.stringify({
 				eventType: "restaurant.updated",
 				entityGuid: "rest-123",
 			}),
-			headers: { "Content-Type": "application/json" },
-		});
+		);
 
 		const ctx = {
 			request,

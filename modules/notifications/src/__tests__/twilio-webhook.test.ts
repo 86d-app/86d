@@ -77,7 +77,7 @@ function invokeEndpoint(
 	return fn(ctx) as Promise<Response>;
 }
 
-function makeCtx(
+async function makeCtx(
 	formBody: string,
 	headers: Record<string, string> = {},
 	controllerOverrides?: Partial<
@@ -93,14 +93,50 @@ function makeCtx(
 		query: {},
 		params: {},
 		body: {},
-		request: makeRequest(formBody, headers),
+		// Default to an authentic sender; a test that is about verification
+		// passes its own signature header and keeps it.
+		request: headers["x-twilio-signature"]
+			? makeRequest(formBody, headers)
+			: makeRequest(formBody, {
+					"x-twilio-signature": await computeTwilioSignature(
+						TWILIO_AUTH_TOKEN,
+						WEBHOOK_URL,
+						Object.fromEntries(new URLSearchParams(formBody)),
+					),
+					...headers,
+				}),
 		context: { controllers: { notifications: controller } },
 	};
 }
 
 describe("createTwilioWebhook", () => {
-	describe("without auth token (dev mode)", () => {
+	describe("without auth token", () => {
 		const webhook = createTwilioWebhook({});
+
+		it("refuses the event instead of trusting an unverifiable sender", async () => {
+			const body = makeFormBody({
+				MessageSid: "SM-001",
+				MessageStatus: "delivered",
+			});
+			const res = await invokeEndpoint(webhook, {
+				query: {},
+				params: {},
+				body: {},
+				request: makeRequest(body),
+				context: { controllers: { notifications: {} } },
+			});
+
+			expect(res.status).toBe(503);
+			const json = await res.json();
+			expect(json.error).toMatch(/not configured/i);
+		});
+	});
+
+	describe("with auth token and webhook URL configured", () => {
+		const webhook = createTwilioWebhook({
+			authToken: TWILIO_AUTH_TOKEN,
+			webhookUrl: WEBHOOK_URL,
+		});
 
 		it("updates delivery status to delivered", async () => {
 			const notification = makeNotification({ deliveryExternalId: "SM-001" });
@@ -117,7 +153,7 @@ describe("createTwilioWebhook", () => {
 				From: "+15555550100",
 				To: "+15555550200",
 			});
-			const ctx = makeCtx(
+			const ctx = await makeCtx(
 				body,
 				{},
 				{
@@ -141,7 +177,7 @@ describe("createTwilioWebhook", () => {
 				MessageSid: "SM-002",
 				MessageStatus: "undelivered",
 			});
-			const ctx = makeCtx(
+			const ctx = await makeCtx(
 				body,
 				{},
 				{
@@ -164,7 +200,7 @@ describe("createTwilioWebhook", () => {
 				MessageSid: "SM-003",
 				MessageStatus: "failed",
 			});
-			const ctx = makeCtx(
+			const ctx = await makeCtx(
 				body,
 				{},
 				{
@@ -183,7 +219,7 @@ describe("createTwilioWebhook", () => {
 				MessageSid: "SM-004",
 				MessageStatus: "queued",
 			});
-			const ctx = makeCtx(body);
+			const ctx = await makeCtx(body);
 
 			const res = await invokeEndpoint(webhook, ctx);
 			const json = await res.json();
@@ -195,7 +231,7 @@ describe("createTwilioWebhook", () => {
 				MessageSid: "SM-005",
 				MessageStatus: "sending",
 			});
-			const ctx = makeCtx(body);
+			const ctx = await makeCtx(body);
 
 			const res = await invokeEndpoint(webhook, ctx);
 			const json = await res.json();
@@ -204,7 +240,7 @@ describe("createTwilioWebhook", () => {
 
 		it("returns 400 when MessageSid is missing", async () => {
 			const body = makeFormBody({ MessageStatus: "delivered" });
-			const ctx = makeCtx(body);
+			const ctx = await makeCtx(body);
 
 			const res = await invokeEndpoint(webhook, ctx);
 			expect(res.status).toBe(400);
@@ -217,7 +253,7 @@ describe("createTwilioWebhook", () => {
 				MessageSid: "SM-unknown",
 				MessageStatus: "delivered",
 			});
-			const ctx = makeCtx(body, {}, { findByExternalId: findSpy });
+			const ctx = await makeCtx(body, {}, { findByExternalId: findSpy });
 
 			const res = await invokeEndpoint(webhook, ctx);
 			const json = await res.json();
@@ -236,7 +272,7 @@ describe("createTwilioWebhook", () => {
 				MessageSid: "SM-006",
 				MessageStatus: "delivered",
 			});
-			const ctx = makeCtx(
+			const ctx = await makeCtx(
 				body,
 				{},
 				{
@@ -260,7 +296,7 @@ describe("createTwilioWebhook", () => {
 				MessageSid: "SM-007",
 				SmsStatus: "delivered",
 			});
-			const ctx = makeCtx(
+			const ctx = await makeCtx(
 				body,
 				{},
 				{
@@ -302,7 +338,7 @@ describe("createTwilioWebhook", () => {
 				params,
 			);
 
-			const ctx = makeCtx(
+			const ctx = await makeCtx(
 				body,
 				{ "x-twilio-signature": sig },
 				{ findByExternalId: findSpy, updateDeliveryStatus: updateSpy },
@@ -320,7 +356,7 @@ describe("createTwilioWebhook", () => {
 			};
 			const body = makeFormBody(params);
 
-			const ctx = makeCtx(body, { "x-twilio-signature": "invalidsig" });
+			const ctx = await makeCtx(body, { "x-twilio-signature": "invalidsig" });
 
 			const res = await invokeEndpoint(webhook, ctx);
 			expect(res.status).toBe(401);
@@ -332,7 +368,13 @@ describe("createTwilioWebhook", () => {
 				MessageStatus: "delivered",
 			};
 			const body = makeFormBody(params);
-			const ctx = makeCtx(body);
+			const ctx = {
+				query: {},
+				params: {},
+				body: {},
+				request: makeRequest(body),
+				context: { controllers: { notifications: {} } },
+			};
 
 			const res = await invokeEndpoint(webhook, ctx);
 			expect(res.status).toBe(400);

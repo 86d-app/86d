@@ -1,4 +1,9 @@
-import type { ModuleDataService, ScopedEventEmitter } from "@86d-app/core";
+import {
+	inventoryStockAdjustedV1,
+	type ModuleDataService,
+	type ModuleTransactionRunner,
+	type ScopedEventEmitter,
+} from "@86d-app/core";
 import type {
 	BackInStockSubscription,
 	InventoryController,
@@ -111,9 +116,58 @@ function subscriptionId(
 	return [productId, variantId ?? "_", email.toLowerCase()].join(":");
 }
 
+/**
+ * Commit the stock row and the durable `inventory.stock-adjusted` event in one
+ * transaction so a completed adjustment can never exist without its event, and
+ * an event can never describe an adjustment that was rolled back.
+ *
+ * Without a transaction runner the Store Runtime has no transactional storage
+ * behind it. The stock row is still written, and the caller is told no durable
+ * event was recorded rather than being given a silent partial success.
+ */
+async function commitAdjustment(
+	data: ModuleDataService,
+	transactions: ModuleTransactionRunner | undefined,
+	item: Omit<InventoryItem, "available">,
+	delta: number,
+): Promise<InventoryItem> {
+	const result = withAvailable(item);
+	if (!transactions) {
+		await data.upsert(
+			"inventoryItem",
+			item.id,
+			item as Record<string, unknown>,
+		);
+		return result;
+	}
+	await transactions.transaction(async (transaction) => {
+		await transaction.upsert(
+			"inventoryItem",
+			item.id,
+			item as Record<string, unknown>,
+		);
+		await transaction.emit(inventoryStockAdjustedV1, {
+			aggregate: { type: "inventory-item", id: item.id },
+			payload: {
+				productId: item.productId,
+				...(item.variantId === undefined ? {} : { variantId: item.variantId }),
+				...(item.locationId === undefined
+					? {}
+					: { locationId: item.locationId }),
+				delta,
+				quantity: result.quantity,
+				reserved: result.reserved,
+				available: result.available,
+			},
+		});
+	});
+	return result;
+}
+
 export function createInventoryController(
 	data: ModuleDataService,
 	events?: ScopedEventEmitter | undefined,
+	transactions?: ModuleTransactionRunner | undefined,
 ): InventoryController {
 	return {
 		async getStock(params): Promise<InventoryItem | null> {
@@ -180,12 +234,14 @@ export function createInventoryController(
 				quantity: Math.max(0, existing.quantity + params.delta),
 				updatedAt: new Date(),
 			};
-			await data.upsert(
-				"inventoryItem",
-				id,
-				updated as Record<string, unknown>,
+			// The applied delta is the clamped difference, not the requested one.
+			const appliedDelta = updated.quantity - existing.quantity;
+			const result = await commitAdjustment(
+				data,
+				transactions,
+				updated,
+				appliedDelta,
 			);
-			const result = withAvailable(updated);
 			emitUpdated(result, events);
 			checkLowStock(result, events);
 			void emitBackInStock(result, previousAvailable, data, events);

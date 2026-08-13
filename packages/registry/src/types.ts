@@ -34,6 +34,35 @@ export interface ModuleSpecifier {
 
 // ── Registry Manifest ─────────────────────────────────────────────────
 
+/** A versioned capability a Module provides or accepts. */
+export const registryCapabilitySchema = z.object({
+	/** Capability name (e.g. "commerce.tax.quote"). */
+	name: z.string(),
+	/** Module that owns the contract. */
+	owner: z.string(),
+	/** Semver capability versions produced (providers) or accepted (consumers). */
+	versions: z.array(z.string().min(1)).min(1),
+});
+
+export type RegistryCapability = z.infer<typeof registryCapabilitySchema>;
+
+/** A versioned durable event a Module emits or handles. */
+export const registryDurableEventSchema = z.object({
+	name: z.string(),
+	owner: z.string(),
+	version: z.number().int().positive(),
+});
+
+export type RegistryDurableEvent = z.infer<typeof registryDurableEventSchema>;
+
+/** Recorded evidence backing a maturity claim. */
+export const registryMaturityEvidenceSchema = z.object({
+	kind: z.string(),
+	reference: z.string(),
+	recordedAt: z.string(),
+	version: z.string().optional(),
+});
+
 /** Schema for a single module entry in the registry manifest. */
 export const registryModuleSchema = z.object({
 	/** npm package name (e.g. "@86d-app/products"). */
@@ -54,8 +83,47 @@ export const registryModuleSchema = z.object({
 	hasAdminComponents: z.boolean().default(false),
 	/** Whether the module declares store pages. */
 	hasStorePages: z.boolean().default(false),
-	/** SHA-256 hash of the module's package.json for integrity verification. */
+	/**
+	 * SHA-256 hash of the module's package.json.
+	 * Retained for older manifests; `subtreeIntegrity` is what verification uses.
+	 */
 	integrity: z.string().optional(),
+	/**
+	 * SHA-256 hash of the module's complete source subtree. This is the value a
+	 * fetch verifies against, so a manifest cannot match while the Module's
+	 * behavior has been replaced.
+	 */
+	subtreeIntegrity: z.string().optional(),
+	/**
+	 * Commit the entry was built from. Fetches resolve to this SHA rather than a
+	 * mutable branch, so the same manifest always yields the same source.
+	 */
+	commit: z.string().optional(),
+	/** Published maturity, derived from recorded evidence. */
+	maturity: z
+		.enum(["stable", "beta", "experimental", "deprecated"])
+		.default("experimental"),
+	/** Evidence backing the published maturity. */
+	maturityEvidence: z.array(registryMaturityEvidenceSchema).default([]),
+	/** Why the published maturity is lower than the Module's own claim. */
+	maturityDowngradeReason: z.string().optional(),
+	/** Store Runtime compatibility for this entry. */
+	runtime: z
+		.object({
+			/** Store Runtime versions this Module is built against. */
+			storeRuntime: z.string(),
+			/** Module contract version the runtime must understand. */
+			moduleContract: z.number().int().positive(),
+		})
+		.optional(),
+	/** Capabilities this Module produces. */
+	providesCapabilities: z.array(registryCapabilitySchema).default([]),
+	/** Capabilities this Module accepts. */
+	acceptsCapabilities: z.array(registryCapabilitySchema).default([]),
+	/** Durable events this Module emits. */
+	emitsDurableEvents: z.array(registryDurableEventSchema).default([]),
+	/** Durable events this Module handles. */
+	handlesDurableEvents: z.array(registryDurableEventSchema).default([]),
 });
 
 export type RegistryModule = z.infer<typeof registryModuleSchema>;

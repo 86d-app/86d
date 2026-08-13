@@ -60,6 +60,7 @@ export function createToastWebhook(opts: ToastWebhookOptions) {
 	return createStoreEndpoint(
 		"/toast/webhook",
 		{
+			exposure: "provider_webhook",
 			method: "POST",
 			requireRequest: true,
 		},
@@ -68,6 +69,15 @@ export function createToastWebhook(opts: ToastWebhookOptions) {
 			const rawBody = await request.text();
 
 			// Signature verification (skipped if no secret configured)
+			// An unconfigured Integration must not accept a provider event.
+			// Skipping verification here would let anyone post one.
+			if (!opts.webhookSecret) {
+				return Response.json(
+					{ error: "Toast webhook verification is not configured." },
+					{ status: 503 },
+				);
+			}
+
 			if (opts.webhookSecret) {
 				const sigHeader = request.headers.get("x-toast-signature") ?? "";
 				const valid = await verifyToastSignature(

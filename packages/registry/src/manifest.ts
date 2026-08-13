@@ -1,11 +1,48 @@
 import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { computeSubtreeIntegrity } from "./integrity.js";
+import { resolveModuleMaturity } from "./maturity.js";
 import type {
+	RegistryCapability,
+	RegistryDurableEvent,
 	RegistryManifest,
 	RegistryModule,
 	RegistryTemplate,
 } from "./types.js";
+
+/**
+ * The declarations a Module exposes, read from the Module itself.
+ *
+ * The caller loads each Module and passes what it declares. Reading these from
+ * the built object rather than matching patterns in `index.ts` means the
+ * manifest records what the Module actually does: a regex over source cannot
+ * see a capability assembled in a helper, and silently records nothing.
+ */
+export interface ModuleDeclarations {
+	id: string;
+	version?: string | undefined;
+	category?: string | undefined;
+	requires?: string[] | undefined;
+	hasStorePages?: boolean | undefined;
+	providesCapabilities?: RegistryCapability[] | undefined;
+	acceptsCapabilities?: RegistryCapability[] | undefined;
+	emitsDurableEvents?: RegistryDurableEvent[] | undefined;
+	handlesDurableEvents?: RegistryDurableEvent[] | undefined;
+}
+
+export interface BuildManifestOptions {
+	baseUrl?: string;
+	defaultRef?: string;
+	/** Commit the manifest is built from. Entries pin to it. */
+	commit?: string;
+	/** Store Runtime version these entries are built against. */
+	storeRuntimeVersion?: string;
+	/** Module contract version the runtime must understand. */
+	moduleContractVersion?: number;
+	/** Declarations per Module short name, supplied by the generator. */
+	declarations?: Record<string, ModuleDeclarations>;
+}
 
 /**
  * Build a registry manifest by scanning the local `modules/` directory.
@@ -14,10 +51,7 @@ import type {
  */
 export function buildManifest(
 	root: string,
-	options?: {
-		baseUrl?: string;
-		defaultRef?: string;
-	},
+	options?: BuildManifestOptions,
 ): RegistryManifest {
 	const modulesDir = join(root, "modules");
 	const templatesDir = join(root, "templates");
@@ -41,7 +75,7 @@ export function buildManifest(
 
 	for (const name of dirs) {
 		const moduleDir = join(modulesDir, name);
-		const entry = buildModuleEntry(moduleDir, name);
+		const entry = buildModuleEntry(moduleDir, name, options);
 		if (entry) {
 			modules[name] = entry;
 		}
@@ -72,6 +106,7 @@ export function buildManifest(
 function buildModuleEntry(
 	moduleDir: string,
 	name: string,
+	options?: BuildManifestOptions,
 ): RegistryModule | undefined {
 	const pkgPath = join(moduleDir, "package.json");
 	if (!existsSync(pkgPath)) return undefined;
@@ -79,39 +114,16 @@ function buildModuleEntry(
 	const pkgRaw = readFileSync(pkgPath, "utf-8");
 	const pkg = JSON.parse(pkgRaw);
 
-	// SHA-256 integrity hash of the package.json for verification after fetch
 	const integrity = `sha256-${createHash("sha256").update(pkgRaw).digest("hex")}`;
-	const indexPath = join(moduleDir, "src", "index.ts");
+	const subtreeIntegrity = computeSubtreeIntegrity(moduleDir);
+	const declared = options?.declarations?.[name];
+	const maturity = resolveModuleMaturity(moduleDir);
 
-	// Extract metadata from index.ts
 	let description = pkg.description ?? "";
-	const version = pkg.version ?? "0.0.1";
-	let category = "general";
-	const requires: string[] = [];
-
-	if (existsSync(indexPath)) {
-		const content = readFileSync(indexPath, "utf-8");
-
-		// Extract category from admin.pages[].group
-		const groupMatch = content.match(/group:\s*"([^"]+)"/);
-		if (groupMatch) {
-			category = groupMatch[1].toLowerCase();
-		}
-
-		// Extract requires
-		const reqMatch = content.match(/requires:\s*\[([^\]]*)\]/);
-		if (reqMatch) {
-			const reqContent = reqMatch[1];
-			const ids = reqContent.match(/"([^"]+)"/g);
-			if (ids) {
-				for (const id of ids) {
-					requires.push(id.slice(1, -1));
-				}
-			}
-		}
+	if (!description && pkg.keywords) {
+		description = (pkg.keywords as string[]).join(", ");
 	}
 
-	// Detect capabilities
 	const hasStoreComponents = existsSync(
 		join(moduleDir, "src", "store", "components", "index.tsx"),
 	);
@@ -119,28 +131,36 @@ function buildModuleEntry(
 		join(moduleDir, "src", "admin", "components", "index.tsx"),
 	);
 
-	let hasStorePages = false;
-	if (existsSync(indexPath)) {
-		const content = readFileSync(indexPath, "utf-8");
-		hasStorePages = /store:\s*\{[^}]*pages\s*:/.test(content);
-	}
-
-	// Use keywords for description if not set
-	if (!description && pkg.keywords) {
-		description = (pkg.keywords as string[]).join(", ");
-	}
-
 	return {
 		name: pkg.name ?? `@86d-app/${name}`,
 		description,
-		version,
-		category,
+		version: declared?.version ?? pkg.version ?? "0.0.1",
+		category: declared?.category ?? "general",
 		path: `modules/${name}`,
-		requires,
+		requires: declared?.requires ?? [],
 		hasStoreComponents,
 		hasAdminComponents,
-		hasStorePages,
+		hasStorePages: declared?.hasStorePages ?? false,
 		integrity,
+		...(subtreeIntegrity ? { subtreeIntegrity } : {}),
+		...(options?.commit ? { commit: options.commit } : {}),
+		maturity: maturity.maturity,
+		maturityEvidence: maturity.evidence,
+		...(maturity.downgradeReason
+			? { maturityDowngradeReason: maturity.downgradeReason }
+			: {}),
+		...(options?.storeRuntimeVersion && options?.moduleContractVersion
+			? {
+					runtime: {
+						storeRuntime: options.storeRuntimeVersion,
+						moduleContract: options.moduleContractVersion,
+					},
+				}
+			: {}),
+		providesCapabilities: declared?.providesCapabilities ?? [],
+		acceptsCapabilities: declared?.acceptsCapabilities ?? [],
+		emitsDurableEvents: declared?.emitsDurableEvents ?? [],
+		handlesDurableEvents: declared?.handlesDurableEvents ?? [],
 	};
 }
 

@@ -8,7 +8,34 @@ import {
 	readLocalManifest,
 	resolveModules,
 } from "../resolver.js";
-import type { RegistryManifest, StoreConfig } from "../types.js";
+import type {
+	RegistryManifest,
+	RegistryModule,
+	StoreConfig,
+} from "../types.js";
+
+/** Build a manifest entry with the fields every entry now carries. */
+function registryEntry(
+	entry: Omit<
+		RegistryModule,
+		| "maturity"
+		| "maturityEvidence"
+		| "providesCapabilities"
+		| "acceptsCapabilities"
+		| "emitsDurableEvents"
+		| "handlesDurableEvents"
+	>,
+): RegistryModule {
+	return {
+		maturity: "experimental",
+		maturityEvidence: [],
+		providesCapabilities: [],
+		acceptsCapabilities: [],
+		emitsDurableEvents: [],
+		handlesDurableEvents: [],
+		...entry,
+	};
+}
 
 const TMP_ROOT = join(import.meta.dirname, ".tmp-resolver-test");
 
@@ -45,7 +72,7 @@ const testManifest: RegistryManifest = {
 	defaultRef: "main",
 	templates: {},
 	modules: {
-		products: {
+		products: registryEntry({
 			name: "@86d-app/products",
 			description: "Product catalog",
 			version: "0.0.1",
@@ -55,8 +82,8 @@ const testManifest: RegistryManifest = {
 			hasStoreComponents: true,
 			hasAdminComponents: true,
 			hasStorePages: true,
-		},
-		cart: {
+		}),
+		cart: registryEntry({
 			name: "@86d-app/cart",
 			description: "Shopping cart",
 			version: "0.0.1",
@@ -66,8 +93,8 @@ const testManifest: RegistryManifest = {
 			hasStoreComponents: true,
 			hasAdminComponents: true,
 			hasStorePages: false,
-		},
-		shipping: {
+		}),
+		shipping: registryEntry({
 			name: "@86d-app/shipping",
 			description: "Shipping rates",
 			version: "0.0.1",
@@ -77,7 +104,7 @@ const testManifest: RegistryManifest = {
 			hasStoreComponents: false,
 			hasAdminComponents: true,
 			hasStorePages: false,
-		},
+		}),
 	},
 };
 
@@ -244,7 +271,7 @@ describe("getModuleDependencies", () => {
 		defaultRef: "main",
 		templates: {},
 		modules: {
-			products: {
+			products: registryEntry({
 				name: "@86d-app/products",
 				description: "Products",
 				version: "0.0.1",
@@ -254,8 +281,8 @@ describe("getModuleDependencies", () => {
 				hasStoreComponents: true,
 				hasAdminComponents: true,
 				hasStorePages: true,
-			},
-			cart: {
+			}),
+			cart: registryEntry({
 				name: "@86d-app/cart",
 				description: "Cart",
 				version: "0.0.1",
@@ -265,8 +292,8 @@ describe("getModuleDependencies", () => {
 				hasStoreComponents: true,
 				hasAdminComponents: true,
 				hasStorePages: false,
-			},
-			checkout: {
+			}),
+			checkout: registryEntry({
 				name: "@86d-app/checkout",
 				description: "Checkout",
 				version: "0.0.1",
@@ -276,8 +303,8 @@ describe("getModuleDependencies", () => {
 				hasStoreComponents: true,
 				hasAdminComponents: true,
 				hasStorePages: true,
-			},
-			orders: {
+			}),
+			orders: registryEntry({
 				name: "@86d-app/orders",
 				description: "Orders",
 				version: "0.0.1",
@@ -287,7 +314,7 @@ describe("getModuleDependencies", () => {
 				hasStoreComponents: false,
 				hasAdminComponents: true,
 				hasStorePages: false,
-			},
+			}),
 		},
 	};
 
@@ -330,7 +357,7 @@ describe("getModuleDependencies", () => {
 			defaultRef: "main",
 			templates: {},
 			modules: {
-				a: {
+				a: registryEntry({
 					name: "@86d-app/a",
 					description: "A",
 					version: "0.0.1",
@@ -340,8 +367,8 @@ describe("getModuleDependencies", () => {
 					hasStoreComponents: false,
 					hasAdminComponents: false,
 					hasStorePages: false,
-				},
-				b: {
+				}),
+				b: registryEntry({
 					name: "@86d-app/b",
 					description: "B",
 					version: "0.0.1",
@@ -351,7 +378,7 @@ describe("getModuleDependencies", () => {
 					hasStoreComponents: false,
 					hasAdminComponents: false,
 					hasStorePages: false,
-				},
+				}),
 			},
 		};
 		expect(() => getModuleDependencies("a", circularManifest)).toThrow(
@@ -366,7 +393,7 @@ describe("getModuleDependencies", () => {
 			defaultRef: "main",
 			templates: {},
 			modules: {
-				a: {
+				a: registryEntry({
 					name: "@86d-app/a",
 					description: "",
 					version: "0.0.1",
@@ -376,8 +403,8 @@ describe("getModuleDependencies", () => {
 					hasStoreComponents: false,
 					hasAdminComponents: false,
 					hasStorePages: false,
-				},
-				b: {
+				}),
+				b: registryEntry({
 					name: "@86d-app/b",
 					description: "",
 					version: "0.0.1",
@@ -387,8 +414,8 @@ describe("getModuleDependencies", () => {
 					hasStoreComponents: false,
 					hasAdminComponents: false,
 					hasStorePages: false,
-				},
-				c: {
+				}),
+				c: registryEntry({
 					name: "@86d-app/c",
 					description: "",
 					version: "0.0.1",
@@ -398,7 +425,7 @@ describe("getModuleDependencies", () => {
 					hasStoreComponents: false,
 					hasAdminComponents: false,
 					hasStorePages: false,
-				},
+				}),
 			},
 		};
 		expect(() => getModuleDependencies("a", manifest)).toThrow(
@@ -415,7 +442,7 @@ describe("detectCircularDependencies", () => {
 			defaultRef: "main",
 			templates: {},
 			modules: {
-				a: {
+				a: registryEntry({
 					name: "@86d-app/a",
 					description: "",
 					version: "0.0.1",
@@ -425,8 +452,8 @@ describe("detectCircularDependencies", () => {
 					hasStoreComponents: false,
 					hasAdminComponents: false,
 					hasStorePages: false,
-				},
-				b: {
+				}),
+				b: registryEntry({
 					name: "@86d-app/b",
 					description: "",
 					version: "0.0.1",
@@ -436,7 +463,7 @@ describe("detectCircularDependencies", () => {
 					hasStoreComponents: false,
 					hasAdminComponents: false,
 					hasStorePages: false,
-				},
+				}),
 			},
 		};
 		expect(detectCircularDependencies(manifest)).toEqual([]);
@@ -449,7 +476,7 @@ describe("detectCircularDependencies", () => {
 			defaultRef: "main",
 			templates: {},
 			modules: {
-				a: {
+				a: registryEntry({
 					name: "@86d-app/a",
 					description: "",
 					version: "0.0.1",
@@ -459,8 +486,8 @@ describe("detectCircularDependencies", () => {
 					hasStoreComponents: false,
 					hasAdminComponents: false,
 					hasStorePages: false,
-				},
-				b: {
+				}),
+				b: registryEntry({
 					name: "@86d-app/b",
 					description: "",
 					version: "0.0.1",
@@ -470,8 +497,8 @@ describe("detectCircularDependencies", () => {
 					hasStoreComponents: false,
 					hasAdminComponents: false,
 					hasStorePages: false,
-				},
-				c: {
+				}),
+				c: registryEntry({
 					name: "@86d-app/c",
 					description: "",
 					version: "0.0.1",
@@ -481,7 +508,7 @@ describe("detectCircularDependencies", () => {
 					hasStoreComponents: false,
 					hasAdminComponents: false,
 					hasStorePages: false,
-				},
+				}),
 			},
 		};
 		const cycles = detectCircularDependencies(manifest);

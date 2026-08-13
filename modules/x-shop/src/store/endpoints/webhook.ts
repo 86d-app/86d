@@ -1,19 +1,23 @@
-import { createStoreEndpoint, z } from "@86d-app/core";
+import { createStoreEndpoint } from "@86d-app/core";
 
+/**
+ * X delivers events with a signed payload. No verification material is
+ * configured for this Store, so the ingress stays closed rather than accepting
+ * an unsigned provider event.
+ */
 export const webhookEndpoint = createStoreEndpoint(
 	"/x-shop/webhooks",
 	{
+		exposure: "provider_webhook",
 		method: "POST",
-		body: z.object({
-			type: z.string().min(1).max(200),
-			data: z
-				.record(z.string().max(100), z.unknown())
-				.refine((r) => Object.keys(r).length <= 100, {
-					message: "Too many fields in payload",
-				}),
-		}),
+		requireRequest: true,
 	},
-	async (ctx) => {
-		return { received: true, type: ctx.body.type };
-	},
+	async () =>
+		Response.json(
+			{
+				error:
+					"X Shop webhook verification is not configured; provider ingress is disabled.",
+			},
+			{ status: 503 },
+		),
 );

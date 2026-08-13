@@ -27,6 +27,7 @@ export function createUberEatsWebhook(opts: UberEatsWebhookOptions) {
 	return createStoreEndpoint(
 		"/uber-eats/webhook",
 		{
+			exposure: "provider_webhook",
 			method: "POST",
 			requireRequest: true,
 		},
@@ -35,6 +36,15 @@ export function createUberEatsWebhook(opts: UberEatsWebhookOptions) {
 			const rawBody = await request.text();
 
 			// Verify webhook signature using X-Uber-Signature header
+			// An unconfigured Integration must not accept a provider event.
+			// Skipping verification here would let anyone post one.
+			if (!opts.clientSecret) {
+				return Response.json(
+					{ error: "Uber Eats webhook verification is not configured." },
+					{ status: 503 },
+				);
+			}
+
 			if (opts.clientSecret) {
 				const sigHeader = request.headers.get("x-uber-signature") ?? "";
 				const valid = await UberEatsProvider.verifyWebhookSignature(

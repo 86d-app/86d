@@ -232,6 +232,7 @@ export function createBraintreeWebhook(opts: BraintreeWebhookOptions) {
 	return createStoreEndpoint(
 		"/braintree/webhook",
 		{
+			exposure: "provider_webhook",
 			method: "POST",
 			requireRequest: true,
 		},

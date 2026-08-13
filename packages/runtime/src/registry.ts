@@ -1,5 +1,6 @@
 import type {
 	AnyCapabilityDefinition,
+	AnyDurableEventConsumer,
 	CapabilityDecision,
 	CapabilityFailure,
 	CapabilityInvoker,
@@ -8,19 +9,23 @@ import type {
 	CapabilityRejected,
 	CapabilityRequest,
 	CapabilityResult,
+	EndpointExposureEntry,
 	Module,
 	ModuleContext,
 	ModuleControllers,
 	ModuleDataService,
 	ModuleStatus,
+	ModuleTransactionRunner,
 	Primitive,
 	Session,
 } from "@86d-app/core";
 import {
+	collectEndpointExposures,
 	createEventBus,
 	createScopedEmitter,
 	type EventBus,
 	type EventBusOptions,
+	formatEndpointExposureViolations,
 	formatPathConflicts,
 	formatViolations,
 	getRequiredModuleIds,
@@ -38,6 +43,8 @@ export interface ModuleEntry {
 	dbId: string | undefined;
 	/** Module-scoped data service (set after boot) */
 	dataService: ModuleDataService | undefined;
+	/** Owner-local atomic state and durable-event seam (set after boot) */
+	transactions: ModuleTransactionRunner | undefined;
 	/** Controllers owned by this module; never shared with another module context. */
 	controllers: ModuleControllers;
 	/** Error captured during init, if any */
@@ -88,11 +95,31 @@ export interface ModuleRegistryConfig {
 	}) => Promise<string>;
 	/**
 	 * Factory to create a data service for a module.
+	 *
+	 * `moduleId` is the logical Module package ID and is the durable-event source
+	 * identity. `moduleDbId` is the persisted `Module` row UUID used for
+	 * owner-scoped foreign keys. They are distinct values and are never
+	 * interchangeable: substituting one for the other silently breaks the durable
+	 * event ownership guard and violates the outbox foreign key.
 	 */
 	createDataService: (params: {
 		storeId: string;
+		moduleId: string;
 		moduleDbId: string;
 	}) => ModuleDataService;
+	/**
+	 * Factory for the Module's owner-local transaction runner. A host that can
+	 * commit state and durable events in one database transaction supplies this;
+	 * a host without transactional storage omits it and Modules observe
+	 * `ctx.transactions === undefined`.
+	 */
+	createTransactionRunner?:
+		| ((params: {
+				storeId: string;
+				moduleId: string;
+				moduleDbId: string;
+		  }) => ModuleTransactionRunner)
+		| undefined;
 	/**
 	 * Event bus options.
 	 */
@@ -191,6 +218,7 @@ export class ModuleRegistry {
 	private capabilityBindings = new Map<string, RegisteredCapabilityProvider>();
 	private capabilityDependencies = new Map<string, Set<string>>();
 	private resolvedStoreId: string | undefined;
+	private endpointExposures: EndpointExposureEntry[] = [];
 	private eventBus: EventBus | undefined;
 	private bootedAt: number | undefined;
 	private booted = false;
@@ -214,6 +242,7 @@ export class ModuleRegistry {
 				status: "pending",
 				dbId: undefined,
 				dataService: undefined,
+				transactions: undefined,
 				controllers: { ...(mod.controllers ?? {}) },
 				error: undefined,
 			});
@@ -503,6 +532,18 @@ export class ModuleRegistry {
 			);
 		}
 
+		// An endpoint whose reachability cannot be resolved is not served. The
+		// alternative is guessing from its path, which is how a provider webhook
+		// gets treated as a shopper endpoint.
+		const exposures = collectEndpointExposures(this.modules);
+		if (exposures.violations.length > 0) {
+			const messages = formatEndpointExposureViolations(exposures.violations);
+			throw new Error(
+				`Module endpoint exposure violations:\n${messages.map((m) => `  - ${m}`).join("\n")}`,
+			);
+		}
+		this.endpointExposures = exposures.entries;
+
 		// Resolve store ID
 		this.resolvedStoreId = await this.config.resolveStoreId(this.storeIdParam);
 
@@ -561,12 +602,16 @@ export class ModuleRegistry {
 				});
 				entry.dbId = dbId;
 
-				// Create data service
-				const dataService = this.config.createDataService({
+				// Create the owner-scoped data seam. The logical Module ID and the
+				// persisted row UUID are both supplied and are not interchangeable.
+				const identity = {
 					storeId: this.resolvedStoreId,
+					moduleId: mod.id,
 					moduleDbId: dbId,
-				});
+				};
+				const dataService = this.config.createDataService(identity);
 				entry.dataService = dataService;
+				entry.transactions = this.config.createTransactionRunner?.(identity);
 
 				// Wire event handlers
 				if (mod.events?.handles) {
@@ -586,6 +631,7 @@ export class ModuleRegistry {
 					events: scopedEmitter,
 					controllers: entry.controllers,
 					capabilities: this.createCapabilityInvoker(mod.id),
+					transactions: entry.transactions,
 				};
 
 				// Call init
@@ -652,6 +698,7 @@ export class ModuleRegistry {
 			session,
 			controllers: entry.controllers,
 			capabilities: this.createCapabilityInvoker(moduleId),
+			transactions: entry.transactions,
 			storeId: this.resolvedStoreId,
 			events: this.eventBus
 				? createScopedEmitter(this.eventBus, moduleId)
@@ -688,6 +735,7 @@ export class ModuleRegistry {
 						options: this.getModuleOptions(mod.id),
 						controllers: entry.controllers,
 						capabilities: this.createCapabilityInvoker(mod.id),
+						transactions: entry.transactions,
 						storeId: this.resolvedStoreId,
 						events: scopedEmitter,
 					});
@@ -769,5 +817,52 @@ export class ModuleRegistry {
 	 */
 	getEventBus(): EventBus | undefined {
 		return this.eventBus;
+	}
+
+	/**
+	 * Persisted `Module` row UUID for a ready Module. Distinct from the logical
+	 * Module ID; used for owner-scoped foreign keys.
+	 */
+	/**
+	 * Declared exposure for every registered endpoint, resolved at boot.
+	 * The request path is never consulted to derive this.
+	 */
+	getEndpointExposures(): readonly EndpointExposureEntry[] {
+		return this.endpointExposures;
+	}
+
+	getModuleDbId(moduleId: string): string | undefined {
+		const entry = this.entries.get(moduleId);
+		return entry?.status === "ready" ? entry.dbId : undefined;
+	}
+
+	/**
+	 * Durable event consumers declared by Modules that booted successfully.
+	 *
+	 * A Module that failed to initialize contributes nothing: its data service
+	 * does not exist, so delivering to it could not commit. Those events stay in
+	 * the outbox and are delivered once the Module boots.
+	 */
+	getDurableEventConsumers(): AnyDurableEventConsumer[] {
+		const consumers: AnyDurableEventConsumer[] = [];
+		const seen = new Set<string>();
+		for (const mod of this.modules) {
+			if (this.entries.get(mod.id)?.status !== "ready") continue;
+			for (const consumer of mod.durableEvents?.handles ?? []) {
+				if (consumer.owner !== mod.id) {
+					throw new Error(
+						`Module "${mod.id}" cannot register durable consumer "${consumer.consumer}" owned by "${consumer.owner}".`,
+					);
+				}
+				if (seen.has(consumer.consumer)) {
+					throw new Error(
+						`Duplicate durable event consumer "${consumer.consumer}".`,
+					);
+				}
+				seen.add(consumer.consumer);
+				consumers.push(consumer);
+			}
+		}
+		return consumers;
 	}
 }

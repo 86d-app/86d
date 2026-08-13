@@ -1,4 +1,9 @@
-import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
+import {
+	inventoryStockAdjustedV1,
+	type Module,
+	type ModuleConfig,
+	type ModuleContext,
+} from "@86d-app/core";
 import { adminEndpoints } from "./admin/endpoints";
 import { inventoryCheckoutProvider } from "./capabilities";
 import { inventorySchema } from "./schema";
@@ -30,8 +35,17 @@ export default function inventory(options?: InventoryOptions): Module {
 		events: {
 			emits: ["inventory.updated", "inventory.low", "inventory.back-in-stock"],
 		},
+		// `inventory.stock-adjusted` is the completed-change fact. It commits with
+		// the stock row in one transaction and is delivered from the outbox. The
+		// `events` entries above remain the in-memory notification path and are
+		// not authority for anything.
+		durableEvents: { emits: [inventoryStockAdjustedV1] },
 		init: async (ctx: ModuleContext) => {
-			const controller = createInventoryController(ctx.data, ctx.events);
+			const controller = createInventoryController(
+				ctx.data,
+				ctx.events,
+				ctx.transactions,
+			);
 			return { controllers: { inventory: controller } };
 		},
 		endpoints: {

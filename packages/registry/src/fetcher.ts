@@ -1,14 +1,10 @@
 import { spawnSync } from "node:child_process";
-import { createHash } from "node:crypto";
-import {
-	cpSync,
-	existsSync,
-	mkdirSync,
-	readFileSync,
-	rmSync,
-	writeFileSync,
-} from "node:fs";
+import { cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import {
+	computeSubtreeIntegrity,
+	verifySubtreeIntegrity,
+} from "./integrity.js";
 import type {
 	FetchResult,
 	ModuleSpecifier,
@@ -129,24 +125,28 @@ async function fetchFromRegistry(
 		source: "github",
 		repo: repoMatch[1],
 		path: entry.path,
-		ref: manifest.defaultRef,
+		// Pin to the commit the entry was built from. `defaultRef` is a branch,
+		// so the same manifest could otherwise resolve to different source on
+		// each fetch and the recorded hash would be meaningless.
+		ref: entry.commit ?? manifest.defaultRef,
 	};
 
 	const result = await fetchFromGitHub(ghSpec, root);
+	if (!result.success || !result.localPath) return result;
 
-	// Verify integrity if the manifest includes a hash
-	if (result.success && result.localPath && entry.integrity) {
-		const pkgPath = join(result.localPath, "package.json");
-		if (existsSync(pkgPath)) {
-			const actual = `sha256-${createHash("sha256").update(readFileSync(pkgPath, "utf-8")).digest("hex")}`;
-			if (actual !== entry.integrity) {
-				rmSync(result.localPath, { recursive: true, force: true });
-				return {
-					success: false,
-					error: `Integrity check failed for "${spec.name}": expected ${entry.integrity}, got ${actual}`,
-				};
-			}
-		}
+	// Verify the complete subtree, failing closed. A missing expectation and a
+	// missing file are both refusals: the previous behavior accepted either as
+	// "nothing to check" and installed unverified source.
+	const verdict = verifySubtreeIntegrity(
+		result.localPath,
+		entry.subtreeIntegrity,
+	);
+	if (!verdict.ok) {
+		rmSync(result.localPath, { recursive: true, force: true });
+		return {
+			success: false,
+			error: `Integrity check failed for "${spec.name}": ${verdict.reason}`,
+		};
 	}
 
 	return result;
@@ -329,11 +329,12 @@ export function ensureCacheDir(root: string): string {
 }
 
 /**
- * Compute a SHA-256 integrity hash for a module's package.json.
+ * Integrity hash for a Module.
+ *
+ * This covers the Module's complete source subtree. Hashing `package.json`
+ * alone left every byte of behavior unverified, so a lockfile could match while
+ * the Module's controllers had been swapped.
  */
 export function computeIntegrity(modulePath: string): string | undefined {
-	const pkgPath = join(modulePath, "package.json");
-	if (!existsSync(pkgPath)) return undefined;
-	const content = readFileSync(pkgPath, "utf-8");
-	return `sha256-${createHash("sha256").update(content).digest("hex")}`;
+	return computeSubtreeIntegrity(modulePath);
 }

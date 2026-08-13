@@ -19,6 +19,15 @@ async function computeSignature(body: string, secret: string): Promise<string> {
 		.join("");
 }
 
+const CLIENT_SECRET = "test-client-secret-uber";
+
+/** Build a request the configured endpoint will accept as authentic. */
+async function createSignedRequest(body: string): Promise<Request> {
+	return createMockRequest(body, {
+		"x-uber-signature": await computeSignature(body, CLIENT_SECRET),
+	});
+}
+
 function createMockRequest(
 	body: string,
 	headers: Record<string, string> = {},
@@ -85,8 +94,6 @@ function getHandler(
 // ── Tests ───────────────────────────────────────────────────────────────────
 
 describe("uber-eats webhook endpoint", () => {
-	const CLIENT_SECRET = "test-client-secret-uber";
-
 	describe("signature verification", () => {
 		it("rejects requests with invalid signature", async () => {
 			const webhook = createUberEatsWebhook({ clientSecret: CLIENT_SECRET });
@@ -134,7 +141,7 @@ describe("uber-eats webhook endpoint", () => {
 			expect(response.status).toBe(200);
 		});
 
-		it("skips verification when no secret configured", async () => {
+		it("refuses the event when no secret is configured", async () => {
 			const webhook = createUberEatsWebhook({});
 			const body = JSON.stringify({
 				event_type: "orders.notification",
@@ -152,14 +159,17 @@ describe("uber-eats webhook endpoint", () => {
 				},
 			});
 
-			expect(response.status).toBe(200);
+			// An unconfigured Integration cannot authenticate the sender.
+			expect(response.status).toBe(503);
+			const data = await response.json();
+			expect(data.error).toMatch(/not configured/i);
 		});
 	});
 
 	describe("event handling", () => {
 		it("rejects invalid JSON", async () => {
-			const webhook = createUberEatsWebhook({});
-			const request = createMockRequest("not-json");
+			const webhook = createUberEatsWebhook({ clientSecret: CLIENT_SECRET });
+			const request = await createSignedRequest("not-json");
 
 			const handler = getHandler(webhook);
 			const response = await handler({
@@ -173,8 +183,8 @@ describe("uber-eats webhook endpoint", () => {
 		});
 
 		it("rejects missing event_type", async () => {
-			const webhook = createUberEatsWebhook({});
-			const request = createMockRequest(JSON.stringify({ meta: {} }));
+			const webhook = createUberEatsWebhook({ clientSecret: CLIENT_SECRET });
+			const request = await createSignedRequest(JSON.stringify({ meta: {} }));
 
 			const handler = getHandler(webhook);
 			const response = await handler({
@@ -188,13 +198,13 @@ describe("uber-eats webhook endpoint", () => {
 		});
 
 		it("creates order on orders.notification event", async () => {
-			const webhook = createUberEatsWebhook({});
+			const webhook = createUberEatsWebhook({ clientSecret: CLIENT_SECRET });
 			const controller = createMockController();
 			const body = JSON.stringify({
 				event_type: "orders.notification",
 				meta: { resource_id: "uber-order-abc" },
 			});
-			const request = createMockRequest(body);
+			const request = await createSignedRequest(body);
 
 			const handler = getHandler(webhook);
 			await handler({
@@ -214,13 +224,13 @@ describe("uber-eats webhook endpoint", () => {
 		});
 
 		it("cancels order on orders.cancel event", async () => {
-			const webhook = createUberEatsWebhook({});
+			const webhook = createUberEatsWebhook({ clientSecret: CLIENT_SECRET });
 			const controller = createMockController();
 			const body = JSON.stringify({
 				event_type: "orders.cancel",
 				meta: { resource_id: "order-xyz" },
 			});
-			const request = createMockRequest(body);
+			const request = await createSignedRequest(body);
 
 			const handler = getHandler(webhook);
 			await handler({
@@ -239,14 +249,14 @@ describe("uber-eats webhook endpoint", () => {
 		});
 
 		it("emits ubereats.webhook.received event", async () => {
-			const webhook = createUberEatsWebhook({});
+			const webhook = createUberEatsWebhook({ clientSecret: CLIENT_SECRET });
 			const events = createMockEvents();
 			const body = JSON.stringify({
 				event_type: "store.status.changed",
 				event_id: "evt-123",
 				meta: { resource_id: "store-1" },
 			});
-			const request = createMockRequest(body);
+			const request = await createSignedRequest(body);
 
 			const handler = getHandler(webhook);
 			await handler({
@@ -268,14 +278,14 @@ describe("uber-eats webhook endpoint", () => {
 		});
 
 		it("extracts resource_id from resource_href fallback", async () => {
-			const webhook = createUberEatsWebhook({});
+			const webhook = createUberEatsWebhook({ clientSecret: CLIENT_SECRET });
 			const controller = createMockController();
 			const body = JSON.stringify({
 				event_type: "orders.notification",
 				resource_href:
 					"https://api.uber.com/v1/eats/order/uber-order-from-href",
 			});
-			const request = createMockRequest(body);
+			const request = await createSignedRequest(body);
 
 			const handler = getHandler(webhook);
 			await handler({

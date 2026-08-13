@@ -1,3 +1,7 @@
+import {
+	createEndpointExposureResolver,
+	type EndpointExposure,
+} from "@86d-app/core";
 import type { Session } from "auth";
 import { getSession } from "auth/actions";
 import { verifyStoreAdminAccess } from "auth/store-access";
@@ -6,6 +10,7 @@ import { NextResponse } from "next/server";
 import { logger } from "utils/logger";
 import { createRateLimiter } from "utils/rate-limit";
 import { ensureBooted } from "~/lib/api-registry";
+import { drainDurableEvents } from "~/lib/durable-events";
 import { createApiRouter, getModuleIdForPath } from "../../../generated/api";
 
 type RouteParams = { params: Promise<{ path: string[] }> };
@@ -21,6 +26,31 @@ const sensitiveLimiter = createRateLimiter({ limit: 10, window: 600_000 });
 
 /** Admin endpoint limit: 300 requests per minute per session user. */
 const adminLimiter = createRateLimiter({ limit: 300, window: 60_000 });
+
+/** Provider webhook limit: 600 per minute per source IP, separate from shopper traffic. */
+const webhookLimiter = createRateLimiter({ limit: 600, window: 60_000 });
+
+// ── Declared exposure ─────────────────────────────────────────────────────────
+
+let exposureResolver: ((path: string) => EndpointExposure | undefined) | null =
+	null;
+
+/**
+ * Resolve a request path to the exposure its endpoint declared at registration.
+ *
+ * Returns `internal` when nothing matches so an unknown path is refused rather
+ * than defaulting to a reachable surface. The 404 for unmatched paths is still
+ * produced downstream by module resolution.
+ */
+async function resolveExposure(fullPath: string): Promise<EndpointExposure> {
+	if (!exposureResolver) {
+		const reg = await ensureBooted();
+		exposureResolver = createEndpointExposureResolver(
+			reg.getEndpointExposures(),
+		);
+	}
+	return exposureResolver(fullPath) ?? "internal";
+}
 
 // Paths that get the stricter rate limit
 const SENSITIVE_PATHS = new Set([
@@ -124,7 +154,28 @@ function rateLimitResponse(resetAt: number): NextResponse {
 async function handleRequest(req: NextRequest, ctx: RouteParams) {
 	const { path } = await ctx.params;
 	const fullPath = `/${path.join("/")}`;
-	const isAdmin = fullPath.startsWith("/admin");
+
+	// Reachability comes from the endpoint's declaration, never from the shape of
+	// the request path. An unresolvable path is served as the most restrictive
+	// option rather than being assumed to be a shopper endpoint.
+	const exposure = await resolveExposure(fullPath);
+	const isAdmin = exposure === "admin";
+
+	// A provider webhook authenticates by verifying the provider's signature
+	// inside the endpoint. It carries no session, and a browser session must
+	// never grant or deny it anything.
+	if (exposure === "provider_webhook") {
+		const ip = getClientIp(req);
+		const result = webhookLimiter.check(`provider_webhook:${ip}`);
+		if (!result.allowed) {
+			logger.warn("Provider webhook rate limit exceeded", {
+				ip,
+				path: fullPath,
+			});
+			return rateLimitResponse(result.resetAt);
+		}
+		return handleAuthedRequest(req, fullPath, null);
+	}
 
 	// ── Session-based authentication ─────────────────────────────────────
 	// Fetch session once and reuse for both auth checks and the handler.
@@ -224,6 +275,13 @@ async function handleAuthedRequest(
 		// Normalize module error responses to { error: { code, message } }
 		if (response.status >= 400) {
 			return normalizeErrorResponse(response);
+		}
+
+		// A successful state change may have committed durable events. Deliver a
+		// bounded batch now rather than leaving the outbox to a later request.
+		// Reads cannot emit, so they never pay for this.
+		if (req.method !== "GET" && req.method !== "HEAD") {
+			await drainDurableEvents(reg);
 		}
 
 		return response;

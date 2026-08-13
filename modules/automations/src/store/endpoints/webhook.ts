@@ -5,8 +5,9 @@ import type { AutomationsController } from "../../service";
  * Webhook reception endpoint for external services.
  *
  * External platforms (Zapier, custom integrations, etc.) can POST events
- * that trigger matching automations. A shared secret is validated via
- * the `x-webhook-secret` header when configured in module options.
+ * that trigger matching automations. A shared secret is required and is
+ * validated against the `x-webhook-secret` header; without one configured the
+ * endpoint refuses, because it would otherwise let anyone trigger automations.
  *
  * Unlike the `/automations/trigger` endpoint, this accepts any event
  * type (not limited to the storefront allowlist) because the caller is
@@ -18,6 +19,7 @@ export function createWebhookEndpoint(opts?: {
 	return createStoreEndpoint(
 		"/automations/webhooks",
 		{
+			exposure: "provider_webhook",
 			method: "POST",
 			body: z.object({
 				eventType: z.string().min(1).max(200),
@@ -31,7 +33,15 @@ export function createWebhookEndpoint(opts?: {
 		async (ctx): Promise<Response> => {
 			const request = ctx.request;
 
-			// Verify shared secret when configured
+			// An unconfigured Integration must not accept a provider event.
+			// Skipping verification here would let anyone post one.
+			if (!opts?.webhookSecret) {
+				return Response.json(
+					{ error: "Automations webhook verification is not configured." },
+					{ status: 503 },
+				);
+			}
+
 			if (opts?.webhookSecret) {
 				const provided = request.headers.get("x-webhook-secret") ?? "";
 				if (provided !== opts.webhookSecret) {

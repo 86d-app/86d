@@ -41,10 +41,11 @@ import { GET, POST } from "../route";
 
 function makeRequest(
 	_path: string,
-	_method = "GET",
+	method = "GET",
 	extraHeaders: Record<string, string> = {},
 ) {
 	return {
+		method,
 		headers: {
 			get: (name: string) => {
 				const h: Record<string, string> = {
@@ -90,9 +91,33 @@ beforeEach(() => {
 		role: "admin",
 	});
 
-	// Default: registry boots successfully
+	// Default: registry boots successfully. Endpoint reachability comes from the
+	// declarations the registry resolved at boot, not from the request path.
 	mockEnsureBooted.mockResolvedValue({
 		createRequestContext: mockCreateRequestContext.mockReturnValue({}),
+		isReady: () => true,
+		getDurableEventConsumers: () => [],
+		getModuleDbId: () => "22222222-2222-4222-8222-222222222222",
+		getEndpointExposures: () => [
+			{
+				moduleId: "products",
+				surface: "store",
+				path: "/products",
+				exposure: "shopper",
+			},
+			{
+				moduleId: "orders",
+				surface: "admin",
+				path: "/admin/orders",
+				exposure: "admin",
+			},
+			{
+				moduleId: "products",
+				surface: "admin",
+				path: "/admin/products",
+				exposure: "admin",
+			},
+		],
 	});
 
 	// Default: route belongs to the products module

@@ -145,6 +145,18 @@ export {
 	type ModuleTransactionRunner,
 } from "./durable-events";
 export {
+	collectEndpointExposures,
+	createEndpointExposureResolver,
+	ENDPOINT_EXPOSURES,
+	type EndpointExposure,
+	type EndpointExposureEntry,
+	type EndpointExposureOptions,
+	type EndpointExposureViolation,
+	endpointExposure,
+	formatEndpointExposureViolations,
+	isEndpointExposure,
+} from "./endpoint-exposure";
+export {
 	formatModuleClientEndpointReferenceConflicts,
 	type ModuleClientEndpointReference,
 	type ModuleClientEndpointReferenceConflict,

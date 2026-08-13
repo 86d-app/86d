@@ -14,6 +14,7 @@ export function createEtsyWebhook(webhookSecret?: string | undefined) {
 	return createStoreEndpoint(
 		"/etsy/webhooks",
 		{
+			exposure: "provider_webhook",
 			method: "POST",
 			requireRequest: true,
 		},
@@ -23,7 +24,15 @@ export function createEtsyWebhook(webhookSecret?: string | undefined) {
 			// Read raw body before parsing to preserve bytes for HMAC
 			const rawBody = await request.text();
 
-			// Signature verification (skipped when no secret configured)
+			// An unconfigured Integration must not accept a provider event.
+			// Skipping verification here would let anyone post one.
+			if (!webhookSecret) {
+				return Response.json(
+					{ error: "Etsy webhook verification is not configured." },
+					{ status: 503 },
+				);
+			}
+
 			if (webhookSecret) {
 				const signature = request.headers.get("x-etsy-signature") ?? "";
 				const valid = await verifyWebhookSignature(

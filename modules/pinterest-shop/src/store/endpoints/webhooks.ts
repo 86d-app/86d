@@ -5,6 +5,7 @@ export function createWebhookEndpoint(webhookSecret?: string) {
 	return createStoreEndpoint(
 		"/pinterest-shop/webhooks",
 		{
+			exposure: "provider_webhook",
 			method: "POST",
 			body: z.object({
 				type: z.string().min(1).max(200),
@@ -16,6 +17,15 @@ export function createWebhookEndpoint(webhookSecret?: string) {
 			}),
 		},
 		async (ctx) => {
+			// An unconfigured Integration must not accept a provider event.
+			// Skipping verification here would let anyone post one.
+			if (!webhookSecret) {
+				return Response.json(
+					{ error: "Pinterest Shop webhook verification is not configured." },
+					{ status: 503 },
+				);
+			}
+
 			if (webhookSecret) {
 				const signature =
 					ctx.headers instanceof Headers

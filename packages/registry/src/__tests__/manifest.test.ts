@@ -129,8 +129,66 @@ describe("buildManifest", () => {
 		expect(products.name).toBe("@86d-app/products");
 		expect(products.version).toBe("0.0.4");
 		expect(products.description).toBe("Product catalog management");
-		expect(products.category).toBe("catalog");
 		expect(products.path).toBe("modules/products");
+	});
+
+	it("takes declared metadata from the Module, not from its source text", () => {
+		// A pattern match over `index.ts` cannot see a category or a page list
+		// that is assembled in a helper, and records nothing without saying so.
+		// The generator loads each Module and passes what it declares.
+		const manifest = buildManifest(TMP_ROOT, {
+			declarations: {
+				products: {
+					id: "products",
+					category: "catalog",
+					hasStorePages: true,
+					requires: ["inventory"],
+					providesCapabilities: [
+						{
+							name: "catalog.product.read",
+							owner: "products",
+							versions: ["1.0.0"],
+						},
+					],
+					acceptsCapabilities: [
+						{
+							name: "inventory.stock.check",
+							owner: "inventory",
+							versions: ["1.0.0"],
+						},
+					],
+					emitsDurableEvents: [
+						{ name: "products.published", owner: "products", version: 1 },
+					],
+				},
+			},
+		});
+		const products = manifest.modules.products;
+
+		expect(products.category).toBe("catalog");
+		expect(products.hasStorePages).toBe(true);
+		expect(products.requires).toEqual(["inventory"]);
+		expect(products.providesCapabilities).toEqual([
+			{ name: "catalog.product.read", owner: "products", versions: ["1.0.0"] },
+		]);
+		expect(products.acceptsCapabilities).toEqual([
+			{
+				name: "inventory.stock.check",
+				owner: "inventory",
+				versions: ["1.0.0"],
+			},
+		]);
+		expect(products.emitsDurableEvents).toEqual([
+			{ name: "products.published", owner: "products", version: 1 },
+		]);
+	});
+
+	it("records nothing rather than guessing when a Module declares nothing", () => {
+		const manifest = buildManifest(TMP_ROOT);
+
+		expect(manifest.modules.products.category).toBe("general");
+		expect(manifest.modules.products.hasStorePages).toBe(false);
+		expect(manifest.modules.products.providesCapabilities).toEqual([]);
 	});
 
 	it("detects store components", () => {
@@ -145,8 +203,13 @@ describe("buildManifest", () => {
 		expect(manifest.modules.analytics.hasAdminComponents).toBe(false);
 	});
 
-	it("detects store pages", () => {
-		const manifest = buildManifest(TMP_ROOT);
+	it("reports store pages from the declaration", () => {
+		const manifest = buildManifest(TMP_ROOT, {
+			declarations: {
+				products: { id: "products", hasStorePages: true },
+				analytics: { id: "analytics", hasStorePages: false },
+			},
+		});
 		expect(manifest.modules.products.hasStorePages).toBe(true);
 		expect(manifest.modules.analytics.hasStorePages).toBe(false);
 	});

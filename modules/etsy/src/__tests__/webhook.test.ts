@@ -108,10 +108,10 @@ describe("verifyWebhookSignature", () => {
 // ── Webhook endpoint tests ───────────────────────────────────────────────────
 
 describe("etsy webhook endpoint", () => {
-	describe("without signature verification", () => {
+	describe("without verification configuration", () => {
 		const endpoint = createEtsyWebhook();
 
-		it("rejects invalid JSON with 400", async () => {
+		it("refuses the event before parsing the body", async () => {
 			const request = new Request("https://store.example.com/etsy/webhooks", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -120,12 +120,11 @@ describe("etsy webhook endpoint", () => {
 			const { context } = createTestContext();
 			const response = await callWebhook(endpoint, request, context);
 
-			expect(response.status).toBe(400);
-			const json = await response.json();
-			expect(json.error).toBe("Invalid JSON body.");
+			// Unverifiable input is refused before it is interpreted at all.
+			expect(response.status).toBe(503);
 		});
 
-		it("handles order.created events", async () => {
+		it("refuses a well-formed event rather than trusting it", async () => {
 			const request = new Request("https://store.example.com/etsy/webhooks", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -134,10 +133,9 @@ describe("etsy webhook endpoint", () => {
 			const { context } = createTestContext();
 			const response = await callWebhook(endpoint, request, context);
 
-			expect(response.status).toBe(200);
+			expect(response.status).toBe(503);
 			const json = await response.json();
-			expect(json.received).toBe(true);
-			expect(json.orderId).toBeDefined();
+			expect(json.error).toMatch(/not configured/i);
 		});
 	});
 
@@ -161,6 +159,23 @@ describe("etsy webhook endpoint", () => {
 			expect(response.status).toBe(200);
 			const json = await response.json();
 			expect(json.received).toBe(true);
+		});
+
+		it("rejects invalid JSON with 400 once the signature checks out", async () => {
+			const body = "not json";
+			const signature = await computeHmacHex(body, TEST_WEBHOOK_SECRET);
+			const request = new Request("https://store.example.com/etsy/webhooks", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"x-etsy-signature": signature,
+				},
+				body,
+			});
+			const { context } = createTestContext();
+			const response = await callWebhook(signedEndpoint, request, context);
+
+			expect(response.status).toBe(400);
 		});
 
 		it("rejects missing signature with 401", async () => {

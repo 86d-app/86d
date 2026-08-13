@@ -26,6 +26,13 @@ interface DispatcherConfig {
 	db: any;
 	storeId: string;
 	consumers: readonly AnyDurableEventConsumer[];
+	/**
+	 * Attempts a single delivery may make before it becomes terminal. Reaching
+	 * the bound moves the delivery to `dead_letter`; it is never claimed again
+	 * and it deliberately holds later events for the same aggregate so nothing
+	 * is applied out of order.
+	 */
+	maxAttempts?: number | undefined;
 	getConsumerData: (
 		moduleId: string,
 		// biome-ignore lint/suspicious/noExplicitAny: generated transaction client is adapter-private
@@ -43,7 +50,12 @@ export interface DrainDurableEventsResult {
 	claimed: number;
 	succeeded: number;
 	failed: number;
+	/** Deliveries that became terminal during this drain. */
+	deadLettered: number;
 }
+
+/** Default attempt budget for one delivery before it becomes terminal. */
+const DEFAULT_MAX_ATTEMPTS = 8;
 
 class DeliveryFailure extends Error {
 	readonly code: string;
@@ -72,6 +84,13 @@ function boundedLease(milliseconds: number): number {
 	return milliseconds;
 }
 
+function boundedAttempts(attempts: number): number {
+	if (!Number.isSafeInteger(attempts) || attempts < 1 || attempts > 50) {
+		throw new Error("Durable event attempt budget must be between 1 and 50.");
+	}
+	return attempts;
+}
+
 function retryDelay(attempts: number): number {
 	return Math.min(60_000, 1_000 * 2 ** Math.min(6, Math.max(0, attempts - 1)));
 }
@@ -89,9 +108,13 @@ function failureCode(error: unknown): string {
 export class DurableEventDispatcher {
 	private readonly config: DispatcherConfig;
 	private readonly consumersById: Map<string, AnyDurableEventConsumer>;
+	private readonly maxAttempts: number;
 
 	constructor(config: DispatcherConfig) {
 		this.config = config;
+		this.maxAttempts = boundedAttempts(
+			config.maxAttempts ?? DEFAULT_MAX_ATTEMPTS,
+		);
 		this.consumersById = new Map();
 		for (const consumer of config.consumers) {
 			if (this.consumersById.has(consumer.consumer)) {
@@ -116,7 +139,7 @@ export class DurableEventDispatcher {
 		const leaseOwner = crypto.randomUUID();
 		const consumers = [...this.consumersById.keys()].sort();
 		if (consumers.length === 0) {
-			return { claimed: 0, succeeded: 0, failed: 0 };
+			return { claimed: 0, succeeded: 0, failed: 0, deadLettered: 0 };
 		}
 
 		const registrations = consumers.map((identity) => {
@@ -129,6 +152,29 @@ export class DurableEventDispatcher {
 				schemaVersion: consumer.definition.version,
 			};
 		});
+
+		// Three explicit statements. Materialization and the claim cannot share
+		// one statement: every CTE reads the snapshot taken when the statement
+		// began, so a claim CTE can never see rows a sibling CTE just inserted
+		// and a newly registered consumer would wait a whole extra drain.
+		await this.config.db.$queryRawUnsafe(
+			MATERIALIZE_SQL,
+			this.config.storeId,
+			limit,
+			now,
+			JSON.stringify(registrations),
+		);
+
+		const deadLettered = (await this.config.db.$queryRawUnsafe(
+			DEAD_LETTER_SQL,
+			this.config.storeId,
+			consumers,
+			limit,
+			now,
+			this.maxAttempts,
+		)) as Array<{ eventId: string }>;
+		await this.markExhaustedEvents(deadLettered, now);
+
 		const claimed = (await this.config.db.$queryRawUnsafe(
 			CLAIM_SQL,
 			this.config.storeId,
@@ -136,32 +182,61 @@ export class DurableEventDispatcher {
 			limit,
 			now,
 			leaseExpiresAt,
-			JSON.stringify(registrations),
 			leaseOwner,
+			this.maxAttempts,
 		)) as ClaimedDelivery[];
 
 		let succeeded = 0;
 		let failed = 0;
+		let terminal = deadLettered.length;
 		for (const delivery of claimed) {
 			const outcome = await this.deliver(delivery, now);
 			if (outcome === "succeeded") succeeded++;
 			if (outcome === "failed") failed++;
+			if (outcome === "dead_letter") {
+				failed++;
+				terminal++;
+			}
 		}
-		return { claimed: claimed.length, succeeded, failed };
+		return {
+			claimed: claimed.length,
+			succeeded,
+			failed,
+			deadLettered: terminal,
+		};
+	}
+
+	/**
+	 * Mirror terminal deliveries onto their events so an operator sees one
+	 * durable state instead of an event that still reads as retryable.
+	 */
+	private async markExhaustedEvents(
+		deliveries: ReadonlyArray<{ eventId: string }>,
+		now: Date,
+	): Promise<void> {
+		const eventIds = [...new Set(deliveries.map((row) => row.eventId))];
+		if (eventIds.length === 0) return;
+		await this.config.db.moduleOutboxEvent.updateMany({
+			where: { id: { in: eventIds }, storeId: this.config.storeId },
+			data: {
+				deliveryState: "dead_letter",
+				nextAttemptAt: now,
+				deliveredAt: null,
+			},
+		});
 	}
 
 	private async deliver(
 		delivery: ClaimedDelivery,
 		now: Date,
-	): Promise<"succeeded" | "failed" | "stale"> {
+	): Promise<"succeeded" | "failed" | "dead_letter" | "stale"> {
 		const consumer = this.consumersById.get(delivery.consumer);
 		if (!consumer) {
-			await this.fail(
+			return this.fail(
 				delivery,
 				now,
 				new DeliveryFailure("EVENT_CONSUMER_MISSING"),
 			);
-			return "failed";
 		}
 
 		try {
@@ -271,19 +346,24 @@ export class DurableEventDispatcher {
 			);
 			return outcome;
 		} catch (error) {
-			await this.fail(delivery, now, error);
-			return "failed";
+			return this.fail(delivery, now, error);
 		}
 	}
 
+	/**
+	 * Record a failed attempt. Once the attempt budget is spent the delivery
+	 * becomes terminal rather than scheduling another retry.
+	 */
 	private async fail(
 		delivery: ClaimedDelivery,
 		now: Date,
 		error: unknown,
-	): Promise<void> {
-		const nextAttemptAt = new Date(
-			now.getTime() + retryDelay(delivery.attempts),
-		);
+	): Promise<"failed" | "dead_letter"> {
+		const exhausted = delivery.attempts >= this.maxAttempts;
+		const state = exhausted ? "dead_letter" : "failed";
+		const nextAttemptAt = exhausted
+			? now
+			: new Date(now.getTime() + retryDelay(delivery.attempts));
 		const failed = await this.config.db.moduleEventDelivery.updateMany({
 			where: {
 				consumer: delivery.consumer,
@@ -293,7 +373,7 @@ export class DurableEventDispatcher {
 				leaseOwner: delivery.leaseOwner,
 			},
 			data: {
-				state: "failed",
+				state,
 				nextAttemptAt,
 				leaseToken: null,
 				leaseOwner: null,
@@ -304,20 +384,26 @@ export class DurableEventDispatcher {
 		if (failed.count === 1) {
 			await this.config.db.moduleOutboxEvent.updateMany({
 				where: { id: delivery.eventId, storeId: this.config.storeId },
-				data: { deliveryState: "failed", nextAttemptAt },
+				data: { deliveryState: state, nextAttemptAt, deliveredAt: null },
 			});
 		}
+		return exhausted ? "dead_letter" : "failed";
 	}
 }
 
-const CLAIM_SQL = `
+/**
+ * Materialize a delivery row for every registered consumer of an event that
+ * does not have one yet. Runs as its own statement so the claim below observes
+ * these rows instead of a snapshot taken before they existed.
+ */
+const MATERIALIZE_SQL = `
 WITH registrations AS (
   SELECT
     registration->>'consumer' AS consumer,
     registration->>'owner' AS owner,
     registration->>'eventType' AS "eventType",
     (registration->>'schemaVersion')::integer AS "schemaVersion"
-  FROM jsonb_array_elements($6::jsonb) registration
+  FROM jsonb_array_elements($4::jsonb) registration
 ), missing AS (
   SELECT event."id" AS "eventId", registration.consumer
   FROM "ModuleOutboxEvent" event
@@ -332,21 +418,60 @@ WITH registrations AS (
         AND delivery."consumer" = registration.consumer
     )
   ORDER BY event."occurredAt", event."id", registration.consumer
+  LIMIT $2
+)
+INSERT INTO "ModuleEventDelivery" (
+  "eventId", "consumer", "state", "attempts", "nextAttemptAt", "createdAt", "updatedAt"
+)
+SELECT missing."eventId", missing.consumer, 'pending', 0, $3, $3, $3
+FROM missing
+ON CONFLICT ("consumer", "eventId") DO NOTHING
+RETURNING "eventId"
+`;
+
+/**
+ * Retire deliveries whose attempt budget is spent. A delivery that keeps
+ * crashing its process never reaches the failure path, so the budget is
+ * enforced here as well as on the failure path.
+ */
+const DEAD_LETTER_SQL = `
+UPDATE "ModuleEventDelivery" delivery
+SET "state" = 'dead_letter',
+    "nextAttemptAt" = $4,
+    "leaseToken" = NULL,
+    "leaseOwner" = NULL,
+    "leaseExpiresAt" = NULL,
+    "lastError" = COALESCE(delivery."lastError", 'EVENT_ATTEMPTS_EXHAUSTED'),
+    "updatedAt" = $4
+FROM (
+  SELECT candidate."consumer", candidate."eventId"
+  FROM "ModuleEventDelivery" candidate
+  JOIN "ModuleOutboxEvent" event ON event."id" = candidate."eventId"
+  WHERE event."storeId" = $1::uuid
+    AND candidate."consumer" = ANY($2::text[])
+    AND candidate."attempts" >= $5
+    AND (
+      candidate."state" IN ('pending', 'failed')
+      OR (candidate."state" = 'processing' AND candidate."leaseExpiresAt" <= $4)
+    )
+  ORDER BY candidate."eventId", candidate."consumer"
+  FOR UPDATE OF candidate SKIP LOCKED
   LIMIT $3
-), materialized AS (
-  INSERT INTO "ModuleEventDelivery" (
-    "eventId", "consumer", "state", "attempts", "nextAttemptAt", "createdAt", "updatedAt"
-  )
-  SELECT missing."eventId", missing.consumer, 'pending', 0, $4, $4, $4
-  FROM missing
-  ON CONFLICT ("consumer", "eventId") DO NOTHING
-), claimable AS (
+) exhausted
+WHERE delivery."consumer" = exhausted."consumer"
+  AND delivery."eventId" = exhausted."eventId"
+RETURNING delivery."eventId"
+`;
+
+const CLAIM_SQL = `
+WITH claimable AS (
   SELECT delivery."consumer", delivery."eventId"
   FROM "ModuleEventDelivery" delivery
   JOIN "ModuleOutboxEvent" event ON event."id" = delivery."eventId"
   WHERE event."storeId" = $1::uuid
     AND delivery."consumer" = ANY($2::text[])
     AND delivery."nextAttemptAt" <= $4
+    AND delivery."attempts" < $7
     AND (
       delivery."state" IN ('pending', 'failed')
       OR (delivery."state" = 'processing' AND delivery."leaseExpiresAt" <= $4)
@@ -372,17 +497,21 @@ WITH registrations AS (
       "attempts" = delivery."attempts" + 1,
       "leaseToken" = gen_random_uuid(),
       "leaseExpiresAt" = $5,
-      "leaseOwner" = $7,
+      "leaseOwner" = $6,
       "updatedAt" = $4
   FROM claimable
   WHERE delivery."consumer" = claimable."consumer"
     AND delivery."eventId" = claimable."eventId"
   RETURNING delivery.*
 ), event_claims AS (
+  -- The delivered timestamp is cleared with the state. An event that already
+  -- read as delivered becomes claimable again whenever a new consumer registers
+  -- for it, and the completion constraint pairs 'succeeded' with that timestamp.
   UPDATE "ModuleOutboxEvent" event
   SET "deliveryState" = 'processing',
       "attempts" = event."attempts" + 1,
-      "nextAttemptAt" = $5
+      "nextAttemptAt" = $5,
+      "deliveredAt" = NULL
   FROM (SELECT DISTINCT "eventId" FROM claimed) claimed_event
   WHERE event."id" = claimed_event."eventId"
   RETURNING event."id"

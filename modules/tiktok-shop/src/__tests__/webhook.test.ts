@@ -196,10 +196,10 @@ describe("verifyWebhookSignature", () => {
 // ── Webhook endpoint tests ───────────────────────────────────────────────────
 
 describe("tiktok-shop webhook endpoint", () => {
-	describe("without signature verification", () => {
+	describe("without verification configuration", () => {
 		const endpoint = createTikTokShopWebhook();
 
-		it("rejects invalid JSON with 400", async () => {
+		it("refuses the event before parsing the body", async () => {
 			const request = new Request(`https://store.example.com${WEBHOOK_PATH}`, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -208,24 +208,10 @@ describe("tiktok-shop webhook endpoint", () => {
 			const { context } = createTestContext();
 			const response = await callWebhook(endpoint, request, context);
 
-			expect(response.status).toBe(400);
-			const json = await response.json();
-			expect(json.error).toBe("Invalid JSON body.");
+			expect(response.status).toBe(503);
 		});
 
-		it("rejects payloads missing type", async () => {
-			const request = new Request(`https://store.example.com${WEBHOOK_PATH}`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ payload: {} }),
-			});
-			const { context } = createTestContext();
-			const response = await callWebhook(endpoint, request, context);
-
-			expect(response.status).toBe(400);
-		});
-
-		it("handles order.created events", async () => {
+		it("refuses a well-formed event rather than trusting it", async () => {
 			const request = new Request(`https://store.example.com${WEBHOOK_PATH}`, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -234,26 +220,9 @@ describe("tiktok-shop webhook endpoint", () => {
 			const { context } = createTestContext();
 			const response = await callWebhook(endpoint, request, context);
 
-			expect(response.status).toBe(200);
+			expect(response.status).toBe(503);
 			const json = await response.json();
-			expect(json.received).toBe(true);
-			expect(json.orderId).toBeDefined();
-		});
-
-		it("returns received:true for unknown event types", async () => {
-			const request = new Request(`https://store.example.com${WEBHOOK_PATH}`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					type: "inventory.updated",
-					payload: {},
-				}),
-			});
-			const { context } = createTestContext();
-			const response = await callWebhook(endpoint, request, context);
-
-			const json = await response.json();
-			expect(json.received).toBe(true);
+			expect(json.error).toMatch(/not configured/i);
 		});
 	});
 
@@ -283,6 +252,77 @@ describe("tiktok-shop webhook endpoint", () => {
 			const response = await callWebhook(signedEndpoint, request, context);
 
 			expect(response.status).toBe(200);
+			const json = await response.json();
+			expect(json.received).toBe(true);
+		});
+
+		async function signedRequest(body: string): Promise<Request> {
+			const params: Record<string, string> = {
+				app_key: "test-key",
+				timestamp: "1711497600",
+				shop_id: "shop-1",
+			};
+			const sign = await computeSignature(
+				WEBHOOK_PATH,
+				params,
+				body,
+				TEST_APP_SECRET,
+			);
+			return new Request(makeSignedUrl(WEBHOOK_PATH, { ...params, sign }), {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body,
+			});
+		}
+
+		it("rejects invalid JSON with 400 once the signature checks out", async () => {
+			const { context } = createTestContext();
+			const response = await callWebhook(
+				signedEndpoint,
+				await signedRequest("not json"),
+				context,
+			);
+
+			expect(response.status).toBe(400);
+			const json = await response.json();
+			expect(json.error).toBe("Invalid JSON body.");
+		});
+
+		it("rejects payloads missing type", async () => {
+			const { context } = createTestContext();
+			const response = await callWebhook(
+				signedEndpoint,
+				await signedRequest(JSON.stringify({ payload: {} })),
+				context,
+			);
+
+			expect(response.status).toBe(400);
+		});
+
+		it("handles order.created events", async () => {
+			const { context } = createTestContext();
+			const response = await callWebhook(
+				signedEndpoint,
+				await signedRequest(JSON.stringify(ORDER_PAYLOAD)),
+				context,
+			);
+
+			expect(response.status).toBe(200);
+			const json = await response.json();
+			expect(json.received).toBe(true);
+			expect(json.orderId).toBeDefined();
+		});
+
+		it("returns received:true for unknown event types", async () => {
+			const { context } = createTestContext();
+			const response = await callWebhook(
+				signedEndpoint,
+				await signedRequest(
+					JSON.stringify({ type: "inventory.updated", payload: {} }),
+				),
+				context,
+			);
+
 			const json = await response.json();
 			expect(json.received).toBe(true);
 		});

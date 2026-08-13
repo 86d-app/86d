@@ -121,10 +121,10 @@ describe("verifyWebhookSignature", () => {
 // ── Webhook endpoint tests ───────────────────────────────────────────────────
 
 describe("facebook-shop webhook endpoint", () => {
-	describe("without signature verification", () => {
+	describe("without verification configuration", () => {
 		const endpoint = createFacebookShopWebhook();
 
-		it("rejects invalid JSON with 400", async () => {
+		it("refuses the event before parsing the body", async () => {
 			const request = new Request(
 				"https://store.example.com/facebook-shop/webhooks",
 				{
@@ -135,10 +135,12 @@ describe("facebook-shop webhook endpoint", () => {
 			);
 			const { context } = createTestContext();
 			const response = await callWebhook(endpoint, request, context);
-			expect(response.status).toBe(400);
+
+			// Unverifiable input is refused before it is interpreted at all.
+			expect(response.status).toBe(503);
 		});
 
-		it("handles order.created events", async () => {
+		it("refuses a well-formed event rather than trusting it", async () => {
 			const request = new Request(
 				"https://store.example.com/facebook-shop/webhooks",
 				{
@@ -149,9 +151,10 @@ describe("facebook-shop webhook endpoint", () => {
 			);
 			const { context } = createTestContext();
 			const response = await callWebhook(endpoint, request, context);
+
+			expect(response.status).toBe(503);
 			const json = await response.json();
-			expect(json.received).toBe(true);
-			expect(json.orderId).toBeDefined();
+			expect(json.error).toMatch(/not configured/i);
 		});
 	});
 
@@ -175,6 +178,26 @@ describe("facebook-shop webhook endpoint", () => {
 			const { context } = createTestContext();
 			const response = await callWebhook(signedEndpoint, request, context);
 			expect(response.status).toBe(200);
+		});
+
+		it("rejects invalid JSON with 400 once the signature checks out", async () => {
+			const body = "not json";
+			const signature = await computeHubSignature(body, TEST_APP_SECRET);
+			const request = new Request(
+				"https://store.example.com/facebook-shop/webhooks",
+				{
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						"x-hub-signature-256": signature,
+					},
+					body,
+				},
+			);
+			const { context } = createTestContext();
+			const response = await callWebhook(signedEndpoint, request, context);
+
+			expect(response.status).toBe(400);
 		});
 
 		it("rejects missing signature with 401", async () => {

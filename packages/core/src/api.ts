@@ -6,6 +6,7 @@ import {
 	type Middleware,
 	type StrictEndpoint,
 } from "better-call";
+import { type EndpointExposure, isEndpointExposure } from "./endpoint-exposure";
 import type { ModuleContext } from "./types/module";
 
 type AdminContext = ModuleContext & {
@@ -49,8 +50,18 @@ function createMiddlewareFactory(optionsMiddleware: Middleware) {
 /**
  * Creates an endpoint factory function with the given options middleware.
  * Supports both path-based and path-less endpoint signatures.
+ *
+ * Every endpoint the factory produces carries an `exposure`. The admin factory
+ * fixes it, because that surface is authenticated by construction. The store
+ * factory takes `shopper` unless the endpoint declares otherwise, so a provider
+ * webhook or an internal endpoint has to say so instead of being inferred from
+ * its path at request time.
  */
-function createEndpointFactory<Ctx>(optionsMiddleware: Middleware) {
+function createEndpointFactory<Ctx>(
+	optionsMiddleware: Middleware,
+	surfaceExposure: EndpointExposure,
+	fixedExposure: boolean,
+) {
 	// Overload: with path
 	function factory<Path extends string, Options extends EndpointOptions, R>(
 		path: Path,
@@ -77,8 +88,26 @@ function createEndpointFactory<Ctx>(optionsMiddleware: Middleware) {
 			hasPath ? maybeHandler : handlerOrOptions
 		) as EndpointHandler<Ctx, Path, Opts, R>;
 
+		const declared = (options as EndpointOptions & { exposure?: unknown })
+			?.exposure;
+		if (declared !== undefined && !isEndpointExposure(declared)) {
+			throw new Error(
+				`Endpoint "${path ?? "<unnamed>"}" declares unrecognized exposure ${JSON.stringify(declared)}.`,
+			);
+		}
+		if (
+			fixedExposure &&
+			declared !== undefined &&
+			declared !== surfaceExposure
+		) {
+			throw new Error(
+				`Endpoint "${path ?? "<unnamed>"}" cannot declare exposure "${declared}" on the ${surfaceExposure} surface.`,
+			);
+		}
+
 		const mergedOptions = {
 			...options,
+			exposure: fixedExposure ? surfaceExposure : (declared ?? surfaceExposure),
 			use: [...(options?.use || []), optionsMiddleware],
 		};
 
@@ -96,6 +125,8 @@ export const createStoreMiddleware = createMiddlewareFactory(
 );
 export const createStoreEndpoint = createEndpointFactory<ModuleContext>(
 	storeOptionsMiddleware,
+	"shopper",
+	false,
 );
 
 export const adminOptionsMiddleware = createOptionsMiddleware<AdminContext>();
@@ -104,6 +135,8 @@ export const createAdminMiddleware = createMiddlewareFactory(
 );
 export const createAdminEndpoint = createEndpointFactory<AdminContext>(
 	adminOptionsMiddleware,
+	"admin",
+	true,
 );
 
 export type StoreEndpoint<

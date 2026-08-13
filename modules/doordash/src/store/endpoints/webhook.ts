@@ -9,6 +9,7 @@ export function createDoordashWebhook(_signingSecret?: string | undefined) {
 	return createStoreEndpoint(
 		"/doordash/webhook",
 		{
+			exposure: "provider_webhook",
 			method: "POST",
 			requireRequest: true,
 		},
