@@ -73,7 +73,7 @@ export const inventoryCheckoutProvider = provideCapability(
 	inventoryCheckoutCapability,
 	async (ctx, request) =>
 		handleInventoryCheckout(
-			createInventoryController(ctx.data, ctx.events),
+			createInventoryController(ctx.data, ctx.events, ctx.transactions),
 			request,
 		),
 );

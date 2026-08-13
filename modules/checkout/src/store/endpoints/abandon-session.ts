@@ -4,13 +4,16 @@ import {
 	paymentCheckoutCapability,
 	z,
 } from "@86d-app/core";
+import { checkoutRevisionSchema, runCheckoutMutation } from "../../concurrency";
 import type { CheckoutController } from "../../service";
+import { canAccessCheckout } from "./guest-proof";
 
 export const abandonSession = createStoreEndpoint(
 	"/checkout/sessions/:id/abandon",
 	{
 		method: "POST",
 		params: z.object({ id: z.string().max(128) }),
+		body: z.object({ expectedRevision: checkoutRevisionSchema }),
 	},
 	async (ctx) => {
 		const controller = ctx.context.controllers.checkout as CheckoutController;
@@ -19,16 +22,18 @@ export const abandonSession = createStoreEndpoint(
 			return { error: "Checkout session not found", status: 404 };
 		}
 
-		// Ownership check
-		const userId = ctx.context.session?.user.id;
-		if (existing.customerId && (!userId || existing.customerId !== userId)) {
+		if (!(await canAccessCheckout(ctx, existing))) {
 			return { error: "Checkout session not found", status: 404 };
 		}
 
 		// Remember if stock was reserved (processing = stock reserved)
 		const wasProcessing = existing.status === "processing";
 
-		const session = await controller.abandon(ctx.params.id);
+		const mutation = await runCheckoutMutation(() =>
+			controller.abandon(ctx.params.id, ctx.body.expectedRevision),
+		);
+		if (!mutation.ok) return mutation.response;
+		const session = mutation.value;
 		if (!session) {
 			return { error: "Cannot abandon this checkout session", status: 422 };
 		}

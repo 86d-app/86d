@@ -1,10 +1,9 @@
 import {
 	createAdminEndpoint,
-	inventoryCheckoutCapability,
 	sanitizeText,
 	z,
 } from "@86d-app/core";
-import type { Product, ProductVariant } from "../../controllers";
+import type { ProductVariant } from "../../controllers";
 
 export const updateVariant = createAdminEndpoint(
 	"/admin/variants/:id/update",
@@ -17,9 +16,9 @@ export const updateVariant = createAdminEndpoint(
 			name: z.string().min(1).max(200).transform(sanitizeText).optional(),
 			sku: z.string().max(100).nullable().optional(),
 			barcode: z.string().max(100).nullable().optional(),
-			price: z.number().positive().optional(),
-			compareAtPrice: z.number().positive().nullable().optional(),
-			costPrice: z.number().positive().nullable().optional(),
+			price: z.number().int().positive().optional(),
+			compareAtPrice: z.number().int().positive().nullable().optional(),
+			costPrice: z.number().int().positive().nullable().optional(),
 			inventory: z.number().int().min(0).optional(),
 			options: z.record(z.string(), z.string()).optional(),
 			images: z.array(z.string()).optional(),
@@ -31,6 +30,13 @@ export const updateVariant = createAdminEndpoint(
 	async (ctx) => {
 		const { body } = ctx;
 		const controllers = ctx.context.controllers;
+		if (body.inventory !== undefined) {
+			return {
+				code: "INVENTORY_OPERATION_REQUIRED",
+				error: "Stock must be changed through the Inventory operation.",
+				status: 409,
+			};
+		}
 
 		// Check if variant exists
 		const existingVariant = (await controllers.variant.getById(
@@ -46,27 +52,6 @@ export const updateVariant = createAdminEndpoint(
 		const variant = (await controllers.variant.update(
 			ctx,
 		)) as ProductVariant | null;
-
-		// Sync updated inventory count to the inventory module (best-effort).
-		if (body.inventory !== undefined && variant) {
-			try {
-				// Fetch parent product name for the snapshot (best-effort)
-				const parentProduct = (await controllers.product.getById({
-					...ctx,
-					params: { id: existingVariant.productId },
-				})) as Product | null;
-				await ctx.context.capabilities.invoke(inventoryCheckoutCapability, {
-					operation: "set",
-					productId: existingVariant.productId,
-					variantId: existingVariant.id,
-					quantity: body.inventory,
-					...(parentProduct?.name ? { productName: parentProduct.name } : {}),
-					variantName: variant.name,
-				});
-			} catch {
-				// Best-effort: inventory sync failure never blocks variant update
-			}
-		}
 
 		return { variant };
 	},

@@ -1,7 +1,6 @@
 import { calculateRates } from "./calculate-rates";
 import { listCarriers } from "./list-carriers";
 import { listMethods } from "./list-methods";
-import { liveRatesEndpoint } from "./live-rates";
 import { trackShipment } from "./track-shipment";
 import { createShippingWebhook } from "./webhook";
 
@@ -10,7 +9,6 @@ export function createStoreEndpointsWithRates(opts?: {
 }) {
 	return {
 		...storeEndpoints,
-		"/shipping/live-rates": liveRatesEndpoint,
 		"/shipping/webhook": createShippingWebhook({
 			webhookSecret: opts?.webhookSecret,
 		}),

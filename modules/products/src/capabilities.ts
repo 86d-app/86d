@@ -14,7 +14,7 @@ export const productResolveProvider = provideCapability(
 		if (product.status !== "active") {
 			return { ok: false, failure: { code: "not_active" as const } };
 		}
-		if (!Number.isFinite(product.price) || product.price < 0) {
+		if (!Number.isSafeInteger(product.price) || product.price < 0) {
 			return { ok: false, failure: { code: "invalid_price" as const } };
 		}
 
@@ -39,7 +39,7 @@ export const productResolveProvider = provideCapability(
 			if (resolved.productId !== product.id) {
 				return { ok: false, failure: { code: "variant_mismatch" as const } };
 			}
-			if (!Number.isFinite(resolved.price) || resolved.price < 0) {
+			if (!Number.isSafeInteger(resolved.price) || resolved.price < 0) {
 				return { ok: false, failure: { code: "invalid_price" as const } };
 			}
 			variant = {

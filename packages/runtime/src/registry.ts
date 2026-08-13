@@ -466,6 +466,7 @@ export class ModuleRegistry {
 			const result = await registered.provider.handle(
 				{
 					data: providerEntry.dataService,
+					transactions: providerEntry.transactions,
 					events:
 						this.eventBus === undefined
 							? undefined

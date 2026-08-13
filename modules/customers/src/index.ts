@@ -81,13 +81,6 @@ export default function customers(options?: CustomersOptions): Module {
 					icon: "Tag",
 					group: "Customers",
 				},
-				{
-					path: "/admin/customers/loyalty",
-					component: "LoyaltyAdmin",
-					label: "Loyalty",
-					icon: "Star",
-					group: "Customers",
-				},
 			],
 		},
 

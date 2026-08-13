@@ -407,6 +407,9 @@ function AdjustStockModal({
 
 export function InventoryList() {
 	const api = useInventoryAdminApi();
+	const adjustSubmission = useRef<
+		{ fingerprint: string; idempotencyKey: string } | undefined
+	>(undefined);
 	const [lowStockOnly, setLowStockOnly] = useState(false);
 	const [productFilter, setProductFilter] = useState("");
 
@@ -472,6 +475,7 @@ export function InventoryList() {
 
 	const adjustStockMutation = api.adjustStock.useMutation({
 		onSuccess: () => {
+			adjustSubmission.current = undefined;
 			setShowAdjust(false);
 			setAdjustForm(DEFAULT_ADJUST);
 			void api.listItems.invalidate();
@@ -499,6 +503,7 @@ export function InventoryList() {
 	}
 
 	function openAdjustFor(item: InventoryItem) {
+		adjustSubmission.current = undefined;
 		setAdjustForm({
 			productId: item.productId,
 			variantId: item.variantId ?? "",
@@ -512,15 +517,16 @@ export function InventoryList() {
 		e.preventDefault();
 		setSaving(true);
 		setError("");
-		const body: Record<string, unknown> = {
+		const body = {
 			productId: setForm.productId,
 			quantity: setForm.quantity,
 			allowBackorder: setForm.allowBackorder,
+			...(setForm.variantId ? { variantId: setForm.variantId } : {}),
+			...(setForm.locationId ? { locationId: setForm.locationId } : {}),
+			...(setForm.lowStockThreshold !== ""
+				? { lowStockThreshold: Number(setForm.lowStockThreshold) }
+				: {}),
 		};
-		if (setForm.variantId) body.variantId = setForm.variantId;
-		if (setForm.locationId) body.locationId = setForm.locationId;
-		if (setForm.lowStockThreshold !== "")
-			body.lowStockThreshold = Number(setForm.lowStockThreshold);
 		setStockMutation.mutate(body);
 	}
 
@@ -528,13 +534,19 @@ export function InventoryList() {
 		e.preventDefault();
 		setSaving(true);
 		setError("");
-		const body: Record<string, unknown> = {
+		const adjustment = {
 			productId: adjustForm.productId,
 			delta: adjustForm.delta,
+			...(adjustForm.variantId ? { variantId: adjustForm.variantId } : {}),
+			...(adjustForm.locationId ? { locationId: adjustForm.locationId } : {}),
 		};
-		if (adjustForm.variantId) body.variantId = adjustForm.variantId;
-		if (adjustForm.locationId) body.locationId = adjustForm.locationId;
-		adjustStockMutation.mutate(body);
+		const fingerprint = JSON.stringify(adjustment);
+		const idempotencyKey =
+			adjustSubmission.current?.fingerprint === fingerprint
+				? adjustSubmission.current.idempotencyKey
+				: crypto.randomUUID();
+		adjustSubmission.current = { fingerprint, idempotencyKey };
+		adjustStockMutation.mutate({ ...adjustment, idempotencyKey });
 	}
 
 	const subtitle = `${items.length} item${items.length !== 1 ? "s" : ""}`;

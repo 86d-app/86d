@@ -1,5 +1,4 @@
 import { createStoreEndpoint, z } from "@86d-app/core";
-import type { OrderController } from "../../service";
 
 export const trackOrder = createStoreEndpoint(
 	"/orders/track",
@@ -16,19 +15,12 @@ export const trackOrder = createStoreEndpoint(
 				.transform((v) => v.toLowerCase().trim()),
 		}),
 	},
-	async (ctx) => {
-		const controller = ctx.context.controllers.order as OrderController;
-		const { orderNumber, email } = ctx.body;
-
-		const order = await controller.getByTracking(orderNumber, email);
-
-		if (!order) {
-			return { error: "Order not found", status: 404 };
-		}
-
-		// Fetch fulfillments for tracking info
-		const fulfillments = await controller.listFulfillments(order.id);
-
-		return { order, fulfillments };
+	async () => {
+		return {
+			code: "ORDER_GUEST_PROOF_REQUIRED",
+			error:
+				"Guest tracking is unavailable until it is authorized by the scoped Checkout-to-Order proof.",
+			status: 503,
+		};
 	},
 );

@@ -117,11 +117,23 @@ The first theme. Design principles:
 ## API rate limiting
 
 The catch-all route handler (`api/[...path]/route.ts`) enforces rate limits:
-- Public endpoints: 120 requests/min per IP
-- Sensitive endpoints (subscribe, payment intents): 10 requests/10 min per IP
+- Public endpoints: 2000 requests/min per IP
+- Sensitive endpoints (subscribe, checkout session creation, payment intents): 10 requests/10 min per IP
 - Admin endpoints: 300 requests/min per userId
 - Returns `Retry-After` and `X-RateLimit-Reset` headers when limited
 - Structured logging on errors; consistent `{ error: { code, message } }` response shape
+
+Durable event delivery also has a bounded independent worker entrypoint:
+`bun run worker:durable-events`. Production scheduling is an operator/deployment
+responsibility; HTTP mutation drains remain a latency optimization, not the only
+retry path.
+
+Managed Store Runtimes enforce the v2 Store-scoped commerce-availability
+decision at the API edge. Unavailable, stale, malformed, or unreachable managed
+configuration blocks shopper mutations and the insecure Storefront serves a
+same-domain unavailable view. Admin operations, signed provider webhooks, and
+shopper reads remain reachable. A standalone Runtime has no managed credential
+signal, never calls the Control Plane for this gate, and remains fully operable.
 
 ## Webhook verification
 

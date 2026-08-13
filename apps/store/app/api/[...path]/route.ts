@@ -11,6 +11,7 @@ import { logger } from "utils/logger";
 import { createRateLimiter } from "utils/rate-limit";
 import { ensureBooted } from "~/lib/api-registry";
 import { drainDurableEvents } from "~/lib/durable-events";
+import { resolveStoreCommerceGate } from "~/lib/store-commerce-availability";
 import { createApiRouter, getModuleIdForPath } from "../../../generated/api";
 
 type RouteParams = { params: Promise<{ path: string[] }> };
@@ -56,6 +57,7 @@ async function resolveExposure(fullPath: string): Promise<EndpointExposure> {
 const SENSITIVE_PATHS = new Set([
 	"/newsletter/subscribe",
 	"/newsletter/unsubscribe",
+	"/checkout/sessions",
 	"/payments/intents",
 ]);
 
@@ -92,6 +94,10 @@ function httpStatusToCode(status: number): string {
 	}
 }
 
+function isDeclaredErrorCode(value: unknown): value is string {
+	return typeof value === "string" && /^[A-Z][A-Z0-9_]{0,99}$/.test(value);
+}
+
 async function normalizeErrorResponse(
 	response: Response,
 ): Promise<NextResponse> {
@@ -106,7 +112,9 @@ async function normalizeErrorResponse(
 			return NextResponse.json(
 				{
 					error: {
-						code: httpStatusToCode(response.status),
+						code: isDeclaredErrorCode(body.code)
+							? body.code
+							: httpStatusToCode(response.status),
 						message: body.error,
 					},
 				},
@@ -160,6 +168,28 @@ async function handleRequest(req: NextRequest, ctx: RouteParams) {
 	// option rather than being assumed to be a shopper endpoint.
 	const exposure = await resolveExposure(fullPath);
 	const isAdmin = exposure === "admin";
+	const isMutation = req.method !== "GET" && req.method !== "HEAD";
+
+	if (exposure === "shopper" && isMutation) {
+		const commerceGate = await resolveStoreCommerceGate();
+		if (!commerceGate.available) {
+			return NextResponse.json(
+				{
+					error: {
+						code: "STORE_COMMERCE_UNAVAILABLE",
+						message: "This store is temporarily unavailable.",
+					},
+				},
+				{
+					status: 503,
+					headers: {
+						"Cache-Control": "no-store",
+						"Retry-After": "30",
+					},
+				},
+			);
+		}
+	}
 
 	// A provider webhook authenticates by verifying the provider's signature
 	// inside the endpoint. It carries no session, and a browser session must
@@ -255,6 +285,31 @@ async function handleAuthedRequest(
 				},
 				{ status: 404 },
 			);
+		}
+
+		if (fullPath === "/admin/inventory/adjust" && req.method === "POST") {
+			if (!session) {
+				return NextResponse.json(
+					{
+						error: {
+							code: "UNAUTHORIZED",
+							message: "Admin access required.",
+						},
+					},
+					{ status: 401 },
+				);
+			}
+			const { handleInventoryStockAdjustCommand } = await import(
+				"~/lib/inventory-command-route"
+			);
+			const commandResponse = await handleInventoryStockAdjustCommand(
+				req,
+				session,
+			);
+			if (commandResponse.status < 400) {
+				await drainDurableEvents(await ensureBooted());
+			}
+			return commandResponse;
 		}
 
 		const reg = await ensureBooted();

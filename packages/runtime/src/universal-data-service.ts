@@ -2,6 +2,7 @@ import type {
 	AnyDurableEventDefinition,
 	DurableEventEnvelope,
 	DurableEventInput,
+	LockingModuleDataTransaction,
 	ModuleDataTransaction,
 } from "@86d-app/core";
 import type { Prisma } from "@86d-app/core/prisma";
@@ -37,6 +38,10 @@ function normalizeJson(value: unknown): unknown {
 		throw new Error("Durable event payload must be bounded JSON.");
 	}
 	return JSON.parse(serialized) as unknown;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
 /**
@@ -129,6 +134,30 @@ export class UniversalDataService {
 		const result = await this.config.db.moduleData.findUnique(args);
 		// biome-ignore lint/suspicious/noExplicitAny: Prisma JSONB data field
 		return (result?.data as Record<string, any>) ?? null;
+	}
+
+	/**
+	 * Read and lock one owner-local entity inside the caller's transaction.
+	 * The lock closes the read/modify/write race for Command adapters without
+	 * exposing a raw database client to Modules.
+	 */
+	async getForUpdate(
+		entityType: string,
+		entityId: string,
+	): Promise<Record<string, unknown> | null> {
+		const rows: Array<{ data: unknown }> = await this.config.db.$queryRawUnsafe(
+			`SELECT "data"
+			 FROM "ModuleData"
+			 WHERE "moduleId" = $1::uuid
+			   AND "entityType" = $2
+			   AND "entityId" = $3
+			 FOR UPDATE`,
+			this.moduleDbId,
+			entityType,
+			entityId,
+		);
+		const value = rows[0]?.data;
+		return isRecord(value) ? { ...value } : null;
 	}
 
 	/**
@@ -291,15 +320,28 @@ export class UniversalDataService {
 		work: (transaction: ModuleDataTransaction) => Promise<T>,
 	): Promise<T> {
 		return this.config.db.$transaction(async (db: PrismaLikeTransaction) => {
-			const ownerData = this.scoped(db);
-			const transaction: ModuleDataTransaction = Object.assign(ownerData, {
-				emit: <D extends AnyDurableEventDefinition>(
-					definition: D,
-					input: DurableEventInput<D>,
-				): Promise<DurableEventEnvelope<D>> =>
-					this.persistEvent(db, definition, input),
-			});
-			return work(transaction);
+			return work(this.transactionContext(db));
+		});
+	}
+
+	/**
+	 * Bind owner-local ModuleData and outbox operations to a transaction already
+	 * opened by the Store Runtime Command persistence layer.
+	 */
+	currentTransaction(): LockingModuleDataTransaction {
+		return this.transactionContext(this.config.db);
+	}
+
+	private transactionContext(
+		db: PrismaLikeTransaction,
+	): LockingModuleDataTransaction {
+		const ownerData = this.scoped(db);
+		return Object.assign(ownerData, {
+			emit: <D extends AnyDurableEventDefinition>(
+				definition: D,
+				input: DurableEventInput<D>,
+			): Promise<DurableEventEnvelope<D>> =>
+				this.persistEvent(db, definition, input),
 		});
 	}
 

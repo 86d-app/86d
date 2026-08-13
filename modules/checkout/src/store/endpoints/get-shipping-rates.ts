@@ -1,5 +1,6 @@
 import { createStoreEndpoint, shippingQuoteCapability, z } from "@86d-app/core";
 import type { CheckoutController } from "../../service";
+import { canAccessCheckout } from "./guest-proof";
 
 export const getShippingRates = createStoreEndpoint(
 	"/checkout/sessions/:id/shipping-rates",
@@ -14,9 +15,7 @@ export const getShippingRates = createStoreEndpoint(
 			return { error: "Checkout session not found", status: 404 };
 		}
 
-		// Ownership check
-		const userId = ctx.context.session?.user.id;
-		if (session.customerId && (!userId || session.customerId !== userId)) {
+		if (!(await canAccessCheckout(ctx, session))) {
 			return { error: "Checkout session not found", status: 404 };
 		}
 

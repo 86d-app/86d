@@ -104,6 +104,7 @@ export {
 } from "./commands";
 export {
 	abandonedCartRecoveryResolveCapability,
+	cartSnapshotCapability,
 	customerContactResolveCapability,
 	discountCodeCapability,
 	giftCardCheckoutCapability,
@@ -120,6 +121,7 @@ export {
 	shippingQuoteCapability,
 	storeCreditCheckoutCapability,
 	taxQuoteCapability,
+	taxQuoteV2Capability,
 } from "./commerce-capabilities";
 export {
 	computeInitOrder,
@@ -141,6 +143,8 @@ export {
 	defineDurableEvent,
 	durableEventKey,
 	inventoryStockAdjustedV1,
+	inventoryStockAdjustedV2,
+	type LockingModuleDataTransaction,
 	type ModuleDataTransaction,
 	type ModuleTransactionRunner,
 } from "./durable-events";
@@ -173,6 +177,7 @@ export {
 	type ModuleEvent,
 	type ScopedEventEmitter,
 } from "./events";
+export { inventoryCheckoutV2Capability } from "./inventory-reservation-capability";
 export {
 	formatPathConflicts,
 	type ModulePathConflict,
@@ -180,6 +185,15 @@ export {
 	type ModulePathSource,
 	validateUniquePaths,
 } from "./paths";
+export type {
+	PaymentConnectionCapability,
+	PaymentConnectionMode,
+	PaymentConnectionProvider,
+	PaymentOperationPayload,
+	PaymentProviderOperationOutcome,
+	PaymentProviderOperationRequest,
+	PaymentProviderReconciliationRequest,
+} from "./payment-connection-provider";
 export type {
 	PaymentProvider,
 	ProviderIntentResult,

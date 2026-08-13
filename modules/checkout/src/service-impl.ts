@@ -1,4 +1,14 @@
-import type { ModuleDataService } from "@86d-app/core";
+import {
+	type LockingModuleDataTransaction,
+	type ModuleDataService,
+	type ModuleDataTransaction,
+	type ModuleTransactionRunner,
+	z,
+} from "@86d-app/core";
+import {
+	CheckoutMutationUnavailableError,
+	CheckoutRevisionConflictError,
+} from "./concurrency";
 import type {
 	CheckoutController,
 	CheckoutLineItem,
@@ -8,12 +18,78 @@ import type {
 /** Default session TTL: 30 minutes */
 const DEFAULT_TTL_MS = 30 * 60 * 1000;
 
-/**
- * Bridge typed checkout objects to the data service's Record<string, unknown>
- * format. The data service stores JSONB — this cast is safe for plain objects.
- */
-function toRecord(obj: object): Record<string, unknown> {
-	return obj as Record<string, unknown>;
+const checkoutAddressRecordSchema = z.object({
+	firstName: z.string(),
+	lastName: z.string(),
+	company: z.string().optional(),
+	line1: z.string(),
+	line2: z.string().optional(),
+	city: z.string(),
+	state: z.string(),
+	postalCode: z.string(),
+	country: z.string(),
+	phone: z.string().optional(),
+});
+
+const checkoutSessionRecordSchema = z.object({
+	id: z.string(),
+	revision: z.number().int().positive().max(Number.MAX_SAFE_INTEGER).default(1),
+	cartId: z.string().optional(),
+	customerId: z.string().optional(),
+	guestEmail: z.string().optional(),
+	status: z.enum([
+		"pending",
+		"processing",
+		"completed",
+		"expired",
+		"abandoned",
+	]),
+	subtotal: z.number(),
+	taxAmount: z.number(),
+	shippingAmount: z.number(),
+	discountAmount: z.number(),
+	giftCardAmount: z.number().default(0),
+	storeCreditAmount: z.number().default(0),
+	total: z.number(),
+	currency: z.string(),
+	discountCode: z.string().optional(),
+	giftCardCode: z.string().optional(),
+	shippingAddress: checkoutAddressRecordSchema.optional(),
+	billingAddress: checkoutAddressRecordSchema.optional(),
+	shippingMethodName: z.string().optional(),
+	paymentMethod: z.string().optional(),
+	paymentIntentId: z.string().optional(),
+	paymentStatus: z.string().optional(),
+	orderId: z.string().optional(),
+	metadata: z.record(z.string(), z.unknown()).optional(),
+	expiresAt: z.coerce.date(),
+	createdAt: z.coerce.date(),
+	updatedAt: z.coerce.date(),
+});
+
+function parseCheckoutSession(value: Record<string, unknown>) {
+	return checkoutSessionRecordSchema.parse(value);
+}
+
+type RevisionedCheckoutSession = ReturnType<typeof parseCheckoutSession>;
+
+function sessionRecord(session: CheckoutSession): Record<string, unknown> {
+	return { ...session };
+}
+
+function lineItemRecord(
+	item: CheckoutLineItem & { sessionId: string },
+): Record<string, unknown> {
+	return { ...item };
+}
+
+function isLockingTransaction(
+	transaction: ModuleDataTransaction,
+): transaction is LockingModuleDataTransaction {
+	return (
+		"getForUpdate" in transaction &&
+		typeof transaction.getForUpdate === "function"
+	);
 }
 
 /** Centralized total calculation — never negative */
@@ -38,7 +114,89 @@ function calculateTotal(session: {
 
 export function createCheckoutController(
 	data: ModuleDataService,
+	transactions?: ModuleTransactionRunner | undefined,
 ): CheckoutController {
+	async function persistMutation(
+		ownerData: ModuleDataService,
+		stored: Record<string, unknown> | null,
+		expectedRevision: number | undefined,
+		mutate: (session: RevisionedCheckoutSession) => CheckoutSession | null,
+	): Promise<CheckoutSession | null> {
+		if (!stored) return null;
+
+		const existing = parseCheckoutSession(stored);
+		if (
+			expectedRevision !== undefined &&
+			existing.revision !== expectedRevision
+		) {
+			throw new CheckoutRevisionConflictError(existing.revision);
+		}
+
+		const next = mutate(existing);
+		if (!next) return null;
+		if (existing.revision >= Number.MAX_SAFE_INTEGER) {
+			throw new CheckoutMutationUnavailableError();
+		}
+
+		const updated = {
+			...next,
+			revision: existing.revision + 1,
+			updatedAt: new Date(),
+		} satisfies CheckoutSession;
+		await ownerData.upsert(
+			"checkoutSession",
+			existing.id,
+			sessionRecord(updated),
+		);
+		return updated;
+	}
+
+	async function mutateSession(
+		id: string,
+		expectedRevision: number | undefined,
+		mutate: (session: RevisionedCheckoutSession) => CheckoutSession | null,
+	): Promise<CheckoutSession | null> {
+		if (
+			expectedRevision !== undefined &&
+			(!Number.isSafeInteger(expectedRevision) || expectedRevision < 1)
+		) {
+			throw new CheckoutRevisionConflictError(1);
+		}
+
+		if (!transactions) {
+			if (expectedRevision !== undefined) {
+				throw new CheckoutMutationUnavailableError();
+			}
+			return persistMutation(
+				data,
+				await data.get("checkoutSession", id),
+				expectedRevision,
+				mutate,
+			);
+		}
+
+		return transactions.transaction(async (transaction) => {
+			if (!isLockingTransaction(transaction)) {
+				if (expectedRevision !== undefined) {
+					throw new CheckoutMutationUnavailableError();
+				}
+				return persistMutation(
+					transaction,
+					await transaction.get("checkoutSession", id),
+					expectedRevision,
+					mutate,
+				);
+			}
+
+			return persistMutation(
+				transaction,
+				await transaction.getForUpdate("checkoutSession", id),
+				expectedRevision,
+				mutate,
+			);
+		});
+	}
+
 	return {
 		async create(params): Promise<CheckoutSession> {
 			const id = params.id ?? crypto.randomUUID();
@@ -47,6 +205,7 @@ export function createCheckoutController(
 
 			const session: CheckoutSession = {
 				id,
+				revision: 1,
 				cartId: params.cartId,
 				customerId: params.customerId,
 				guestEmail: params.guestEmail,
@@ -67,7 +226,7 @@ export function createCheckoutController(
 				updatedAt: now,
 			};
 
-			await data.upsert("checkoutSession", id, toRecord(session));
+			await data.upsert("checkoutSession", id, sessionRecord(session));
 
 			// Store line items
 			for (const item of params.lineItems) {
@@ -75,7 +234,7 @@ export function createCheckoutController(
 				await data.upsert(
 					"checkoutLineItem",
 					`${id}_${item.productId}${item.variantId ? `_${item.variantId}` : ""}`,
-					toRecord(itemRecord),
+					lineItemRecord(itemRecord),
 				);
 			}
 
@@ -83,239 +242,188 @@ export function createCheckoutController(
 		},
 
 		async getById(id: string): Promise<CheckoutSession | null> {
-			return (await data.get("checkoutSession", id)) as CheckoutSession | null;
+			const stored = await data.get("checkoutSession", id);
+			return stored ? parseCheckoutSession(stored) : null;
 		},
 
-		async update(id: string, params): Promise<CheckoutSession | null> {
-			const existing = (await data.get(
-				"checkoutSession",
-				id,
-			)) as CheckoutSession | null;
-			if (
-				!existing ||
-				existing.status === "completed" ||
-				existing.status === "expired"
-			) {
-				return null;
-			}
+		async update(
+			id: string,
+			params,
+			expectedRevision?: number | undefined,
+		): Promise<CheckoutSession | null> {
+			return mutateSession(id, expectedRevision, (existing) => {
+				if (existing.status === "completed" || existing.status === "expired") {
+					return null;
+				}
 
-			const merged = {
-				...existing,
-				...(params.guestEmail !== undefined
-					? { guestEmail: params.guestEmail }
-					: {}),
-				...(params.shippingAddress !== undefined
-					? { shippingAddress: params.shippingAddress }
-					: {}),
-				...(params.billingAddress !== undefined
-					? { billingAddress: params.billingAddress }
-					: {}),
-				...(params.shippingAmount !== undefined
-					? { shippingAmount: params.shippingAmount }
-					: {}),
-				...(params.shippingMethodName !== undefined
-					? { shippingMethodName: params.shippingMethodName }
-					: {}),
-				...(params.taxAmount !== undefined
-					? { taxAmount: params.taxAmount }
-					: {}),
-				...(params.paymentMethod !== undefined
-					? { paymentMethod: params.paymentMethod }
-					: {}),
-				...(params.metadata !== undefined ? { metadata: params.metadata } : {}),
-			};
+				const merged = {
+					...existing,
+					...(params.guestEmail !== undefined
+						? { guestEmail: params.guestEmail }
+						: {}),
+					...(params.shippingAddress !== undefined
+						? { shippingAddress: params.shippingAddress }
+						: {}),
+					...(params.billingAddress !== undefined
+						? { billingAddress: params.billingAddress }
+						: {}),
+					...(params.shippingAmount !== undefined
+						? { shippingAmount: params.shippingAmount }
+						: {}),
+					...(params.shippingMethodName !== undefined
+						? { shippingMethodName: params.shippingMethodName }
+						: {}),
+					...(params.taxAmount !== undefined
+						? { taxAmount: params.taxAmount }
+						: {}),
+					...(params.paymentMethod !== undefined
+						? { paymentMethod: params.paymentMethod }
+						: {}),
+					...(params.metadata !== undefined
+						? { metadata: params.metadata }
+						: {}),
+				};
 
-			// Recalculate total when any amount field changes
-			const amountsChanged =
-				params.shippingAmount !== undefined || params.taxAmount !== undefined;
+				const amountsChanged =
+					params.shippingAmount !== undefined || params.taxAmount !== undefined;
 
-			const updated: CheckoutSession = {
-				...merged,
-				total: amountsChanged ? calculateTotal(merged) : merged.total,
-				updatedAt: new Date(),
-			};
-
-			await data.upsert("checkoutSession", id, toRecord(updated));
-			return updated;
+				return {
+					...merged,
+					total: amountsChanged ? calculateTotal(merged) : merged.total,
+				};
+			});
 		},
 
 		async applyDiscount(
 			id: string,
 			params: { code: string; discountAmount: number; freeShipping: boolean },
+			expectedRevision?: number | undefined,
 		): Promise<CheckoutSession | null> {
-			const existing = (await data.get(
-				"checkoutSession",
-				id,
-			)) as CheckoutSession | null;
-			if (
-				!existing ||
-				existing.status === "completed" ||
-				existing.status === "expired"
-			) {
-				return null;
-			}
+			return mutateSession(id, expectedRevision, (existing) => {
+				if (existing.status === "completed" || existing.status === "expired") {
+					return null;
+				}
 
-			const shippingAmount = params.freeShipping ? 0 : existing.shippingAmount;
-
-			const updated: CheckoutSession = {
-				...existing,
-				discountCode: params.code,
-				discountAmount: params.discountAmount,
-				shippingAmount,
-				total: calculateTotal({
+				const shippingAmount = params.freeShipping
+					? 0
+					: existing.shippingAmount;
+				return {
 					...existing,
-					shippingAmount,
+					discountCode: params.code,
 					discountAmount: params.discountAmount,
-				}),
-				updatedAt: new Date(),
-			};
-
-			await data.upsert("checkoutSession", id, toRecord(updated));
-			return updated;
+					shippingAmount,
+					total: calculateTotal({
+						...existing,
+						shippingAmount,
+						discountAmount: params.discountAmount,
+					}),
+				};
+			});
 		},
 
-		async removeDiscount(id: string): Promise<CheckoutSession | null> {
-			const existing = (await data.get(
-				"checkoutSession",
-				id,
-			)) as CheckoutSession | null;
-			if (
-				!existing ||
-				existing.status === "completed" ||
-				existing.status === "expired"
-			) {
-				return null;
-			}
+		async removeDiscount(
+			id: string,
+			expectedRevision?: number | undefined,
+		): Promise<CheckoutSession | null> {
+			return mutateSession(id, expectedRevision, (existing) => {
+				if (existing.status === "completed" || existing.status === "expired") {
+					return null;
+				}
 
-			const updated: CheckoutSession = {
-				...existing,
-				discountCode: undefined,
-				discountAmount: 0,
-				total: calculateTotal({
+				return {
 					...existing,
+					discountCode: undefined,
 					discountAmount: 0,
-				}),
-				updatedAt: new Date(),
-			};
-
-			await data.upsert("checkoutSession", id, toRecord(updated));
-			return updated;
+					total: calculateTotal({
+						...existing,
+						discountAmount: 0,
+					}),
+				};
+			});
 		},
 
 		async applyGiftCard(
 			id: string,
 			params: { code: string; giftCardAmount: number },
+			expectedRevision?: number | undefined,
 		): Promise<CheckoutSession | null> {
-			const existing = (await data.get(
-				"checkoutSession",
-				id,
-			)) as CheckoutSession | null;
-			if (
-				!existing ||
-				existing.status === "completed" ||
-				existing.status === "expired"
-			) {
-				return null;
-			}
+			return mutateSession(id, expectedRevision, (existing) => {
+				if (existing.status === "completed" || existing.status === "expired") {
+					return null;
+				}
 
-			const updated: CheckoutSession = {
-				...existing,
-				giftCardCode: params.code,
-				giftCardAmount: params.giftCardAmount,
-				total: calculateTotal({
+				return {
 					...existing,
+					giftCardCode: params.code,
 					giftCardAmount: params.giftCardAmount,
-				}),
-				updatedAt: new Date(),
-			};
-
-			await data.upsert("checkoutSession", id, toRecord(updated));
-			return updated;
+					total: calculateTotal({
+						...existing,
+						giftCardAmount: params.giftCardAmount,
+					}),
+				};
+			});
 		},
 
-		async removeGiftCard(id: string): Promise<CheckoutSession | null> {
-			const existing = (await data.get(
-				"checkoutSession",
-				id,
-			)) as CheckoutSession | null;
-			if (
-				!existing ||
-				existing.status === "completed" ||
-				existing.status === "expired"
-			) {
-				return null;
-			}
+		async removeGiftCard(
+			id: string,
+			expectedRevision?: number | undefined,
+		): Promise<CheckoutSession | null> {
+			return mutateSession(id, expectedRevision, (existing) => {
+				if (existing.status === "completed" || existing.status === "expired") {
+					return null;
+				}
 
-			const updated: CheckoutSession = {
-				...existing,
-				giftCardCode: undefined,
-				giftCardAmount: 0,
-				total: calculateTotal({
+				return {
 					...existing,
+					giftCardCode: undefined,
 					giftCardAmount: 0,
-				}),
-				updatedAt: new Date(),
-			};
-
-			await data.upsert("checkoutSession", id, toRecord(updated));
-			return updated;
+					total: calculateTotal({
+						...existing,
+						giftCardAmount: 0,
+					}),
+				};
+			});
 		},
 
 		async applyStoreCredit(
 			id: string,
 			params: { storeCreditAmount: number },
+			expectedRevision?: number | undefined,
 		): Promise<CheckoutSession | null> {
-			const existing = (await data.get(
-				"checkoutSession",
-				id,
-			)) as CheckoutSession | null;
-			if (
-				!existing ||
-				existing.status === "completed" ||
-				existing.status === "expired"
-			) {
-				return null;
-			}
+			return mutateSession(id, expectedRevision, (existing) => {
+				if (existing.status === "completed" || existing.status === "expired") {
+					return null;
+				}
 
-			const updated: CheckoutSession = {
-				...existing,
-				storeCreditAmount: params.storeCreditAmount,
-				total: calculateTotal({
+				return {
 					...existing,
 					storeCreditAmount: params.storeCreditAmount,
-				}),
-				updatedAt: new Date(),
-			};
-
-			await data.upsert("checkoutSession", id, toRecord(updated));
-			return updated;
+					total: calculateTotal({
+						...existing,
+						storeCreditAmount: params.storeCreditAmount,
+					}),
+				};
+			});
 		},
 
-		async removeStoreCredit(id: string): Promise<CheckoutSession | null> {
-			const existing = (await data.get(
-				"checkoutSession",
-				id,
-			)) as CheckoutSession | null;
-			if (
-				!existing ||
-				existing.status === "completed" ||
-				existing.status === "expired"
-			) {
-				return null;
-			}
+		async removeStoreCredit(
+			id: string,
+			expectedRevision?: number | undefined,
+		): Promise<CheckoutSession | null> {
+			return mutateSession(id, expectedRevision, (existing) => {
+				if (existing.status === "completed" || existing.status === "expired") {
+					return null;
+				}
 
-			const updated: CheckoutSession = {
-				...existing,
-				storeCreditAmount: 0,
-				total: calculateTotal({
+				return {
 					...existing,
 					storeCreditAmount: 0,
-				}),
-				updatedAt: new Date(),
-			};
-
-			await data.upsert("checkoutSession", id, toRecord(updated));
-			return updated;
+					total: calculateTotal({
+						...existing,
+						storeCreditAmount: 0,
+					}),
+				};
+			});
 		},
 
 		async confirm(
@@ -367,7 +475,7 @@ export function createCheckoutController(
 				updatedAt: new Date(),
 			};
 
-			await data.upsert("checkoutSession", id, toRecord(updated));
+			await data.upsert("checkoutSession", id, sessionRecord(updated));
 			return { session: updated };
 		},
 
@@ -395,7 +503,7 @@ export function createCheckoutController(
 				updatedAt: new Date(),
 			};
 
-			await data.upsert("checkoutSession", id, toRecord(updated));
+			await data.upsert("checkoutSession", id, sessionRecord(updated));
 			return updated;
 		},
 
@@ -421,27 +529,18 @@ export function createCheckoutController(
 				updatedAt: new Date(),
 			};
 
-			await data.upsert("checkoutSession", id, toRecord(updated));
+			await data.upsert("checkoutSession", id, sessionRecord(updated));
 			return updated;
 		},
 
-		async abandon(id: string): Promise<CheckoutSession | null> {
-			const existing = (await data.get(
-				"checkoutSession",
-				id,
-			)) as CheckoutSession | null;
-			if (!existing || existing.status === "completed") {
-				return null;
-			}
-
-			const updated: CheckoutSession = {
-				...existing,
-				status: "abandoned",
-				updatedAt: new Date(),
-			};
-
-			await data.upsert("checkoutSession", id, toRecord(updated));
-			return updated;
+		async abandon(
+			id: string,
+			expectedRevision?: number | undefined,
+		): Promise<CheckoutSession | null> {
+			return mutateSession(id, expectedRevision, (existing) => {
+				if (existing.status === "completed") return null;
+				return { ...existing, status: "abandoned" };
+			});
 		},
 
 		async getLineItems(sessionId: string): Promise<CheckoutLineItem[]> {
@@ -583,7 +682,11 @@ export function createCheckoutController(
 							status: "expired",
 							updatedAt: now,
 						};
-						await data.upsert("checkoutSession", session.id, toRecord(updated));
+						await data.upsert(
+							"checkoutSession",
+							session.id,
+							sessionRecord(updated),
+						);
 						if (status === "processing") {
 							processingSessions.push(session);
 						}

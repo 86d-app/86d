@@ -1,14 +1,40 @@
-import type { Module, ModuleContext } from "@86d-app/core";
+import type {
+	Module,
+	ModuleContext,
+	PaymentConnectionProvider,
+} from "@86d-app/core";
 import { adminEndpoints } from "./admin/endpoints";
 import {
 	createPaymentCheckoutProvider,
 	createPaymentIntentProvider,
 } from "./capabilities";
+import { createPaymentConnectionController } from "./connection-service";
 import { paymentsSchema } from "./schema";
 import type { PaymentProvider } from "./service";
 import { createPaymentController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints";
 
+export type {
+	PaymentConnectionCapability,
+	PaymentConnectionMode,
+	PaymentConnectionProvider,
+	PaymentOperationPayload,
+	PaymentProviderOperationOutcome,
+	PaymentProviderOperationRequest,
+	PaymentProviderReconciliationRequest,
+} from "@86d-app/core";
+export type {
+	CreatePaymentConnectionInput,
+	PaymentConnection,
+	PaymentConnectionController,
+	PaymentConnectionErrorCode,
+	PaymentConnectionHealth,
+	PaymentConnectionLifecycle,
+	PaymentOperation,
+	PaymentOperationAttempt,
+	PaymentOperationExecutionInput,
+} from "./connection-service";
+export { PaymentConnectionError } from "./connection-service";
 export type {
 	PaymentController,
 	PaymentIntent,
@@ -26,6 +52,11 @@ export interface PaymentsOptions {
 	currency?: string;
 	/** Payment provider implementation (e.g. StripePaymentProvider) */
 	provider?: PaymentProvider;
+	/**
+	 * Explicit v2 adapters, each bound to one immutable Payment Connection ID.
+	 * These are not used by the legacy Checkout capability or shopper routes.
+	 */
+	connectionProviders?: readonly PaymentConnectionProvider[];
 }
 
 export default function payments(options?: PaymentsOptions): Module {
@@ -47,7 +78,17 @@ export default function payments(options?: PaymentsOptions): Module {
 		},
 		init: async (ctx: ModuleContext) => {
 			const controller = createPaymentController(ctx.data, options?.provider);
-			return { controllers: { payments: controller } };
+			const connections = createPaymentConnectionController(
+				ctx.data,
+				ctx.transactions,
+				options?.connectionProviders,
+			);
+			return {
+				controllers: {
+					payments: controller,
+					paymentConnections: connections,
+				},
+			};
 		},
 		endpoints: {
 			store: storeEndpoints,

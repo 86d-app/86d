@@ -4,7 +4,9 @@ import {
 	sanitizeText,
 	z,
 } from "@86d-app/core";
+import { checkoutRevisionSchema, runCheckoutMutation } from "../../concurrency";
 import type { CheckoutController } from "../../service";
+import { canAccessCheckout } from "./guest-proof";
 import { recalculateTax } from "./recalculate-tax";
 
 export const applyDiscount = createStoreEndpoint(
@@ -13,6 +15,7 @@ export const applyDiscount = createStoreEndpoint(
 		method: "POST",
 		params: z.object({ id: z.string().max(128) }),
 		body: z.object({
+			expectedRevision: checkoutRevisionSchema,
 			code: z.string().min(1).max(50).transform(sanitizeText),
 		}),
 	},
@@ -24,9 +27,7 @@ export const applyDiscount = createStoreEndpoint(
 			return { error: "Checkout session not found", status: 404 };
 		}
 
-		// Ownership check
-		const userId = ctx.context.session?.user.id;
-		if (session.customerId && (!userId || session.customerId !== userId)) {
+		if (!(await canAccessCheckout(ctx, session))) {
 			return { error: "Checkout session not found", status: 404 };
 		}
 
@@ -52,11 +53,19 @@ export const applyDiscount = createStoreEndpoint(
 			};
 		}
 
-		let updated = await checkoutController.applyDiscount(ctx.params.id, {
-			code: ctx.body.code,
-			discountAmount: result.decision.discountAmount,
-			freeShipping: result.decision.freeShipping,
-		});
+		const mutation = await runCheckoutMutation(() =>
+			checkoutController.applyDiscount(
+				ctx.params.id,
+				{
+					code: ctx.body.code,
+					discountAmount: result.decision.discountAmount,
+					freeShipping: result.decision.freeShipping,
+				},
+				ctx.body.expectedRevision,
+			),
+		);
+		if (!mutation.ok) return mutation.response;
+		let updated = mutation.value;
 
 		// Recalculate tax on post-discount amounts
 		if (updated) {

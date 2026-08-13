@@ -61,6 +61,11 @@ export const ordersSchema = {
 				required: true,
 				defaultValue: 0,
 			},
+			storeCreditAmount: {
+				type: "number",
+				required: true,
+				defaultValue: 0,
+			},
 			total: {
 				type: "number",
 				required: true,
@@ -70,6 +75,25 @@ export const ordersSchema = {
 				required: true,
 				defaultValue: "USD",
 			},
+			/** Immutable references to the accepted server-owned offer. */
+			checkoutId: { type: "string", required: false },
+			acceptedOfferId: { type: "string", required: false },
+			catalogRevision: { type: "string", required: false },
+			priceSourceVersion: { type: "string", required: false },
+			taxQuoteId: { type: "string", required: false },
+			shippingQuoteId: { type: "string", required: false },
+			shippingOptionId: { type: "string", required: false },
+			inventoryReservationIds: {
+				type: "json",
+				required: false,
+				defaultValue: [],
+			},
+			paymentConnectionId: { type: "string", required: false },
+			paymentOperationId: { type: "string", required: false },
+			/** Explicit closure is evaluated separately from delivery evidence. */
+			closedAt: { type: "date", required: false },
+			closureReason: { type: "string", required: false },
+			closurePolicyVersion: { type: "number", required: false },
 			notes: {
 				type: "string",
 				required: false,

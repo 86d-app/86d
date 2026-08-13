@@ -94,6 +94,69 @@ export function createOrderController(
 ): OrderController {
 	return {
 		async create(params: CreateOrderParams): Promise<Order> {
+			const moneyAmounts = [
+				params.subtotal,
+				params.taxAmount ?? 0,
+				params.shippingAmount ?? 0,
+				params.discountAmount ?? 0,
+				params.giftCardAmount ?? 0,
+				params.storeCreditAmount ?? 0,
+				params.total,
+				...params.items.map((item) => item.price),
+			];
+			if (
+				moneyAmounts.some(
+					(amount) => !Number.isSafeInteger(amount) || amount < 0,
+				)
+			) {
+				throw new Error(
+					"Order monetary values must be non-negative safe integers.",
+				);
+			}
+			if (
+				params.items.some(
+					(item) => !Number.isSafeInteger(item.quantity) || item.quantity < 1,
+				)
+			) {
+				throw new Error(
+					"Order item quantities must be positive safe integers.",
+				);
+			}
+			const itemSubtotal = params.items.reduce((subtotal, item) => {
+				const lineSubtotal = item.price * item.quantity;
+				if (!Number.isSafeInteger(lineSubtotal)) {
+					throw new Error("Order line subtotal exceeds safe integer bounds.");
+				}
+				return subtotal + lineSubtotal;
+			}, 0);
+			if (
+				!Number.isSafeInteger(itemSubtotal) ||
+				itemSubtotal !== params.subtotal
+			) {
+				throw new Error(
+					"Order subtotal does not match its immutable line items.",
+				);
+			}
+			const expectedTotal = Math.max(
+				0,
+				params.subtotal +
+					(params.taxAmount ?? 0) +
+					(params.shippingAmount ?? 0) -
+					(params.discountAmount ?? 0) -
+					(params.giftCardAmount ?? 0) -
+					(params.storeCreditAmount ?? 0),
+			);
+			if (
+				!Number.isSafeInteger(expectedTotal) ||
+				expectedTotal !== params.total
+			) {
+				throw new Error(
+					"Order total does not match its accepted amount components.",
+				);
+			}
+			if (!/^[A-Z]{3}$/.test(params.currency ?? "USD")) {
+				throw new Error("Order currency must be an uppercase ISO 4217 code.");
+			}
 			const id = params.id ?? crypto.randomUUID();
 			const orderNumber = generateOrderNumber();
 			const now = new Date();
@@ -113,6 +176,16 @@ export function createOrderController(
 				storeCreditAmount: params.storeCreditAmount ?? 0,
 				total: params.total,
 				currency: params.currency ?? "USD",
+				checkoutId: params.checkoutId,
+				acceptedOfferId: params.acceptedOfferId,
+				catalogRevision: params.catalogRevision,
+				priceSourceVersion: params.priceSourceVersion,
+				taxQuoteId: params.taxQuoteId,
+				shippingQuoteId: params.shippingQuoteId,
+				shippingOptionId: params.shippingOptionId,
+				inventoryReservationIds: params.inventoryReservationIds ?? [],
+				paymentConnectionId: params.paymentConnectionId,
+				paymentOperationId: params.paymentOperationId,
 				notes: params.notes,
 				metadata: params.metadata ?? {},
 				createdAt: now,

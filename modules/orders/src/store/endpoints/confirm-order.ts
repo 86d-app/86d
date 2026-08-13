@@ -1,5 +1,4 @@
 import { createStoreEndpoint, z } from "@86d-app/core";
-import type { OrderController } from "../../service";
 
 /**
  * Guest order confirmation lookup.
@@ -20,27 +19,12 @@ export const confirmOrder = createStoreEndpoint(
 				.transform((v) => v.toLowerCase().trim()),
 		}),
 	},
-	async (ctx) => {
-		const controller = ctx.context.controllers.order as OrderController;
-		const { orderId, email } = ctx.body;
-
-		const order = await controller.getById(orderId);
-		if (!order) {
-			return { error: "Order not found", status: 404 };
-		}
-
-		// Allow if logged-in user owns this order
-		const userId = ctx.context.session?.user.id;
-		if (userId && order.customerId === userId) {
-			return { order };
-		}
-
-		// Allow if email matches the guest email on the order
-		if (order.guestEmail && order.guestEmail.toLowerCase().trim() === email) {
-			return { order };
-		}
-
-		// Return 404 (not 403) to avoid leaking order existence
-		return { error: "Order not found", status: 404 };
+	async () => {
+		return {
+			code: "ORDER_GUEST_PROOF_REQUIRED",
+			error:
+				"Guest confirmation is unavailable until it is authorized by the scoped Checkout-to-Order proof.",
+			status: 503,
+		};
 	},
 );

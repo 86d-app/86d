@@ -1,5 +1,4 @@
 import { createAdminEndpoint, z } from "@86d-app/core";
-import type { InventoryController } from "../../service";
 
 export const setStock = createAdminEndpoint(
 	"/admin/inventory/set",
@@ -16,18 +15,12 @@ export const setStock = createAdminEndpoint(
 			variantName: z.string().max(200).optional(),
 		}),
 	},
-	async (ctx) => {
-		const controller = ctx.context.controllers.inventory as InventoryController;
-		const item = await controller.setStock({
-			productId: ctx.body.productId,
-			variantId: ctx.body.variantId,
-			locationId: ctx.body.locationId,
-			quantity: ctx.body.quantity,
-			lowStockThreshold: ctx.body.lowStockThreshold,
-			allowBackorder: ctx.body.allowBackorder,
-			productName: ctx.body.productName,
-			variantName: ctx.body.variantName,
-		});
-		return { item };
+	async () => {
+		return {
+			code: "INVENTORY_SET_COMMAND_UNAVAILABLE",
+			error:
+				"Setting absolute stock is unavailable until its Inventory Command is registered.",
+			status: 503,
+		};
 	},
 );

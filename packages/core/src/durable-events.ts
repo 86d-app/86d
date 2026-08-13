@@ -50,6 +50,15 @@ export interface ModuleDataTransaction extends ModuleDataService {
 	): Promise<DurableEventEnvelope<D>>;
 }
 
+/** Additive transaction contract for owner-local compare/mutate operations. */
+export interface LockingModuleDataTransaction extends ModuleDataTransaction {
+	/** Read and lock one owner-local entity until the surrounding transaction ends. */
+	getForUpdate(
+		entityType: string,
+		entityId: string,
+	): Promise<Record<string, unknown> | null>;
+}
+
 export interface ModuleTransactionRunner {
 	transaction<T>(
 		work: (transaction: ModuleDataTransaction) => Promise<T>,
@@ -118,20 +127,47 @@ function assertIdentifier(value: string, label: string, maximum: number): void {
 	}
 }
 
+const inventoryStockAdjustedPayloadShape = {
+	productId: z.string().min(1).max(255),
+	variantId: z.string().min(1).max(255).optional(),
+	locationId: z.string().min(1).max(255).optional(),
+	delta: z.number().int(),
+	quantity: z.number().int().nonnegative(),
+	reserved: z.number().int().nonnegative(),
+	available: z.number().int().nonnegative(),
+};
+
 /** Shared Store Runtime contract for the M1H Inventory durability tracer. */
 export const inventoryStockAdjustedV1 = defineDurableEvent({
 	name: "inventory.stock-adjusted",
 	version: 1,
 	owner: "inventory",
+	payload: z.object(inventoryStockAdjustedPayloadShape).strict(),
+});
+
+/** Command-correlated Inventory adjustment fact. */
+export const inventoryStockAdjustedV2 = defineDurableEvent({
+	name: "inventory.stock-adjusted",
+	version: 2,
+	owner: "inventory",
 	payload: z
 		.object({
-			productId: z.string().min(1).max(255),
-			variantId: z.string().min(1).max(255).optional(),
-			locationId: z.string().min(1).max(255).optional(),
-			delta: z.number().int(),
-			quantity: z.number().int().nonnegative(),
-			reserved: z.number().int().nonnegative(),
-			available: z.number().int().nonnegative(),
+			...inventoryStockAdjustedPayloadShape,
+			command: z
+				.object({
+					executionId: z.string().min(1).max(255),
+					operationId: z.string().min(8).max(200),
+					correlationId: z.string().min(1).max(255),
+					causationId: z.string().min(1).max(255).optional(),
+					actor: z
+						.object({
+							type: z.enum(["account", "workload", "system"]),
+							id: z.string().min(1).max(255),
+						})
+						.strict(),
+					authorityId: z.string().min(1).max(255),
+				})
+				.strict(),
 		})
 		.strict(),
 });

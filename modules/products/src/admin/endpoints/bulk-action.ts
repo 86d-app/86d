@@ -12,11 +12,7 @@ export const bulkAction = createAdminEndpoint(
 	},
 	async (ctx) => {
 		const controllers = ctx.context.controllers;
-		const { action, ids, status } = ctx.body as {
-			action: "updateStatus" | "delete";
-			ids: string[];
-			status?: "draft" | "active" | "archived" | undefined;
-		};
+		const { action, ids, status } = ctx.body;
 
 		if (action === "updateStatus") {
 			if (!status) {

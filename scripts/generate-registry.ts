@@ -42,6 +42,23 @@ function resolveCommit(): string | undefined {
 	}
 }
 
+function assertTrackedSourceIsClean(): void {
+	const changed = execFileSync(
+		"git",
+		["status", "--porcelain", "--untracked-files=no", "--", "modules", "templates"],
+		{
+			cwd: WORKSPACE_ROOT,
+			encoding: "utf-8",
+		},
+	).trim();
+
+	if (changed) {
+		throw new Error(
+			"Refusing to pin registry entries to HEAD while tracked Module or template source differs from that commit. Commit the source first, then regenerate.",
+		);
+	}
+}
+
 function storeRuntimeVersion(): string | undefined {
 	const pkgPath = join(WORKSPACE_ROOT, "package.json");
 	if (!existsSync(pkgPath)) return undefined;
@@ -120,14 +137,18 @@ async function loadDeclarations(): Promise<Record<string, ModuleDeclarations>> {
 	return declarations;
 }
 
+assertTrackedSourceIsClean();
 const commit = resolveCommit();
+if (!commit) {
+	throw new Error("A resolved git commit is required to generate registry.json.");
+}
 const storeRuntime = storeRuntimeVersion();
 const declarations = await loadDeclarations();
 
 const manifest = buildManifest(WORKSPACE_ROOT, {
 	baseUrl: "https://github.com/86d-app/86d",
 	defaultRef: "main",
-	...(commit ? { commit } : {}),
+	commit,
 	...(storeRuntime
 		? {
 				storeRuntimeVersion: storeRuntime,

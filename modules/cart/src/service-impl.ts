@@ -1,8 +1,24 @@
-import type { ModuleDataService } from "@86d-app/core";
+import { type ModuleDataService, z } from "@86d-app/core";
 import type { Cart, CartController, CartItem } from "./service";
+
+const cartRecordSchema = z.object({
+	id: z.string(),
+	customerId: z.string().optional(),
+	guestId: z.string().optional(),
+	status: z.enum(["active", "abandoned", "converted"]),
+	expiresAt: z.coerce.date(),
+	metadata: z.record(z.string(), z.unknown()).optional(),
+	createdAt: z.coerce.date(),
+	updatedAt: z.coerce.date(),
+});
 
 export function createCartControllers(data: ModuleDataService): CartController {
 	return {
+		async getById(id) {
+			const parsed = cartRecordSchema.safeParse(await data.get("cart", id));
+			return parsed.success ? parsed.data : null;
+		},
+
 		async getOrCreateCart(params) {
 			const { customerId, guestId } = params;
 			const cartId = customerId || guestId || crypto.randomUUID();

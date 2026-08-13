@@ -37,6 +37,7 @@ export const CheckoutShipping = observer(() => {
 		data:
 			| {
 					session: {
+						revision: number;
 						shippingAddress?: CheckoutAddress | null;
 						shippingAmount?: number;
 						shippingMethodName?: string | null;
@@ -47,6 +48,9 @@ export const CheckoutShipping = observer(() => {
 
 	const initial = data?.session?.shippingAddress ?? emptyAddress;
 	const [address, setAddress] = useState<CheckoutAddress>(initial);
+	const [revision, setRevision] = useState<number | null>(
+		data?.session?.revision ?? null,
+	);
 	const [error, setError] = useState("");
 
 	// Shipping rate selection state
@@ -61,6 +65,12 @@ export const CheckoutShipping = observer(() => {
 			setPhase("rates");
 		}
 	}, [data?.session?.shippingAddress]);
+
+	useEffect(() => {
+		if (data?.session?.revision !== undefined) {
+			setRevision(data.session.revision);
+		}
+	}, [data?.session?.revision]);
 
 	// Fetch shipping rates when in rates phase
 	const {
@@ -102,7 +112,10 @@ export const CheckoutShipping = observer(() => {
 	});
 
 	const selectMethodMutation = api.updateSession.useMutation({
-		onSuccess: () => {
+		onSuccess: (result) => {
+			if ("session" in result && typeof result.session?.revision === "number") {
+				setRevision(result.session.revision);
+			}
 			checkoutState.setStep("payment");
 		},
 		onError: () => {
@@ -131,7 +144,7 @@ export const CheckoutShipping = observer(() => {
 			return;
 		}
 
-		if (!sessionId) {
+		if (!sessionId || revision === null) {
 			setError("No checkout session found.");
 			return;
 		}
@@ -139,6 +152,7 @@ export const CheckoutShipping = observer(() => {
 		updateMutation.mutate(
 			{
 				params: { id: sessionId },
+				expectedRevision: revision,
 				shippingAddress: {
 					firstName: address.firstName.trim(),
 					lastName: address.lastName.trim(),
@@ -153,7 +167,13 @@ export const CheckoutShipping = observer(() => {
 				},
 			},
 			{
-				onSuccess: () => {
+				onSuccess: (result) => {
+					if (
+						"session" in result &&
+						typeof result.session?.revision === "number"
+					) {
+						setRevision(result.session.revision);
+					}
 					setSelectedRateId(null);
 					setPhase("rates");
 				},
@@ -169,12 +189,13 @@ export const CheckoutShipping = observer(() => {
 		e.preventDefault();
 		setRatesError("");
 
-		if (!sessionId) return;
+		if (!sessionId || revision === null) return;
 
 		// If no rates available (shipping module not installed), proceed with $0 shipping
 		if (rates.length === 0) {
 			selectMethodMutation.mutate({
 				params: { id: sessionId },
+				expectedRevision: revision,
 				shippingAmount: 0,
 				shippingMethodName: "Free Shipping",
 			});
@@ -189,6 +210,7 @@ export const CheckoutShipping = observer(() => {
 
 		selectMethodMutation.mutate({
 			params: { id: sessionId },
+			expectedRevision: revision,
 			shippingAmount: selected.price,
 			shippingMethodName: selected.name,
 		});

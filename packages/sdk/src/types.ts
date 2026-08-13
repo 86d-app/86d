@@ -59,6 +59,56 @@ export interface BillingInfo {
 	periodEnd?: string;
 }
 
+export type StoreEntitlementPlan = "launch" | "premium" | "enterprise";
+
+export type StoreEntitlementLifecycle =
+	| "trialing"
+	| "active"
+	| "suspended"
+	| "destroyed";
+
+export interface StoreRuntimeEntitlement {
+	version: 1;
+	catalogVersion: number;
+	plan: StoreEntitlementPlan;
+	lifecycle: StoreEntitlementLifecycle;
+	trialEndsAt?: string | undefined;
+	premiumTransitionAt?: string | undefined;
+	currentPeriodEndsAt?: string | undefined;
+	suspendAt?: string | undefined;
+	destroyAt?: string | undefined;
+}
+
+export type StoreCommerceAvailabilityReason =
+	| "entitlement_trialing"
+	| "entitlement_active"
+	| "entitlement_suspended"
+	| "entitlement_destroyed"
+	| "entitlement_missing"
+	| "entitlement_invalid"
+	| "entitlement_reconciliation_required";
+
+interface StoreCommerceAvailabilityBase {
+	version: 1;
+	evaluatedAt: string;
+	recheckAt?: string | undefined;
+}
+
+export type StoreCommerceAvailability = StoreCommerceAvailabilityBase &
+	(
+		| {
+				available: true;
+				reason: "entitlement_trialing" | "entitlement_active";
+		  }
+		| {
+				available: false;
+				reason: Exclude<
+					StoreCommerceAvailabilityReason,
+					"entitlement_trialing" | "entitlement_active"
+				>;
+		  }
+	);
+
 export interface Config {
 	$schema?: string;
 	theme: string;
@@ -76,14 +126,44 @@ export interface Config {
 	};
 }
 
-/**
- * Configuration that may cross the Control Plane-to-Runtime seam.
- * Store-owned Module and notification settings are deliberately absent.
- */
-export type RemoteStoreConfig = Config & {
+interface RemoteConfigBoundary {
 	moduleOptions?: never;
 	notificationSettings?: never;
-};
+}
+
+/** Legacy managed configuration retained during the v2 rollout. */
+export type RemoteStoreConfigV1 = Config &
+	RemoteConfigBoundary & {
+		contractVersion?: never;
+		entitlement?: never;
+		commerceAvailability?: never;
+	};
+
+/**
+ * Versioned managed configuration that may cross the Control Plane-to-Runtime
+ * seam. Store-owned Module and notification settings are deliberately absent.
+ */
+export type RemoteStoreConfigV2 = Omit<
+	Config,
+	"billing" | "favicon" | "modules" | "theme"
+> &
+	RemoteConfigBoundary & {
+		theme: "brisa";
+		favicon: "/assets/favicon.svg";
+		modules: string[];
+		contractVersion: 2;
+		entitlement: StoreRuntimeEntitlement | null;
+		commerceAvailability: StoreCommerceAvailability;
+		billing?: never;
+	};
+
+export type RemoteStoreConfig = RemoteStoreConfigV1 | RemoteStoreConfigV2;
+
+export function isRemoteStoreConfigV2(
+	config: Config | RemoteStoreConfig,
+): config is RemoteStoreConfigV2 {
+	return "contractVersion" in config && config.contractVersion === 2;
+}
 
 export const DEFAULT_CONFIG: Config = {
 	$schema: "https://86d.app/docs.json",

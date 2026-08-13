@@ -1,6 +1,5 @@
 import {
 	createAdminEndpoint,
-	inventoryCheckoutCapability,
 	sanitizeText,
 	z,
 } from "@86d-app/core";
@@ -15,9 +14,9 @@ export const createProduct = createAdminEndpoint(
 			slug: z.string().min(1).max(200),
 			description: z.string().max(10000).transform(sanitizeText).optional(),
 			shortDescription: z.string().max(500).transform(sanitizeText).optional(),
-			price: z.number().positive(),
-			compareAtPrice: z.number().positive().optional(),
-			costPrice: z.number().positive().optional(),
+			price: z.number().int().positive(),
+			compareAtPrice: z.number().int().positive().optional(),
+			costPrice: z.number().int().positive().optional(),
 			sku: z.string().max(100).optional(),
 			barcode: z.string().max(100).optional(),
 			inventory: z.number().int().min(0).optional(),
@@ -39,6 +38,17 @@ export const createProduct = createAdminEndpoint(
 	async (ctx) => {
 		const { body } = ctx;
 		const controllers = ctx.context.controllers;
+		if (
+			body.inventory !== undefined ||
+			body.trackInventory !== undefined ||
+			body.allowBackorder !== undefined
+		) {
+			return {
+				code: "INVENTORY_OPERATION_REQUIRED",
+				error: "Stock must be changed through the Inventory operation.",
+				status: 409,
+			};
+		}
 
 		// Check if slug is unique
 		const existingProduct = await controllers.product.getBySlug({
@@ -53,23 +63,6 @@ export const createProduct = createAdminEndpoint(
 		}
 
 		const product = (await controllers.product.create(ctx)) as Product;
-
-		// Sync inventory to the inventory module when it is installed and a count
-		// was provided. This keeps centralized tracking (low-stock alerts,
-		// back-in-stock, reservations) consistent with the products module.
-		if (body.inventory !== undefined) {
-			try {
-				await ctx.context.capabilities.invoke(inventoryCheckoutCapability, {
-					operation: "set",
-					productId: product.id,
-					quantity: body.inventory,
-					productName: product.name,
-					allowBackorder: body.allowBackorder ?? false,
-				});
-			} catch {
-				// Best-effort: inventory sync failure never blocks product creation
-			}
-		}
 
 		void ctx.context.events?.emit("product.created", {
 			productId: product.id,

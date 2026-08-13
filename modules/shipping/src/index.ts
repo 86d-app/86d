@@ -6,6 +6,11 @@ import {
 import { createAdminEndpointsWithSettings } from "./admin/endpoints";
 import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
 import { createShippingQuoteProvider } from "./capabilities";
+import {
+	createEasyPostShippingConnectionProvider,
+	createShippingFoundationController,
+	shippingAddressSchema,
+} from "./foundation-v2";
 import { shippingSchema } from "./schema";
 import { createShippingController } from "./service-impl";
 import {
@@ -13,6 +18,51 @@ import {
 	storeEndpoints,
 } from "./store/endpoints";
 
+export type {
+	CreateShippingConnectionInput,
+	CreateShippingQuoteInput,
+	RecordShippingLabelInput,
+	RecordShippingLabelRefundInput,
+	RecordShippingPostageAdjustmentInput,
+	RecordShippingTrackingInput,
+	ShippingAddress,
+	ShippingConnection,
+	ShippingConnectionCapability,
+	ShippingConnectionProvider,
+	ShippingFoundationController,
+	ShippingLabel,
+	ShippingLabelRefund,
+	ShippingOption,
+	ShippingParcel,
+	ShippingPostageAdjustment,
+	ShippingQuote,
+	ShippingTracking,
+} from "./foundation-v2";
+
+export {
+	createEasyPostShippingConnectionProvider,
+	createShippingConnectionInputSchema,
+	createShippingFoundationController,
+	createShippingQuoteInputSchema,
+	recordShippingLabelInputSchema,
+	recordShippingLabelRefundInputSchema,
+	recordShippingPostageAdjustmentInputSchema,
+	recordShippingTrackingInputSchema,
+	shippingAddressSchema,
+	shippingConnectionCapabilitySchema,
+	shippingConnectionHealthSchema,
+	shippingConnectionLifecycleSchema,
+	shippingConnectionModeSchema,
+	shippingConnectionSchema,
+	shippingLabelRefundSchema,
+	shippingLabelSchema,
+	shippingOptionSchema,
+	shippingParcelPlanSchema,
+	shippingParcelSchema,
+	shippingPostageAdjustmentSchema,
+	shippingQuoteSchema,
+	shippingTrackingSchema,
+} from "./foundation-v2";
 export type {
 	CalculatedRate,
 	LiveRate,
@@ -37,6 +87,65 @@ export interface ShippingOptions extends ModuleConfig {
 	/** EasyPost webhook signing secret — enables signature verification on
 	 *  incoming tracker webhook events */
 	easypostWebhookSecret?: string | undefined;
+	/** Stable identity for the configured EasyPost Shipping Connection. */
+	easypostConnectionId?: string | undefined;
+	/** Merchant-visible name for the configured EasyPost Shipping Connection. */
+	easypostConnectionName?: string | undefined;
+	/** Server-owned Shipping origin. The complete set is required for v2 quotes. */
+	easypostOriginName?: string | undefined;
+	easypostOriginCompany?: string | undefined;
+	easypostOriginStreet1?: string | undefined;
+	easypostOriginStreet2?: string | undefined;
+	easypostOriginCity?: string | undefined;
+	easypostOriginState?: string | undefined;
+	easypostOriginPostalCode?: string | undefined;
+	easypostOriginCountry?: string | undefined;
+	easypostOriginPhone?: string | undefined;
+	/** Local quote validity, from 60 to 3,600 seconds. */
+	quoteTtlSeconds?: number | undefined;
+}
+
+function configuredEasyPostOrigin(options?: ShippingOptions) {
+	const values = [
+		options?.easypostOriginName,
+		options?.easypostOriginCompany,
+		options?.easypostOriginStreet1,
+		options?.easypostOriginStreet2,
+		options?.easypostOriginCity,
+		options?.easypostOriginState,
+		options?.easypostOriginPostalCode,
+		options?.easypostOriginCountry,
+		options?.easypostOriginPhone,
+	];
+	if (!values.some((value) => value !== undefined)) return null;
+	if (
+		!options?.easypostOriginStreet1 ||
+		!options.easypostOriginCity ||
+		!options.easypostOriginState ||
+		!options.easypostOriginPostalCode ||
+		!options.easypostOriginCountry
+	) {
+		throw new Error(
+			"EasyPost v2 origin requires street, city, state, postal code, and country.",
+		);
+	}
+	return shippingAddressSchema.parse({
+		...(options.easypostOriginName ? { name: options.easypostOriginName } : {}),
+		...(options.easypostOriginCompany
+			? { company: options.easypostOriginCompany }
+			: {}),
+		street1: options.easypostOriginStreet1,
+		...(options.easypostOriginStreet2
+			? { street2: options.easypostOriginStreet2 }
+			: {}),
+		city: options.easypostOriginCity,
+		state: options.easypostOriginState,
+		postalCode: options.easypostOriginPostalCode,
+		country: options.easypostOriginCountry,
+		...(options.easypostOriginPhone
+			? { phone: options.easypostOriginPhone }
+			: {}),
+	});
 }
 
 export default function shipping(options?: ShippingOptions): Module {
@@ -49,18 +158,16 @@ export default function shipping(options?: ShippingOptions): Module {
 		easypostTestMode: options?.easypostTestMode,
 		easypostWebhookSecret: options?.easypostWebhookSecret,
 	});
+	const easypostConnectionId =
+		options?.easypostConnectionId ?? "shipping_easypost_default";
+	const easypostOrigin = configuredEasyPostOrigin(options);
 
 	return {
 		id: "shipping",
 		version: "0.1.0",
 		schema: shippingSchema,
 		capabilities: {
-			provides: [
-				createShippingQuoteProvider({
-					easypostApiKey: options?.easypostApiKey,
-					easypostTestMode: options?.easypostTestMode ?? true,
-				}),
-			],
+			provides: [createShippingQuoteProvider()],
 			accepts: [
 				acceptCapability(orderCustomerAuthorizeCapability, { optional: true }),
 			],
@@ -72,6 +179,9 @@ export default function shipping(options?: ShippingOptions): Module {
 				"shippingMethods",
 				"shippingCarriers",
 				"shipments",
+				"shippingConnectionsV2",
+				"shippingQuotesV2",
+				"shippingLabelsV2",
 			],
 		},
 		events: {
@@ -85,11 +195,36 @@ export default function shipping(options?: ShippingOptions): Module {
 			],
 		},
 		init: async (ctx: ModuleContext) => {
-			const controller = createShippingController(ctx.data, ctx.events, {
-				easypostApiKey: options?.easypostApiKey,
-				easypostTestMode: options?.easypostTestMode ?? true,
-			});
-			return { controllers: { shipping: controller } };
+			const controller = createShippingController(ctx.data, ctx.events);
+			const providers = options?.easypostApiKey
+				? [
+						createEasyPostShippingConnectionProvider({
+							connectionId: easypostConnectionId,
+							apiKey: options.easypostApiKey,
+							testMode: options.easypostTestMode ?? true,
+						}),
+					]
+				: [];
+			const foundation = createShippingFoundationController(
+				ctx.data,
+				ctx.transactions,
+				providers,
+				{ quoteTtlSeconds: options?.quoteTtlSeconds },
+			);
+			if (options?.easypostApiKey && easypostOrigin && ctx.transactions) {
+				await foundation.ensureConnection({
+					id: easypostConnectionId,
+					name: options.easypostConnectionName ?? "EasyPost",
+					provider: "easypost",
+					mode: options.easypostTestMode === false ? "live" : "test",
+					capabilities: ["quote"],
+					secretReference: "module-option:easypostApiKey",
+					originAddress: easypostOrigin,
+				});
+			}
+			return {
+				controllers: { shipping: controller, shippingV2: foundation },
+			};
 		},
 		endpoints: {
 			store: hasEasyPost

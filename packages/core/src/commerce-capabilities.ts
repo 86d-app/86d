@@ -33,6 +33,47 @@ export const abandonedCartRecoveryResolveCapability = defineCapability({
 		.strict(),
 });
 
+export const cartSnapshotCapability = defineCapability({
+	name: "cart.snapshot",
+	version: "1.0.0",
+	owner: "cart",
+	request: z
+		.object({
+			cartId: z.string().min(1).max(200),
+			customerId: z.string().min(1).max(200).optional(),
+			guestId: z.string().min(1).max(200).optional(),
+		})
+		.strict()
+		.refine(
+			(request) =>
+				(request.customerId === undefined) !== (request.guestId === undefined),
+			"Exactly one Cart owner identity is required.",
+		),
+	decision: z
+		.object({
+			cartId: z.string().min(1).max(200),
+			revision: z.string().datetime(),
+			items: z
+				.array(
+					z
+						.object({
+							productId: z.string().min(1).max(200),
+							variantId: z.string().min(1).max(200).optional(),
+							quantity: z.number().int().positive().max(999),
+						})
+						.strict(),
+				)
+				.max(100),
+		})
+		.strict(),
+	failure: z
+		.object({
+			code: z.enum(["CART_NOT_FOUND", "CART_NOT_ACTIVE", "CART_NOT_OWNED"]),
+			message: z.string().min(1).max(200),
+		})
+		.strict(),
+});
+
 export const customerContactResolveCapability = defineCapability({
 	name: "customers.contact.resolve",
 	version: "1.0.0",
@@ -262,17 +303,45 @@ export const orderCreateCapability = defineCapability({
 			id: z.string().min(1).max(200).optional(),
 			customerId: z.string().min(1).max(200).optional(),
 			guestEmail: z.string().email().max(320).optional(),
-			currency: z.string().min(3).max(3).optional(),
+			currency: z
+				.string()
+				.regex(/^[A-Z]{3}$/)
+				.optional(),
 			paymentStatus: z
 				.enum(["unpaid", "paid", "partially_paid", "refunded", "voided"])
 				.optional(),
-			subtotal: z.number().finite().nonnegative(),
-			taxAmount: z.number().finite().nonnegative().optional(),
-			shippingAmount: z.number().finite().nonnegative().optional(),
-			discountAmount: z.number().finite().nonnegative().optional(),
-			giftCardAmount: z.number().finite().nonnegative().optional(),
-			storeCreditAmount: z.number().finite().nonnegative().optional(),
-			total: z.number().finite().nonnegative(),
+			subtotal: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
+			taxAmount: z
+				.number()
+				.int()
+				.nonnegative()
+				.max(Number.MAX_SAFE_INTEGER)
+				.optional(),
+			shippingAmount: z
+				.number()
+				.int()
+				.nonnegative()
+				.max(Number.MAX_SAFE_INTEGER)
+				.optional(),
+			discountAmount: z
+				.number()
+				.int()
+				.nonnegative()
+				.max(Number.MAX_SAFE_INTEGER)
+				.optional(),
+			giftCardAmount: z
+				.number()
+				.int()
+				.nonnegative()
+				.max(Number.MAX_SAFE_INTEGER)
+				.optional(),
+			storeCreditAmount: z
+				.number()
+				.int()
+				.nonnegative()
+				.max(Number.MAX_SAFE_INTEGER)
+				.optional(),
+			total: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
 			notes: z.string().max(5000).optional(),
 			metadata: z.record(z.string(), z.unknown()).optional(),
 			items: z
@@ -283,7 +352,11 @@ export const orderCreateCapability = defineCapability({
 							variantId: z.string().min(1).max(200).optional(),
 							name: z.string().min(1).max(500),
 							sku: z.string().max(200).optional(),
-							price: z.number().finite().nonnegative(),
+							price: z
+								.number()
+								.int()
+								.nonnegative()
+								.max(Number.MAX_SAFE_INTEGER),
 							quantity: z.number().int().positive().max(9999),
 						})
 						.strict(),
@@ -555,7 +628,7 @@ export const productResolveCapability = defineCapability({
 					name: z.string(),
 					slug: z.string(),
 					status: z.literal("active"),
-					price: z.number().finite().nonnegative(),
+					price: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
 					sku: z.string().optional(),
 					images: z.array(z.string()),
 				})
@@ -565,7 +638,7 @@ export const productResolveCapability = defineCapability({
 					id: z.string(),
 					productId: z.string(),
 					name: z.string(),
-					price: z.number().finite().nonnegative(),
+					price: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
 					sku: z.string().optional(),
 					images: z.array(z.string()),
 				})
@@ -720,6 +793,203 @@ export const taxQuoteCapability = defineCapability({
 	failure: z
 		.object({
 			code: z.literal("TAX_REVIEW_REQUIRED"),
+			message: z.string().min(1).max(200),
+		})
+		.strict(),
+});
+
+const taxMoneyMinorSchema = z
+	.number()
+	.int()
+	.nonnegative()
+	.max(Number.MAX_SAFE_INTEGER);
+
+const taxQuoteV2LineSchema = z
+	.object({
+		lineId: z.string().min(1).max(200),
+		productId: z.string().min(1).max(200),
+		variantId: z.string().min(1).max(200).optional(),
+		taxCategoryId: z.string().min(1).max(200),
+		quantity: z.number().int().positive().max(1_000_000),
+		unitAmount: taxMoneyMinorSchema,
+		discountAmount: taxMoneyMinorSchema.optional(),
+	})
+	.strict()
+	.superRefine((line, context) => {
+		const grossAmount = line.unitAmount * line.quantity;
+		if (!Number.isSafeInteger(grossAmount)) {
+			context.addIssue({
+				code: "custom",
+				message: "Line total exceeds safe integer minor units",
+				path: ["unitAmount"],
+			});
+		}
+		if ((line.discountAmount ?? 0) > grossAmount) {
+			context.addIssue({
+				code: "custom",
+				message: "Line discount cannot exceed the line total",
+				path: ["discountAmount"],
+			});
+		}
+	});
+
+const taxQuoteV2AllocationSchema = z
+	.object({
+		lineId: z.string().min(1).max(200),
+		productId: z.string().min(1).max(200),
+		variantId: z.string().min(1).max(200).optional(),
+		taxCategoryId: z.string().min(1).max(200),
+		quantity: z.number().int().positive().max(1_000_000),
+		grossAmount: taxMoneyMinorSchema,
+		discountAmount: taxMoneyMinorSchema,
+		taxableAmount: taxMoneyMinorSchema,
+		taxAmount: taxMoneyMinorSchema.nullable(),
+	})
+	.strict();
+
+export const taxQuoteV2Capability = defineCapability({
+	name: "tax.quote",
+	version: "2.0.0",
+	owner: "tax",
+	request: z
+		.object({
+			currency: z.string().regex(/^[A-Z]{3}$/),
+			address: z
+				.object({
+					country: z.string().regex(/^[A-Z]{2}$/),
+					state: z.string().min(1).max(100),
+					city: z.string().min(1).max(200).optional(),
+					postalCode: z.string().min(1).max(20).optional(),
+					normalizationVersion: z.string().min(1).max(100),
+				})
+				.strict(),
+			lineItems: z
+				.array(taxQuoteV2LineSchema)
+				.min(1)
+				.max(100)
+				.superRefine((lines, context) => {
+					const lineIds = new Set<string>();
+					for (const [index, line] of lines.entries()) {
+						if (lineIds.has(line.lineId)) {
+							context.addIssue({
+								code: "custom",
+								message: "Tax quote line IDs must be unique",
+								path: [index, "lineId"],
+							});
+						}
+						lineIds.add(line.lineId);
+					}
+				}),
+			shippingAmount: taxMoneyMinorSchema.optional(),
+			customerId: z.string().min(1).max(200).optional(),
+			marketplaceStatus: z.enum(["NOT_MARKETPLACE", "COLLECTED", "UNKNOWN"]),
+		})
+		.strict()
+		.superRefine((request, context) => {
+			const subtotal = request.lineItems.reduce(
+				(total, line) => total + line.unitAmount * line.quantity,
+				0,
+			);
+			const discount = request.lineItems.reduce(
+				(total, line) => total + (line.discountAmount ?? 0),
+				0,
+			);
+			if (
+				!Number.isSafeInteger(subtotal) ||
+				!Number.isSafeInteger(discount) ||
+				!Number.isSafeInteger(
+					subtotal - discount + (request.shippingAmount ?? 0),
+				)
+			) {
+				context.addIssue({
+					code: "custom",
+					message: "Tax quote totals exceed safe integer minor units",
+					path: ["lineItems"],
+				});
+			}
+		}),
+	decision: z
+		.object({
+			quoteId: z.string().min(1).max(200),
+			jurisdictionDecision: z.enum([
+				"COLLECT",
+				"NO_NEXUS",
+				"MARKETPLACE_COLLECTED",
+				"BLOCKED",
+			]),
+			status: z.enum([
+				"CALCULATED",
+				"NO_NEXUS",
+				"EXEMPT",
+				"MARKETPLACE_COLLECTED",
+				"REVIEW_REQUIRED",
+			]),
+			reason: z.enum([
+				"TAX_CALCULATED",
+				"NO_NEXUS_POLICY",
+				"EXEMPTION_APPLIED",
+				"MARKETPLACE_POLICY",
+				"POLICY_BLOCKED",
+				"POLICY_NOT_CONFIGURED",
+				"POLICY_INVALID",
+				"POLICY_AMBIGUOUS",
+				"UNSUPPORTED_JURISDICTION",
+				"RATE_PACK_NOT_CONFIGURED",
+				"RATE_PACK_INVALID",
+				"RATE_PACK_STALE",
+				"RATE_NOT_CONFIGURED",
+				"RATE_AMBIGUOUS",
+				"EXEMPTION_INVALID",
+				"EXEMPTION_UNSUPPORTED",
+				"MARKETPLACE_STATUS_UNRESOLVED",
+				"MARKETPLACE_POLICY_CONFLICT",
+				"PROVIDER_NOT_CONFIGURED",
+				"PROVIDER_FAILED",
+				"PROVIDER_RESPONSE_INVALID",
+				"PROVIDER_NEXUS_CONFLICT",
+				"UNSUPPORTED_CURRENCY",
+				"MONEY_OVERFLOW",
+				"QUOTE_PERSISTENCE_FAILED",
+				"TAX_DATA_UNAVAILABLE",
+			]),
+			policyVersion: z.string().min(1).max(200),
+			sourceVersion: z.string().min(1).max(200),
+			issuedAt: z.string().datetime({ offset: true }),
+			expiresAt: z.string().datetime({ offset: true }),
+			currency: z.string().regex(/^[A-Z]{3}$/),
+			source: z
+				.object({
+					kind: z.enum([
+						"MANUAL",
+						"OFFICIAL_DATA",
+						"PROVIDER",
+						"POLICY",
+						"EXEMPTION",
+					]),
+					name: z.string().min(1).max(300),
+					reference: z.string().min(1).max(1_000),
+					connectionId: z.string().min(1).max(200).optional(),
+				})
+				.strict()
+				.optional(),
+			totals: z
+				.object({
+					subtotal: taxMoneyMinorSchema,
+					discount: taxMoneyMinorSchema,
+					shipping: taxMoneyMinorSchema,
+					taxable: taxMoneyMinorSchema,
+					lineTax: taxMoneyMinorSchema.nullable(),
+					shippingTax: taxMoneyMinorSchema.nullable(),
+					tax: taxMoneyMinorSchema.nullable(),
+					grandTotal: taxMoneyMinorSchema.nullable(),
+				})
+				.strict(),
+			lineAllocations: z.array(taxQuoteV2AllocationSchema).min(1).max(100),
+		})
+		.strict(),
+	failure: z
+		.object({
+			code: z.literal("TAX_QUOTE_V2_FAILED"),
 			message: z.string().min(1).max(200),
 		})
 		.strict(),

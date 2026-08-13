@@ -1,5 +1,6 @@
 import { createStoreEndpoint, z } from "@86d-app/core";
 import type { CheckoutController } from "../../service";
+import { canAccessCheckout } from "./guest-proof";
 
 export const getSession = createStoreEndpoint(
 	"/checkout/sessions/:id",
@@ -14,9 +15,7 @@ export const getSession = createStoreEndpoint(
 			return { error: "Checkout session not found", status: 404 };
 		}
 
-		// Customers can only access their own sessions
-		const userId = ctx.context.session?.user.id;
-		if (session.customerId && (!userId || session.customerId !== userId)) {
+		if (!(await canAccessCheckout(ctx, session))) {
 			return { error: "Checkout session not found", status: 404 };
 		}
 

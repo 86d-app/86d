@@ -26,7 +26,7 @@ CheckoutOptions {
 
 ## Data models
 
-- **checkoutSession**: id, cartId?, customerId?, guestEmail?, status, subtotal, taxAmount, shippingAmount, discountAmount, total, currency, discountCode?, shippingAddress (JSON)?, billingAddress (JSON)?, paymentMethod?, orderId?, metadata, expiresAt, createdAt, updatedAt
+- **checkoutSession**: id, revision, cartId?, customerId?, guestEmail?, status, subtotal, taxAmount, shippingAmount, discountAmount, total, currency, discountCode?, shippingAddress (JSON)?, billingAddress (JSON)?, paymentMethod?, orderId?, metadata, expiresAt, createdAt, updatedAt
 - **checkoutLineItem**: productId, variantId?, name, sku?, price, quantity — stored with composite key `{sessionId}_{productId}[_{variantId}]`
 
 ## Session statuses
@@ -40,6 +40,17 @@ CheckoutOptions {
 Product and variant resolution plus Order creation are required capabilities. Inventory, Tax, Shipping, Discount, Gift Card, Store Credit, Payment, Price List, and currency conversion are explicit optional integrations whose call sites return bounded unavailability or domain failures. Checkout never receives another Module's data service or controller.
 
 M0 activation containment remains in force: confirm, payment, capture, payment-status, and completion routes return `CHECKOUT_ACTIVATION_UNAVAILABLE`. The consumer operation grants cover only currently reachable decisions (`check`/`release`, validation/balance reads, and payment cancellation); duplicate-sensitive commit, redeem, debit, reserve, deduct, create, get, and confirm operations are not granted to Checkout.
+
+Session creation accepts a Cart identity and resolves an owner-authorized,
+versioned Cart snapshot before re-resolving Product/Variant prices. Guest access
+uses a high-entropy proof held in an httpOnly cookie; a Checkout UUID alone is
+not authorization. The accepted-offer/finalizer path is still unavailable, so
+this must not be described as activated commerce completion.
+
+Every shopper mutation requires the session's current `expectedRevision`.
+Checkout locks the owner-local session row, compares that token, and increments
+`revision` in the same transaction. A stale token returns
+`CHECKOUT_REVISION_CONFLICT`; unavailable row locking fails closed.
 
 ## Patterns
 

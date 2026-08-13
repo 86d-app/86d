@@ -40,8 +40,12 @@ export const importProducts = createAdminEndpoint(
 				.max(500),
 		}),
 	},
-	async (ctx) => {
-		const result = await ctx.context.controllers.import.importProducts(ctx);
-		return result;
+	async () => {
+		return {
+			code: "PRODUCT_IMPORT_REVIEW_REQUIRED",
+			error:
+				"Direct Product import is unavailable until the validated draft, Review, and immutable publish pipeline is configured.",
+			status: 503,
+		};
 	},
 );

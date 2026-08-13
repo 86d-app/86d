@@ -9,6 +9,7 @@ import { formatPrice } from "./_utils";
 import CheckoutSummaryTemplate from "./checkout-summary.mdx";
 
 interface SummarySession {
+	revision: number;
 	subtotal: number;
 	taxAmount: number;
 	shippingAmount: number;
@@ -90,44 +91,58 @@ export const CheckoutSummary = observer(() => {
 	const handleApplyPromo = (e: FormEvent) => {
 		e.preventDefault();
 		const code = promoCode.trim();
-		if (!code || !sessionId) return;
+		if (!code || !sessionId || !session) return;
 		setPromoError("");
 		applyDiscountMutation.mutate({
 			params: { id: sessionId },
+			expectedRevision: session.revision,
 			code,
 		});
 	};
 
 	const handleRemovePromo = () => {
-		if (!sessionId) return;
-		removeDiscountMutation.mutate({ params: { id: sessionId } });
+		if (!sessionId || !session) return;
+		removeDiscountMutation.mutate({
+			params: { id: sessionId },
+			expectedRevision: session.revision,
+		});
 	};
 
 	const handleApplyGiftCard = (e: FormEvent) => {
 		e.preventDefault();
 		const code = giftCode.trim();
-		if (!code || !sessionId) return;
+		if (!code || !sessionId || !session) return;
 		setGiftError("");
 		applyGiftCardMutation.mutate({
 			params: { id: sessionId },
+			expectedRevision: session.revision,
 			code,
 		});
 	};
 
 	const handleRemoveGiftCard = () => {
-		if (!sessionId) return;
-		removeGiftCardMutation.mutate({ params: { id: sessionId } });
+		if (!sessionId || !session) return;
+		removeGiftCardMutation.mutate({
+			params: { id: sessionId },
+			expectedRevision: session.revision,
+		});
 	};
 
 	const handleApplyStoreCredit = () => {
-		if (!sessionId) return;
+		if (!sessionId || !session) return;
 		setStoreCreditError("");
-		applyStoreCreditMutation.mutate({ params: { id: sessionId } });
+		applyStoreCreditMutation.mutate({
+			params: { id: sessionId },
+			expectedRevision: session.revision,
+		});
 	};
 
 	const handleRemoveStoreCredit = () => {
-		if (!sessionId) return;
-		removeStoreCreditMutation.mutate({ params: { id: sessionId } });
+		if (!sessionId || !session) return;
+		removeStoreCreditMutation.mutate({
+			params: { id: sessionId },
+			expectedRevision: session.revision,
+		});
 	};
 
 	if (!session) return null;

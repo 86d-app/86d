@@ -37,6 +37,9 @@ export type CartItem = {
  * Public API that other modules can use
  */
 export type CartController = ModuleController & {
+	/** Resolve a Cart by its owner-local identity. */
+	getById(id: string): Promise<Cart | null>;
+
 	/**
 	 * Get or create a cart for a customer/guest
 	 */

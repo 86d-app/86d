@@ -23,6 +23,9 @@
 
 Checkout session management for the 86d commerce platform. Handles the cart-to-order conversion flow: session creation, address collection, discount application, and order completion.
 
+> [!IMPORTANT]
+> Live confirmation, payment, and completion are intentionally unavailable while the accepted-offer finalizer is incomplete. Shopper mutations are revision guarded: read the session's `revision` and send it as the required `expectedRevision`; stale writes return `CHECKOUT_REVISION_CONFLICT` (HTTP 409).
+
 ![version](https://img.shields.io/badge/version-0.0.1-blue) ![license](https://img.shields.io/badge/license-MIT-green)
 
 ## Installation
@@ -72,6 +75,11 @@ Flow: `pending → processing → completed`, `pending → expired`, `pending/pr
 | `GET` | `/checkout/sessions/:id` | Get a session by ID |
 | `PUT` | `/checkout/sessions/:id/update` | Update addresses, shipping amount, or payment method |
 | `POST` | `/checkout/sessions/:id/discount` | Apply a discount code |
+
+Every mutation after session creation requires `expectedRevision`. The Store
+Runtime locks the Checkout-owned row, compares the revision, and increments it
+atomically with the update. Row-locking unavailability fails closed rather than
+falling back to last-write-wins behavior.
 
 > Note: Checkout is customer-facing only. There are no admin endpoints.
 
@@ -162,6 +170,7 @@ interface CheckoutLineItem {
 
 interface CheckoutSession {
   id: string;
+  revision: number;
   cartId?: string;
   customerId?: string;
   guestEmail?: string;

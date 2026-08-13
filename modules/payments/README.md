@@ -21,7 +21,7 @@
 
 📚 **Documentation:** [86d.app/docs/modules/payments](https://86d.app/docs/modules/payments)
 
-Provider-agnostic payment processing for the 86d commerce platform. Tracks payment intents, saved payment methods, and refunds locally. Delegates actual processing to a configurable `PaymentProvider` (Stripe, Square, PayPal, etc.).
+Provider-neutral payment ownership for the 86d commerce platform. The additive v2 boundary records named Store Payment Connections and durable provider operations; legacy intent, method, and refund APIs remain migration state.
 
 ![version](https://img.shields.io/badge/version-0.0.1-blue) ![license](https://img.shields.io/badge/license-MIT-green)
 
@@ -77,18 +77,24 @@ interface PaymentProvider {
 }
 ```
 
-**Offline mode:** If no provider is configured, intents are stored locally with `pending` status and status transitions are handled in-memory. Useful for testing and development.
+**Missing provider:** a positive Payment cannot be confirmed or refunded without a configured provider. Explicit offline behavior is restricted to non-production development callers.
+
+## Payment Connections v2
+
+`PaymentsOptions.connectionProviders` accepts server-created adapters bound to one immutable `connectionId`. The owner-local `paymentConnections` controller manages named Connections and durable intent, authorization, capture, refund, and void operations. Each operation records its Connection, operation-specific idempotency key, request digest, provider reference, attempt history, and ambiguous or needs-attention state.
+
+The v2 service is intentionally not exposed as a shopper endpoint or wired into the legacy Checkout capability. A host must supply an owner-local locking transaction runner, and every enabled Connection must have an exact provider/mode/capability adapter match. Missing, disabled, revoked, unhealthy, or mismatched Connections fail closed. Capture, refund, and void operations must continue a succeeded source operation and use its original Connection and provider reference.
+
+The opaque `secretReference` is server-side configuration data. It must never be returned by Store or admin endpoints, browser output, logs, or agent output.
 
 ## Store Endpoints
 
 | Method | Path | Description |
 |---|---|---|
-| `POST` | `/payments/intents` | Create a payment intent |
-| `GET` | `/payments/intents/:id` | Get intent by ID |
-| `POST` | `/payments/intents/:id/confirm` | Confirm payment |
-| `POST` | `/payments/intents/:id/cancel` | Cancel payment |
 | `GET` | `/payments/methods` | List customer's saved payment methods |
 | `DELETE` | `/payments/methods/:id` | Delete a payment method |
+
+Generic shopper intent create/get/confirm/cancel source files remain as migration history but are not registered by the Module. Live activation stays contained until the v2 Checkout finalizer and provider paths satisfy the critical-path contract.
 
 ## Admin Endpoints
 
@@ -99,7 +105,7 @@ interface PaymentProvider {
 | `POST` | `/admin/payments/:id/refund` | Issue a refund |
 | `GET` | `/admin/payments/:id/refunds` | List refunds for an intent |
 
-## Controller API
+## Legacy v1 Controller API
 
 ```ts
 // ── Payment intents ─────────────────────────────────────────────────────────
@@ -169,7 +175,9 @@ controller.getRefund(id: string): Promise<Refund | null>
 controller.listRefunds(intentId: string): Promise<Refund[]>
 ```
 
-## Example: Checkout Payment Flow
+## Legacy Controller Example
+
+This example describes direct server-side controller use during migration. It is not the active Store Checkout path and does not provide Payment Connection durability.
 
 ```ts
 // 1. Customer initiates checkout — create intent
@@ -214,7 +222,7 @@ const method = await controller.savePaymentMethod({
 | `succeeded` | Payment completed successfully |
 | `failed` | Payment failed |
 | `cancelled` | Intent was cancelled |
-| `refunded` | Payment has been (partially or fully) refunded |
+| `refunded` | Legacy projection after a refund; not authoritative for partial-refund accounting |
 
 ## Financial Safety Guards
 

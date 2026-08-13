@@ -1,18 +1,22 @@
 import { createEventBus, createScopedEmitter } from "@86d-app/core";
-import { createMockDataService } from "@86d-app/core/test-utils";
+import {
+	createMockDataService,
+	createMockModuleContext,
+} from "@86d-app/core/test-utils";
 import { beforeEach, describe, expect, it } from "vitest";
+import orders from "../index";
 import { createOrderController } from "../service-impl";
 
 /**
- * Tests for the shipment.delivered → order auto-fulfillment cross-module handler.
+ * Characterizes the Order/Fulfillment authority boundary.
  *
- * The orders module subscribes to "shipment.delivered" events and automatically
- * marks the corresponding order as "completed", then emits "order.fulfilled".
- *
- * These tests simulate the handler logic directly via the event bus.
+ * Shipping delivery is parcel evidence. It cannot close the commercial Order;
+ * only the versioned Order closure policy (or an audited manual close) can do
+ * that after every Payment, dispute, Return, and Fulfillment obligation is
+ * terminal.
  */
 
-describe("shipment.delivered → order auto-fulfillment", () => {
+describe("shipment.delivered Order boundary", () => {
 	let data: ReturnType<typeof createMockDataService>;
 	let bus: ReturnType<typeof createEventBus>;
 
@@ -22,53 +26,18 @@ describe("shipment.delivered → order auto-fulfillment", () => {
 	});
 
 	async function setupHandler() {
-		const controller = createOrderController(data);
+		const module = orders();
 		const scopedEmitter = createScopedEmitter(bus, "orders");
-
 		const emittedFulfillments: Array<{ orderId: string }> = [];
 		bus.on("order.fulfilled", (ev) => {
 			const payload = ev.payload as { orderId: string };
 			emittedFulfillments.push(payload);
 		});
-
-		scopedEmitter.on<{
-			orderId?: string;
-			shipmentId?: string;
-			trackingNumber?: string;
-		}>("shipment.delivered", async (event) => {
-			const payload = event.payload as {
-				orderId?: string;
-				shipmentId?: string;
-				trackingNumber?: string;
-			};
-			const orderId = payload.orderId;
-			if (!orderId) return;
-			let order: Awaited<ReturnType<typeof controller.getById>> = null;
-			try {
-				order = await controller.getById(orderId);
-			} catch {
-				return;
-			}
-			if (
-				!order ||
-				order.status === "completed" ||
-				order.status === "cancelled"
-			)
-				return;
-			try {
-				await controller.updateStatus(orderId, "completed");
-			} catch {
-				return;
-			}
-			await scopedEmitter
-				.emit("order.fulfilled", {
-					orderId,
-					shipmentId: payload.shipmentId,
-					trackingNumber: payload.trackingNumber,
-				})
-				.catch(() => undefined);
+		await module.init?.({
+			...createMockModuleContext({ data }),
+			events: scopedEmitter,
 		});
-
+		const controller = createOrderController(data);
 		return { controller, emittedFulfillments };
 	}
 
@@ -99,7 +68,7 @@ describe("shipment.delivered → order auto-fulfillment", () => {
 		});
 	}
 
-	it("marks order as completed when shipment.delivered fires for that order", async () => {
+	it("does not close an Order when one parcel is delivered", async () => {
 		const { controller, emittedFulfillments } = await setupHandler();
 		const order = await createTestOrder(controller);
 
@@ -111,9 +80,44 @@ describe("shipment.delivered → order auto-fulfillment", () => {
 		});
 
 		const updated = await controller.getById(order.id);
-		expect(updated?.status).toBe("completed");
-		expect(emittedFulfillments).toHaveLength(1);
-		expect(emittedFulfillments[0]?.orderId).toBe(order.id);
+		expect(updated?.status).toBe("pending");
+		expect(emittedFulfillments).toHaveLength(0);
+	});
+
+	it("keeps a split Order open across delivered parcels and duplicate facts", async () => {
+		const { controller, emittedFulfillments } = await setupHandler();
+		const order = await controller.create({
+			customerId: "cust_001",
+			items: [
+				{
+					productId: "prod_001",
+					name: "First Product",
+					quantity: 1,
+					price: 1000,
+				},
+				{
+					productId: "prod_002",
+					name: "Second Product",
+					quantity: 1,
+					price: 1500,
+				},
+			],
+			subtotal: 2500,
+			total: 2500,
+		});
+		const delivered = (shipmentId: string) =>
+			bus.emit("shipment.delivered", "shipping", {
+				orderId: order.id,
+				shipmentId,
+				status: "delivered",
+			});
+
+		await delivered("shipment-first");
+		await delivered("shipment-first");
+		await delivered("shipment-second");
+
+		expect((await controller.getById(order.id))?.status).toBe("pending");
+		expect(emittedFulfillments).toHaveLength(0);
 	});
 
 	it("skips update when order is already completed", async () => {

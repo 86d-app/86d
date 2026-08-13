@@ -1,6 +1,7 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
 import {
 	acceptCapability,
+	cartSnapshotCapability,
 	discountCodeCapability,
 	giftCardCheckoutCapability,
 	inventoryCheckoutCapability,
@@ -61,6 +62,7 @@ export default function checkout(options?: CheckoutOptions): Module {
 		schema: checkoutSchema,
 		capabilities: {
 			accepts: [
+				acceptCapability(cartSnapshotCapability),
 				acceptCapability(productResolveCapability),
 				acceptCapability(orderCreateCapability),
 				acceptCapability(inventoryCheckoutCapability, {
@@ -119,7 +121,7 @@ export default function checkout(options?: CheckoutOptions): Module {
 		},
 
 		init: async (ctx: ModuleContext) => {
-			const controller = createCheckoutController(ctx.data);
+			const controller = createCheckoutController(ctx.data, ctx.transactions);
 			return {
 				controllers: { checkout: controller },
 			};

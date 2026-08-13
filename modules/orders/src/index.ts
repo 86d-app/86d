@@ -115,48 +115,6 @@ export default function orders(options?: OrdersOptions): Module {
 		init: async (ctx: ModuleContext) => {
 			const controller = createOrderController(ctx.data);
 
-			if (ctx.events) {
-				type ShipmentDeliveredPayload = {
-					orderId?: string;
-					shipmentId?: string;
-					trackingNumber?: string;
-				};
-				ctx.events.on<ShipmentDeliveredPayload>(
-					"shipment.delivered",
-					async (event) => {
-						const payload = event.payload as ShipmentDeliveredPayload;
-						const orderId = payload.orderId;
-						if (!orderId) return;
-						let order: Awaited<ReturnType<typeof controller.getById>> = null;
-						try {
-							order = await controller.getById(orderId);
-						} catch {
-							return;
-						}
-						if (
-							!order ||
-							order.status === "completed" ||
-							order.status === "cancelled"
-						)
-							return;
-						try {
-							await controller.updateStatus(orderId, "completed");
-						} catch {
-							return;
-						}
-						if (ctx.events) {
-							await ctx.events
-								.emit("order.fulfilled", {
-									orderId,
-									shipmentId: payload.shipmentId,
-									trackingNumber: payload.trackingNumber,
-								})
-								.catch(() => undefined);
-						}
-					},
-				);
-			}
-
 			return {
 				controllers: { order: controller },
 			};

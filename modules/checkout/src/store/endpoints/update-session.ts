@@ -4,7 +4,9 @@ import {
 	taxQuoteCapability,
 	z,
 } from "@86d-app/core";
+import { checkoutRevisionSchema, runCheckoutMutation } from "../../concurrency";
 import type { CheckoutController } from "../../service";
+import { canAccessCheckout } from "./guest-proof";
 
 const addressSchema = z.object({
 	firstName: z.string().min(1).max(200).transform(sanitizeText),
@@ -25,6 +27,7 @@ export const updateSession = createStoreEndpoint(
 		method: "PUT",
 		params: z.object({ id: z.string().max(200) }),
 		body: z.object({
+			expectedRevision: checkoutRevisionSchema,
 			guestEmail: z.string().email().max(320).optional(),
 			shippingAddress: addressSchema.optional(),
 			billingAddress: addressSchema.optional(),
@@ -53,9 +56,7 @@ export const updateSession = createStoreEndpoint(
 			return { error: "Checkout session not found", status: 404 };
 		}
 
-		// Ownership check
-		const userId = ctx.context.session?.user.id;
-		if (existing.customerId && (!userId || existing.customerId !== userId)) {
+		if (!(await canAccessCheckout(ctx, existing))) {
 			return { error: "Checkout session not found", status: 404 };
 		}
 
@@ -115,10 +116,23 @@ export const updateSession = createStoreEndpoint(
 			}
 		}
 
-		const session = await controller.update(ctx.params.id, {
-			...ctx.body,
-			...(taxAmount !== undefined ? { taxAmount } : {}),
-		});
+		const mutation = await runCheckoutMutation(() =>
+			controller.update(
+				ctx.params.id,
+				{
+					guestEmail: ctx.body.guestEmail,
+					shippingAddress: ctx.body.shippingAddress,
+					billingAddress: ctx.body.billingAddress,
+					shippingAmount: ctx.body.shippingAmount,
+					shippingMethodName: ctx.body.shippingMethodName,
+					paymentMethod: ctx.body.paymentMethod,
+					...(taxAmount !== undefined ? { taxAmount } : {}),
+				},
+				ctx.body.expectedRevision,
+			),
+		);
+		if (!mutation.ok) return mutation.response;
+		const session = mutation.value;
 		if (!session) {
 			return { error: "Cannot update this checkout session", status: 422 };
 		}

@@ -4,7 +4,9 @@ import {
 	sanitizeText,
 	z,
 } from "@86d-app/core";
+import { checkoutRevisionSchema, runCheckoutMutation } from "../../concurrency";
 import type { CheckoutController } from "../../service";
+import { canAccessCheckout } from "./guest-proof";
 
 export const applyGiftCard = createStoreEndpoint(
 	"/checkout/sessions/:id/gift-card",
@@ -12,6 +14,7 @@ export const applyGiftCard = createStoreEndpoint(
 		method: "POST",
 		params: z.object({ id: z.string().max(128) }),
 		body: z.object({
+			expectedRevision: checkoutRevisionSchema,
 			code: z.string().min(1).max(50).transform(sanitizeText),
 		}),
 	},
@@ -23,9 +26,7 @@ export const applyGiftCard = createStoreEndpoint(
 			return { error: "Checkout session not found", status: 404 };
 		}
 
-		// Ownership check
-		const userId = ctx.context.session?.user.id;
-		if (session.customerId && (!userId || session.customerId !== userId)) {
+		if (!(await canAccessCheckout(ctx, session))) {
 			return { error: "Checkout session not found", status: 404 };
 		}
 
@@ -73,10 +74,18 @@ export const applyGiftCard = createStoreEndpoint(
 			Math.max(0, remainingTotal),
 		);
 
-		const updated = await checkoutController.applyGiftCard(ctx.params.id, {
-			code: ctx.body.code.toUpperCase(),
-			giftCardAmount,
-		});
+		const mutation = await runCheckoutMutation(() =>
+			checkoutController.applyGiftCard(
+				ctx.params.id,
+				{
+					code: ctx.body.code.toUpperCase(),
+					giftCardAmount,
+				},
+				ctx.body.expectedRevision,
+			),
+		);
+		if (!mutation.ok) return mutation.response;
+		const updated = mutation.value;
 
 		return { session: updated };
 	},

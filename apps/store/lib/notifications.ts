@@ -1,30 +1,21 @@
 /**
  * Email notification handlers for store events.
  *
- * Subscribes to module events (order placed, shipped, cancelled,
- * delivered, refunded, return approved, payment failed) and sends
- * transactional emails via Resend. Handlers are registered once
- * on the shared EventBus after the module registry boots.
+ * Subscribes only to non-critical Store events and sends best-effort local
+ * email through a literal provider credential. Checkout, Order, Payment,
+ * Shipment, and Return communication must be driven by durable notification
+ * intents and are deliberately not registered on the in-memory EventBus.
  */
 
 import type { EventBus, ModuleEvent } from "@86d-app/core";
 import AbandonedCartEmail from "emails/abandoned-cart";
 import BackInStockEmail from "emails/back-in-stock";
-import DeliveryConfirmationEmail from "emails/delivery-confirmation";
 import LowStockAlertEmail from "emails/low-stock-alert";
-import OrderCancelledEmail from "emails/order-cancelled";
-import OrderCompletedEmail from "emails/order-completed";
-import OrderConfirmationEmail from "emails/order-confirmation";
-import PaymentFailedEmail from "emails/payment-failed";
-import RefundProcessedEmail from "emails/refund-processed";
-import ReturnApprovedEmail from "emails/return-approved";
 import ReviewRequestEmail from "emails/review-request";
-import ShippingNotificationEmail from "emails/shipping-notification";
 import SubscriptionCancelEmail from "emails/subscription-cancel";
 import SubscriptionCompleteEmail from "emails/subscription-complete";
 import SubscriptionUpdateEmail from "emails/subscription-update";
 import WelcomeEmail from "emails/welcome";
-import { getTrackingUrl } from "lib/carrier-tracking";
 import { logger } from "utils/logger";
 
 /**
@@ -235,292 +226,7 @@ const DEFAULT_CONFIG: NotificationConfig = {
 	storeName: "86d Store",
 };
 
-// ── Handlers ─────────────────────────────────────────────────────────
-
-function createCheckoutCompletedHandler(
-	resend: EmailClient,
-	config: NotificationConfig,
-) {
-	return async (event: ModuleEvent<CheckoutCompletedPayload>) => {
-		const p = event.payload;
-		if (!p.email) {
-			logger.warn(
-				"checkout.completed: no email address, skipping notification",
-				{
-					sessionId: p.sessionId,
-				},
-			);
-			return;
-		}
-
-		await resend.emails.send({
-			from: config.fromAddress,
-			to: [p.email],
-			subject: `Order Confirmed - ${p.orderNumber}`,
-			react: OrderConfirmationEmail({
-				orderNumber: p.orderNumber,
-				customerName: p.customerName,
-				items: p.items,
-				subtotal: p.subtotal,
-				taxAmount: p.taxAmount,
-				shippingAmount: p.shippingAmount,
-				discountAmount: p.discountAmount,
-				total: p.total,
-				currency: p.currency,
-				shippingAddress: p.shippingAddress,
-				storeName: config.storeName,
-			}),
-		});
-
-		logger.info("Order confirmation email sent", {
-			orderNumber: p.orderNumber,
-			to: p.email,
-		});
-	};
-}
-
-function createOrderShippedHandler(
-	resend: EmailClient,
-	config: NotificationConfig,
-) {
-	return async (event: ModuleEvent<OrderShippedPayload>) => {
-		const p = event.payload;
-		if (!p.email) {
-			logger.warn("order.shipped: no email address, skipping notification", {
-				orderId: p.orderId,
-			});
-			return;
-		}
-
-		// Auto-generate tracking URL from carrier + tracking number if not provided
-		let trackingUrl = p.trackingUrl;
-		if (!trackingUrl && p.carrier && p.trackingNumber) {
-			trackingUrl = getTrackingUrl(p.carrier, p.trackingNumber) ?? undefined;
-		}
-
-		await resend.emails.send({
-			from: config.fromAddress,
-			to: [p.email],
-			subject: `Your Order Has Shipped - ${p.orderNumber}`,
-			react: ShippingNotificationEmail({
-				orderNumber: p.orderNumber,
-				customerName: p.customerName,
-				trackingNumber: p.trackingNumber,
-				trackingUrl,
-				carrier: p.carrier,
-				storeName: config.storeName,
-			}),
-		});
-
-		logger.info("Shipping notification email sent", {
-			orderNumber: p.orderNumber,
-			to: p.email,
-		});
-	};
-}
-
-function createOrderFulfilledHandler(
-	resend: EmailClient,
-	config: NotificationConfig,
-) {
-	return async (event: ModuleEvent<OrderFulfilledPayload>) => {
-		const p = event.payload;
-		if (!p.email) {
-			logger.warn("order.fulfilled: no email address, skipping notification", {
-				orderId: p.orderId,
-			});
-			return;
-		}
-
-		await resend.emails.send({
-			from: config.fromAddress,
-			to: [p.email],
-			subject: `Your Order is Complete - ${p.orderNumber}`,
-			react: OrderCompletedEmail({
-				orderNumber: p.orderNumber,
-				customerName: p.customerName,
-				storeName: config.storeName,
-			}),
-		});
-
-		logger.info("Order completed email sent", {
-			orderNumber: p.orderNumber,
-			to: p.email,
-		});
-	};
-}
-
-function createOrderCancelledHandler(
-	resend: EmailClient,
-	config: NotificationConfig,
-) {
-	return async (event: ModuleEvent<OrderCancelledPayload>) => {
-		const p = event.payload;
-		if (!p.email) {
-			logger.warn("order.cancelled: no email address, skipping notification", {
-				orderId: p.orderId,
-			});
-			return;
-		}
-
-		await resend.emails.send({
-			from: config.fromAddress,
-			to: [p.email],
-			subject: `Order Cancelled - ${p.orderNumber}`,
-			react: OrderCancelledEmail({
-				orderNumber: p.orderNumber,
-				customerName: p.customerName,
-				reason: p.reason,
-				storeName: config.storeName,
-			}),
-		});
-
-		logger.info("Order cancelled email sent", {
-			orderNumber: p.orderNumber,
-			to: p.email,
-		});
-	};
-}
-
-function createPaymentRefundedHandler(
-	resend: EmailClient,
-	config: NotificationConfig,
-) {
-	return async (event: ModuleEvent<PaymentRefundedPayload>) => {
-		const p = event.payload;
-		if (!p.email) {
-			logger.warn("payment.refunded: no email address, skipping notification", {
-				refundId: p.refundId,
-			});
-			return;
-		}
-
-		await resend.emails.send({
-			from: config.fromAddress,
-			to: [p.email],
-			subject: `Refund Processed - ${p.orderNumber}`,
-			react: RefundProcessedEmail({
-				orderNumber: p.orderNumber,
-				customerName: p.customerName,
-				refundAmount: p.refundAmount,
-				currency: p.currency,
-				items: p.items,
-				reason: p.reason,
-				storeName: config.storeName,
-			}),
-		});
-
-		logger.info("Refund processed email sent", {
-			orderNumber: p.orderNumber,
-			refundId: p.refundId,
-			to: p.email,
-		});
-	};
-}
-
-function createShipmentDeliveredHandler(
-	resend: EmailClient,
-	config: NotificationConfig,
-) {
-	return async (event: ModuleEvent<ShipmentDeliveredPayload>) => {
-		const p = event.payload;
-		if (!p.email) {
-			logger.warn(
-				"shipment.delivered: no email address, skipping notification",
-				{ orderId: p.orderId },
-			);
-			return;
-		}
-
-		await resend.emails.send({
-			from: config.fromAddress,
-			to: [p.email],
-			subject: `Your Order Has Been Delivered - ${p.orderNumber}`,
-			react: DeliveryConfirmationEmail({
-				orderNumber: p.orderNumber,
-				customerName: p.customerName,
-				deliveredAt: p.deliveredAt,
-				storeName: config.storeName,
-				reviewUrl: p.reviewUrl,
-			}),
-		});
-
-		logger.info("Delivery confirmation email sent", {
-			orderNumber: p.orderNumber,
-			to: p.email,
-		});
-	};
-}
-
-function createReturnApprovedHandler(
-	resend: EmailClient,
-	config: NotificationConfig,
-) {
-	return async (event: ModuleEvent<ReturnApprovedPayload>) => {
-		const p = event.payload;
-		if (!p.email) {
-			logger.warn("return.approved: no email address, skipping notification", {
-				returnId: p.returnId,
-			});
-			return;
-		}
-
-		await resend.emails.send({
-			from: config.fromAddress,
-			to: [p.email],
-			subject: `Return Approved - ${p.orderNumber}`,
-			react: ReturnApprovedEmail({
-				orderNumber: p.orderNumber,
-				customerName: p.customerName,
-				returnId: p.returnId,
-				items: p.items,
-				instructions: p.instructions,
-				storeName: config.storeName,
-			}),
-		});
-
-		logger.info("Return approved email sent", {
-			orderNumber: p.orderNumber,
-			returnId: p.returnId,
-			to: p.email,
-		});
-	};
-}
-
-function createPaymentFailedHandler(
-	resend: EmailClient,
-	config: NotificationConfig,
-) {
-	return async (event: ModuleEvent<PaymentFailedPayload>) => {
-		const p = event.payload;
-		if (!p.email) {
-			logger.warn("payment.failed: no email address, skipping notification", {
-				paymentIntentId: p.paymentIntentId,
-			});
-			return;
-		}
-
-		await resend.emails.send({
-			from: config.fromAddress,
-			to: [p.email],
-			subject: `Payment Failed${p.orderNumber ? ` - ${p.orderNumber}` : ""}`,
-			react: PaymentFailedEmail({
-				orderNumber: p.orderNumber,
-				customerName: p.customerName,
-				amount: p.amount,
-				currency: p.currency,
-				reason: p.reason,
-				retryUrl: p.retryUrl,
-				storeName: config.storeName,
-			}),
-		});
-
-		logger.info("Payment failed email sent", {
-			paymentIntentId: p.paymentIntentId,
-			to: p.email,
-		});
-	};
-}
+// ── Non-critical local handlers ─────────────────────────────────────
 
 function createReviewRequestedHandler(
 	resend: EmailClient,
@@ -826,33 +532,7 @@ export function registerNotificationHandlers(
 		registeredEvents.push(event);
 	}
 
-	register(
-		"checkout.completed",
-		createCheckoutCompletedHandler(resend, mergedConfig),
-	);
 	register("inventory.low", createInventoryLowHandler(resend, mergedConfig));
-	register("order.shipped", createOrderShippedHandler(resend, mergedConfig));
-	register(
-		"order.fulfilled",
-		createOrderFulfilledHandler(resend, mergedConfig),
-	);
-	register(
-		"order.cancelled",
-		createOrderCancelledHandler(resend, mergedConfig),
-	);
-	register(
-		"payment.refunded",
-		createPaymentRefundedHandler(resend, mergedConfig),
-	);
-	register(
-		"shipment.delivered",
-		createShipmentDeliveredHandler(resend, mergedConfig),
-	);
-	register(
-		"return.approved",
-		createReturnApprovedHandler(resend, mergedConfig),
-	);
-	register("payment.failed", createPaymentFailedHandler(resend, mergedConfig));
 	register(
 		"inventory.back-in-stock",
 		createBackInStockHandler(resend, mergedConfig),

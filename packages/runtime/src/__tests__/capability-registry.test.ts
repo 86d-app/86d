@@ -1,4 +1,9 @@
-import type { Module, ModuleDataService } from "@86d-app/core";
+import type {
+	Module,
+	ModuleDataTransaction,
+	ModuleDataService,
+	ModuleTransactionRunner,
+} from "@86d-app/core";
 import {
 	acceptCapability,
 	defineCapability,
@@ -48,6 +53,16 @@ function dataService(label: string): ModuleDataService & { label: string } {
 		upsert: vi.fn().mockResolvedValue(undefined),
 		delete: vi.fn().mockResolvedValue(undefined),
 		findMany: vi.fn().mockResolvedValue([]),
+	};
+}
+
+function unusedTransactionRunner(): ModuleTransactionRunner {
+	return {
+		async transaction<T>(
+			_work: (transaction: ModuleDataTransaction) => Promise<T>,
+		): Promise<T> {
+			throw new Error("The test transaction runner must not be called.");
+		},
 	};
 }
 
@@ -502,6 +517,43 @@ describe("ModuleRegistry capability invocation", () => {
 		expect(
 			(checkout.data as ModuleDataService & { label: string }).label,
 		).toMatch(/^checkout-/);
+	});
+
+	it("invokes a provider with only its owner's transaction runner", async () => {
+		const inventoryTransactions = unusedTransactionRunner();
+		const checkoutTransactions = unusedTransactionRunner();
+		const handler = vi.fn(async (ctx) => ({
+			ok: true as const,
+			decision: { available: ctx.transactions === inventoryTransactions },
+		}));
+		const adapters = config();
+		adapters.createTransactionRunner = vi.fn(({ moduleId }) =>
+			moduleId === "inventory"
+				? inventoryTransactions
+				: checkoutTransactions,
+		);
+		const registry = new ModuleRegistry(
+			[
+				module("inventory", {
+					capabilities: {
+						provides: [provideCapability(availabilityV1, handler)],
+					},
+				}),
+				module("checkout", {
+					capabilities: { accepts: [acceptCapability(availabilityV1)] },
+				}),
+			],
+			"store-1",
+			adapters,
+		);
+		await registry.boot();
+
+		const result = await registry
+			.createRequestContext("checkout")
+			.capabilities.invoke(availabilityV1, { sku: "sku-1" });
+
+		expect(result).toEqual({ ok: true, decision: { available: true } });
+		expect(handler).toHaveBeenCalledTimes(1);
 	});
 
 	it("validates provider decisions and failures", async () => {

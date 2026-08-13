@@ -94,13 +94,6 @@ export default function products(options?: ProductsOptions): Module {
 					icon: "SquaresFour",
 					group: "Catalog",
 				},
-				{
-					path: "/admin/products/collections",
-					component: "CollectionsAdmin",
-					label: "Collections",
-					icon: "Stack",
-					group: "Catalog",
-				},
 			],
 		},
 		store: {

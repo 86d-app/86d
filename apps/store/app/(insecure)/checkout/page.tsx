@@ -85,6 +85,7 @@ interface ShippingRate {
 
 interface CheckoutSessionData {
 	id: string;
+	revision: number;
 	subtotal: number;
 	taxAmount: number;
 	shippingAmount: number;
@@ -812,14 +813,6 @@ const CheckoutPage = observer(function CheckoutPage() {
 		co.setProcessing(true);
 
 		try {
-			const lineItems = cart.items.map((item) => ({
-				productId: item.productId,
-				...(item.variantId ? { variantId: item.variantId } : {}),
-				name: item.product.name,
-				price: item.variant?.price ?? item.product.price,
-				quantity: item.quantity,
-			}));
-
 			const addr = {
 				firstName: shippingAddress.firstName,
 				lastName: shippingAddress.lastName,
@@ -838,8 +831,13 @@ const CheckoutPage = observer(function CheckoutPage() {
 			let result: SessionResult;
 			if (co.sessionId) {
 				// Update existing session
+				if (!session) {
+					setError("Refresh the checkout before updating it");
+					return;
+				}
 				result = await updateSessionMut.mutateAsync({
 					params: { id: co.sessionId },
+					expectedRevision: session.revision,
 					guestEmail: email,
 					shippingAddress: addr,
 					...(co.sameAsShipping
@@ -870,9 +868,6 @@ const CheckoutPage = observer(function CheckoutPage() {
 				result = await createSessionMut.mutateAsync({
 					cartId: cart.id,
 					guestEmail: email,
-					subtotal: cart.subtotal,
-					total: cart.subtotal,
-					lineItems,
 					shippingAddress: addr,
 					...(co.sameAsShipping
 						? { billingAddress: addr }
@@ -938,6 +933,7 @@ const CheckoutPage = observer(function CheckoutPage() {
 		email,
 		shippingAddress,
 		billingAddress,
+		session,
 		co,
 		isAddressValid,
 		createSessionMut,
@@ -947,7 +943,7 @@ const CheckoutPage = observer(function CheckoutPage() {
 
 	// ── Select shipping and move to payment
 	const handleShippingSubmit = useCallback(async () => {
-		if (!co.sessionId) return;
+		if (!co.sessionId || !session) return;
 		setError(null);
 		co.setProcessing(true);
 
@@ -957,6 +953,7 @@ const CheckoutPage = observer(function CheckoutPage() {
 
 			const result: SessionResult = await updateSessionMut.mutateAsync({
 				params: { id: co.sessionId },
+				expectedRevision: session.revision,
 				shippingAmount,
 				shippingMethodName: rate?.name,
 			});
@@ -970,7 +967,7 @@ const CheckoutPage = observer(function CheckoutPage() {
 		} finally {
 			co.setProcessing(false);
 		}
-	}, [co, shippingRates, selectedRate, updateSessionMut]);
+	}, [co, session, shippingRates, selectedRate, updateSessionMut]);
 
 	// ── Payment step: create intent and either advance (demo) or show Stripe
 	const handlePaymentSubmit = useCallback(async () => {
@@ -1240,10 +1237,9 @@ const CheckoutPage = observer(function CheckoutPage() {
 			void api.cart.getCart.invalidate();
 			cartStore.setItemCount(0);
 
-			// Navigate to confirmation (include email for guest order lookup fallback)
-			const confirmUrl = email
-				? `/checkout/confirmation?order=${encodeURIComponent(orderId)}&email=${encodeURIComponent(email)}`
-				: `/checkout/confirmation?order=${encodeURIComponent(orderId)}`;
+			// Contact data never belongs in a confirmation URL. The scoped guest
+			// proof cookie authorizes any future server-side guest lookup.
+			const confirmUrl = `/checkout/confirmation?order=${encodeURIComponent(orderId)}`;
 			window.location.href = `${confirmUrl}&num=${encodeURIComponent(orderNumber)}`;
 		} catch (err) {
 			// Mutation errors are surfaced by their individual onError callbacks.
@@ -1273,11 +1269,12 @@ const CheckoutPage = observer(function CheckoutPage() {
 	// ── Apply discount
 	const handleApplyDiscount = useCallback(
 		async (code: string) => {
-			if (!co.sessionId) return;
+			if (!co.sessionId || !session) return;
 			setError(null);
 			try {
 				const result: SessionResult = await applyDiscountMut.mutateAsync({
 					params: { id: co.sessionId },
+					expectedRevision: session.revision,
 					code,
 				});
 				const sess = result?.session;
@@ -1289,16 +1286,17 @@ const CheckoutPage = observer(function CheckoutPage() {
 				// Error handled by mutation onError
 			}
 		},
-		[co, applyDiscountMut],
+		[co, session, applyDiscountMut],
 	);
 
 	// ── Remove discount
 	const handleRemoveDiscount = useCallback(async () => {
-		if (!co.sessionId) return;
+		if (!co.sessionId || !session) return;
 		setError(null);
 		try {
 			const result: SessionResult = await removeDiscountMut.mutateAsync({
 				params: { id: co.sessionId },
+				expectedRevision: session.revision,
 			});
 			const sess = result?.session;
 			if (sess) {
@@ -1308,16 +1306,17 @@ const CheckoutPage = observer(function CheckoutPage() {
 		} catch {
 			// Error handled by mutation onError
 		}
-	}, [co, removeDiscountMut]);
+	}, [co, session, removeDiscountMut]);
 
 	// ── Apply gift card
 	const handleApplyGiftCard = useCallback(
 		async (code: string) => {
-			if (!co.sessionId) return;
+			if (!co.sessionId || !session) return;
 			setError(null);
 			try {
 				const result: SessionResult = await applyGiftCardMut.mutateAsync({
 					params: { id: co.sessionId },
+					expectedRevision: session.revision,
 					code,
 				});
 				const sess = result?.session;
@@ -1329,16 +1328,17 @@ const CheckoutPage = observer(function CheckoutPage() {
 				// Error handled by mutation onError
 			}
 		},
-		[co, applyGiftCardMut],
+		[co, session, applyGiftCardMut],
 	);
 
 	// ── Remove gift card
 	const handleRemoveGiftCard = useCallback(async () => {
-		if (!co.sessionId) return;
+		if (!co.sessionId || !session) return;
 		setError(null);
 		try {
 			const result: SessionResult = await removeGiftCardMut.mutateAsync({
 				params: { id: co.sessionId },
+				expectedRevision: session.revision,
 			});
 			const sess = result?.session;
 			if (sess) {
@@ -1348,15 +1348,16 @@ const CheckoutPage = observer(function CheckoutPage() {
 		} catch {
 			// Error handled by mutation onError
 		}
-	}, [co, removeGiftCardMut]);
+	}, [co, session, removeGiftCardMut]);
 
 	// ── Apply store credit
 	const handleApplyStoreCredit = useCallback(async () => {
-		if (!co.sessionId) return;
+		if (!co.sessionId || !session) return;
 		setError(null);
 		try {
 			const result: SessionResult = await applyStoreCreditMut.mutateAsync({
 				params: { id: co.sessionId },
+				expectedRevision: session.revision,
 			});
 			const sess = result?.session;
 			if (sess) {
@@ -1366,15 +1367,16 @@ const CheckoutPage = observer(function CheckoutPage() {
 		} catch {
 			// Error handled by mutation onError
 		}
-	}, [co, applyStoreCreditMut]);
+	}, [co, session, applyStoreCreditMut]);
 
 	// ── Remove store credit
 	const handleRemoveStoreCredit = useCallback(async () => {
-		if (!co.sessionId) return;
+		if (!co.sessionId || !session) return;
 		setError(null);
 		try {
 			const result: SessionResult = await removeStoreCreditMut.mutateAsync({
 				params: { id: co.sessionId },
+				expectedRevision: session.revision,
 			});
 			const sess = result?.session;
 			if (sess) {
@@ -1384,7 +1386,7 @@ const CheckoutPage = observer(function CheckoutPage() {
 		} catch {
 			// Error handled by mutation onError
 		}
-	}, [co, removeStoreCreditMut]);
+	}, [co, session, removeStoreCreditMut]);
 
 	// ── Empty cart state
 	if (cart && cart.items.length === 0 && !co.sessionId) {

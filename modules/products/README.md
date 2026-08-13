@@ -19,6 +19,13 @@
 
 # Products Module
 
+> [!IMPORTANT]
+> New Product and Variant prices are integer minor units. Inventory owns stock,
+> so Product stock mutations are rejected. Collections owns Collection writes;
+> the Products collection routes are compatibility reads only. Direct import is
+> unavailable until validated draft, Review, and immutable publish revisions are
+> implemented.
+
 📚 **Documentation:** [86d.app/docs/modules/products](https://86d.app/docs/modules/products)
 
 Product catalog module with variants and hierarchical categories. Full CRUD for the admin panel and read-only browsing with search and filtering for the storefront.
@@ -90,14 +97,9 @@ Query parameters for `GET /products`:
 | `GET` | `/admin/categories/list` | List all categories |
 | `PUT` | `/admin/categories/:id` | Update a category |
 | `DELETE` | `/admin/categories/:id` | Delete a category |
-| `POST` | `/admin/collections` | Create a collection |
 | `GET` | `/admin/collections/list` | List all collections |
-| `PUT` | `/admin/collections/:id` | Update a collection |
-| `DELETE` | `/admin/collections/:id` | Delete a collection |
-| `POST` | `/admin/collections/:id/products` | Add product to collection |
-| `DELETE` | `/admin/collections/:id/products/:productId` | Remove product from collection |
 | `POST` | `/admin/products/bulk-action` | Bulk update status or delete |
-| `POST` | `/admin/products/import` | Import products from CSV data |
+| `POST` | `/admin/products/import` | Contained; returns `PRODUCT_IMPORT_REVIEW_REQUIRED` |
 
 ## Service API
 

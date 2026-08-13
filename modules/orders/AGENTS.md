@@ -1,6 +1,6 @@
 # Orders Module
 
-Order lifecycle management: CRUD, status transitions, fulfillments, returns, invoices, notes, bulk operations, guest tracking, and reordering.
+Order ownership and compatibility reads for the accepted commercial agreement. Competing Fulfillment/Return writers, destructive bulk operations, and identifier-plus-email guest lookup are contained.
 
 ## Structure
 
@@ -14,14 +14,14 @@ src/
     endpoints/      Customer-facing (requires session)
       list-orders.ts              GET  /orders/me
       get-order.ts                GET  /orders/me/:id
-      cancel-order.ts             POST /orders/me/:id/cancel
+      cancel-order.ts             POST /orders/me/:id/cancel (contained)
       get-fulfillments.ts         GET  /orders/me/:id/fulfillments
       get-invoice.ts              GET  /orders/me/:id/invoice
       get-returns.ts              GET  /orders/me/:id/returns
-      create-return.ts            POST /orders/me/:id/returns/create
+      create-return.ts            POST /orders/me/:id/returns/create (contained; Returns owns writes)
       list-my-returns.ts          GET  /orders/me/returns
       reorder.ts                  POST /orders/me/:id/reorder
-      track-order.ts              POST /orders/track
+      track-order.ts              POST /orders/track (contained; scoped guest proof required)
       store-search.ts             GET  /orders/store-search
     components/     Store UI (OrderHistory, OrderDetail, OrderReturns, OrderTracker)
   admin/
@@ -61,7 +61,7 @@ OrdersOptions {
 
 ## Data models
 
-- **order**: id, orderNumber (unique, auto-gen), customerId?, guestEmail?, status, paymentStatus, subtotal, taxAmount, shippingAmount, discountAmount, total, currency, notes?, metadata, createdAt, updatedAt
+- **order**: immutable integer monetary snapshot and currency, accepted Checkout/Catalog/tax/Shipping/Inventory/Payment references, explicit closedAt/reason/policy version, attribution, notes, metadata, timestamps
 - **orderItem**: id, orderId (FK), productId, variantId?, name (snapshot), sku?, price (snapshot), quantity, subtotal, metadata
 - **orderAddress**: id, orderId (FK), type (billing|shipping), firstName, lastName, company?, line1, line2?, city, state, postalCode, country, phone?
 - **fulfillment**: id, orderId (FK), status, trackingNumber?, trackingUrl?, carrier?, notes?, shippedAt?, deliveredAt?, createdAt, updatedAt
@@ -84,13 +84,21 @@ Cancellable: `pending`, `processing`, `on_hold`. Non-cancellable: `completed`, `
 
 ## Events emitted
 
-`order.placed`, `order.updated`, `order.fulfilled`, `order.cancelled`, `order.shipped`, `shipment.delivered`, `return.requested`, `return.approved`, `return.rejected`, `return.refunded`, `return.completed`
+`order.placed`, `order.updated`, `order.fulfilled`, `order.cancelled`, `order.shipped`, `return.requested`, `return.approved`, `return.rejected`, `return.refunded`, `return.completed`
+
+Shipping/Fulfillment delivery evidence never closes an Order by itself. Store
+Admin status edits cannot assert Order closure or Payment outcomes. HTTP
+cancellation fails closed until its cross-owner workflow is durable.
+
+Order creation rejects floats, unsafe integers, mismatched line subtotals,
+mismatched component totals, and non-uppercase ISO currency codes.
 
 ## Key patterns
 
 - Customer endpoints verify `order.customerId === userId` (return 404, not 403)
-- Guest tracking matches email case-insensitively against guestEmail and metadata.customerEmail
-- `bulkDelete` cascades: items, addresses, fulfillments (with fulfillmentItems), returns (with returnItems), notes
+- Email, Order ID, tracking number, or Order number never authorizes guest access; legacy guest confirmation and tracking handlers fail closed until scoped Checkout-to-Order proof verification is wired
+- Accepted Order deletion and bulk status/Payment/deletion mutations fail closed
+- Order-owned Fulfillment and Return rows are compatibility reads only; their HTTP writers fail closed in favor of the standalone owner modules
 - Tracking URLs auto-generated for UPS, USPS, FedEx, DHL carriers
 - Invoice numbers: `INV-{YYYYMMDD}-{orderSuffix}`
 - `findMany` uses `take`/`skip` for pagination

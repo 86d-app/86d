@@ -43,6 +43,7 @@ src/
 
 ```ts
 LoyaltyOptions {
+  enabled?: boolean           // default false; endpoints/pages remain unavailable
   pointsPerDollar?: string   // default "1"
   minRedemption?: string     // minimum points to redeem
   redemptionRate?: string    // e.g. "100" = 100 points per $1
@@ -58,7 +59,7 @@ LoyaltyOptions {
 
 ## Patterns
 
-- Auto-earns points on `order.placed` event (listens in init) via `calculateOrderPoints`
+- Disabled by default. Setting `enabled: true` exposes the loyalty surfaces, but automatic earning remains unavailable until it is driven by an idempotent durable Order fact.
 - Requires `customers` module
 - `getOrCreateAccount()` auto-provisions loyalty account for new customers
 - Three admin pages: overview, rules, tiers

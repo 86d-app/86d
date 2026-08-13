@@ -5,13 +5,7 @@ import {
 	sanitizeText,
 	z,
 } from "@86d-app/core";
-import { performCancellationEffects } from "../../cancel-effects";
-import type {
-	OrderController,
-	OrderStatus,
-	OrderWithDetails,
-	PaymentStatus,
-} from "../../service";
+import type { OrderController, OrderWithDetails } from "../../service";
 
 export const adminUpdateOrder = createAdminEndpoint(
 	"/admin/orders/:id/update",
@@ -49,41 +43,42 @@ export const adminUpdateOrder = createAdminEndpoint(
 
 		const previousStatus = order.status;
 		const { status, paymentStatus, notes, metadata } = ctx.body;
-
-		if (status) {
-			const updated = await controller.updateStatus(
-				ctx.params.id,
-				status as OrderStatus,
-			);
-			if (updated) order = { ...order, ...updated };
+		if (status === "completed" || status === "refunded") {
+			return {
+				code: "ORDER_CLOSURE_OPERATION_REQUIRED",
+				error:
+					"Order closure requires the versioned closure operation and cannot be asserted by a status edit.",
+				status: 409,
+			};
+		}
+		if (status === "cancelled" && previousStatus !== "cancelled") {
+			return {
+				code: "ORDER_CANCELLATION_OPERATION_UNAVAILABLE",
+				error:
+					"Order cancellation is unavailable until Payment, Inventory, tax, loyalty, and Shipping effects are coordinated durably.",
+				status: 503,
+			};
+		}
+		if (paymentStatus !== undefined) {
+			return {
+				code: "PAYMENT_OPERATION_REQUIRED",
+				error:
+					"Payment state must be changed by the owning payment operation.",
+				status: 409,
+			};
 		}
 
-		if (paymentStatus) {
-			const updated = await controller.updatePaymentStatus(
-				ctx.params.id,
-				paymentStatus as PaymentStatus,
-			);
+		if (status) {
+			const updated = await controller.updateStatus(ctx.params.id, status);
 			if (updated) order = { ...order, ...updated };
 		}
 
 		if (notes !== undefined || metadata !== undefined) {
 			const updated = await controller.update(ctx.params.id, {
 				...(notes !== undefined ? { notes } : {}),
-				...(metadata !== undefined
-					? { metadata: metadata as Record<string, unknown> }
-					: {}),
+				...(metadata !== undefined ? { metadata } : {}),
 			});
 			if (updated) order = { ...order, ...updated };
-		}
-
-		// Perform cancellation side effects when transitioning to "cancelled"
-		if (status === "cancelled" && previousStatus !== "cancelled") {
-			await performCancellationEffects({
-				order,
-				orderController: controller,
-				capabilities: ctx.context.capabilities,
-				cancelledBy: "admin",
-			});
 		}
 
 		// Emit events for status transitions that trigger email notifications
@@ -93,15 +88,7 @@ export const adminUpdateOrder = createAdminEndpoint(
 				ctx.context.capabilities,
 			);
 
-			if (status === "completed") {
-				await ctx.context.events.emit("order.fulfilled", {
-					orderId: order.id,
-					orderNumber: order.orderNumber,
-					customerId: order.customerId,
-					email,
-					customerName,
-				});
-			} else if (status === "cancelled") {
+			if (status === "cancelled") {
 				await ctx.context.events.emit("order.cancelled", {
 					orderId: order.id,
 					orderNumber: order.orderNumber,

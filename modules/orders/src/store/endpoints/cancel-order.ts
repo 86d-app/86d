@@ -1,5 +1,4 @@
 import { createStoreEndpoint, z } from "@86d-app/core";
-import { performCancellationEffects } from "../../cancel-effects";
 import type { OrderController } from "../../service";
 
 export const cancelMyOrder = createStoreEndpoint(
@@ -21,33 +20,11 @@ export const cancelMyOrder = createStoreEndpoint(
 			return { error: "Order not found", status: 404 };
 		}
 
-		const cancelled = await controller.cancel(ctx.params.id);
-		if (!cancelled) {
-			return {
-				error: "Order cannot be cancelled in its current state",
-				status: 422,
-			};
-		}
-
-		// Perform cancellation side effects: refund payment, release inventory
-		await performCancellationEffects({
-			order,
-			orderController: controller,
-			capabilities: ctx.context.capabilities,
-			cancelledBy: "customer",
-		});
-
-		// Emit order.cancelled event for email notifications
-		if (ctx.context.events) {
-			await ctx.context.events.emit("order.cancelled", {
-				orderId: cancelled.id,
-				orderNumber: cancelled.orderNumber,
-				email: cancelled.guestEmail ?? ctx.context.session?.user.email ?? "",
-				customerName: ctx.context.session?.user.name ?? "Customer",
-				reason: "Cancelled by customer",
-			});
-		}
-
-		return { order: cancelled };
+		return {
+			code: "ORDER_CANCELLATION_OPERATION_UNAVAILABLE",
+			error:
+				"Order cancellation is unavailable until Payment, Inventory, tax, loyalty, and Shipping effects are coordinated durably.",
+			status: 503,
+		};
 	},
 );

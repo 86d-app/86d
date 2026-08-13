@@ -1,6 +1,5 @@
 import {
 	createAdminEndpoint,
-	inventoryCheckoutCapability,
 	sanitizeText,
 	z,
 } from "@86d-app/core";
@@ -17,9 +16,9 @@ export const createVariant = createAdminEndpoint(
 			name: z.string().min(1).max(200).transform(sanitizeText),
 			sku: z.string().max(100).optional(),
 			barcode: z.string().max(100).optional(),
-			price: z.number().positive(),
-			compareAtPrice: z.number().positive().optional(),
-			costPrice: z.number().positive().optional(),
+			price: z.number().int().positive(),
+			compareAtPrice: z.number().int().positive().optional(),
+			costPrice: z.number().int().positive().optional(),
 			inventory: z.number().int().min(0).optional(),
 			options: z.record(z.string(), z.string()),
 			images: z.array(z.string()).optional(),
@@ -31,6 +30,13 @@ export const createVariant = createAdminEndpoint(
 	async (ctx) => {
 		const { params } = ctx;
 		const controllers = ctx.context.controllers;
+		if (ctx.body.inventory !== undefined) {
+			return {
+				code: "INVENTORY_OPERATION_REQUIRED",
+				error: "Stock must be changed through the Inventory operation.",
+				status: 409,
+			};
+		}
 
 		// Check if product exists
 		const existingProduct = (await controllers.product.getById({
@@ -45,22 +51,6 @@ export const createVariant = createAdminEndpoint(
 		}
 
 		const variant = (await controllers.variant.create(ctx)) as ProductVariant;
-
-		// Sync variant inventory to the inventory module (best-effort).
-		if (ctx.body.inventory !== undefined) {
-			try {
-				await ctx.context.capabilities.invoke(inventoryCheckoutCapability, {
-					operation: "set",
-					productId: params.productId,
-					variantId: variant.id,
-					quantity: ctx.body.inventory,
-					productName: existingProduct.name,
-					variantName: variant.name,
-				});
-			} catch {
-				// Best-effort: inventory sync failure never blocks variant creation
-			}
-		}
 
 		return { variant, status: 201 };
 	},

@@ -13,7 +13,8 @@
 		"preview": "next build && next start",
 		"start": "next start",
 		"test": "vitest run",
-		"typecheck": "tsc --noEmit"
+		"typecheck": "tsc --noEmit",
+		"worker:durable-events": "bun scripts/durable-events-worker.ts"
 	},
 	"dependencies": {
 		"@86d-app/abandoned-carts": "workspace:*",

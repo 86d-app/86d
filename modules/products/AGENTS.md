@@ -1,6 +1,10 @@
 # Products Module
 
-Product catalog with variants, hierarchical categories, and collections. Full CRUD for admin, read-only browsing and search for storefront. Includes CSV import, bulk operations, and inventory management.
+Product and Variant catalog with accepted Categories. New price writes use integer
+minor units. Inventory is authoritative for stock, and Collections is
+authoritative for Collection writes; the similarly named Products fields/tables
+are temporary read projections. Direct spreadsheet import is contained until the
+reviewed revision pipeline exists.
 
 ## Structure
 
@@ -54,12 +58,12 @@ ProductsOptions {
 - `addProductToCollection` prevents duplicates (returns existing link)
 - Import resolves categories by name (case-insensitive), deduplicates slugs, updates existing products by SKU
 - Inventory decrement has NO floor — can go negative (documented behavior)
-- Untracked products (`trackInventory: false`) skip inventory operations
+- Product and Variant endpoints reject stock mutations with `INVENTORY_OPERATION_REQUIRED`.
 - Related products scored: same category (+10), shared tags (+1 each)
 
 ## Gotchas
 
 - `exactOptionalPropertyTypes` is on — use `undefined` carefully for optional fields
-- Price fields in import are multiplied by 100 (dollars to cents)
+- Direct import returns `PRODUCT_IMPORT_REVIEW_REQUIRED` before mutation.
 - Category tree only includes visible categories
 - Search is case-insensitive across name, description, and tags

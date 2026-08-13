@@ -1,4 +1,5 @@
 import type { z } from "zod";
+import type { ModuleTransactionRunner } from "./durable-events";
 import type { ScopedEventEmitter } from "./events";
 import type { Primitive } from "./types/helper";
 import type { ModuleDataService } from "./types/module";
@@ -74,6 +75,8 @@ export type CapabilityKernelFailure = Readonly<{
 export type CapabilityProviderContext = Readonly<{
 	data: ModuleDataService;
 	events?: ScopedEventEmitter | undefined;
+	/** Owner-local atomic state and durable-event transaction seam. */
+	transactions?: ModuleTransactionRunner | undefined;
 	storeId: string;
 	options: Record<string, Primitive>;
 }>;

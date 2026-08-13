@@ -7,7 +7,10 @@
  * draining late only delays delivery.
  */
 
-import { DurableEventDispatcher } from "@86d-app/runtime/durable-event-dispatcher";
+import {
+	DurableEventDispatcher,
+	type DrainDurableEventsResult,
+} from "@86d-app/runtime/durable-event-dispatcher";
 import type { ModuleRegistry } from "@86d-app/runtime/registry";
 import { UniversalDataService } from "@86d-app/runtime/universal-data-service";
 import { db } from "db";
@@ -22,7 +25,14 @@ const LEASE_MS = 30_000;
 
 let dispatcher: DurableEventDispatcher | undefined;
 let dispatcherRegistry: ModuleRegistry | undefined;
-let draining: Promise<void> | undefined;
+let draining: Promise<DrainDurableEventsResult> | undefined;
+
+const EMPTY_DRAIN_RESULT: DrainDurableEventsResult = {
+	claimed: 0,
+	succeeded: 0,
+	failed: 0,
+	deadLettered: 0,
+};
 
 function getDispatcher(
 	registry: ModuleRegistry,
@@ -61,48 +71,58 @@ function getDispatcher(
 	return dispatcher;
 }
 
-/**
- * Deliver a bounded batch of committed durable events.
- *
- * Never throws: a delivery problem must not change the outcome of the request
- * that happened to trigger the drain. The events stay in the outbox.
- */
-export async function drainDurableEvents(
+/** Deliver one bounded batch and surface infrastructure failures to a worker. */
+export async function drainDurableEventsBatch(
 	registry: ModuleRegistry,
-): Promise<void> {
+): Promise<DrainDurableEventsResult> {
 	const storeId = env.STORE_ID;
-	if (!storeId || !registry.isReady()) return;
+	if (!storeId || !registry.isReady()) return EMPTY_DRAIN_RESULT;
 
 	// One drain at a time in this process. Concurrent drains are safe — claims
 	// use `FOR UPDATE SKIP LOCKED` — but serializing avoids pointless contention.
 	if (draining) return draining;
 
 	draining = (async () => {
-		try {
-			const active = getDispatcher(registry, storeId);
-			if (!active) return;
-			const result = await active.drain({
-				limit: DRAIN_LIMIT,
-				leaseDurationMs: LEASE_MS,
-			});
-			if (result.failed > 0 || result.deadLettered > 0) {
-				logger.warn("Durable event delivery reported failures", {
-					claimed: result.claimed,
-					succeeded: result.succeeded,
-					failed: result.failed,
-					deadLettered: result.deadLettered,
-				});
-			}
-		} catch (error) {
-			logger.error("Durable event drain failed", {
-				reason: error instanceof Error ? error.message : String(error),
-			});
-		} finally {
-			draining = undefined;
-		}
+		const active = getDispatcher(registry, storeId);
+		if (!active) return EMPTY_DRAIN_RESULT;
+		return active.drain({
+			limit: DRAIN_LIMIT,
+			leaseDurationMs: LEASE_MS,
+		});
 	})();
 
-	return draining;
+	try {
+		return await draining;
+	} finally {
+		draining = undefined;
+	}
+}
+
+/**
+ * Deliver a bounded batch after an HTTP mutation.
+ *
+ * Never throws: a delivery problem must not change the outcome of the request
+ * that happened to trigger the drain. The independent worker uses the batch
+ * function above so infrastructure failures remain observable to its scheduler.
+ */
+export async function drainDurableEvents(
+	registry: ModuleRegistry,
+): Promise<void> {
+	try {
+		const result = await drainDurableEventsBatch(registry);
+		if (result.failed > 0 || result.deadLettered > 0) {
+			logger.warn("Durable event delivery reported failures", {
+				claimed: result.claimed,
+				succeeded: result.succeeded,
+				failed: result.failed,
+				deadLettered: result.deadLettered,
+			});
+		}
+	} catch (error) {
+		logger.error("Durable event drain failed", {
+			reason: error instanceof Error ? error.message : String(error),
+		});
+	}
 }
 
 /** Test seam: forget the memoized dispatcher. */

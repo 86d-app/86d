@@ -2,6 +2,82 @@ import type { ModuleSchema } from "@86d-app/core";
 
 export const taxSchema = {
 	/**
+	 * Effective-dated merchant-approved jurisdiction policy used by tax.quote v2.
+	 * Policies are additive to the legacy v1 tax records during migration.
+	 */
+	taxPolicyV2: {
+		fields: {
+			id: { type: "string", required: true },
+			version: { type: "string", required: true },
+			country: { type: "string", required: true },
+			state: { type: "string", required: true },
+			city: { type: "string", required: false },
+			postalCode: { type: "string", required: false },
+			jurisdictionDecision: {
+				type: ["COLLECT", "NO_NEXUS", "MARKETPLACE_COLLECTED", "BLOCKED"],
+				required: true,
+			},
+			calculationSource: {
+				type: ["RATE_PACK", "TAXJAR"],
+				required: false,
+			},
+			ratePackId: { type: "string", required: false },
+			sourceVersion: { type: "string", required: false },
+			effectiveFrom: { type: "date", required: true },
+			effectiveTo: { type: "date", required: false },
+			quoteTtlSeconds: { type: "number", required: true },
+			enabled: { type: "boolean", required: true, defaultValue: true },
+			createdAt: {
+				type: "date",
+				required: true,
+				defaultValue: () => new Date(),
+			},
+		},
+	},
+
+	/** Versioned manual or provenance-labelled official-data rate pack. */
+	taxRatePackV2: {
+		fields: {
+			id: { type: "string", required: true },
+			version: { type: "string", required: true },
+			sourceKind: {
+				type: ["MANUAL", "OFFICIAL_DATA"],
+				required: true,
+			},
+			sourceName: { type: "string", required: true },
+			sourceReference: { type: "string", required: true },
+			effectiveFrom: { type: "date", required: true },
+			effectiveTo: { type: "date", required: false },
+			enabled: { type: "boolean", required: true, defaultValue: true },
+			rates: { type: "json", required: true },
+			createdAt: {
+				type: "date",
+				required: true,
+				defaultValue: () => new Date(),
+			},
+		},
+	},
+
+	/** Effective-dated full or category exemption evidence for tax.quote v2. */
+	taxExemptionV2: {
+		fields: {
+			id: { type: "string", required: true },
+			version: { type: "string", required: true },
+			customerId: { type: "string", required: true },
+			taxCategoryId: { type: "string", required: false },
+			reason: { type: "string", required: true },
+			effectiveFrom: { type: "date", required: true },
+			effectiveTo: { type: "date", required: false },
+			enabled: { type: "boolean", required: true, defaultValue: true },
+			createdAt: {
+				type: "date",
+				required: true,
+				defaultValue: () => new Date(),
+			},
+		},
+	},
+
+	/**
 	 * Tax rates by jurisdiction.
 	 * A jurisdiction is a combination of country + state/province + optional city/postal.
 	 * Rates are stored as decimals (e.g. 0.0825 for 8.25%).

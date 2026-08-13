@@ -14,6 +14,8 @@ export type {
 } from "./service";
 
 export interface LoyaltyOptions extends ModuleConfig {
+	/** Explicit activation gate. Loyalty is disabled unless set to true. */
+	enabled?: boolean;
 	/** Points earned per dollar spent (default: 1) */
 	pointsPerDollar?: string;
 	/** Minimum points required for redemption */
@@ -23,6 +25,8 @@ export interface LoyaltyOptions extends ModuleConfig {
 }
 
 export default function loyalty(options?: LoyaltyOptions): Module {
+	const enabled = options?.enabled === true;
+
 	return {
 		id: "loyalty",
 		version: "0.0.1",
@@ -42,75 +46,49 @@ export default function loyalty(options?: LoyaltyOptions): Module {
 		},
 		init: async (ctx: ModuleContext) => {
 			const controller = createLoyaltyController(ctx.data);
-
-			interface OrderPayload {
-				total?: number;
-				customerId?: string;
-				orderId?: string;
-			}
-
-			ctx.events?.on<OrderPayload>("order.placed", async (event) => {
-				const orderTotal = event.payload?.total ?? 0;
-				const customerId = event.payload?.customerId;
-				if (!customerId || orderTotal <= 0) return;
-
-				const points = await controller.calculateOrderPoints(orderTotal);
-				if (points > 0) {
-					await controller.earnPoints({
-						customerId,
-						points,
-						description: `Order reward (${orderTotal.toFixed(2)})`,
-						orderId: event.payload?.orderId,
-					});
-					const account = await controller.getAccount(customerId);
-					void ctx.events?.emit("loyalty.pointsEarned", {
-						customerId,
-						points,
-						balance: account?.balance ?? 0,
-						orderId: event.payload?.orderId,
-					});
-				}
-			});
-
 			return { controllers: { loyalty: controller } };
 		},
-		search: { store: "/loyalty/store-search" },
+		...(enabled ? { search: { store: "/loyalty/store-search" } } : {}),
 		endpoints: {
-			store: storeEndpoints,
-			admin: adminEndpoints,
+			store: enabled ? storeEndpoints : {},
+			admin: enabled ? adminEndpoints : {},
 		},
 		admin: {
-			pages: [
-				{
-					path: "/admin/loyalty",
-					component: "LoyaltyOverview",
-					label: "Loyalty",
-					icon: "Star",
-					group: "Customers",
-				},
-				{
-					path: "/admin/loyalty/rules",
-					component: "LoyaltyRules",
-					label: "Earn Rules",
-					icon: "Settings",
-					group: "Customers",
-				},
-				{
-					path: "/admin/loyalty/tiers",
-					component: "LoyaltyTiers",
-					label: "Tiers",
-					icon: "Trophy",
-					group: "Customers",
-				},
-			],
+			pages: enabled
+				? [
+						{
+							path: "/admin/loyalty",
+							component: "LoyaltyOverview",
+							label: "Loyalty",
+							icon: "Star",
+							group: "Customers",
+						},
+						{
+							path: "/admin/loyalty/rules",
+							component: "LoyaltyRules",
+							label: "Earn Rules",
+							icon: "Settings",
+							group: "Customers",
+						},
+						{
+							path: "/admin/loyalty/tiers",
+							component: "LoyaltyTiers",
+							label: "Tiers",
+							icon: "Trophy",
+							group: "Customers",
+						},
+					]
+				: [],
 		},
 		store: {
-			pages: [
-				{
-					path: "/loyalty",
-					component: "LoyaltyPage",
-				},
-			],
+			pages: enabled
+				? [
+						{
+							path: "/loyalty",
+							component: "LoyaltyPage",
+						},
+					]
+				: [],
 		},
 		options,
 	};

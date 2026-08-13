@@ -1,6 +1,5 @@
 import {
 	createAdminEndpoint,
-	inventoryCheckoutCapability,
 	sanitizeText,
 	z,
 } from "@86d-app/core";
@@ -18,9 +17,9 @@ export const updateProduct = createAdminEndpoint(
 			slug: z.string().min(1).max(200).optional(),
 			description: z.string().max(10000).transform(sanitizeText).optional(),
 			shortDescription: z.string().max(500).transform(sanitizeText).optional(),
-			price: z.number().positive().optional(),
-			compareAtPrice: z.number().positive().nullable().optional(),
-			costPrice: z.number().positive().nullable().optional(),
+			price: z.number().int().positive().optional(),
+			compareAtPrice: z.number().int().positive().nullable().optional(),
+			costPrice: z.number().int().positive().nullable().optional(),
 			sku: z.string().max(100).nullable().optional(),
 			barcode: z.string().max(100).nullable().optional(),
 			inventory: z.number().int().min(0).optional(),
@@ -42,6 +41,17 @@ export const updateProduct = createAdminEndpoint(
 	async (ctx) => {
 		const { body } = ctx;
 		const controllers = ctx.context.controllers;
+		if (
+			body.inventory !== undefined ||
+			body.trackInventory !== undefined ||
+			body.allowBackorder !== undefined
+		) {
+			return {
+				code: "INVENTORY_OPERATION_REQUIRED",
+				error: "Stock must be changed through the Inventory operation.",
+				status: 409,
+			};
+		}
 
 		// Check if product exists
 		const existingProduct = (await controllers.product.getById(
@@ -69,21 +79,6 @@ export const updateProduct = createAdminEndpoint(
 		}
 
 		const product = (await controllers.product.update(ctx)) as Product | null;
-
-		// Sync updated inventory count to the inventory module (best-effort).
-		if (body.inventory !== undefined && product) {
-			try {
-				await ctx.context.capabilities.invoke(inventoryCheckoutCapability, {
-					operation: "set",
-					productId: existingProduct.id,
-					quantity: body.inventory,
-					...(product?.name ? { productName: product.name } : {}),
-					allowBackorder: body.allowBackorder ?? existingProduct.allowBackorder,
-				});
-			} catch {
-				// Best-effort: inventory sync failure never blocks product update
-			}
-		}
 
 		if (product) {
 			void ctx.context.events?.emit("product.updated", {

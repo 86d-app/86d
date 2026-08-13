@@ -128,7 +128,6 @@ function orderToSummary(o: OrderApiResponse): OrderSummary {
 function ConfirmationContent() {
 	const searchParams = useSearchParams();
 	const orderId = searchParams.get("order");
-	const guestEmail = searchParams.get("email");
 	const urlOrderNumber = searchParams.get("num");
 	const { track } = useAnalytics();
 	const tracked = useRef(false);
@@ -148,7 +147,8 @@ function ConfirmationContent() {
 			// sessionStorage may not be available
 		}
 
-		// Fallback: fetch order from API if sessionStorage was empty
+		// Fallback only to the authenticated Customer endpoint. Guest recovery
+		// requires the scoped Checkout-to-Order proof and is not an email lookup.
 		if (!found && orderId) {
 			(async () => {
 				// Try authenticated endpoint first (works for logged-in users)
@@ -164,33 +164,13 @@ function ConfirmationContent() {
 						return;
 					}
 				}
-
-				// Guest fallback: use confirm endpoint with email verification
-				if (guestEmail) {
-					const confirmRes = await fetch("/api/orders/confirm", {
-						method: "POST",
-						headers: { "Content-Type": "application/json" },
-						body: JSON.stringify({
-							orderId,
-							email: guestEmail,
-						}),
-					}).catch(() => null);
-					if (confirmRes?.ok) {
-						const data = (await confirmRes.json()) as {
-							order?: OrderApiResponse;
-						};
-						if (data?.order) {
-							setSummary(orderToSummary(data.order));
-						}
-					}
-				}
 			})();
 		}
-	}, [orderId, guestEmail]);
+	}, [orderId]);
 
 	// Fire purchase event once on confirmation page load
 	useEffect(() => {
-		if (orderId && !tracked.current) {
+		if (orderId && summary && !tracked.current) {
 			tracked.current = true;
 			track({
 				type: "purchase",
@@ -198,7 +178,7 @@ function ConfirmationContent() {
 				data: { source: "checkout" },
 			});
 		}
-	}, [orderId, track]);
+	}, [orderId, summary, track]);
 
 	const currency = summary?.currency ?? "USD";
 	const addr = summary?.shippingAddress;
@@ -434,15 +414,9 @@ function ConfirmationContent() {
 
 			{/* Actions */}
 			<div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
-				{guestEmail ? (
-					<a href="/track" className={buttonVariants()}>
-						Track your order
-					</a>
-				) : (
-					<a href="/account/orders" className={buttonVariants()}>
-						View my orders
-					</a>
-				)}
+				<a href="/account/orders" className={buttonVariants()}>
+					View my orders
+				</a>
 				<a href="/products" className={buttonVariants({ variant: "outline" })}>
 					Continue shopping
 				</a>

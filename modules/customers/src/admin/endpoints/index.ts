@@ -7,13 +7,10 @@ import { adminGetCustomer } from "./get-customer";
 import { adminImportCustomers } from "./import-customers";
 import { adminListCustomers } from "./list-customers";
 import { adminListTags } from "./list-tags";
-import { adminAdjustPoints } from "./loyalty-adjust";
 import {
 	adminGetLoyaltyBalance,
 	adminGetLoyaltyHistory,
 } from "./loyalty-balance";
-import { adminEarnPoints } from "./loyalty-earn";
-import { adminRedeemPoints } from "./loyalty-redeem";
 import { adminGetLoyaltyStats } from "./loyalty-stats";
 import { adminAddTags, adminRemoveTags } from "./manage-tags";
 import { adminSetDefaultAddress } from "./set-default-address";
@@ -39,7 +36,4 @@ export const adminEndpoints = {
 	"/admin/customers/:id/tags/remove": adminRemoveTags,
 	"/admin/customers/:id/loyalty": adminGetLoyaltyBalance,
 	"/admin/customers/:id/loyalty/history": adminGetLoyaltyHistory,
-	"/admin/customers/:id/loyalty/earn": adminEarnPoints,
-	"/admin/customers/:id/loyalty/redeem": adminRedeemPoints,
-	"/admin/customers/:id/loyalty/adjust": adminAdjustPoints,
 };

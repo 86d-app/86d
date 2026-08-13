@@ -27,6 +27,12 @@ packages/sdk/
 - `fetchFromApi(storeId, apiBaseUrl, apiKey?)` — async; fetch from API
 - `Config`, `RemoteStoreConfig`, `DEFAULT_CONFIG`, `GetStoreConfigOptions`
 
+Managed fetches request
+`application/vnd.86d.store-runtime-config.v2+json`. The v2 DTO carries the
+Store-scoped entitlement and the Control Plane's versioned commerce-availability
+decision. A strict legacy v1 DTO remains readable during rollout; unknown fields
+fail closed in both versions.
+
 ## Environment variables
 
 - `STORE_ID` — optional UUID; when set and valid, fetches from API

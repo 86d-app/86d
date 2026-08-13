@@ -2,9 +2,28 @@ import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
 import { createAdminEndpointsWithSettings } from "./admin/endpoints";
 import { createGetSettingsEndpoint } from "./admin/endpoints/get-settings";
 import { createTaxQuoteProvider } from "./capabilities";
+import { createTaxQuoteV2Provider } from "./capabilities-v2";
+import { TaxJarQuoteProviderV2 } from "./provider-v2";
 import { taxSchema } from "./schema";
 import { createTaxController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints";
+
+export type { TaxQuoteV2Dependencies } from "./capabilities-v2";
+export {
+	createTaxQuoteV2Provider,
+	handleTaxQuoteV2,
+	taxQuoteV2Capability,
+} from "./capabilities-v2";
+export type {
+	TaxJarQuoteProviderV2Options,
+	TaxProviderV2Result,
+	TaxQuoteProviderV2,
+} from "./provider-v2";
+export {
+	minorUnitsToTaxJarMajorUnits,
+	TaxJarQuoteProviderV2,
+	taxJarMajorUnitsToMinorUnits,
+} from "./provider-v2";
 
 export type {
 	CreateTaxCategoryParams,
@@ -36,6 +55,18 @@ export interface TaxOptions extends ModuleConfig {
 	taxjarApiKey?: string | undefined;
 	/** Use TaxJar sandbox environment (default: false) */
 	taxjarSandbox?: boolean | undefined;
+	/** Immutable Store Connection used for new TaxJar v2 quotes. */
+	taxjarConnectionId?: string | undefined;
+	/** Server-owned TaxJar origin country. */
+	taxjarOriginCountry?: string | undefined;
+	/** Server-owned TaxJar origin state or province. */
+	taxjarOriginState?: string | undefined;
+	/** Server-owned TaxJar origin postal code. */
+	taxjarOriginPostalCode?: string | undefined;
+	/** Optional server-owned TaxJar origin city. */
+	taxjarOriginCity?: string | undefined;
+	/** Optional server-owned TaxJar origin street. */
+	taxjarOriginStreet?: string | undefined;
 }
 
 export default function tax(options?: TaxOptions): Module {
@@ -43,6 +74,25 @@ export default function tax(options?: TaxOptions): Module {
 		taxjarApiKey: options?.taxjarApiKey,
 		taxjarSandbox: options?.taxjarSandbox,
 	});
+	const taxJarV2Provider =
+		options?.taxjarApiKey &&
+		options.taxjarConnectionId &&
+		options.taxjarOriginCountry &&
+		options.taxjarOriginState &&
+		options.taxjarOriginPostalCode
+			? new TaxJarQuoteProviderV2({
+					apiKey: options.taxjarApiKey,
+					sandbox: options.taxjarSandbox ?? false,
+					connectionId: options.taxjarConnectionId,
+					origin: {
+						country: options.taxjarOriginCountry,
+						state: options.taxjarOriginState,
+						postalCode: options.taxjarOriginPostalCode,
+						city: options.taxjarOriginCity,
+						street: options.taxjarOriginStreet,
+					},
+				})
+			: undefined;
 
 	return {
 		id: "tax",
@@ -50,6 +100,7 @@ export default function tax(options?: TaxOptions): Module {
 		schema: taxSchema,
 		capabilities: {
 			provides: [
+				createTaxQuoteV2Provider({ provider: taxJarV2Provider }),
 				createTaxQuoteProvider({
 					taxjarApiKey: options?.taxjarApiKey,
 					taxjarSandbox: options?.taxjarSandbox,

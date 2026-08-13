@@ -14,7 +14,9 @@ export const CheckoutInformation = observer(() => {
 	const { data } = api.getSession.useQuery(
 		sessionId ? { params: { id: sessionId } } : undefined,
 		{ enabled: !!sessionId },
-	) as { data: { session: { guestEmail?: string } } | undefined };
+	) as {
+		data: { session: { guestEmail?: string; revision: number } } | undefined;
+	};
 
 	const [email, setEmail] = useState(data?.session?.guestEmail ?? "");
 	const [error, setError] = useState("");
@@ -42,13 +44,14 @@ export const CheckoutInformation = observer(() => {
 			return;
 		}
 
-		if (!sessionId) {
+		if (!sessionId || !data?.session) {
 			setError("No checkout session found.");
 			return;
 		}
 
 		updateMutation.mutate({
 			params: { id: sessionId },
+			expectedRevision: data.session.revision,
 			guestEmail: trimmed,
 		});
 	};

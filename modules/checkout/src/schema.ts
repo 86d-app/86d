@@ -4,6 +4,7 @@ export const checkoutSchema = {
 	checkoutSession: {
 		fields: {
 			id: { type: "string", required: true },
+			revision: { type: "number", required: true, defaultValue: 1 },
 			cartId: { type: "string", required: false },
 			customerId: { type: "string", required: false },
 			guestEmail: { type: "string", required: false },
@@ -18,6 +19,8 @@ export const checkoutSchema = {
 			discountAmount: { type: "number", required: true, defaultValue: 0 },
 			/** Amount applied from a gift card */
 			giftCardAmount: { type: "number", required: true, defaultValue: 0 },
+			/** Amount applied from Store credit */
+			storeCreditAmount: { type: "number", required: true, defaultValue: 0 },
 			total: { type: "number", required: true },
 			currency: { type: "string", required: true, defaultValue: "USD" },
 			/** Validated promo code applied to this session */

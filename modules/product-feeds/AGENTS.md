@@ -46,7 +46,7 @@ src/
 - Each channel has default field mappings (Google uses `g:` prefix, Facebook uses bare names)
 - Field transforms: `uppercase`, `lowercase`, `prefix`, `suffix`, `template` (uses `{value}` placeholder)
 - Filters: `minPrice`, `maxPrice`, `requireImages`, `requireInStock`, `includeCategories`, `excludeCategories`, `includeStatuses`
-- Feed generation: filter products → apply category mappings → map fields → validate → format output → cache
+- Feed generation is fail-closed until it can read an immutable published Catalog revision; caller-supplied product snapshots are never authoritative
 - Output formats: XML (RSS 2.0 + Google NS), CSV, TSV, JSON
 - XML output escapes `&`, `<`, `>`, `"`, `'`; CSV escapes commas and quotes
 - Controller key is `productFeeds` (camelCase of module id)
@@ -61,7 +61,7 @@ src/
 
 ## Gotchas
 
-- `generateFeed` clears all previous feedItems before re-generating
+- The generation endpoint currently returns `PRODUCT_FEED_GENERATION_REVIEW_REQUIRED` without mutating feed state
 - Feed auto-transitions from `draft` → `active` on first successful generation
 - Feed transitions to `error` status if any items have validation errors
 - `deleteFeed` cascades: deletes all feedItems and categoryMappings

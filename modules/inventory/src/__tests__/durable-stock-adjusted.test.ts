@@ -8,6 +8,7 @@ import type {
 import { inventoryStockAdjustedV1 } from "@86d-app/core";
 import { createMockDataService } from "@86d-app/core/test-utils";
 import { describe, expect, it, vi } from "vitest";
+import { inventoryCheckoutProvider } from "../capabilities";
 import { createInventoryController } from "../service-impl";
 
 type EmittedEvent = {
@@ -91,6 +92,54 @@ function recordingRunner(data: ModuleDataService) {
 }
 
 describe("adjustStock durable event", () => {
+	it("uses the owner transaction runner through the capability provider", async () => {
+		const data = createMockDataService();
+		const recorder = recordingRunner(data);
+		await data.upsert("inventoryItem", "p1:_:_", {
+			id: "p1:_:_",
+			productId: "p1",
+			quantity: 10,
+			reserved: 0,
+			allowBackorder: false,
+			createdAt: new Date("2026-08-13T00:00:00.000Z"),
+			updatedAt: new Date("2026-08-13T00:00:00.000Z"),
+		});
+
+		const result = await inventoryCheckoutProvider.handle(
+			{
+				data,
+				transactions: recorder.runner,
+				storeId: "store-1",
+				options: {},
+			},
+			{ operation: "adjust", productId: "p1", delta: -4 },
+		);
+
+		expect(result).toMatchObject({
+			ok: true,
+			decision: {
+				operation: "adjust",
+				stock: { quantity: 6, reserved: 0, available: 6 },
+			},
+		});
+		expect(recorder.committed).toBe(true);
+		expect(recorder.writes).toEqual([
+			{ entityType: "inventoryItem", entityId: "p1:_:_" },
+		]);
+		expect(recorder.emitted).toHaveLength(1);
+		expect(recorder.emitted[0]?.definition).toBe(inventoryStockAdjustedV1);
+		expect(recorder.emitted[0]?.input).toMatchObject({
+			aggregate: { type: "inventory-item", id: "p1:_:_" },
+			payload: {
+				productId: "p1",
+				delta: -4,
+				quantity: 6,
+				reserved: 0,
+				available: 6,
+			},
+		});
+	});
+
 	it("commits the stock row and inventory.stock-adjusted together", async () => {
 		const data = createMockDataService();
 		const recorder = recordingRunner(data);

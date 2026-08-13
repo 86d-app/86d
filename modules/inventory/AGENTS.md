@@ -52,7 +52,8 @@ Items identified by `productId:variantId:locationId` (uses `_` as placeholder). 
 ## Key patterns
 
 - `available` is computed, never stored: `Math.max(0, quantity - reserved)`
-- `setStock` preserves existing `reserved` count (upsert, not overwrite)
+- The admin adjust route is an authenticated transport adapter to `inventory.stock.adjust@1`; its Module handler fails closed so there is no second direct writer
+- Absolute set-stock remains contained until a corresponding Inventory Command is registered
 - `reserve` returns null if available < requested AND allowBackorder is false
 - `deduct` decrements both quantity and reserved (used at fulfillment)
 - `release` floors reserved at zero (safe over-release)

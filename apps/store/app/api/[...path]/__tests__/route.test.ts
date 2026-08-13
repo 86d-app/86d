@@ -247,6 +247,17 @@ describe("GET|POST /api/[...path]", () => {
 	});
 
 	describe("public route — rate limiting", () => {
+		it("applies the sensitive limiter to checkout session creation", async () => {
+			await POST(
+				makeRequest("/checkout/sessions", "POST"),
+				makeCtx(["checkout", "sessions"]),
+			);
+
+			expect(mockRateLimiterCheck).toHaveBeenCalledWith(
+				"sensitive:10.0.0.1",
+			);
+		});
+
 		it("returns 429 when public rate limit is exceeded", async () => {
 			const resetAt = Date.now() + 60_000;
 			mockRateLimiterCheck.mockReturnValue({ allowed: false, resetAt });
@@ -299,6 +310,33 @@ describe("GET|POST /api/[...path]", () => {
 	});
 
 	describe("error response normalization", () => {
+		it("preserves an explicit module failure code at the API boundary", async () => {
+			mockCreateApiRouter.mockReturnValue({
+				handler: vi.fn().mockResolvedValue(
+					makeHandlerResponse(503, {
+						code: "CHECKOUT_ACTIVATION_UNAVAILABLE",
+						error:
+							"Checkout activation is unavailable until authoritative commerce decisions are configured.",
+					}),
+				),
+			});
+
+			const res = await POST(
+				makeRequest("/checkout/sessions/session-1/complete", "POST"),
+				makeCtx(["checkout", "sessions", "session-1", "complete"]),
+			);
+			const json = await res.json();
+
+			expect(res.status).toBe(503);
+			expect(json).toEqual({
+				error: {
+					code: "CHECKOUT_ACTIVATION_UNAVAILABLE",
+					message:
+						"Checkout activation is unavailable until authoritative commerce decisions are configured.",
+				},
+			});
+		});
+
 		it("normalizes module string errors to { error: { code, message } } shape", async () => {
 			mockCreateApiRouter.mockReturnValue({
 				handler: vi

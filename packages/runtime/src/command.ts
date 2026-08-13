@@ -101,6 +101,11 @@ type NormalizedCommandOutcome =
 	| { ok: true; result: JsonValue }
 	| { ok: false; failure: CommandFailure };
 
+export type CommandInvocation = Readonly<{
+	executionId: string;
+	idempotencyKey: string;
+}>;
+
 interface TypedCommandDefinition<
 	TTransaction,
 	TInput,
@@ -133,6 +138,7 @@ interface TypedCommandDefinition<
 		target: TargetReference;
 		input: TInput;
 		transaction: TTransaction;
+		invocation: CommandInvocation;
 	}): Promise<CommandHandlerResult<TResult, TFailureDetails>>;
 }
 
@@ -155,6 +161,7 @@ export interface DefinedCommand<TTransaction>
 		target: TargetReference;
 		input: JsonValue;
 		transaction: TTransaction;
+		invocation: CommandInvocation;
 	}): Promise<NormalizedCommandOutcome>;
 }
 
@@ -276,6 +283,7 @@ export function defineCommand<TTransaction>() {
 					target: args.target,
 					input: parsedInput.data,
 					transaction: args.transaction,
+					invocation: args.invocation,
 				});
 				if (outcome.ok) {
 					const parsedResult = definition.resultSchema.safeParse(
@@ -1155,6 +1163,10 @@ export function createCommandExecutor<TTransaction>(options: {
 					target: target.data,
 					input: parsedInput.data,
 					transaction,
+					invocation: {
+						executionId: admittedExecution.executionId,
+						idempotencyKey: admittedExecution.idempotencyKey,
+					},
 				});
 				if (outcome.ok) {
 					const redactedResult = redactInput(

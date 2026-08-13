@@ -301,6 +301,8 @@ export type CheckoutAddress = {
 
 export type CheckoutSession = {
 	id: string;
+	/** Monotonic compare-and-swap token for shopper mutations. */
+	revision?: number | undefined;
 	cartId?: string | undefined;
 	customerId?: string | undefined;
 	guestEmail?: string | undefined;
@@ -386,6 +388,7 @@ export type CheckoutController = ModuleController & {
 			paymentMethod?: string | undefined;
 			metadata?: Record<string, unknown> | undefined;
 		},
+		expectedRevision?: number | undefined,
 	): Promise<CheckoutSession | null>;
 
 	/** Apply a promo code and update discountAmount */
@@ -396,10 +399,14 @@ export type CheckoutController = ModuleController & {
 			discountAmount: number;
 			freeShipping: boolean;
 		},
+		expectedRevision?: number | undefined,
 	): Promise<CheckoutSession | null>;
 
 	/** Remove applied discount */
-	removeDiscount(id: string): Promise<CheckoutSession | null>;
+	removeDiscount(
+		id: string,
+		expectedRevision?: number | undefined,
+	): Promise<CheckoutSession | null>;
 
 	/** Apply a gift card and update giftCardAmount */
 	applyGiftCard(
@@ -408,19 +415,27 @@ export type CheckoutController = ModuleController & {
 			code: string;
 			giftCardAmount: number;
 		},
+		expectedRevision?: number | undefined,
 	): Promise<CheckoutSession | null>;
 
 	/** Remove applied gift card */
-	removeGiftCard(id: string): Promise<CheckoutSession | null>;
+	removeGiftCard(
+		id: string,
+		expectedRevision?: number | undefined,
+	): Promise<CheckoutSession | null>;
 
 	/** Apply store credit for the current customer and update storeCreditAmount */
 	applyStoreCredit(
 		id: string,
 		params: { storeCreditAmount: number },
+		expectedRevision?: number | undefined,
 	): Promise<CheckoutSession | null>;
 
 	/** Remove applied store credit */
-	removeStoreCredit(id: string): Promise<CheckoutSession | null>;
+	removeStoreCredit(
+		id: string,
+		expectedRevision?: number | undefined,
+	): Promise<CheckoutSession | null>;
 
 	/**
 	 * Validate the session has all required fields and transition to "processing".
@@ -441,7 +456,10 @@ export type CheckoutController = ModuleController & {
 	complete(id: string, orderId: string): Promise<CheckoutSession | null>;
 
 	/** Abandon a session */
-	abandon(id: string): Promise<CheckoutSession | null>;
+	abandon(
+		id: string,
+		expectedRevision?: number | undefined,
+	): Promise<CheckoutSession | null>;
 
 	/** Get line items stored for this session */
 	getLineItems(sessionId: string): Promise<CheckoutLineItem[]>;
