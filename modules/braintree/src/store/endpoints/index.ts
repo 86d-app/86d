@@ -1,11 +1,11 @@
-import { createBraintreeWebhook } from "./webhook";
+import { createContainedBraintreeWebhook } from "./webhook";
 
 export function createStoreEndpoints(opts: {
 	publicKey: string;
 	privateKey: string;
 }) {
 	return {
-		"/braintree/webhook": createBraintreeWebhook({
+		"/braintree/webhook": createContainedBraintreeWebhook({
 			publicKey: opts.publicKey,
 			privateKey: opts.privateKey,
 		}),

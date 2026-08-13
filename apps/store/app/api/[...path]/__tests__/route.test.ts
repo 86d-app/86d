@@ -25,6 +25,11 @@ const mockEnsureBooted = vi.hoisted(() => vi.fn());
 vi.mock("~/lib/api-registry", () => ({ ensureBooted: mockEnsureBooted }));
 const mockCreateRequestContext = vi.hoisted(() => vi.fn());
 
+const mockResolveStoreCommerceGate = vi.hoisted(() => vi.fn());
+vi.mock("~/lib/store-commerce-availability", () => ({
+	resolveStoreCommerceGate: mockResolveStoreCommerceGate,
+}));
+
 const mockCreateApiRouter = vi.hoisted(() => vi.fn());
 const mockGetModuleIdForPath = vi.hoisted(() => vi.fn());
 vi.mock("../../../../generated/api", () => ({
@@ -90,6 +95,11 @@ beforeEach(() => {
 		hasAccess: true,
 		role: "admin",
 	});
+	mockResolveStoreCommerceGate.mockResolvedValue({
+		managed: false,
+		available: true,
+		reason: "standalone",
+	});
 
 	// Default: registry boots successfully. Endpoint reachability comes from the
 	// declarations the registry resolved at boot, not from the request path.
@@ -116,6 +126,12 @@ beforeEach(() => {
 				surface: "admin",
 				path: "/admin/products",
 				exposure: "admin",
+			},
+			{
+				moduleId: "stripe",
+				surface: "store",
+				path: "/stripe/webhook",
+				exposure: "provider_webhook",
 			},
 		],
 	});
@@ -253,9 +269,7 @@ describe("GET|POST /api/[...path]", () => {
 				makeCtx(["checkout", "sessions"]),
 			);
 
-			expect(mockRateLimiterCheck).toHaveBeenCalledWith(
-				"sensitive:10.0.0.1",
-			);
+			expect(mockRateLimiterCheck).toHaveBeenCalledWith("sensitive:10.0.0.1");
 		});
 
 		it("returns 429 when public rate limit is exceeded", async () => {
@@ -421,6 +435,67 @@ describe("GET|POST /api/[...path]", () => {
 			const res = await POST(makeRequest("/products"), makeCtx(["products"]));
 
 			expect(res.status).toBe(200);
+		});
+	});
+
+	describe("Store-scoped commerce availability", () => {
+		it("blocks a shopper mutation before session or Module execution", async () => {
+			mockResolveStoreCommerceGate.mockResolvedValueOnce({
+				managed: true,
+				available: false,
+				reason: "entitlement_unavailable",
+			});
+
+			const response = await POST(
+				makeRequest("/products", "POST"),
+				makeCtx(["products"]),
+			);
+
+			expect(response.status).toBe(503);
+			expect(response.headers.get("Cache-Control")).toBe("no-store");
+			expect(response.headers.get("Retry-After")).toBe("30");
+			await expect(response.json()).resolves.toEqual({
+				error: {
+					code: "STORE_COMMERCE_UNAVAILABLE",
+					message: "This store is temporarily unavailable.",
+				},
+			});
+			expect(mockGetSession).not.toHaveBeenCalled();
+			expect(mockCreateApiRouter).not.toHaveBeenCalled();
+		});
+
+		it("keeps shopper reads available without consulting the mutation gate", async () => {
+			const response = await GET(
+				makeRequest("/products"),
+				makeCtx(["products"]),
+			);
+
+			expect(response.status).toBe(200);
+			expect(mockResolveStoreCommerceGate).not.toHaveBeenCalled();
+		});
+
+		it("keeps Store Admin recovery mutations available during suspension", async () => {
+			const response = await POST(
+				makeRequest("/admin/products", "POST"),
+				makeCtx(["admin", "products"]),
+			);
+
+			expect(response.status).toBe(200);
+			expect(mockResolveStoreCommerceGate).not.toHaveBeenCalled();
+		});
+
+		it("keeps provider webhooks independent of Store entitlement and browser sessions", async () => {
+			mockGetModuleIdForPath.mockReturnValue("stripe");
+
+			const response = await POST(
+				makeRequest("/stripe/webhook", "POST"),
+				makeCtx(["stripe", "webhook"]),
+			);
+
+			expect(response.status).toBe(200);
+			expect(mockResolveStoreCommerceGate).not.toHaveBeenCalled();
+			expect(mockGetSession).not.toHaveBeenCalled();
+			expect(mockCreateRequestContext).toHaveBeenCalledWith("stripe", null);
 		});
 	});
 

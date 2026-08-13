@@ -64,9 +64,9 @@ BraintreeOptions {
 - HMAC-SHA1 signature verification with timing-safe comparison
 - `bt_signature` format: `PUBLIC_KEY|HEX_HMAC_SHA1`
 - XML payload (base64 encoded)
-- Event kinds: `transaction_settled`, `transaction_disbursed`, `transaction_settlement_declined`
-- Refund detection: `<type>credit</type>` or `<refunded-transaction-id>` markers
-- Domain events: `payment.completed`, `payment.failed`, `payment.refunded`
+- The registered endpoint verifies every callback, then returns `503 PAYMENT_WEBHOOK_DURABILITY_REQUIRED` so Braintree retries; it does not mutate Payments or emit commerce events
+- Missing verification configuration fails with `503`; invalid or missing signatures return `401`
+- The legacy process-local XML event mapper remains in source for migration reference but is deliberately unregistered
 
 ## Patterns
 

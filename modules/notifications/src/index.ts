@@ -22,6 +22,15 @@ import { createNotificationsController } from "./service-impl";
 import { createStoreEndpoints } from "./store/endpoints";
 
 export type {
+	NotificationIntent,
+	NotificationIntentEnqueueResult,
+	NotificationIntentInput,
+} from "./intents";
+export {
+	createNotificationIntentStore,
+	notificationIntentInputSchema,
+} from "./intents";
+export type {
 	BatchSendResult,
 	DeliveryStatus,
 	Notification,
@@ -143,7 +152,7 @@ export default function notifications(options?: NotificationsOptions): Module {
 				"cart.recoveryAttempted",
 				async (event) => {
 					const p = event.payload;
-					if (!p || p.channel !== "email" || !emailProvider) return;
+					if (p?.channel !== "email" || !emailProvider) return;
 
 					const cartResult = await ctx.capabilities.invoke(
 						abandonedCartRecoveryResolveCapability,

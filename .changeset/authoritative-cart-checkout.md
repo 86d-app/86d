@@ -22,3 +22,14 @@ Tax exposes explicit v2 jurisdiction and quote decisions with deterministic
 integer allocation and effective-dated policy provenance.
 Product-feed generation is contained until it derives output from an immutable
 published Catalog revision instead of caller-supplied product data.
+Products now exposes an owner-local Catalog revision engine with
+immutable digests, reviewed publication, stale-base conflict detection,
+transition audit, replay receipts, and an atomic `catalog.published@1` fact.
+Authenticated Store Admin transport now creates, reviews, publishes, gets, and
+lists those revisions while deriving actor and Store authority from the session.
+Checkout now exports a dormant, owner-local Checkout Request foundation with
+row-locked idempotent creation, sanitized contact data, immutable Cart choices,
+bounded retention, invitation state, and no live-money or inventory authority.
+Its bounded Store transport resolves a caller-owned Cart and protects request
+reads with authenticated ownership or a request-scoped guest proof. Invitation
+transitions remain unavailable until durable delivery can prove the send.

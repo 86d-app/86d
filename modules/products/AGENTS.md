@@ -12,6 +12,7 @@ reviewed revision pipeline exists.
 src/
   index.ts          Factory: products(options?) => Module + admin nav
   schema.ts         Zod models: product, productVariant, category, collection, collectionProduct
+  catalog-revisions.ts  Immutable Catalog revision transition and publish interface
   controllers.ts    Raw module controllers (ctx pattern for endpoint system)
   service.ts        TypeScript interface (ProductController)
   service-impl.ts   Clean typed implementation (createProductController)
@@ -59,11 +60,24 @@ ProductsOptions {
 - Import resolves categories by name (case-insensitive), deduplicates slugs, updates existing products by SKU
 - Inventory decrement has NO floor — can go negative (documented behavior)
 - Product and Variant endpoints reject stock mutations with `INVENTORY_OPERATION_REQUIRED`.
+- Catalog revision content contains Product, Variant, accepted Category, currency,
+  and integer-minor-unit facts only; it contains no Inventory or Collection truth.
+- `applyCatalogRevisionOperation` requires a caller-owned locking transaction.
+  Draft content is immutable, transition retries use durable operation receipts,
+  and publish rejects a stale base before atomically advancing the Catalog head.
+- Authenticated Store Admin revision endpoints are thin transport adapters. They
+  derive actor, authority, permissions, and Store target from the session and
+  fail closed without the owner transaction/outbox seam.
+- Successful publish emits `catalog.published@1` from the same transaction as the
+  revision, supersession, audit, and operation receipt.
 - Related products scored: same category (+10), shared tags (+1 each)
 
 ## Gotchas
 
 - `exactOptionalPropertyTypes` is on — use `undefined` carefully for optional fields
 - Direct import returns `PRODUCT_IMPORT_REVIEW_REQUIRED` before mutation.
+- Catalog revision create/review/publish/read transport is active for Store
+  Admin. Existing Product CRUD, import, search indexing, and product feeds are
+  not revision-backed yet.
 - Category tree only includes visible categories
 - Search is case-insensitive across name, description, and tags

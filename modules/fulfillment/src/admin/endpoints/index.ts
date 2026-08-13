@@ -1,10 +1,12 @@
-import { addTracking } from "./add-tracking";
-import { cancelFulfillment } from "./cancel-fulfillment";
+import {
+	addTrackingUnavailable as addTracking,
+	cancelFulfillmentUnavailable as cancelFulfillment,
+	updateStatusUnavailable as updateStatus,
+} from "./activation-unavailable";
 import { createFulfillment } from "./create-fulfillment";
 import { getFulfillment } from "./get-fulfillment";
 import { listByOrder } from "./list-by-order";
 import { listFulfillments } from "./list-fulfillments";
-import { updateStatus } from "./update-status";
 
 export const adminEndpoints = {
 	"/admin/fulfillment": listFulfillments,

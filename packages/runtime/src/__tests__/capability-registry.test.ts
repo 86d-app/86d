@@ -1,7 +1,7 @@
 import type {
 	Module,
-	ModuleDataTransaction,
 	ModuleDataService,
+	ModuleDataTransaction,
 	ModuleTransactionRunner,
 } from "@86d-app/core";
 import {
@@ -528,9 +528,7 @@ describe("ModuleRegistry capability invocation", () => {
 		}));
 		const adapters = config();
 		adapters.createTransactionRunner = vi.fn(({ moduleId }) =>
-			moduleId === "inventory"
-				? inventoryTransactions
-				: checkoutTransactions,
+			moduleId === "inventory" ? inventoryTransactions : checkoutTransactions,
 		);
 		const registry = new ModuleRegistry(
 			[

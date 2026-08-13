@@ -230,7 +230,7 @@ export function createCartControllers(data: ModuleDataService): CartController {
 
 			// Guest cart ID matches the guestId (same key scheme as getOrCreateCart)
 			const guestCart = (await data.get("cart", guestId)) as Cart | null;
-			if (!guestCart || guestCart.status !== "active") {
+			if (guestCart?.status !== "active") {
 				return { merged: 0, customerCartId: customerId };
 			}
 

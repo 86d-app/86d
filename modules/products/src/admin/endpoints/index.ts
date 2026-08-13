@@ -1,4 +1,11 @@
 import { bulkAction } from "./bulk-action";
+import {
+	createCatalogRevisionDraft,
+	getCatalogRevision,
+	listCatalogRevisions,
+	publishCatalogRevision,
+	reviewCatalogRevision,
+} from "./catalog-revisions";
 import { createCategory } from "./create-category";
 import { createProduct } from "./create-product";
 import { createVariant } from "./create-variant";
@@ -15,6 +22,11 @@ import { updateProduct } from "./update-product";
 import { updateVariant } from "./update-variant";
 
 export const adminEndpoints = {
+	"/admin/catalog/revisions/list": listCatalogRevisions,
+	"/admin/catalog/revisions/create": createCatalogRevisionDraft,
+	"/admin/catalog/revisions/:id": getCatalogRevision,
+	"/admin/catalog/revisions/:id/review": reviewCatalogRevision,
+	"/admin/catalog/revisions/:id/publish": publishCatalogRevision,
 	"/admin/products/list": adminListProducts,
 	"/admin/products/create": createProduct,
 	"/admin/products/:id": adminGetProduct,

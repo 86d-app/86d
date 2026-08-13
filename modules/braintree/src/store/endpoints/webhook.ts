@@ -273,7 +273,6 @@ export function createBraintreeWebhook(opts: BraintreeWebhookOptions) {
 					{ status: 401 },
 				);
 			}
-
 			const kind = extractKind(btPayload);
 			if (!kind) {
 				return Response.json(
@@ -345,6 +344,59 @@ export function createBraintreeWebhook(opts: BraintreeWebhookOptions) {
 
 				return Response.json({ received: true, kind });
 			});
+		},
+	);
+}
+
+/**
+ * Registered containment endpoint. It authenticates Braintree's form payload
+ * but does not apply a provider outcome without durable receipt persistence.
+ */
+export function createContainedBraintreeWebhook(opts: BraintreeWebhookOptions) {
+	return createStoreEndpoint(
+		"/braintree/webhook",
+		{
+			exposure: "provider_webhook",
+			method: "POST",
+			requireRequest: true,
+		},
+		async (ctx) => {
+			const publicKey = opts.publicKey?.trim();
+			const privateKey = opts.privateKey?.trim();
+			if (!publicKey || !privateKey) {
+				return Response.json(
+					{ error: "Braintree webhook verification is not configured." },
+					{ status: 503 },
+				);
+			}
+
+			const params = new URLSearchParams(await ctx.request.text());
+			const signature = params.get("bt_signature");
+			const payload = params.get("bt_payload");
+			if (
+				!signature ||
+				!payload ||
+				!(await verifyBraintreeSignature(
+					signature,
+					payload,
+					publicKey,
+					privateKey,
+				))
+			) {
+				return Response.json(
+					{ error: "Invalid or missing webhook signature." },
+					{ status: 401 },
+				);
+			}
+
+			return Response.json(
+				{
+					code: "PAYMENT_WEBHOOK_DURABILITY_REQUIRED",
+					error:
+						"Braintree webhook processing requires a durable provider receipt.",
+				},
+				{ status: 503, headers: { "Retry-After": "60" } },
+			);
 		},
 	);
 }

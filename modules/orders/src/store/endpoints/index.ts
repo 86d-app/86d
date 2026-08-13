@@ -1,13 +1,15 @@
-import { cancelMyOrder } from "./cancel-order";
 import { confirmOrder } from "./confirm-order";
 import { createMyReturn } from "./create-return";
-import { getMyOrderFulfillments } from "./get-fulfillments";
-import { getMyInvoice } from "./get-invoice";
-import { getMyOrder } from "./get-order";
-import { getMyOrderReturns } from "./get-returns";
-import { listMyReturns } from "./list-my-returns";
-import { listMyOrders } from "./list-orders";
-import { reorder } from "./reorder";
+import {
+	cancelMyOrderUnavailable as cancelMyOrder,
+	getMyInvoiceUnavailable as getMyInvoice,
+	getMyOrderUnavailable as getMyOrder,
+	getMyOrderFulfillmentsUnavailable as getMyOrderFulfillments,
+	getMyOrderReturnsUnavailable as getMyOrderReturns,
+	listMyOrdersUnavailable as listMyOrders,
+	listMyReturnsUnavailable as listMyReturns,
+	reorderUnavailable as reorder,
+} from "./customer-continuity-unavailable";
 import { storeSearch } from "./store-search";
 import { trackOrder } from "./track-order";
 

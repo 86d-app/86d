@@ -311,4 +311,202 @@ describe("fetchFromApi", () => {
 			fetchFromApi("abc-123", "https://api.86d.app"),
 		).rejects.toThrow("Invalid store config from 86d API");
 	});
+
+	it("accepts a coherent Store-scoped entitlement projection", async () => {
+		globalThis.fetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: () =>
+				Promise.resolve({
+					...createValidApiResponse(),
+					theme: "brisa",
+					favicon: "/assets/favicon.svg",
+					variables: undefined,
+					contractVersion: 2,
+					entitlement: {
+						version: 1,
+						catalogVersion: 1,
+						plan: "launch",
+						lifecycle: "active",
+						currentPeriodEndsAt: "2026-09-13T12:00:00.000Z",
+					},
+					commerceAvailability: {
+						version: 1,
+						available: true,
+						reason: "entitlement_active",
+						evaluatedAt: "2026-08-13T12:00:00.000Z",
+						recheckAt: "2026-08-13T12:05:00.000Z",
+					},
+				}),
+		});
+
+		await expect(
+			fetchFromApi("abc-123", "https://api.86d.app"),
+		).resolves.toMatchObject({
+			contractVersion: 2,
+			entitlement: { lifecycle: "active", plan: "launch" },
+			commerceAvailability: {
+				available: true,
+				reason: "entitlement_active",
+			},
+		});
+	});
+
+	it.each([
+		{
+			label: "a suspended entitlement reported as available",
+			entitlement: {
+				version: 1,
+				catalogVersion: 1,
+				plan: "launch",
+				lifecycle: "suspended",
+				suspendAt: "2026-08-13T12:00:00.000Z",
+			},
+			commerceAvailability: {
+				version: 1,
+				available: true,
+				reason: "entitlement_active",
+				evaluatedAt: "2026-08-13T12:00:00.000Z",
+				recheckAt: "2026-08-13T12:05:00.000Z",
+			},
+		},
+		{
+			label: "a missing entitlement reported as available",
+			entitlement: null,
+			commerceAvailability: {
+				version: 1,
+				available: true,
+				reason: "entitlement_trialing",
+				evaluatedAt: "2026-08-13T12:00:00.000Z",
+				recheckAt: "2026-08-13T12:05:00.000Z",
+			},
+		},
+	])("rejects $label", async ({ entitlement, commerceAvailability }) => {
+		globalThis.fetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: () =>
+				Promise.resolve({
+					...createValidApiResponse(),
+					theme: "brisa",
+					favicon: "/assets/favicon.svg",
+					variables: undefined,
+					contractVersion: 2,
+					entitlement,
+					commerceAvailability,
+				}),
+		});
+
+		await expect(
+			fetchFromApi("abc-123", "https://api.86d.app"),
+		).rejects.toThrow("Invalid store config from 86d API");
+	});
+
+	it.each([
+		{
+			label: "does not advance beyond evaluation time",
+			recheckAt: "2026-08-13T12:00:00.000Z",
+			currentPeriodEndsAt: "2026-09-13T12:00:00.000Z",
+		},
+		{
+			label: "extends beyond the Store entitlement deadline",
+			recheckAt: "2026-09-13T12:00:01.000Z",
+			currentPeriodEndsAt: "2026-09-13T12:00:00.000Z",
+		},
+	])("rejects an availability recheck that $label", async ({
+		recheckAt,
+		currentPeriodEndsAt,
+	}) => {
+		globalThis.fetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: () =>
+				Promise.resolve({
+					...createValidApiResponse(),
+					theme: "brisa",
+					favicon: "/assets/favicon.svg",
+					variables: undefined,
+					contractVersion: 2,
+					entitlement: {
+						version: 1,
+						catalogVersion: 1,
+						plan: "launch",
+						lifecycle: "active",
+						currentPeriodEndsAt,
+					},
+					commerceAvailability: {
+						version: 1,
+						available: true,
+						reason: "entitlement_active",
+						evaluatedAt: "2026-08-13T12:00:00.000Z",
+						recheckAt,
+					},
+				}),
+		});
+
+		await expect(
+			fetchFromApi("abc-123", "https://api.86d.app"),
+		).rejects.toThrow("Invalid store config from 86d API");
+	});
+
+	it("bounds an active commerce cache to an earlier scheduled suspension", async () => {
+		globalThis.fetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: () =>
+				Promise.resolve({
+					...createValidApiResponse(),
+					theme: "brisa",
+					favicon: "/assets/favicon.svg",
+					variables: undefined,
+					contractVersion: 2,
+					entitlement: {
+						version: 1,
+						catalogVersion: 1,
+						plan: "launch",
+						lifecycle: "active",
+						currentPeriodEndsAt: "2026-09-13T12:00:00.000Z",
+						suspendAt: "2026-08-14T12:00:00.000Z",
+					},
+					commerceAvailability: {
+						version: 1,
+						available: true,
+						reason: "entitlement_active",
+						evaluatedAt: "2026-08-13T12:00:00.000Z",
+						recheckAt: "2026-08-14T12:00:01.000Z",
+					},
+				}),
+		});
+
+		await expect(
+			fetchFromApi("abc-123", "https://api.86d.app"),
+		).rejects.toThrow("Invalid store config from 86d API");
+	});
+
+	it("rejects a trial entitlement without its exact deadline", async () => {
+		globalThis.fetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: () =>
+				Promise.resolve({
+					...createValidApiResponse(),
+					theme: "brisa",
+					favicon: "/assets/favicon.svg",
+					variables: undefined,
+					contractVersion: 2,
+					entitlement: {
+						version: 1,
+						catalogVersion: 1,
+						plan: "launch",
+						lifecycle: "trialing",
+					},
+					commerceAvailability: {
+						version: 1,
+						available: true,
+						reason: "entitlement_trialing",
+						evaluatedAt: "2026-08-13T12:00:00.000Z",
+						recheckAt: "2026-08-13T12:05:00.000Z",
+					},
+				}),
+		});
+
+		await expect(
+			fetchFromApi("abc-123", "https://api.86d.app"),
+		).rejects.toThrow("Invalid store config from 86d API");
+	});
 });

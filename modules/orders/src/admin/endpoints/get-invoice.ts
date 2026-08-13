@@ -1,19 +1,33 @@
-import { createAdminEndpoint, z } from "@86d-app/core";
-import type { OrderController } from "../../service";
+import {
+	createAdminEndpoint,
+	storePresentationResolveCapability,
+	z,
+} from "@86d-app/core";
+import { createOrderController } from "../../service-impl";
 
 export const adminGetInvoice = createAdminEndpoint(
 	"/admin/orders/:id/invoice",
 	{
 		method: "GET",
 		params: z.object({ id: z.string() }),
-		query: z.object({ storeName: z.string().optional() }).optional(),
 	},
 	async (ctx) => {
-		const controller = ctx.context.controllers.order as OrderController;
-		const storeName =
-			(ctx.query as { storeName?: string } | undefined)?.storeName ??
-			"86d Store";
-		const invoice = await controller.getInvoiceData(ctx.params.id, storeName);
+		const controller = createOrderController(ctx.context.data);
+		const presentation = await ctx.context.capabilities.invoke(
+			storePresentationResolveCapability,
+			{},
+		);
+		if (!presentation.ok) {
+			return {
+				code: "STORE_PRESENTATION_UNAVAILABLE",
+				error: "Authoritative Store presentation settings are unavailable.",
+				status: 503,
+			};
+		}
+		const invoice = await controller.getInvoiceData(
+			ctx.params.id,
+			presentation.decision.storeName,
+		);
 		if (!invoice) {
 			return { error: "Order not found", status: 404 };
 		}

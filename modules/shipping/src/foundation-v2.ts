@@ -1245,6 +1245,7 @@ export function createShippingFoundationController(
 						existing.fulfillmentId !== parsed.fulfillmentId ||
 						existing.quoteId !== parsed.quoteId ||
 						existing.optionId !== parsed.optionId ||
+						existing.parcelReference !== parsed.parcelReference ||
 						existing.connectionId !== quote.connectionId ||
 						existing.providerShipmentReference !==
 							quote.providerQuoteReference ||
@@ -1305,11 +1306,22 @@ export function createShippingFoundationController(
 				const existing = existingRow
 					? shippingTrackingSchema.parse(existingRow)
 					: null;
-				if (existing && existing.connectionId !== label.connectionId) {
+				if (
+					existing &&
+					(existing.connectionId !== label.connectionId ||
+						existing.trackingCode !== parsed.trackingCode)
+				) {
 					throw new ShippingFoundationError(
 						"original_connection_mismatch",
 						"Tracking must retain the label's original Shipping Connection.",
 					);
+				}
+				if (
+					existing &&
+					existing.providerOccurredAt.getTime() >=
+						parsed.providerOccurredAt.getTime()
+				) {
+					return existing;
 				}
 				const now = new Date();
 				const tracking = shippingTrackingSchema.parse({
@@ -1354,23 +1366,33 @@ export function createShippingFoundationController(
 				if (
 					existing &&
 					(existing.connectionId !== label.connectionId ||
-						existing.providerRefundReference !== parsed.providerRefundReference)
+						(existing.providerRefundReference !== undefined &&
+							parsed.providerRefundReference !== undefined &&
+							existing.providerRefundReference !==
+								parsed.providerRefundReference))
 				) {
 					throw new ShippingFoundationError(
 						"idempotency_conflict",
 						"Label refund key is already bound to a different provider result.",
 					);
 				}
+				if (existing?.status === "succeeded") return existing;
 				const now = new Date();
+				const providerRefundReference =
+					parsed.providerRefundReference ?? existing?.providerRefundReference;
+				if (parsed.status === "succeeded" && !providerRefundReference) {
+					throw new ShippingFoundationError(
+						"idempotency_conflict",
+						"A succeeded label refund requires a provider reference.",
+					);
+				}
 				const refund = shippingLabelRefundSchema.parse({
 					id: refundId,
 					fulfillmentId: label.fulfillmentId,
 					labelId: label.id,
 					connectionId: label.connectionId,
 					idempotencyKey: parsed.idempotencyKey,
-					...(parsed.providerRefundReference
-						? { providerRefundReference: parsed.providerRefundReference }
-						: {}),
+					...(providerRefundReference ? { providerRefundReference } : {}),
 					status: parsed.status,
 					createdAt: existing?.createdAt ?? now,
 					updatedAt: now,

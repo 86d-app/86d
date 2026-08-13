@@ -7,6 +7,7 @@ In-app and email notification system with templates, batch send, priority levels
 ```
 src/
   index.ts          Factory: notifications(options?) => Module
+  intents.ts        Persistence-only durable intent/idempotency foundation
   schema.ts         Zod models: notification, template, preference
   service.ts        NotificationsController interface + types
   service-impl.ts   NotificationsController implementation
@@ -21,6 +22,7 @@ src/
       notification-template-list.mdx       Admin template
     endpoints/
       index.ts                   Endpoint map
+      delivery-containment.ts    Shared external-delivery 503 response
       list-notifications.ts      GET  /admin/notifications
       create-notification.ts     POST /admin/notifications/create
       get-notification.ts        GET  /admin/notifications/:id
@@ -60,6 +62,8 @@ src/
       unread-count.ts            GET  /notifications/unread-count
       get-preferences.ts         GET  /notifications/preferences
       update-preferences.ts      POST /notifications/preferences/update
+      resend-webhook.ts          POST /notifications/webhook/resend
+      twilio-webhook.ts          POST /notifications/webhook/twilio
 ```
 
 ## Options
@@ -75,6 +79,11 @@ NotificationsOptions {
 - **notification**: id, customerId, type, channel, priority (low|normal|high|urgent), title, body, actionUrl?, metadata, read, readAt?, createdAt
 - **template**: id, slug, name, type, channel, priority, titleTemplate, bodyTemplate, actionUrlTemplate?, variables (string[]), active, createdAt, updatedAt
 - **preference**: id, customerId, orderUpdates, promotions, shippingAlerts, accountAlerts, updatedAt
+- **notificationIntent**: deterministic idempotency identity, durable source-event reference, template key, one shopper recipient, delivery mode, immutable request fingerprint, Connection reference, bounded payload, state, attempt count, provider acceptance reference, and accepted recipient units
+
+`notificationIntentLock` serializes creation for one deterministic intent ID. The
+intent store rejects reuse of an idempotency key for a different request and
+does not dispatch delivery.
 
 ## Events
 
@@ -86,13 +95,23 @@ The module emits these events via `ScopedEventEmitter`:
 
 Events are fire-and-forget (`void events.emit(...)`) — failures do not break operations.
 
+Checkout, Order, Payment, Shipment, and Return events are deliberately not
+consumed through this in-memory bus. Their future consumer must receive durable
+outbox facts and create a `notificationIntent` before any local-provider or
+managed-gateway attempt.
+
 ## Key patterns
 
 - Controller accepts `events?: ScopedEventEmitter` and `options?: { maxPerCustomer?: number }` parameters
+- Literal Resend/Twilio options remain available to standalone and BYO Stores. Managed provisioning does not supply an upstream provider key.
+- The additive notification-intent store is persistence-only. Gateway routing, workload scope, Connection/entitlement enforcement, delivery retries, provider acceptance reconciliation, and metering are not activated yet.
+- Registered Admin create and batch routes only create `in_app` notifications. Email and `both` requests fail with `NOTIFICATION_DELIVERY_DURABILITY_REQUIRED` before persistence or provider delivery.
+- Registered template sends validate a stored template snapshot and only execute `in_app` templates. External templates fail closed before creating notifications.
+- Resend and Twilio callbacks fail closed without verification configuration, reject missing or invalid signatures, and return a retryable durability-required response after valid verification. They do not mutate the delivery projection until durable provider receipts exist.
 - `maxPerCustomer` enforcement happens after every `create()` — oldest notifications are auto-deleted when limit exceeded
 - Templates use `{{variable}}` interpolation — unknown variables are left as-is
-- `sendFromTemplate` takes templateId + customerIds + variables → creates one notification per customer
-- `batchSend` sends identical notifications to up to 500 customers at once
+- The registered `sendFromTemplate` route creates one in-app notification per customer from a validated active in-app template
+- The registered `batchSend` route creates identical in-app notifications for up to 500 customers
 - Preferences are lazy-created: defaults returned without persisting until first update
 - Admin can manage customer preferences (view, update, reset/delete)
 - Stats include both `byType` and `byPriority` breakdowns

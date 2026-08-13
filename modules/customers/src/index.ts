@@ -1,10 +1,28 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
 import { adminEndpoints } from "./admin/endpoints";
-import { customerContactResolveProvider } from "./capabilities";
+import {
+	customerContactResolveProvider,
+	customerIdentityResolveProvider,
+} from "./capabilities";
 import { customersSchema } from "./schema";
 import { createCustomerController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints";
 
+export { customerIdentityResolveCapability } from "./capabilities";
+export type {
+	StoreCustomer,
+	StoreCustomerAuditBinding,
+	StoreCustomerAuthBinding,
+	StoreCustomerIdentityInput,
+	StoreCustomerIdentityService,
+	StoreCustomerResolutionResult,
+} from "./identity-binding";
+export {
+	createStoreCustomerIdentityService,
+	storeCustomerAuditBindingSchema,
+	storeCustomerAuthBindingSchema,
+	storeCustomerIdentityInputSchema,
+} from "./identity-binding";
 // Export types for other modules to use via inter-module contracts
 export type {
 	Customer,
@@ -39,7 +57,12 @@ export default function customers(options?: CustomersOptions): Module {
 		id: "customers",
 		version: "0.0.1",
 		schema: customersSchema,
-		capabilities: { provides: [customerContactResolveProvider] },
+		capabilities: {
+			provides: [
+				customerContactResolveProvider,
+				customerIdentityResolveProvider,
+			],
+		},
 		exports: {
 			read: [
 				"customerEmail",

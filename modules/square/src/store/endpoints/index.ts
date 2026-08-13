@@ -1,11 +1,11 @@
-import { createSquareWebhook } from "./webhook";
+import { createContainedSquareWebhook } from "./webhook";
 
 export function createStoreEndpoints(opts?: {
 	webhookSignatureKey?: string;
 	webhookNotificationUrl?: string;
 }) {
 	return {
-		"/square/webhook": createSquareWebhook({
+		"/square/webhook": createContainedSquareWebhook({
 			webhookSignatureKey: opts?.webhookSignatureKey,
 			notificationUrl: opts?.webhookNotificationUrl ?? "",
 		}),

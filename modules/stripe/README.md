@@ -105,11 +105,13 @@ The webhook endpoint:
 
 1. Reads the raw request body before parsing (required for HMAC verification)
 2. Verifies the `Stripe-Signature` header using HMAC-SHA256 with timestamp replay protection (5-minute tolerance)
-3. Returns `{ received: true, type: "..." }` on success
+3. Returns `503 PAYMENT_WEBHOOK_DURABILITY_REQUIRED` after successful verification so Stripe retries; no Payment state or commerce event is changed
 
 **Without `webhookSecret`:** The webhook endpoint returns `503` and performs no payment or event effects.
 
 **With `webhookSecret`:** Invalid or expired signatures return `401`.
+
+The previous process-local event handler remains unregistered until provider receipts and Payment outcome application are durable and idempotent.
 
 ### Webhook Verification
 

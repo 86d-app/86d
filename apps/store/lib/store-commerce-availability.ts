@@ -35,7 +35,7 @@ export function isManagedStoreRuntime(
 		environment["86D_STORE_ID"],
 		environment["86D_WORKLOAD_CREDENTIAL"],
 		environment["86D_API_KEY"],
-	].some((value) => typeof value === "string" && value.length > 0);
+	].some((value) => typeof value === "string" && value.trim().length > 0);
 }
 
 function deadlineIsCurrent(deadline: string | undefined, now: Date): boolean {
@@ -57,7 +57,7 @@ export function evaluateManagedCommerceConfig(
 			};
 		}
 		const recheckAt = config.commerceAvailability.recheckAt;
-		if (recheckAt && !deadlineIsCurrent(recheckAt, now)) {
+		if (!deadlineIsCurrent(recheckAt, now)) {
 			return {
 				managed: true,
 				available: false,
@@ -74,7 +74,11 @@ export function evaluateManagedCommerceConfig(
 	const billing = config.billing;
 	const activeStatus =
 		billing?.status === "active" || billing?.status === "trialing";
-	if (billing?.isActive === true && activeStatus) {
+	if (
+		billing?.isActive === true &&
+		activeStatus &&
+		deadlineIsCurrent(billing.periodEnd, now)
+	) {
 		return {
 			managed: true,
 			available: true,

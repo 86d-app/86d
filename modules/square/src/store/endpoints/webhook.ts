@@ -227,7 +227,6 @@ export function createSquareWebhook(opts: SquareWebhookOptions) {
 					{ status: 401 },
 				);
 			}
-
 			let event: Record<string, unknown>;
 			try {
 				event = JSON.parse(rawBody) as Record<string, unknown>;
@@ -308,6 +307,56 @@ export function createSquareWebhook(opts: SquareWebhookOptions) {
 
 					return Response.json({ received: true, type: eventType });
 				},
+			);
+		},
+	);
+}
+
+/**
+ * Registered containment endpoint. A valid signature proves provenance only;
+ * Square outcomes remain retryable until Payments owns a durable receipt.
+ */
+export function createContainedSquareWebhook(opts: SquareWebhookOptions) {
+	return createStoreEndpoint(
+		"/square/webhook",
+		{
+			exposure: "provider_webhook",
+			method: "POST",
+			requireRequest: true,
+		},
+		async (ctx) => {
+			const webhookSignatureKey = opts.webhookSignatureKey?.trim();
+			const notificationUrl = opts.notificationUrl?.trim();
+			if (!webhookSignatureKey || !notificationUrl) {
+				return Response.json(
+					{ error: "Square webhook verification is not configured." },
+					{ status: 503 },
+				);
+			}
+
+			const rawBody = await ctx.request.text();
+			const signature =
+				ctx.request.headers.get("x-square-hmacsha256-signature") ?? "";
+			const valid = await verifySquareSignature(
+				rawBody,
+				signature,
+				webhookSignatureKey,
+				notificationUrl,
+			);
+			if (!valid) {
+				return Response.json(
+					{ error: "Invalid webhook signature." },
+					{ status: 401 },
+				);
+			}
+
+			return Response.json(
+				{
+					code: "PAYMENT_WEBHOOK_DURABILITY_REQUIRED",
+					error:
+						"Square webhook processing requires a durable provider receipt.",
+				},
+				{ status: 503, headers: { "Retry-After": "60" } },
 			);
 		},
 	);

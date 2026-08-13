@@ -1,8 +1,4 @@
-import {
-	createAdminEndpoint,
-	sanitizeText,
-	z,
-} from "@86d-app/core";
+import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
 import type { Product, ProductVariant } from "../../controllers";
 
 export const createVariant = createAdminEndpoint(

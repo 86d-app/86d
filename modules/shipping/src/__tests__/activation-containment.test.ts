@@ -8,7 +8,7 @@ afterEach(() => {
 });
 
 describe("shipping activation containment", () => {
-	it("does not expose label purchase to shopper-facing routes", () => {
+	it("does not expose provider quote or label purchase to shopper-facing routes", () => {
 		const routes =
 			shipping({
 				easypostApiKey: "EZTK_test",
@@ -16,7 +16,9 @@ describe("shipping activation containment", () => {
 			}).endpoints?.store ?? {};
 
 		expect(routes).not.toHaveProperty("/shipping/purchase-label");
-		expect(routes).toHaveProperty("/shipping/live-rates");
+		expect(routes).not.toHaveProperty("/shipping/live-rates");
+		expect(routes).toHaveProperty("/shipping/calculate");
+		expect(routes).toHaveProperty("/shipping/track/:id");
 	});
 
 	it("fails closed before provider or database effects when label purchase is retried", async () => {

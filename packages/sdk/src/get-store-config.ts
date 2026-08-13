@@ -61,14 +61,10 @@ function workloadClient(config: ManagedWorkloadConfig): WorkloadTokenClient {
 export async function getStoreConfig(
 	options?: GetStoreConfigOptions,
 ): Promise<Config | RemoteStoreConfig> {
-	const storeId =
-		options?.storeId ?? (process.env.STORE_ID as string | undefined);
+	const storeId = options?.storeId ?? process.env.STORE_ID;
 	const apiBaseUrl =
-		options?.apiBaseUrl ??
-		(process.env["86D_API_URL"] as string | undefined) ??
-		DEFAULT_API_BASE_URL;
-	const apiKey =
-		options?.apiKey ?? (process.env["86D_API_KEY"] as string | undefined);
+		options?.apiBaseUrl ?? process.env["86D_API_URL"] ?? DEFAULT_API_BASE_URL;
+	const apiKey = options?.apiKey ?? process.env["86D_API_KEY"];
 	const templatePath = options?.templatePath;
 	const fallbackToTemplate = options?.fallbackToTemplateOnError ?? false;
 	const managedWorkload = readManagedWorkloadConfig();

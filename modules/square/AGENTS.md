@@ -65,11 +65,11 @@ SquareOptions {
 
 ## Webhook
 
-- HMAC-SHA256 signature verification (when key + URL provided)
+- HMAC-SHA256 signature verification requires both the configured key and exact notification URL
 - Timing-safe comparison prevents timing attacks
-- Event map: `payment.completed`, `payment.failed`, `payment.canceled`
-- Refund events: `refund.completed`, `refund.updated`
-- Domain events: `payment.completed`, `payment.failed`, `payment.refunded`
+- The registered endpoint verifies every callback, then returns `503 PAYMENT_WEBHOOK_DURABILITY_REQUIRED` so Square retries; it does not mutate Payments or emit commerce events
+- Missing verification configuration fails with `503`; invalid or missing signatures return `401`
+- The legacy process-local event mapper remains in source for migration reference but is deliberately unregistered
 
 ## Patterns
 

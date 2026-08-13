@@ -1,6 +1,6 @@
 # Shipping Module
 
-Shipping zone/rate management, shipping methods with delivery estimates, carrier definitions with tracking URLs, and shipment lifecycle tracking. Standalone — no dependencies on other modules.
+Shipping zone/rate configuration plus a dormant v2 foundation for Connection-bound, fulfillment-linked quotes, labels, tracking, refunds, and adjustments. Shopper quote/tracking and legacy shipment mutation routes are contained until that foundation is durably activated.
 
 ## Structure
 
@@ -94,3 +94,7 @@ Types: `ShippingZone`, `ShippingRate`, `CalculatedRate`, `ShippingMethod`, `Ship
 - Carrier `code` always normalized to lowercase on create/update
 - `countries` stored as JSON array in the data service
 - `exactOptionalPropertyTypes` compatible: all optional params use `T | undefined`
+- The registered EasyPost webhook preserves strict v2 HMAC/path/timestamp verification, then returns `503 SHIPPING_WEBHOOK_DURABILITY_REQUIRED` so EasyPost retries. It does not update a Shipment from process-local state.
+- The legacy tracking-number lookup handler remains in source for migration reference but is deliberately unregistered until durable receipts, ordering, Connection identity, and `fulfillmentId` linkage exist.
+- Registered shopper calculation and tracking routes return explicit v2-required errors; browser order amount, origin, packing, or an ID alone is not Shipping authority.
+- Registered shipment create/update/status/delete routes return `SHIPPING_FULFILLMENT_WORKFLOW_REQUIRED`. Legacy controller methods remain compatibility-only.

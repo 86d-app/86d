@@ -349,4 +349,89 @@ export const productsSchema = {
 			},
 		},
 	},
+	/** Immutable Product, Variant, and accepted Category publication snapshot. */
+	catalogRevision: {
+		fields: {
+			id: { type: "string", required: true },
+			sequence: { type: "number", required: true, unique: true },
+			state: {
+				type: ["draft", "reviewed", "published", "superseded", "failed"],
+				required: true,
+				index: true,
+			},
+			baseRevisionId: { type: "string", required: false, index: true },
+			contentVersion: { type: "number", required: true },
+			contentDigest: { type: "string", required: true, index: true },
+			content: { type: "json", required: true },
+			createdAt: { type: "date", required: true },
+			createdBy: { type: "json", required: true },
+			createdAuthorityId: { type: "string", required: true },
+			reviewedAt: { type: "date", required: false },
+			reviewedBy: { type: "json", required: false },
+			reviewedAuthorityId: { type: "string", required: false },
+			publishedAt: { type: "date", required: false },
+			publishedBy: { type: "json", required: false },
+			publishedAuthorityId: { type: "string", required: false },
+			supersededAt: { type: "date", required: false },
+			supersededByRevisionId: {
+				type: "string",
+				required: false,
+				index: true,
+			},
+			failedAt: { type: "date", required: false },
+			failedBy: { type: "json", required: false },
+			failedAuthorityId: { type: "string", required: false },
+			failedFromState: { type: ["draft", "reviewed"], required: false },
+			failureReason: { type: "string", required: false },
+		},
+	},
+	/** One protected pointer serializes draft numbering and publication CAS. */
+	catalogRevisionHead: {
+		fields: {
+			id: { type: "string", required: true },
+			nextSequence: { type: "number", required: true },
+			publishedRevisionId: { type: "string", required: false },
+			publishedContentDigest: { type: "string", required: false },
+			updatedAt: { type: "date", required: true },
+		},
+	},
+	/** Stable row acquired with FOR UPDATE before any Catalog transition. */
+	catalogRevisionLock: {
+		fields: {
+			id: { type: "string", required: true },
+		},
+	},
+	/** Append-only transition explanation keyed by operation identity. */
+	catalogRevisionAudit: {
+		fields: {
+			id: { type: "string", required: true },
+			revisionId: { type: "string", required: true, index: true },
+			fromState: {
+				type: ["draft", "reviewed", "published", "superseded", "failed"],
+				required: false,
+			},
+			toState: {
+				type: ["draft", "reviewed", "published", "superseded", "failed"],
+				required: true,
+			},
+			actor: { type: "json", required: true },
+			authorityId: { type: "string", required: true },
+			commandExecutionId: { type: "string", required: false, index: true },
+			occurredAt: { type: "date", required: true },
+		},
+	},
+	/** Successful transition receipt prevents duplicate effects on Command retry. */
+	catalogRevisionOperation: {
+		fields: {
+			id: { type: "string", required: true },
+			action: {
+				type: ["create_draft", "review", "publish", "fail"],
+				required: true,
+			},
+			revisionId: { type: "string", required: true, index: true },
+			requestDigest: { type: "string", required: true },
+			decision: { type: "json", required: true },
+			createdAt: { type: "date", required: true },
+		},
+	},
 } satisfies ModuleSchema;

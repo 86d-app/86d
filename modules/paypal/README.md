@@ -82,11 +82,7 @@ No manual token management required.
 
 ## Webhook
 
-The `paypal()` module registers a webhook endpoint at `POST /paypal/webhook`. PayPal uses the `event_type` field in its webhook payloads.
-
-```ts
-// Response: { received: true, type: "PAYMENT.CAPTURE.COMPLETED" }
-```
+The `paypal()` module registers `POST /paypal/webhook` with PayPal's remote signature verification. Missing verification configuration returns `503`, and missing or unverifiable signatures return `401`. A verified event returns `503 PAYMENT_WEBHOOK_DURABILITY_REQUIRED` so PayPal retries; it does not mutate Payment state or emit a commerce outcome. The previous process-local mapper remains deliberately unregistered.
 
 ## Usage with payments module
 

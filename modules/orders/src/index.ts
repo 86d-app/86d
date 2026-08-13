@@ -2,14 +2,17 @@ import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
 import {
 	acceptCapability,
 	customerContactResolveCapability,
+	customerIdentityResolveCapability,
 	inventoryCheckoutCapability,
 	paymentIntentCapability,
 	productResolveCapability,
+	storePresentationResolveCapability,
 } from "@86d-app/core";
 import { adminEndpoints } from "./admin/endpoints";
 import {
 	orderCreateProvider,
 	orderCustomerAuthorizeProvider,
+	orderLineQuantityValidateProvider,
 	orderPurchaseVerifyProvider,
 } from "./capabilities";
 import { ordersSchema } from "./schema";
@@ -96,6 +99,7 @@ export default function orders(options?: OrdersOptions): Module {
 			provides: [
 				orderCreateProvider,
 				orderCustomerAuthorizeProvider,
+				orderLineQuantityValidateProvider,
 				orderPurchaseVerifyProvider,
 			],
 			accepts: [
@@ -109,6 +113,10 @@ export default function orders(options?: OrdersOptions): Module {
 					optional: true,
 				}),
 				acceptCapability(customerContactResolveCapability, { optional: true }),
+				acceptCapability(customerIdentityResolveCapability, { optional: true }),
+				acceptCapability(storePresentationResolveCapability, {
+					optional: true,
+				}),
 			],
 		},
 

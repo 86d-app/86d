@@ -1,5 +1,5 @@
 import { createStoreEndpoint, z } from "@86d-app/core";
-import type { OrderController } from "../../service";
+import { resolveOrderCustomerContext } from "./customer-context";
 
 export const cancelMyOrder = createStoreEndpoint(
 	"/orders/me/:id/cancel",
@@ -8,15 +8,12 @@ export const cancelMyOrder = createStoreEndpoint(
 		params: z.object({ id: z.string().max(128) }),
 	},
 	async (ctx) => {
-		const userId = ctx.context.session?.user.id;
-		if (!userId) {
-			return { error: "Unauthorized", status: 401 };
-		}
+		const customerContext = await resolveOrderCustomerContext(ctx.context);
+		if (!customerContext.ok) return customerContext.response;
 
-		const controller = ctx.context.controllers.order as OrderController;
-		const order = await controller.getById(ctx.params.id);
+		const order = await customerContext.controller.getById(ctx.params.id);
 
-		if (!order || order.customerId !== userId) {
+		if (!order || order.customerId !== customerContext.customerId) {
 			return { error: "Order not found", status: 404 };
 		}
 

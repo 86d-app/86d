@@ -65,4 +65,56 @@ export const notificationsSchema = {
 			},
 		},
 	},
+	notificationIntentLock: {
+		fields: {
+			id: { type: "string", required: true },
+			updatedAt: {
+				type: "date",
+				required: true,
+				defaultValue: () => new Date(),
+				onUpdate: () => new Date(),
+			},
+		},
+	},
+	notificationIntent: {
+		fields: {
+			id: { type: "string", required: true },
+			idempotencyKey: { type: "string", required: true, index: true },
+			requestFingerprint: { type: "string", required: true },
+			sourceEventId: { type: "string", required: true, index: true },
+			sourceModule: { type: "string", required: true, index: true },
+			templateKey: { type: "string", required: true },
+			channel: { type: "string", required: true },
+			recipient: { type: "string", required: true },
+			deliveryMode: { type: "string", required: true },
+			connectionId: { type: "string", required: false, index: true },
+			payload: { type: "json", required: true, defaultValue: {} },
+			status: {
+				type: "string",
+				required: true,
+				defaultValue: "pending",
+				index: true,
+			},
+			attempts: { type: "number", required: true, defaultValue: 0 },
+			acceptedRecipientUnits: {
+				type: "number",
+				required: true,
+				defaultValue: 0,
+			},
+			providerMessageId: { type: "string", required: false, index: true },
+			lastError: { type: "string", required: false },
+			acceptedAt: { type: "date", required: false },
+			createdAt: {
+				type: "date",
+				required: true,
+				defaultValue: () => new Date(),
+			},
+			updatedAt: {
+				type: "date",
+				required: true,
+				defaultValue: () => new Date(),
+				onUpdate: () => new Date(),
+			},
+		},
+	},
 } satisfies ModuleSchema;

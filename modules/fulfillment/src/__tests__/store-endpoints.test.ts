@@ -5,7 +5,7 @@ import type {
 	FulfillmentItem,
 	FulfillmentStatus,
 } from "../service";
-import { createFulfillmentController } from "../service-impl";
+import { createTestFulfillmentController as createFulfillmentController } from "./test-controller";
 
 /**
  * Store endpoint integration tests for the fulfillment module.
@@ -341,7 +341,7 @@ describe("controller: createFulfillment", () => {
 				orderId: "order_1",
 				items: [],
 			}),
-		).rejects.toThrow("Fulfillment must contain at least one item");
+		).rejects.toThrow("Fulfillment must contain at least one Order line");
 	});
 
 	it("assigns unique IDs to each fulfillment", async () => {

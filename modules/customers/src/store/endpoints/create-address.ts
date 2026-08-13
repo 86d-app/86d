@@ -1,5 +1,5 @@
 import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
-import type { CustomerController } from "../../service";
+import { resolveAuthenticatedStoreCustomer } from "./customer-context";
 
 export const createAddress = createStoreEndpoint(
 	"/customers/me/addresses/create",
@@ -25,14 +25,11 @@ export const createAddress = createStoreEndpoint(
 		}),
 	},
 	async (ctx) => {
-		const userId = ctx.context.session?.user.id;
-		if (!userId) {
-			return { error: "Unauthorized", status: 401 };
-		}
+		const resolved = await resolveAuthenticatedStoreCustomer(ctx.context);
+		if (!resolved.ok) return resolved.response;
 
-		const controller = ctx.context.controllers.customer as CustomerController;
-		const address = await controller.createAddress({
-			customerId: userId,
+		const address = await resolved.controller.createAddress({
+			customerId: resolved.customer.id,
 			...ctx.body,
 		});
 		return { address };

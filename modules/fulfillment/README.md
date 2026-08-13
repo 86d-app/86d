@@ -21,7 +21,7 @@
 
 📚 **Documentation:** [86d.app/docs/modules/fulfillment](https://86d.app/docs/modules/fulfillment)
 
-Manages the order fulfillment lifecycle from packing through shipment tracking to delivery confirmation. Supports multiple fulfillments per order for partial shipments.
+Owns delivery obligations from packing through shipment tracking to delivery confirmation. Supports multiple obligations per order for partial and split delivery without making Orders or Shipping a second Fulfillment writer.
 
 ## Installation
 
@@ -59,11 +59,11 @@ Store endpoints return a subset of fields — `notes` and `updatedAt` are exclud
 | Method | Path | Description |
 |---|---|---|
 | `GET` | `/admin/fulfillment` | List all fulfillments (filterable by status, limit, offset) |
-| `POST` | `/admin/fulfillment/create` | Create a new fulfillment for an order |
+| `POST` | `/admin/fulfillment/create` | Create a quantity-validated delivery obligation for an order |
 | `GET` | `/admin/fulfillment/:id` | Get a fulfillment by ID |
-| `POST` | `/admin/fulfillment/:id/status` | Update fulfillment status |
-| `POST` | `/admin/fulfillment/:id/tracking` | Add carrier and tracking information |
-| `POST` | `/admin/fulfillment/:id/cancel` | Cancel a fulfillment |
+| `POST` | `/admin/fulfillment/:id/status` | Contained: returns `FULFILLMENT_WORKFLOW_REQUIRED` |
+| `POST` | `/admin/fulfillment/:id/tracking` | Contained: Shipping-owned tracking workflow required |
+| `POST` | `/admin/fulfillment/:id/cancel` | Contained: durable cancellation workflow required |
 | `GET` | `/admin/fulfillment/order/:orderId` | List fulfillments for an order (admin) |
 
 ## Status Lifecycle
@@ -90,7 +90,7 @@ The module emits the following domain events via `ScopedEventEmitter`:
 | `fulfillment.delivered` | Status → delivered | `{ fulfillmentId, orderId }` |
 | `fulfillment.cancelled` | Status → cancelled | `{ fulfillmentId, orderId }` |
 
-Events fire-and-forget and never block the mutation.
+Creation commits `fulfillment.created@1` to the durable outbox in the same transaction as its obligation row. Compatibility events fire-and-forget only after that commit and never determine whether the mutation succeeded. Legacy status, tracking, and cancellation controller methods remain in source, but their registered Admin routes fail closed until transactional durable workflows replace them. This is not the complete M5 lifecycle.
 
 ## Controller API
 
@@ -216,8 +216,11 @@ Use this component alongside order details to display shipping carrier and track
 
 ## Notes
 
-- Requires the `orders` module (reads orderDetails and orderItems).
-- Multiple fulfillments can be created per order, supporting partial and split shipments.
+- Requires the typed Orders line-quantity capability. It never reads the Orders database or controller directly.
+- Creation fails closed if the capability, owner-local transaction, or row-locking support is unavailable.
+- Multiple fulfillments can be created per order. Creation holds one owner-local lock per Order and rejects cumulative non-cancelled obligations above each accepted Order line quantity.
 - Fulfillment items are stored as a JSON array (not a separate table).
+- Generic fulfillments still require at least one positive-quantity Order line. Zero-line pickup, digital, and manual obligations need an explicit versioned obligation type and are not represented by empty item arrays.
 - Store endpoints are read-only; all mutations require admin access.
 - Endpoints return `{ error, status }` objects for not-found cases instead of throwing.
+- Status, tracking, and cancellation routes are contained while their legacy controller writers await CAS plus durable lifecycle facts. Legacy Orders-owned fulfillment data also needs a backfill/read adapter, and Store reads still need Customer or scoped guest-proof authorization.

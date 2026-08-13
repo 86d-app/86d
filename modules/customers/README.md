@@ -49,6 +49,12 @@ const module = customers({
 
 All store endpoints require an authenticated session.
 
+> [!IMPORTANT]
+> Profile and address endpoints resolve the trusted Better Auth session through
+> the Store Customer binding. Verified email is required, the session supplies
+> audit correlation, and raw authentication user IDs are never used as Customer
+> IDs.
+
 | Method | Path | Description |
 |---|---|---|
 | `GET` | `/customers/me` | Get the authenticated customer's profile |
@@ -57,6 +63,27 @@ All store endpoints require an authenticated session.
 | `POST` | `/customers/me/addresses/create` | Add a new address |
 | `PUT` | `/customers/me/addresses/:id` | Update an existing address |
 | `DELETE` | `/customers/me/addresses/:id/delete` | Delete an address |
+
+## Store Customer identity binding
+
+`customers.identity.resolve@1.0.0` and
+`createStoreCustomerIdentityService()` provide the owner-local foundation for
+resolving a verified authentication principal to a distinct Store Customer.
+The raw auth subject is hashed and never becomes the Customer ID. Identity and
+normalized-email claims are row-locked, creation is idempotent, and the durable
+binding records its verified email, source, correlation ID, and initial audit
+principal. Missing transaction or locking support fails closed.
+
+This path accepts only server-derived authentication identity. An unverified
+email is rejected. It deliberately cannot claim a guest Order or history: that
+requires a future Orders-owned typed capability that verifies the scoped guest
+proof and records an idempotent claim audit. Matching an email string alone is
+never sufficient.
+
+Customers-owned loyalty endpoints are not registered. The standalone Loyalty
+module is the sole active loyalty authority; Customers loyalty source remains
+compatibility code only. Obsolete Customers loyalty admin and Storefront
+components are not exported; loyalty presentation must use the Loyalty Module.
 
 ## Admin Endpoints
 
@@ -235,25 +262,9 @@ None. The component manages its own state and fetches data via the module client
 
 Use this component on a customer account page to let users manage their saved addresses.
 
-### LoyaltyCard
-
-Displays the authenticated customer's loyalty points balance, tier, and transaction history.
-
-#### Props
-
-None. The component manages its own state and fetches data via the module client.
-
-#### Usage in MDX
-
-```mdx
-<LoyaltyCard />
-```
-
-Use this component on a customer account or rewards page to show loyalty program status and point history.
-
 ## Notes
 
-- Store endpoints resolve the customer ID from the active session (`ctx.context.session?.user.id`). Unauthenticated requests are rejected.
+- Store profile and address endpoints resolve the active session through the Store Customer identity binding.
 - Address ownership is verified before any update or delete operation — customers cannot modify each other's addresses.
 - `setDefaultAddress` is idempotent: calling it on an already-default address is a no-op.
 - Each customer can have one default billing address and one default shipping address independently.

@@ -1,9 +1,21 @@
-import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
+import {
+	acceptCapability,
+	type Module,
+	type ModuleConfig,
+	type ModuleContext,
+	orderLineQuantityValidateCapability,
+} from "@86d-app/core";
 import { adminEndpoints } from "./admin/endpoints";
+import { fulfillmentCreatedV1 } from "./events";
 import { fulfillmentSchema } from "./schema";
 import { createFulfillmentController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints";
 
+export {
+	FulfillmentAuthorityError,
+	type FulfillmentAuthorityErrorCode,
+} from "./authority";
+export { fulfillmentCreatedV1 } from "./events";
 export type {
 	Fulfillment,
 	FulfillmentController,
@@ -21,8 +33,8 @@ export default function fulfillment(options?: FulfillmentOptions): Module {
 		id: "fulfillment",
 		version: "0.0.1",
 		schema: fulfillmentSchema,
-		requires: {
-			orders: { read: ["orderStatus", "orderItems"] },
+		capabilities: {
+			accepts: [acceptCapability(orderLineQuantityValidateCapability)],
 		},
 		events: {
 			emits: [
@@ -32,10 +44,19 @@ export default function fulfillment(options?: FulfillmentOptions): Module {
 				"fulfillment.cancelled",
 			],
 		},
+		// Creation state and this completed-change fact commit atomically. The
+		// in-memory event above remains compatibility notification only.
+		durableEvents: { emits: [fulfillmentCreatedV1] },
 		init: async (ctx: ModuleContext) => {
-			const controller = createFulfillmentController(ctx.data, ctx.events, {
-				autoShipOnTracking: options?.autoShipOnTracking,
-			});
+			const controller = createFulfillmentController(
+				ctx.data,
+				ctx.events,
+				{
+					autoShipOnTracking: options?.autoShipOnTracking,
+				},
+				ctx.capabilities,
+				ctx.transactions,
+			);
 			return { controllers: { fulfillment: controller } };
 		},
 		endpoints: {

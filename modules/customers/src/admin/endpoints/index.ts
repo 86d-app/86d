@@ -7,11 +7,6 @@ import { adminGetCustomer } from "./get-customer";
 import { adminImportCustomers } from "./import-customers";
 import { adminListCustomers } from "./list-customers";
 import { adminListTags } from "./list-tags";
-import {
-	adminGetLoyaltyBalance,
-	adminGetLoyaltyHistory,
-} from "./loyalty-balance";
-import { adminGetLoyaltyStats } from "./loyalty-stats";
 import { adminAddTags, adminRemoveTags } from "./manage-tags";
 import { adminSetDefaultAddress } from "./set-default-address";
 import { adminUpdateAddress } from "./update-address";
@@ -23,7 +18,6 @@ export const adminEndpoints = {
 	"/admin/customers/import": adminImportCustomers,
 	"/admin/customers/tags": adminListTags,
 	"/admin/customers/bulk-tags": adminBulkTags,
-	"/admin/customers/loyalty/stats": adminGetLoyaltyStats,
 	"/admin/customers/:id": adminGetCustomer,
 	"/admin/customers/:id/update": adminUpdateCustomer,
 	"/admin/customers/:id/delete": adminDeleteCustomer,
@@ -34,6 +28,4 @@ export const adminEndpoints = {
 		adminSetDefaultAddress,
 	"/admin/customers/:id/tags": adminAddTags,
 	"/admin/customers/:id/tags/remove": adminRemoveTags,
-	"/admin/customers/:id/loyalty": adminGetLoyaltyBalance,
-	"/admin/customers/:id/loyalty/history": adminGetLoyaltyHistory,
 };

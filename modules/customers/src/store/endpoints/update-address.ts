@@ -1,5 +1,5 @@
 import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
-import type { CustomerController } from "../../service";
+import { resolveAuthenticatedStoreCustomer } from "./customer-context";
 
 export const updateAddress = createStoreEndpoint(
 	"/customers/me/addresses/:id",
@@ -34,20 +34,19 @@ export const updateAddress = createStoreEndpoint(
 		}),
 	},
 	async (ctx) => {
-		const userId = ctx.context.session?.user.id;
-		if (!userId) {
-			return { error: "Unauthorized", status: 401 };
-		}
-
-		const controller = ctx.context.controllers.customer as CustomerController;
+		const resolved = await resolveAuthenticatedStoreCustomer(ctx.context);
+		if (!resolved.ok) return resolved.response;
 
 		// Verify ownership
-		const existing = await controller.getAddress(ctx.params.id);
-		if (!existing || existing.customerId !== userId) {
+		const existing = await resolved.controller.getAddress(ctx.params.id);
+		if (!existing || existing.customerId !== resolved.customer.id) {
 			return { error: "Address not found", status: 404 };
 		}
 
-		const address = await controller.updateAddress(ctx.params.id, ctx.body);
+		const address = await resolved.controller.updateAddress(
+			ctx.params.id,
+			ctx.body,
+		);
 		return { address };
 	},
 );

@@ -51,13 +51,12 @@ StripeOptions {
 
 - Signature: HMAC-SHA256 via Web Crypto API, timing-safe comparison
 - Replay protection: 5-minute timestamp tolerance
-- Event map: `payment_intent.succeeded`, `payment_intent.payment_failed`, `payment_intent.canceled`, `charge.succeeded`, `charge.failed`
-- Refund events: `charge.refunded`, `charge.dispute.funds_withdrawn`
-- Domain events emitted: `payment.completed`, `payment.failed`, `payment.refunded`
+- The registered endpoint verifies every callback, then returns `503 PAYMENT_WEBHOOK_DURABILITY_REQUIRED` so Stripe retries; it does not mutate Payments or emit commerce events
+- The legacy process-local event mapper remains in source for migration reference but is deliberately unregistered
 
 ## Patterns
 
-- Without `webhookSecret` all requests accepted (dev mode)
+- Without `webhookSecret` the endpoint fails closed with `503`; invalid or expired signatures return `401`
 - Admin endpoint masks API keys (first 7 chars visible)
 - Admin detects key mode: `sk_live_` → "live", `sk_test_` → "test"
 - Tests mock `globalThis.fetch` — no real Stripe calls

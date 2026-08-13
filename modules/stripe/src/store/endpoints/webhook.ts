@@ -260,7 +260,6 @@ export function createStripeWebhook(opts: StripeWebhookOptions) {
 					{ status: 401 },
 				);
 			}
-
 			let event: Record<string, unknown>;
 			try {
 				event = JSON.parse(rawBody) as Record<string, unknown>;
@@ -340,6 +339,49 @@ export function createStripeWebhook(opts: StripeWebhookOptions) {
 
 					return Response.json({ received: true, type: eventType });
 				},
+			);
+		},
+	);
+}
+
+/**
+ * Registered containment endpoint. Verification remains strict, but a signed
+ * event is deliberately not acknowledged until Payments can persist a receipt
+ * and apply the provider outcome through its durable owner workflow.
+ */
+export function createContainedStripeWebhook(opts: StripeWebhookOptions) {
+	return createStoreEndpoint(
+		"/stripe/webhook",
+		{
+			exposure: "provider_webhook",
+			method: "POST",
+			requireRequest: true,
+		},
+		async (ctx) => {
+			const webhookSecret = opts.webhookSecret?.trim();
+			if (!webhookSecret) {
+				return Response.json(
+					{ error: "Stripe webhook verification is not configured." },
+					{ status: 503 },
+				);
+			}
+
+			const rawBody = await ctx.request.text();
+			const signature = ctx.request.headers.get("stripe-signature") ?? "";
+			if (!(await verifyStripeSignature(rawBody, signature, webhookSecret))) {
+				return Response.json(
+					{ error: "Invalid or expired webhook signature." },
+					{ status: 401 },
+				);
+			}
+
+			return Response.json(
+				{
+					code: "PAYMENT_WEBHOOK_DURABILITY_REQUIRED",
+					error:
+						"Stripe webhook processing requires a durable provider receipt.",
+				},
+				{ status: 503, headers: { "Retry-After": "60" } },
 			);
 		},
 	);

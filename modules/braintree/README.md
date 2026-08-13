@@ -79,7 +79,7 @@ Production base URL: `https://api.braintreegateway.com`
 POST /braintree/webhook
 ```
 
-Receives Braintree webhook notifications. Returns `{ received: true, kind }`.
+Authenticates Braintree's form payload with the configured public/private keys. Missing verification configuration returns `503`, and missing or invalid signatures return `401`. A verified callback returns `503 PAYMENT_WEBHOOK_DURABILITY_REQUIRED` so Braintree retries; it does not mutate Payment state or emit a commerce outcome. The previous process-local XML mapper remains deliberately unregistered.
 
 ## API Mapping
 

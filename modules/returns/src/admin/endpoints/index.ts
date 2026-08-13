@@ -1,12 +1,14 @@
-import { approveReturn } from "./approve-return";
-import { cancelReturn } from "./cancel-return";
 import { completeReturn } from "./complete-return";
 import { getReturn } from "./get-return";
+import {
+	approveReturnUnavailable as approveReturn,
+	cancelReturnUnavailable as cancelReturn,
+	rejectReturnUnavailable as rejectReturn,
+	updateTrackingUnavailable as updateTracking,
+} from "./lifecycle-unavailable";
 import { listReturns } from "./list-returns";
 import { markReceived } from "./mark-received";
-import { rejectReturn } from "./reject-return";
 import { returnSummary } from "./return-summary";
-import { updateTracking } from "./update-tracking";
 
 export const adminEndpoints = {
 	"/admin/returns": listReturns,

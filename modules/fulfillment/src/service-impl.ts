@@ -1,4 +1,12 @@
-import type { ModuleDataService, ScopedEventEmitter } from "@86d-app/core";
+import type {
+	ModuleDataService,
+	ModuleTransactionRunner,
+	ScopedEventEmitter,
+} from "@86d-app/core";
+import {
+	createAuthoritativeFulfillment,
+	type OrderLineQuantityAuthority,
+} from "./authority";
 import type {
 	Fulfillment,
 	FulfillmentController,
@@ -22,35 +30,24 @@ export function createFulfillmentController(
 	data: ModuleDataService,
 	events?: ScopedEventEmitter | undefined,
 	options?: FulfillmentControllerOptions | undefined,
+	capabilities?: OrderLineQuantityAuthority | undefined,
+	transactions?: ModuleTransactionRunner | undefined,
 ): FulfillmentController {
 	return {
 		async createFulfillment(params): Promise<Fulfillment> {
-			if (params.items.length === 0) {
-				throw new Error("Fulfillment must contain at least one item");
-			}
-
-			const id = crypto.randomUUID();
-			const now = new Date();
-			const fulfillment: Fulfillment = {
-				id,
+			const fulfillment = await createAuthoritativeFulfillment({
+				capabilities,
+				transactions,
 				orderId: params.orderId,
-				status: "pending",
 				items: params.items,
 				notes: params.notes,
-				createdAt: now,
-				updatedAt: now,
-			};
-			await data.upsert(
-				"fulfillment",
-				id,
-				fulfillment as Record<string, unknown>,
-			);
+			});
 
 			if (events) {
 				void events.emit("fulfillment.created", {
-					fulfillmentId: id,
+					fulfillmentId: fulfillment.id,
 					orderId: params.orderId,
-					items: params.items,
+					items: fulfillment.items,
 				});
 			}
 

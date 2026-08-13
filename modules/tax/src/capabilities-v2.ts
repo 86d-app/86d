@@ -481,6 +481,7 @@ export async function handleTaxQuoteV2(
 			line,
 			rate: candidates[0]?.rate ?? null,
 			ambiguous:
+				candidates.length > 1 &&
 				candidates[0]?.score === candidates[1]?.score &&
 				candidates[0]?.categoryScore === candidates[1]?.categoryScore,
 		};
@@ -532,6 +533,7 @@ export async function handleTaxQuoteV2(
 		"default",
 	);
 	if (
+		shippingCandidates.length > 1 &&
 		shippingCandidates[0]?.score === shippingCandidates[1]?.score &&
 		shippingCandidates[0]?.categoryScore ===
 			shippingCandidates[1]?.categoryScore

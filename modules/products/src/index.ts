@@ -1,5 +1,9 @@
 import type { Module, ModuleConfig } from "@86d-app/core";
-import { acceptCapability, inventoryCheckoutCapability } from "@86d-app/core";
+import {
+	acceptCapability,
+	catalogPublishedV1,
+	inventoryCheckoutCapability,
+} from "@86d-app/core";
 import { adminEndpoints } from "./admin/endpoints";
 import { productResolveProvider } from "./capabilities";
 import { controllers } from "./controllers";
@@ -11,6 +15,28 @@ import {
 } from "./markdown";
 import { productsSchema } from "./schema";
 import { storeEndpoints } from "./store/endpoints";
+
+export {
+	applyCatalogRevisionOperation,
+	type CatalogRevisionContent,
+	type CatalogRevisionOperationContext,
+	type CatalogRevisionOperationDecision,
+	type CatalogRevisionOperationFailureCode,
+	type CatalogRevisionOperationInput,
+	type CatalogRevisionOperationResult,
+	type CatalogRevisionRecord,
+	type CatalogRevisionState,
+	catalogRevisionCategorySchema,
+	catalogRevisionContentSchema,
+	catalogRevisionOperationDecisionSchema,
+	catalogRevisionOperationFailureCodeSchema,
+	catalogRevisionOperationInputSchema,
+	catalogRevisionProductSchema,
+	catalogRevisionRecordSchema,
+	catalogRevisionStateSchema,
+	catalogRevisionVariantSchema,
+	digestCatalogRevisionContent,
+} from "./catalog-revisions";
 
 export interface ProductsOptions extends ModuleConfig {
 	/**
@@ -49,6 +75,9 @@ export default function products(options?: ProductsOptions): Module {
 		},
 		events: {
 			emits: ["product.created", "product.updated", "product.deleted"],
+		},
+		durableEvents: {
+			emits: [catalogPublishedV1],
 		},
 		controllers,
 		capabilities: {

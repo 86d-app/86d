@@ -1,78 +1,75 @@
 "use client";
 
-import { useAnalytics } from "hooks/use-analytics";
-import dynamic from "next/dynamic";
+import { z } from "@86d-app/core";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { buttonVariants } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 
-const TipSelector = dynamic(
-	() =>
-		import("@86d-app/tipping/components").then((m) => ({
-			default: m.default.TipSelector,
-		})),
-	{ ssr: false },
-);
-
 // ── Types ────────────────────────────────────────────────────────────────────
 
-interface OrderSummary {
-	orderId: string;
-	orderNumber?: string;
-	email?: string;
-	items: Array<{
-		name: string;
-		quantity: number;
-		price: number;
-		image?: string;
-	}>;
-	subtotal: number;
-	taxAmount: number;
-	shippingAmount: number;
-	discountAmount: number;
-	giftCardAmount: number;
-	storeCreditAmount?: number;
-	total: number;
-	currency: string;
-	shippingAddress?: {
-		firstName: string;
-		lastName: string;
-		line1: string;
-		line2?: string;
-		city: string;
-		state: string;
-		postalCode: string;
-		country: string;
-	};
-}
+const addressSchema = z.object({
+	firstName: z.string(),
+	lastName: z.string(),
+	line1: z.string(),
+	line2: z.string().optional(),
+	city: z.string(),
+	state: z.string(),
+	postalCode: z.string(),
+	country: z.string(),
+});
+
+const orderSummarySchema = z.object({
+	orderId: z.string(),
+	orderNumber: z.string().optional(),
+	email: z.string().email().optional(),
+	items: z.array(
+		z.object({
+			name: z.string(),
+			quantity: z.number().int().positive(),
+			price: z.number().int().nonnegative(),
+			image: z.string().optional(),
+		}),
+	),
+	subtotal: z.number().int().nonnegative(),
+	taxAmount: z.number().int().nonnegative(),
+	shippingAmount: z.number().int().nonnegative(),
+	discountAmount: z.number().int().nonnegative(),
+	giftCardAmount: z.number().int().nonnegative(),
+	storeCreditAmount: z.number().int().nonnegative().optional(),
+	total: z.number().int().nonnegative(),
+	currency: z.string().regex(/^[A-Z]{3}$/),
+	shippingAddress: addressSchema.optional(),
+});
+
+type OrderSummary = z.infer<typeof orderSummarySchema>;
 
 /** Shape returned by GET /api/orders/me/:id or POST /api/orders/confirm */
-interface OrderApiResponse {
-	id: string;
-	orderNumber?: string;
-	guestEmail?: string;
-	subtotal: number;
-	taxAmount: number;
-	shippingAmount: number;
-	discountAmount: number;
-	giftCardAmount: number;
-	storeCreditAmount?: number;
-	total: number;
-	currency: string;
-	items?: Array<{ name: string; quantity: number; price: number }>;
-	addresses?: Array<{
-		type: string;
-		firstName: string;
-		lastName: string;
-		line1: string;
-		line2?: string;
-		city: string;
-		state: string;
-		postalCode: string;
-		country: string;
-	}>;
-}
+const orderApiResponseSchema = z.object({
+	id: z.string(),
+	orderNumber: z.string().optional(),
+	guestEmail: z.string().email().optional(),
+	subtotal: z.number().int().nonnegative(),
+	taxAmount: z.number().int().nonnegative(),
+	shippingAmount: z.number().int().nonnegative(),
+	discountAmount: z.number().int().nonnegative(),
+	giftCardAmount: z.number().int().nonnegative(),
+	storeCreditAmount: z.number().int().nonnegative().optional(),
+	total: z.number().int().nonnegative(),
+	currency: z.string().regex(/^[A-Z]{3}$/),
+	items: z
+		.array(
+			z.object({
+				name: z.string(),
+				quantity: z.number().int().positive(),
+				price: z.number().int().nonnegative(),
+			}),
+		)
+		.optional(),
+	addresses: z.array(addressSchema.extend({ type: z.string() })).optional(),
+});
+
+type OrderApiResponse = z.infer<typeof orderApiResponseSchema>;
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -86,20 +83,16 @@ function formatPrice(cents: number, currency = "USD"): string {
 // ── Confirmation Content ────────────────────────────────────────────────────
 
 function orderToSummary(o: OrderApiResponse): OrderSummary {
-	const addr = o.addresses?.find(
-		(a: { type: string }) => a.type === "shipping",
-	);
+	const addr = o.addresses?.find((address) => address.type === "shipping");
 	return {
 		orderId: o.id,
 		...(o.orderNumber ? { orderNumber: o.orderNumber } : {}),
 		...(o.guestEmail ? { email: o.guestEmail } : {}),
-		items: (o.items ?? []).map(
-			(item: { name: string; quantity: number; price: number }) => ({
-				name: item.name,
-				quantity: item.quantity,
-				price: item.price,
-			}),
-		),
+		items: (o.items ?? []).map((item) => ({
+			name: item.name,
+			quantity: item.quantity,
+			price: item.price,
+		})),
 		subtotal: o.subtotal ?? 0,
 		taxAmount: o.taxAmount ?? 0,
 		shippingAmount: o.shippingAmount ?? 0,
@@ -128,61 +121,86 @@ function orderToSummary(o: OrderApiResponse): OrderSummary {
 function ConfirmationContent() {
 	const searchParams = useSearchParams();
 	const orderId = searchParams.get("order");
-	const urlOrderNumber = searchParams.get("num");
-	const { track } = useAnalytics();
-	const tracked = useRef(false);
 	const [summary, setSummary] = useState<OrderSummary | null>(null);
+	const [lookupState, setLookupState] = useState<
+		"loading" | "verified" | "unavailable"
+	>(orderId ? "loading" : "unavailable");
 
-	// Load order summary from sessionStorage, with API fallback
+	// Browser storage and query parameters are not proof that checkout completed.
+	// Render success only after the Store verifies the Order for this Customer.
 	useEffect(() => {
-		let found = false;
-		try {
-			const raw = sessionStorage.getItem("checkout_confirmation");
-			if (raw) {
-				setSummary(JSON.parse(raw) as OrderSummary);
-				sessionStorage.removeItem("checkout_confirmation");
-				found = true;
-			}
-		} catch {
-			// sessionStorage may not be available
+		let cancelled = false;
+		if (!orderId) {
+			setSummary(null);
+			setLookupState("unavailable");
+			return () => {
+				cancelled = true;
+			};
 		}
 
-		// Fallback only to the authenticated Customer endpoint. Guest recovery
-		// requires the scoped Checkout-to-Order proof and is not an email lookup.
-		if (!found && orderId) {
-			(async () => {
-				// Try authenticated endpoint first (works for logged-in users)
-				const authRes = await fetch(
-					`/api/orders/me/${encodeURIComponent(orderId)}`,
-				).catch(() => null);
-				if (authRes?.ok) {
-					const data = (await authRes.json()) as {
-						order?: OrderApiResponse;
-					};
-					if (data?.order) {
-						setSummary(orderToSummary(data.order));
-						return;
-					}
-				}
-			})();
-		}
+		setSummary(null);
+		setLookupState("loading");
+		void (async () => {
+			const authRes = await fetch(
+				`/api/orders/me/${encodeURIComponent(orderId)}`,
+			).catch(() => null);
+			if (!authRes?.ok) {
+				if (!cancelled) setLookupState("unavailable");
+				return;
+			}
+
+			const payload = await authRes.json().catch(() => undefined);
+			const response = z
+				.object({ order: orderApiResponseSchema.optional() })
+				.safeParse(payload);
+			if (!response.success || !response.data.order) {
+				if (!cancelled) setLookupState("unavailable");
+				return;
+			}
+
+			if (!cancelled) {
+				setSummary(orderToSummary(response.data.order));
+				setLookupState("verified");
+			}
+		})();
+
+		return () => {
+			cancelled = true;
+		};
 	}, [orderId]);
 
-	// Fire purchase event once on confirmation page load
-	useEffect(() => {
-		if (orderId && summary && !tracked.current) {
-			tracked.current = true;
-			track({
-				type: "purchase",
-				orderId,
-				data: { source: "checkout" },
-			});
-		}
-	}, [orderId, summary, track]);
+	if (lookupState === "loading") {
+		return (
+			<div className="mx-auto max-w-2xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+				<div className="flex flex-col items-center gap-4">
+					<Skeleton className="size-16 rounded-full" />
+					<Skeleton className="h-8 w-64 rounded-lg" />
+					<Skeleton className="h-4 w-48" />
+				</div>
+			</div>
+		);
+	}
 
-	const currency = summary?.currency ?? "USD";
-	const addr = summary?.shippingAddress;
-	const displayOrderNumber = summary?.orderNumber ?? urlOrderNumber ?? orderId;
+	if (lookupState !== "verified" || !summary) {
+		return (
+			<div className="mx-auto max-w-2xl px-4 py-12 text-center sm:px-6 sm:py-16 lg:px-8">
+				<h1 className="mb-2 font-bold font-display text-2xl text-foreground tracking-tight sm:text-3xl">
+					Order confirmation unavailable
+				</h1>
+				<p className="mx-auto mb-8 max-w-md text-muted-foreground text-sm">
+					The Store could not verify an order for this session. No successful
+					purchase is being shown.
+				</p>
+				<a href="/products" className={buttonVariants()}>
+					Continue shopping
+				</a>
+			</div>
+		);
+	}
+
+	const currency = summary.currency;
+	const addr = summary.shippingAddress;
+	const displayOrderNumber = summary.orderNumber ?? summary.orderId;
 
 	return (
 		<div className="mx-auto max-w-2xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
@@ -214,16 +232,6 @@ function ConfirmationContent() {
 				</h1>
 				<p className="text-muted-foreground text-sm">
 					Your order has been placed successfully.
-					{summary?.email && (
-						<>
-							{" "}
-							A confirmation email will be sent to{" "}
-							<span className="font-medium text-foreground">
-								{summary.email}
-							</span>
-							.
-						</>
-					)}
 				</p>
 				{displayOrderNumber && (
 					<p className="mt-2 font-mono text-muted-foreground text-xs">
@@ -233,7 +241,7 @@ function ConfirmationContent() {
 			</div>
 
 			{/* Order items */}
-			{summary && summary.items.length > 0 && (
+			{summary.items.length > 0 && (
 				<div className="mb-6 rounded-xl border border-border bg-card">
 					<div className="border-border border-b px-6 py-4">
 						<h2 className="font-semibold text-foreground text-sm">
@@ -355,17 +363,6 @@ function ConfirmationContent() {
 				</div>
 			)}
 
-			{/* Tipping — shown when the tipping module is installed */}
-			{summary && (
-				<div className="mb-8">
-					<TipSelector
-						orderId={summary.orderId}
-						orderTotal={summary.total}
-						currency={summary.currency}
-					/>
-				</div>
-			)}
-
 			{/* What happens next */}
 			<div className="mb-8 rounded-xl border border-border bg-card p-6">
 				<h2 className="mb-4 font-semibold text-foreground text-sm">
@@ -378,10 +375,10 @@ function ConfirmationContent() {
 						</div>
 						<div>
 							<p className="font-medium text-foreground text-sm">
-								Order confirmation
+								Order details
 							</p>
 							<p className="text-muted-foreground text-xs">
-								You'll receive a confirmation email with your order details.
+								Your verified order details are recorded by the Store.
 							</p>
 						</div>
 					</div>
@@ -394,7 +391,7 @@ function ConfirmationContent() {
 								Order processing
 							</p>
 							<p className="text-muted-foreground text-xs">
-								We'll prepare your items and notify you when they ship.
+								Fulfillment status will appear after the Store allocates items.
 							</p>
 						</div>
 					</div>

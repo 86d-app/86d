@@ -21,7 +21,7 @@
 
 📚 **Documentation:** [86d.app/docs/modules/shipping](https://86d.app/docs/modules/shipping)
 
-Complete shipping management for the 86d commerce platform. Supports multi-zone rate configuration, named shipping methods with delivery estimates, carrier definitions with tracking URL generation, and full shipment lifecycle tracking.
+Shipping configuration and a dormant authoritative v2 foundation for the 86d commerce platform. Legacy zone, method, and carrier configuration remains available; shopper quotes/tracking and shipment mutations are contained until fulfillment-linked, Connection-bound durable operations are activated.
 
 ![version](https://img.shields.io/badge/version-0.1.0-blue) ![license](https://img.shields.io/badge/license-MIT-green)
 
@@ -54,18 +54,20 @@ const client = createModuleClient([
 
 | Method | Path | Description |
 |---|---|---|
-| `POST` | `/shipping/calculate` | Calculate applicable rates for a destination and order |
+| `POST` | `/shipping/calculate` | Contained: returns `SHIPPING_QUOTE_V2_REQUIRED` |
 | `GET` | `/shipping/methods` | List active shipping methods sorted by display order |
 | `GET` | `/shipping/carriers` | List active shipping carriers |
-| `GET` | `/shipping/track/:id` | Get shipment tracking info and URL |
+| `GET` | `/shipping/track/:id` | Contained: verified Customer/guest continuity required |
+
+When EasyPost is configured, `POST /shipping/webhook` preserves strict v2 HMAC, path, and timestamp verification. Missing verification configuration returns `503`, and missing or invalid signatures return `401`. A verified callback returns `503 SHIPPING_WEBHOOK_DURABILITY_REQUIRED` so EasyPost retries; it does not mutate Shipping state. The legacy process-local tracking-number handler remains deliberately unregistered until durable receipts, ordering, Connection identity, and `fulfillmentId` linkage are available.
 
 ### POST /shipping/calculate
 
-Request body: `{ country: string, orderAmount: number, weight?: number }`
+Returns `503 SHIPPING_QUOTE_V2_REQUIRED`. The legacy controller remains migration compatibility; a browser-supplied order amount is not an accepted Shipping quote.
 
 ### GET /shipping/track/:id
 
-Returns: `{ shipment: { id, orderId, trackingNumber, status, shippedAt, deliveredAt, estimatedDelivery }, trackingUrl: string | null }`
+Returns `503 SHIPPING_CUSTOMER_CONTINUITY_REQUIRED` until tracking is linked to a Fulfillment and authorized by verified Store Customer identity or scoped guest proof.
 
 ## Admin Endpoints
 
@@ -105,11 +107,11 @@ Returns: `{ shipment: { id, orderId, trackingNumber, status, shippedAt, delivere
 | Method | Path | Description |
 |---|---|---|
 | `GET` | `/admin/shipping/shipments` | List shipments (filter by orderId, status) |
-| `POST` | `/admin/shipping/shipments/create` | Create a shipment for an order |
+| `POST` | `/admin/shipping/shipments/create` | Contained: fulfillment-linked durable operation required |
 | `GET` | `/admin/shipping/shipments/:id` | Get shipment details + tracking URL |
-| `PUT` | `/admin/shipping/shipments/:id/update` | Update shipment details |
-| `PUT` | `/admin/shipping/shipments/:id/status` | Update shipment status |
-| `DELETE` | `/admin/shipping/shipments/:id/delete` | Delete a shipment |
+| `PUT` | `/admin/shipping/shipments/:id/update` | Contained: fulfillment-linked durable operation required |
+| `PUT` | `/admin/shipping/shipments/:id/status` | Contained: provider receipt/workflow required |
+| `DELETE` | `/admin/shipping/shipments/:id/delete` | Contained: audited reversal workflow required |
 
 ## Rate Calculation
 

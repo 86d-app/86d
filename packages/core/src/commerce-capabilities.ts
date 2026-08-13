@@ -92,6 +92,84 @@ export const customerContactResolveCapability = defineCapability({
 		.strict(),
 });
 
+/**
+ * Resolve a server-verified authentication principal to a Store-owned Customer.
+ * The raw authentication subject is input identity, never the Customer ID.
+ */
+export const customerIdentityResolveCapability = defineCapability({
+	name: "customers.identity.resolve",
+	version: "1.0.0",
+	owner: "customers",
+	request: z
+		.object({
+			identity: z
+				.object({
+					provider: z.string().trim().min(1).max(100),
+					subject: z.string().trim().min(1).max(255),
+					email: z.string().email().max(320),
+					emailVerified: z.boolean(),
+					firstName: z.string().max(200).optional(),
+					lastName: z.string().max(200).optional(),
+				})
+				.strict(),
+			audit: z
+				.object({
+					source: z.enum(["storefront", "store_admin", "workload", "system"]),
+					correlationId: z.string().min(1).max(255),
+				})
+				.strict(),
+		})
+		.strict(),
+	decision: z
+		.object({
+			customerId: z.string().min(1).max(100),
+			bindingId: z.string().min(1).max(100),
+			verifiedEmail: z.string().email().max(320),
+			createdCustomer: z.boolean(),
+			createdBinding: z.boolean(),
+			boundAt: z.string().datetime(),
+		})
+		.strict(),
+	failure: z
+		.object({
+			code: z.enum([
+				"INVALID_IDENTITY_INPUT",
+				"AUTH_IDENTITY_UNVERIFIED",
+				"TRANSACTION_UNAVAILABLE",
+				"LOCKING_UNAVAILABLE",
+				"AUTH_IDENTITY_CONFLICT",
+				"CUSTOMER_STATE_INVALID",
+			]),
+			message: z.string().min(1).max(300),
+		})
+		.strict(),
+});
+
+/** Resolve shopper-visible presentation from the Store Runtime Settings owner. */
+export const storePresentationResolveCapability = defineCapability({
+	name: "settings.presentation.resolve",
+	version: "1.0.0",
+	owner: "settings",
+	request: z.object({}).strict(),
+	decision: z
+		.object({
+			storeName: z.string().min(1).max(200),
+			storeDescription: z.string().max(2_000).optional(),
+			supportEmail: z.string().email().max(320).optional(),
+			currency: z
+				.string()
+				.regex(/^[A-Z]{3}$/)
+				.optional(),
+		})
+		.strict(),
+	failure: z
+		.object({
+			code: z.enum(["SETTINGS_UNAVAILABLE", "SETTINGS_INVALID"]),
+			message: z.string().min(1).max(300),
+		})
+		.strict(),
+});
+
 export const discountCodeCapability = defineCapability({
 	name: "discounts.code",
 	version: "1.0.0",
@@ -385,6 +463,62 @@ export const orderCustomerAuthorizeCapability = defineCapability({
 	failure: z
 		.object({
 			code: z.enum(["order_not_found", "not_owner", "lookup_failed"]),
+		})
+		.strict(),
+});
+
+/**
+ * Orders validates immutable commercial line quantities for delivery owners.
+ * Consumers receive only the bounded quantities they asked to allocate; the
+ * capability does not expose Orders storage or grant mutation authority.
+ */
+export const orderLineQuantityValidateCapability = defineCapability({
+	name: "orders.line-quantities.validate",
+	version: "1.0.0",
+	owner: "orders",
+	request: z
+		.object({
+			orderId: z.string().min(1).max(200),
+			items: z
+				.array(
+					z
+						.object({
+							orderItemId: z.string().min(1).max(200),
+							quantity: z.number().int().positive().max(1_000_000),
+						})
+						.strict(),
+				)
+				.min(1)
+				.max(1_000),
+		})
+		.strict(),
+	decision: z
+		.object({
+			orderId: z.string().min(1).max(200),
+			items: z
+				.array(
+					z
+						.object({
+							orderItemId: z.string().min(1).max(200),
+							requestedQuantity: z.number().int().positive().max(1_000_000),
+							orderedQuantity: z.number().int().positive().max(1_000_000),
+						})
+						.strict(),
+				)
+				.min(1)
+				.max(1_000),
+		})
+		.strict(),
+	failure: z
+		.object({
+			code: z.enum([
+				"ORDER_NOT_FOUND",
+				"ORDER_NOT_FULFILLABLE",
+				"ORDER_LINE_NOT_FOUND",
+				"ORDER_LINE_QUANTITY_EXCEEDED",
+				"ORDER_LINE_DATA_INVALID",
+				"ORDER_LOOKUP_FAILED",
+			]),
 		})
 		.strict(),
 });

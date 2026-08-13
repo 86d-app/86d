@@ -91,7 +91,6 @@ export type StoreCommerceAvailabilityReason =
 interface StoreCommerceAvailabilityBase {
 	version: 1;
 	evaluatedAt: string;
-	recheckAt?: string | undefined;
 }
 
 export type StoreCommerceAvailability = StoreCommerceAvailabilityBase &
@@ -99,6 +98,7 @@ export type StoreCommerceAvailability = StoreCommerceAvailabilityBase &
 		| {
 				available: true;
 				reason: "entitlement_trialing" | "entitlement_active";
+				recheckAt: string;
 		  }
 		| {
 				available: false;
@@ -106,6 +106,7 @@ export type StoreCommerceAvailability = StoreCommerceAvailabilityBase &
 					StoreCommerceAvailabilityReason,
 					"entitlement_trialing" | "entitlement_active"
 				>;
+				recheckAt?: string | undefined;
 		  }
 	);
 

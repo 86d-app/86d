@@ -57,6 +57,7 @@ async function resolveExposure(fullPath: string): Promise<EndpointExposure> {
 const SENSITIVE_PATHS = new Set([
 	"/newsletter/subscribe",
 	"/newsletter/unsubscribe",
+	"/checkout/requests",
 	"/checkout/sessions",
 	"/payments/intents",
 ]);
@@ -247,7 +248,9 @@ async function handleRequest(req: NextRequest, ctx: RouteParams) {
 	} else {
 		// Rate limit public routes by IP
 		const ip = getClientIp(req);
-		const isSensitive = SENSITIVE_PATHS.has(fullPath);
+		const isSensitive =
+			SENSITIVE_PATHS.has(fullPath) ||
+			fullPath.startsWith("/checkout/requests/");
 		const limiter = isSensitive ? sensitiveLimiter : publicLimiter;
 		const limitKey = `${isSensitive ? "sensitive" : "public"}:${ip}`;
 

@@ -47,19 +47,24 @@ const module = orders({
 
 ## Store Endpoints
 
-All store endpoints require an authenticated session.
+Authenticated history, detail, invoice, reorder, and cancellation endpoints are
+contained until Orders can audit and migrate legacy rows that used raw
+authentication subjects as `order.customerId`. The Customer capability already
+resolves a distinct Store Customer, but activating it without that Orders-owned
+attribution step would hide historical Orders. Guest proof lookups and legacy
+Order-owned Fulfillment/Return projections remain contained too.
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/orders/me` | List all orders for the authenticated customer |
-| `GET` | `/orders/me/:id` | Get a specific order (with items and addresses) |
-| `POST` | `/orders/me/:id/cancel` | Contained until the durable cancellation workflow is available |
-| `GET` | `/orders/me/:id/fulfillments` | List fulfillments with overall status |
-| `GET` | `/orders/me/:id/invoice` | Get invoice data for an order |
-| `GET` | `/orders/me/:id/returns` | List return requests for an order |
+| `GET` | `/orders/me` | Contained pending audited legacy attribution |
+| `GET` | `/orders/me/:id` | Contained pending audited legacy attribution |
+| `POST` | `/orders/me/:id/cancel` | Contained pending audited attribution and durable cancellation |
+| `GET` | `/orders/me/:id/fulfillments` | Contained pending Store Customer resolution |
+| `GET` | `/orders/me/:id/invoice` | Contained pending audited legacy attribution |
+| `GET` | `/orders/me/:id/returns` | Contained pending Store Customer resolution |
 | `POST` | `/orders/me/:id/returns/create` | Contained; standalone Returns owns creation |
-| `GET` | `/orders/me/returns` | List all returns across orders |
-| `POST` | `/orders/me/:id/reorder` | Get cart-ready items from a previous order |
+| `GET` | `/orders/me/returns` | Contained pending Store Customer resolution |
+| `POST` | `/orders/me/:id/reorder` | Contained pending audited legacy attribution |
 | `POST` | `/orders/track` | Contained until scoped guest-proof authorization is wired |
 | `GET` | `/orders/store-search` | Store search integration |
 
@@ -237,7 +242,7 @@ The legacy public form is retained as migration UI, but its endpoint fails close
 
 - Order numbers auto-generated as `ORD-{base36timestamp}-{random}`.
 - Item `name` and `price` are snapshotted at creation and don't update with catalog changes.
-- Customer endpoints verify `order.customerId === session.user.id` (return 404, not 403).
+- Customer endpoints resolve Better Auth identity through `customers.identity.resolve` and compare `order.customerId` to the returned Store Customer ID (returning 404 for non-owners).
 - Tracking URLs auto-generated for UPS, USPS, FedEx, DHL carriers.
 - Legacy controller delete/bulk methods remain migration code but are not reachable through active mutating HTTP behavior.
 - Invoice numbers: `INV-{YYYYMMDD}-{orderSuffix}`.

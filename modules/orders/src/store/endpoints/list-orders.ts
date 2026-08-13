@@ -1,5 +1,5 @@
 import { createStoreEndpoint, z } from "@86d-app/core";
-import type { OrderController } from "../../service";
+import { resolveOrderCustomerContext } from "./customer-context";
 
 export const listMyOrders = createStoreEndpoint(
 	"/orders/me",
@@ -11,19 +11,19 @@ export const listMyOrders = createStoreEndpoint(
 		}),
 	},
 	async (ctx) => {
-		const userId = ctx.context.session?.user.id;
-		if (!userId) {
-			return { error: "Unauthorized", status: 401 };
-		}
+		const customerContext = await resolveOrderCustomerContext(ctx.context);
+		if (!customerContext.ok) return customerContext.response;
 
 		const { page, limit } = ctx.query;
 		const offset = (page - 1) * limit;
 
-		const controller = ctx.context.controllers.order as OrderController;
-		const { orders, total } = await controller.listForCustomer(userId, {
-			limit,
-			offset,
-		});
+		const { orders, total } = await customerContext.controller.listForCustomer(
+			customerContext.customerId,
+			{
+				limit,
+				offset,
+			},
+		);
 
 		return {
 			orders,

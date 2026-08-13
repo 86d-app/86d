@@ -62,8 +62,7 @@ export const adminUpdateOrder = createAdminEndpoint(
 		if (paymentStatus !== undefined) {
 			return {
 				code: "PAYMENT_OPERATION_REQUIRED",
-				error:
-					"Payment state must be changed by the owning payment operation.",
+				error: "Payment state must be changed by the owning payment operation.",
 				status: 409,
 			};
 		}

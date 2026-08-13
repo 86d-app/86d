@@ -1,15 +1,17 @@
-import { calculateRates } from "./calculate-rates";
+import {
+	calculateRatesUnavailable as calculateRates,
+	trackShipmentUnavailable as trackShipment,
+} from "./activation-unavailable";
 import { listCarriers } from "./list-carriers";
 import { listMethods } from "./list-methods";
-import { trackShipment } from "./track-shipment";
-import { createShippingWebhook } from "./webhook";
+import { createContainedShippingWebhook } from "./webhook";
 
 export function createStoreEndpointsWithRates(opts?: {
 	webhookSecret?: string | undefined;
 }) {
 	return {
 		...storeEndpoints,
-		"/shipping/webhook": createShippingWebhook({
+		"/shipping/webhook": createContainedShippingWebhook({
 			webhookSecret: opts?.webhookSecret,
 		}),
 	};

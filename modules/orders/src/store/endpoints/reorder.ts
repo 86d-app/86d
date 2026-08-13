@@ -3,7 +3,7 @@ import {
 	productResolveCapability,
 	z,
 } from "@86d-app/core";
-import type { OrderController } from "../../service";
+import { resolveOrderCustomerContext } from "./customer-context";
 
 export const reorder = createStoreEndpoint(
 	"/orders/me/:id/reorder",
@@ -12,19 +12,18 @@ export const reorder = createStoreEndpoint(
 		params: z.object({ id: z.string().max(128) }),
 	},
 	async (ctx) => {
-		const userId = ctx.context.session?.user.id;
-		if (!userId) {
-			return { error: "Unauthorized", status: 401 };
-		}
+		const customerContext = await resolveOrderCustomerContext(ctx.context);
+		if (!customerContext.ok) return customerContext.response;
 
-		const controller = ctx.context.controllers.order as OrderController;
-		const order = await controller.getById(ctx.params.id);
+		const order = await customerContext.controller.getById(ctx.params.id);
 
-		if (!order || order.customerId !== userId) {
+		if (!order || order.customerId !== customerContext.customerId) {
 			return { error: "Order not found", status: 404 };
 		}
 
-		const items = await controller.getReorderItems(ctx.params.id);
+		const items = await customerContext.controller.getReorderItems(
+			ctx.params.id,
+		);
 		if (!items || items.length === 0) {
 			return { error: "No items to reorder", status: 422 };
 		}

@@ -1,7 +1,7 @@
 import { db } from "db";
 import { ensureBooted } from "../lib/api-registry";
-import { drainDurableEventsBatch } from "../lib/durable-events";
 import { runDurableEventWorker } from "../lib/durable-event-worker";
+import { drainDurableEventsBatch } from "../lib/durable-events";
 
 const configuredMaxBatches = Number.parseInt(
 	process.env.DURABLE_EVENT_MAX_BATCHES ?? "25",

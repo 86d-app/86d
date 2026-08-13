@@ -225,7 +225,6 @@ export function createShippingWebhook(opts: {
 					{ status: 401 },
 				);
 			}
-
 			let event: EasyPostWebhookEvent;
 			try {
 				event = JSON.parse(rawBody) as EasyPostWebhookEvent;
@@ -288,6 +287,51 @@ export function createShippingWebhook(opts: {
 					status: internalStatus,
 				});
 			});
+		},
+	);
+}
+
+/**
+ * Registered containment endpoint. EasyPost provenance is verified, but
+ * tracking cannot mutate Shipping until receipt and ordering are durable.
+ */
+export function createContainedShippingWebhook(opts: {
+	webhookSecret?: string | undefined;
+}) {
+	return createStoreEndpoint(
+		"/shipping/webhook",
+		{
+			exposure: "provider_webhook",
+			method: "POST",
+			requireRequest: true,
+		},
+		async (ctx) => {
+			const webhookSecret = opts.webhookSecret?.trim();
+			if (!webhookSecret) {
+				return Response.json(
+					{ error: "EasyPost webhook verification is not configured." },
+					{ status: 503 },
+				);
+			}
+
+			const rawBody = await ctx.request.text();
+			if (
+				!(await verifyEasyPostSignature(rawBody, ctx.request, webhookSecret))
+			) {
+				return Response.json(
+					{ error: "Invalid or missing webhook signature." },
+					{ status: 401 },
+				);
+			}
+
+			return Response.json(
+				{
+					code: "SHIPPING_WEBHOOK_DURABILITY_REQUIRED",
+					error:
+						"EasyPost webhook processing requires a durable provider receipt.",
+				},
+				{ status: 503, headers: { "Retry-After": "60" } },
+			);
 		},
 	);
 }

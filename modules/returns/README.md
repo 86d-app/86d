@@ -21,9 +21,9 @@
 
 📚 **Documentation:** [86d.app/docs/modules/returns](https://86d.app/docs/modules/returns)
 
-Manages customer return requests with a multi-step approval workflow. Supports line-item returns with reason and condition tracking, multiple refund methods, and return shipment tracking.
+Contains the legacy return workflow and exposes an additive authoritative request foundation. The foundation snapshots line quantities and reasons, validates cumulative quantities against Orders, replays operations deterministically, and commits `return.requested@1` atomically.
 
-**Flow:** requested -> approved -> received -> completed. Admin can reject at any non-terminal stage. Customers can cancel before completion.
+**Target flow:** requested -> approved -> received -> completed. Customer reads/writes and all lifecycle mutations remain contained until Store Customer/guest-proof authorization and the authoritative cross-owner workflows are durable.
 
 ## Installation
 
@@ -51,10 +51,10 @@ const module = returns({
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/returns` | List the current customer's return requests |
-| `POST` | `/returns/submit` | Submit a new return request with items |
-| `GET` | `/returns/:id` | Get return request status and items |
-| `POST` | `/returns/:id/cancel` | Cancel a return request |
+| `GET` | `/returns` | Contained: verified Store Customer or guest proof required |
+| `GET` | `/returns/:id` | Contained: verified Store Customer or guest proof required |
+
+No shopper write transport is registered yet. Legacy submit accepted browser-owned product and monetary snapshots, while legacy cancellation equated a raw authentication ID with a Store Customer. Both remain unregistered until a trusted Command adapter can authorize a resolved Store Customer or admin and supply explicit actor/authority evidence.
 
 ## Admin Endpoints
 
@@ -63,16 +63,16 @@ const module = returns({
 | `GET` | `/admin/returns` | List all return requests (paginated) |
 | `GET` | `/admin/returns/summary` | Get return statistics summary |
 | `GET` | `/admin/returns/:id` | Get return request with items |
-| `POST` | `/admin/returns/:id/approve` | Approve a return request |
-| `POST` | `/admin/returns/:id/reject` | Reject a return request |
-| `POST` | `/admin/returns/:id/received` | Mark items as received |
-| `POST` | `/admin/returns/:id/complete` | Complete the return (set refund amount) |
-| `POST` | `/admin/returns/:id/cancel` | Cancel a return request |
-| `PUT` | `/admin/returns/:id/tracking` | Update return shipment tracking info |
+| `POST` | `/admin/returns/:id/approve` | Contained: durable lifecycle workflow required |
+| `POST` | `/admin/returns/:id/reject` | Contained: durable lifecycle workflow required |
+| `POST` | `/admin/returns/:id/received` | Contained: returns `503` until durable disposition/restock coordination exists |
+| `POST` | `/admin/returns/:id/complete` | Contained: returns `503` until durable refund and reversal coordination exists |
+| `POST` | `/admin/returns/:id/cancel` | Contained: durable reversal workflow required |
+| `PUT` | `/admin/returns/:id/tracking` | Contained: Shipping-owned return tracking required |
 
 ## Controller API
 
-The `ReturnController` interface is exported for inter-module use (e.g. store-credits issuing refunds on completion).
+The legacy `ReturnController` remains exported for migration compatibility. Other Modules must not use it to issue refunds, restock, or claim authoritative Return outcomes.
 
 ```ts
 interface ReturnController {
@@ -151,25 +151,6 @@ interface ReturnSummary {
 
 ## Store Components
 
-### ReturnForm
-
-Renders a multi-step return request form where customers select items to return, specify reasons and item conditions, choose a refund method, and submit the request. Displays a confirmation message upon successful submission.
-
-#### Props
-
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `orderId` | `string` | Yes | The ID of the order to create a return for. |
-| `items` | `OrderItem[]` | Yes | Array of order line items available for return. Each item has `id`, `productName`, `quantity`, `unitPrice`, and optional `sku`. |
-
-#### Usage in MDX
-
-```mdx
-<ReturnForm orderId={orderId} items={orderItems} />
-```
-
-Best used on an order detail page to let customers initiate a return for specific items in their order.
-
 ### ReturnStatus
 
 Displays the current status of a return request including items, refund amount, refund method, and tracking information. Fetches return details by ID from the module client.
@@ -190,7 +171,11 @@ Best used on a return detail page or order history section to show customers the
 
 ## Notes
 
-- Return requests are created with their line items in a single operation. Each item tracks its own reason and condition.
-- The `refundAmount` is set by the admin at completion time, not when the customer submits the request.
-- Events are emitted at each status transition (`return.requested`, `return.approved`, `return.rejected`, `return.received`, `return.completed`, `return.cancelled`, `return.refunded`) for integration with notifications and store-credits modules.
-- The `returnRequest.orderId` references the orders module via a cascade foreign key.
+- `requestAuthoritativeReturn` is an unregistered owner-local foundation. It requires row-locking transactions and the typed Orders line-quantity capability.
+- One operation ID maps to one normalized input digest and one deterministic request. Same-input retries replay; changed input conflicts.
+- Cumulative request quantities cannot exceed an immutable Order line. Authoritative snapshots currently consume capacity permanently; a future durable lifecycle state will release rejected/cancelled capacity without rewriting history.
+- Cumulative admission currently covers authoritative snapshots only. Legacy requests need a reviewed backfill before activation.
+- Request state, replay receipt, and `return.requested@1` commit in one owner transaction. The fact includes explicit actor and authority evidence but no provider credentials or monetary outcome.
+- The foundation does not issue refunds, restock Inventory, change Fulfillment or Payment state, adjust tax or loyalty, or send communications.
+- Return-window, paid/terminal Order eligibility, resolved Customer ownership, and Store-bound authority checks remain prerequisites for a registered Command transport.
+- Legacy reads and remaining status endpoints are migration surfaces, not proof that the complete Return workflow is Stable.

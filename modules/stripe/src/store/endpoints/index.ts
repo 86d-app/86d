@@ -1,8 +1,8 @@
-import { createStripeWebhook } from "./webhook";
+import { createContainedStripeWebhook } from "./webhook";
 
 export function createStoreEndpoints(opts?: { webhookSecret?: string }) {
 	return {
-		"/stripe/webhook": createStripeWebhook({
+		"/stripe/webhook": createContainedStripeWebhook({
 			webhookSecret: opts?.webhookSecret,
 		}),
 	};

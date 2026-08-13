@@ -93,7 +93,7 @@ const availableCommerceSchema = z
 		available: z.literal(true),
 		reason: z.enum(["entitlement_trialing", "entitlement_active"]),
 		evaluatedAt: z.iso.datetime(),
-		recheckAt: z.iso.datetime().optional(),
+		recheckAt: z.iso.datetime(),
 	})
 	.strict();
 
@@ -158,7 +158,98 @@ const remoteStoreConfigV2DtoSchema = z
 		commerceAvailability: commerceAvailabilitySchema,
 		billing: z.never().optional(),
 	})
-	.strict();
+	.strict()
+	.superRefine((config, context) => {
+		const { commerceAvailability, entitlement } = config;
+		const evaluatedAt = Date.parse(commerceAvailability.evaluatedAt);
+		const recheckAt = commerceAvailability.recheckAt
+			? Date.parse(commerceAvailability.recheckAt)
+			: undefined;
+		if (recheckAt !== undefined && recheckAt <= evaluatedAt) {
+			context.addIssue({
+				code: "custom",
+				path: ["commerceAvailability", "recheckAt"],
+				message: "The commerce recheck must follow its evaluation time.",
+			});
+		}
+		if (commerceAvailability.available) {
+			const expectedReason =
+				entitlement?.lifecycle === "trialing"
+					? "entitlement_trialing"
+					: entitlement?.lifecycle === "active"
+						? "entitlement_active"
+						: undefined;
+			if (expectedReason !== commerceAvailability.reason) {
+				context.addIssue({
+					code: "custom",
+					path: ["commerceAvailability"],
+					message:
+						"Available commerce must match an active or trialing Store entitlement.",
+				});
+			}
+			if (
+				(entitlement?.lifecycle === "trialing" &&
+					entitlement.trialEndsAt === undefined) ||
+				(entitlement?.lifecycle === "active" &&
+					entitlement.currentPeriodEndsAt === undefined)
+			) {
+				context.addIssue({
+					code: "custom",
+					path: ["entitlement"],
+					message:
+						"Available commerce requires the exact Store entitlement deadline.",
+				});
+			}
+			const entitlementDeadlines = [
+				entitlement?.lifecycle === "trialing"
+					? entitlement.trialEndsAt
+					: entitlement?.lifecycle === "active"
+						? entitlement.currentPeriodEndsAt
+						: undefined,
+				entitlement?.suspendAt,
+				entitlement?.destroyAt,
+			]
+				.filter((deadline) => deadline !== undefined)
+				.map((deadline) => Date.parse(deadline));
+			const entitlementDeadline =
+				entitlementDeadlines.length > 0
+					? Math.min(...entitlementDeadlines)
+					: undefined;
+			if (
+				entitlementDeadline !== undefined &&
+				recheckAt !== undefined &&
+				recheckAt > entitlementDeadline
+			) {
+				context.addIssue({
+					code: "custom",
+					path: ["commerceAvailability", "recheckAt"],
+					message:
+						"The commerce recheck cannot outlive the Store entitlement deadline.",
+				});
+			}
+			return;
+		}
+
+		const expectedLifecycle =
+			commerceAvailability.reason === "entitlement_suspended"
+				? "suspended"
+				: commerceAvailability.reason === "entitlement_destroyed"
+					? "destroyed"
+					: undefined;
+		if (
+			(expectedLifecycle !== undefined &&
+				entitlement?.lifecycle !== expectedLifecycle) ||
+			(commerceAvailability.reason === "entitlement_missing" &&
+				entitlement !== null)
+		) {
+			context.addIssue({
+				code: "custom",
+				path: ["commerceAvailability"],
+				message:
+					"Commerce unavailability must match the Store entitlement projection.",
+			});
+		}
+	});
 
 const remoteStoreConfigDtoSchema = z.union([
 	remoteStoreConfigV2DtoSchema,

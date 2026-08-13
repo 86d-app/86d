@@ -91,10 +91,10 @@ The opaque `secretReference` is server-side configuration data. It must never be
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/payments/methods` | List customer's saved payment methods |
-| `DELETE` | `/payments/methods/:id` | Delete a payment method |
+| `GET` | `/payments/methods` | Contained: verified Customer + Payment Connection required |
+| `DELETE` | `/payments/methods/:id` | Contained: verified Customer + Payment Connection required |
 
-Generic shopper intent create/get/confirm/cancel source files remain as migration history but are not registered by the Module. Live activation stays contained until the v2 Checkout finalizer and provider paths satisfy the critical-path contract.
+Generic shopper intent create/get/confirm/cancel and saved-method source files remain as migration history but their unsafe paths are not registered by the Module. Live activation stays contained until the v2 Checkout finalizer, verified Store Customer binding, and provider paths satisfy the critical-path contract.
 
 ## Admin Endpoints
 
@@ -102,7 +102,7 @@ Generic shopper intent create/get/confirm/cancel source files remain as migratio
 |---|---|---|
 | `GET` | `/admin/payments` | List all intents (filter: `customerId`, `status`, `orderId`) |
 | `GET` | `/admin/payments/:id` | Get intent detail |
-| `POST` | `/admin/payments/:id/refund` | Issue a refund |
+| `POST` | `/admin/payments/:id/refund` | Contained: original-Connection-bound v2 operation required |
 | `GET` | `/admin/payments/:id/refunds` | List refunds for an intent |
 
 ## Legacy v1 Controller API

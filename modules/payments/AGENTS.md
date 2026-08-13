@@ -28,7 +28,7 @@ src/
 - **Explicit routing**: A v2 adapter is bound to exactly one `connectionId`; no default provider or provider fallback exists in the v2 service.
 - **Operation identity**: Every provider operation persists its immutable Connection, operation-specific idempotency key, request digest, attempt history, provider reference, and final/ambiguous state before and after the external call.
 - **Reversal routing**: Capture, refund, and void must cite a succeeded source operation and its provider reference, so they retain the original Connection.
-- **Containment**: v2 has owner-local production exports only. It is not registered as a shopper endpoint or as the legacy Checkout payment capability.
+- **Containment**: v2 has owner-local production exports only. It is not registered as a shopper endpoint or as the legacy Checkout payment capability. Saved-method routes and the legacy Admin refund route also return explicit v2-required errors.
 - **Transactions**: Connection and operation writes fail closed unless the host supplies an owner-local locking transaction runner.
 
 Legacy v1 migration behavior follows:
@@ -61,7 +61,7 @@ Legacy v1 migration behavior follows:
 - Endpoint validates `amount` as `z.number().int().positive()` — controller also validates (defense in depth).
 - `createRefund` throws on non-existent intent, wrong status, exceeded cap, or missing provider. Endpoints should catch and return structured errors.
 - `handleWebhookEvent` has no status guards — it trusts the provider (Stripe can set any status). `handleWebhookRefund` deduplicates but doesn't cap amounts (provider-side refunds are authoritative).
-- Admin refund endpoint checks intent existence before calling controller, but doesn't validate intent status — controller handles that.
+- The legacy Admin refund handler remains in source for migration reference but is unregistered; the registered path requires a durable original-Connection-bound v2 operation.
 
 ## Tests (205 total)
 

@@ -1,4 +1,4 @@
-import { createPayPalWebhook } from "./webhook";
+import { createContainedPayPalWebhook } from "./webhook";
 
 export function createStoreEndpoints(opts: {
 	clientId: string;
@@ -7,7 +7,7 @@ export function createStoreEndpoints(opts: {
 	sandbox?: string;
 }) {
 	return {
-		"/paypal/webhook": createPayPalWebhook({
+		"/paypal/webhook": createContainedPayPalWebhook({
 			clientId: opts.clientId,
 			clientSecret: opts.clientSecret,
 			webhookId: opts.webhookId,

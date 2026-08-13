@@ -14,8 +14,5 @@ export function useCustomerApi() {
 			client.module("customers").store["/customers/me/addresses/:id"],
 		deleteAddress:
 			client.module("customers").store["/customers/me/addresses/:id/delete"],
-		getLoyalty: client.module("customers").store["/customers/me/loyalty"],
-		getLoyaltyHistory:
-			client.module("customers").store["/customers/me/loyalty/history"],
 	};
 }

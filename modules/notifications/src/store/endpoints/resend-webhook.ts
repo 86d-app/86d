@@ -1,9 +1,9 @@
 import { createStoreEndpoint } from "@86d-app/core";
-import type { DeliveryStatus, NotificationsController } from "../../service";
 
 /**
- * Resend webhook endpoint — receives delivery status events (email.delivered,
- * email.bounced, email.complained) and updates the matching notification record.
+ * Resend webhook containment endpoint. It authenticates the exact raw request,
+ * then asks the provider to retry until receipt persistence and delivery-status
+ * projection can be performed durably.
  *
  * Resend uses Svix for webhook delivery. Each request carries three headers:
  *   svix-id        — unique message ID
@@ -13,25 +13,10 @@ import type { DeliveryStatus, NotificationsController } from "../../service";
  * The signed payload is: `${svixId}.${svixTimestamp}.${rawBody}`
  * The key is the raw bytes of the webhook signing secret.
  *
- * When no secret is configured the endpoint accepts all events (dev mode).
+ * An unconfigured verifier fails closed.
  */
 
 const FIVE_MINUTES_MS = 5 * 60 * 1000;
-
-interface ResendWebhookData {
-	email_id: string;
-	from?: string;
-	to?: string[];
-	subject?: string;
-	created_at?: string;
-	bounce?: { message?: string } | null;
-	complaint?: { userAgent?: string } | null;
-}
-
-interface ResendWebhookEvent {
-	type: string;
-	data: ResendWebhookData;
-}
 
 async function verifySvixSignature(
 	rawBody: string,
@@ -72,22 +57,6 @@ async function verifySvixSignature(
 	return false;
 }
 
-function mapResendStatusToDelivery(eventType: string): DeliveryStatus | null {
-	switch (eventType) {
-		case "email.delivered":
-			return "delivered";
-		case "email.bounced":
-			return "bounced";
-		case "email.complained":
-			return "complained";
-		case "email.delivery_delayed":
-		case "email.sent":
-			return "sent";
-		default:
-			return null;
-	}
-}
-
 export function createResendWebhook(opts: {
 	webhookSecret?: string | undefined;
 }) {
@@ -100,89 +69,48 @@ export function createResendWebhook(opts: {
 		},
 		async (ctx) => {
 			const request = ctx.request;
-			const rawBody = await request.text();
 
-			// An unconfigured Integration must not accept a provider event.
-			// Skipping verification here would let anyone post one.
-			if (!opts.webhookSecret) {
+			const webhookSecret = opts.webhookSecret?.trim();
+			if (!webhookSecret) {
 				return Response.json(
 					{ error: "Resend webhook verification is not configured." },
 					{ status: 503 },
 				);
 			}
 
-			if (opts.webhookSecret) {
-				const svixId = request.headers.get("svix-id") ?? "";
-				const svixTimestamp = request.headers.get("svix-timestamp") ?? "";
-				const svixSignature = request.headers.get("svix-signature") ?? "";
-
-				if (!svixId || !svixTimestamp || !svixSignature) {
-					return Response.json(
-						{ error: "Missing Svix webhook headers." },
-						{ status: 400 },
-					);
-				}
-
-				const valid = await verifySvixSignature(
-					rawBody,
-					svixId,
-					svixTimestamp,
-					svixSignature,
-					opts.webhookSecret,
+			const rawBody = await request.text();
+			const svixId = request.headers.get("svix-id") ?? "";
+			const svixTimestamp = request.headers.get("svix-timestamp") ?? "";
+			const svixSignature = request.headers.get("svix-signature") ?? "";
+			if (!svixId || !svixTimestamp || !svixSignature) {
+				return Response.json(
+					{ error: "Missing Svix webhook headers." },
+					{ status: 401 },
 				);
-				if (!valid) {
-					return Response.json(
-						{ error: "Invalid webhook signature." },
-						{ status: 401 },
-					);
-				}
 			}
 
-			let event: ResendWebhookEvent;
-			try {
-				event = JSON.parse(rawBody) as ResendWebhookEvent;
-			} catch {
-				return Response.json({ error: "Invalid JSON body." }, { status: 400 });
+			const valid = await verifySvixSignature(
+				rawBody,
+				svixId,
+				svixTimestamp,
+				svixSignature,
+				webhookSecret,
+			);
+			if (!valid) {
+				return Response.json(
+					{ error: "Invalid or expired webhook signature." },
+					{ status: 401 },
+				);
 			}
 
-			const emailId = event.data?.email_id;
-			if (!emailId || typeof emailId !== "string") {
-				return Response.json({ received: true, handled: false });
-			}
-
-			const deliveryStatus = mapResendStatusToDelivery(event.type);
-			if (!deliveryStatus) {
-				return Response.json({ received: true, handled: false });
-			}
-
-			const notifications = ctx.context?.controllers?.notifications as
-				| NotificationsController
-				| undefined;
-			if (!notifications) {
-				return Response.json({ received: true, handled: false });
-			}
-
-			const notification = await notifications
-				.findByExternalId(emailId)
-				.catch(() => null);
-			if (!notification) {
-				return Response.json({ received: true, handled: false });
-			}
-
-			if (notification.deliveryStatus === deliveryStatus) {
-				return Response.json({ received: true, handled: false });
-			}
-
-			await notifications
-				.updateDeliveryStatus(notification.id, deliveryStatus)
-				.catch(() => null);
-
-			return Response.json({
-				received: true,
-				handled: true,
-				notificationId: notification.id,
-				deliveryStatus,
-			});
+			return Response.json(
+				{
+					code: "NOTIFICATION_WEBHOOK_DURABILITY_REQUIRED",
+					error:
+						"Resend webhook processing requires a durable provider receipt.",
+				},
+				{ status: 503, headers: { "Retry-After": "60" } },
+			);
 		},
 	);
 }

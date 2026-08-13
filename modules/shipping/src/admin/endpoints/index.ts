@@ -1,12 +1,10 @@
 import { addRate } from "./add-rate";
 import { createCarrier } from "./create-carrier";
 import { createMethod } from "./create-method";
-import { createShipment } from "./create-shipment";
 import { createZone } from "./create-zone";
 import { deleteCarrier } from "./delete-carrier";
 import { deleteMethod } from "./delete-method";
 import { deleteRate } from "./delete-rate";
-import { deleteShipment } from "./delete-shipment";
 import { deleteZone } from "./delete-zone";
 import type { createGetSettingsEndpoint } from "./get-settings";
 import { getShipment } from "./get-shipment";
@@ -15,11 +13,15 @@ import { listMethods } from "./list-methods";
 import { listRates } from "./list-rates";
 import { listShipments } from "./list-shipments";
 import { listZones } from "./list-zones";
+import {
+	createShipmentUnavailable as createShipment,
+	deleteShipmentUnavailable as deleteShipment,
+	updateShipmentUnavailable as updateShipment,
+	updateShipmentStatusUnavailable as updateShipmentStatus,
+} from "./shipment-activation-unavailable";
 import { updateCarrier } from "./update-carrier";
 import { updateMethod } from "./update-method";
 import { updateRate } from "./update-rate";
-import { updateShipment } from "./update-shipment";
-import { updateShipmentStatus } from "./update-shipment-status";
 import { updateZone } from "./update-zone";
 
 export function createAdminEndpointsWithSettings(

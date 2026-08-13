@@ -1,5 +1,4 @@
 import { createAdminEndpoint, z } from "@86d-app/core";
-import type { ReturnController } from "../../service";
 
 export const completeReturn = createAdminEndpoint(
 	"/admin/returns/:id/complete",
@@ -10,23 +9,12 @@ export const completeReturn = createAdminEndpoint(
 			refundAmount: z.number().min(0),
 		}),
 	},
-	async (ctx) => {
-		const controller = ctx.context.controllers.returns as ReturnController;
-		const result = await controller.complete(
-			ctx.params.id,
-			ctx.body.refundAmount,
-		);
-		if (!result) {
-			return { error: "Return request not found", status: 404 };
-		}
-		void ctx.context.events?.emit("return.completed", {
-			returnId: result.id,
-			orderId: result.orderId,
-			orderNumber: result.orderId,
-			email: result.customerEmail ?? "",
-			customerName: "",
-			reason: result.reason,
-		});
-		return { return: result };
+	async () => {
+		return {
+			code: "RETURN_COMPLETION_WORKFLOW_REQUIRED",
+			error:
+				"Completing a Return requires durable refund, tax, inventory, loyalty, and communication outcomes.",
+			status: 503,
+		};
 	},
 );

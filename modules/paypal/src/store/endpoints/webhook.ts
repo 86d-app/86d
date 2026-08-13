@@ -279,7 +279,6 @@ export function createPayPalWebhook(opts: PayPalWebhookOptions) {
 					{ status: 401 },
 				);
 			}
-
 			let event: Record<string, unknown>;
 			try {
 				event = JSON.parse(rawBody) as Record<string, unknown>;
@@ -359,6 +358,62 @@ export function createPayPalWebhook(opts: PayPalWebhookOptions) {
 
 					return Response.json({ received: true, type: eventType });
 				},
+			);
+		},
+	);
+}
+
+/**
+ * Registered containment endpoint. PayPal still verifies every callback, but
+ * verified events remain retryable until a durable Payments receipt exists.
+ */
+export function createContainedPayPalWebhook(opts: PayPalWebhookOptions) {
+	const baseUrl =
+		opts.sandbox === "true"
+			? "https://api-m.sandbox.paypal.com"
+			: "https://api-m.paypal.com";
+
+	return createStoreEndpoint(
+		"/paypal/webhook",
+		{
+			exposure: "provider_webhook",
+			method: "POST",
+			requireRequest: true,
+		},
+		async (ctx) => {
+			const clientId = opts.clientId?.trim();
+			const clientSecret = opts.clientSecret?.trim();
+			const webhookId = opts.webhookId?.trim();
+			if (!clientId || !clientSecret || !webhookId) {
+				return Response.json(
+					{ error: "PayPal webhook verification is not configured." },
+					{ status: 503 },
+				);
+			}
+
+			const rawBody = await ctx.request.text();
+			const valid = await verifyPayPalSignature(
+				rawBody,
+				ctx.request.headers,
+				webhookId,
+				clientId,
+				clientSecret,
+				baseUrl,
+			);
+			if (!valid) {
+				return Response.json(
+					{ error: "Invalid or unverifiable webhook signature." },
+					{ status: 401 },
+				);
+			}
+
+			return Response.json(
+				{
+					code: "PAYMENT_WEBHOOK_DURABILITY_REQUIRED",
+					error:
+						"PayPal webhook processing requires a durable provider receipt.",
+				},
+				{ status: 503, headers: { "Retry-After": "60" } },
 			);
 		},
 	);

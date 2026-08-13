@@ -171,3 +171,31 @@ export const inventoryStockAdjustedV2 = defineDurableEvent({
 		})
 		.strict(),
 });
+
+/** Products-owned fact emitted only when an immutable Catalog revision publishes. */
+export const catalogPublishedV1 = defineDurableEvent({
+	name: "catalog.published",
+	version: 1,
+	owner: "products",
+	payload: z
+		.object({
+			revisionId: z.string().min(1).max(200),
+			revisionSequence: z.number().int().positive(),
+			baseRevisionId: z.string().min(1).max(200).optional(),
+			contentVersion: z.literal(1),
+			contentDigest: z.string().regex(/^[a-f0-9]{64}$/),
+			currency: z.string().regex(/^[A-Z]{3}$/),
+			productCount: z.number().int().nonnegative(),
+			variantCount: z.number().int().nonnegative(),
+			categoryCount: z.number().int().nonnegative(),
+			operationId: z.string().min(8).max(180),
+			actor: z
+				.object({
+					type: z.enum(["account", "workload", "system"]),
+					id: z.string().min(1).max(255),
+				})
+				.strict(),
+			authorityId: z.string().min(1).max(255),
+		})
+		.strict(),
+});

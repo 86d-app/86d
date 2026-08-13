@@ -1,7 +1,7 @@
-import { createRefund } from "./create-refund";
 import { getIntentAdmin } from "./get-intent";
 import { listIntents } from "./list-intents";
 import { listRefunds } from "./list-refunds";
+import { createRefundUnavailable as createRefund } from "./refund-unavailable";
 
 export const adminEndpoints = {
 	"/admin/payments": listIntents,

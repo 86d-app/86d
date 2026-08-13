@@ -15,10 +15,58 @@ import {
 	taxQuoteCapability,
 } from "@86d-app/core";
 import { adminEndpoints } from "./admin/endpoints";
+import { checkoutFinalizationLifecycleV1 } from "./finalization";
 import { checkoutSchema } from "./schema";
 import { createCheckoutController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints";
 
+export type {
+	CheckoutRequest,
+	CheckoutRequestCreateInput,
+	CheckoutRequestCreateResult,
+	CheckoutRequestInvitationState,
+	CheckoutRequestReadResult,
+	CheckoutRequestStore,
+} from "./checkout-request";
+export {
+	checkoutRequestAuditActorSchema,
+	checkoutRequestCartSnapshotSchema,
+	checkoutRequestContactSchema,
+	checkoutRequestCreateInputSchema,
+	checkoutRequestReasonSchema,
+	createCheckoutRequestStore,
+} from "./checkout-request";
+export type {
+	AdmitCheckoutFinalizationInput,
+	CheckoutFinalization,
+	CheckoutFinalizationAttempt,
+	CheckoutFinalizationCompensation,
+	CheckoutFinalizationErrorCode,
+	CheckoutFinalizationSnapshot,
+	CheckoutFinalizationStore,
+	RecordCheckoutFinalizationAttemptInput,
+	RecordCheckoutFinalizationCompensationInput,
+} from "./finalization";
+export {
+	admitCheckoutFinalizationInputSchema,
+	CheckoutFinalizationError,
+	checkoutFinalizationAcceptedInputSchema,
+	checkoutFinalizationAttemptOutcomeSchema,
+	checkoutFinalizationAttentionSchema,
+	checkoutFinalizationCompensationActionSchema,
+	checkoutFinalizationCompensationOutcomeSchema,
+	checkoutFinalizationCompensationTargetSchema,
+	checkoutFinalizationLifecycleV1,
+	checkoutFinalizationResultSchema,
+	checkoutFinalizationStateSchema,
+	checkoutFinalizationStepSchema,
+	createCheckoutFinalizationStore,
+	recordCheckoutFinalizationAttemptInputSchema,
+	recordCheckoutFinalizationCompensationInputSchema,
+	storedCheckoutFinalizationAttemptSchema,
+	storedCheckoutFinalizationCompensationSchema,
+	storedCheckoutFinalizationSchema,
+} from "./finalization";
 export type {
 	CheckoutAddress,
 	CheckoutController,
@@ -97,6 +145,7 @@ export default function checkout(options?: CheckoutOptions): Module {
 		events: {
 			emits: ["checkout.completed", "checkout.abandoned"],
 		},
+		durableEvents: { emits: [checkoutFinalizationLifecycleV1] },
 		requires: {
 			discounts: {
 				read: ["discountValidation", "discountAmount"],

@@ -23,6 +23,14 @@
 
 In-app and email notification system with reusable templates, batch sending, priority levels, and per-customer preference management.
 
+> Critical Checkout, Order, Payment, Shipment, and Return communication is
+> currently contained: the Module does not send it from the in-memory event
+> bus. An additive durable `NotificationIntent` store owns deterministic IDs,
+> request fingerprints, template choice, recipient, delivery mode, Connection
+> reference, status, and provider-accepted recipient units without activating
+> delivery. A durable outbox consumer and managed Communications Gateway remain
+> required before these messages can be enabled safely.
+
 ## Installation
 
 ```sh
@@ -45,6 +53,13 @@ const module = notifications({
 |---|---|---|---|
 | `maxPerCustomer` | `string` | `"500"` | Maximum notifications stored per customer before auto-cleanup |
 
+Standalone and BYO Stores may configure literal Resend or Twilio credentials
+locally. Managed Store provisioning never injects the 86d.app provider key.
+The registered Admin delivery routes do not use those credentials yet: external
+channels remain contained until durable intent dispatch and provider acceptance
+receipts exist. This change does not activate the managed Communications
+Gateway.
+
 ## Store Endpoints
 
 | Method | Path | Description |
@@ -57,6 +72,8 @@ const module = notifications({
 | `POST` | `/notifications/:id/read` | Mark a notification as read |
 | `POST` | `/notifications/:id/delete` | Delete a notification (ownership verified) |
 | `POST` | `/notifications/read-all` | Mark all notifications as read |
+| `POST` | `/notifications/webhook/resend` | Verify Resend, then request a retry until durable receipt processing exists |
+| `POST` | `/notifications/webhook/twilio` | Verify Twilio, then request a retry until durable receipt processing exists |
 
 ## Admin Endpoints
 
@@ -65,10 +82,10 @@ const module = notifications({
 | Method | Path | Description |
 |---|---|---|
 | `GET` | `/admin/notifications` | List all notifications (filterable by type, priority, read status) |
-| `POST` | `/admin/notifications/create` | Create a notification for a customer |
+| `POST` | `/admin/notifications/create` | Create an in-app notification for a customer |
 | `GET` | `/admin/notifications/stats` | Get notification statistics (total, unread, byType, byPriority) |
 | `POST` | `/admin/notifications/bulk-delete` | Delete multiple notifications |
-| `POST` | `/admin/notifications/batch-send` | Send notification to multiple customers (up to 500) |
+| `POST` | `/admin/notifications/batch-send` | Create in-app notifications for multiple customers (up to 500) |
 | `GET` | `/admin/notifications/:id` | Get a notification |
 | `POST` | `/admin/notifications/:id/update` | Update a notification |
 | `POST` | `/admin/notifications/:id/delete` | Delete a notification |
@@ -88,14 +105,28 @@ const module = notifications({
 |---|---|---|
 | `GET` | `/admin/notifications/templates` | List notification templates |
 | `POST` | `/admin/notifications/templates/create` | Create a reusable template |
-| `POST` | `/admin/notifications/templates/send` | Send template-based notification to customers |
+| `POST` | `/admin/notifications/templates/send` | Create notifications from an active in-app template |
 | `GET` | `/admin/notifications/templates/:id` | Get a template |
 | `POST` | `/admin/notifications/templates/:id/update` | Update a template |
 | `POST` | `/admin/notifications/templates/:id/delete` | Delete a template |
 
 ## Controller API
 
-The `NotificationsController` interface is exported for inter-module use (e.g. orders sending shipping notifications).
+The `NotificationsController` interface is exported for local composition.
+Critical commerce communication must originate from durable outbox facts and
+notification intents rather than calling this controller from another Module.
+
+Registered Admin endpoints accept only `in_app` delivery. Requests with
+`email` or `both`, including templates configured for either external channel,
+return `503 NOTIFICATION_DELIVERY_DURABILITY_REQUIRED` before creating a
+notification or contacting a provider. Inbox CRUD, template management, and
+Customer preference routes remain active.
+
+Signed Resend and Twilio callbacks are deliberately not acknowledged. Missing
+verification configuration fails closed, missing or invalid signatures return
+`401`, and valid callbacks return retryable `503
+NOTIFICATION_WEBHOOK_DURABILITY_REQUIRED` with `Retry-After: 60`. No delivery
+status is projected until a durable, idempotent provider receipt is available.
 
 ```ts
 interface NotificationsController {

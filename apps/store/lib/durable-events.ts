@@ -8,8 +8,8 @@
  */
 
 import {
-	DurableEventDispatcher,
 	type DrainDurableEventsResult,
+	DurableEventDispatcher,
 } from "@86d-app/runtime/durable-event-dispatcher";
 import type { ModuleRegistry } from "@86d-app/runtime/registry";
 import { UniversalDataService } from "@86d-app/runtime/universal-data-service";

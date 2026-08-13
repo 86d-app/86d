@@ -1,7 +1,7 @@
 import { createMockDataService } from "@86d-app/core/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { FulfillmentStatus } from "../service";
-import { createFulfillmentController } from "../service-impl";
+import { createTestFulfillmentController as createFulfillmentController } from "./test-controller";
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -37,7 +37,7 @@ describe("fulfillment controllers — edge cases", () => {
 					orderId: "order_1",
 					items: [],
 				}),
-			).rejects.toThrow("at least one item");
+			).rejects.toThrow("at least one Order line");
 		});
 
 		it("generates unique IDs for each fulfillment", async () => {

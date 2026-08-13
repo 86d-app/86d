@@ -1,38 +1,45 @@
-import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
-import type { OrderController } from "../../service";
+import {
+	createStoreEndpoint,
+	storePresentationResolveCapability,
+	z,
+} from "@86d-app/core";
+import { resolveOrderCustomerContext } from "./customer-context";
 
 export const getMyInvoice = createStoreEndpoint(
 	"/orders/me/:id/invoice",
 	{
 		method: "GET",
 		params: z.object({ id: z.string().max(128) }),
-		query: z
-			.object({
-				storeName: z.string().max(200).transform(sanitizeText).optional(),
-			})
-			.optional(),
 	},
 	async (ctx) => {
-		const userId = ctx.context.session?.user.id;
-		if (!userId) {
-			return { error: "Unauthorized", status: 401 };
-		}
+		const customerContext = await resolveOrderCustomerContext(ctx.context);
+		if (!customerContext.ok) return customerContext.response;
 
-		const controller = ctx.context.controllers.order as OrderController;
-		const order = await controller.getById(ctx.params.id);
+		const order = await customerContext.controller.getById(ctx.params.id);
 
 		if (!order) {
 			return { error: "Order not found", status: 404 };
 		}
 
-		if (order.customerId !== userId) {
+		if (order.customerId !== customerContext.customerId) {
 			return { error: "Order not found", status: 404 };
 		}
 
-		const storeName =
-			(ctx.query as { storeName?: string } | undefined)?.storeName ??
-			"86d Store";
-		const invoice = await controller.getInvoiceData(ctx.params.id, storeName);
+		const presentation = await ctx.context.capabilities.invoke(
+			storePresentationResolveCapability,
+			{},
+		);
+		if (!presentation.ok) {
+			return {
+				code: "STORE_PRESENTATION_UNAVAILABLE",
+				error: "Authoritative Store presentation settings are unavailable.",
+				status: 503,
+			};
+		}
+		const invoice = await customerContext.controller.getInvoiceData(
+			ctx.params.id,
+			presentation.decision.storeName,
+		);
 		if (!invoice) {
 			return { error: "Invoice not found", status: 404 };
 		}

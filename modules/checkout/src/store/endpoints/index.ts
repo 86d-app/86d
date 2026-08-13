@@ -9,7 +9,9 @@ import {
 import { applyDiscount } from "./apply-discount";
 import { applyGiftCard } from "./apply-gift-card";
 import { applyStoreCredit } from "./apply-store-credit";
+import { createCheckoutRequest } from "./create-checkout-request";
 import { createSession } from "./create-session";
+import { getCheckoutRequest } from "./get-checkout-request";
 import { getLineItems } from "./get-line-items";
 import { getSession } from "./get-session";
 import { getShippingRates } from "./get-shipping-rates";
@@ -19,6 +21,8 @@ import { removeStoreCredit } from "./remove-store-credit";
 import { updateSession } from "./update-session";
 
 export const storeEndpoints = {
+	"/checkout/requests": createCheckoutRequest,
+	"/checkout/requests/:id": getCheckoutRequest,
 	"/checkout/sessions": createSession,
 	"/checkout/sessions/:id": getSession,
 	"/checkout/sessions/:id/update": updateSession,

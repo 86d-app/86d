@@ -134,7 +134,7 @@ Templates live in `templates/<name>/`. The store app resolves them via tsconfig 
 - **Module** is the technical packaging unit used in this repository.
 - **Connection** is a configured provider relationship used by an Integration.
 
-Do not use bare “dashboard” or “console” in product language. Current 86d.app UI strings, internal E2E filenames, and code identifiers that use `dashboard` are migration state.
+Do not use bare “dashboard” or “console” in product language. Use **86d Console** in product copy and `console` for its app, package, and code identifiers.
 
 ## Code conventions
 

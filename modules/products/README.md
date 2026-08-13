@@ -23,8 +23,9 @@
 > New Product and Variant prices are integer minor units. Inventory owns stock,
 > so Product stock mutations are rejected. Collections owns Collection writes;
 > the Products collection routes are compatibility reads only. Direct import is
-> unavailable until validated draft, Review, and immutable publish revisions are
-> implemented.
+> unavailable while its upload, diagnostics, diff, and Review transport remain
+> unfinished. The owner-local immutable revision engine exists but is not wired
+> to import, admin CRUD, or product-feed generation yet.
 
 📚 **Documentation:** [86d.app/docs/modules/products](https://86d.app/docs/modules/products)
 
@@ -100,6 +101,11 @@ Query parameters for `GET /products`:
 | `GET` | `/admin/collections/list` | List all collections |
 | `POST` | `/admin/products/bulk-action` | Bulk update status or delete |
 | `POST` | `/admin/products/import` | Contained; returns `PRODUCT_IMPORT_REVIEW_REQUIRED` |
+| `POST` | `/admin/catalog/revisions/create` | Create an immutable Catalog draft |
+| `GET` | `/admin/catalog/revisions/list` | List revision summaries |
+| `GET` | `/admin/catalog/revisions/:id` | Read one immutable revision and its content |
+| `POST` | `/admin/catalog/revisions/:id/review` | Review the expected content digest |
+| `POST` | `/admin/catalog/revisions/:id/publish` | Publish against the recorded base revision |
 
 ## Service API
 
@@ -112,8 +118,40 @@ const ctrl = createProductController(dataService);
 const product = await ctrl.createProduct({ name: "Widget", slug: "widget", price: 2999 });
 const variants = await ctrl.getVariantsByProduct(product.id);
 await ctrl.addProductToCollection(collectionId, product.id);
-const result = await ctrl.importProducts([{ name: "Gadget", price: 19.99 }]);
+const result = await ctrl.importProducts([{ name: "Gadget", price: 1999 }]);
 ```
+
+## Catalog revision foundation
+
+`applyCatalogRevisionOperation(transaction, input, context)` is the narrow,
+Products-owned interface for future Catalog Commands. It accepts normalized
+Product, Variant, accepted Category, currency, and integer-minor-unit facts and
+supports these transitions:
+
+```text
+create_draft -> draft -> review -> reviewed -> publish -> published
+                    \-> fail -> failed       \-> fail -> failed
+published -> superseded (only when its reviewed successor publishes)
+```
+
+Revision content and its SHA-256 digest never change after draft creation. Every
+operation locks the owner-local Catalog aggregate, records its actor and
+authority in an audit row, and writes a replay receipt. Publish compares the
+draft's recorded base revision to the locked published head; a stale base returns
+`stale_base_revision` without changing state. The new revision, supersession of
+the prior revision, audit rows, replay receipt, and `catalog.published@1` outbox
+fact commit in the caller's transaction.
+
+The authenticated Store Admin transport derives its Account actor, Store
+authority, and Store target from the session. Callers provide a stable operation
+ID; review and publish also provide the server-issued content digest. All writes
+return 503 unless the Runtime supplies owner-local locking and transactional
+durable-event storage. Reads validate stored data and list bounded summaries.
+
+Direct spreadsheet import continues to return
+`PRODUCT_IMPORT_REVIEW_REQUIRED`, and product-feed generation continues to fail
+closed until its published-revision consumer is connected. Existing Product
+CRUD is migration state and does not claim to be revision-backed.
 
 ## Controller API
 

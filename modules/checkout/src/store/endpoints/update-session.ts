@@ -1,9 +1,4 @@
-import {
-	createStoreEndpoint,
-	sanitizeText,
-	taxQuoteCapability,
-	z,
-} from "@86d-app/core";
+import { createStoreEndpoint, sanitizeText, z } from "@86d-app/core";
 import { checkoutRevisionSchema, runCheckoutMutation } from "../../concurrency";
 import type { CheckoutController } from "../../service";
 import { canAccessCheckout } from "./guest-proof";
@@ -60,60 +55,25 @@ export const updateSession = createStoreEndpoint(
 			return { error: "Checkout session not found", status: 404 };
 		}
 
-		let taxAmount: number | undefined;
 		if (ctx.body.shippingAddress) {
-			try {
-				const lineItems = await controller.getLineItems(existing.id);
-				if (lineItems.length === 0) {
-					return {
-						code: "CHECKOUT_TAX_UNAVAILABLE",
-						error: "An authoritative tax decision is unavailable.",
-						status: 503,
-					};
-				}
-				const discountRatio =
-					existing.subtotal > 0 && existing.discountAmount > 0
-						? existing.discountAmount / existing.subtotal
-						: 0;
-				const taxResult = await ctx.context.capabilities.invoke(
-					taxQuoteCapability,
-					{
-						address: {
-							country: ctx.body.shippingAddress.country,
-							state: ctx.body.shippingAddress.state,
-							city: ctx.body.shippingAddress.city,
-							postalCode: ctx.body.shippingAddress.postalCode,
-						},
-						lineItems: lineItems.map((item) => ({
-							productId: item.productId,
-							amount: Math.round(
-								item.price * item.quantity * (1 - discountRatio),
-							),
-							quantity: item.quantity,
-						})),
-						shippingAmount: existing.shippingAmount,
-						...(existing.customerId ? { customerId: existing.customerId } : {}),
-					},
-				);
-				if (
-					!taxResult.ok ||
-					!Number.isSafeInteger(taxResult.decision.totalTax) ||
-					taxResult.decision.totalTax < 0
-				) {
-					return {
-						code: "CHECKOUT_TAX_UNAVAILABLE",
-						error: "An authoritative tax decision is unavailable.",
-						status: 503,
-					};
-				}
-				taxAmount = taxResult.decision.totalTax;
-			} catch {
-				return {
-					code: "CHECKOUT_TAX_UNAVAILABLE",
-					error: "An authoritative tax decision is unavailable.",
-					status: 503,
-				};
-			}
+			return {
+				code: "CHECKOUT_TAX_V2_REQUIRED",
+				error:
+					"Shipping addresses require a revision-bound authoritative Tax decision.",
+				status: 503,
+			};
+		}
+
+		if (
+			ctx.body.shippingMethodName !== undefined ||
+			ctx.body.paymentMethod !== undefined
+		) {
+			return {
+				code: "CHECKOUT_CALLER_OPTION_REJECTED",
+				error:
+					"Shipping and Payment selections must use Store-issued local option identifiers.",
+				status: 422,
+			};
 		}
 
 		const mutation = await runCheckoutMutation(() =>
@@ -121,12 +81,7 @@ export const updateSession = createStoreEndpoint(
 				ctx.params.id,
 				{
 					guestEmail: ctx.body.guestEmail,
-					shippingAddress: ctx.body.shippingAddress,
 					billingAddress: ctx.body.billingAddress,
-					shippingAmount: ctx.body.shippingAmount,
-					shippingMethodName: ctx.body.shippingMethodName,
-					paymentMethod: ctx.body.paymentMethod,
-					...(taxAmount !== undefined ? { taxAmount } : {}),
 				},
 				ctx.body.expectedRevision,
 			),

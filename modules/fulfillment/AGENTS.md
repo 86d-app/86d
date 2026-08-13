@@ -1,6 +1,6 @@
 # Fulfillment Module
 
-Shipment lifecycle management with a 5-state machine. Handles creation, status transitions, tracking, cancellation, and optional auto-ship on tracking.
+Authoritative delivery-obligation foundation with quantity-validated creation. Shipping owns parcels, labels, and tracking; Orders owns only the accepted commercial lines. Direct status, tracking, and cancellation transport is contained until durable workflows own those transitions.
 
 ## Structure
 
@@ -41,6 +41,7 @@ FulfillmentOptions {
 ## Data models
 
 - **fulfillment**: id, orderId, status (pending|processing|shipped|delivered|cancelled), items (JSON: [{lineItemId, quantity}]), carrier?, trackingNumber?, trackingUrl?, notes?, shippedAt?, deliveredAt?, createdAt, updatedAt
+- **fulfillmentOrderLock**: one internal owner-local serialization row per Order; it is not a commerce projection or public API
 
 ## Status state machine
 
@@ -58,12 +59,22 @@ pending → processing → shipped → delivered
 
 ## Key patterns
 
-- Requires `orders` module (reads orderDetails, orderItems)
+- Requires the typed `orders.line-quantities.validate@1.0.0` capability; no Orders data is read directly
+- Creation fails closed without the Orders capability, transactions, or row locking
+- Creation normalizes duplicate requested lines, serializes by Order, and rejects cumulative non-cancelled obligations above accepted Order quantities
+- Creation commits `fulfillment.created@1` to the durable outbox in the same owner-local transaction as the obligation row
+- Cancelled obligations no longer consume a line allocation
 - Items stored as JSON array (not separate entity)
-- `createFulfillment` throws if items array is empty
+- `createFulfillment` rejects an empty items array. Explicit zero-line pickup, digital, and manual obligation types remain unmodeled and must not be simulated with an empty generic Fulfillment.
 - Store endpoints strip `notes` and `updatedAt` from responses
 - `autoShipOnTracking` only applies to pending/processing fulfillments
 - Events emitter is optional — controller works without it (graceful no-op)
+
+## Remaining authority gaps
+
+- Legacy controller methods for status, tracking, and cancellation remain for compatibility, but their registered Admin routes return `FULFILLMENT_WORKFLOW_REQUIRED`. They are not CAS-protected or transactionally paired with durable facts, so the full Fulfillment lifecycle is not yet M5-complete.
+- Existing fulfillment rows have no migration/backfill adapter from the legacy Orders-owned tables.
+- Store reads still need Customer or scoped guest-proof authorization before they are safe as the canonical account surface.
 
 ## Events emitted
 

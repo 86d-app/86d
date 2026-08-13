@@ -24,7 +24,7 @@
 Checkout session management for the 86d commerce platform. Handles the cart-to-order conversion flow: session creation, address collection, discount application, and order completion.
 
 > [!IMPORTANT]
-> Live confirmation, payment, and completion are intentionally unavailable while the accepted-offer finalizer is incomplete. Shopper mutations are revision guarded: read the session's `revision` and send it as the required `expectedRevision`; stale writes return `CHECKOUT_REVISION_CONFLICT` (HTTP 409).
+> Live confirmation, payment, completion, and stale-session expiry are intentionally unavailable while the accepted-offer finalizer and durable expiry workflow are incomplete. Shopper mutations are revision guarded: read the session's `revision` and send it as the required `expectedRevision`; stale writes return `CHECKOUT_REVISION_CONFLICT` (HTTP 409).
 
 ![version](https://img.shields.io/badge/version-0.0.1-blue) ![license](https://img.shields.io/badge/license-MIT-green)
 
@@ -73,7 +73,7 @@ Flow: `pending → processing → completed`, `pending → expired`, `pending/pr
 |---|---|---|
 | `POST` | `/checkout/sessions` | Create a new checkout session |
 | `GET` | `/checkout/sessions/:id` | Get a session by ID |
-| `PUT` | `/checkout/sessions/:id/update` | Update addresses, shipping amount, or payment method |
+| `PUT` | `/checkout/sessions/:id/update` | Update contact/billing data; caller Shipping/Payment choices are rejected |
 | `POST` | `/checkout/sessions/:id/discount` | Apply a discount code |
 
 Every mutation after session creation requires `expectedRevision`. The Store
@@ -81,7 +81,55 @@ Runtime locks the Checkout-owned row, compares the revision, and increments it
 atomically with the update. Row-locking unavailability fails closed rather than
 falling back to last-write-wins behavior.
 
-> Note: Checkout is customer-facing only. There are no admin endpoints.
+> Store Admin inspection endpoints are available. The expiry mutation returns
+> `CHECKOUT_EXPIRY_WORKFLOW_REQUIRED` until durable compensation exists.
+
+## Non-binding Checkout Requests
+
+`POST /checkout/requests` creates a non-binding request from a caller-owned,
+active Cart snapshot. Its strict body accepts only an operation key, Cart ID,
+reason, and sanitized contact. `GET /checkout/requests/:id` requires either the
+same authenticated owner or the request-scoped high-entropy guest proof stored
+in a secure httpOnly cookie. Guest owner and proof values are persisted as
+digests and omitted from responses. Create is deterministic and replay-safe;
+both endpoints fail closed without owner-local transactional row locking and
+use the Store edge's sensitive-path rate limiter.
+
+A Checkout Request stores no caller amount, Product price, Payment credential,
+final Tax or Shipping decision, Order, or Inventory promise. There is no
+invitation transition endpoint: setting `invited` or `reminded` before a durable
+delivery workflow proves the send would be false success. Any later invitation
+must start a fresh Checkout calculation and explicit shopper acceptance.
+
+The ordinary Checkout endpoints remain contained independently: session
+create/update reject Shipping addresses and caller Shipping/Payment selections
+until the revision-bound Tax v2 and accepted-offer flow is integrated; rate
+lookup returns `CHECKOUT_SHIPPING_QUOTE_V2_REQUIRED`; confirmation success
+requires server verification.
+
+## Dormant Finalization ledger
+
+`createCheckoutFinalizationStore()` exposes an unregistered, Checkout-owned
+workflow ledger for the future accepted-offer finalizer. Admission derives one
+stable aggregate ID from Checkout plus operation key, locks and validates the
+expected Checkout revision, digests the immutable accepted-input references,
+and rejects either changed-input replay or a second Finalization for that
+Checkout. It persists current step, state, attempt and compensation sequences,
+Order/Payment result references, and `needs_attention` without accepting any
+caller monetary value.
+
+Attempt and compensation keys are independently replay-safe. Their records and
+the `checkout.finalization-lifecycle@1` fact commit in the same owner-local
+transaction as aggregate progress. An ambiguous attempt or compensation moves
+the ledger to `needs_attention`; no API reports completion while an outcome is
+unknown.
+
+This is storage and concurrency scaffolding only. It invokes no capability, has
+no endpoint or UI registration, and cannot mark either Checkout or Finalization
+completed. M5-08's complete ten-step orchestration, per-step compensation and
+reconciliation behavior, authoritative completion transaction, and injected-
+failure proof matrix remain absent. The accepted-input identifiers are
+references to revalidate, not evidence that their owning decisions are fresh.
 
 ## Controller API
 
@@ -137,7 +185,7 @@ controller.abandon(id: string): Promise<CheckoutSession | null>
 // Retrieve line items stored for a session
 controller.getLineItems(sessionId: string): Promise<CheckoutLineItem[]>
 
-// Expire all sessions past their TTL — call periodically (e.g. cron)
+// Owner-local compatibility method. The HTTP expiry path remains contained.
 controller.expireStale(): Promise<number>
 ```
 
@@ -251,7 +299,8 @@ Typically rendered automatically by `CheckoutForm`. Can be used standalone if bu
 
 ### CheckoutShipping
 
-Step 2: Collects the shipping address (name, address, city, state, ZIP, country, phone). Advances to the payment step on submit.
+Step 2 is retained as migration presentation. Its Shipping-address mutation
+fails closed until Checkout persists a revision-bound Tax and Shipping offer.
 
 #### Props
 
@@ -265,7 +314,8 @@ None.
 
 ### CheckoutPayment
 
-Step 3: Confirms the checkout session (validates fields, reserves inventory) and creates a payment intent. In demo mode (no payments module), auto-succeeds. With a payment provider, renders a placeholder for the provider's UI (e.g. Stripe PaymentElement).
+Step 3 is retained as migration presentation. Confirmation and Payment routes
+return explicit activation-unavailable errors; there is no demo auto-success.
 
 #### Props
 
@@ -279,7 +329,9 @@ None.
 
 ### CheckoutReview
 
-Step 4: Shows the final order summary — contact, shipping address, line items, and totals. The "Place order" button completes the checkout session and shows an order confirmation.
+Step 4 is retained as migration presentation. “Place order” cannot complete a
+Checkout until the durable finalizer is implemented. The confirmation page
+renders success only for a server-verified Order.
 
 #### Props
 

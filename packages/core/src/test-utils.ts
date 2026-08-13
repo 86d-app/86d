@@ -17,6 +17,13 @@
 
 import type { CapabilityInvoker } from "./capabilities";
 import type {
+	AnyDurableEventDefinition,
+	DurableEventEnvelope,
+	DurableEventInput,
+	LockingModuleDataTransaction,
+	ModuleTransactionRunner,
+} from "./durable-events";
+import type {
 	ModuleConfig,
 	ModuleContext,
 	ModuleControllers,
@@ -155,6 +162,97 @@ export function createMockDataService(): MockDataService {
 			);
 
 			return sliced;
+		},
+	};
+}
+
+export type MockDurableEvent = Readonly<{
+	id: string;
+	name: string;
+	version: number;
+	sourceModule: string;
+	aggregate: Readonly<{ type: string; id: string; sequence: number }>;
+	payload: unknown;
+}>;
+
+export interface MockTransactionRunner extends ModuleTransactionRunner {
+	readonly data: MockDataService;
+	readonly emitted: MockDurableEvent[];
+}
+
+/**
+ * Create an owner-local locking transaction runner for behavior tests.
+ *
+ * Writes and durable events commit together. A thrown error restores the
+ * pre-transaction data snapshot and publishes no event, which lets Module
+ * tests characterize atomic failure without mocking their own internals.
+ */
+export function createMockTransactionRunner(
+	options: {
+		data?: MockDataService | undefined;
+		storeId?: string | undefined;
+		beforeEmit?:
+			| ((event: MockDurableEvent) => Promise<void> | void)
+			| undefined;
+	} = {},
+): MockTransactionRunner {
+	const data = options.data ?? createMockDataService();
+	const emitted: MockDurableEvent[] = [];
+
+	return {
+		data,
+		emitted,
+		async transaction(work) {
+			const snapshot = new Map(data._store);
+			const pending: MockDurableEvent[] = [];
+			const transaction: LockingModuleDataTransaction = {
+				get: data.get.bind(data),
+				findMany: data.findMany.bind(data),
+				upsert: data.upsert.bind(data),
+				delete: data.delete.bind(data),
+				getForUpdate: data.get.bind(data),
+				async emit<D extends AnyDurableEventDefinition>(
+					definition: D,
+					input: DurableEventInput<D>,
+				): Promise<DurableEventEnvelope<D>> {
+					const sequence =
+						pending.filter(
+							(event) =>
+								event.aggregate.type === input.aggregate.type &&
+								event.aggregate.id === input.aggregate.id,
+						).length + 1;
+					const validation = definition.payload.safeParse(input.payload);
+					if (!validation.success) {
+						throw new Error("Durable event payload is invalid.");
+					}
+					const payload = input.payload;
+					const event = {
+						id: input.id ?? `event-${emitted.length + pending.length + 1}`,
+						name: definition.name,
+						version: definition.version,
+						sourceModule: definition.owner,
+						aggregate: { ...input.aggregate, sequence },
+						payload,
+					} satisfies MockDurableEvent;
+					await options.beforeEmit?.(event);
+					pending.push(event);
+					return {
+						...event,
+						storeId: options.storeId ?? "test-store",
+						occurredAt: input.occurredAt ?? new Date(),
+					};
+				},
+			};
+
+			try {
+				const result = await work(transaction);
+				emitted.push(...pending);
+				return result;
+			} catch (error) {
+				data._store.clear();
+				for (const [key, value] of snapshot) data._store.set(key, value);
+				throw error;
+			}
 		},
 	};
 }

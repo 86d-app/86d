@@ -12,15 +12,15 @@ src/
   service-impl.ts   OrderController implementation (35 methods)
   store/
     endpoints/      Customer-facing (requires session)
-      list-orders.ts              GET  /orders/me
-      get-order.ts                GET  /orders/me/:id
+      list-orders.ts              GET  /orders/me (contained pending legacy attribution)
+      get-order.ts                GET  /orders/me/:id (contained pending legacy attribution)
       cancel-order.ts             POST /orders/me/:id/cancel (contained)
       get-fulfillments.ts         GET  /orders/me/:id/fulfillments
-      get-invoice.ts              GET  /orders/me/:id/invoice
+      get-invoice.ts              GET  /orders/me/:id/invoice (contained pending legacy attribution)
       get-returns.ts              GET  /orders/me/:id/returns
       create-return.ts            POST /orders/me/:id/returns/create (contained; Returns owns writes)
       list-my-returns.ts          GET  /orders/me/returns
-      reorder.ts                  POST /orders/me/:id/reorder
+      reorder.ts                  POST /orders/me/:id/reorder (contained pending legacy attribution)
       track-order.ts              POST /orders/track (contained; scoped guest proof required)
       store-search.ts             GET  /orders/store-search
     components/     Store UI (OrderHistory, OrderDetail, OrderReturns, OrderTracker)
@@ -92,10 +92,18 @@ cancellation fails closed until its cross-owner workflow is durable.
 
 Order creation rejects floats, unsafe integers, mismatched line subtotals,
 mismatched component totals, and non-uppercase ISO currency codes.
+Invoice projections resolve the Store name through the typed Settings-owned
+presentation capability; callers cannot supply branding.
 
 ## Key patterns
 
-- Customer endpoints verify `order.customerId === userId` (return 404, not 403)
+- Authenticated history/detail/invoice/reorder/cancellation routes remain
+  contained until Orders performs an audited attribution migration for legacy
+  rows keyed by raw authentication subjects; switching directly to the new
+  Customer identity would hide existing history
+- Legacy Order-owned Fulfillment/Return projections remain contained with
+  `STORE_CUSTOMER_CONTINUITY_REQUIRED` until standalone-owner read adapters and
+  guest proof are available
 - Email, Order ID, tracking number, or Order number never authorizes guest access; legacy guest confirmation and tracking handlers fail closed until scoped Checkout-to-Order proof verification is wired
 - Accepted Order deletion and bulk status/Payment/deletion mutations fail closed
 - Order-owned Fulfillment and Return rows are compatibility reads only; their HTTP writers fail closed in favor of the standalone owner modules

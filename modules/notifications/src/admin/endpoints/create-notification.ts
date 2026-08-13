@@ -1,5 +1,5 @@
 import { createAdminEndpoint, sanitizeText, z } from "@86d-app/core";
-import type { NotificationsController } from "../../service";
+import { notificationDeliveryDurabilityRequired } from "./delivery-containment";
 
 export const createNotificationEndpoint = createAdminEndpoint(
 	"/admin/notifications/create",
@@ -30,12 +30,15 @@ export const createNotificationEndpoint = createAdminEndpoint(
 		}),
 	},
 	async (ctx) => {
-		const controller = ctx.context.controllers
-			.notifications as NotificationsController;
+		if (ctx.body.channel && ctx.body.channel !== "in_app") {
+			return notificationDeliveryDurabilityRequired();
+		}
+
+		const controller = ctx.context.controllers.notifications;
 		const notification = await controller.create({
 			customerId: ctx.body.customerId,
 			type: ctx.body.type,
-			channel: ctx.body.channel,
+			channel: "in_app",
 			priority: ctx.body.priority,
 			title: ctx.body.title,
 			body: ctx.body.body,

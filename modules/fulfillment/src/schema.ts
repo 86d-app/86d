@@ -1,6 +1,13 @@
 import type { ModuleSchema } from "@86d-app/core";
 
 export const fulfillmentSchema = {
+	/** One stable owner-local row per Order used to serialize allocations. */
+	fulfillmentOrderLock: {
+		fields: {
+			id: { type: "string", required: true },
+			orderId: { type: "string", required: true, unique: true },
+		},
+	},
 	fulfillment: {
 		fields: {
 			id: { type: "string", required: true },

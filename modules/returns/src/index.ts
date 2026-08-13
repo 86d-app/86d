@@ -1,13 +1,30 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
 import {
 	acceptCapability,
-	inventoryCheckoutCapability,
-	orderCustomerAuthorizeCapability,
+	orderLineQuantityValidateCapability,
 } from "@86d-app/core";
 import { adminEndpoints } from "./admin/endpoints";
+import { returnRequestedV1 } from "./events";
 import { returnsSchema } from "./schema";
 import { createReturnController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints";
+
+export {
+	type AuthoritativeReturnRequest,
+	authoritativeReturnRequestSchema,
+	type RequestReturnInput,
+	type RequestReturnResult,
+	ReturnAuthorityError,
+	type ReturnAuthorityErrorCode,
+	requestAuthoritativeReturn,
+	requestReturnInputSchema,
+} from "./authority";
+export {
+	returnConditionSnapshotSchema,
+	returnReasonSnapshotSchema,
+	returnRequestedV1,
+	returnResolutionSchema,
+} from "./events";
 
 export type {
 	CreateReturnItemParams,
@@ -47,13 +64,7 @@ export default function returns(options?: ReturnsOptions): Module {
 		version: "0.0.1",
 		schema: returnsSchema,
 		capabilities: {
-			accepts: [
-				acceptCapability(orderCustomerAuthorizeCapability, { optional: true }),
-				acceptCapability(inventoryCheckoutCapability, {
-					operations: ["adjust"],
-					optional: true,
-				}),
-			],
+			accepts: [acceptCapability(orderLineQuantityValidateCapability)],
 		},
 		exports: {
 			read: ["returnStatus", "returnRefundAmount"],
@@ -69,6 +80,7 @@ export default function returns(options?: ReturnsOptions): Module {
 				"return.refunded",
 			],
 		},
+		durableEvents: { emits: [returnRequestedV1] },
 
 		init: async (ctx: ModuleContext) => {
 			const controller = createReturnController(ctx.data);
@@ -101,10 +113,6 @@ export default function returns(options?: ReturnsOptions): Module {
 
 		store: {
 			pages: [
-				{
-					path: "/account/returns",
-					component: "ReturnForm",
-				},
 				{
 					path: "/account/returns/:id",
 					component: "ReturnStatus",

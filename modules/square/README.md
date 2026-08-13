@@ -69,13 +69,7 @@ const squareModule = square({
 
 ## Webhook
 
-The `square()` module registers a webhook endpoint at `POST /square/webhook`. Square uses the `type` field in its webhook payloads.
-
-```ts
-// Response: { received: true, type: "payment.updated" }
-```
-
-Signature verification must be implemented at the adapter level using the `webhookSignatureKey`.
+The `square()` module registers `POST /square/webhook` with HMAC-SHA256 verification against the configured signature key and exact notification URL. Missing verification configuration returns `503`, and missing or invalid signatures return `401`. A verified event returns `503 PAYMENT_WEBHOOK_DURABILITY_REQUIRED` so Square retries; it does not mutate Payment state or emit a commerce outcome. The previous process-local mapper remains deliberately unregistered.
 
 ## Usage with payments module
 

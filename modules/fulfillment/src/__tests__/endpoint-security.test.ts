@@ -1,7 +1,7 @@
 import { createMockDataService } from "@86d-app/core/test-utils";
 import { beforeEach, describe, expect, it } from "vitest";
 import type { FulfillmentController, FulfillmentStatus } from "../service";
-import { createFulfillmentController } from "../service-impl";
+import { createTestFulfillmentController as createFulfillmentController } from "./test-controller";
 
 /**
  * Security regression tests for fulfillment endpoints.
@@ -345,7 +345,7 @@ describe("fulfillment endpoint security", () => {
 		it("rejects creation with empty items array", async () => {
 			await expect(
 				controller.createFulfillment({ orderId: "order_1", items: [] }),
-			).rejects.toThrow("at least one item");
+			).rejects.toThrow("at least one Order line");
 		});
 
 		it("accepts a single item with quantity 1", async () => {

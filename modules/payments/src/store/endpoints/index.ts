@@ -1,5 +1,7 @@
-import { deletePaymentMethod } from "./delete-method";
-import { listPaymentMethods } from "./list-methods";
+import {
+	deletePaymentMethodUnavailable as deletePaymentMethod,
+	listPaymentMethodsUnavailable as listPaymentMethods,
+} from "./activation-unavailable";
 
 export const storeEndpoints = {
 	"/payments/methods": listPaymentMethods,

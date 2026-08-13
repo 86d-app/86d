@@ -1,9 +1,9 @@
 import { createStoreEndpoint } from "@86d-app/core";
-import type { DeliveryStatus, NotificationsController } from "../../service";
 
 /**
- * Twilio StatusCallback endpoint — receives SMS delivery status events and
- * updates the matching notification record.
+ * Twilio callback containment endpoint. It authenticates the exact form body,
+ * then asks the provider to retry until receipt persistence and delivery-status
+ * projection can be performed durably.
  *
  * Twilio POSTs URL-encoded form data with:
  *   MessageSid    — the message SID (matches smsDelivery.messageId stored at send time)
@@ -15,7 +15,7 @@ import type { DeliveryStatus, NotificationsController } from "../../service";
  * The key is the Twilio Auth Token. The result is base64-encoded and compared
  * with the X-Twilio-Signature header.
  *
- * When no authToken or webhookUrl is provided the endpoint accepts all events.
+ * An unconfigured verifier fails closed.
  */
 
 async function computeTwilioSignature(
@@ -43,20 +43,6 @@ async function computeTwilioSignature(
 	return btoa(String.fromCharCode(...new Uint8Array(sigBytes)));
 }
 
-function mapTwilioStatusToDelivery(status: string): DeliveryStatus | null {
-	switch (status) {
-		case "delivered":
-			return "delivered";
-		case "failed":
-		case "undelivered":
-			return "failed";
-		case "sent":
-			return "sent";
-		default:
-			return null;
-	}
-}
-
 export function createTwilioWebhook(opts: {
 	authToken?: string | undefined;
 	webhookUrl?: string | undefined;
@@ -78,74 +64,43 @@ export function createTwilioWebhook(opts: {
 				params[k] = v;
 			}
 
-			// An unconfigured Integration must not accept a provider event.
-			// Skipping verification here would let anyone post one.
-			if (!opts.authToken || !opts.webhookUrl) {
+			const authToken = opts.authToken?.trim();
+			const webhookUrl = opts.webhookUrl?.trim();
+			if (!authToken || !webhookUrl) {
 				return Response.json(
 					{ error: "Twilio webhook verification is not configured." },
 					{ status: 503 },
 				);
 			}
 
-			if (opts.authToken && opts.webhookUrl) {
-				const twilioSig = request.headers.get("x-twilio-signature") ?? "";
-				if (!twilioSig) {
-					return Response.json(
-						{ error: "Missing X-Twilio-Signature header." },
-						{ status: 400 },
-					);
-				}
-
-				const expected = await computeTwilioSignature(
-					opts.authToken,
-					opts.webhookUrl,
-					params,
+			const twilioSignature = request.headers.get("x-twilio-signature") ?? "";
+			if (!twilioSignature) {
+				return Response.json(
+					{ error: "Missing X-Twilio-Signature header." },
+					{ status: 401 },
 				);
-				if (twilioSig !== expected) {
-					return Response.json(
-						{ error: "Invalid webhook signature." },
-						{ status: 401 },
-					);
-				}
 			}
 
-			const messageSid = params.MessageSid ?? params.SmsSid ?? "";
-			const messageStatus = params.MessageStatus ?? params.SmsStatus ?? "";
-
-			if (!messageSid) {
-				return Response.json({ error: "Missing MessageSid." }, { status: 400 });
+			const expected = await computeTwilioSignature(
+				authToken,
+				webhookUrl,
+				params,
+			);
+			if (twilioSignature !== expected) {
+				return Response.json(
+					{ error: "Invalid webhook signature." },
+					{ status: 401 },
+				);
 			}
 
-			const deliveryStatus = mapTwilioStatusToDelivery(messageStatus);
-			if (!deliveryStatus) {
-				// Status is queued/sending — acknowledge but no action needed
-				return Response.json({ received: true, handled: false });
-			}
-
-			const notifications = ctx.context?.controllers?.notifications as
-				| NotificationsController
-				| undefined;
-			if (!notifications) {
-				return Response.json({ received: true, handled: false });
-			}
-
-			const notification = await notifications
-				.findByExternalId(messageSid)
-				.catch(() => null);
-			if (!notification) {
-				return Response.json({ received: true, handled: false });
-			}
-
-			if (notification.deliveryStatus === deliveryStatus) {
-				return Response.json({ received: true, handled: false });
-			}
-
-			await notifications
-				.updateDeliveryStatus(notification.id, deliveryStatus)
-				.catch(() => null);
-
-			// Twilio expects a TwiML or empty 2xx response
-			return new Response(null, { status: 204 });
+			return Response.json(
+				{
+					code: "NOTIFICATION_WEBHOOK_DURABILITY_REQUIRED",
+					error:
+						"Twilio webhook processing requires a durable provider receipt.",
+				},
+				{ status: 503, headers: { "Retry-After": "60" } },
+			);
 		},
 	);
 }

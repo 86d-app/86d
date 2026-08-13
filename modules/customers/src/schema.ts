@@ -1,4 +1,5 @@
 import type { ModuleSchema } from "@86d-app/core";
+import { storeCustomerAuditBindingSchema } from "./identity-binding";
 
 export const customersSchema = {
 	customer: {
@@ -122,6 +123,42 @@ export const customersSchema = {
 				defaultValue: () => new Date(),
 				onUpdate: () => new Date(),
 			},
+		},
+	},
+	/** One verified authentication principal bound to one Store Customer. */
+	storeCustomerAuthBinding: {
+		fields: {
+			id: { type: "string", required: true },
+			bindingVersion: { type: "number", required: true },
+			customerId: {
+				type: "string",
+				required: true,
+				unique: true,
+				references: {
+					model: "customer",
+					field: "id",
+					onDelete: "restrict",
+				},
+			},
+			authProvider: { type: "string", required: true },
+			authSubjectDigest: { type: "string", required: true, index: true },
+			verifiedEmail: { type: "string", required: true, index: true },
+			customerCreated: { type: "boolean", required: true },
+			auditBinding: {
+				type: "json",
+				required: true,
+				validator: {
+					input: storeCustomerAuditBindingSchema,
+					output: storeCustomerAuditBindingSchema,
+				},
+			},
+			boundAt: { type: "date", required: true },
+		},
+	},
+	/** Stable owner-local rows that serialize principal and normalized-email claims. */
+	storeCustomerIdentityLock: {
+		fields: {
+			id: { type: "string", required: true },
 		},
 	},
 } satisfies ModuleSchema;

@@ -19,6 +19,10 @@
 
 # Settings Module
 
+Settings is the Store Runtime authority for shopper-visible presentation. It
+provides the typed `settings.presentation.resolve@1.0.0` decision so consumers
+such as invoice projection do not accept browser- or admin-supplied branding.
+
 📚 **Documentation:** [86d.app/docs/modules/settings](https://86d.app/docs/modules/settings)
 
 Global key-value store for store configuration. Settings are organized into groups (general, contact, social, legal, commerce, appearance) and managed through dedicated admin sub-pages.

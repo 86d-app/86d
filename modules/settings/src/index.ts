@@ -1,5 +1,6 @@
 import type { Module, ModuleConfig, ModuleContext } from "@86d-app/core";
 import { adminEndpoints } from "./admin/endpoints";
+import { storePresentationResolveProvider } from "./capabilities";
 import { settingsSchema } from "./schema";
 import { createSettingsController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints";
@@ -23,6 +24,7 @@ export default function settings(options?: SettingsOptions): Module {
 		id: "settings",
 		version: "0.0.1",
 		schema: settingsSchema,
+		capabilities: { provides: [storePresentationResolveProvider] },
 		exports: {
 			read: ["storeName", "storeDescription", "currency"],
 		},

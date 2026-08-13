@@ -314,59 +314,47 @@ describe("admin POST /returns/:id/reject", () => {
 // ── admin POST /returns/:id/received ─────────────────────────────────────────
 
 describe("admin POST /returns/:id/received", () => {
-	it("returns 404 with status when return not found", async () => {
-		const result = (await call(receivedHandler, {
-			params: { id: "missing" },
-		})) as { error: string; status: number };
-		expect(result.error).toBe("Return request not found");
-		expect(result.status).toBe(404);
-	});
+	it("keeps receipt and restock effects contained across retries", async () => {
+		const controller = makeController();
+		const request = () =>
+			call(receivedHandler, {
+				params: { id: "ret-6" },
+				controller,
+			});
 
-	it("marks return as received and returns it", async () => {
-		const returnWithItems = makeReturnWithItems({ id: "ret-6" });
-		const received = makeReturnRequest({ id: "ret-6", status: "received" });
-		const ctrl = makeController({
-			getById: vi.fn().mockResolvedValue(returnWithItems),
-			markReceived: vi.fn().mockResolvedValue(received),
+		await expect(request()).resolves.toMatchObject({
+			code: "RETURN_RECEIPT_WORKFLOW_REQUIRED",
+			status: 503,
 		});
-		const result = (await call(receivedHandler, {
-			params: { id: "ret-6" },
-			controller: ctrl,
-		})) as { return: ReturnRequest };
-		expect(result.return.status).toBe("received");
-		expect(ctrl.markReceived).toHaveBeenCalledWith("ret-6");
+		await expect(request()).resolves.toMatchObject({
+			code: "RETURN_RECEIPT_WORKFLOW_REQUIRED",
+			status: 503,
+		});
+		expect(controller.markReceived).not.toHaveBeenCalled();
 	});
 });
 
 // ── admin POST /returns/:id/complete ─────────────────────────────────────────
 
 describe("admin POST /returns/:id/complete", () => {
-	it("returns 404 with status when return not found", async () => {
-		const result = (await call(completeHandler, {
-			params: { id: "missing" },
-			body: { refundAmount: 1000 },
-		})) as { error: string; status: number };
-		expect(result.error).toBe("Return request not found");
-		expect(result.status).toBe(404);
-	});
+	it("keeps refund and downstream adjustments contained across retries", async () => {
+		const controller = makeController();
+		const request = () =>
+			call(completeHandler, {
+				params: { id: "ret-7" },
+				body: { refundAmount: 3_000 },
+				controller,
+			});
 
-	it("completes the return with refundAmount and returns it", async () => {
-		const completed = makeReturnRequest({
-			id: "ret-7",
-			status: "completed",
-			refundAmount: 3000,
+		await expect(request()).resolves.toMatchObject({
+			code: "RETURN_COMPLETION_WORKFLOW_REQUIRED",
+			status: 503,
 		});
-		const ctrl = makeController({
-			complete: vi.fn().mockResolvedValue(completed),
+		await expect(request()).resolves.toMatchObject({
+			code: "RETURN_COMPLETION_WORKFLOW_REQUIRED",
+			status: 503,
 		});
-		const result = (await call(completeHandler, {
-			params: { id: "ret-7" },
-			body: { refundAmount: 3000 },
-			controller: ctrl,
-		})) as { return: ReturnRequest };
-		expect(result.return.status).toBe("completed");
-		expect(result.return.refundAmount).toBe(3000);
-		expect(ctrl.complete).toHaveBeenCalledWith("ret-7", 3000);
+		expect(controller.complete).not.toHaveBeenCalled();
 	});
 });
 

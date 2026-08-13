@@ -1,5 +1,10 @@
 # Settings Module
 
+Settings owns shopper-visible Store presentation. The typed
+`settings.presentation.resolve@1.0.0` capability exposes validated name,
+description, support email, and currency decisions without giving consumers
+Settings data access. Missing or malformed required presentation fails closed.
+
 Key-value store for global store configuration organized by group (general, contact, social, legal, commerce, appearance).
 
 ## Structure

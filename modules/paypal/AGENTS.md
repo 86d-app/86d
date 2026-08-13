@@ -66,9 +66,9 @@ OAuth2 client credentials flow. Tokens cached with 60-second expiry buffer.
 
 - PayPal uses RSA signatures verified via REST API (not local crypto)
 - Requires all 5 transmission headers or verification fails
-- Event map: `PAYMENT.CAPTURE.COMPLETED`, `PAYMENT.CAPTURE.DENIED`, `PAYMENT.CAPTURE.PENDING`, `CHECKOUT.ORDER.APPROVED`
-- Refund events: `PAYMENT.CAPTURE.REFUNDED`, `PAYMENT.SALE.REFUNDED`
-- Without `webhookId` all requests accepted (dev mode)
+- The registered endpoint verifies every callback, then returns `503 PAYMENT_WEBHOOK_DURABILITY_REQUIRED` so PayPal retries; it does not mutate Payments or emit commerce events
+- Missing credentials or `webhookId` fail closed with `503`; missing, invalid, or unverifiable signatures return `401`
+- The legacy process-local event mapper remains in source for migration reference but is deliberately unregistered
 
 ## Patterns
 

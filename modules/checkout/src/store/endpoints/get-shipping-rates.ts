@@ -1,4 +1,4 @@
-import { createStoreEndpoint, shippingQuoteCapability, z } from "@86d-app/core";
+import { createStoreEndpoint, z } from "@86d-app/core";
 import type { CheckoutController } from "../../service";
 import { canAccessCheckout } from "./guest-proof";
 
@@ -19,38 +19,11 @@ export const getShippingRates = createStoreEndpoint(
 			return { error: "Checkout session not found", status: 404 };
 		}
 
-		if (!session.shippingAddress) {
-			return {
-				error: "Shipping address is required to get rates",
-				status: 422,
-			};
-		}
-
-		try {
-			const result = await ctx.context.capabilities.invoke(
-				shippingQuoteCapability,
-				{
-					country: session.shippingAddress.country,
-					orderAmount: session.subtotal,
-				},
-			);
-			if (!result.ok) {
-				return {
-					code: "CHECKOUT_SHIPPING_UNAVAILABLE",
-					error:
-						result.failure.code === "NO_SHIPPING_OPTION"
-							? result.failure.message
-							: "An authoritative shipping decision is unavailable.",
-					status: result.failure.code === "NO_SHIPPING_OPTION" ? 422 : 503,
-				};
-			}
-			return { rates: result.decision.rates };
-		} catch {
-			return {
-				code: "CHECKOUT_SHIPPING_UNAVAILABLE",
-				error: "An authoritative shipping decision is unavailable.",
-				status: 503,
-			};
-		}
+		return {
+			code: "CHECKOUT_SHIPPING_QUOTE_V2_REQUIRED",
+			error:
+				"Shipping quotes require an expiring, revision-bound Store option.",
+			status: 503,
+		};
 	},
 );

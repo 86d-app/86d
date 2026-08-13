@@ -1,7 +1,7 @@
 import type { ScopedEventEmitter } from "@86d-app/core";
 import { createMockDataService } from "@86d-app/core/test-utils";
 import { describe, expect, it, vi } from "vitest";
-import { createFulfillmentController } from "../service-impl";
+import { createTestFulfillmentController as createFulfillmentController } from "./test-controller";
 
 function createMockEvents(): ScopedEventEmitter & {
 	emitted: Array<{ type: string; payload: unknown }>;
@@ -63,7 +63,7 @@ describe("createFulfillment", () => {
 		const ctrl = createFulfillmentController(createMockDataService());
 		await expect(
 			ctrl.createFulfillment({ orderId: "order-1", items: [] }),
-		).rejects.toThrow("at least one item");
+		).rejects.toThrow("at least one Order line");
 	});
 
 	it("generates unique IDs for each fulfillment", async () => {

@@ -288,31 +288,39 @@ describe("admin POST /product-feeds/:id/delete", () => {
 });
 
 describe("admin POST /product-feeds/:id/generate", () => {
-	it("returns error when not found", async () => {
-		const result = (await call(generateFeedHandler, {
-			params: { id: "missing" },
-			body: { products: [] },
-		})) as { error: string };
-		expect(result.error).toBeDefined();
+	it("rejects caller-supplied Product snapshots before generation", async () => {
+		const controller = makeController();
+
+		await expect(
+			call(generateFeedHandler, {
+				params: { id: "feed_1" },
+				body: { products: [{ id: "browser-product", price: 0 }] },
+				controller,
+			}),
+		).rejects.toMatchObject({ statusCode: 400 });
+		expect(controller.generateFeed).not.toHaveBeenCalled();
 	});
 
-	it("generates feed and returns counts", async () => {
-		const ctrl = makeController({
-			generateFeed: vi.fn().mockResolvedValue({
-				itemCount: 5,
-				errorCount: 0,
-				warningCount: 1,
-				output: "",
-			}),
+	it("retries fail closed until immutable published Catalog derivation exists", async () => {
+		const controller = makeController();
+		const request = () =>
+			call(generateFeedHandler, {
+				params: { id: "feed_1" },
+				body: {},
+				controller,
+			});
+
+		await expect(request()).resolves.toEqual({
+			code: "PRODUCT_FEED_GENERATION_REVIEW_REQUIRED",
+			error:
+				"Product feed generation is unavailable until it reads an immutable published Catalog revision.",
+			status: 503,
 		});
-		const result = (await call(generateFeedHandler, {
-			params: { id: "feed_1" },
-			body: { products: [] },
-			controller: ctrl,
-		})) as { itemCount: number; errorCount: number; warningCount: number };
-		expect(result.itemCount).toBe(5);
-		expect(result.errorCount).toBe(0);
-		expect(result.warningCount).toBe(1);
+		await expect(request()).resolves.toMatchObject({
+			code: "PRODUCT_FEED_GENERATION_REVIEW_REQUIRED",
+			status: 503,
+		});
+		expect(controller.generateFeed).not.toHaveBeenCalled();
 	});
 });
 

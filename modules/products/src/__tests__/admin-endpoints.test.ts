@@ -649,7 +649,7 @@ describe("admin POST /products/bulk", () => {
 // ── importProducts ────────────────────────────────────────────────────────────
 
 describe("admin POST /products/import", () => {
-	it("calls import controller and returns result", async () => {
+	it("keeps direct spreadsheet mutation contained across retries", async () => {
 		const controllers = makeControllers({
 			import: {
 				importProducts: vi
@@ -657,32 +657,23 @@ describe("admin POST /products/import", () => {
 					.mockResolvedValue({ created: 5, updated: 2, errors: [] }),
 			},
 		});
-		const result = (await call(importProductsHandler, {
-			body: {
-				products: [{ name: "Widget A", price: 999 }],
-			},
-			controllers,
-		})) as { created: number; updated: number; errors: unknown[] };
-		expect(result.created).toBe(5);
-		expect(result.updated).toBe(2);
-		expect(result.errors).toHaveLength(0);
-	});
+		const request = () =>
+			call(importProductsHandler, {
+				body: { products: [{ name: "Widget A", price: 999 }] },
+				controllers,
+			});
 
-	it("returns import errors when rows are invalid", async () => {
-		const errors = [{ row: 1, field: "price", message: "Invalid price" }];
-		const controllers = makeControllers({
-			import: {
-				importProducts: vi
-					.fn()
-					.mockResolvedValue({ created: 0, updated: 0, errors }),
-			},
+		await expect(request()).resolves.toEqual({
+			code: "PRODUCT_IMPORT_REVIEW_REQUIRED",
+			error:
+				"Direct Product import is unavailable until the validated draft, Review, and immutable publish pipeline is configured.",
+			status: 503,
 		});
-		const result = (await call(importProductsHandler, {
-			body: { products: [{ name: "Bad", price: "not-a-number" }] },
-			controllers,
-		})) as { errors: typeof errors };
-		expect(result.errors).toHaveLength(1);
-		expect(result.errors[0].field).toBe("price");
+		await expect(request()).resolves.toMatchObject({
+			code: "PRODUCT_IMPORT_REVIEW_REQUIRED",
+			status: 503,
+		});
+		expect(controllers.import.importProducts).not.toHaveBeenCalled();
 	});
 });
 
