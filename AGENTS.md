@@ -172,7 +172,7 @@ Beta shows one clear warning on first enablement. Experimental requires explicit
 
 **Unit (Vitest):** `bun run test`, with `@86d-app/core/test-utils` mocks. External-provider fixtures must match the real API JSON shape so a broken integration cannot pass.
 
-**E2E (Playwright):** config at `playwright.config.ts`; specs `storefront`, `checkout`, `admin`, `dashboard`, `accessibility`, `performance`, `visual`. Visual regression runs across viewport projects `visual-desktop` (1280×720), `visual-tablet` (768×1024), `visual-mobile` (375×667), in light and dark. Import from `./fixtures/test-fixtures`, not `@playwright/test`. Selectors are always `data-testid`; always `waitForLoadState('networkidle')`, never `waitForTimeout()`. Coverage target: every page route, admin screen, store-facing screen, empty state, and error state.
+**E2E (Playwright):** config at `tests/playwright.config.ts`; specs `storefront`, `checkout`, `admin`, `dashboard`, `accessibility`, `performance`, `visual`. Visual regression runs across viewport projects `visual-desktop` (1280×720), `visual-tablet` (768×1024), `visual-mobile` (375×667), in light and dark. Import from `./fixtures/test-fixtures`, not `@playwright/test`. Selectors are always `data-testid`; always `waitForLoadState('networkidle')`, never `waitForTimeout()`. Coverage target: every page route, admin screen, store-facing screen, empty state, and error state.
 
 ## Health gates
 

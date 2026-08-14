@@ -26,13 +26,13 @@ tests/e2e/
 
 ## Config
 
-- `playwright.config.ts` at repo root
+- `tests/playwright.config.ts` (parent directory)
 - Projects: `store-chromium`, `store-mobile`, `visual-desktop/tablet/mobile`
 - WebServer auto-starts `bun run dev:store` on port 3000
 
 ## Adding tests
 
 1. Import from `./fixtures/test-fixtures` (not `@playwright/test` directly) to get page-objects
-2. Add new spec files to the appropriate `testMatch` array in `playwright.config.ts`
+2. Add new spec files to the appropriate `testMatch` array in `tests/playwright.config.ts`
 3. Prefer `data-testid` over CSS class selectors for elements that may change styling
 4. Always seed data first: `bun run db:seed`

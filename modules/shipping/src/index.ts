@@ -115,61 +115,8 @@ export interface ShippingOptions extends ModuleConfig {
 	easypostConnectionId?: string | undefined;
 	/** Merchant-visible name for the configured EasyPost Shipping Connection. */
 	easypostConnectionName?: string | undefined;
-	/** Server-owned Shipping origin. The complete set is required for v2 quotes. */
-	easypostOriginName?: string | undefined;
-	easypostOriginCompany?: string | undefined;
-	easypostOriginStreet1?: string | undefined;
-	easypostOriginStreet2?: string | undefined;
-	easypostOriginCity?: string | undefined;
-	easypostOriginState?: string | undefined;
-	easypostOriginPostalCode?: string | undefined;
-	easypostOriginCountry?: string | undefined;
-	easypostOriginPhone?: string | undefined;
 	/** Local quote validity, from 60 to 3,600 seconds. */
 	quoteTtlSeconds?: number | undefined;
-}
-
-function configuredEasyPostOrigin(options?: ShippingOptions) {
-	const values = [
-		options?.easypostOriginName,
-		options?.easypostOriginCompany,
-		options?.easypostOriginStreet1,
-		options?.easypostOriginStreet2,
-		options?.easypostOriginCity,
-		options?.easypostOriginState,
-		options?.easypostOriginPostalCode,
-		options?.easypostOriginCountry,
-		options?.easypostOriginPhone,
-	];
-	if (!values.some((value) => value !== undefined)) return null;
-	if (
-		!options?.easypostOriginStreet1 ||
-		!options.easypostOriginCity ||
-		!options.easypostOriginState ||
-		!options.easypostOriginPostalCode ||
-		!options.easypostOriginCountry
-	) {
-		throw new Error(
-			"EasyPost v2 origin requires street, city, state, postal code, and country.",
-		);
-	}
-	return shippingAddressSchema.parse({
-		...(options.easypostOriginName ? { name: options.easypostOriginName } : {}),
-		...(options.easypostOriginCompany
-			? { company: options.easypostOriginCompany }
-			: {}),
-		street1: options.easypostOriginStreet1,
-		...(options.easypostOriginStreet2
-			? { street2: options.easypostOriginStreet2 }
-			: {}),
-		city: options.easypostOriginCity,
-		state: options.easypostOriginState,
-		postalCode: options.easypostOriginPostalCode,
-		country: options.easypostOriginCountry,
-		...(options.easypostOriginPhone
-			? { phone: options.easypostOriginPhone }
-			: {}),
-	});
 }
 
 export default function shipping(options?: ShippingOptions): Module {
@@ -181,10 +128,11 @@ export default function shipping(options?: ShippingOptions): Module {
 		easypostApiKey: options?.easypostApiKey,
 		easypostTestMode: options?.easypostTestMode,
 		easypostWebhookSecret: options?.easypostWebhookSecret,
+		easypostConnectionId:
+			options?.easypostConnectionId ?? "shipping_easypost_default",
 	});
 	const easypostConnectionId =
 		options?.easypostConnectionId ?? "shipping_easypost_default";
-	const easypostOrigin = configuredEasyPostOrigin(options);
 
 	return {
 		id: "shipping",
@@ -235,19 +183,14 @@ export default function shipping(options?: ShippingOptions): Module {
 				providers,
 				{ quoteTtlSeconds: options?.quoteTtlSeconds },
 			);
-			if (options?.easypostApiKey && easypostOrigin && ctx.transactions) {
-				await foundation.ensureConnection({
-					id: easypostConnectionId,
-					name: options.easypostConnectionName ?? "EasyPost",
-					provider: "easypost",
-					mode: options.easypostTestMode === false ? "live" : "test",
-					capabilities: ["quote"],
-					secretReference: "module-option:easypostApiKey",
-					originAddress: easypostOrigin,
-				});
-				const checked = await foundation.checkConnection(easypostConnectionId);
-				if (checked.health === "healthy" && checked.lifecycle !== "enabled") {
-					await foundation.enableConnection(easypostConnectionId);
+			if (options?.easypostApiKey && ctx.transactions) {
+				const existing = await foundation.getConnection(easypostConnectionId);
+				if (existing) {
+					const checked =
+						await foundation.checkConnection(easypostConnectionId);
+					if (checked.health === "healthy" && checked.lifecycle !== "enabled") {
+						await foundation.enableConnection(easypostConnectionId);
+					}
 				}
 			}
 			return {
@@ -260,7 +203,12 @@ export default function shipping(options?: ShippingOptions): Module {
 						webhookSecret: options?.easypostWebhookSecret,
 					})
 				: storeEndpoints,
-			admin: createAdminEndpointsWithSettings(settingsEndpoint),
+			admin: createAdminEndpointsWithSettings(settingsEndpoint, {
+				easypostApiKey: options?.easypostApiKey,
+				easypostTestMode: options?.easypostTestMode,
+				easypostConnectionId,
+				easypostConnectionName: options?.easypostConnectionName ?? "EasyPost",
+			}),
 		},
 		admin: {
 			pages: [

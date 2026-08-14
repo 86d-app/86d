@@ -722,6 +722,16 @@ describe("admin DELETE /shipping/shipments/:id/delete", () => {
 // ── Settings ──────────────────────────────────────────────────────────────────
 
 describe("admin GET /shipping/settings", () => {
+	const settingsContext = {
+		context: {
+			controllers: {
+				shippingV2: {
+					getConnection: vi.fn().mockResolvedValue(null),
+				},
+			},
+		},
+	};
+
 	it("returns not_configured and configured=false when no API key", async () => {
 		const endpoint = createGetSettingsEndpoint({});
 		const handler = extractHandler(endpoint);
@@ -729,10 +739,11 @@ describe("admin GET /shipping/settings", () => {
 			query: {},
 			params: {},
 			body: {},
-			context: {},
-		})) as { status: string; configured: boolean };
+			...settingsContext,
+		})) as { status: string; configured: boolean; originConfigured: boolean };
 		expect(result.status).toBe("not_configured");
 		expect(result.configured).toBe(false);
+		expect(result.originConfigured).toBe(false);
 	});
 
 	it("returns unavailable when only the API key is present", async () => {
@@ -744,7 +755,7 @@ describe("admin GET /shipping/settings", () => {
 			query: {},
 			params: {},
 			body: {},
-			context: {},
+			...settingsContext,
 		})) as { status: string; configured: boolean; apiKeyMasked: string | null };
 		expect(result.configured).toBe(false);
 		expect(result.apiKeyMasked).not.toBeNull();

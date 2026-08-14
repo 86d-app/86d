@@ -473,6 +473,10 @@ export interface ShippingFoundationController extends ModuleController {
 	): Promise<ShippingConnection>;
 	getConnection(id: string): Promise<ShippingConnection | null>;
 	listConnections(): Promise<ShippingConnection[]>;
+	updateConnectionOrigin(
+		id: string,
+		originAddress: ShippingAddress,
+	): Promise<ShippingConnection>;
 	checkConnection(id: string): Promise<ShippingConnection>;
 	enableConnection(id: string): Promise<ShippingConnection>;
 	disableConnection(id: string): Promise<ShippingConnection>;
@@ -955,6 +959,35 @@ export function createShippingFoundationController(
 				orderBy: { createdAt: "asc" },
 			});
 			return rows.map((row) => shippingConnectionSchema.parse(row));
+		},
+
+		async updateConnectionOrigin(id, originAddress) {
+			const connectionId = identifierSchema.parse(id);
+			const parsedOrigin = shippingAddressSchema.parse(originAddress);
+			return transact(async (transaction) => {
+				const connection = requireConnection(
+					await transaction.getForUpdate("shippingConnectionV2", connectionId),
+				);
+				if (connection.lifecycle === "revoked") {
+					throw new ShippingFoundationError(
+						"connection_revoked",
+						"A revoked Shipping Connection cannot be updated.",
+					);
+				}
+				const now = new Date();
+				const updated = shippingConnectionSchema.parse({
+					...connection,
+					originAddress: parsedOrigin,
+					health: "unknown",
+					healthCheckedAt: undefined,
+					lifecycle: "draft",
+					enabledAt: undefined,
+					disabledAt: undefined,
+					updatedAt: now,
+				});
+				await transaction.upsert("shippingConnectionV2", connectionId, updated);
+				return updated;
+			});
 		},
 
 		async checkConnection(id) {

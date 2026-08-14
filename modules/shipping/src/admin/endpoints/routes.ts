@@ -6,6 +6,7 @@ import { deleteCarrier } from "./delete-carrier";
 import { deleteMethod } from "./delete-method";
 import { deleteRate } from "./delete-rate";
 import { deleteZone } from "./delete-zone";
+import { createGetConnectionEndpoint } from "./get-connection";
 import type { createGetSettingsEndpoint } from "./get-settings";
 import { getShipment } from "./get-shipment";
 import { listCarriers } from "./list-carriers";
@@ -20,16 +21,27 @@ import {
 	updateShipmentStatusUnavailable as updateShipmentStatus,
 } from "./shipment-activation-unavailable";
 import { updateCarrier } from "./update-carrier";
+import {
+	createUpdateConnectionOriginEndpoint,
+	type UpdateConnectionOriginOptions,
+} from "./update-connection-origin";
 import { updateMethod } from "./update-method";
 import { updateRate } from "./update-rate";
 import { updateZone } from "./update-zone";
 
+export interface AdminConnectionOptions extends UpdateConnectionOriginOptions {}
+
 export function createAdminEndpointsWithSettings(
 	settingsEndpoint: ReturnType<typeof createGetSettingsEndpoint>,
+	connectionOptions: AdminConnectionOptions,
 ) {
 	return {
 		...adminEndpoints,
 		"/admin/shipping/settings": settingsEndpoint,
+		"/admin/shipping/connection":
+			createGetConnectionEndpoint(connectionOptions),
+		"/admin/shipping/connection/origin":
+			createUpdateConnectionOriginEndpoint(connectionOptions),
 	};
 }
 

@@ -1,6 +1,6 @@
 # E2E Tests
 
-Playwright end-to-end tests for the 86d store.
+Playwright end-to-end tests for the 86d store. Config lives in [`../playwright.config.ts`](../playwright.config.ts).
 
 ## Prerequisites
 

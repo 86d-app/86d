@@ -23,7 +23,15 @@ function callSettings(options: {
 		...options,
 	});
 	const handler = extractHandler(endpoint);
-	return handler({ context: {} });
+	return handler({
+		context: {
+			controllers: {
+				shippingV2: {
+					getConnection: vi.fn().mockResolvedValue(null),
+				},
+			},
+		},
+	});
 }
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────

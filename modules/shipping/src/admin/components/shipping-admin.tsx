@@ -49,12 +49,47 @@ interface SettingsData {
 	webhookConfigured: boolean;
 	testMode: boolean;
 	apiKeyMasked: string | null;
+	originConfigured: boolean;
 }
+
+interface ShippingOriginAddress {
+	name?: string | undefined;
+	company?: string | undefined;
+	street1: string;
+	street2?: string | undefined;
+	city: string;
+	state: string;
+	postalCode: string;
+	country: string;
+	phone?: string | undefined;
+}
+
+interface ShippingConnectionData {
+	id: string;
+	name: string;
+	provider: string;
+	mode: string;
+	health: string;
+	lifecycle: string;
+	originAddress: ShippingOriginAddress;
+}
+
+const DEFAULT_ORIGIN: ShippingOriginAddress = {
+	street1: "",
+	city: "",
+	state: "",
+	postalCode: "",
+	country: "US",
+};
 
 function useShippingAdminApi() {
 	const client = useModuleClient();
 	return {
 		getSettings: client.module("shipping").admin["/admin/shipping/settings"],
+		getConnection:
+			client.module("shipping").admin["/admin/shipping/connection"],
+		updateConnectionOrigin:
+			client.module("shipping").admin["/admin/shipping/connection/origin"],
 		listZones: client.module("shipping").admin["/admin/shipping/zones"],
 		createZone: client.module("shipping").admin["/admin/shipping/zones/create"],
 		updateZone:
@@ -120,6 +155,238 @@ function ConnectionStatus({ settings }: { settings: SettingsData }) {
 					rates and authenticated tracking updates.
 				</p>
 			</div>
+		</div>
+	);
+}
+
+function OriginWarningBanner() {
+	return (
+		<div className="mb-4 flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-900/20">
+			<div className="size-2 rounded-full bg-amber-500" />
+			<div className="flex-1">
+				<p className="font-medium text-amber-900 text-sm dark:text-amber-300">
+					Ship-from address required
+				</p>
+				<p className="text-amber-800 text-xs dark:text-amber-400">
+					EasyPost credentials are configured, but live shipping quotes need a
+					complete ship-from address below.
+				</p>
+			</div>
+		</div>
+	);
+}
+
+function ShipFromAddressForm({
+	initial,
+	saving,
+	saved,
+	error,
+	onSave,
+}: {
+	initial: ShippingOriginAddress;
+	saving: boolean;
+	saved: boolean;
+	error: string;
+	onSave: (origin: ShippingOriginAddress) => void;
+}) {
+	const [form, setForm] = useState<ShippingOriginAddress>(initial);
+
+	useEffect(() => {
+		setForm(initial);
+	}, [initial]);
+
+	return (
+		<div className="mb-6 rounded-lg border border-border bg-card p-4">
+			<div className="mb-4">
+				<h2 className="font-semibold text-foreground text-sm">
+					Ship-from address
+				</h2>
+				<p className="mt-1 text-muted-foreground text-xs">
+					Server-owned origin used for live carrier quotes. Required fields:
+					street, city, state, postal code, and country.
+				</p>
+			</div>
+			{error && (
+				<p className="mb-3 rounded-md bg-red-50 px-3 py-2 text-red-700 text-sm dark:bg-red-900/20 dark:text-red-400">
+					{error}
+				</p>
+			)}
+			{saved && (
+				<p className="mb-3 rounded-md bg-green-50 px-3 py-2 text-green-700 text-sm dark:bg-green-900/20 dark:text-green-400">
+					Ship-from address saved.
+				</p>
+			)}
+			<form
+				onSubmit={(e) => {
+					e.preventDefault();
+					onSave(form);
+				}}
+				className="grid gap-3 sm:grid-cols-2"
+			>
+				<div>
+					<label
+						htmlFor="ship-origin-name"
+						className="mb-1 block font-medium text-foreground text-sm"
+					>
+						Name
+					</label>
+					<input
+						id="ship-origin-name"
+						value={form.name ?? ""}
+						onChange={(e) =>
+							setForm((current) => ({ ...current, name: e.target.value }))
+						}
+						className="h-9 w-full rounded-md border border-border bg-background px-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+					/>
+				</div>
+				<div>
+					<label
+						htmlFor="ship-origin-company"
+						className="mb-1 block font-medium text-foreground text-sm"
+					>
+						Company
+					</label>
+					<input
+						id="ship-origin-company"
+						value={form.company ?? ""}
+						onChange={(e) =>
+							setForm((current) => ({ ...current, company: e.target.value }))
+						}
+						className="h-9 w-full rounded-md border border-border bg-background px-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+					/>
+				</div>
+				<div className="sm:col-span-2">
+					<label
+						htmlFor="ship-origin-street1"
+						className="mb-1 block font-medium text-foreground text-sm"
+					>
+						Street address <span className="text-red-500">*</span>
+					</label>
+					<input
+						id="ship-origin-street1"
+						required
+						value={form.street1}
+						onChange={(e) =>
+							setForm((current) => ({ ...current, street1: e.target.value }))
+						}
+						className="h-9 w-full rounded-md border border-border bg-background px-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+					/>
+				</div>
+				<div className="sm:col-span-2">
+					<label
+						htmlFor="ship-origin-street2"
+						className="mb-1 block font-medium text-foreground text-sm"
+					>
+						Street address 2
+					</label>
+					<input
+						id="ship-origin-street2"
+						value={form.street2 ?? ""}
+						onChange={(e) =>
+							setForm((current) => ({ ...current, street2: e.target.value }))
+						}
+						className="h-9 w-full rounded-md border border-border bg-background px-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+					/>
+				</div>
+				<div>
+					<label
+						htmlFor="ship-origin-city"
+						className="mb-1 block font-medium text-foreground text-sm"
+					>
+						City <span className="text-red-500">*</span>
+					</label>
+					<input
+						id="ship-origin-city"
+						required
+						value={form.city}
+						onChange={(e) =>
+							setForm((current) => ({ ...current, city: e.target.value }))
+						}
+						className="h-9 w-full rounded-md border border-border bg-background px-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+					/>
+				</div>
+				<div>
+					<label
+						htmlFor="ship-origin-state"
+						className="mb-1 block font-medium text-foreground text-sm"
+					>
+						State / province <span className="text-red-500">*</span>
+					</label>
+					<input
+						id="ship-origin-state"
+						required
+						value={form.state}
+						onChange={(e) =>
+							setForm((current) => ({ ...current, state: e.target.value }))
+						}
+						className="h-9 w-full rounded-md border border-border bg-background px-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+					/>
+				</div>
+				<div>
+					<label
+						htmlFor="ship-origin-postal"
+						className="mb-1 block font-medium text-foreground text-sm"
+					>
+						Postal code <span className="text-red-500">*</span>
+					</label>
+					<input
+						id="ship-origin-postal"
+						required
+						value={form.postalCode}
+						onChange={(e) =>
+							setForm((current) => ({ ...current, postalCode: e.target.value }))
+						}
+						className="h-9 w-full rounded-md border border-border bg-background px-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+					/>
+				</div>
+				<div>
+					<label
+						htmlFor="ship-origin-country"
+						className="mb-1 block font-medium text-foreground text-sm"
+					>
+						Country <span className="text-red-500">*</span>
+					</label>
+					<input
+						id="ship-origin-country"
+						required
+						maxLength={2}
+						value={form.country}
+						onChange={(e) =>
+							setForm((current) => ({
+								...current,
+								country: e.target.value.toUpperCase(),
+							}))
+						}
+						placeholder="US"
+						className="h-9 w-full rounded-md border border-border bg-background px-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+					/>
+				</div>
+				<div className="sm:col-span-2">
+					<label
+						htmlFor="ship-origin-phone"
+						className="mb-1 block font-medium text-foreground text-sm"
+					>
+						Phone
+					</label>
+					<input
+						id="ship-origin-phone"
+						value={form.phone ?? ""}
+						onChange={(e) =>
+							setForm((current) => ({ ...current, phone: e.target.value }))
+						}
+						className="h-9 w-full rounded-md border border-border bg-background px-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+					/>
+				</div>
+				<div className="flex justify-end sm:col-span-2">
+					<button
+						type="submit"
+						disabled={saving}
+						className="rounded-md bg-foreground px-4 py-2 font-medium text-background text-sm hover:opacity-90 disabled:opacity-50"
+					>
+						{saving ? "Saving…" : "Save ship-from address"}
+					</button>
+				</div>
+			</form>
 		</div>
 	);
 }
@@ -391,10 +658,35 @@ export function ShippingAdmin() {
 
 	const [saving, setSaving] = useState(false);
 	const [error, setError] = useState("");
+	const [originSaving, setOriginSaving] = useState(false);
+	const [originSaved, setOriginSaved] = useState(false);
+	const [originError, setOriginError] = useState("");
 
 	const { data: settingsData } = api.getSettings.useQuery() as {
 		data: SettingsData | undefined;
 	};
+
+	const { data: connectionData } = api.getConnection.useQuery() as {
+		data: { connection: ShippingConnectionData | null } | undefined;
+	};
+
+	const connectionOrigin =
+		connectionData?.connection?.originAddress ?? DEFAULT_ORIGIN;
+
+	const updateOriginMutation = api.updateConnectionOrigin.useMutation({
+		onSuccess: () => {
+			void api.getConnection.invalidate();
+			void api.getSettings.invalidate();
+			setOriginSaving(false);
+			setOriginSaved(true);
+			setOriginError("");
+			setTimeout(() => setOriginSaved(false), 2000);
+		},
+		onError: (err: Error) => {
+			setOriginError(extractError(err, "Failed to save ship-from address"));
+			setOriginSaving(false);
+		},
+	});
 
 	const { data: zonesData, isLoading: loading } = api.listZones.useQuery() as {
 		data: { zones: ShippingZone[] } | undefined;
@@ -540,6 +832,23 @@ export function ShippingAdmin() {
 		void fetchRates(zoneId);
 	}
 
+	function handleSaveOrigin(origin: ShippingOriginAddress) {
+		setOriginSaving(true);
+		setOriginError("");
+		const body: Record<string, string> = {
+			street1: origin.street1,
+			city: origin.city,
+			state: origin.state,
+			postalCode: origin.postalCode,
+			country: origin.country,
+		};
+		if (origin.name?.trim()) body.name = origin.name.trim();
+		if (origin.company?.trim()) body.company = origin.company.trim();
+		if (origin.street2?.trim()) body.street2 = origin.street2.trim();
+		if (origin.phone?.trim()) body.phone = origin.phone.trim();
+		updateOriginMutation.mutate(body);
+	}
+
 	const subtitle = `${zones.length} zone${zones.length !== 1 ? "s" : ""}`;
 
 	return (
@@ -552,6 +861,16 @@ export function ShippingAdmin() {
 			content={
 				<>
 					{settingsData && <ConnectionStatus settings={settingsData} />}
+					{settingsData?.configured && !settingsData.originConfigured && (
+						<OriginWarningBanner />
+					)}
+					<ShipFromAddressForm
+						initial={connectionOrigin}
+						saving={originSaving}
+						saved={originSaved}
+						error={originError}
+						onSave={handleSaveOrigin}
+					/>
 					<div className="overflow-hidden rounded-lg border border-border bg-card">
 						<table className="w-full">
 							<thead>

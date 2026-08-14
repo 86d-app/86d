@@ -334,4 +334,40 @@ describe("Shipping v2 authority", () => {
 			isUspsPriorityMailRate({ carrier: "UPS", service: "Priority" }),
 		).toBe(false);
 	});
+
+	it("updates origin on an existing connection and requires re-enablement", async () => {
+		const { controller } = await enabledController();
+		const updatedOrigin = {
+			...origin,
+			street1: "200 Warehouse Blvd",
+			city: "Dallas",
+			state: "TX",
+			postalCode: "75201",
+		};
+
+		const updated = await controller.updateConnectionOrigin(
+			"shipping-connection-1",
+			updatedOrigin,
+		);
+		expect(updated.originAddress).toEqual(updatedOrigin);
+		expect(updated.health).toBe("unknown");
+		expect(updated.lifecycle).toBe("draft");
+
+		await controller.checkConnection("shipping-connection-1");
+		const enabled = await controller.enableConnection("shipping-connection-1");
+		expect(enabled.lifecycle).toBe("enabled");
+		expect(enabled.health).toBe("healthy");
+	});
+
+	it("rejects origin updates on revoked connections", async () => {
+		const { controller } = await enabledController();
+		await controller.revokeConnection("shipping-connection-1");
+
+		await expect(
+			controller.updateConnectionOrigin("shipping-connection-1", {
+				...origin,
+				street1: "999 Blocked Way",
+			}),
+		).rejects.toMatchObject({ code: "connection_revoked" });
+	});
 });
