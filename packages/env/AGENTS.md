@@ -12,6 +12,7 @@ src/
 ## Key exports
 
 - `default` (env) — validated environment object, typed as `Env`
+- `parseEnvironment(environment)` — validates an explicit environment through the same production boundary
 - `Env` — TypeScript type inferred from the Zod schema
 
 ## Environment variables
@@ -27,12 +28,13 @@ src/
 | `NEXT_PUBLIC_GOOGLE_TAG_MANAGER_ID` | `string` | No | — |
 | `VERCEL_BLOB_STORAGE_HOSTNAME` | `string` | No | — |
 | `RESEND_API_KEY` | `string` | No | — |
-| `BETTER_AUTH_SECRET` | `string` | No | — |
+| `BETTER_AUTH_SECRET` | `string` | Production only | Local-only deterministic value in development and test |
 
 ## Patterns
 
-- Uses `z.safeParse(process.env)` — throws with flattened field errors on failure
-- All variables are optional with defaults except truly optional ones
+- Uses `z.safeParse(process.env)` and explicit production security checks
+- Production rejects a missing, short, known-placeholder, or low-entropy `BETTER_AUTH_SECRET`
+- Development and test use a deterministic local-only auth secret when none is set
 - Import as `import env from "env"` for validated, typed access
 
 ## Gotchas

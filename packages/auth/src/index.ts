@@ -4,8 +4,9 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { toNextJsHandler } from "better-auth/next-js";
 import { admin, genericOAuth } from "better-auth/plugins";
 import { db } from "db";
+import env from "env";
 
-const apiUrl = process.env["86D_API_URL"] ?? "https://api.86d.app";
+const apiUrl = env["86D_API_URL"];
 
 export interface ManagedAdminOAuthEnvironment {
 	apiUrl: string;
@@ -34,8 +35,8 @@ export function resolveManagedAdminOAuthConfig(
 
 const managedAdminOAuth = resolveManagedAdminOAuthConfig({
 	apiUrl,
-	clientId: process.env["86D_ADMIN_OAUTH_CLIENT_ID"],
-	clientSecret: process.env["86D_ADMIN_OAUTH_CLIENT_SECRET"],
+	clientId: env["86D_ADMIN_OAUTH_CLIENT_ID"],
+	clientSecret: env["86D_ADMIN_OAUTH_CLIENT_SECRET"],
 });
 
 /**
@@ -90,6 +91,7 @@ const socialProviders = managedAdminOAuth
 
 export const auth = betterAuth({
 	database: prismaAdapter(db, { provider: "postgresql" }),
+	secret: env.BETTER_AUTH_SECRET,
 	emailAndPassword: { enabled: true },
 	session: {
 		cookieCache: { enabled: true, maxAge: 60 * 5 },

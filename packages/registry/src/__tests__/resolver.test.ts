@@ -1,6 +1,7 @@
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { readStoreConfig } from "../config.js";
 import {
 	detectCircularDependencies,
 	getLocalModuleNames,
@@ -109,30 +110,33 @@ const testManifest: RegistryManifest = {
 };
 
 describe("resolveModules", () => {
-	it("resolves '*' to all local modules", async () => {
-		const config: StoreConfig = { modules: "*" };
-		const results = await resolveModules(config, {
-			root: TMP_ROOT,
-			manifest: testManifest,
-		});
+	it.each([
+		["omitted selection", {}],
+		["wildcard selection", { modules: "*" }],
+		[
+			"wildcard selection with a global opt-in",
+			{
+				modules: "*",
+				advanced: { version: 1, allowExperimentalModules: true },
+			},
+		],
+	] satisfies Array<[string, StoreConfig]>)(
+		"does not admit Experimental Modules from %s",
+		async (_label, config) => {
+			const results = await resolveModules(config, {
+				root: TMP_ROOT,
+				manifest: testManifest,
+			});
 
-		// Should find 3 local + 1 registry-only (shipping)
-		expect(results.length).toBe(4);
+			expect(results).toHaveLength(4);
+			expect(results.every((result) => result.status === "error")).toBe(true);
+			expect(
+				results.every((result) => result.error?.includes("explicitly named")),
+			).toBe(true);
+		},
+	);
 
-		const local = results.filter((r) => r.status === "found");
-		expect(local.length).toBe(3);
-		expect(local.map((r) => r.specifier.name).sort()).toEqual([
-			"blog",
-			"cart",
-			"products",
-		]);
-
-		const missing = results.filter((r) => r.status === "missing");
-		expect(missing.length).toBe(1);
-		expect(missing[0].specifier.name).toBe("shipping");
-	});
-
-	it("resolves explicit module list", async () => {
+	it("denies explicitly selected Experimental Modules without advanced opt-in", async () => {
 		const config: StoreConfig = {
 			modules: ["@86d-app/products", "@86d-app/cart"],
 		};
@@ -141,16 +145,92 @@ describe("resolveModules", () => {
 			manifest: testManifest,
 		});
 
-		expect(results.length).toBe(2);
-		expect(results[0].status).toBe("found");
-		expect(results[0].specifier.name).toBe("products");
-		expect(results[1].status).toBe("found");
-		expect(results[1].specifier.name).toBe("cart");
+		expect(results).toHaveLength(2);
+		expect(results.every((result) => result.status === "error")).toBe(true);
+		expect(
+			results.every((result) => result.error?.includes("advanced opt-in")),
+		).toBe(true);
+		expect(
+			results.every((result) => result.error?.includes("advanced.version")),
+		).toBe(true);
+	});
+
+	it("admits explicitly selected Experimental Modules with versioned advanced opt-in", async () => {
+		const config: StoreConfig = {
+			modules: ["@86d-app/products", "@86d-app/cart"],
+			advanced: { version: 1, allowExperimentalModules: true },
+		};
+		const results = await resolveModules(config, {
+			root: TMP_ROOT,
+			manifest: testManifest,
+		});
+
+		expect(results.map((result) => result.status)).toEqual(["found", "found"]);
+		expect(results.map((result) => result.specifier.name)).toEqual([
+			"products",
+			"cart",
+		]);
+	});
+
+	it("rejects an unsupported advanced opt-in version from JSON config", async () => {
+		const configPath = join(TMP_ROOT, "unsupported-advanced-config.json");
+		writeFileSync(
+			configPath,
+			JSON.stringify({
+				modules: ["@86d-app/products"],
+				advanced: { version: 2, allowExperimentalModules: true },
+			}),
+		);
+		const results = await resolveModules(readStoreConfig(configPath), {
+			root: TMP_ROOT,
+			manifest: testManifest,
+		});
+
+		expect(results).toHaveLength(1);
+		expect(results[0]).toEqual(
+			expect.objectContaining({
+				status: "error",
+				error: expect.stringContaining("advanced.version to 1"),
+			}),
+		);
+	});
+
+	it("admits a Stable Module from wildcard discovery without advanced opt-in", async () => {
+		const products = testManifest.modules.products;
+		if (!products) throw new Error("products fixture is missing");
+		const manifest: RegistryManifest = {
+			...testManifest,
+			modules: {
+				...testManifest.modules,
+				products: {
+					...products,
+					maturity: "stable",
+					maturityEvidence: [
+						{
+							kind: "production-smoke",
+							reference: "test-fixture:products-production-smoke",
+							recordedAt: "2026-08-13T00:00:00.000Z",
+							version: products.version,
+						},
+					],
+				},
+			},
+		};
+
+		const results = await resolveModules(
+			{ modules: "*" },
+			{ root: TMP_ROOT, manifest },
+		);
+
+		expect(
+			results.find((result) => result.specifier.name === "products"),
+		).toEqual(expect.objectContaining({ status: "found" }));
 	});
 
 	it("marks unknown modules as missing", async () => {
 		const config: StoreConfig = {
 			modules: ["@86d-app/unknown-module"],
+			advanced: { version: 1, allowExperimentalModules: true },
 		};
 		const results = await resolveModules(config, {
 			root: TMP_ROOT,
@@ -160,10 +240,39 @@ describe("resolveModules", () => {
 		expect(results.length).toBe(1);
 		expect(results[0].status).toBe("missing");
 		expect(results[0].error).toContain("not found");
+		expect(results[0].error).toContain("Check the specifier");
+		expect(results[0].error).not.toContain("advanced opt-in");
+	});
+
+	it("blocks explicitly selected Deprecated Modules with transition guidance", async () => {
+		const cart = testManifest.modules.cart;
+		if (!cart) throw new Error("cart fixture is missing");
+		const manifest: RegistryManifest = {
+			...testManifest,
+			modules: {
+				...testManifest.modules,
+				cart: { ...cart, maturity: "deprecated" },
+			},
+		};
+		const results = await resolveModules(
+			{ modules: ["@86d-app/cart"] },
+			{ root: TMP_ROOT, manifest },
+		);
+
+		expect(results).toHaveLength(1);
+		expect(results[0]).toEqual(
+			expect.objectContaining({
+				status: "error",
+				error: expect.stringContaining("documented transition"),
+			}),
+		);
 	});
 
 	it("resolves bare names", async () => {
-		const config: StoreConfig = { modules: ["products"] };
+		const config: StoreConfig = {
+			modules: ["products"],
+			advanced: { version: 1, allowExperimentalModules: true },
+		};
 		const results = await resolveModules(config, {
 			root: TMP_ROOT,
 			manifest: testManifest,
@@ -174,19 +283,10 @@ describe("resolveModules", () => {
 		expect(results[0].specifier.source).toBe("local");
 	});
 
-	it("handles undefined modules as '*'", async () => {
-		const config: StoreConfig = {};
-		const results = await resolveModules(config, {
-			root: TMP_ROOT,
-			manifest: testManifest,
-		});
-
-		expect(results.length).toBe(4);
-	});
-
 	it("parses GitHub specifiers", async () => {
 		const config: StoreConfig = {
 			modules: ["github:owner/repo/modules/custom"],
+			advanced: { version: 1, allowExperimentalModules: true },
 		};
 		const results = await resolveModules(config, {
 			root: TMP_ROOT,
@@ -202,6 +302,7 @@ describe("resolveModules", () => {
 	it("parses npm specifiers", async () => {
 		const config: StoreConfig = {
 			modules: ["npm:@acme/commerce-module"],
+			advanced: { version: 1, allowExperimentalModules: true },
 		};
 		const results = await resolveModules(config, {
 			root: TMP_ROOT,

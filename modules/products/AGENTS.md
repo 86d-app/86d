@@ -13,6 +13,7 @@ src/
   index.ts          Factory: products(options?) => Module + admin nav
   schema.ts         Zod models: product, productVariant, category, collection, collectionProduct
   catalog-revisions.ts  Immutable Catalog revision transition and publish interface
+  catalog-presentation.ts  Durable publication consumer + atomic presentation read model
   controllers.ts    Raw module controllers (ctx pattern for endpoint system)
   service.ts        TypeScript interface (ProductController)
   service-impl.ts   Clean typed implementation (createProductController)
@@ -70,6 +71,11 @@ ProductsOptions {
   fail closed without the owner transaction/outbox seam.
 - Successful publish emits `catalog.published@1` from the same transaction as the
   revision, supersession, audit, and operation receipt.
+- `products.catalog-presentation.v1` verifies each publication against its
+  immutable revision and rebuilds Storefront, search, and feed-facing data in one
+  `catalogPresentation` row. Exact replays and older revisions converge without
+  replacing current state; mismatches throw so the dispatcher records retry or
+  dead-letter state while the last good projection remains readable.
 - Related products scored: same category (+10), shared tags (+1 each)
 
 ## Gotchas
@@ -79,5 +85,8 @@ ProductsOptions {
 - Catalog revision create/review/publish/read transport is active for Store
   Admin. Existing Product CRUD, import, search indexing, and product feeds are
   not revision-backed yet.
+- The presentation read model is registered in the standalone Runtime, but
+  legacy Storefront endpoints and the Search and Product Feeds Module adapters
+  have not switched to it yet.
 - Category tree only includes visible categories
 - Search is case-insensitive across name, description, and tags

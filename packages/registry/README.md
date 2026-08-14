@@ -28,7 +28,7 @@ The registry provides the module resolution layer for 86d stores. When a store's
 **Key features:**
 - Resolve modules and templates from local workspace, GitHub repos, or npm
 - Generate and consume `registry.json` manifests with integrity verification
-- Support `"*"` wildcard for including all available modules
+- Discover available modules with `"*"` without auto-enabling Experimental entries
 - **Lock file** (`registry.lock.json`) for reproducible builds with `--frozen` CI support
 - **Circular dependency detection** — throws on cycles with descriptive error messages
 - Template resolution — fetch store templates from GitHub or npm
@@ -58,9 +58,15 @@ Or with explicit module references:
     "github:owner/repo/modules/loyalty#v2.0",
     "npm:@acme/commerce-module",
     "npm:@acme/commerce-module@^1.0.0"
-  ]
+  ],
+  "advanced": {
+    "version": 1,
+    "allowExperimentalModules": true
+  }
 }
 ```
+
+Use the `advanced` block only when every selected Experimental Module is intentional. The resolver treats entries without maturity evidence as Experimental.
 
 | Format | Source | Description |
 |---|---|---|
@@ -144,10 +150,22 @@ The store's `config.json` supports these registry-related fields:
 
 | Field | Type | Default | Description |
 |---|---|---|---|
-| `modules` | `"*" \| string[]` | `"*"` | Module specifiers or `"*"` for all |
+| `modules` | `"*" \| string[]` | `"*"` | Explicit Module specifiers or wildcard discovery |
+| `advanced` | `{ version: 1, allowExperimentalModules?: boolean }` | None | Versioned opt-in for explicitly named Experimental Modules |
 | `template` | `string` | — | Template specifier (local name, GitHub, or npm) |
 | `registry` | `string` | GitHub raw URL | Custom registry manifest URL |
 | `moduleOptions` | `Record<string, object>` | `{}` | Per-module configuration |
+
+### Module maturity and admission
+
+The resolver applies maturity rules before code generation:
+
+- Stable Modules resolve through ordinary explicit selection or wildcard discovery
+- Experimental Modules must be named in `modules` and require `advanced.version: 1` with `allowExperimentalModules: true`
+- Deprecated Modules return an error that directs you to their transition path
+- Unknown names return a missing result with guidance to check the specifier or use a GitHub or npm source
+
+An omitted `modules` field behaves like `"*"`. Neither form can enable Experimental Modules, even when the advanced flag is present.
 
 ### Resolving Templates
 
@@ -215,6 +233,9 @@ Parse a module specifier string into a structured object with source type, name,
 ### `resolveModules(config, options): Promise<ResolvedModule[]>`
 Resolve a store config's module list into concrete entries with status (`found`, `missing`, `error`).
 
+### `evaluateModuleAdmission(input): ModuleAdmissionDecision`
+Apply selection and maturity rules to one resolved or generated Module. Import it from `@86d-app/registry/admission` when a runtime needs the same fail-closed decision as the resolver.
+
 ### `fetchModule(spec, root, manifest?): Promise<FetchResult>`
 Download a module from its remote source (GitHub tarball or npm) and install it locally.
 
@@ -271,7 +292,7 @@ The registry is used at buildtime by `scripts/generate-modules.ts`:
 2. For missing modules (registry/GitHub/npm), fetches them automatically
 3. Generates the store's import files in `apps/store/generated/`
 
-This means `bun run generate:modules` will pull any missing modules before generating code. Modules that fail to fetch are skipped with warnings.
+This means `bun run generate:modules` pulls missing admitted Modules before generating code. Modules that fail resolution, admission, or fetching are skipped with warnings.
 
 ## Lock File
 

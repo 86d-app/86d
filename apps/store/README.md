@@ -42,12 +42,18 @@ All store configuration is in `templates/brisa/config.json`:
         "@86d-app/cart",
         "@86d-app/products"
     ],
+    "advanced": {
+        "version": 1,
+        "allowExperimentalModules": true
+    },
     "variables": {
         "light": { ... },
         "dark": { ... }
     }
 }
 ```
+
+The advanced block admits only Experimental Modules that you explicitly name. A wildcard or omitted `modules` field cannot admit them.
 
 ## Module System
 

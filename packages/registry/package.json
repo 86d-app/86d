@@ -10,6 +10,10 @@
 	"license": "MIT",
 	"type": "module",
 	"exports": {
+		"./admission": {
+			"types": "./src/admission.ts",
+			"default": "./src/admission.ts"
+		},
 		"./config": {
 			"types": "./src/config.ts",
 			"default": "./src/config.ts"

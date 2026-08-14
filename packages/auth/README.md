@@ -73,6 +73,7 @@ if (result.hasAccess) {
 The better-auth instance configured with:
 
 - **Database**: Prisma adapter with PostgreSQL provider
+- **Secret**: The validated `BETTER_AUTH_SECRET`, passed explicitly
 - **Email/Password**: Enabled
 - **Session**: Cookie caching with 5-minute TTL
 - **Plugins**: Admin (role-based access)
@@ -110,5 +111,6 @@ interface StoreAccessResult {
 ## Notes
 
 - Only the `"admin"` role grants store admin access.
+- Production startup rejects a missing or weak `BETTER_AUTH_SECRET`. Development and test use the environment package's explicit local-only fallback.
 - Session cookie cache reduces database lookups for 5 minutes per session.
 - The `db` workspace package provides the Prisma client used by the auth adapter.

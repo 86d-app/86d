@@ -45,6 +45,10 @@
 			"default": "./src/admin/components/product-new.tsx"
 		},
 		"./capabilities": "./src/capabilities.ts",
+		"./catalog-presentation": {
+			"types": "./src/catalog-presentation.ts",
+			"default": "./src/catalog-presentation.ts"
+		},
 		"./components": {
 			"types": "./src/store/components/mdx.tsx",
 			"default": "./src/store/components/mdx.tsx"

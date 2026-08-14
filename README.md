@@ -28,7 +28,7 @@ Modular open-source commerce platform. Bun + Turborepo monorepo.
 ## Prerequisites
 
 - [Bun](https://bun.sh) v1.3.6+
-- [Node.js](https://nodejs.org) v23+
+- [Node.js](https://nodejs.org) 23, 24, or 25
 - [PostgreSQL](https://www.postgresql.org) v15+
 
 ## Quick Start
@@ -95,7 +95,7 @@ bun run test:e2e         # Playwright E2E tests
 
 ## Environment Variables
 
-See [`apps/store/.env.example`](apps/store/.env.example) for the full list.
+See [`.env.example`](.env.example) for the full list.
 
 | Variable               | Description                          |
 |------------------------|--------------------------------------|

@@ -1,5 +1,16 @@
+import env from "env";
 import { describe, expect, it } from "vitest";
-import { mapSsoProfileToUser, resolveManagedAdminOAuthConfig } from "../index";
+import {
+	auth,
+	mapSsoProfileToUser,
+	resolveManagedAdminOAuthConfig,
+} from "../index";
+
+describe("auth configuration", () => {
+	it("passes the validated auth secret explicitly to Better Auth", () => {
+		expect(auth.options.secret).toBe(env.BETTER_AUTH_SECRET);
+	});
+});
 
 describe("resolveManagedAdminOAuthConfig", () => {
 	it("requires distinct human OAuth client credentials", () => {

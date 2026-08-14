@@ -4,6 +4,7 @@ import { catalogPublishedV1 } from "@86d-app/core/durable-events";
 import type { Module, ModuleConfig } from "@86d-app/core/types/module";
 import { adminEndpoints } from "./admin/endpoints/routes";
 import { productResolveProvider } from "./capabilities";
+import { catalogPresentationConsumer } from "./catalog-presentation";
 import {
 	applyCatalogRevisionOperation,
 	catalogRevisionCategorySchema,
@@ -91,6 +92,7 @@ export default function products(options?: ProductsOptions): Module {
 		},
 		durableEvents: {
 			emits: [catalogPublishedV1],
+			handles: [catalogPresentationConsumer],
 		},
 		controllers,
 		capabilities: {

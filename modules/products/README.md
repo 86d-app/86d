@@ -24,8 +24,9 @@
 > so Product stock mutations are rejected. Collections owns Collection writes;
 > the Products collection routes are compatibility reads only. Direct import is
 > unavailable while its upload, diagnostics, diff, and Review transport remain
-> unfinished. The owner-local immutable revision engine exists but is not wired
-> to import, admin CRUD, or product-feed generation yet.
+> unfinished. The owner-local immutable revision and presentation projection
+> exist, but import, admin CRUD, and live product-feed generation have not moved
+> to that path yet.
 
 📚 **Documentation:** [86d.app/docs/modules/products](https://86d.app/docs/modules/products)
 
@@ -150,8 +151,29 @@ durable-event storage. Reads validate stored data and list bounded summaries.
 
 Direct spreadsheet import continues to return
 `PRODUCT_IMPORT_REVIEW_REQUIRED`, and product-feed generation continues to fail
-closed until its published-revision consumer is connected. Existing Product
-CRUD is migration state and does not claim to be revision-backed.
+closed until its projection adapter is connected. Existing Product CRUD is
+migration state and does not claim to be revision-backed.
+
+### Published Catalog presentation
+
+The Products Module registers `products.catalog-presentation.v1` as a durable
+consumer of `catalog.published@1`. It validates the event against the immutable
+revision, recomputes the content digest, and replaces one owner-local
+`catalogPresentation` row. That row contains three views built from the same
+revision: active and visible Storefront data, product search documents, and
+feed-facing product data with explicit minor-unit prices.
+
+An exact replay is a no-op. A publication below the projected revision sequence
+is ignored, while a conflicting sequence or mismatched revision fails delivery.
+The runtime runs the handler and its delivery receipt in one transaction, so a
+failure leaves the last good presentation readable and visible in the durable
+delivery retry or dead-letter state. Repairing a transient source problem lets
+the same event replay successfully.
+
+Use `readCatalogPresentation(data)` to read and validate the current projection.
+The consumer is fully standalone and makes no 86d.app or Control Plane call.
+Legacy Storefront endpoints, the Search Module's external index, and generated
+channel feeds still require explicit adapters before they become revision-backed.
 
 ## Controller API
 

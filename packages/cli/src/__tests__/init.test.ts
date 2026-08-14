@@ -18,9 +18,9 @@ describe("init", () => {
 		mkdirSync(join(tempDir, "scripts"), { recursive: true });
 		mkdirSync(join(tempDir, "node_modules/.bin"), { recursive: true });
 
-		// Create .env.example
+		// Model a clean checkout: the environment template lives at repository root.
 		writeFileSync(
-			join(tempDir, "apps/store/.env.example"),
+			join(tempDir, ".env.example"),
 			"DATABASE_URL=\nSTORE_ID=\nBETTER_AUTH_SECRET=change-me-to-a-random-string\n",
 		);
 
@@ -79,7 +79,7 @@ describe("init", () => {
 		await init(args);
 	}
 
-	it("copies .env.example to .env", async () => {
+	it("creates .env from the root .env.example in a clean checkout", async () => {
 		await runInit();
 
 		expect(existsSync(join(tempDir, ".env"))).toBe(true);

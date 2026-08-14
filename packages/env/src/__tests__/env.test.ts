@@ -1,6 +1,96 @@
 import { describe, expect, it, vi } from "vitest";
 
 describe("env", () => {
+	it("rejects production without an auth secret", async () => {
+		const mod = await import("../index");
+
+		expect(() =>
+			mod.parseEnvironment({
+				NODE_ENV: "production",
+			}),
+		).toThrow(/BETTER_AUTH_SECRET/);
+	});
+
+	it("rejects a production auth secret shorter than 32 characters", async () => {
+		const mod = await import("../index");
+
+		expect(() =>
+			mod.parseEnvironment({
+				NODE_ENV: "production",
+				BETTER_AUTH_SECRET: "short-production-secret",
+			}),
+		).toThrow(/at least 32 characters/);
+	});
+
+	it("rejects Better Auth's predictable production default", async () => {
+		const mod = await import("../index");
+
+		expect(() =>
+			mod.parseEnvironment({
+				NODE_ENV: "production",
+				BETTER_AUTH_SECRET: "better-auth-secret-12345678901234567890",
+			}),
+		).toThrow(/placeholder or default/);
+	});
+
+	it("rejects the repository's Docker development secret in production", async () => {
+		const mod = await import("../index");
+
+		expect(() =>
+			mod.parseEnvironment({
+				NODE_ENV: "production",
+				BETTER_AUTH_SECRET: "docker-dev-secret-change-in-production",
+			}),
+		).toThrow(/placeholder or default/);
+	});
+
+	it.each(["development", "test"] as const)(
+		"uses an explicit local-only auth secret in %s",
+		async (nodeEnv) => {
+			const mod = await import("../index");
+
+			const parsed = mod.parseEnvironment({ NODE_ENV: nodeEnv });
+
+			expect(parsed.BETTER_AUTH_SECRET).toBe(
+				"86d-local-development-only-better-auth-secret",
+			);
+		},
+	);
+
+	it("rejects the local-only auth secret in production", async () => {
+		const mod = await import("../index");
+
+		expect(() =>
+			mod.parseEnvironment({
+				NODE_ENV: "production",
+				BETTER_AUTH_SECRET: "86d-local-development-only-better-auth-secret",
+			}),
+		).toThrow(/local-only/);
+	});
+
+	it("rejects a low-entropy production auth secret", async () => {
+		const mod = await import("../index");
+
+		expect(() =>
+			mod.parseEnvironment({
+				NODE_ENV: "production",
+				BETTER_AUTH_SECRET: "a".repeat(64),
+			}),
+		).toThrow(/low entropy/);
+	});
+
+	it("preserves an acceptable production auth secret", async () => {
+		const mod = await import("../index");
+		const secret = "vG9!xQ2#pL7@rT4$wY8%mN6&kC3*zF5+uH1";
+
+		const parsed = mod.parseEnvironment({
+			NODE_ENV: "production",
+			BETTER_AUTH_SECRET: secret,
+		});
+
+		expect(parsed.BETTER_AUTH_SECRET).toBe(secret);
+	});
+
 	it("exports a validated env object with defaults", async () => {
 		const mod = await import("../index");
 		const env = mod.default;
@@ -91,12 +181,9 @@ describe("env", () => {
 		const mod = await import("../index");
 		const env = mod.default;
 
-		// These should be undefined unless set in actual env
+		// This should be undefined unless set in the actual environment.
 		if (!process.env.RESEND_API_KEY) {
 			expect(env.RESEND_API_KEY).toBeUndefined();
-		}
-		if (!process.env.BETTER_AUTH_SECRET) {
-			expect(env.BETTER_AUTH_SECRET).toBeUndefined();
 		}
 	});
 

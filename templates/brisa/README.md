@@ -35,13 +35,16 @@ Edit `config.json` to customize:
 | Key | Description | Default |
 |-----|-------------|---------|
 | `name` | Store display name | `"86d Starter Kit"` |
-| `modules` | Enabled modules (`"*"` or array) | `"*"` |
+| `modules` | Enabled Modules as explicit package names | 100 bundled first-party Modules |
+| `advanced` | Versioned opt-in for selected Experimental Modules | Version `1`, enabled |
 | `moduleOptions` | Per-module config | Cart: 7d expiry, 100 max items |
 | `variables.light` | Light theme OKLCH tokens | Neutral palette |
 | `variables.dark` | Dark theme OKLCH tokens | Neutral dark palette |
 | `favicon` | Path to favicon SVG | `/assets/favicon.svg` |
 | `logo.light` / `logo.dark` | Logo paths per theme | `/assets/logo/` |
 | `icon.light` / `icon.dark` | Icon paths per theme | `/assets/icon/` |
+
+Brisa names each bundled Module instead of using wildcard discovery. Registry entries without maturity evidence are Experimental, so the template also records the versioned advanced opt-in. Remove packages you don't want before regenerating the Store imports.
 
 ## Pages
 

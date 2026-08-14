@@ -1,5 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { evaluateModuleAdmission } from "./admission.js";
 import { fetchWithRetry } from "./fetcher.js";
 import { parseSpecifier } from "./specifier.js";
 import type {
@@ -37,12 +38,31 @@ export async function resolveModules(
 	const manifest =
 		options.manifest ?? (await loadManifest(root, config.registry));
 
-	if (config.modules === "*" || config.modules === undefined) {
-		return resolveAllModules(root, manifest);
-	}
+	const resolved =
+		config.modules === "*" || config.modules === undefined
+			? resolveAllModules(root, manifest)
+			: resolveSpecifiers(config.modules.map(parseSpecifier), root, manifest);
 
-	const specifiers = config.modules.map(parseSpecifier);
-	return resolveSpecifiers(specifiers, root, manifest);
+	return applyModuleAdmission(resolved, config, manifest);
+}
+
+function applyModuleAdmission(
+	resolved: ResolvedModule[],
+	config: StoreConfig,
+	manifest: RegistryManifest | undefined,
+): ResolvedModule[] {
+	return resolved.map((result) => {
+		if (result.error) return result;
+		const manifestEntry = manifest?.modules[result.specifier.name];
+		const decision = evaluateModuleAdmission({
+			moduleName: result.specifier.packageName,
+			modules: config.modules,
+			...(manifestEntry ? { maturity: manifestEntry.maturity } : {}),
+			...(config.advanced ? { advanced: config.advanced } : {}),
+		});
+		if (decision.allowed) return result;
+		return { ...result, status: "error", error: decision.message };
+	});
 }
 
 /**
@@ -153,7 +173,7 @@ function resolveOne(
 			return {
 				specifier: spec,
 				status: "missing",
-				error: `Module "${spec.name}" not found locally or in registry`,
+				error: `Module "${spec.name}" not found locally or in registry. Check the specifier, or use an explicit GitHub or npm source.`,
 			};
 		}
 

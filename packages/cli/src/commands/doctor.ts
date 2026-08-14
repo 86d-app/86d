@@ -19,7 +19,14 @@ interface Check {
 	fix?: string;
 }
 
-export async function doctor() {
+interface DoctorOptions {
+	nodeVersion?: string;
+}
+
+const SUPPORTED_NODE_MAJORS = new Set([23, 24, 25]);
+const NODE_VERSION_REQUIREMENT = "23, 24, or 25";
+
+export async function doctor(options: DoctorOptions = {}) {
 	const checks: Check[] = [];
 	let root: string | undefined;
 
@@ -27,9 +34,9 @@ export async function doctor() {
 	console.log();
 
 	// 1. Runtime check
-	const nodeVersion = process.versions.node;
+	const nodeVersion = options.nodeVersion ?? process.versions.node;
 	const nodeMajor = Number.parseInt(nodeVersion.split(".")[0], 10);
-	if (nodeMajor >= 23) {
+	if (SUPPORTED_NODE_MAJORS.has(nodeMajor)) {
 		checks.push({
 			label: "Node.js",
 			status: "pass",
@@ -39,8 +46,8 @@ export async function doctor() {
 		checks.push({
 			label: "Node.js",
 			status: "fail",
-			message: `v${nodeVersion} (requires >=23)`,
-			fix: "Upgrade Node.js to version 23 or later",
+			message: `v${nodeVersion} (requires ${NODE_VERSION_REQUIREMENT})`,
+			fix: `Upgrade Node.js to version ${NODE_VERSION_REQUIREMENT}`,
 		});
 	}
 

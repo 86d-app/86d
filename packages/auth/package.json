@@ -27,7 +27,8 @@
 	},
 	"dependencies": {
 		"better-auth": "1.6.11",
-		"db": "workspace:*"
+		"db": "workspace:*",
+		"env": "workspace:*"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "catalog:",

@@ -1,5 +1,20 @@
 import { z } from "zod";
 
+const LOCAL_BETTER_AUTH_SECRET =
+	"86d-local-development-only-better-auth-secret";
+const KNOWN_AUTH_SECRET_PLACEHOLDERS = new Set([
+	"better-auth-secret-12345678901234567890",
+	"docker-dev-secret-change-in-production",
+]);
+const MINIMUM_AUTH_SECRET_ENTROPY_BITS = 120;
+
+function estimateSecretEntropyBits(secret: string): number {
+	const uniqueCharacters = new Set(secret).size;
+	return uniqueCharacters === 0
+		? 0
+		: secret.length * Math.log2(uniqueCharacters);
+}
+
 const envSchema = z.object({
 	NODE_ENV: z
 		.enum(["development", "production", "test"])
@@ -33,29 +48,73 @@ const envSchema = z.object({
 	BETTER_AUTH_SECRET: z.string().optional(),
 });
 
-const parsed = envSchema.safeParse({
-	...process.env,
-	// Managed Runtime identity is canonical at boot. Standalone installs retain
-	// the historical STORE_ID boundary and its local default.
-	STORE_ID: process.env["86D_STORE_ID"] ?? process.env.STORE_ID,
-});
+type ParsedEnv = z.infer<typeof envSchema>;
+export type Env = Omit<ParsedEnv, "BETTER_AUTH_SECRET"> & {
+	BETTER_AUTH_SECRET: string;
+};
 
-if (!parsed.success) {
-	console.error(
-		"Invalid environment variables:",
-		parsed.error.flatten().fieldErrors,
-	);
-	throw new Error("Invalid environment variables");
+export function parseEnvironment(
+	environment: Record<string, string | undefined>,
+): Env {
+	const parsed = envSchema.safeParse({
+		...environment,
+		// Managed Runtime identity is canonical at boot. Standalone installs retain
+		// the historical STORE_ID boundary and its local default.
+		STORE_ID: environment["86D_STORE_ID"] ?? environment.STORE_ID,
+	});
+
+	if (!parsed.success) {
+		console.error(
+			"Invalid environment variables:",
+			parsed.error.flatten().fieldErrors,
+		);
+		throw new Error("Invalid environment variables");
+	}
+
+	if (
+		parsed.data.NODE_ENV === "production" &&
+		(!parsed.data.BETTER_AUTH_SECRET ||
+			parsed.data.BETTER_AUTH_SECRET.length < 32)
+	) {
+		throw new Error(
+			"Invalid environment variables: BETTER_AUTH_SECRET must be set to at least 32 characters in production",
+		);
+	}
+	if (
+		parsed.data.NODE_ENV === "production" &&
+		parsed.data.BETTER_AUTH_SECRET === LOCAL_BETTER_AUTH_SECRET
+	) {
+		throw new Error(
+			"Invalid environment variables: BETTER_AUTH_SECRET cannot use the local-only development secret in production",
+		);
+	}
+	if (
+		parsed.data.NODE_ENV === "production" &&
+		parsed.data.BETTER_AUTH_SECRET !== undefined &&
+		KNOWN_AUTH_SECRET_PLACEHOLDERS.has(parsed.data.BETTER_AUTH_SECRET)
+	) {
+		throw new Error(
+			"Invalid environment variables: BETTER_AUTH_SECRET cannot use a known placeholder or default in production",
+		);
+	}
+	if (
+		parsed.data.NODE_ENV === "production" &&
+		parsed.data.BETTER_AUTH_SECRET &&
+		estimateSecretEntropyBits(parsed.data.BETTER_AUTH_SECRET) <
+			MINIMUM_AUTH_SECRET_ENTROPY_BITS
+	) {
+		throw new Error(
+			"Invalid environment variables: BETTER_AUTH_SECRET has unacceptably low entropy for production",
+		);
+	}
+
+	return {
+		...parsed.data,
+		BETTER_AUTH_SECRET:
+			parsed.data.BETTER_AUTH_SECRET ?? LOCAL_BETTER_AUTH_SECRET,
+	};
 }
 
-const env = parsed.data;
-
-// Warn in production when critical secrets are missing
-if (env.NODE_ENV === "production" && !env.BETTER_AUTH_SECRET) {
-	console.warn(
-		"⚠ BETTER_AUTH_SECRET is not set. Session tokens will use a weak default. Set this to a secure random string in production.",
-	);
-}
+const env = parseEnvironment(process.env);
 
 export default env;
-export type Env = z.infer<typeof envSchema>;

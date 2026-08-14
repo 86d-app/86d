@@ -31,11 +31,13 @@ src/
 
 - `better-auth` — auth framework
 - `db` (workspace) — Prisma client for database access
+- `env` (workspace) — validated auth secret and managed OAuth configuration
 - `next` (peer, optional) — needed for `actions.ts` server headers
 
 ## Patterns
 
 - Session uses cookie caching with 5-minute TTL (`cookieCache.maxAge: 300`)
+- Better Auth receives the validated `BETTER_AUTH_SECRET` explicitly; production validation fails closed before auth is created
 - Admin plugin from better-auth provides role-based access
 - `verifyStoreAdminAccess` only checks for `"admin"` role — no other roles grant store access
 - `StoreAccessResult.role` uses `string | undefined` (not `null`) to satisfy `exactOptionalPropertyTypes`

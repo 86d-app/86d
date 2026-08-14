@@ -162,6 +162,12 @@ export type RegistryManifest = z.infer<typeof registryManifestSchema>;
 
 // ── Store Config ──────────────────────────────────────────────────────
 
+/** Versioned advanced behavior that must never be implied by discovery. */
+export interface AdvancedStoreConfig {
+	version: 1;
+	allowExperimentalModules?: boolean;
+}
+
 /**
  * Extended config.json shape that supports registry features.
  *
@@ -179,6 +185,7 @@ export interface StoreConfig {
 	name?: string;
 	template?: string;
 	modules?: "*" | string[];
+	advanced?: AdvancedStoreConfig;
 	moduleOptions?: Record<string, Record<string, unknown>>;
 	registry?: string;
 	variables?: Record<string, Record<string, string>>;

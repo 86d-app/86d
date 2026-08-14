@@ -434,4 +434,19 @@ export const productsSchema = {
 			createdAt: { type: "date", required: true },
 		},
 	},
+	/** Atomic Storefront, search, and feed read state for one publication. */
+	catalogPresentation: {
+		fields: {
+			id: { type: "string", required: true },
+			revisionId: { type: "string", required: true, index: true },
+			revisionSequence: { type: "number", required: true, index: true },
+			contentVersion: { type: "number", required: true },
+			contentDigest: { type: "string", required: true, index: true },
+			currency: { type: "string", required: true },
+			projectedAt: { type: "date", required: true },
+			storefront: { type: "json", required: true },
+			search: { type: "json", required: true },
+			feeds: { type: "json", required: true },
+		},
+	},
 } satisfies ModuleSchema;

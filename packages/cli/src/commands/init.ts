@@ -23,7 +23,7 @@ export async function init(args: string[]) {
 
 	// 1. Copy .env.example if .env doesn't exist
 	const envPath = join(root, ".env");
-	const envExamplePath = join(root, "apps/store/.env.example");
+	const envExamplePath = join(root, ".env.example");
 
 	if (!existsSync(envPath) && existsSync(envExamplePath)) {
 		copyFileSync(envExamplePath, envPath);

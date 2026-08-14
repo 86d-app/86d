@@ -4,7 +4,7 @@ Modular, open-source commerce Store Runtime. Each Store is single-tenant with it
 
 Bun monorepo orchestrated by Turborepo. TypeScript everywhere, strict mode.
 
-In the full workspace, read `../private/internals/product-context/README.md` before changing product behavior, ownership, payments, Checkout, Fulfillment, managed credentials, Modules, or agent surfaces. It defines target behavior. This file and the code describe current implementation. When they differ, implement an explicit migration and preserve standalone operation.
+In the full workspace, read `../prd/README.md` before changing product behavior, ownership, payments, Checkout, Fulfillment, managed credentials, Modules, or agent surfaces. It defines target behavior. This file and the code describe current implementation. When they differ, implement an explicit migration and preserve standalone operation.
 
 ## Get started
 

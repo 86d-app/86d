@@ -91,7 +91,7 @@ describe("doctor", () => {
 		vi.restoreAllMocks();
 	});
 
-	async function runDoctor() {
+	async function runDoctor(nodeVersion = "25.0.0") {
 		vi.resetModules();
 		vi.doMock("../utils.js", async () => {
 			const actual =
@@ -120,7 +120,7 @@ describe("doctor", () => {
 		}));
 
 		const { doctor } = await import("../commands/doctor.js");
-		await doctor();
+		await doctor({ nodeVersion });
 	}
 
 	it("reports healthy project with no issues", async () => {
@@ -130,13 +130,29 @@ describe("doctor", () => {
 		expect(output).toContain("No issues found");
 	});
 
-	it("checks Node.js version", async () => {
-		await runDoctor();
+	it.each(["23.0.0", "24.12.0", "25.9.3"])(
+		"accepts supported Node.js version %s",
+		async (nodeVersion) => {
+			await runDoctor(nodeVersion);
 
-		const output = logs.join("\n");
-		expect(output).toContain("Node.js");
-		expect(output).toContain(process.versions.node);
-	});
+			const output = logs.join("\n");
+			expect(output).toContain("Node.js");
+			expect(output).toContain(`v${nodeVersion}`);
+			expect(output).toContain("No issues found");
+		},
+	);
+
+	it.each(["22.22.0", "26.0.0"])(
+		"rejects unsupported Node.js version %s",
+		async (nodeVersion) => {
+			await runDoctor(nodeVersion);
+
+			const output = logs.join("\n");
+			expect(output).toContain(`v${nodeVersion} (requires 23, 24, or 25)`);
+			expect(output).toContain("Upgrade Node.js to version 23, 24, or 25");
+			expect(output).not.toContain("No issues found");
+		},
+	);
 
 	it("checks Bun installation", async () => {
 		await runDoctor();
