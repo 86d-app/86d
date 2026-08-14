@@ -19,6 +19,15 @@ export interface EasyPostAddress {
 	email?: string | undefined;
 }
 
+export interface EasyPostVerifiedAddress extends EasyPostAddress {
+	id?: string | undefined;
+	verifications?:
+		| {
+				delivery?: { success?: boolean | undefined } | undefined;
+		  }
+		| undefined;
+}
+
 export interface EasyPostParcel {
 	length: number;
 	width: number;
@@ -161,13 +170,32 @@ export class EasyPostProvider {
 	}
 
 	/**
+	 * Verify a destination through EasyPost Address before quoting.
+	 * Fails closed when delivery verification explicitly rejects the address.
+	 */
+	async verifyAddress(address: EasyPostAddress): Promise<EasyPostVerifiedAddress> {
+		const created = await this.request<EasyPostVerifiedAddress>(
+			"POST",
+			"/addresses",
+			{
+				address,
+				verify: true,
+			},
+		);
+		if (created.verifications?.delivery?.success === false) {
+			throw new Error("EasyPost could not verify the destination address.");
+		}
+		return created;
+	}
+
+	/**
 	 * Create a shipment to get available rates.
 	 * Does NOT purchase a label — just returns rate options.
 	 */
 	async getRates(params: GetRatesParams): Promise<EasyPostShipmentResponse> {
 		return this.request<EasyPostShipmentResponse>("POST", "/shipments", {
 			shipment: {
-				to_address: params.toAddress,
+				to_address: { ...params.toAddress, verify: true },
 				from_address: params.fromAddress,
 				parcel: params.parcel,
 			},

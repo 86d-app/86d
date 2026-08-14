@@ -469,6 +469,15 @@ export function createTaxController(
 					categoryId,
 				);
 
+				// Reaching here means tax is owed at this address: an explicit nexus
+				// list matched it, or nexus enforcement is off entirely. With no rate
+				// configured there is nothing to calculate from, so the zero below is
+				// an absence of a decision rather than a decision to charge nothing.
+				// The line records that difference; callers that would sell on the
+				// number refuse, while reporting and jurisdiction checks still read a
+				// plain zero.
+				const resolved = matchingRates.length > 0;
+
 				// Check if these specific rates are inclusive
 				const itemInclusive =
 					matchingRates.length > 0 ? matchingRates[0].inclusive : false;
@@ -496,6 +505,7 @@ export function createTaxController(
 					taxAmount: tax,
 					rate: itemEffectiveRate,
 					rateNames: matchingRates.map((r) => r.name),
+					...(resolved ? {} : { unresolved: true as const }),
 				});
 
 				totalItemTax += tax;

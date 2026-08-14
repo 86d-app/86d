@@ -190,6 +190,7 @@ const providerQuoteOptionSchema = z
 const providerQuoteResultSchema = z
 	.object({
 		providerQuoteReference: providerReferenceSchema,
+		verifiedDestinationAddress: shippingAddressSchema.optional(),
 		options: z
 			.array(providerQuoteOptionSchema)
 			.min(1)
@@ -202,6 +203,19 @@ const providerQuoteResultSchema = z
 			),
 	})
 	.strict();
+
+export const USPS_PRIORITY_MAIL_SERVICE = "usps.priority_mail";
+
+export function isUspsPriorityMailRate(rate: {
+	carrier: string;
+	service: string;
+}): boolean {
+	const carrier = rate.carrier.trim().toUpperCase();
+	const service = rate.service.trim().replace(/[\s_-]+/g, "").toLowerCase();
+	return (
+		carrier === "USPS" && (service === "priority" || service === "prioritymail")
+	);
+}
 
 export const createShippingQuoteInputSchema = z
 	.object({

@@ -5,7 +5,7 @@ import { z } from "@86d-app/core/zod";
 import { checkoutRevisionSchema, runCheckoutMutation } from "../../concurrency";
 import type { CheckoutController } from "../../service";
 import { canAccessCheckout } from "./guest-proof";
-import { recalculateTax } from "./recalculate-tax";
+import { recalculateTax, taxRecalculationError } from "./recalculate-tax";
 
 export const applyDiscount = createStoreEndpoint(
 	"/checkout/sessions/:id/discount",
@@ -67,18 +67,15 @@ export const applyDiscount = createStoreEndpoint(
 
 		// Recalculate tax on post-discount amounts
 		if (updated) {
-			updated = await recalculateTax(
+			const tax = await recalculateTax(
 				updated,
 				checkoutController,
 				ctx.context.capabilities,
 			);
-			if (!updated) {
-				return {
-					code: "CHECKOUT_TAX_UNAVAILABLE",
-					error: "An authoritative tax decision is unavailable.",
-					status: 503,
-				};
+			if (!tax.ok) {
+				return taxRecalculationError(tax);
 			}
+			updated = tax.session;
 		}
 
 		return { session: updated };

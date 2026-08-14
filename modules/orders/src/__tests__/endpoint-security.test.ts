@@ -335,14 +335,6 @@ describe("orders endpoint security", () => {
 			);
 			const items = await controller.getItems(order.id);
 
-			// Create fulfillment with items
-			await controller.createFulfillment({
-				orderId: order.id,
-				carrier: "UPS",
-				trackingNumber: "1Z123",
-				items: [{ orderItemId: items[0].id, quantity: 1 }],
-			});
-
 			// Create return with items
 			await controller.createReturn({
 				orderId: order.id,
@@ -364,7 +356,6 @@ describe("orders endpoint security", () => {
 			expect(await controller.getById(order.id)).toBeNull();
 			expect(await controller.getItems(order.id)).toHaveLength(0);
 			expect(await controller.getAddresses(order.id)).toHaveLength(0);
-			expect(await controller.listFulfillments(order.id)).toHaveLength(0);
 			expect(await controller.listReturns(order.id)).toHaveLength(0);
 			expect(await controller.listNotes(order.id)).toHaveLength(0);
 		});
@@ -378,8 +369,9 @@ describe("orders endpoint security", () => {
 			);
 
 			const keepItems = await controller.getItems(keepOrder.id);
-			await controller.createFulfillment({
+			await controller.createReturn({
 				orderId: keepOrder.id,
+				reason: "defective",
 				items: [{ orderItemId: keepItems[0].id, quantity: 1 }],
 			});
 
@@ -389,7 +381,7 @@ describe("orders endpoint security", () => {
 			expect(await controller.getById(keepOrder.id)).not.toBeNull();
 			expect(await controller.getItems(keepOrder.id)).toHaveLength(1);
 			expect(await controller.getAddresses(keepOrder.id)).toHaveLength(1);
-			expect(await controller.listFulfillments(keepOrder.id)).toHaveLength(1);
+			expect(await controller.listReturns(keepOrder.id)).toHaveLength(1);
 		});
 	});
 

@@ -122,10 +122,10 @@ export type CreateOrderParams = {
 
 export type FulfillmentStatus =
 	| "pending"
+	| "processing"
 	| "shipped"
-	| "in_transit"
 	| "delivered"
-	| "failed";
+	| "cancelled";
 
 export type Fulfillment = {
 	id: string;
@@ -156,26 +156,6 @@ export type OrderFulfillmentStatus =
 	| "unfulfilled"
 	| "partially_fulfilled"
 	| "fulfilled";
-
-export type CreateFulfillmentParams = {
-	orderId: string;
-	carrier?: string | undefined;
-	trackingNumber?: string | undefined;
-	trackingUrl?: string | undefined;
-	notes?: string | undefined;
-	items: Array<{
-		orderItemId: string;
-		quantity: number;
-	}>;
-};
-
-export type UpdateFulfillmentParams = {
-	status?: FulfillmentStatus | undefined;
-	trackingNumber?: string | undefined;
-	trackingUrl?: string | undefined;
-	carrier?: string | undefined;
-	notes?: string | undefined;
-};
 
 export type ReturnStatus =
 	| "requested"
@@ -451,39 +431,6 @@ export type OrderController = ModuleController & {
 	 * Get order addresses
 	 */
 	getAddresses(orderId: string): Promise<OrderAddress[]>;
-
-	/**
-	 * Create a fulfillment for an order
-	 */
-	createFulfillment(params: CreateFulfillmentParams): Promise<Fulfillment>;
-
-	/**
-	 * Get a fulfillment by ID with its items
-	 */
-	getFulfillment(id: string): Promise<FulfillmentWithItems | null>;
-
-	/**
-	 * List all fulfillments for an order
-	 */
-	listFulfillments(orderId: string): Promise<FulfillmentWithItems[]>;
-
-	/**
-	 * Update a fulfillment (tracking, status, etc.)
-	 */
-	updateFulfillment(
-		id: string,
-		params: UpdateFulfillmentParams,
-	): Promise<Fulfillment | null>;
-
-	/**
-	 * Delete a fulfillment
-	 */
-	deleteFulfillment(id: string): Promise<void>;
-
-	/**
-	 * Get the overall fulfillment status for an order
-	 */
-	getOrderFulfillmentStatus(orderId: string): Promise<OrderFulfillmentStatus>;
 
 	/**
 	 * Create a return request for an order

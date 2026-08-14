@@ -14,6 +14,18 @@ export async function handleTaxQuote(
 ) {
 	try {
 		const calculation = await controller.calculate(request);
+		// A zero that means "no rate was configured" is not a decision to charge
+		// nothing. Selling on it would undercharge every shopper in that
+		// jurisdiction silently, so the quote becomes review instead.
+		if (calculation.lines.some((line) => line.unresolved)) {
+			return {
+				ok: false as const,
+				failure: {
+					code: "TAX_REVIEW_REQUIRED" as const,
+					message: "No tax rate is configured for this address.",
+				},
+			};
+		}
 		return {
 			ok: true as const,
 			decision: {

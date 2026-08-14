@@ -17,9 +17,6 @@ import { adminListReturns } from "../admin/endpoints/list-returns";
 import { adminUpdateOrder } from "../admin/endpoints/update-order";
 import { adminUpdateReturn } from "../admin/endpoints/update-return";
 import type {
-	Fulfillment,
-	FulfillmentItem,
-	FulfillmentWithItems,
 	Order,
 	OrderController,
 	OrderItem,
@@ -97,40 +94,6 @@ function makeOrderNote(overrides: Partial<OrderNote> = {}): OrderNote {
 	};
 }
 
-function makeFulfillmentItem(
-	overrides: Partial<FulfillmentItem> = {},
-): FulfillmentItem {
-	return {
-		id: "fitem-1",
-		fulfillmentId: "ful-1",
-		orderItemId: "item-1",
-		quantity: 1,
-		...overrides,
-	};
-}
-
-function makeFulfillment(overrides: Partial<Fulfillment> = {}): Fulfillment {
-	const now = new Date();
-	return {
-		id: "ful-1",
-		orderId: "order-1",
-		status: "pending",
-		createdAt: now,
-		updatedAt: now,
-		...overrides,
-	};
-}
-
-function makeFulfillmentWithItems(
-	overrides: Partial<FulfillmentWithItems> = {},
-): FulfillmentWithItems {
-	return {
-		...makeFulfillment(),
-		items: [makeFulfillmentItem()],
-		...overrides,
-	};
-}
-
 function makeReturnRequest(
 	overrides: Partial<ReturnRequest> = {},
 ): ReturnRequest {
@@ -185,12 +148,6 @@ function makeController(
 		delete: vi.fn().mockResolvedValue(undefined),
 		getItems: vi.fn().mockResolvedValue([]),
 		getAddresses: vi.fn().mockResolvedValue([]),
-		createFulfillment: vi.fn().mockResolvedValue(makeFulfillment()),
-		getFulfillment: vi.fn().mockResolvedValue(null),
-		listFulfillments: vi.fn().mockResolvedValue([]),
-		updateFulfillment: vi.fn().mockResolvedValue(null),
-		deleteFulfillment: vi.fn().mockResolvedValue(undefined),
-		getOrderFulfillmentStatus: vi.fn().mockResolvedValue("unfulfilled"),
 		createReturn: vi.fn().mockResolvedValue(makeReturnWithItems()),
 		getReturn: vi.fn().mockResolvedValue(null),
 		listReturns: vi.fn().mockResolvedValue([]),
@@ -220,6 +177,7 @@ function call(
 		params?: Record<string, string>;
 		body?: Record<string, unknown>;
 		controller?: OrderController;
+		fulfillment?: { listByOrder: ReturnType<typeof vi.fn> };
 		emitFn?: ReturnType<typeof vi.fn>;
 		data?: ReturnType<typeof createMockDataService>;
 		capabilityInvoke?: ReturnType<typeof vi.fn>;
@@ -232,7 +190,10 @@ function call(
 		body: opts.body ?? {},
 		context: {
 			data: opts.data ?? createMockDataService(),
-			controllers: { order: opts.controller ?? makeController() },
+			controllers: {
+				order: opts.controller ?? makeController(),
+				...(opts.fulfillment ? { fulfillment: opts.fulfillment } : {}),
+			},
 			events: { emit },
 			capabilities: {
 				invoke:
@@ -540,26 +501,50 @@ describe("admin GET /admin/orders/:id/fulfillments", () => {
 		expect(result.status).toBe(404);
 	});
 
-	it("returns fulfillments and fulfillment status for existing order", async () => {
+	it("returns fulfillments from the Fulfillment owner for an existing order", async () => {
 		const existing = makeOrderWithDetails({ id: "order-1" });
-		const fulfillments = [makeFulfillmentWithItems()];
+		const now = new Date("2026-08-14T00:00:00.000Z");
+		const listByOrder = vi.fn().mockResolvedValue([
+			{
+				id: "ful-1",
+				orderId: "order-1",
+				status: "pending",
+				items: [{ lineItemId: "item-1", quantity: 1 }],
+				createdAt: now,
+				updatedAt: now,
+			},
+		]);
 		const ctrl = makeController({
 			getById: vi.fn().mockResolvedValue(existing),
-			listFulfillments: vi.fn().mockResolvedValue(fulfillments),
-			getOrderFulfillmentStatus: vi
-				.fn()
-				.mockResolvedValue("partially_fulfilled"),
+			getItems: vi.fn().mockResolvedValue([makeOrderItem()]),
 		});
 		const result = (await call(listFulfillmentsHandler, {
 			params: { id: "order-1" },
 			controller: ctrl,
+			fulfillment: { listByOrder },
 		})) as {
-			fulfillments: FulfillmentWithItems[];
+			fulfillments: Array<{ items: Array<{ orderItemId: string }> }>;
 			fulfillmentStatus: string;
 		};
 		expect(result.fulfillments).toHaveLength(1);
+		expect(result.fulfillments[0].items[0].orderItemId).toBe("item-1");
 		expect(result.fulfillmentStatus).toBe("partially_fulfilled");
-		expect(ctrl.listFulfillments).toHaveBeenCalledWith("order-1");
+		expect(listByOrder).toHaveBeenCalledWith("order-1");
+	});
+
+	it("fails closed when the Fulfillment owner is absent", async () => {
+		const existing = makeOrderWithDetails({ id: "order-1" });
+		const ctrl = makeController({
+			getById: vi.fn().mockResolvedValue(existing),
+		});
+		const result = (await call(listFulfillmentsHandler, {
+			params: { id: "order-1" },
+			controller: ctrl,
+		})) as { code: string; status: number };
+		expect(result).toMatchObject({
+			code: "FULFILLMENT_OWNER_OPERATION_REQUIRED",
+			status: 503,
+		});
 	});
 });
 
@@ -577,15 +562,11 @@ describe("admin POST /admin/orders/:id/fulfillments/create", () => {
 			code: "FULFILLMENT_OWNER_OPERATION_REQUIRED",
 			status: 503,
 		});
-		expect(ctrl.getById).not.toHaveBeenCalled();
-		expect(ctrl.createFulfillment).not.toHaveBeenCalled();
 	});
 
-	it("does not invoke the retired Order-owned Fulfillment writer", async () => {
+	it("does not invoke Orders as a Fulfillment writer", async () => {
 		const ctrl = makeController({
 			getById: vi.fn().mockResolvedValue(makeOrderWithDetails()),
-			createFulfillment: vi.fn().mockResolvedValue(makeFulfillment()),
-			getOrderFulfillmentStatus: vi.fn().mockResolvedValue("fulfilled"),
 		});
 		const result = await call(createFulfillmentHandler, {
 			params: { id: "order-1" },
@@ -601,8 +582,6 @@ describe("admin POST /admin/orders/:id/fulfillments/create", () => {
 			status: 503,
 		});
 		expect(ctrl.getById).not.toHaveBeenCalled();
-		expect(ctrl.createFulfillment).not.toHaveBeenCalled();
-		expect(ctrl.getOrderFulfillmentStatus).not.toHaveBeenCalled();
 	});
 });
 

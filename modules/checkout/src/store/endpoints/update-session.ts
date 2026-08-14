@@ -4,6 +4,7 @@ import { z } from "@86d-app/core/zod";
 import { checkoutRevisionSchema, runCheckoutMutation } from "../../concurrency";
 import type { CheckoutController } from "../../service";
 import { canAccessCheckout } from "./guest-proof";
+import { recalculateTax, taxRecalculationError } from "./recalculate-tax";
 
 const addressSchema = z.object({
 	firstName: z.string().min(1).max(200).transform(sanitizeText),
@@ -57,15 +58,6 @@ export const updateSession = createStoreEndpoint(
 			return { error: "Checkout session not found", status: 404 };
 		}
 
-		if (ctx.body.shippingAddress) {
-			return {
-				code: "CHECKOUT_TAX_V2_REQUIRED",
-				error:
-					"Shipping addresses require a revision-bound authoritative Tax decision.",
-				status: 503,
-			};
-		}
-
 		if (
 			ctx.body.shippingMethodName !== undefined ||
 			ctx.body.paymentMethod !== undefined
@@ -83,6 +75,7 @@ export const updateSession = createStoreEndpoint(
 				ctx.params.id,
 				{
 					guestEmail: ctx.body.guestEmail,
+					shippingAddress: ctx.body.shippingAddress,
 					billingAddress: ctx.body.billingAddress,
 				},
 				ctx.body.expectedRevision,
@@ -94,6 +87,19 @@ export const updateSession = createStoreEndpoint(
 			return { error: "Cannot update this checkout session", status: 422 };
 		}
 
-		return { session };
+		if (!ctx.body.shippingAddress) {
+			return { session };
+		}
+
+		const tax = await recalculateTax(
+			session,
+			controller,
+			ctx.context.capabilities,
+		);
+		if (!tax.ok) {
+			return taxRecalculationError(tax);
+		}
+
+		return { session: tax.session };
 	},
 );

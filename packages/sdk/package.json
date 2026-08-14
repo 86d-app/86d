@@ -1,6 +1,7 @@
 {
 	"name": "@86d-app/sdk",
 	"version": "0.0.4",
+	"license": "MIT",
 	"private": true,
 	"type": "module",
 	"exports": {

@@ -195,11 +195,208 @@ describe("Checkout Finalization admission", () => {
 				total: 1,
 			}),
 		).toMatchObject({ success: false });
-		expect(
-			checkoutFinalizationStateSchema.safeParse("completed"),
-		).toMatchObject({
+		expect(checkoutFinalizationStateSchema.safeParse("settled")).toMatchObject({
 			success: false,
 		});
+	});
+});
+
+/** Advances a freshly admitted Finalization to its final checkpoint. */
+async function advanceToCompletionStep(
+	store: ReturnType<typeof createCheckoutFinalizationStore>,
+	finalizationId: string,
+): Promise<{ attemptCount: number; state: "pending" | "running" }> {
+	let attemptCount = 0;
+	let state: "pending" | "running" = "pending";
+	for (const [index, step] of STEPS.entries()) {
+		const nextStep = STEPS[index + 1];
+		if (!nextStep) break;
+		await store.recordAttempt({
+			finalizationId,
+			attemptKey: `advance-${step}`,
+			expectedAttemptCount: attemptCount,
+			expectedState: state,
+			expectedStep: step,
+			outcome: { type: "advanced", nextStep },
+		});
+		attemptCount += 1;
+		state = "running";
+	}
+	return { attemptCount, state };
+}
+
+const completionResult = {
+	orderId: "order-1",
+	payment: {
+		connectionId: "payment-connection-1",
+		paymentId: "payment-1",
+		captureOperationId: "capture-1",
+	},
+};
+
+describe("Checkout Finalization completion", () => {
+	it("reaches a terminal completed state carrying its Order reference", async () => {
+		const storage = createTransactionTestStore();
+		await seedCheckout(storage);
+		const store = createCheckoutFinalizationStore(storage.transactions);
+		const admitted = await store.admit(admission());
+		const { attemptCount, state } = await advanceToCompletionStep(
+			store,
+			admitted.finalization.id,
+		);
+
+		const completed = await store.recordAttempt({
+			finalizationId: admitted.finalization.id,
+			attemptKey: "complete-1",
+			expectedAttemptCount: attemptCount,
+			expectedState: state,
+			expectedStep: "checkout_completion",
+			outcome: { type: "completed" },
+			result: completionResult,
+		});
+
+		expect(completed.replayed).toBe(false);
+		expect(completed.finalization).toMatchObject({
+			state: "completed",
+			currentStep: "checkout_completion",
+			attemptCount: attemptCount + 1,
+			result: { orderId: "order-1" },
+		});
+		expect(completed.attempt).toMatchObject({
+			stateAfter: "completed",
+			step: "checkout_completion",
+		});
+		expect(storage.events.at(-1)).toMatchObject({
+			definition: checkoutFinalizationLifecycleV1,
+			input: {
+				payload: {
+					cause: "attempt_recorded",
+					state: "completed",
+					result: { orderId: "order-1" },
+				},
+			},
+		});
+	});
+
+	it("refuses to complete without the Order the purchase produced", async () => {
+		const storage = createTransactionTestStore();
+		await seedCheckout(storage);
+		const store = createCheckoutFinalizationStore(storage.transactions);
+		const admitted = await store.admit(admission());
+		const { attemptCount, state } = await advanceToCompletionStep(
+			store,
+			admitted.finalization.id,
+		);
+
+		await expect(
+			store.recordAttempt({
+				finalizationId: admitted.finalization.id,
+				attemptKey: "complete-without-order",
+				expectedAttemptCount: attemptCount,
+				expectedState: state,
+				expectedStep: "checkout_completion",
+				outcome: { type: "completed" },
+				result: {
+					payment: {
+						connectionId: "payment-connection-1",
+						paymentId: "payment-1",
+					},
+				},
+			}),
+		).rejects.toMatchObject({ code: "COMPLETION_INVALID" });
+
+		const snapshot = await store.getById(admitted.finalization.id);
+		expect(snapshot.finalization).toMatchObject({
+			state: "running",
+			attemptCount,
+		});
+	});
+
+	it("refuses to complete before reaching the completion checkpoint", async () => {
+		const storage = createTransactionTestStore();
+		await seedCheckout(storage);
+		const store = createCheckoutFinalizationStore(storage.transactions);
+		const admitted = await store.admit(admission());
+
+		await expect(
+			store.recordAttempt({
+				finalizationId: admitted.finalization.id,
+				attemptKey: "complete-too-early",
+				expectedAttemptCount: 0,
+				expectedState: "pending",
+				expectedStep: "checkout_revision",
+				outcome: { type: "completed" },
+				result: completionResult,
+			}),
+		).rejects.toMatchObject({ code: "COMPLETION_INVALID" });
+
+		const snapshot = await store.getById(admitted.finalization.id);
+		expect(snapshot.finalization).toMatchObject({
+			state: "pending",
+			attemptCount: 0,
+		});
+	});
+
+	it("is terminal: a completed Finalization takes no further attempt or compensation", async () => {
+		const storage = createTransactionTestStore();
+		await seedCheckout(storage);
+		const store = createCheckoutFinalizationStore(storage.transactions);
+		const admitted = await store.admit(admission());
+		const { attemptCount, state } = await advanceToCompletionStep(
+			store,
+			admitted.finalization.id,
+		);
+		const completing = {
+			finalizationId: admitted.finalization.id,
+			attemptKey: "complete-1",
+			expectedAttemptCount: attemptCount,
+			expectedState: state,
+			expectedStep: "checkout_completion" as const,
+			outcome: { type: "completed" as const },
+			result: completionResult,
+		};
+		await store.recordAttempt(completing);
+
+		// Replaying the completing key returns the same attempt, and does not
+		// record a second one.
+		const replay = await store.recordAttempt(completing);
+		expect(replay.replayed).toBe(true);
+		expect(replay.finalization.attemptCount).toBe(attemptCount + 1);
+
+		await expect(
+			store.recordAttempt({
+				finalizationId: admitted.finalization.id,
+				attemptKey: "after-completion",
+				expectedAttemptCount: attemptCount + 1,
+				expectedState: "running",
+				expectedStep: "checkout_completion",
+				outcome: {
+					type: "retryable_failure",
+					reason: { code: "TOO_LATE" },
+				},
+			}),
+		).rejects.toMatchObject({ code: "STATE_CONFLICT" });
+
+		await expect(
+			store.recordCompensation({
+				finalizationId: admitted.finalization.id,
+				compensationKey: "compensate-after-completion",
+				expectedCompensationCount: 0,
+				action: "cancel_order",
+				target: {
+					ownerModule: "orders",
+					resourceType: "order",
+					resourceId: "order-1",
+					operationId: "operation-1",
+				},
+				outcome: { type: "planned" },
+			}),
+		).rejects.toMatchObject({ code: "STATE_CONFLICT" });
+
+		const snapshot = await store.getById(admitted.finalization.id);
+		expect(snapshot.finalization.state).toBe("completed");
+		expect(snapshot.attempts).toHaveLength(attemptCount + 1);
+		expect(snapshot.compensations).toHaveLength(0);
 	});
 });
 

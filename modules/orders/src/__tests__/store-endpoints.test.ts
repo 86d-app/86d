@@ -174,7 +174,7 @@ async function simulateTrackOrder(
 		return { error: "Order not found", status: 404 };
 	}
 
-	const fulfillments = await controller.listFulfillments(order.id);
+	const fulfillments: unknown[] = [];
 	return { order, fulfillments };
 }
 
@@ -636,18 +636,9 @@ describe("store endpoint: track order (guest)", () => {
 		expect(result).toEqual({ error: "Order not found", status: 404 });
 	});
 
-	it("includes fulfillments in tracking response", async () => {
+	it("does not invent Order-owned fulfillments on the guest tracking path", async () => {
 		const order = await seedOrder(controller, {
 			guestEmail: "guest@example.com",
-		});
-
-		// Create a fulfillment for the order
-		const itemId = order.items[0].id;
-		await controller.createFulfillment({
-			orderId: order.id,
-			carrier: "ups",
-			trackingNumber: "1Z999AA10123456784",
-			items: [{ orderItemId: itemId, quantity: 1 }],
 		});
 
 		const result = await simulateTrackOrder(
@@ -658,8 +649,7 @@ describe("store endpoint: track order (guest)", () => {
 
 		expect("fulfillments" in result).toBe(true);
 		if ("fulfillments" in result) {
-			expect(result.fulfillments).toHaveLength(1);
-			expect(result.fulfillments[0].carrier).toBe("ups");
+			expect(result.fulfillments).toHaveLength(0);
 		}
 	});
 });

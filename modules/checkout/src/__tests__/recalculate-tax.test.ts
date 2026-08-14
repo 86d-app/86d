@@ -3,7 +3,7 @@ import type {
 	CapabilityInvoker,
 	CapabilityRequest,
 } from "@86d-app/core/capabilities";
-import type { taxQuoteCapability } from "@86d-app/core/commerce-capabilities";
+import type { taxQuoteV2Capability } from "@86d-app/core/commerce-capabilities";
 import { createMockDataService } from "@86d-app/core/test-utils";
 import { describe, expect, it } from "vitest";
 import type {
@@ -12,70 +12,138 @@ import type {
 	CheckoutSession,
 } from "../service";
 import { createCheckoutController } from "../service-impl";
-import { recalculateTax } from "../store/endpoints/recalculate-tax";
+import {
+	CHECKOUT_ADDRESS_NORMALIZATION_VERSION,
+	recalculateTax,
+} from "../store/endpoints/recalculate-tax";
 
 // ---------------------------------------------------------------------------
-// Mock tax controller — records calls, applies configurable flat rate
+// Mock tax.quote v2 invoker
 // ---------------------------------------------------------------------------
 
-interface TaxCalculateParams {
-	address: {
-		country: string;
-		state: string;
-		city?: string | undefined;
-		postalCode?: string | undefined;
-	};
-	lineItems: Array<{
-		productId: string;
-		amount: number;
-		quantity: number;
-	}>;
-	shippingAmount?: number | undefined;
-	customerId?: string | undefined;
-}
+type TaxQuoteV2Request = CapabilityRequest<typeof taxQuoteV2Capability>;
+type TaxQuoteV2Decision = CapabilityDecision<typeof taxQuoteV2Capability>;
 
-type TaxQuoteInvoker = {
+type TaxQuoteV2Invoker = {
 	invoke(
-		definition: typeof taxQuoteCapability,
-		request: CapabilityRequest<typeof taxQuoteCapability>,
-	): Promise<{
-		ok: true;
-		decision: CapabilityDecision<typeof taxQuoteCapability>;
-	}>;
+		definition: typeof taxQuoteV2Capability,
+		request: TaxQuoteV2Request,
+	): Promise<
+		| { ok: true; decision: TaxQuoteV2Decision }
+		| {
+				ok: false;
+				failure: {
+					code: "CAPABILITY_UNAVAILABLE";
+					capability: string;
+					version: string;
+				};
+		  }
+	>;
 };
 
-function createMockTaxCapabilities(taxRate = 0.1) {
-	const calls: TaxCalculateParams[] = [];
+function createMockTaxCapabilities(
+	options: {
+		taxRate?: number;
+		status?: TaxQuoteV2Decision["status"];
+		reason?: TaxQuoteV2Decision["reason"];
+		tax?: number | null;
+	} = {},
+) {
+	const taxRate = options.taxRate ?? 0.1;
+	const status = options.status ?? "CALCULATED";
+	const reason =
+		options.reason ??
+		(status === "CALCULATED"
+			? "TAX_CALCULATED"
+			: status === "NO_NEXUS"
+				? "NO_NEXUS_POLICY"
+				: status === "EXEMPT"
+					? "EXEMPTION_APPLIED"
+					: status === "MARKETPLACE_COLLECTED"
+						? "MARKETPLACE_POLICY"
+						: "RATE_NOT_CONFIGURED");
+	const calls: TaxQuoteV2Request[] = [];
 
-	const capabilities: TaxQuoteInvoker & {
-		_calls: TaxCalculateParams[];
+	const capabilities: TaxQuoteV2Invoker & {
+		_calls: TaxQuoteV2Request[];
 	} = {
 		_calls: calls,
 		async invoke(_definition, request) {
-			const params = request as TaxCalculateParams;
-			calls.push(params);
-			const subtotal = params.lineItems.reduce(
-				(sum, item) => sum + item.amount,
+			calls.push(request);
+			const subtotal = request.lineItems.reduce(
+				(sum, item) => sum + item.unitAmount * item.quantity,
 				0,
 			);
-			const totalTax = Math.round(subtotal * taxRate);
+			const discount = request.lineItems.reduce(
+				(sum, item) => sum + (item.discountAmount ?? 0),
+				0,
+			);
+			const taxable = subtotal - discount;
+			const tax =
+				options.tax !== undefined
+					? options.tax
+					: status === "REVIEW_REQUIRED"
+						? null
+						: Math.round(taxable * taxRate);
+			const shipping = request.shippingAmount ?? 0;
+
 			return {
 				ok: true as const,
 				decision: {
-					totalTax,
-					shippingTax: 0,
-					lineItems: params.lineItems.map((item) => ({
-						productId: item.productId,
-						taxableAmount: item.amount,
-						taxAmount: Math.round(item.amount * taxRate),
-						rate: taxRate,
-					})),
-				},
+					quoteId: `quote-${calls.length}`,
+					jurisdictionDecision:
+						status === "REVIEW_REQUIRED"
+							? "BLOCKED"
+							: status === "NO_NEXUS"
+								? "NO_NEXUS"
+								: status === "MARKETPLACE_COLLECTED"
+									? "MARKETPLACE_COLLECTED"
+									: "COLLECT",
+					status,
+					reason,
+					policyVersion: "policy-v1",
+					sourceVersion: "rates-v1",
+					issuedAt: "2026-08-14T00:00:00.000Z",
+					expiresAt: "2026-08-14T00:10:00.000Z",
+					currency: request.currency,
+					totals: {
+						subtotal,
+						discount,
+						shipping,
+						taxable,
+						lineTax: tax,
+						shippingTax: status === "REVIEW_REQUIRED" ? null : 0,
+						tax,
+						grandTotal:
+							tax === null ? null : taxable + shipping + tax,
+					},
+					lineAllocations: request.lineItems.map((item) => {
+						const grossAmount = item.unitAmount * item.quantity;
+						const discountAmount = item.discountAmount ?? 0;
+						const lineTaxable = grossAmount - discountAmount;
+						return {
+							lineId: item.lineId,
+							productId: item.productId,
+							...(item.variantId ? { variantId: item.variantId } : {}),
+							taxCategoryId: item.taxCategoryId,
+							quantity: item.quantity,
+							grossAmount,
+							discountAmount,
+							taxableAmount: lineTaxable,
+							taxAmount:
+								tax === null
+									? null
+									: Math.round(lineTaxable * taxRate),
+						};
+					}),
+				} satisfies TaxQuoteV2Decision,
 			};
 		},
 	};
 
-	return capabilities as CapabilityInvoker & { _calls: TaxCalculateParams[] };
+	return capabilities as CapabilityInvoker & {
+		_calls: TaxQuoteV2Request[];
+	};
 }
 
 // ---------------------------------------------------------------------------
@@ -104,10 +172,6 @@ const sampleAddress: CheckoutAddress = {
 	country: "US",
 };
 
-// ---------------------------------------------------------------------------
-// Helper to create a session with known state
-// ---------------------------------------------------------------------------
-
 async function createSessionWithDiscount(
 	ctrl: ReturnType<typeof createCheckoutController>,
 	overrides: Partial<{
@@ -123,29 +187,32 @@ async function createSessionWithDiscount(
 		total: 4000,
 		lineItems: sampleLineItems,
 		shippingAddress: overrides.shippingAddress ?? sampleAddress,
-		shippingAmount: overrides.shippingAmount ?? 500,
+		shippingAmount: overrides.shippingAmount ?? 0,
 		taxAmount: overrides.taxAmount ?? 0,
+		discountAmount: overrides.discountAmount ?? 0,
+		...(overrides.discountCode
+			? { metadata: { discountCode: overrides.discountCode } }
+			: {}),
 	});
 
-	if (overrides.discountAmount) {
-		await ctrl.applyDiscount(session.id, {
+	let current = session;
+	if (overrides.discountAmount && overrides.discountAmount > 0) {
+		const discounted = await ctrl.applyDiscount(session.id, {
 			code: overrides.discountCode ?? "SAVE",
 			discountAmount: overrides.discountAmount,
 			freeShipping: false,
 		});
+		current = discounted as CheckoutSession;
 	}
-
-	// Re-fetch to get current state
-	const current = await ctrl.getById(session.id);
 	return current as CheckoutSession;
 }
 
 // ---------------------------------------------------------------------------
-// recalculateTax — core helper tests
+// recalculateTax — tax.quote v2
 // ---------------------------------------------------------------------------
 
 describe("recalculateTax", () => {
-	it("returns null when the tax capability is unavailable", async () => {
+	it("returns CHECKOUT_TAX_UNAVAILABLE when the tax capability fails", async () => {
 		const ctrl = createCheckoutController(createMockDataService());
 		const session = await createSessionWithDiscount(ctrl);
 		const unavailable = {
@@ -154,13 +221,16 @@ describe("recalculateTax", () => {
 				failure: {
 					code: "CAPABILITY_UNAVAILABLE" as const,
 					capability: "tax.quote",
-					version: "1.0.0",
+					version: "2.0.0",
 				},
 			}),
 		} satisfies CapabilityInvoker;
 
 		const result = await recalculateTax(session, ctrl, unavailable);
-		expect(result).toBeNull();
+		expect(result).toEqual({
+			ok: false,
+			code: "CHECKOUT_TAX_UNAVAILABLE",
+		});
 	});
 
 	it("returns original session when no shipping address", async () => {
@@ -170,98 +240,164 @@ describe("recalculateTax", () => {
 			total: 4000,
 			lineItems: sampleLineItems,
 		});
-		const taxCtrl = createMockTaxCapabilities(0.1);
+		const taxCtrl = createMockTaxCapabilities();
 
 		const result = await recalculateTax(session, ctrl, taxCtrl);
-		expect(result).toBe(session);
+		expect(result).toEqual({ ok: true, session });
 		expect(taxCtrl._calls).toHaveLength(0);
 	});
 
-	it("calculates tax on full line item amounts when no discount", async () => {
+	it("persists CALCULATED tax and binds the quote identity", async () => {
 		const ctrl = createCheckoutController(createMockDataService());
 		const session = await createSessionWithDiscount(ctrl);
-		const taxCtrl = createMockTaxCapabilities(0.1);
+		const taxCtrl = createMockTaxCapabilities({ taxRate: 0.1 });
 
 		const result = await recalculateTax(session, ctrl, taxCtrl);
 
-		// No discount → full amounts: p1=2000, p2=2000 → subtotal 4000 → tax 400
-		expect(result?.taxAmount).toBe(400);
-		expect(taxCtrl._calls[0].lineItems).toEqual([
-			{ productId: "p1", amount: 2000, quantity: 2 },
-			{ productId: "p2", amount: 2000, quantity: 1 },
-		]);
+		expect(result.ok).toBe(true);
+		if (!result.ok) return;
+		expect(result.session.taxAmount).toBe(400);
+		expect(result.session.metadata).toMatchObject({
+			taxQuoteId: "quote-1",
+			taxQuoteStatus: "CALCULATED",
+		});
+		expect(taxCtrl._calls[0]).toMatchObject({
+			currency: "USD",
+			marketplaceStatus: "NOT_MARKETPLACE",
+			address: {
+				country: "US",
+				state: "IL",
+				city: "Springfield",
+				postalCode: "62701",
+				normalizationVersion: CHECKOUT_ADDRESS_NORMALIZATION_VERSION,
+			},
+			lineItems: [
+				{
+					lineId: "p1::0",
+					productId: "p1",
+					taxCategoryId: "general",
+					quantity: 2,
+					unitAmount: 1000,
+				},
+				{
+					lineId: "p2:v1:1",
+					productId: "p2",
+					variantId: "v1",
+					taxCategoryId: "general",
+					quantity: 1,
+					unitAmount: 2000,
+				},
+			],
+		});
 	});
 
-	it("distributes discount proportionally across line items for tax", async () => {
+	it("distributes discount as line discountAmount for tax.quote v2", async () => {
 		const ctrl = createCheckoutController(createMockDataService());
-		// subtotal=4000, discount=1000 → 25% off each line item
 		const session = await createSessionWithDiscount(ctrl, {
 			discountAmount: 1000,
 		});
-		const taxCtrl = createMockTaxCapabilities(0.1);
+		const taxCtrl = createMockTaxCapabilities({ taxRate: 0.1 });
 
 		const result = await recalculateTax(session, ctrl, taxCtrl);
 
-		// 25% off: p1=2000*0.75=1500, p2=2000*0.75=1500 → subtotal 3000 → tax 300
-		expect(result?.taxAmount).toBe(300);
+		expect(result.ok).toBe(true);
+		if (!result.ok) return;
+		expect(result.session.taxAmount).toBe(300);
 		expect(taxCtrl._calls[0].lineItems).toEqual([
-			{ productId: "p1", amount: 1500, quantity: 2 },
-			{ productId: "p2", amount: 1500, quantity: 1 },
+			{
+				lineId: "p1::0",
+				productId: "p1",
+				taxCategoryId: "general",
+				quantity: 2,
+				unitAmount: 1000,
+				discountAmount: 500,
+			},
+			{
+				lineId: "p2:v1:1",
+				productId: "p2",
+				variantId: "v1",
+				taxCategoryId: "general",
+				quantity: 1,
+				unitAmount: 2000,
+				discountAmount: 500,
+			},
 		]);
 	});
 
-	it("handles 50% discount correctly", async () => {
+	it("persists reasoned zero for NO_NEXUS without REVIEW_REQUIRED", async () => {
 		const ctrl = createCheckoutController(createMockDataService());
-		// subtotal=4000, discount=2000 → 50% off
-		const session = await createSessionWithDiscount(ctrl, {
-			discountAmount: 2000,
+		const session = await createSessionWithDiscount(ctrl, { taxAmount: 50 });
+		const taxCtrl = createMockTaxCapabilities({
+			status: "NO_NEXUS",
+			tax: 0,
 		});
-		const taxCtrl = createMockTaxCapabilities(0.1);
 
 		const result = await recalculateTax(session, ctrl, taxCtrl);
 
-		// 50% off: p1=1000, p2=1000 → subtotal 2000 → tax 200
-		expect(result?.taxAmount).toBe(200);
-		expect(taxCtrl._calls[0].lineItems).toEqual([
-			{ productId: "p1", amount: 1000, quantity: 2 },
-			{ productId: "p2", amount: 1000, quantity: 1 },
-		]);
+		expect(result.ok).toBe(true);
+		if (!result.ok) return;
+		expect(result.session.taxAmount).toBe(0);
+		expect(result.session.metadata).toMatchObject({
+			taxQuoteStatus: "NO_NEXUS",
+			taxQuoteReason: "NO_NEXUS_POLICY",
+		});
 	});
 
-	it("handles 100% discount (zero taxable amounts)", async () => {
+	it("persists reasoned zero for EXEMPT", async () => {
 		const ctrl = createCheckoutController(createMockDataService());
-		const session = await createSessionWithDiscount(ctrl, {
-			discountAmount: 4000,
+		const session = await createSessionWithDiscount(ctrl, { taxAmount: 50 });
+		const taxCtrl = createMockTaxCapabilities({
+			status: "EXEMPT",
+			tax: 0,
 		});
-		const taxCtrl = createMockTaxCapabilities(0.1);
 
 		const result = await recalculateTax(session, ctrl, taxCtrl);
 
-		// 100% off → all amounts 0 → tax 0
-		expect(result?.taxAmount).toBe(0);
-		expect(taxCtrl._calls[0].lineItems).toEqual([
-			{ productId: "p1", amount: 0, quantity: 2 },
-			{ productId: "p2", amount: 0, quantity: 1 },
-		]);
+		expect(result.ok).toBe(true);
+		if (!result.ok) return;
+		expect(result.session.taxAmount).toBe(0);
+		expect(result.session.metadata).toMatchObject({
+			taxQuoteStatus: "EXEMPT",
+		});
 	});
 
-	it("updates total correctly after tax recalculation", async () => {
+	it("fails closed on REVIEW_REQUIRED without writing inferred zero", async () => {
+		const ctrl = createCheckoutController(createMockDataService());
+		const session = await createSessionWithDiscount(ctrl, { taxAmount: 50 });
+		const taxCtrl = createMockTaxCapabilities({
+			status: "REVIEW_REQUIRED",
+			reason: "RATE_NOT_CONFIGURED",
+			tax: null,
+		});
+
+		const result = await recalculateTax(session, ctrl, taxCtrl);
+
+		expect(result).toEqual({
+			ok: false,
+			code: "TAX_REVIEW_REQUIRED",
+			reason: "RATE_NOT_CONFIGURED",
+		});
+		const unchanged = await ctrl.getById(session.id);
+		expect(unchanged?.taxAmount).toBe(50);
+	});
+
+	it("updates total correctly after CALCULATED tax", async () => {
 		const ctrl = createCheckoutController(createMockDataService());
 		const session = await createSessionWithDiscount(ctrl, {
 			discountAmount: 1000,
 			shippingAmount: 500,
 		});
-		const taxCtrl = createMockTaxCapabilities(0.1);
+		const taxCtrl = createMockTaxCapabilities({ taxRate: 0.1 });
 
 		const result = await recalculateTax(session, ctrl, taxCtrl);
 
-		// subtotal=4000, tax=300, shipping=500, discount=1000
-		// total = 4000 + 300 + 500 - 1000 = 3800
-		expect(result?.taxAmount).toBe(300);
-		expect(result?.total).toBe(3800);
+		expect(result.ok).toBe(true);
+		if (!result.ok) return;
+		expect(result.session.taxAmount).toBe(300);
+		expect(result.session.total).toBe(3800);
 	});
 
-	it("passes shipping amount and customerId to tax controller", async () => {
+	it("passes shipping amount and customerId to tax.quote v2", async () => {
 		const ctrl = createCheckoutController(createMockDataService());
 		const session = await ctrl.create({
 			subtotal: 4000,
@@ -271,7 +407,7 @@ describe("recalculateTax", () => {
 			shippingAmount: 800,
 			customerId: "cust-789",
 		});
-		const taxCtrl = createMockTaxCapabilities(0.1);
+		const taxCtrl = createMockTaxCapabilities();
 
 		await recalculateTax(session, ctrl, taxCtrl);
 
@@ -280,120 +416,113 @@ describe("recalculateTax", () => {
 	});
 });
 
-// ---------------------------------------------------------------------------
-// Discount → tax recalculation integration flow
-// ---------------------------------------------------------------------------
-
 describe("apply/remove discount tax recalculation flow", () => {
 	it("tax decreases when discount is applied", async () => {
 		const ctrl = createCheckoutController(createMockDataService());
-		const taxCtrl = createMockTaxCapabilities(0.1);
+		const taxCtrl = createMockTaxCapabilities({ taxRate: 0.1 });
 
-		// Create session with tax already calculated (no discount)
 		const session = await createSessionWithDiscount(ctrl);
 		const withTax = await recalculateTax(session, ctrl, taxCtrl);
-		expect(withTax?.taxAmount).toBe(400); // 10% of 4000
+		expect(withTax.ok && withTax.session.taxAmount).toBe(400);
 
-		// Apply 25% discount
-		const discounted = await ctrl.applyDiscount(withTax?.id ?? "", {
-			code: "SAVE25",
-			discountAmount: 1000,
-			freeShipping: false,
-		});
+		const discounted = await ctrl.applyDiscount(
+			withTax.ok ? withTax.session.id : "",
+			{
+				code: "SAVE25",
+				discountAmount: 1000,
+				freeShipping: false,
+			},
+		);
 
-		// Recalculate tax (simulates what the endpoint now does)
 		const afterDiscount = await recalculateTax(
 			discounted as CheckoutSession,
 			ctrl,
 			taxCtrl,
 		);
 
-		// Tax should be 10% of 3000 (post-discount) = 300
-		expect(afterDiscount?.taxAmount).toBe(300);
+		expect(afterDiscount.ok && afterDiscount.session.taxAmount).toBe(300);
 	});
 
 	it("tax restores when discount is removed", async () => {
 		const ctrl = createCheckoutController(createMockDataService());
-		const taxCtrl = createMockTaxCapabilities(0.1);
+		const taxCtrl = createMockTaxCapabilities({ taxRate: 0.1 });
 
-		// Create session, apply discount, calculate tax
 		const session = await createSessionWithDiscount(ctrl, {
 			discountAmount: 1000,
 		});
 		const withDiscountTax = await recalculateTax(session, ctrl, taxCtrl);
-		expect(withDiscountTax?.taxAmount).toBe(300); // 10% of 3000
+		expect(withDiscountTax.ok && withDiscountTax.session.taxAmount).toBe(300);
 
-		// Remove discount
-		const noDiscount = await ctrl.removeDiscount(withDiscountTax?.id ?? "");
+		const noDiscount = await ctrl.removeDiscount(
+			withDiscountTax.ok ? withDiscountTax.session.id : "",
+		);
 
-		// Recalculate tax (simulates what the endpoint now does)
 		const afterRemove = await recalculateTax(
 			noDiscount as CheckoutSession,
 			ctrl,
 			taxCtrl,
 		);
 
-		// Tax should be restored: 10% of 4000 = 400
-		expect(afterRemove?.taxAmount).toBe(400);
+		expect(afterRemove.ok && afterRemove.session.taxAmount).toBe(400);
 	});
 
 	it("total is correct through full apply-tax-remove-tax cycle", async () => {
 		const ctrl = createCheckoutController(createMockDataService());
-		const taxCtrl = createMockTaxCapabilities(0.1);
+		const taxCtrl = createMockTaxCapabilities({ taxRate: 0.1 });
 
-		// 1. Create session: subtotal=4000, shipping=500
 		const session = await createSessionWithDiscount(ctrl, {
 			shippingAmount: 500,
 		});
 
-		// 2. Initial tax: 10% of 4000 = 400
 		const step1 = await recalculateTax(session, ctrl, taxCtrl);
-		expect(step1?.total).toBe(4900); // 4000 + 400 + 500
+		expect(step1.ok && step1.session.total).toBe(4900);
 
-		// 3. Apply $500 discount
-		const discounted = await ctrl.applyDiscount(step1?.id ?? "", {
-			code: "SAVE5",
-			discountAmount: 500,
-			freeShipping: false,
-		});
+		const discounted = await ctrl.applyDiscount(
+			step1.ok ? step1.session.id : "",
+			{
+				code: "SAVE5",
+				discountAmount: 500,
+				freeShipping: false,
+			},
+		);
 
-		// 4. Recalc tax: 10% of 3500 = 350
 		const step2 = await recalculateTax(
 			discounted as CheckoutSession,
 			ctrl,
 			taxCtrl,
 		);
-		expect(step2?.taxAmount).toBe(350);
-		// total = 4000 + 350 + 500 - 500 = 4350
-		expect(step2?.total).toBe(4350);
+		expect(step2.ok && step2.session.taxAmount).toBe(350);
+		expect(step2.ok && step2.session.total).toBe(4350);
 
-		// 5. Remove discount
-		const removed = await ctrl.removeDiscount(step2?.id ?? "");
+		const removed = await ctrl.removeDiscount(
+			step2.ok ? step2.session.id : "",
+		);
 		const step3 = await recalculateTax(
 			removed as CheckoutSession,
 			ctrl,
 			taxCtrl,
 		);
-		// Back to original: tax=400, total=4900
-		expect(step3?.taxAmount).toBe(400);
-		expect(step3?.total).toBe(4900);
+		expect(step3.ok && step3.session.taxAmount).toBe(400);
+		expect(step3.ok && step3.session.total).toBe(4900);
 	});
 
 	it("free shipping discount recalculates tax with zero shipping", async () => {
 		const ctrl = createCheckoutController(createMockDataService());
-		const taxCtrl = createMockTaxCapabilities(0.1);
+		const taxCtrl = createMockTaxCapabilities({ taxRate: 0.1 });
 
 		const session = await createSessionWithDiscount(ctrl, {
 			shippingAmount: 500,
 		});
 		const withTax = await recalculateTax(session, ctrl, taxCtrl);
 
-		// Apply free shipping discount
-		const discounted = await ctrl.applyDiscount(withTax?.id ?? "", {
-			code: "FREESHIP",
-			discountAmount: 0,
-			freeShipping: true,
-		});
+		const discounted = await ctrl.applyDiscount(
+			withTax.ok ? withTax.session.id : "",
+			{
+				code: "FREESHIP",
+				discountAmount: 0,
+				freeShipping: true,
+			},
+		);
 
 		const afterDiscount = await recalculateTax(
 			discounted as CheckoutSession,
@@ -401,11 +530,8 @@ describe("apply/remove discount tax recalculation flow", () => {
 			taxCtrl,
 		);
 
-		// Shipping set to 0 by freeShipping flag
-		expect(afterDiscount?.shippingAmount).toBe(0);
-		// Tax unchanged (no discount amount, just free shipping)
-		expect(afterDiscount?.taxAmount).toBe(400);
-		// Shipping amount passed to tax controller should be 0
+		expect(afterDiscount.ok && afterDiscount.session.shippingAmount).toBe(0);
+		expect(afterDiscount.ok && afterDiscount.session.taxAmount).toBe(400);
 		const lastCall = taxCtrl._calls[taxCtrl._calls.length - 1];
 		expect(lastCall.shippingAmount).toBe(0);
 	});

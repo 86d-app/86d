@@ -1,5 +1,10 @@
 import { createStoreEndpoint } from "@86d-app/core/api";
 import { z } from "@86d-app/core/zod";
+import {
+	type OwnerFulfillmentController,
+	projectOrderFulfillmentStatus,
+	projectOwnerFulfillments,
+} from "../../fulfillment-projection";
 import type { OrderController } from "../../service";
 
 export const getMyOrderFulfillments = createStoreEndpoint(
@@ -9,28 +14,35 @@ export const getMyOrderFulfillments = createStoreEndpoint(
 		params: z.object({ id: z.string().max(128) }),
 	},
 	async (ctx) => {
-		const userId = ctx.context.session?.user.id;
-		if (!userId) {
-			return { error: "Unauthorized", status: 401 };
-		}
-
 		const controller = ctx.context.controllers.order as OrderController;
 		const order = await controller.getById(ctx.params.id);
-
 		if (!order) {
 			return { error: "Order not found", status: 404 };
 		}
 
-		// Ensure the order belongs to the requesting customer
-		if (order.customerId !== userId) {
-			return { error: "Order not found", status: 404 };
+		const fulfillmentController = ctx.context.controllers.fulfillment as
+			| OwnerFulfillmentController
+			| undefined;
+		if (!fulfillmentController?.listByOrder) {
+			return {
+				code: "FULFILLMENT_OWNER_OPERATION_REQUIRED",
+				error:
+					"Fulfillment reads belong to the standalone Fulfillment module.",
+				status: 503,
+			};
 		}
 
-		const fulfillments = await controller.listFulfillments(ctx.params.id);
-		const fulfillmentStatus = await controller.getOrderFulfillmentStatus(
-			ctx.params.id,
-		);
+		const [ownerFulfillments, orderItems] = await Promise.all([
+			fulfillmentController.listByOrder(ctx.params.id),
+			controller.getItems(ctx.params.id),
+		]);
 
-		return { fulfillments, fulfillmentStatus };
+		return {
+			fulfillments: projectOwnerFulfillments(ownerFulfillments),
+			fulfillmentStatus: projectOrderFulfillmentStatus(
+				orderItems,
+				ownerFulfillments,
+			),
+		};
 	},
 );

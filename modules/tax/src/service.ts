@@ -66,6 +66,12 @@ export type TaxLineResult = {
 	taxAmount: number;
 	rate: number;
 	rateNames: string[];
+	/**
+	 * Set when tax was owed at this address but no rate was configured to
+	 * calculate it. The amount is zero because nothing could be determined, not
+	 * because nothing is due, and a caller must not sell on it.
+	 */
+	unresolved?: true;
 };
 
 /** Result of a full tax calculation */

@@ -547,445 +547,6 @@ describe("createOrderController", () => {
 		});
 	});
 
-	// ── Fulfillment Tests ─────────────────────────────────────────────────
-
-	describe("createFulfillment", () => {
-		it("creates a fulfillment with items", async () => {
-			const order = await controller.create({
-				...sampleOrder,
-				items: sampleItems,
-			});
-			const items = await controller.getItems(order.id);
-
-			const fulfillment = await controller.createFulfillment({
-				orderId: order.id,
-				carrier: "UPS",
-				trackingNumber: "1Z999AA10123456784",
-				items: [{ orderItemId: items[0]?.id, quantity: 2 }],
-			});
-
-			expect(fulfillment.orderId).toBe(order.id);
-			expect(fulfillment.carrier).toBe("UPS");
-			expect(fulfillment.trackingNumber).toBe("1Z999AA10123456784");
-			expect(fulfillment.status).toBe("shipped");
-			expect(fulfillment.shippedAt).toBeInstanceOf(Date);
-		});
-
-		it("auto-generates tracking URL for known carriers", async () => {
-			const order = await controller.create({
-				...sampleOrder,
-				items: sampleItems,
-			});
-			const items = await controller.getItems(order.id);
-
-			const fulfillment = await controller.createFulfillment({
-				orderId: order.id,
-				carrier: "FedEx",
-				trackingNumber: "123456789012",
-				items: [{ orderItemId: items[0]?.id, quantity: 1 }],
-			});
-
-			expect(fulfillment.trackingUrl).toContain("fedex.com");
-			expect(fulfillment.trackingUrl).toContain("123456789012");
-		});
-
-		it("uses provided trackingUrl over auto-generated", async () => {
-			const order = await controller.create({
-				...sampleOrder,
-				items: sampleItems,
-			});
-			const items = await controller.getItems(order.id);
-
-			const fulfillment = await controller.createFulfillment({
-				orderId: order.id,
-				carrier: "UPS",
-				trackingNumber: "1Z999",
-				trackingUrl: "https://custom-tracker.example.com/1Z999",
-				items: [{ orderItemId: items[0]?.id, quantity: 1 }],
-			});
-
-			expect(fulfillment.trackingUrl).toBe(
-				"https://custom-tracker.example.com/1Z999",
-			);
-		});
-
-		it("sets status to pending when no tracking number", async () => {
-			const order = await controller.create({
-				...sampleOrder,
-				items: sampleItems,
-			});
-			const items = await controller.getItems(order.id);
-
-			const fulfillment = await controller.createFulfillment({
-				orderId: order.id,
-				items: [{ orderItemId: items[0]?.id, quantity: 1 }],
-			});
-
-			expect(fulfillment.status).toBe("pending");
-			expect(fulfillment.shippedAt).toBeUndefined();
-		});
-
-		it("stores fulfillment items correctly", async () => {
-			const order = await controller.create({
-				...sampleOrder,
-				items: sampleItems,
-			});
-			const items = await controller.getItems(order.id);
-
-			const fulfillment = await controller.createFulfillment({
-				orderId: order.id,
-				items: [{ orderItemId: items[0]?.id, quantity: 1 }],
-			});
-
-			const found = await controller.getFulfillment(fulfillment.id);
-			expect(found).not.toBeNull();
-			expect(found?.items).toHaveLength(1);
-			expect(found?.items[0]?.orderItemId).toBe(items[0]?.id);
-			expect(found?.items[0]?.quantity).toBe(1);
-		});
-
-		it("includes notes", async () => {
-			const order = await controller.create({
-				...sampleOrder,
-				items: sampleItems,
-			});
-			const items = await controller.getItems(order.id);
-
-			const fulfillment = await controller.createFulfillment({
-				orderId: order.id,
-				notes: "Fragile items — handle with care",
-				items: [{ orderItemId: items[0]?.id, quantity: 1 }],
-			});
-
-			expect(fulfillment.notes).toBe("Fragile items — handle with care");
-		});
-	});
-
-	describe("getFulfillment", () => {
-		it("returns null for non-existent fulfillment", async () => {
-			const result = await controller.getFulfillment("non-existent");
-			expect(result).toBeNull();
-		});
-
-		it("returns fulfillment with items", async () => {
-			const order = await controller.create({
-				...sampleOrder,
-				items: sampleItems,
-			});
-			const items = await controller.getItems(order.id);
-
-			const created = await controller.createFulfillment({
-				orderId: order.id,
-				carrier: "USPS",
-				trackingNumber: "9400111",
-				items: [{ orderItemId: items[0]?.id, quantity: 2 }],
-			});
-
-			const found = await controller.getFulfillment(created.id);
-			expect(found).not.toBeNull();
-			expect(found?.id).toBe(created.id);
-			expect(found?.items).toHaveLength(1);
-			expect(found?.carrier).toBe("USPS");
-		});
-	});
-
-	describe("listFulfillments", () => {
-		it("lists all fulfillments for an order", async () => {
-			const order = await controller.create({
-				...sampleOrder,
-				subtotal: 4997,
-				total: 4997,
-				items: [
-					...sampleItems,
-					{
-						productId: "prod_xyz",
-						name: "Another Widget",
-						price: 999,
-						quantity: 1,
-					},
-				],
-			});
-			const items = await controller.getItems(order.id);
-
-			await controller.createFulfillment({
-				orderId: order.id,
-				carrier: "UPS",
-				trackingNumber: "1Z111",
-				items: [{ orderItemId: items[0]?.id, quantity: 2 }],
-			});
-
-			await controller.createFulfillment({
-				orderId: order.id,
-				carrier: "FedEx",
-				trackingNumber: "FX222",
-				items: [{ orderItemId: items[1]?.id, quantity: 1 }],
-			});
-
-			const fulfillments = await controller.listFulfillments(order.id);
-			expect(fulfillments).toHaveLength(2);
-			expect(fulfillments.every((f) => f.items.length > 0)).toBe(true);
-		});
-
-		it("returns empty array for order with no fulfillments", async () => {
-			const order = await controller.create({
-				...sampleOrder,
-				items: sampleItems,
-			});
-
-			const fulfillments = await controller.listFulfillments(order.id);
-			expect(fulfillments).toHaveLength(0);
-		});
-	});
-
-	describe("updateFulfillment", () => {
-		it("returns null for non-existent fulfillment", async () => {
-			const result = await controller.updateFulfillment("non-existent", {
-				status: "delivered",
-			});
-			expect(result).toBeNull();
-		});
-
-		it("updates status to delivered and sets deliveredAt", async () => {
-			const order = await controller.create({
-				...sampleOrder,
-				items: sampleItems,
-			});
-			const items = await controller.getItems(order.id);
-
-			const fulfillment = await controller.createFulfillment({
-				orderId: order.id,
-				carrier: "UPS",
-				trackingNumber: "1Z999",
-				items: [{ orderItemId: items[0]?.id, quantity: 2 }],
-			});
-
-			const updated = await controller.updateFulfillment(fulfillment.id, {
-				status: "delivered",
-			});
-
-			expect(updated?.status).toBe("delivered");
-			expect(updated?.deliveredAt).toBeInstanceOf(Date);
-		});
-
-		it("updates tracking number and auto-generates URL", async () => {
-			const order = await controller.create({
-				...sampleOrder,
-				items: sampleItems,
-			});
-			const items = await controller.getItems(order.id);
-
-			const fulfillment = await controller.createFulfillment({
-				orderId: order.id,
-				items: [{ orderItemId: items[0]?.id, quantity: 1 }],
-			});
-
-			const updated = await controller.updateFulfillment(fulfillment.id, {
-				carrier: "DHL",
-				trackingNumber: "DHL123",
-			});
-
-			expect(updated?.carrier).toBe("DHL");
-			expect(updated?.trackingNumber).toBe("DHL123");
-			expect(updated?.trackingUrl).toContain("dhl.com");
-		});
-
-		it("updates status to shipped and sets shippedAt", async () => {
-			const order = await controller.create({
-				...sampleOrder,
-				items: sampleItems,
-			});
-			const items = await controller.getItems(order.id);
-
-			const fulfillment = await controller.createFulfillment({
-				orderId: order.id,
-				items: [{ orderItemId: items[0]?.id, quantity: 1 }],
-			});
-
-			expect(fulfillment.shippedAt).toBeUndefined();
-
-			const updated = await controller.updateFulfillment(fulfillment.id, {
-				status: "shipped",
-			});
-
-			expect(updated?.status).toBe("shipped");
-			expect(updated?.shippedAt).toBeInstanceOf(Date);
-		});
-
-		it("preserves existing trackingUrl when not provided", async () => {
-			const order = await controller.create({
-				...sampleOrder,
-				items: sampleItems,
-			});
-			const items = await controller.getItems(order.id);
-
-			const fulfillment = await controller.createFulfillment({
-				orderId: order.id,
-				carrier: "UPS",
-				trackingNumber: "1Z999",
-				items: [{ orderItemId: items[0]?.id, quantity: 1 }],
-			});
-
-			const updated = await controller.updateFulfillment(fulfillment.id, {
-				notes: "Updated notes",
-			});
-
-			expect(updated?.trackingUrl).toBe(fulfillment.trackingUrl);
-		});
-	});
-
-	describe("deleteFulfillment", () => {
-		it("deletes a fulfillment and its items", async () => {
-			const order = await controller.create({
-				...sampleOrder,
-				items: sampleItems,
-			});
-			const items = await controller.getItems(order.id);
-
-			const fulfillment = await controller.createFulfillment({
-				orderId: order.id,
-				items: [{ orderItemId: items[0]?.id, quantity: 1 }],
-			});
-
-			await controller.deleteFulfillment(fulfillment.id);
-
-			const found = await controller.getFulfillment(fulfillment.id);
-			expect(found).toBeNull();
-		});
-
-		it("fulfillment status reverts to unfulfilled after delete", async () => {
-			const order = await controller.create({
-				...sampleOrder,
-				items: sampleItems,
-			});
-			const items = await controller.getItems(order.id);
-
-			const fulfillment = await controller.createFulfillment({
-				orderId: order.id,
-				items: [{ orderItemId: items[0]?.id, quantity: 2 }],
-			});
-
-			const statusBefore = await controller.getOrderFulfillmentStatus(order.id);
-			expect(statusBefore).toBe("fulfilled");
-
-			await controller.deleteFulfillment(fulfillment.id);
-
-			const statusAfter = await controller.getOrderFulfillmentStatus(order.id);
-			expect(statusAfter).toBe("unfulfilled");
-		});
-	});
-
-	describe("getOrderFulfillmentStatus", () => {
-		it("returns unfulfilled when no fulfillments exist", async () => {
-			const order = await controller.create({
-				...sampleOrder,
-				items: sampleItems,
-			});
-
-			const status = await controller.getOrderFulfillmentStatus(order.id);
-			expect(status).toBe("unfulfilled");
-		});
-
-		it("returns fulfilled when all items are fully fulfilled", async () => {
-			const order = await controller.create({
-				...sampleOrder,
-				items: sampleItems,
-			});
-			const items = await controller.getItems(order.id);
-
-			await controller.createFulfillment({
-				orderId: order.id,
-				items: [{ orderItemId: items[0]?.id, quantity: 2 }],
-			});
-
-			const status = await controller.getOrderFulfillmentStatus(order.id);
-			expect(status).toBe("fulfilled");
-		});
-
-		it("returns partially_fulfilled when some items are fulfilled", async () => {
-			const order = await controller.create({
-				...sampleOrder,
-				items: sampleItems,
-			});
-			const items = await controller.getItems(order.id);
-
-			await controller.createFulfillment({
-				orderId: order.id,
-				items: [{ orderItemId: items[0]?.id, quantity: 1 }],
-			});
-
-			const status = await controller.getOrderFulfillmentStatus(order.id);
-			expect(status).toBe("partially_fulfilled");
-		});
-
-		it("returns fulfilled with multi-item orders", async () => {
-			const order = await controller.create({
-				...sampleOrder,
-				subtotal: 5498,
-				total: 5498,
-				items: [
-					...sampleItems,
-					{
-						productId: "prod_xyz",
-						name: "Second Widget",
-						price: 500,
-						quantity: 3,
-					},
-				],
-			});
-			const items = await controller.getItems(order.id);
-
-			// Fulfill first item
-			await controller.createFulfillment({
-				orderId: order.id,
-				items: [{ orderItemId: items[0]?.id, quantity: 2 }],
-			});
-
-			const partial = await controller.getOrderFulfillmentStatus(order.id);
-			expect(partial).toBe("partially_fulfilled");
-
-			// Fulfill second item
-			await controller.createFulfillment({
-				orderId: order.id,
-				items: [{ orderItemId: items[1]?.id, quantity: 3 }],
-			});
-
-			const full = await controller.getOrderFulfillmentStatus(order.id);
-			expect(full).toBe("fulfilled");
-		});
-
-		it("handles split fulfillments for same item", async () => {
-			const order = await controller.create({
-				...sampleOrder,
-				items: sampleItems,
-			});
-			const items = await controller.getItems(order.id);
-
-			// Fulfill 1 of 2
-			await controller.createFulfillment({
-				orderId: order.id,
-				items: [{ orderItemId: items[0]?.id, quantity: 1 }],
-			});
-
-			const partial = await controller.getOrderFulfillmentStatus(order.id);
-			expect(partial).toBe("partially_fulfilled");
-
-			// Fulfill remaining 1
-			await controller.createFulfillment({
-				orderId: order.id,
-				items: [{ orderItemId: items[0]?.id, quantity: 1 }],
-			});
-
-			const full = await controller.getOrderFulfillmentStatus(order.id);
-			expect(full).toBe("fulfilled");
-		});
-
-		it("returns unfulfilled for orders with no items", async () => {
-			// Edge case: an order with no items shouldn't break
-			const status = await controller.getOrderFulfillmentStatus("non-existent");
-			expect(status).toBe("unfulfilled");
-		});
-	});
-
 	// ── Return Request Tests ───────────────────────────────────────────────
 
 	describe("createReturn", () => {
@@ -1541,14 +1102,6 @@ describe("createOrderController", () => {
 			});
 			const items = await controller.getItems(order.id);
 
-			// Create a fulfillment
-			await controller.createFulfillment({
-				orderId: order.id,
-				carrier: "UPS",
-				trackingNumber: "1Z999",
-				items: [{ orderItemId: items[0]?.id, quantity: 1 }],
-			});
-
 			// Create a return
 			await controller.createReturn({
 				orderId: order.id,
@@ -1565,9 +1118,6 @@ describe("createOrderController", () => {
 			// Related records should also be gone
 			const orderItems = await controller.getItems(order.id);
 			expect(orderItems).toHaveLength(0);
-
-			const fulfillments = await controller.listFulfillments(order.id);
-			expect(fulfillments).toHaveLength(0);
 
 			const returns = await controller.listReturns(order.id);
 			expect(returns).toHaveLength(0);
@@ -2445,5 +1995,73 @@ describe("createOrderController", () => {
 				}),
 			).rejects.toThrow("Order must contain at least one immutable line item.");
 		});
+	});
+});
+
+describe("createOrderController replay safety", () => {
+	function controllerWith() {
+		const data = createMockDataService();
+		return { data, controller: createOrderController(data) };
+	}
+
+	const replayable: CreateOrderParams = {
+		...sampleOrder,
+		id: "order-deterministic-1",
+		items: sampleItems,
+		billingAddress: {
+			firstName: "Ada",
+			lastName: "Lovelace",
+			line1: "123 Main Street",
+			city: "Austin",
+			state: "TX",
+			postalCode: "78701",
+			country: "US",
+		},
+	};
+
+	it("returns the same Order on replay instead of duplicating its lines", async () => {
+		const { data, controller } = controllerWith();
+
+		const first = await controller.create(replayable);
+		const second = await controller.create(replayable);
+
+		// A Finalization step that lost its response and retried must not create a
+		// second set of line items for the same Order.
+		expect(second.id).toBe(first.id);
+		expect(second.orderNumber).toBe(first.orderNumber);
+		const items = await data.findMany("orderItem", {
+			where: { orderId: first.id },
+		});
+		expect(items).toHaveLength(sampleItems.length);
+		const addresses = await data.findMany("orderAddress", {
+			where: { orderId: first.id },
+		});
+		expect(addresses).toHaveLength(1);
+	});
+
+	it("keeps the Order number stable across a replay", async () => {
+		const { controller } = controllerWith();
+		const first = await controller.create(replayable);
+		const second = await controller.create({
+			...replayable,
+			// Even a caller that recomputed its payload must not renumber the Order
+			// a shopper has already been shown.
+			notes: "retried",
+		});
+
+		expect(second.orderNumber).toBe(first.orderNumber);
+		expect(second.createdAt).toEqual(first.createdAt);
+	});
+
+	it("still creates distinct Orders for distinct identities", async () => {
+		const { controller } = controllerWith();
+		const first = await controller.create(replayable);
+		const second = await controller.create({
+			...replayable,
+			id: "order-deterministic-2",
+		});
+
+		expect(second.id).not.toBe(first.id);
+		expect(second.orderNumber).not.toBe(first.orderNumber);
 	});
 });

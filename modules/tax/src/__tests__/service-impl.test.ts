@@ -320,14 +320,30 @@ describe("TaxController", () => {
 	// ── Tax Calculation Engine ────────────────────────────────────────────────
 
 	describe("calculate", () => {
-		it("calculates zero tax when no rates exist", async () => {
+		it("marks a line it has no configured rate for as unresolved", async () => {
+			// A store that owes tax somewhere but has configured no matching rate has
+			// not decided anything. The amount is zero because nothing could be
+			// determined, which is not the same as a merchant who deliberately
+			// collects nothing, so the line says so and Checkout refuses to sell.
 			const result = await controller.calculate({
 				address: { country: "US", state: "CA" },
 				lineItems: [{ productId: "p1", amount: 100, quantity: 1 }],
 			});
 
 			expect(result.totalTax).toBe(0);
-			expect(result.lines).toHaveLength(1);
+			expect(result.lines[0].unresolved).toBe(true);
+		});
+
+		it("still returns zero where the merchant declared no nexus", async () => {
+			await controller.createNexus({ country: "US", state: "NY" });
+
+			// An explicit nexus list that excludes this address is a real decision.
+			const result = await controller.calculate({
+				address: { country: "US", state: "CA" },
+				lineItems: [{ productId: "p1", amount: 100, quantity: 1 }],
+			});
+
+			expect(result.totalTax).toBe(0);
 			expect(result.lines[0].taxAmount).toBe(0);
 		});
 

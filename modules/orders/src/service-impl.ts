@@ -1,17 +1,12 @@
 import type { ModuleDataService } from "@86d-app/core/types/module";
 import type {
 	AddNoteParams,
-	CreateFulfillmentParams,
 	CreateOrderParams,
 	CreateReturnParams,
-	Fulfillment,
-	FulfillmentItem,
-	FulfillmentWithItems,
 	InvoiceData,
 	Order,
 	OrderAddress,
 	OrderController,
-	OrderFulfillmentStatus,
 	OrderItem,
 	OrderNote,
 	OrderStatus,
@@ -22,7 +17,6 @@ import type {
 	ReturnRequest,
 	ReturnRequestWithItems,
 	ReturnStatus,
-	UpdateFulfillmentParams,
 	UpdateReturnParams,
 } from "./service";
 
@@ -161,6 +155,16 @@ export function createOrderController(
 				throw new Error("Order currency must be an uppercase ISO 4217 code.");
 			}
 			const id = params.id ?? crypto.randomUUID();
+
+			// A caller that supplies an identifier owns it, so a repeat is a replay
+			// rather than a second Order. Without this, retrying after a lost
+			// response renumbers the Order the shopper was shown and writes a second
+			// full set of line items and addresses against the same identifier.
+			if (params.id) {
+				const existing = await data.get("order", id);
+				if (existing) return existing as unknown as Order;
+			}
+
 			const orderNumber = generateOrderNumber();
 			const now = new Date();
 
@@ -197,10 +201,12 @@ export function createOrderController(
 
 			await data.upsert("order", id, order as Record<string, unknown>);
 
-			// Create order items
-			for (const item of params.items) {
+			// Create order items. Their identifiers derive from the Order and the
+			// line position so a partial write that is retried overwrites the same
+			// rows instead of adding a parallel set.
+			for (const [index, item] of params.items.entries()) {
 				const orderItem: OrderItem = {
-					id: crypto.randomUUID(),
+					id: `${id}:item:${index}`,
 					orderId: id,
 					productId: item.productId,
 					variantId: item.variantId,
@@ -221,7 +227,7 @@ export function createOrderController(
 			// Create billing address
 			if (params.billingAddress) {
 				const addr: OrderAddress = {
-					id: crypto.randomUUID(),
+					id: `${id}:address:billing`,
 					orderId: id,
 					type: "billing",
 					...params.billingAddress,
@@ -236,7 +242,7 @@ export function createOrderController(
 			// Create shipping address
 			if (params.shippingAddress) {
 				const addr: OrderAddress = {
-					id: crypto.randomUUID(),
+					id: `${id}:address:shipping`,
 					orderId: id,
 					type: "shipping",
 					...params.shippingAddress,
@@ -500,179 +506,6 @@ export function createOrderController(
 			})) as OrderAddress[];
 		},
 
-		async createFulfillment(
-			params: CreateFulfillmentParams,
-		): Promise<Fulfillment> {
-			const id = crypto.randomUUID();
-			const now = new Date();
-
-			const trackingUrl =
-				params.trackingUrl ??
-				inferTrackingUrl(params.carrier, params.trackingNumber);
-
-			const fulfillment: Fulfillment = {
-				id,
-				orderId: params.orderId,
-				status: params.trackingNumber ? "shipped" : "pending",
-				trackingNumber: params.trackingNumber,
-				trackingUrl,
-				carrier: params.carrier,
-				notes: params.notes,
-				shippedAt: params.trackingNumber ? now : undefined,
-				deliveredAt: undefined,
-				createdAt: now,
-				updatedAt: now,
-			};
-
-			await data.upsert(
-				"fulfillment",
-				id,
-				fulfillment as Record<string, unknown>,
-			);
-
-			for (const item of params.items) {
-				const fulfillmentItem: FulfillmentItem = {
-					id: crypto.randomUUID(),
-					fulfillmentId: id,
-					orderItemId: item.orderItemId,
-					quantity: item.quantity,
-				};
-				await data.upsert(
-					"fulfillmentItem",
-					fulfillmentItem.id,
-					fulfillmentItem as unknown as Record<string, unknown>,
-				);
-			}
-
-			return fulfillment;
-		},
-
-		async getFulfillment(id: string): Promise<FulfillmentWithItems | null> {
-			const fulfillment = (await data.get(
-				"fulfillment",
-				id,
-			)) as Fulfillment | null;
-			if (!fulfillment) return null;
-
-			const items = (await data.findMany("fulfillmentItem", {
-				where: { fulfillmentId: id },
-			})) as FulfillmentItem[];
-
-			return { ...fulfillment, items };
-		},
-
-		async listFulfillments(orderId: string): Promise<FulfillmentWithItems[]> {
-			const fulfillments = (await data.findMany("fulfillment", {
-				where: { orderId },
-			})) as Fulfillment[];
-
-			fulfillments.sort(
-				(a, b) =>
-					new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-			);
-
-			const result: FulfillmentWithItems[] = [];
-			for (const f of fulfillments) {
-				const items = (await data.findMany("fulfillmentItem", {
-					where: { fulfillmentId: f.id },
-				})) as FulfillmentItem[];
-				result.push({ ...f, items });
-			}
-			return result;
-		},
-
-		async updateFulfillment(
-			id: string,
-			params: UpdateFulfillmentParams,
-		): Promise<Fulfillment | null> {
-			const existing = (await data.get(
-				"fulfillment",
-				id,
-			)) as Fulfillment | null;
-			if (!existing) return null;
-
-			const trackingUrl =
-				params.trackingUrl ??
-				(params.trackingNumber || params.carrier
-					? inferTrackingUrl(
-							params.carrier ?? existing.carrier,
-							params.trackingNumber ?? existing.trackingNumber,
-						)
-					: existing.trackingUrl);
-
-			const updated: Fulfillment = {
-				...existing,
-				...(params.status !== undefined ? { status: params.status } : {}),
-				...(params.trackingNumber !== undefined
-					? { trackingNumber: params.trackingNumber }
-					: {}),
-				trackingUrl,
-				...(params.carrier !== undefined ? { carrier: params.carrier } : {}),
-				...(params.notes !== undefined ? { notes: params.notes } : {}),
-				...(params.status === "shipped" && !existing.shippedAt
-					? { shippedAt: new Date() }
-					: {}),
-				...(params.status === "delivered" && !existing.deliveredAt
-					? { deliveredAt: new Date() }
-					: {}),
-				updatedAt: new Date(),
-			};
-
-			await data.upsert("fulfillment", id, updated as Record<string, unknown>);
-			return updated;
-		},
-
-		async deleteFulfillment(id: string): Promise<void> {
-			// Delete fulfillment items first
-			const items = (await data.findMany("fulfillmentItem", {
-				where: { fulfillmentId: id },
-			})) as FulfillmentItem[];
-			for (const item of items) {
-				await data.delete("fulfillmentItem", item.id);
-			}
-			await data.delete("fulfillment", id);
-		},
-
-		async getOrderFulfillmentStatus(
-			orderId: string,
-		): Promise<OrderFulfillmentStatus> {
-			const orderItems = (await data.findMany("orderItem", {
-				where: { orderId },
-			})) as OrderItem[];
-
-			if (orderItems.length === 0) return "unfulfilled";
-
-			const fulfillments = (await data.findMany("fulfillment", {
-				where: { orderId },
-			})) as Fulfillment[];
-
-			if (fulfillments.length === 0) return "unfulfilled";
-
-			// Sum fulfilled quantities per order item
-			const fulfilledQty: Record<string, number> = {};
-			for (const f of fulfillments) {
-				const fItems = (await data.findMany("fulfillmentItem", {
-					where: { fulfillmentId: f.id },
-				})) as FulfillmentItem[];
-				for (const fi of fItems) {
-					fulfilledQty[fi.orderItemId] =
-						(fulfilledQty[fi.orderItemId] ?? 0) + fi.quantity;
-				}
-			}
-
-			let allFulfilled = true;
-			let anyFulfilled = false;
-			for (const item of orderItems) {
-				const qty = fulfilledQty[item.id] ?? 0;
-				if (qty > 0) anyFulfilled = true;
-				if (qty < item.quantity) allFulfilled = false;
-			}
-
-			if (allFulfilled) return "fulfilled";
-			if (anyFulfilled) return "partially_fulfilled";
-			return "unfulfilled";
-		},
-
 		// ── Return Request Methods ────────────────────────────────────────
 
 		async createReturn(params: CreateReturnParams): Promise<ReturnRequest> {
@@ -911,19 +744,6 @@ export function createOrderController(
 				})) as OrderAddress[];
 				for (const addr of addresses) {
 					await data.delete("orderAddress", addr.id);
-				}
-
-				const fulfillments = (await data.findMany("fulfillment", {
-					where: { orderId: id },
-				})) as Fulfillment[];
-				for (const f of fulfillments) {
-					const fItems = (await data.findMany("fulfillmentItem", {
-						where: { fulfillmentId: f.id },
-					})) as FulfillmentItem[];
-					for (const fi of fItems) {
-						await data.delete("fulfillmentItem", fi.id);
-					}
-					await data.delete("fulfillment", f.id);
 				}
 
 				const returns = (await data.findMany("returnRequest", {

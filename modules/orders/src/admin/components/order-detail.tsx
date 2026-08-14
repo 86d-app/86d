@@ -223,7 +223,7 @@ function useOrderAdminApi() {
 		listFulfillments:
 			client.module("orders").admin["/admin/orders/:id/fulfillments"],
 		createFulfillment:
-			client.module("orders").admin["/admin/orders/:id/fulfillments/create"],
+			client.module("fulfillment").admin["/admin/fulfillment/create"],
 		updateFulfillment:
 			client.module("orders").admin["/admin/fulfillments/:id/update"],
 		deleteFulfillment:
@@ -688,13 +688,11 @@ function FulfillDialog({
 		}
 		setError("");
 		createMutation.mutate({
-			params: { id: order.id },
 			body: {
-				carrier: carrier || undefined,
-				trackingNumber: trackingNumber || undefined,
+				orderId: order.id,
 				notes: notes || undefined,
-				items: itemEntries.map(([orderItemId, quantity]) => ({
-					orderItemId,
+				items: itemEntries.map(([lineItemId, quantity]) => ({
+					lineItemId,
 					quantity,
 				})),
 			},

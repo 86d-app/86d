@@ -51,9 +51,10 @@ function capabilityInvoker(options?: {
 	cartFailure?: string;
 	productFailure?: string;
 	variantId?: string;
+	taxStatus?: "CALCULATED" | "REVIEW_REQUIRED" | "UNAVAILABLE";
 }) {
 	return {
-		invoke: vi.fn(async (definition: { name: string }) => {
+		invoke: vi.fn(async (definition: { name: string; version?: string }) => {
 			if (definition.name === "cart.snapshot") {
 				if (options?.cartFailure) {
 					return {
@@ -95,6 +96,55 @@ function capabilityInvoker(options?: {
 							sku: "REAL-SKU",
 							images: [],
 						},
+					},
+				};
+			}
+			if (definition.name === "tax.quote") {
+				if (options?.taxStatus === "UNAVAILABLE") {
+					return {
+						ok: false,
+						failure: {
+							code: "CAPABILITY_UNAVAILABLE",
+							capability: "tax.quote",
+							version: "2.0.0",
+						},
+					};
+				}
+				const review = options?.taxStatus === "REVIEW_REQUIRED";
+				return {
+					ok: true,
+					decision: {
+						quoteId: "quote-1",
+						jurisdictionDecision: review ? "BLOCKED" : "COLLECT",
+						status: review ? "REVIEW_REQUIRED" : "CALCULATED",
+						reason: review ? "RATE_NOT_CONFIGURED" : "TAX_CALCULATED",
+						policyVersion: "policy-v1",
+						sourceVersion: "rates-v1",
+						issuedAt: "2026-08-14T00:00:00.000Z",
+						expiresAt: "2026-08-14T00:10:00.000Z",
+						currency: "USD",
+						totals: {
+							subtotal: 2_500,
+							discount: 0,
+							shipping: 0,
+							taxable: 2_500,
+							lineTax: review ? null : 206,
+							shippingTax: review ? null : 0,
+							tax: review ? null : 206,
+							grandTotal: review ? null : 2_706,
+						},
+						lineAllocations: [
+							{
+								lineId: "product-1::0",
+								productId: "product-1",
+								taxCategoryId: "general",
+								quantity: 2,
+								grossAmount: 2_500,
+								discountAmount: 0,
+								taxableAmount: 2_500,
+								taxAmount: review ? null : 206,
+							},
+						],
 					},
 				};
 			}
@@ -213,24 +263,78 @@ describe("checkout activation containment", () => {
 		expect(create).not.toHaveBeenCalled();
 	});
 
-	it("contains Checkout creation with a shipping address until Tax v2 is bound", async () => {
-		const create = vi.fn();
-		const capabilities = capabilityInvoker();
+	it("binds a shipping address through tax.quote v2 instead of inferring zero", async () => {
+		const created = checkoutSession({ shippingAddress });
+		const create = vi.fn().mockResolvedValue(created);
+		const update = vi.fn().mockResolvedValue({
+			...created,
+			taxAmount: 206,
+			total: 2_706,
+			metadata: { taxQuoteId: "quote-1", taxQuoteStatus: "CALCULATED" },
+		});
+		const getLineItems = vi.fn().mockResolvedValue([
+			{
+				productId: "product-1",
+				name: "Authoritative Product",
+				price: 1_250,
+				quantity: 2,
+			},
+		]);
+		const capabilities = capabilityInvoker({ taxStatus: "CALCULATED" });
 		const result = await createSession({
 			body: { cartId: "cart-1", shippingAddress },
+			headers: new Headers({ cookie: "cart_guest_id=guest-1" }),
 			context: {
-				controllers: { checkout: { create } },
+				controllers: { checkout: { create, update, getLineItems } },
 				capabilities,
 				session: null,
 			},
 		});
 
 		expect(result).toMatchObject({
-			code: "CHECKOUT_TAX_V2_REQUIRED",
-			status: 503,
+			session: expect.objectContaining({
+				taxAmount: 206,
+				metadata: expect.objectContaining({ taxQuoteStatus: "CALCULATED" }),
+			}),
 		});
-		expect(create).not.toHaveBeenCalled();
-		expect(capabilities.invoke).not.toHaveBeenCalled();
+		expect(create).toHaveBeenCalledWith(
+			expect.objectContaining({ shippingAddress }),
+		);
+		expect(capabilities.invoke).toHaveBeenCalledWith(
+			expect.objectContaining({ name: "tax.quote", version: "2.0.0" }),
+			expect.objectContaining({
+				address: expect.objectContaining({ country: "US", state: "TX" }),
+			}),
+		);
+	});
+
+	it("fails closed on REVIEW_REQUIRED without returning a sellable inferred zero", async () => {
+		const created = checkoutSession({ shippingAddress, taxAmount: 0 });
+		const create = vi.fn().mockResolvedValue(created);
+		const update = vi.fn();
+		const getLineItems = vi.fn().mockResolvedValue([
+			{
+				productId: "product-1",
+				name: "Authoritative Product",
+				price: 1_250,
+				quantity: 2,
+			},
+		]);
+		const result = await createSession({
+			body: { cartId: "cart-1", shippingAddress },
+			headers: new Headers({ cookie: "cart_guest_id=guest-1" }),
+			context: {
+				controllers: { checkout: { create, update, getLineItems } },
+				capabilities: capabilityInvoker({ taxStatus: "REVIEW_REQUIRED" }),
+				session: null,
+			},
+		});
+
+		expect(result).toMatchObject({
+			code: "TAX_REVIEW_REQUIRED",
+			status: 422,
+		});
+		expect(update).not.toHaveBeenCalled();
 	});
 
 	it("rejects a caller-supplied shipping amount before reading or mutating a session", async () => {
@@ -250,25 +354,49 @@ describe("checkout activation containment", () => {
 		expect(update).not.toHaveBeenCalled();
 	});
 
-	it("contains an authorized address update until Tax v2 is bound", async () => {
-		const update = vi.fn();
-		const getById = vi
+	it("recalculates tax.quote v2 when an authorized address update is persisted", async () => {
+		const existing = checkoutSession({ customerId: "customer-1" });
+		const updated = checkoutSession({
+			customerId: "customer-1",
+			shippingAddress,
+			revision: 2,
+		});
+		const getById = vi.fn().mockResolvedValue(existing);
+		const update = vi
 			.fn()
-			.mockResolvedValue(checkoutSession({ customerId: "customer-1" }));
+			.mockResolvedValueOnce(updated)
+			.mockResolvedValueOnce({
+				...updated,
+				taxAmount: 206,
+				total: 2_706,
+				metadata: { taxQuoteId: "quote-1", taxQuoteStatus: "CALCULATED" },
+			});
+		const getLineItems = vi.fn().mockResolvedValue([
+			{
+				productId: "product-1",
+				name: "Authoritative Product",
+				price: 1_250,
+				quantity: 2,
+			},
+		]);
 		const result = await updateSession({
 			params: { id: "session-1" },
 			body: { expectedRevision: 1, shippingAddress },
 			context: {
-				controllers: { checkout: { getById, update } },
+				controllers: { checkout: { getById, update, getLineItems } },
+				capabilities: capabilityInvoker({ taxStatus: "CALCULATED" }),
 				session: createMockSession({ userId: "customer-1" }),
 			},
 		});
 
 		expect(result).toMatchObject({
-			code: "CHECKOUT_TAX_V2_REQUIRED",
-			status: 503,
+			session: expect.objectContaining({ taxAmount: 206 }),
 		});
-		expect(update).not.toHaveBeenCalled();
+		expect(update).toHaveBeenCalledWith(
+			"session-1",
+			expect.objectContaining({ shippingAddress }),
+			1,
+		);
 	});
 
 	it("contains an authorized guest shipping quote until Shipping v2 is bound", async () => {

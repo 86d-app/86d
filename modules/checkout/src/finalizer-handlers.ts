@@ -1,0 +1,451 @@
+import type { CapabilityInvoker } from "@86d-app/core/capabilities";
+import {
+	orderCreateCapability,
+	paymentCheckoutCapability,
+} from "@86d-app/core/commerce-capabilities";
+import { inventoryCheckoutV2Capability } from "@86d-app/core/inventory-reservation-capability";
+import type {
+	CheckoutFinalization,
+	CheckoutFinalizationStore,
+} from "./finalization";
+import {
+	type CheckoutFinalizationStepHandlers,
+	type CheckoutFinalizationStepOutcome,
+	type CheckoutFinalizer,
+	createCheckoutFinalizer,
+} from "./finalizer";
+import type { CheckoutController } from "./service";
+import { recalculateTax } from "./store/endpoints/recalculate-tax";
+
+const NEXT_STEP = {
+	checkout_revision: "accepted_offer",
+	accepted_offer: "shipping_and_tax",
+	shipping_and_tax: "inventory",
+	inventory: "payment_connection",
+	payment_connection: "payment_outcome",
+	payment_outcome: "order",
+	order: "commerce_commit",
+	commerce_commit: "payment_settlement",
+	payment_settlement: "checkout_completion",
+} as const;
+
+function advance(
+	step: keyof typeof NEXT_STEP,
+): CheckoutFinalizationStepOutcome {
+	return {
+		outcome: { type: "advanced", nextStep: NEXT_STEP[step] },
+	};
+}
+
+function needsAttention(
+	code: string,
+	detail?: string,
+): CheckoutFinalizationStepOutcome {
+	return {
+		outcome: {
+			type: "needs_attention",
+			reason: detail ? { code, detail } : { code },
+		},
+	};
+}
+
+function retryable(
+	code: string,
+	detail?: string,
+): CheckoutFinalizationStepOutcome {
+	return {
+		outcome: {
+			type: "retryable_failure",
+			reason: detail ? { code, detail } : { code },
+		},
+	};
+}
+
+export type CheckoutFinalizationHandlerDependencies = Readonly<{
+	capabilities: CapabilityInvoker;
+	checkout: CheckoutController;
+	/** Lease duration for inventory reservations created during finalization. */
+	reservationLeaseSeconds?: number | undefined;
+}>;
+
+/**
+ * Real capability handlers for the Checkout Finalizer.
+ *
+ * Activation of shopper payment and label purchase remains contained elsewhere.
+ * These handlers invoke Tax, Inventory, Payment, and Order capabilities and
+ * complete the Checkout session only after an Order identity exists. Missing
+ * or non-authoritative decisions fail closed with needs_attention /
+ * retryable_failure — they never invent success.
+ */
+export function createCheckoutFinalizationHandlers(
+	deps: CheckoutFinalizationHandlerDependencies,
+): CheckoutFinalizationStepHandlers {
+	const leaseSeconds = deps.reservationLeaseSeconds ?? 900;
+
+	return {
+		async checkout_revision({ finalization }) {
+			const session = await deps.checkout.getById(finalization.checkoutId);
+			if (!session) {
+				return needsAttention(
+					"CHECKOUT_NOT_FOUND",
+					"The Checkout session named by this Finalization is gone.",
+				);
+			}
+			if (session.revision !== finalization.expectedRevision) {
+				return needsAttention(
+					"CHECKOUT_REVISION_CONFLICT",
+					"The Checkout revision no longer matches the accepted Finalization.",
+				);
+			}
+			return advance("checkout_revision");
+		},
+
+		async accepted_offer({ finalization }) {
+			if (!finalization.acceptedInput.acceptedOfferId) {
+				return needsAttention("ACCEPTED_OFFER_REQUIRED");
+			}
+			return advance("accepted_offer");
+		},
+
+		async shipping_and_tax({ finalization }) {
+			return handleShippingAndTax(deps, finalization);
+		},
+
+		async inventory({ finalization }) {
+			return handleInventory(deps, finalization, leaseSeconds);
+		},
+
+		async payment_connection({ finalization }) {
+			if (!finalization.acceptedInput.paymentConnectionId) {
+				return needsAttention(
+					"PAYMENT_CONNECTION_REQUIRED",
+					"Finalization cannot advance without a Payment Connection identity.",
+				);
+			}
+			return advance("payment_connection");
+		},
+
+		async payment_outcome({ finalization }) {
+			return handlePaymentOutcome(deps, finalization);
+		},
+
+		async order({ finalization }) {
+			return handleOrder(deps, finalization);
+		},
+
+		async commerce_commit() {
+			return advance("commerce_commit");
+		},
+
+		async payment_settlement() {
+			return advance("payment_settlement");
+		},
+
+		async checkout_completion({ finalization }) {
+			return handleCheckoutCompletion(deps, finalization);
+		},
+	};
+}
+
+/**
+ * Transport entry: drive one Finalization with the real capability handlers.
+ * Safe to schedule; does not expose a shopper HTTP activation path.
+ */
+export function createCheckoutFinalizationTransport(options: {
+	store: CheckoutFinalizationStore;
+	handlers: CheckoutFinalizationStepHandlers;
+	maxAttemptsPerRun?: number | undefined;
+}): CheckoutFinalizer {
+	return createCheckoutFinalizer(options);
+}
+
+async function handleShippingAndTax(
+	deps: CheckoutFinalizationHandlerDependencies,
+	finalization: CheckoutFinalization,
+): Promise<CheckoutFinalizationStepOutcome> {
+	const session = await deps.checkout.getById(finalization.checkoutId);
+	if (!session) {
+		return needsAttention("CHECKOUT_NOT_FOUND");
+	}
+	if (!session.shippingAddress) {
+		return needsAttention(
+			"SHIPPING_ADDRESS_REQUIRED",
+			"Tax cannot be decided without a shipping address.",
+		);
+	}
+
+	const tax = await recalculateTax(session, deps.checkout, deps.capabilities);
+	if (!tax.ok) {
+		if (tax.code === "TAX_REVIEW_REQUIRED") {
+			return needsAttention(
+				"TAX_REVIEW_REQUIRED",
+				tax.reason ?? "Tax requires merchant review before payment.",
+			);
+		}
+		return retryable("CHECKOUT_TAX_UNAVAILABLE");
+	}
+
+	const quoteId = tax.session.metadata?.taxQuoteId;
+	if (typeof quoteId !== "string" || quoteId.length === 0) {
+		return needsAttention("TAX_QUOTE_REQUIRED");
+	}
+
+	const acceptedQuoteId = finalization.acceptedInput.taxQuoteId;
+	if (acceptedQuoteId && acceptedQuoteId !== quoteId) {
+		return needsAttention(
+			"TAX_QUOTE_MISMATCH",
+			"The live Tax quote no longer matches the accepted Finalization input.",
+		);
+	}
+
+	return advance("shipping_and_tax");
+}
+
+async function handleInventory(
+	deps: CheckoutFinalizationHandlerDependencies,
+	finalization: CheckoutFinalization,
+	leaseSeconds: number,
+): Promise<CheckoutFinalizationStepOutcome> {
+	const lineItems = await deps.checkout.getLineItems(finalization.checkoutId);
+	if (lineItems.length === 0) {
+		return needsAttention("CHECKOUT_LINES_REQUIRED");
+	}
+
+	const existing = finalization.acceptedInput.inventoryReservationIds;
+	if (existing.length > 0 && existing.length === lineItems.length) {
+		// Reservations were admitted with the Finalization; do not double-reserve.
+		return advance("inventory");
+	}
+
+	for (const [index, item] of lineItems.entries()) {
+		const lineId = `${item.productId}:${item.variantId ?? ""}:${index}`;
+		const idempotencyKey = `finalize:${finalization.id}:inventory:${lineId}`;
+		const result = await deps.capabilities.invoke(
+			inventoryCheckoutV2Capability,
+			{
+				operation: "reserve",
+				checkoutId: finalization.checkoutId,
+				lineId,
+				productId: item.productId,
+				...(item.variantId ? { variantId: item.variantId } : {}),
+				quantity: item.quantity,
+				leaseDurationSeconds: leaseSeconds,
+				idempotencyKey,
+			},
+		);
+		if (!result.ok) {
+			return retryable("INVENTORY_RESERVATION_FAILED", result.failure.code);
+		}
+		if (result.decision.operation !== "reserve") {
+			return needsAttention("INVENTORY_DECISION_INVALID");
+		}
+		if (result.decision.reservation.status !== "reserved") {
+			return needsAttention(
+				"INVENTORY_NOT_RESERVED",
+				result.decision.reservation.status,
+			);
+		}
+	}
+
+	return advance("inventory");
+}
+
+async function handlePaymentOutcome(
+	deps: CheckoutFinalizationHandlerDependencies,
+	finalization: CheckoutFinalization,
+): Promise<CheckoutFinalizationStepOutcome> {
+	const session = await deps.checkout.getById(finalization.checkoutId);
+	if (!session) {
+		return needsAttention("CHECKOUT_NOT_FOUND");
+	}
+
+	if (session.total <= 0) {
+		return advance("payment_outcome");
+	}
+
+	if (
+		!session.paymentIntentId ||
+		session.paymentIntentId === "no_payment_required"
+	) {
+		return needsAttention(
+			"PAYMENT_ACTIVATION_REQUIRED",
+			"Live payment activation remains contained until production evidence exists.",
+		);
+	}
+
+	const payment = await deps.capabilities.invoke(paymentCheckoutCapability, {
+		operation: "get",
+		intentId: session.paymentIntentId,
+	});
+	if (!payment.ok) {
+		if (payment.failure.code === "PAYMENT_NOT_FOUND") {
+			return needsAttention("PAYMENT_NOT_FOUND");
+		}
+		return retryable("PAYMENT_STATUS_UNAVAILABLE");
+	}
+	if (payment.decision.status !== "succeeded") {
+		return needsAttention("PAYMENT_NOT_COMPLETED", payment.decision.status);
+	}
+
+	return advance("payment_outcome");
+}
+
+async function handleOrder(
+	deps: CheckoutFinalizationHandlerDependencies,
+	finalization: CheckoutFinalization,
+): Promise<CheckoutFinalizationStepOutcome> {
+	if (finalization.result.orderId) {
+		return advance("order");
+	}
+
+	const session = await deps.checkout.getById(finalization.checkoutId);
+	if (!session) {
+		return needsAttention("CHECKOUT_NOT_FOUND");
+	}
+	const lineItems = await deps.checkout.getLineItems(finalization.checkoutId);
+	if (lineItems.length === 0) {
+		return needsAttention("CHECKOUT_LINES_REQUIRED");
+	}
+
+	const orderId = `order:${finalization.id}`;
+	const created = await deps.capabilities.invoke(orderCreateCapability, {
+		id: orderId,
+		...(session.customerId ? { customerId: session.customerId } : {}),
+		...(session.guestEmail ? { guestEmail: session.guestEmail } : {}),
+		currency: session.currency,
+		paymentStatus: session.total > 0 ? "paid" : "unpaid",
+		subtotal: session.subtotal,
+		taxAmount: session.taxAmount,
+		shippingAmount: session.shippingAmount,
+		discountAmount: session.discountAmount,
+		giftCardAmount: session.giftCardAmount,
+		storeCreditAmount: session.storeCreditAmount,
+		total: session.total,
+		items: lineItems.map((item) => ({
+			productId: item.productId,
+			...(item.variantId ? { variantId: item.variantId } : {}),
+			name: item.name,
+			...(item.sku ? { sku: item.sku } : {}),
+			price: item.price,
+			quantity: item.quantity,
+		})),
+		...(session.billingAddress
+			? {
+					billingAddress: {
+						firstName: session.billingAddress.firstName,
+						lastName: session.billingAddress.lastName,
+						line1: session.billingAddress.line1,
+						...(session.billingAddress.line2
+							? { line2: session.billingAddress.line2 }
+							: {}),
+						city: session.billingAddress.city,
+						state: session.billingAddress.state,
+						postalCode: session.billingAddress.postalCode,
+						country: session.billingAddress.country,
+						...(session.billingAddress.phone
+							? { phone: session.billingAddress.phone }
+							: {}),
+					},
+				}
+			: {}),
+		...(session.shippingAddress
+			? {
+					shippingAddress: {
+						firstName: session.shippingAddress.firstName,
+						lastName: session.shippingAddress.lastName,
+						line1: session.shippingAddress.line1,
+						...(session.shippingAddress.line2
+							? { line2: session.shippingAddress.line2 }
+							: {}),
+						city: session.shippingAddress.city,
+						state: session.shippingAddress.state,
+						postalCode: session.shippingAddress.postalCode,
+						country: session.shippingAddress.country,
+						...(session.shippingAddress.phone
+							? { phone: session.shippingAddress.phone }
+							: {}),
+					},
+				}
+			: {}),
+		checkoutId: finalization.checkoutId,
+		acceptedOfferId: finalization.acceptedInput.acceptedOfferId,
+		catalogRevision: finalization.acceptedInput.catalogRevisionId,
+		priceSourceVersion: finalization.acceptedInput.pricingDecisionId,
+		...(finalization.acceptedInput.taxQuoteId
+			? { taxQuoteId: finalization.acceptedInput.taxQuoteId }
+			: typeof session.metadata?.taxQuoteId === "string"
+				? { taxQuoteId: session.metadata.taxQuoteId }
+				: {}),
+		...(finalization.acceptedInput.shippingQuoteId
+			? { shippingQuoteId: finalization.acceptedInput.shippingQuoteId }
+			: {}),
+		...(finalization.acceptedInput.shippingOptionId
+			? { shippingOptionId: finalization.acceptedInput.shippingOptionId }
+			: {}),
+		...(finalization.acceptedInput.inventoryReservationIds.length > 0
+			? {
+					inventoryReservationIds:
+						finalization.acceptedInput.inventoryReservationIds,
+				}
+			: {}),
+		...(finalization.acceptedInput.paymentConnectionId
+			? {
+					paymentConnectionId: finalization.acceptedInput.paymentConnectionId,
+				}
+			: {}),
+		...(session.paymentIntentId &&
+		session.paymentIntentId !== "no_payment_required"
+			? { paymentOperationId: session.paymentIntentId }
+			: {}),
+	});
+
+	if (!created.ok) {
+		return retryable("ORDER_CREATE_FAILED", created.failure.code);
+	}
+
+	return {
+		outcome: { type: "advanced", nextStep: "commerce_commit" },
+		result: { orderId: created.decision.orderId },
+	};
+}
+
+async function handleCheckoutCompletion(
+	deps: CheckoutFinalizationHandlerDependencies,
+	finalization: CheckoutFinalization,
+): Promise<CheckoutFinalizationStepOutcome> {
+	const orderId = finalization.result.orderId;
+	if (!orderId) {
+		return needsAttention(
+			"ORDER_REQUIRED",
+			"Checkout completion requires the Order identity from prior checkpoints.",
+		);
+	}
+
+	const session = await deps.checkout.getById(finalization.checkoutId);
+	if (!session) {
+		return needsAttention("CHECKOUT_NOT_FOUND");
+	}
+
+	if (session.status === "completed" && session.orderId === orderId) {
+		return {
+			outcome: { type: "completed" },
+			result: { orderId },
+		};
+	}
+
+	const completed = await deps.checkout.complete(
+		finalization.checkoutId,
+		orderId,
+	);
+	if (!completed) {
+		return needsAttention(
+			"CHECKOUT_COMPLETION_FAILED",
+			"The Checkout session could not transition to completed.",
+		);
+	}
+
+	return {
+		outcome: { type: "completed" },
+		result: { orderId },
+	};
+}

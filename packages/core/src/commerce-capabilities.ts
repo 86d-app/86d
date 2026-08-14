@@ -443,6 +443,25 @@ export const orderCreateCapability = defineCapability({
 				.max(1000),
 			billingAddress: orderAddressSchema.optional(),
 			shippingAddress: orderAddressSchema.optional(),
+			// The decisions this Order was created from. Orders already stores and
+			// accepts every one of these, but the capability could not carry them,
+			// so a cross-module caller had no way to record what it agreed to. They
+			// are the identities a Checkout Finalization holds, and without them a
+			// created Order cannot be traced back to the offer, prices, tax quote,
+			// Shipping quote, reservations, or Payment that produced it.
+			checkoutId: z.string().min(1).max(200).optional(),
+			acceptedOfferId: z.string().min(1).max(200).optional(),
+			catalogRevision: z.string().min(1).max(200).optional(),
+			priceSourceVersion: z.string().min(1).max(200).optional(),
+			taxQuoteId: z.string().min(1).max(200).optional(),
+			shippingQuoteId: z.string().min(1).max(200).optional(),
+			shippingOptionId: z.string().min(1).max(200).optional(),
+			inventoryReservationIds: z
+				.array(z.string().min(1).max(200))
+				.max(1000)
+				.optional(),
+			paymentConnectionId: z.string().min(1).max(200).optional(),
+			paymentOperationId: z.string().min(1).max(200).optional(),
 		})
 		.strict(),
 	decision: z.object({ orderId: z.string(), orderNumber: z.string() }).strict(),

@@ -1,6 +1,7 @@
 {
 	"name": "store",
 	"version": "0.0.4",
+	"license": "MIT",
 	"private": true,
 	"type": "module",
 	"scripts": {

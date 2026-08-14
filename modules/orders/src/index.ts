@@ -27,7 +27,6 @@ import { storeEndpoints } from "./store/endpoints/routes";
 // Export types for other modules to use via inter-module contracts
 export type {
 	AddNoteParams,
-	CreateFulfillmentParams,
 	CreateOrderParams,
 	CreateReturnParams,
 	Fulfillment,
@@ -51,7 +50,6 @@ export type {
 	ReturnRequestWithItems,
 	ReturnStatus,
 	ReturnType,
-	UpdateFulfillmentParams,
 	UpdateReturnParams,
 } from "./service";
 

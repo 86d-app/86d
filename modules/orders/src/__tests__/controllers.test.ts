@@ -371,91 +371,6 @@ describe("orders controllers — edge cases", () => {
 
 	// ── fulfillment status — complex scenarios ──────────────────────
 
-	describe("getOrderFulfillmentStatus — complex scenarios", () => {
-		it("partial fulfillment of multi-item order", async () => {
-			const order = await controller.create(
-				makeOrderParams({
-					items: [
-						{
-							productId: "p1",
-							name: "A",
-							price: 100,
-							quantity: 3,
-						},
-						{
-							productId: "p2",
-							name: "B",
-							price: 200,
-							quantity: 2,
-						},
-					],
-				}),
-			);
-			const items = await controller.getItems(order.id);
-
-			// Fulfill only p1
-			await controller.createFulfillment({
-				orderId: order.id,
-				items: [{ orderItemId: items[0].id, quantity: 3 }],
-			});
-
-			const status = await controller.getOrderFulfillmentStatus(order.id);
-			expect(status).toBe("partially_fulfilled");
-		});
-
-		it("split fulfillment across multiple shipments", async () => {
-			const order = await controller.create(
-				makeOrderParams({
-					items: [
-						{
-							productId: "p1",
-							name: "A",
-							price: 100,
-							quantity: 4,
-						},
-					],
-				}),
-			);
-			const items = await controller.getItems(order.id);
-
-			await controller.createFulfillment({
-				orderId: order.id,
-				items: [{ orderItemId: items[0].id, quantity: 2 }],
-			});
-
-			let status = await controller.getOrderFulfillmentStatus(order.id);
-			expect(status).toBe("partially_fulfilled");
-
-			await controller.createFulfillment({
-				orderId: order.id,
-				items: [{ orderItemId: items[0].id, quantity: 2 }],
-			});
-
-			status = await controller.getOrderFulfillmentStatus(order.id);
-			expect(status).toBe("fulfilled");
-		});
-
-		it("deleting a fulfillment reverts to unfulfilled", async () => {
-			const order = await controller.create(makeOrderParams());
-			const items = await controller.getItems(order.id);
-
-			const fulfillment = await controller.createFulfillment({
-				orderId: order.id,
-				items: [{ orderItemId: items[0].id, quantity: 1 }],
-			});
-
-			expect(await controller.getOrderFulfillmentStatus(order.id)).toBe(
-				"fulfilled",
-			);
-
-			await controller.deleteFulfillment(fulfillment.id);
-
-			expect(await controller.getOrderFulfillmentStatus(order.id)).toBe(
-				"unfulfilled",
-			);
-		});
-	});
-
 	// ── invoice — edge cases ────────────────────────────────────────
 
 	describe("getInvoiceData — edge cases", () => {
@@ -584,22 +499,6 @@ describe("orders controllers — edge cases", () => {
 			expect(await controller.getItems(b.id)).toHaveLength(2);
 		});
 
-		it("fulfillments from different orders are isolated", async () => {
-			const a = await controller.create(makeOrderParams());
-			const b = await controller.create(makeOrderParams());
-			const aItems = await controller.getItems(a.id);
-
-			await controller.createFulfillment({
-				orderId: a.id,
-				items: [{ orderItemId: aItems[0].id, quantity: 1 }],
-			});
-
-			const aFulfillments = await controller.listFulfillments(a.id);
-			const bFulfillments = await controller.listFulfillments(b.id);
-			expect(aFulfillments).toHaveLength(1);
-			expect(bFulfillments).toHaveLength(0);
-		});
-
 		it("returns from different orders are isolated", async () => {
 			const a = await controller.create(makeOrderParams());
 			const b = await controller.create(makeOrderParams());
@@ -646,10 +545,6 @@ describe("orders controllers — edge cases", () => {
 			);
 			const items = await controller.getItems(order.id);
 
-			await controller.createFulfillment({
-				orderId: order.id,
-				items: [{ orderItemId: items[0].id, quantity: 1 }],
-			});
 			await controller.createReturn({
 				orderId: order.id,
 				reason: "defective",
@@ -667,7 +562,6 @@ describe("orders controllers — edge cases", () => {
 			expect(await controller.getById(order.id)).toBeNull();
 			expect(await controller.getItems(order.id)).toHaveLength(0);
 			expect(await controller.getAddresses(order.id)).toHaveLength(0);
-			expect(await controller.listFulfillments(order.id)).toHaveLength(0);
 			expect(await controller.listReturns(order.id)).toHaveLength(0);
 		});
 
@@ -811,63 +705,6 @@ describe("orders controllers — edge cases", () => {
 	});
 
 	// ── fulfillment with tracking ───────────────────────────────────
-
-	describe("createFulfillment — tracking URL generation", () => {
-		it("auto-generates UPS tracking URL", async () => {
-			const order = await controller.create(makeOrderParams());
-			const items = await controller.getItems(order.id);
-
-			const f = await controller.createFulfillment({
-				orderId: order.id,
-				carrier: "UPS",
-				trackingNumber: "1Z999AA10123456784",
-				items: [{ orderItemId: items[0].id, quantity: 1 }],
-			});
-			expect(f.trackingUrl).toContain("ups.com");
-			expect(f.status).toBe("shipped");
-			expect(f.shippedAt).toBeDefined();
-		});
-
-		it("auto-generates FedEx tracking URL", async () => {
-			const order = await controller.create(makeOrderParams());
-			const items = await controller.getItems(order.id);
-
-			const f = await controller.createFulfillment({
-				orderId: order.id,
-				carrier: "FedEx",
-				trackingNumber: "123456789012",
-				items: [{ orderItemId: items[0].id, quantity: 1 }],
-			});
-			expect(f.trackingUrl).toContain("fedex.com");
-		});
-
-		it("uses provided trackingUrl over auto-generated", async () => {
-			const order = await controller.create(makeOrderParams());
-			const items = await controller.getItems(order.id);
-
-			const customUrl = "https://custom-tracking.example.com/123";
-			const f = await controller.createFulfillment({
-				orderId: order.id,
-				carrier: "UPS",
-				trackingNumber: "123",
-				trackingUrl: customUrl,
-				items: [{ orderItemId: items[0].id, quantity: 1 }],
-			});
-			expect(f.trackingUrl).toBe(customUrl);
-		});
-
-		it("status is pending when no tracking number", async () => {
-			const order = await controller.create(makeOrderParams());
-			const items = await controller.getItems(order.id);
-
-			const f = await controller.createFulfillment({
-				orderId: order.id,
-				items: [{ orderItemId: items[0].id, quantity: 1 }],
-			});
-			expect(f.status).toBe("pending");
-			expect(f.shippedAt).toBeUndefined();
-		});
-	});
 
 	// ── listReturnsForCustomer — cross-order ────────────────────────
 

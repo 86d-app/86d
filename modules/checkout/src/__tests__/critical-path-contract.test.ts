@@ -7,6 +7,7 @@ import {
 	CheckoutMutationUnavailableError,
 	CheckoutRevisionConflictError,
 } from "../concurrency";
+import checkout from "../index";
 import { createCheckoutController } from "../service-impl";
 import { createSession } from "../store/endpoints/create-session";
 import {
@@ -321,5 +322,38 @@ describe("Checkout Cart-identity transport", () => {
 			status: 409,
 			currentRevision: 2,
 		});
+	});
+});
+
+describe("checkout capability admissions", () => {
+	/** name@version pairs this module is allowed to invoke at runtime. */
+	function admittedCapabilities() {
+		return (checkout().capabilities?.accepts ?? []).flatMap((acceptance) =>
+			acceptance.versions.map((version) => `${acceptance.name}@${version}`),
+		);
+	}
+
+	it("admits the v2 Tax and Inventory capabilities Finalization depends on", () => {
+		// Both are already provided by their owning modules. Until Checkout accepts
+		// them the registry never binds them, so a Finalization step handler that
+		// invoked one would fail as an unaccepted capability rather than reserve
+		// stock or decide tax.
+		expect(admittedCapabilities()).toEqual(
+			expect.arrayContaining(["tax.quote@2.0.0", "inventory.checkout@2.0.0"]),
+		);
+	});
+
+	it("keeps the superseded v1 Tax and Inventory admissions during migration", () => {
+		expect(admittedCapabilities()).toEqual(
+			expect.arrayContaining(["tax.quote@1.0.0", "inventory.checkout@1.0.0"]),
+		);
+	});
+
+	it("admits Order creation as a required capability", () => {
+		const orderCreate = (checkout().capabilities?.accepts ?? []).find(
+			(acceptance) => acceptance.name === "orders.create",
+		);
+		expect(orderCreate).toBeDefined();
+		expect(orderCreate?.optional).toBe(false);
 	});
 });

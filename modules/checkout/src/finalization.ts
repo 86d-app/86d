@@ -38,6 +38,7 @@ const referenceList = z
 export const checkoutFinalizationStateSchema = z.enum([
 	"pending",
 	"running",
+	"completed",
 	"compensating",
 	"needs_attention",
 ]);
@@ -146,6 +147,7 @@ export const checkoutFinalizationAttemptOutcomeSchema = z.discriminatedUnion(
 				nextStep: checkoutFinalizationStepSchema.exclude(["compensation"]),
 			})
 			.strict(),
+		z.object({ type: z.literal("completed") }).strict(),
 		z
 			.object({
 				type: z.literal("retryable_failure"),
@@ -379,6 +381,7 @@ export type CheckoutFinalizationErrorCode =
 	| "FINALIZATION_CONFLICT"
 	| "OPERATION_CONFLICT"
 	| "STATE_CONFLICT"
+	| "COMPLETION_INVALID"
 	| "STORED_STATE_INVALID";
 
 export class CheckoutFinalizationError extends Error {
@@ -592,6 +595,7 @@ function mergeResult(
 function attemptTransition(
 	finalization: CheckoutFinalization,
 	outcome: z.infer<typeof checkoutFinalizationAttemptOutcomeSchema>,
+	result: CheckoutFinalization["result"],
 ): Pick<CheckoutFinalization, "state" | "currentStep"> &
 	Readonly<{
 		needsAttention?: z.infer<typeof checkoutFinalizationAttentionSchema>;
@@ -605,6 +609,25 @@ function attemptTransition(
 				);
 			}
 			return { state: "running", currentStep: outcome.nextStep };
+		case "completed":
+			// Completion is the one irreversible claim this ledger makes, so it must
+			// be reached rather than asserted: the run has to be standing on the
+			// completion checkpoint, and it has to name the Order it produced. A
+			// completed Finalization with no Order would record a purchase that
+			// nothing in the Store Runtime owns.
+			if (finalization.currentStep !== "checkout_completion") {
+				throw new CheckoutFinalizationError(
+					"COMPLETION_INVALID",
+					"A Finalization may only complete from its completion checkpoint.",
+				);
+			}
+			if (!result.orderId) {
+				throw new CheckoutFinalizationError(
+					"COMPLETION_INVALID",
+					"A completed Finalization must carry the Order it produced.",
+				);
+			}
+			return { state: "completed", currentStep: "checkout_completion" };
 		case "retryable_failure":
 			return { state: "running", currentStep: finalization.currentStep };
 		case "compensation_required":
@@ -825,8 +848,8 @@ async function recordAttemptLocked(
 			"The Finalization attempt count exceeded safe integer bounds.",
 		);
 	}
-	const transition = attemptTransition(finalization, input.outcome);
 	const result = mergeResult(finalization.result, input.result);
+	const transition = attemptTransition(finalization, input.outcome, result);
 	const now = new Date();
 	const nextFinalization = {
 		...finalization,
@@ -1023,11 +1046,16 @@ async function readSnapshotLocked(
 }
 
 /**
- * Creates the dormant Checkout-owned Finalization ledger.
+ * Creates the Checkout-owned Finalization ledger.
  *
  * It validates and locks the Checkout revision, then records only references
- * supplied by a future trusted orchestrator. It invokes no commerce capability,
- * has no transport, and cannot mark Checkout or Finalization completed.
+ * supplied by a trusted orchestrator. It invokes no commerce capability and has
+ * no transport of its own.
+ *
+ * A run may reach the terminal `completed` state, but only from the completion
+ * checkpoint and only while naming the Order it produced. Completion remains a
+ * statement about this ledger: it does not mark the Checkout session completed,
+ * which stays the session owner's transition.
  */
 export function createCheckoutFinalizationStore(
 	transactions: ModuleTransactionRunner | undefined,

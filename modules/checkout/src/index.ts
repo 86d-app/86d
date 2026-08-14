@@ -12,7 +12,9 @@ import {
 	shippingQuoteCapability,
 	storeCreditCheckoutCapability,
 	taxQuoteCapability,
+	taxQuoteV2Capability,
 } from "@86d-app/core/commerce-capabilities";
+import { inventoryCheckoutV2Capability } from "@86d-app/core/inventory-reservation-capability";
 import type {
 	Module,
 	ModuleConfig,
@@ -47,6 +49,11 @@ import {
 	storedCheckoutFinalizationCompensationSchema,
 	storedCheckoutFinalizationSchema,
 } from "./finalization";
+import { createCheckoutFinalizer } from "./finalizer";
+import {
+	createCheckoutFinalizationHandlers,
+	createCheckoutFinalizationTransport,
+} from "./finalizer-handlers";
 import { checkoutSchema } from "./schema";
 import { createCheckoutController } from "./service-impl";
 import { storeEndpoints } from "./store/endpoints/routes";
@@ -70,6 +77,15 @@ export type {
 	RecordCheckoutFinalizationAttemptInput,
 	RecordCheckoutFinalizationCompensationInput,
 } from "./finalization";
+export type {
+	CheckoutFinalizationStepContext,
+	CheckoutFinalizationStepHandler,
+	CheckoutFinalizationStepHandlers,
+	CheckoutFinalizationStepOutcome,
+	CheckoutFinalizer,
+	CheckoutFinalizerRunSummary,
+} from "./finalizer";
+export type { CheckoutFinalizationHandlerDependencies } from "./finalizer-handlers";
 export type {
 	CheckoutAddress,
 	CheckoutController,
@@ -101,6 +117,9 @@ export {
 	checkoutRequestCreateInputSchema,
 	checkoutRequestReasonSchema,
 	createCheckoutFinalizationStore,
+	createCheckoutFinalizationHandlers,
+	createCheckoutFinalizationTransport,
+	createCheckoutFinalizer,
 	createCheckoutRequestStore,
 	recordCheckoutFinalizationAttemptInputSchema,
 	recordCheckoutFinalizationCompensationInputSchema,
@@ -146,7 +165,16 @@ export default function checkout(options?: CheckoutOptions): Module {
 					operations: ["check", "release"],
 					optional: true,
 				}),
+				// The v2 reservation ledger carries checkout and line identity, a
+				// lease, and an operation key, so a Finalization step can reserve and
+				// commit stock idempotently. The v1 admission above stays until the
+				// live path stops using it.
+				acceptCapability(inventoryCheckoutV2Capability, { optional: true }),
 				acceptCapability(taxQuoteCapability, { optional: true }),
+				// v2 answers with an explicit collect, no-nexus, marketplace, or
+				// blocked decision instead of an amount, so a missing policy fails the
+				// Checkout rather than silently becoming zero tax.
+				acceptCapability(taxQuoteV2Capability, { optional: true }),
 				acceptCapability(shippingQuoteCapability, { optional: true }),
 				acceptCapability(discountCodeCapability, {
 					operations: ["validate"],

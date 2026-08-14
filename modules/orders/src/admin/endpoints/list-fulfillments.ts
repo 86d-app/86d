@@ -1,5 +1,10 @@
 import { createAdminEndpoint } from "@86d-app/core/api";
 import { z } from "@86d-app/core/zod";
+import {
+	type OwnerFulfillmentController,
+	projectOrderFulfillmentStatus,
+	projectOwnerFulfillments,
+} from "../../fulfillment-projection";
 import type { OrderController } from "../../service";
 
 export const adminListFulfillments = createAdminEndpoint(
@@ -16,11 +21,29 @@ export const adminListFulfillments = createAdminEndpoint(
 			return { error: "Order not found", status: 404 };
 		}
 
-		const fulfillments = await controller.listFulfillments(ctx.params.id);
-		const fulfillmentStatus = await controller.getOrderFulfillmentStatus(
-			ctx.params.id,
-		);
+		const fulfillmentController = ctx.context.controllers.fulfillment as
+			| OwnerFulfillmentController
+			| undefined;
+		if (!fulfillmentController?.listByOrder) {
+			return {
+				code: "FULFILLMENT_OWNER_OPERATION_REQUIRED",
+				error:
+					"Fulfillment reads belong to the standalone Fulfillment module.",
+				status: 503,
+			};
+		}
 
-		return { fulfillments, fulfillmentStatus };
+		const [ownerFulfillments, orderItems] = await Promise.all([
+			fulfillmentController.listByOrder(ctx.params.id),
+			controller.getItems(ctx.params.id),
+		]);
+
+		return {
+			fulfillments: projectOwnerFulfillments(ownerFulfillments),
+			fulfillmentStatus: projectOrderFulfillmentStatus(
+				orderItems,
+				ownerFulfillments,
+			),
+		};
 	},
 );

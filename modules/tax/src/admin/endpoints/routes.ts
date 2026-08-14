@@ -15,6 +15,13 @@ import { adminListExemptions } from "./list-exemptions";
 import { adminListNexus } from "./list-nexus";
 import { adminListRates } from "./list-rates";
 import { adminListTransactions } from "./list-transactions";
+import {
+	adminCreateTaxPolicyV2,
+	adminCreateTaxRatePackV2,
+	adminDisableTaxPolicyV2,
+	adminListTaxPoliciesV2,
+	adminListTaxRatePacksV2,
+} from "./policy-v2";
 import { adminUpdateRate } from "./update-rate";
 
 export function createAdminEndpointsWithSettings(
@@ -44,4 +51,9 @@ const adminEndpoints = {
 	"/admin/tax/transactions": adminListTransactions,
 	"/admin/tax/transactions/:id/link": adminLinkTransaction,
 	"/admin/tax/report": adminGetReport,
+	"/admin/tax/v2/rate-packs": adminListTaxRatePacksV2,
+	"/admin/tax/v2/rate-packs/create": adminCreateTaxRatePackV2,
+	"/admin/tax/v2/policies": adminListTaxPoliciesV2,
+	"/admin/tax/v2/policies/create": adminCreateTaxPolicyV2,
+	"/admin/tax/v2/policies/:id/disable": adminDisableTaxPolicyV2,
 };

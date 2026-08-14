@@ -10,6 +10,7 @@ import { z } from "@86d-app/core/zod";
 import { isCapabilityUnavailable } from "../../capability-failures";
 import type { CheckoutController, CheckoutLineItem } from "../../service";
 import { createGuestProofMetadata, setGuestProofCookie } from "./guest-proof";
+import { recalculateTax, taxRecalculationError } from "./recalculate-tax";
 
 const addressSchema = z.object({
 	firstName: z.string().min(1).max(200).transform(sanitizeText),
@@ -48,15 +49,6 @@ export const createSession = createStoreEndpoint(
 		}),
 	},
 	async (ctx) => {
-		if (ctx.body.shippingAddress) {
-			return {
-				code: "CHECKOUT_TAX_V2_REQUIRED",
-				error:
-					"Shipping addresses require a revision-bound authoritative Tax decision.",
-				status: 503,
-			};
-		}
-
 		const customerId = ctx.context.session?.user.id;
 		const controller = ctx.context.controllers.checkout as CheckoutController;
 		const guestId = customerId ? undefined : ctx.getCookie("cart_guest_id");
@@ -270,6 +262,9 @@ export const createSession = createStoreEndpoint(
 			subtotal,
 			total,
 			lineItems: authoritativeLineItems,
+			...(ctx.body.shippingAddress
+				? { shippingAddress: ctx.body.shippingAddress }
+				: {}),
 			...(ctx.body.billingAddress
 				? { billingAddress: ctx.body.billingAddress }
 				: {}),
@@ -280,6 +275,19 @@ export const createSession = createStoreEndpoint(
 		});
 		if (guestProof) setGuestProofCookie(ctx, session, guestProof.proof);
 
-		return { session };
+		if (!session.shippingAddress) {
+			return { session };
+		}
+
+		const tax = await recalculateTax(
+			session,
+			controller,
+			ctx.context.capabilities,
+		);
+		if (!tax.ok) {
+			return taxRecalculationError(tax);
+		}
+
+		return { session: tax.session };
 	},
 );

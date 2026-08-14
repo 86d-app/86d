@@ -48,7 +48,25 @@ async function simulateCalculateTax(
 		shippingAmount: body.shippingAmount,
 		customerId: opts.customerId,
 	});
+	if (calculation.lines.some((line) => line.unresolved)) {
+		return {
+			code: "TAX_REVIEW_REQUIRED" as const,
+			error: "Tax requires merchant review before payment.",
+			status: 422 as const,
+		};
+	}
 	return { calculation };
+}
+
+function expectTaxCalculation(
+	result: Awaited<ReturnType<typeof simulateCalculateTax>>,
+) {
+	if (!("calculation" in result)) {
+		throw new Error(
+			`expected a tax calculation, got ${JSON.stringify(result)}`,
+		);
+	}
+	return result.calculation;
 }
 
 /**
@@ -105,13 +123,13 @@ describe("store endpoint: calculate tax — jurisdiction matching", () => {
 			lineItems: [{ productId: "prod_1", amount: 10000, quantity: 1 }],
 		});
 
-		expect(result.calculation.totalTax).toBe(725);
-		expect(result.calculation.effectiveRate).toBeCloseTo(0.0725, 4);
-		expect(result.calculation.jurisdiction.country).toBe("US");
-		expect(result.calculation.jurisdiction.state).toBe("CA");
+		expect(expectTaxCalculation(result).totalTax).toBe(725);
+		expect(expectTaxCalculation(result).effectiveRate).toBeCloseTo(0.0725, 4);
+		expect(expectTaxCalculation(result).jurisdiction.country).toBe("US");
+		expect(expectTaxCalculation(result).jurisdiction.state).toBe("CA");
 	});
 
-	it("returns zero tax when no rates match the jurisdiction", async () => {
+	it("fails closed with TAX_REVIEW_REQUIRED when no rates match", async () => {
 		const controller = createTaxController(data);
 		await controller.createRate({
 			name: "CA Tax",
@@ -125,8 +143,11 @@ describe("store endpoint: calculate tax — jurisdiction matching", () => {
 			lineItems: [{ productId: "prod_1", amount: 10000, quantity: 1 }],
 		});
 
-		expect(result.calculation.totalTax).toBe(0);
-		expect(result.calculation.lines[0].taxAmount).toBe(0);
+		expect(result).toEqual({
+			code: "TAX_REVIEW_REQUIRED",
+			error: "Tax requires merchant review before payment.",
+			status: 422,
+		});
 	});
 
 	it("applies both state and city rates additively", async () => {
@@ -151,9 +172,9 @@ describe("store endpoint: calculate tax — jurisdiction matching", () => {
 		});
 
 		// Both rates apply: 10000 * (0.0725 + 0.095) = 1675
-		expect(result.calculation.totalTax).toBe(1675);
-		expect(result.calculation.lines[0].rateNames).toContain("LA City");
-		expect(result.calculation.lines[0].rateNames).toContain("CA State");
+		expect(expectTaxCalculation(result).totalTax).toBe(1675);
+		expect(expectTaxCalculation(result).lines[0].rateNames).toContain("LA City");
+		expect(expectTaxCalculation(result).lines[0].rateNames).toContain("CA State");
 	});
 
 	it("calculates tax on multiple line items", async () => {
@@ -175,8 +196,8 @@ describe("store endpoint: calculate tax — jurisdiction matching", () => {
 
 		// Tax on prod_a: 5000 * 0.08 = 400
 		// Tax on prod_b: 3000 * 0.08 = 240
-		expect(result.calculation.lines).toHaveLength(2);
-		expect(result.calculation.totalTax).toBe(640);
+		expect(expectTaxCalculation(result).lines).toHaveLength(2);
+		expect(expectTaxCalculation(result).totalTax).toBe(640);
 	});
 
 	it("includes shipping tax when shippingAmount is provided", async () => {
@@ -196,8 +217,8 @@ describe("store endpoint: calculate tax — jurisdiction matching", () => {
 
 		// Item tax: 10000 * 0.0625 = 625
 		// Shipping tax: 800 * 0.0625 = 50
-		expect(result.calculation.shippingTax).toBe(50);
-		expect(result.calculation.totalTax).toBe(675);
+		expect(expectTaxCalculation(result).shippingTax).toBe(50);
+		expect(expectTaxCalculation(result).totalTax).toBe(675);
 	});
 
 	it("returns zero shipping tax when shippingAmount is 0", async () => {
@@ -215,7 +236,7 @@ describe("store endpoint: calculate tax — jurisdiction matching", () => {
 			shippingAmount: 0,
 		});
 
-		expect(result.calculation.shippingTax).toBe(0);
+		expect(expectTaxCalculation(result).shippingTax).toBe(0);
 	});
 });
 
@@ -249,7 +270,7 @@ describe("store endpoint: calculate tax — customer exemptions", () => {
 			{ customerId: "cust_exempt" },
 		);
 
-		expect(result.calculation.totalTax).toBe(0);
+		expect(expectTaxCalculation(result).totalTax).toBe(0);
 	});
 
 	it("charges full tax when customerId is not provided (guest)", async () => {
@@ -266,7 +287,7 @@ describe("store endpoint: calculate tax — customer exemptions", () => {
 			lineItems: [{ productId: "prod_1", amount: 10000, quantity: 1 }],
 		});
 
-		expect(result.calculation.totalTax).toBe(725);
+		expect(expectTaxCalculation(result).totalTax).toBe(725);
 	});
 
 	it("charges full tax for non-exempt customers", async () => {
@@ -287,7 +308,7 @@ describe("store endpoint: calculate tax — customer exemptions", () => {
 			{ customerId: "cust_regular" },
 		);
 
-		expect(result.calculation.totalTax).toBe(725);
+		expect(expectTaxCalculation(result).totalTax).toBe(725);
 	});
 });
 
@@ -313,7 +334,7 @@ describe("store endpoint: calculate tax — inclusive rates", () => {
 			lineItems: [{ productId: "prod_1", amount: 12000, quantity: 1 }],
 		});
 
-		expect(result.calculation.inclusive).toBe(true);
+		expect(expectTaxCalculation(result).inclusive).toBe(true);
 	});
 });
 
