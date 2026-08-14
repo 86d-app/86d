@@ -17,7 +17,7 @@ ENV NODE_ENV=production
 COPY package.json bun.lock ./
 # Workspace members referenced by bun.lock (frozen install requires manifests on disk)
 COPY internals/github/package.json internals/github/
-COPY internals/registry/package.json internals/registry/
+COPY apps/registry/package.json apps/registry/
 COPY internals/generators/package.json internals/generators/
 COPY packages/cli/package.json packages/cli/
 COPY apps/store/package.json apps/store/

@@ -37,6 +37,7 @@ import {
 	verifyLockfile,
 	writeLockfile,
 } from "@86d-app/registry/lockfile";
+import { registryManifestPath } from "@86d-app/registry/paths";
 import {
 	detectCircularDependencies,
 	resolveModules,
@@ -276,7 +277,7 @@ async function resolveModulesFromRegistry(): Promise<ResolvedModule[]> {
 
 		// Load manifest for fetch operations
 		const { readLocalManifest } = await import("@86d-app/registry/resolver");
-		const manifest = readLocalManifest(join(WORKSPACE_ROOT, "registry.json"));
+		const manifest = readLocalManifest(registryManifestPath(WORKSPACE_ROOT));
 
 		for (const mod of toFetch) {
 			const { specifier } = mod;
@@ -1693,7 +1694,7 @@ async function runGenerators() {
 
 	// Check for circular dependencies in the registry manifest
 	const { readLocalManifest } = await import("@86d-app/registry/resolver");
-	const manifest = readLocalManifest(join(WORKSPACE_ROOT, "registry.json"));
+	const manifest = readLocalManifest(registryManifestPath(WORKSPACE_ROOT));
 	if (manifest) {
 		const cycles = detectCircularDependencies(manifest);
 		if (cycles.length > 0) {
@@ -1710,13 +1711,13 @@ async function runGenerators() {
 		const existingLock = readLockfile(WORKSPACE_ROOT);
 		if (!existingLock) {
 			console.error(
-				"✗ --frozen requires registry.lock.json but none was found",
+				"✗ --frozen requires apps/registry/registry.lock.json but none was found",
 			);
 			process.exit(1);
 		}
 		const diff = verifyLockfile(existingLock, resolvedModules);
 		if (!isLockfileSatisfied(diff)) {
-			console.error("✗ registry.lock.json is out of date:");
+			console.error("✗ apps/registry/registry.lock.json is out of date:");
 			if (diff.added.length > 0)
 				console.error(`  Added: ${diff.added.join(", ")}`);
 			if (diff.removed.length > 0)
@@ -1726,12 +1727,12 @@ async function runGenerators() {
 			console.error("  Run without --frozen to regenerate the lock file.");
 			process.exit(1);
 		}
-		console.log("✓ registry.lock.json is up to date");
+		console.log("✓ apps/registry/registry.lock.json is up to date");
 	} else {
 		const lockfile = generateLockfile(resolvedModules, WORKSPACE_ROOT);
 		writeLockfile(WORKSPACE_ROOT, lockfile);
 		console.log(
-			`✓ Generated registry.lock.json with ${Object.keys(lockfile.modules).length} module(s)`,
+			`✓ Generated apps/registry/registry.lock.json with ${Object.keys(lockfile.modules).length} module(s)`,
 		);
 	}
 

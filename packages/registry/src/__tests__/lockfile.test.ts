@@ -8,6 +8,7 @@ import {
 	verifyLockfile,
 	writeLockfile,
 } from "../lockfile.js";
+import { registryLockfilePath } from "../paths.js";
 import type { ResolvedModule } from "../types.js";
 
 const TMP_ROOT = join(import.meta.dirname, ".tmp-lockfile-test");
@@ -133,7 +134,7 @@ describe("readLockfile / writeLockfile", () => {
 	it("returns undefined for invalid lockfile", () => {
 		const badRoot = join(TMP_ROOT, "bad-lock");
 		mkdirSync(badRoot, { recursive: true });
-		writeFileSync(join(badRoot, "registry.lock.json"), "not json{{{");
+		writeFileSync(registryLockfilePath(badRoot), "not json{{{");
 		expect(readLockfile(badRoot)).toBeUndefined();
 	});
 });

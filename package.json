@@ -23,7 +23,7 @@
 		"test:e2e:ui": "playwright test --config tests/playwright.config.ts --ui",
 		"postinstall": "bun run generate:modules -- --frozen",
 		"generate:modules": "tsx internals/generators/src/generate-modules.ts",
-		"generate:registry": "tsx internals/registry/src/generate-manifest.ts",
+		"generate:registry": "tsx apps/registry/src/generate-manifest.ts",
 		"generate:docs": "tsx internals/generators/src/generate-component-docs.ts",
 		"changeset": "changeset",
 		"version-packages": "changeset version",

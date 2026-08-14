@@ -31,6 +31,18 @@
         "vitest": "catalog:vite",
       },
     },
+    "apps/registry": {
+      "name": "@86d-app/internals-registry",
+      "version": "0.0.0",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+        "@86d-app/registry": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "tsx": "catalog:",
+      },
+    },
     "apps/store": {
       "name": "store",
       "version": "0.0.4",
@@ -208,18 +220,6 @@
     "internals/github": {
       "name": "github",
       "version": "0.0.0",
-    },
-    "internals/registry": {
-      "name": "@86d-app/internals-registry",
-      "version": "0.0.0",
-      "dependencies": {
-        "@86d-app/core": "workspace:*",
-        "@86d-app/registry": "workspace:*",
-      },
-      "devDependencies": {
-        "@biomejs/biome": "catalog:",
-        "tsx": "catalog:",
-      },
     },
     "modules/abandoned-carts": {
       "name": "@86d-app/abandoned-carts",
@@ -2006,7 +2006,7 @@
 
     "@86d-app/internals-generators": ["@86d-app/internals-generators@workspace:internals/generators"],
 
-    "@86d-app/internals-registry": ["@86d-app/internals-registry@workspace:internals/registry"],
+    "@86d-app/internals-registry": ["@86d-app/internals-registry@workspace:apps/registry"],
 
     "@86d-app/inventory": ["@86d-app/inventory@workspace:modules/inventory"],
 

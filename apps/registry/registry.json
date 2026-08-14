@@ -14,11 +14,11 @@
 				"customers"
 			],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-980afcfaca2d7cd96726cff603769f64a00d6a1bdb2e5c5b93f7e18ec4244e1c",
-			"subtreeIntegrity": "sha256-cb6ad3d3b15f922fc189a54c7a3b87b13c862f98d48e2c28e86579092816fd8d",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-26f9f168f2602e38a1e2d968b802b6e452a63b2622cad1b332486e758dcaea0d",
+			"subtreeIntegrity": "sha256-572e914dd2fff91f8e8b672b079a9468d50c43ab6d447bf44949e7d71ba2d3f6",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -46,11 +46,11 @@
 			"path": "modules/affiliates",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-28d1e0f6f20f1aed360c3404ad5ba43d3a4d3f51f7e3c903740e81f48cf605f6",
-			"subtreeIntegrity": "sha256-95fbed608103aca2163e1102f3d06c172f02682506173e9be27db1858c524f03",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-6651bab5ce1191ad6631312e4501599c8eb3024d751a2c323deb131ed76c5ecc",
+			"subtreeIntegrity": "sha256-373a34d17631b8126aaa64e11726dc74d797da7e4e91671a5122ed8416623403",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -70,11 +70,11 @@
 			"path": "modules/amazon",
 			"requires": [],
 			"hasStoreComponents": false,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-3d958aa7855dd6df7c735da21fbe1eea05c730bc23f88b1b8b128257f8a288e6",
-			"subtreeIntegrity": "sha256-152dd02c2c16b6acbc5c22cd6cb426430772c05488b015cca5ef2495492c9b4f",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-152d2ce5244bdaeca65f199124b2a6b34a16af73951777f714ea75cf9265edb4",
+			"subtreeIntegrity": "sha256-cecd169472e04e38aae8a565bc4f8fb76a83df4afaadab4c9b8d228044e50439",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -94,11 +94,11 @@
 			"path": "modules/analytics",
 			"requires": [],
 			"hasStoreComponents": false,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-8aea76450eefb20d56824977238c0735a451fc8df605c8dfd5521920429888c0",
-			"subtreeIntegrity": "sha256-856eec606adc8392258d73e8d658583438c13ba8edccb1f1fdd38db37ab26b3c",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-1db0ef89a8b259d412abf23e930768bd071e5fea193f0feb7bcebb42474b30ac",
+			"subtreeIntegrity": "sha256-d97926ced86d14485a02c13485e5d5898bc720fd6bda946795d80a2466b97a98",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -118,11 +118,11 @@
 			"path": "modules/announcements",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-917b7596def9812f3253cc7c3a90ad6a83b8955b00e3d06dd2765ef7137e09f5",
-			"subtreeIntegrity": "sha256-51e383894ab07ea8433b91935b1196efd1e9c543abcdcbe2b5c4fb1c2f20ae18",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-8eb5e860e18f0185373b1d357e8bb9f7f2b35b59be0d487e579926eb26e8182f",
+			"subtreeIntegrity": "sha256-15ebbd9f8946e84c8f8d32a4ce18370c45b6fb841a03ebef085319655704762d",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -144,11 +144,11 @@
 				"customers"
 			],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-96eeacd3f5b86394a86a01e08dffc4816de3ad4ef295f172b137027ce6bfa1a5",
-			"subtreeIntegrity": "sha256-19b0cfa118b4b9fca049669b9f6b40ab1c459915e08e2b512ba2eedf9cfe2ae7",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-65dba836d547901abc8a3677111aff32e91d3238abf0899335896af9b9513d38",
+			"subtreeIntegrity": "sha256-9d8240d447e2d7fba260a9320de0f0c9eeb94e31c999d6d0acf9f37a5fa86241",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -168,11 +168,11 @@
 			"path": "modules/auctions",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-e243835d2a00abedb53733dd97b563464869b118f61eff300fcd4a853171f6ad",
-			"subtreeIntegrity": "sha256-7cec5f1ee8e6fded1bfb6b4bf448d03e54f2aa06c69e8f8efec114a59bc108dd",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-ee89e6b0304c2acb528f20dc3fa5ac1e09baed2d8bdc94152d8c24d3a1a35b5b",
+			"subtreeIntegrity": "sha256-3857a36ef2ac17801b1061a007f261c0d520b07f2b646085bd577ed1356788e4",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -192,11 +192,11 @@
 			"path": "modules/audit-log",
 			"requires": [],
 			"hasStoreComponents": false,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-945317dcc5a90d1d8c6ed650d0e7d185e3dba26ae95f9d1b442e4869fad298cb",
-			"subtreeIntegrity": "sha256-098b7147f8edc0f999e62315e12db2b32aaafd63e84a4f607f3240f94d6b82c9",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-ba5a15762d2eb1d776dc9bd4c65b9d753119b66abd9970bffd08028c5a5d7163",
+			"subtreeIntegrity": "sha256-d576e6c3221fdf7c641dc3b097be229a0da72dd4dc013d136aaba8c435b7ca27",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -222,11 +222,11 @@
 			"path": "modules/automations",
 			"requires": [],
 			"hasStoreComponents": false,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-fab83f08427580835e0f32fb9a7113937efe2e53857a10b14d32f0a5199792b8",
-			"subtreeIntegrity": "sha256-66fff393d02b932bae0ff53fb82f8dcb9a89b89088dd9027db8811b69713e6f9",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-64fbba563df5e588c746daf676810cb05f53cb9742401120a61120493a10d5d2",
+			"subtreeIntegrity": "sha256-39822d0f4b6d34912d7544b0876e7459f4aa821e97746e5a53f95d13d5593bb9",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -256,11 +256,11 @@
 				"inventory"
 			],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-2f891b4e1a59367da66122c877d15d66fe2e5734a682e238e2cfc51a54d271af",
-			"subtreeIntegrity": "sha256-d3825fd82a649db2a1e66c90ad2df23b9dd887705519108269b500d770f7942d",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-398463c89ee6f49142b256d92f6309ec9cb83d8cd4e9a428203439e9adae3c88",
+			"subtreeIntegrity": "sha256-543e956d6486de6128d8a6600c6e94d9b44580588a49edfa743e7ac051f1453e",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -280,11 +280,11 @@
 			"path": "modules/blog",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-b3e08a6d1f7b24876dc4caa6ca43629f073b17b81769ac5ec5c3077188911820",
-			"subtreeIntegrity": "sha256-af5ca8c12b9290360651d3d4a5d5e95bad9bb73d641918e4576457ca515a8b76",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-ebac554ca4637778f8ca4b6cd34e8502a28556b45731bae7d54ccfe1d2c2e1a3",
+			"subtreeIntegrity": "sha256-2e1d2b1876842c0ad07e6499969814fcef4491a2d77e585a8de13dffd70a99b6",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -304,11 +304,11 @@
 			"path": "modules/braintree",
 			"requires": [],
 			"hasStoreComponents": false,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-c6c3451f67f8d2ea3aeb55b4248a1e9ef3f2d3c3ac81f8503be88cfec636b724",
-			"subtreeIntegrity": "sha256-88fe109ed768c4e3f0859bb51a7cf21b85add28145710762c2616fde1d24d931",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-20bc88bf6454ab6f3f684c3ea877e41f7809fc0b3aa70c1ea5ef0c92dfa7f947",
+			"subtreeIntegrity": "sha256-6eb5a14689d9af4cae193589ed235a11d8451bddf337313a665bf9e40f853f7d",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -328,11 +328,11 @@
 			"path": "modules/brands",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-64bfe407e7b840bad9ed5ab0d1e5886143121280e4bee1b995e3dbd437b6e0b3",
-			"subtreeIntegrity": "sha256-d6804ac13a1c6773b2540daf3af22c9784edb6d49c15c2cc3106fc25c6f6dd28",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-407aeb56367f7c9217af9f373cac362b1df4df99403bd26d9b7dee0b7a06d977",
+			"subtreeIntegrity": "sha256-71a199a2791318e4d529e9c3c0f993d97dc673674281bc6864258e0b85dc78bd",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -354,11 +354,11 @@
 				"products"
 			],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-c9fa012c75bcffb9a2a31eccf090a420e5b3cfa6e8b745eff4e592cbc723fffe",
-			"subtreeIntegrity": "sha256-0b520643015b3515a8bba18045328412fd5cbbe4160ed063259df74517fb13e8",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-8bf8ab4e1f4f30165f4ba05a744836412c04802a999da8472de1b775c4eeacec",
+			"subtreeIntegrity": "sha256-31f4dd150888357c94641c0cbc44aca7301aaec37950f7fd11e45d221a10f13e",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -380,11 +380,11 @@
 				"products"
 			],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-4a2c6713d24c2c7ebeee09e3c85c94884646881507117da0a140f7bacea4aa14",
-			"subtreeIntegrity": "sha256-aabd993dfe15275e06fc43821cd5a910794cd4380aae4a9bd22e3cc112ecc62b",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-526f84ed08f8f7e695bf076e91fdd6e6184d421a60eae925dc3af7fc715e7098",
+			"subtreeIntegrity": "sha256-1ce428ee746e0ff84c620c6fcfe7c32f1fd5d9068d6e7949944232db51bd8d13",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -404,18 +404,26 @@
 			"path": "modules/cart",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-eee088d580896130ef70244a7296c2540f92806ca7ed96855d67316dfd74d69a",
-			"subtreeIntegrity": "sha256-227bbd9a6989ac2ec6b1f4a89e02a9b6f57febcc91c86db76d3ae6e0e073a8c8",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-7f82ed44b9c838c233c8e5a047271f9be177443027fd00792409cc49b28828d6",
+			"subtreeIntegrity": "sha256-d92bd3961d68259e15519972d0ac653ac7e626f54d6873077b1f29d9518bcbb3",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
 				"storeRuntime": "0.0.4",
 				"moduleContract": 1
 			},
-			"providesCapabilities": [],
+			"providesCapabilities": [
+				{
+					"name": "cart.snapshot",
+					"owner": "cart",
+					"versions": [
+						"1.0.0"
+					]
+				}
+			],
 			"acceptsCapabilities": [
 				{
 					"name": "catalog.product.resolve",
@@ -442,11 +450,11 @@
 				"shipping"
 			],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-5711573810a8b7c901f12a3e6d29d5c021c0b4f190cf22e1a42276713523f049",
-			"subtreeIntegrity": "sha256-239a2388b22a57a9d37ff4d10c2151b1ebd2c54fcd74a85a5d84a48d64dc9186",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-77a34b66fc9780b52e3f56ebda6e6ed7791e0399b3e92879c1e6327827299d0a",
+			"subtreeIntegrity": "sha256-0fa5fc9cc5dea14c1a9405626039e958077b6661e86adab9f6d929701888d40f",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -455,6 +463,13 @@
 			},
 			"providesCapabilities": [],
 			"acceptsCapabilities": [
+				{
+					"name": "cart.snapshot",
+					"owner": "cart",
+					"versions": [
+						"1.0.0"
+					]
+				},
 				{
 					"name": "catalog.product.resolve",
 					"owner": "products",
@@ -477,10 +492,24 @@
 					]
 				},
 				{
+					"name": "inventory.checkout",
+					"owner": "inventory",
+					"versions": [
+						"2.0.0"
+					]
+				},
+				{
 					"name": "tax.quote",
 					"owner": "tax",
 					"versions": [
 						"1.0.0"
+					]
+				},
+				{
+					"name": "tax.quote",
+					"owner": "tax",
+					"versions": [
+						"2.0.0"
 					]
 				},
 				{
@@ -531,9 +560,22 @@
 					"versions": [
 						"1.0.0"
 					]
+				},
+				{
+					"name": "customers.identity.resolve",
+					"owner": "customers",
+					"versions": [
+						"1.0.0"
+					]
 				}
 			],
-			"emitsDurableEvents": [],
+			"emitsDurableEvents": [
+				{
+					"name": "checkout.finalization-lifecycle",
+					"owner": "checkout",
+					"version": 1
+				}
+			],
 			"handlesDurableEvents": []
 		},
 		"collections": {
@@ -544,11 +586,11 @@
 			"path": "modules/collections",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-f1c186c0a571b137b86fc35610c40e4e74124677b988178922268f949a60928a",
-			"subtreeIntegrity": "sha256-9002b55e0b68f159f068faef70fab3b80f34cc1cddd486ec6f7b8efe8511a6e1",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-37b64029d3f97ccbd433af13c704190fbec41f7fd7066ce04ec6287ca28a79b3",
+			"subtreeIntegrity": "sha256-9700cc11eef4a80ab9ac0b1835832926108fb2eafde0b504c76f328f236d1cc4",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -568,11 +610,11 @@
 			"path": "modules/comparisons",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-6efb8f483e0271471ac24b73148a841928d4d8d09d35e82e8abf278095bade8a",
-			"subtreeIntegrity": "sha256-b97b1754140d44ed062ff8aa862ba2f19a3940a853afe7c55e7588174738fac0",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-7b91cc1336e33b014daaf3f9405ac48e0efe7b481d2014684ff0ecf97371c852",
+			"subtreeIntegrity": "sha256-39772888260fe6acaa47c553c73d63ebe7e37a5840c9d8cfd32b1cee3134626c",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -592,11 +634,11 @@
 			"path": "modules/customer-groups",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-3e9d41533c787eee9adf0009fc7ec4b9913906a7c1305c155c7654ef6fa2a3fc",
-			"subtreeIntegrity": "sha256-25e58fb7a27021eb808b53e62677a0945395e6ea876addb2f51b8d7b51a0c492",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-410ff3183e375cc538b75b5003baba168d2e9d623f2a5ba6bd9bd6ed38238e03",
+			"subtreeIntegrity": "sha256-d4fbec3535e8be9d9ddeef51fdc8e1b827eb4873401c826806115e2517d62b8f",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -616,11 +658,11 @@
 			"path": "modules/customers",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-97036fbbfcecf7dc34fd12c01ce3b63224bebf0bb63e33ad9b2b067ae99af1e6",
-			"subtreeIntegrity": "sha256-9c1d3371a400944d6f5e8021e46bbafda5ff0ebc9fffc2293a3900cdd8860783",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-3806d526989e11da08fb6b307fba2d0331d296d654cf96e941f5eda6ff8667df",
+			"subtreeIntegrity": "sha256-c5c4ae0e480db8c9d0a0f9629272d738c5d3a58ef7e7fa6d7e815f634b00d106",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -630,6 +672,13 @@
 			"providesCapabilities": [
 				{
 					"name": "customers.contact.resolve",
+					"owner": "customers",
+					"versions": [
+						"1.0.0"
+					]
+				},
+				{
+					"name": "customers.identity.resolve",
 					"owner": "customers",
 					"versions": [
 						"1.0.0"
@@ -650,11 +699,11 @@
 				"orders"
 			],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-8e0532a053ca023dc988a19d13b2445350bd4ead48e2bc67d10c8f269845bd2c",
-			"subtreeIntegrity": "sha256-0a4eac82ca3471fb3257e84bd4de65cb7954f05b4fc3889c7cbf23398d6bc7b8",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-87627f92f981c3a052edce7cd2bc08e6415b05d1b8c41440447e12c6679a3bd2",
+			"subtreeIntegrity": "sha256-c6aafbb3ee3dc7bae74ff1f323ed232e1c87d9081b329d65a71918ae961e8184",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -674,11 +723,11 @@
 			"path": "modules/digital-downloads",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-3c54de0d890df95e1de189dff13448f0ea7bec463dbe791af3297339c279439c",
-			"subtreeIntegrity": "sha256-8b44e5b5983f72986c8efcf59126e6e6c89bff831dc15a56f86ee129c25861fc",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-0b134ba244dfafcd1cc9f90e178c53e40a1f8ecb89e2ca9683adc81ffa209d88",
+			"subtreeIntegrity": "sha256-abdf45e3bc6592fb6f1d4a9105f4033aca89ca5f1af9cde05188d08f1c4e3acc",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -698,11 +747,11 @@
 			"path": "modules/discounts",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-11766b9e3a8f8dbfcab36282be44f75fc567bd85ceb08bc5d7cffbe06dfda3c1",
-			"subtreeIntegrity": "sha256-deab6428790c88d20deaccad118b27b292bdef0ddf37bc4d77a52cc5fec647d3",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-69f1919aa10735a9c2adfb80ce1eeac8aaf4ecbe4e9b6eccbd6b4c3322cbe991",
+			"subtreeIntegrity": "sha256-88266d24ba5f0fd0e5c14f8d48d4cd8274e0557fc10cdd44432b6fb3fd0e4ce6",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -730,11 +779,11 @@
 			"path": "modules/doordash",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-57370217e078991d3075395c38b7860456eb713a63601335872cb73142111fcc",
-			"subtreeIntegrity": "sha256-090ab49e4d7fa78ea43188dec89abfe5cd4854538defbf6a8aed7add5bca520e",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-9c6f41f38eb04b9970cf96532cf1bef87b4fdd23b9c300bfefe3fde77d41ebf4",
+			"subtreeIntegrity": "sha256-c4132ef290b212144c7bfc6850da516cdb5b88e2f5e394713b6b7bdbf7bd5093",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -754,11 +803,11 @@
 			"path": "modules/ebay",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-8ab1787837fabf852e69725c47ac1ab16fa8e04849b55ad739351e28321c879f",
-			"subtreeIntegrity": "sha256-0a9142ad7d1336a1bc2a6fc2e1764b9e787fc13ceb132ed7c7bc67790a04588f",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-b4431aeee2ab8fb13d3aaea4d8588604787af67d839302c3dde46391598a91a8",
+			"subtreeIntegrity": "sha256-d293ab9c6de227bc52a41a421c560407848aff882d7460bad9970eccbc6a100e",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -778,11 +827,11 @@
 			"path": "modules/etsy",
 			"requires": [],
 			"hasStoreComponents": false,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-4decac25a8c695f1ad76ba9b195ec0036c330dc913443dd8265bc45be7372b64",
-			"subtreeIntegrity": "sha256-a27cbf6a9b9d5aaabbfce4d7f88ff23bd5a502c81e226ca1d573e71de4d47068",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-f9a446cde0a0ae82eae4f0cdc67954507d1a39fe5cd8003cbb745aa408844daf",
+			"subtreeIntegrity": "sha256-b93007878eaec4f6845d6d664a1f0834125f1f0bc55c27b597dc938369a33408",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -802,11 +851,11 @@
 			"path": "modules/facebook-shop",
 			"requires": [],
 			"hasStoreComponents": false,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-eed80bb24e12585b1cd585a8229b4d2e9790e4ae942b08c0c2564df356580b3f",
-			"subtreeIntegrity": "sha256-e7c5ae90d816d4125031d4fb25f4fbce1288f8736cf92c2acf04fb1f03610412",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-fcc5d537149dc186d73d9ee9a048cc7b758df1e3f9e4da8b0a03f8c50e727307",
+			"subtreeIntegrity": "sha256-1bf5655057d7107fa477bed2954880999788054b512b6822ed8a3b1ed7428f4b",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -826,11 +875,11 @@
 			"path": "modules/faq",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-ca00c7800cd7b8003bf8adc73e4d123f8ec659b56358dd52b311e62bcdde4a17",
-			"subtreeIntegrity": "sha256-c0312d9ebba118660865d08b45b7ab647b14ef5ff7990ae6daa9ebb22cf67000",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-c4bb86454bd51cccaec5f06b39382146ef4833c971a0956d3076fc106b8dd82f",
+			"subtreeIntegrity": "sha256-91b8b126c0f87703c1c0e0ff2338bbb7b19620f0c7ee13824dde358a17f76b9a",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -850,11 +899,11 @@
 			"path": "modules/favor",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-bfa58e0b95adedc089982237ae4246c5144bb80e5837f14820cf336e2350d43d",
-			"subtreeIntegrity": "sha256-17aad7a240dfa1af7b30b0826c97ed1586eabd498dd956bd915953d32cbddb92",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-50c4dbfb1ca0191699cc82c63a71753a7a3757e288c2650f89af851a07dccc3f",
+			"subtreeIntegrity": "sha256-542c5f920cdb375bac20a67e7e54019c70376a2975baab3ac329afe5b0ae718f",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -876,11 +925,11 @@
 				"products"
 			],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-7f770940bc237283b1b644f55600a5828f56df2ae5a9cf3af47d93dff20bcfb0",
-			"subtreeIntegrity": "sha256-6ae30298ac22b8379da1f9bd62b66f6d5e893b6259c113842efd4a10dab1811b",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-0fc23ae3c13ba4e04e5f33de3eb88766906bdb9c28e2f1c9404c804bd996c337",
+			"subtreeIntegrity": "sha256-b3f2c9e0c9968a84024cbe9cec968abe6043459066a61a605c047a039f7d775d",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -900,11 +949,11 @@
 			"path": "modules/forms",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-41cd81c734135f0d0792caf3e570a2b365fddf80662421e6e26aa999a6edc628",
-			"subtreeIntegrity": "sha256-7ecb070f4d35a91dd09b62cbc02a330828f08288be91fe32509869c55f508fbf",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-389754247df200a60a1363c298c4100fbfe3572eeee51b5d032abdb6952cf6ed",
+			"subtreeIntegrity": "sha256-ec8ba78f0fd28ba50e57730947d97ac01f7f87e18486781914f5c87d6a83e4e5",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -922,15 +971,13 @@
 			"version": "0.0.1",
 			"category": "fulfillment",
 			"path": "modules/fulfillment",
-			"requires": [
-				"orders"
-			],
+			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-76a8a3af78d21ac7955cb4507c40fba2313fbd6d1efd1c8887b0a62a23473b88",
-			"subtreeIntegrity": "sha256-fbf3cc3f34f48c882a9574503f6aad35cdea04a061277bed0d4a3018d4f43768",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-451d59fda3f6a1e730416153bb6bdac5ad7df1b5525e95de3f4ca1ef4dc8b0ee",
+			"subtreeIntegrity": "sha256-7408084b4d54ebc84eaaff71d6c2a6572d196cc7374cd78210b2eba7adcd96a8",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -938,8 +985,43 @@
 				"moduleContract": 1
 			},
 			"providesCapabilities": [],
-			"acceptsCapabilities": [],
-			"emitsDurableEvents": [],
+			"acceptsCapabilities": [
+				{
+					"name": "orders.line-quantities.validate",
+					"owner": "orders",
+					"versions": [
+						"1.0.0"
+					]
+				},
+				{
+					"name": "orders.customer.authorize",
+					"owner": "orders",
+					"versions": [
+						"1.0.0"
+					]
+				},
+				{
+					"name": "orders.guest.authorize",
+					"owner": "orders",
+					"versions": [
+						"1.0.0"
+					]
+				},
+				{
+					"name": "customers.identity.resolve",
+					"owner": "customers",
+					"versions": [
+						"1.0.0"
+					]
+				}
+			],
+			"emitsDurableEvents": [
+				{
+					"name": "fulfillment.created",
+					"owner": "fulfillment",
+					"version": 1
+				}
+			],
 			"handlesDurableEvents": []
 		},
 		"gamification": {
@@ -950,11 +1032,11 @@
 			"path": "modules/gamification",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-51dc63615c1e51612f77ae7d5c20df07cfb348e2376e4f0d84bed1636b835d9d",
-			"subtreeIntegrity": "sha256-f5ff0255ca6b9a6dc541ea50b108a86f2b58c5fd1d5c615b1996bd2bbae4038d",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-120560fc703182f4b29c814c9948cbec5682c55e448e7ba5c01b4372fa8d1155",
+			"subtreeIntegrity": "sha256-9b10999710a8ee1b7253a0fc4a7a61ea3a0fabad49c08357e8df6a3000088b1f",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -974,11 +1056,11 @@
 			"path": "modules/gift-registry",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-1175ea3bb01f15b93b257d2ba06a11e604756e98e5f8b1c73eb6104b14c0d7ad",
-			"subtreeIntegrity": "sha256-d2e6c1742a5611bd306cd77897203e77ba51dc814949102f96d0b1bbd509fe65",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-95ba6df351e82ab400aec8fb7becc5dbfc2e6da0b36f9e83ad407616fc2d80ca",
+			"subtreeIntegrity": "sha256-7e51fa7e65a0503815bfd8590a4056dd8bf60d34bc8657e7b750f1b899815f33",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -998,11 +1080,11 @@
 			"path": "modules/gift-wrapping",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-0ab9af3e5e17678de45ce0519833326119b245a70b4705e8e58c23d254010271",
-			"subtreeIntegrity": "sha256-37987f4ca364a74db08fe870b09f996a83f519a89c93327b21816ae10ce23ed7",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-bee4f4c3a9ff55f5f99dcc9a64d82e75d3c61233136ac9f9649ee4447efa9bfd",
+			"subtreeIntegrity": "sha256-d96a5d59d218fe5ac493324cab42577a33691d2a8c11af5dc87add4902b07e47",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -1030,11 +1112,11 @@
 			"path": "modules/giftcards",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-d43225bf3a3724c2601ba8be0b7cec6b3f4306fead5b8d1b74d55b4938dfb754",
-			"subtreeIntegrity": "sha256-c145c6e0e3c808f5ccbf2e5ec192a55fa8a23cacbfcf2484f3ada33734135321",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-16bc41b686a3c01cd1540b5846d1e565b4f078f81745d0ee9f850cfe3b6b9d4d",
+			"subtreeIntegrity": "sha256-ee97e979d97d3cd9b4d523478b3126e933ce96497763797fb7f05578923653b7",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -1062,11 +1144,11 @@
 			"path": "modules/google-shopping",
 			"requires": [],
 			"hasStoreComponents": false,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-777da99c324458e4fd3469d734c135e73fe57dc37be9731aefe8427fb94f1fcf",
-			"subtreeIntegrity": "sha256-52ba7a51f58bc0187a74c0913b24a1164d2605d7a1bd2a5047db59b313a1e79b",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-bda1b83ccac08d9f4c123734792aaa5d6e3f274ec267ad28008e66c127664e24",
+			"subtreeIntegrity": "sha256-b258b2262b3dfea462763f4625f723a538d31b2a0f87e28a442eb1b7ffb2066a",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -1086,11 +1168,11 @@
 			"path": "modules/import-export",
 			"requires": [],
 			"hasStoreComponents": false,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-9d1cddaa6badeb8b7f749e043c3e9d5f696475f05d750bb0f8ba2e894ad9a57c",
-			"subtreeIntegrity": "sha256-724697a895649864004c13983f92007ab66ecd132457de6d1af781623e07a457",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-f23d109f3bd1f911cded431c2eb04b0508ca2f1603a0da841f581be2cdc11a5a",
+			"subtreeIntegrity": "sha256-641e9a4660f38d4c3d7c757e14b0696bc43827f771dd07257c54a365da63a95b",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -1110,11 +1192,11 @@
 			"path": "modules/instagram-shop",
 			"requires": [],
 			"hasStoreComponents": false,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-3f886d02a52ef343d9358c5abb0d250f08f378a60cf133a8447ae08aa511bfd2",
-			"subtreeIntegrity": "sha256-5a2633eec6a62b276291808153530d4ad1bb7f74a4312304f4db3efc266cf1b0",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-46efa2b0092669fa8999aec6597c45f353012e49252d05997d22eba812f557b2",
+			"subtreeIntegrity": "sha256-28409fb390d14a57c43826421d8efbed3ccc4fea1f8f4cb9e8c314b68fae8ee6",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -1134,11 +1216,11 @@
 			"path": "modules/inventory",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-00fdccb96c6e2fda1b0518b3a300ee53800b87c689fdd6282df18b063597929d",
-			"subtreeIntegrity": "sha256-8b91c42a73e160fb50409606f88a5985d41d6e60e6027ddfc76b1d26a78ee86b",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-b552cbd0270d335e669fd85bdb0a7e8a06c5f38b1530f0332af781d6b2c4be91",
+			"subtreeIntegrity": "sha256-8dcdacb6ec43e8ee1f9d47337e2709697b214e75d7f8dd7d5563ae488691f29c",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -1152,6 +1234,13 @@
 					"versions": [
 						"1.0.0"
 					]
+				},
+				{
+					"name": "inventory.checkout",
+					"owner": "inventory",
+					"versions": [
+						"2.0.0"
+					]
 				}
 			],
 			"acceptsCapabilities": [],
@@ -1160,6 +1249,11 @@
 					"name": "inventory.stock-adjusted",
 					"owner": "inventory",
 					"version": 1
+				},
+				{
+					"name": "inventory.stock-adjusted",
+					"owner": "inventory",
+					"version": 2
 				}
 			],
 			"handlesDurableEvents": []
@@ -1174,11 +1268,11 @@
 				"orders"
 			],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-4b52ace338371ecc61127c3da99e43f64e63def863310b77e714e41631829cdc",
-			"subtreeIntegrity": "sha256-90e7994cf63f9d4f61306ac0b2ce44cbae7a1886be3a2338b026565dc54c2d82",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-0bcf1d70aa6540a9ece66c29306969d5342c56a9c899540bb48fbb1fa6882e6a",
+			"subtreeIntegrity": "sha256-79e995dbeb2d6760969742a4d0578542222c0a42822f4d7b37ca8afdb1cbbfbd",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -1198,11 +1292,11 @@
 			"path": "modules/kiosk",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-9598174d92b96d54899115d8d981186b8d202cbf6cafcc37d519830773dcc844",
-			"subtreeIntegrity": "sha256-c3b2aedac1643e99f18d7730493e3909a5d40173c958e6efe56568d4185d39f3",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-07354098cd9fccd3461f0261f9ab7f5b48fe46bf60daf520b32e56adaffc4fc5",
+			"subtreeIntegrity": "sha256-d2d9406b99b16ba1415f8e19674b9f36048a63d62bc68e548be8a82c8af67e5c",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -1218,17 +1312,43 @@
 			"name": "@86d-app/loyalty",
 			"description": "Customer loyalty and rewards points module for 86d commerce platform",
 			"version": "0.0.1",
-			"category": "customers",
+			"category": "general",
 			"path": "modules/loyalty",
 			"requires": [
 				"customers"
 			],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
-			"hasStorePages": true,
-			"integrity": "sha256-f4134d82621c62564e6838b9a7bf0c7956d0ab1459845c90d90775a89f25dbe0",
-			"subtreeIntegrity": "sha256-eaf7a5b01caa4c8c46187a79c79d7f7a0ec56c62c36ba4a45416ac362a29a223",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"hasAdminComponents": false,
+			"hasStorePages": false,
+			"integrity": "sha256-c7eb3f1fe55ba19a6f3c4e0ac336783bd98ff2b82c3c96ed99704d449a6a34c8",
+			"subtreeIntegrity": "sha256-bc60fea746482a7f00f9784be6c4f4d76f72a382842a2b180b18ae0db2e6544b",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
+			"maturity": "experimental",
+			"maturityEvidence": [],
+			"runtime": {
+				"storeRuntime": "0.0.4",
+				"moduleContract": 1
+			},
+			"providesCapabilities": [],
+			"acceptsCapabilities": [],
+			"emitsDurableEvents": [],
+			"handlesDurableEvents": []
+		},
+		"managed-payments": {
+			"name": "@86d-app/managed-payments",
+			"description": "Cross-plane managed Payment bridge for 86d Store Runtime",
+			"version": "0.0.1",
+			"category": "general",
+			"path": "modules/managed-payments",
+			"requires": [
+				"payments"
+			],
+			"hasStoreComponents": false,
+			"hasAdminComponents": false,
+			"hasStorePages": false,
+			"integrity": "sha256-e222eb1a7fa2899b7260ffda7fcc071ed0d034f3378b21033453c4ee7edb245f",
+			"subtreeIntegrity": "sha256-c772cd5c7c69c3ea7f5ba9cf97a5955c444bfe95129c6665e982936214747bb7",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -1248,11 +1368,11 @@
 			"path": "modules/media",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-0a7aeebf1d8de0c9ff2f58117cb565845f2675ea576080118c54e8d56d6cf96e",
-			"subtreeIntegrity": "sha256-d9423843ec6d9c13f326ed7f27ae93770123f30be9cfd6299c53f0461701db89",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-4be6f300734086cf4c5dad8ce19b86bd2b4bdc3afbad60d5e9d93057d49b4bc9",
+			"subtreeIntegrity": "sha256-8632ef17cdb01ffaddc444be60af5cf79f2e9a14a592541e02214a2031af7c44",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -1274,11 +1394,11 @@
 				"customers"
 			],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-24f1343941559db80adcf2809882c6359dc20f09f7fbb83dd48a1100f70c20fe",
-			"subtreeIntegrity": "sha256-638dbbcfdfbcb9ce2112118e69e4bb8bb775af562601aad3e090c46e4207f808",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-8861454eaded44f4a68f6ce08cbdb71e9947e08eae630c31c7556ec093197c7c",
+			"subtreeIntegrity": "sha256-7d96eca2881a1839d6b9a2160fbfaec0ed3e08e5237b40baa5056e4787591d19",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -1298,11 +1418,11 @@
 			"path": "modules/multi-currency",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-bbe053a31dd8aaec2b3dee0e5d259d0dcd0fbd18fb6a99c74474a00ba6895a23",
-			"subtreeIntegrity": "sha256-1e649584c346aa94bcfd527e39670559538204dcc46091421c272efc0a3a9922",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-ac0b408eda777fb377723693912e2aaa9b7dda8e58339b0a17b2f51ebea1c6da",
+			"subtreeIntegrity": "sha256-e187ac4d20a697317d6e18fbb2621a2187c9c57e12d3cd68c3abae1efebab3a2",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -1330,11 +1450,11 @@
 			"path": "modules/navigation",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-2b52bcb34e45a17362d08314eb345b5c45c4d24cb6484fb9c5a451cf7386dab4",
-			"subtreeIntegrity": "sha256-c479379569eb1bb985112289305101caac3e0a4742586011106a2dd072c1d151",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-82d653e132e4c3177b4f5f3ef95d45d246c146aef10225f77ab8570ee171c2b4",
+			"subtreeIntegrity": "sha256-2ade1c1197ceec152ae1a763b7fc7e4bbfdb1c9f5842ccc3cfaf555b37987827",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -1354,11 +1474,11 @@
 			"path": "modules/newsletter",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-04da0f9125832afc4bb02a80041020f871f6621d4d9038e73448691dbe0e1af4",
-			"subtreeIntegrity": "sha256-738840ae27c04316705a989aae583409e512f4853dffe180d2cd66020c0ead50",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-7695e8c6ae584cbf24a73147b9bcd96b9ecca3321a924d8f7f70ec1a95db1ab3",
+			"subtreeIntegrity": "sha256-015193e506f674e65b6fbc828ce69d8b9a48a86928b6a3019a6bc8a5537cdf75",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -1378,11 +1498,11 @@
 			"path": "modules/notifications",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-bea62815d20be8aed037a38b9d9d7662baff311cbe0edddebe4d7186ddf9247e",
-			"subtreeIntegrity": "sha256-546d280d5b538ab50e45fe7918e6551e26f7024b602cc850e12d69c7c1fcb37f",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-d16d997720f8bad6d3d504b080d0fd2c753ee84c9bddc856ca69f1a8d14f2995",
+			"subtreeIntegrity": "sha256-a23ac1c4d29d2b2aa4f6fb8cfd3be1f78d173f8ceff1088472a74a4040c4b2fc",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -1425,11 +1545,11 @@
 			"path": "modules/order-notes",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-92841d008606e6e57b2f3f95d02b9b88ae45cfa8e160c3265a9a5fb4af0a5f62",
-			"subtreeIntegrity": "sha256-0f6c95b692e67a09aa3c9cbc8119486ec466cc5c52c5edfd9bec9165cdf3d729",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-6d907fd9db6bbe936d9bf19c4dfa2747d752e42de48a13c13133de80449c7cec",
+			"subtreeIntegrity": "sha256-1fd64acebf4d367845eaa4228465a26fd1f72eaf45e3b160916d9500cd65ee84",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -1457,11 +1577,11 @@
 			"path": "modules/orders",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-795686b47e75427cecc5e4046a762194633407788ee454511437fea63c9918c0",
-			"subtreeIntegrity": "sha256-e7e4642def9bc7c595ee7922d69708951c4e2d0cc14b82db9e6d9891cf969c5c",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-ec0a93edbe80d511e4b74d022eb44db9f100e7830217d9ba9666e3c6748e781a",
+			"subtreeIntegrity": "sha256-63e4243edcb3dd9a166fa49c6709a60d6d911bf9e18ad613a90dfc5e3b815201",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -1478,6 +1598,20 @@
 				},
 				{
 					"name": "orders.customer.authorize",
+					"owner": "orders",
+					"versions": [
+						"1.0.0"
+					]
+				},
+				{
+					"name": "orders.guest.authorize",
+					"owner": "orders",
+					"versions": [
+						"1.0.0"
+					]
+				},
+				{
+					"name": "orders.line-quantities.validate",
 					"owner": "orders",
 					"versions": [
 						"1.0.0"
@@ -1519,6 +1653,20 @@
 					"versions": [
 						"1.0.0"
 					]
+				},
+				{
+					"name": "customers.identity.resolve",
+					"owner": "customers",
+					"versions": [
+						"1.0.0"
+					]
+				},
+				{
+					"name": "settings.presentation.resolve",
+					"owner": "settings",
+					"versions": [
+						"1.0.0"
+					]
 				}
 			],
 			"emitsDurableEvents": [],
@@ -1532,11 +1680,11 @@
 			"path": "modules/pages",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-760f268331d8fdcfba9f31ecf592382c25275010fe295993b3625ed91e7cb7a1",
-			"subtreeIntegrity": "sha256-8681d0f6841260f739e8b08b54156c9adf59866bb13bb3b2ebd8788c25daede8",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-6ba1222c434fbcc6f13e202e4a887680ce8547fd831b8e546677fba5590a4f64",
+			"subtreeIntegrity": "sha256-ccaf81d18258f46f34708bb8d2bba68a63409ef99d37428e096917f8c525df8c",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -1556,11 +1704,11 @@
 			"path": "modules/payments",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-4b77d956addc328a7eebb99228751ebe9529da9e480d8b9c3c55c4f323a9550e",
-			"subtreeIntegrity": "sha256-39ad633c40565fd71313375efc288ab3ddfb283f1d4f5252670b203d819c160c",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-2df96f439ca55f092b4e9ceda0c1e1eb42288ea59638349bffcab717f218166a",
+			"subtreeIntegrity": "sha256-31b19f9851cd78a6f8a8a742c4000d20c8f865e79220fae69ffa7b25b5771dda",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -1584,7 +1732,13 @@
 				}
 			],
 			"acceptsCapabilities": [],
-			"emitsDurableEvents": [],
+			"emitsDurableEvents": [
+				{
+					"name": "payment.transition-confirmed",
+					"owner": "payments",
+					"version": 1
+				}
+			],
 			"handlesDurableEvents": []
 		},
 		"paypal": {
@@ -1595,11 +1749,11 @@
 			"path": "modules/paypal",
 			"requires": [],
 			"hasStoreComponents": false,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-9a10bbd971aa3590ce438e9a3370625d419fa781f891fb0af059f5dafd17f220",
-			"subtreeIntegrity": "sha256-ef9f233f0976780b7ffb662609166e61cede33a2950e862ad89112a011a4066e",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-7984af67d7d92229ccfe5d9a30dbac8088473730ee1bec9626cbb7bebad9b8f8",
+			"subtreeIntegrity": "sha256-416432bada476bfbcb45bc567e59fcb8e7d23943026a23aec08a38bdc4443e9f",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -1619,11 +1773,11 @@
 			"path": "modules/photo-booth",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-1ef9eff6f41a407b7f9c2d7ead5909957517cda1f7d9626bc7d1246caef3b4ad",
-			"subtreeIntegrity": "sha256-379b88fd8c15132c4b32def4743c1aa84495e04dcf13ae73ce85d379f173e040",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-9e376db136af3184032fa4513fb0922edb2f47752520f242110dfd37cf2ab913",
+			"subtreeIntegrity": "sha256-8d763df7ddfa0202f37ef1f953877224ebb5805aaaaec5ed2506177d632941b4",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -1643,11 +1797,11 @@
 			"path": "modules/pinterest-shop",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-2b592728a0ce4fc2c5dab546c1a4d3915272b4c87802301aceb67ec8cafc185f",
-			"subtreeIntegrity": "sha256-8eb9fc9268c7f2ca4791e40dc7d5494f21966326973dac8b638b9b70b1bf4906",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-5d1aaa31fe052ae2ce7e2ae044028bf970b0ae8867696dc2a9eccd857076bb1c",
+			"subtreeIntegrity": "sha256-dc96c0a49435d5b438409ec50e8828b9814652207ccddad639f86afdda8813e2",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -1669,11 +1823,11 @@
 				"products"
 			],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-432320ac6cb43eda9a1ae20ffb56986dbd04e28eee1683ad53413053fedd06f4",
-			"subtreeIntegrity": "sha256-07d8681fe54b4fc36693293ab394b6576a02fc31b677694c8fcfc32f98a5453d",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-8c1450a1690a51992b92d85f59c8524deb276658968726e36862d3e11a029196",
+			"subtreeIntegrity": "sha256-8921bcc65b7f9e543bac36772b63befcb439168b25d03725658738308655d67b",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -1695,11 +1849,11 @@
 				"products"
 			],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-2baafd81c6fbccc9f1ce7d90753b4e00a1915dba2cc9246886eb441a7b7d8c69",
-			"subtreeIntegrity": "sha256-92dd95dd85b3f0a9fb97e2b7080f752bbe5f6eff88202ff358b9103d5d9f500b",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-64c794935661e5511743470afce768e0b09800c045a3dfe5f30933eb88364794",
+			"subtreeIntegrity": "sha256-ec05fad0a3ab70d709a7ca020ad0da1be5014335f8414398b703d4aff357c40f",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -1727,11 +1881,11 @@
 			"path": "modules/product-feeds",
 			"requires": [],
 			"hasStoreComponents": false,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-1911db6866acd1aa6f39f3cdebe0ba893b962da63477f6140221f493945c8827",
-			"subtreeIntegrity": "sha256-d523b5ec1d5790c82bdc7c79635c5b1a78d80457c0d6b16837b57630ec648fe8",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-1540e8cce627bd5bcf12f708a90dd65aa8b479d553f9ff60b273399e02a5fabe",
+			"subtreeIntegrity": "sha256-7aed50f828aa989b59addbe38eb7efa5beb1f867c223d22c5f31d1f341fc8c9d",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -1751,11 +1905,11 @@
 			"path": "modules/product-labels",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-c3433cd36638df217076fab9fbba1bd4732df32fe515f328a6ae53d37b9386ae",
-			"subtreeIntegrity": "sha256-31841eff3244675722d07c1d6ff4533177495f2939b9ada5d60bb0085edd61f7",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-85d2dfde7202248fcb46dc029c2cbef3bf9dfd359358cc0275a94aa94de403d0",
+			"subtreeIntegrity": "sha256-941abb6328fae21df9963fe65c77fcc85a79ecda4134c6d5dd7278297f2fe0d0",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -1775,11 +1929,11 @@
 			"path": "modules/product-qa",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-72151773405cd48fe48b3ea327b7c2bf5606f9fad6297597de9d56c81577de33",
-			"subtreeIntegrity": "sha256-49e6148bad089a1d35a33421fd838f75aaffcc2ae5e96796d4f6d945c59a5d6f",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-6ecb0540c98a3284acb8c31c2df7b504e39282c08c30cc8db9ef3c1e4345c8e8",
+			"subtreeIntegrity": "sha256-6f90053dc67e80049b4c50e7e33f3f05955091e76a94c1077e28e090505e6d20",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -1799,11 +1953,11 @@
 			"path": "modules/products",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-0d7ab52560435b407fba2501d4cc2c78b12ef6399d302b3751de6c53f5e69d7e",
-			"subtreeIntegrity": "sha256-4f020e38a9368bfe8da6c9451cda8afcd450bead9da9cc7e0fcb3fdd97569002",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-0f150517eda6d74bc64748c527efa6b4d3cb1d14059dba706b90068d8004991f",
+			"subtreeIntegrity": "sha256-bb1eacd80609b51650de8292a381c254dd887ad0ad124b8ec584026e3cba8947",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -1828,8 +1982,20 @@
 					]
 				}
 			],
-			"emitsDurableEvents": [],
-			"handlesDurableEvents": []
+			"emitsDurableEvents": [
+				{
+					"name": "catalog.published",
+					"owner": "products",
+					"version": 1
+				}
+			],
+			"handlesDurableEvents": [
+				{
+					"name": "catalog.published",
+					"owner": "products",
+					"version": 1
+				}
+			]
 		},
 		"qr-code": {
 			"name": "@86d-app/qr-code",
@@ -1839,11 +2005,11 @@
 			"path": "modules/qr-code",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-75ff20e9c2a712b62fa276d3156827b221a97b9abae4035bd331d87e08d1e03c",
-			"subtreeIntegrity": "sha256-664c19d55e4c7ef7996243acbb118e22625e78c72fa2cfc4d8db8a1295f61ca8",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-74d853e7f91e3eadfa17d1b8f70d5bf2e84ce05bc033a7d2d60b18964a53765b",
+			"subtreeIntegrity": "sha256-ded8246935e38a4ee93eebe3090cd40884c06fe08ecfc6ff91de31165de18d53",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -1863,11 +2029,11 @@
 			"path": "modules/quotes",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-20fee8bcda48a18efe533202985d7a3cf8881ffa26a32309cf39439b0437abdc",
-			"subtreeIntegrity": "sha256-e05c23a36cd1c5798e427d965da7118fb79b1c5ea72a1eb6bb50204ce8c190f9",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-a84fce1a2cb8633cb6c318e1a8a842d4f5dd2ecbad6eb043ac7dc8fede34c6d0",
+			"subtreeIntegrity": "sha256-42a0df72972a1f1fc1102aae43e9b29d47430ad47496fb14cd59b862c64722b0",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -1887,11 +2053,11 @@
 			"path": "modules/recently-viewed",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-846b4db1589d87a44925ac9235efb815ba2d9aba1cf6dad75c3c766e928633a9",
-			"subtreeIntegrity": "sha256-4b218263d81943fd4601094d9be2dd2630a79eaaf7946482fbbee37c4378a447",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-35c805c2a38a8cd2eb9d483e199698e2919d32a18318d969d61b19dda44d0577",
+			"subtreeIntegrity": "sha256-ec9f01827ba9165f22805c1efd776bf82141642a44a9c14b7b601c042be1d8a7",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -1911,11 +2077,11 @@
 			"path": "modules/recommendations",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-2fec50452e52fd42fb42fa7a615f7151122d02249f25599afc731f112cb1ffa8",
-			"subtreeIntegrity": "sha256-c1b985be34c177218aa8f8aaa98394555cb23c40728506778e2152abb975497d",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-e80af07503bd3703f18e972d7973f385b298047583a1315ac30d847fc4cf3abd",
+			"subtreeIntegrity": "sha256-c644e6f9cffddffa1e9892f6130b73778ae178b38002406d9438f433cdeeb29f",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -1935,11 +2101,11 @@
 			"path": "modules/redirects",
 			"requires": [],
 			"hasStoreComponents": false,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-fc9e36ce40bcb5cbdfdb7b0a507264f5eeb72140ed5f77978bdc4f7d633feaab",
-			"subtreeIntegrity": "sha256-ae84c022ba93e08c77f4fe620164c3656c3205bd3de4201fc8be2c69c97ea84b",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-b2d8c20608827f7924cab8037e5884c5fbc3eb3c97ba4bd0e41b1b9722625eb3",
+			"subtreeIntegrity": "sha256-486264d125b029d6076afe6edf219805140f76eac05bbbd894cd1fc6452c4663",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -1959,11 +2125,11 @@
 			"path": "modules/referrals",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-ce2d3562835b96622fc3356f317477f7a39e0cb51e41ee666d2d55a076969af9",
-			"subtreeIntegrity": "sha256-61fcb0cc2d1be4e5e040a4c94ce257c3c3b2ff58cac591b1ca85c450dd50a59f",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-07fe2577a6441a046be1fdd7c1d5e411f82af4b46c589f3e9082207071d56811",
+			"subtreeIntegrity": "sha256-a809618ffc9fed10dd3235a5768c23ae7d64869b970a0b71a4d2f3e276117a3b",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -1983,11 +2149,11 @@
 			"path": "modules/returns",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-f847845d42a6f7bb1e5b06d9833adb49d07528d310232a47f52590b927a38cdb",
-			"subtreeIntegrity": "sha256-da7d81e086c3a8c551fbbbd9ee8303d0bb3cb81840e1d9690ac0d3722451791b",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-8689fb04a29431fcb212919aabff6d1d181707e20d955d4fcaad575847716ba8",
+			"subtreeIntegrity": "sha256-5e68a1d47a773f7687f430eaedb14d192383699cbac1758a7c9270a36808f798",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -1997,21 +2163,20 @@
 			"providesCapabilities": [],
 			"acceptsCapabilities": [
 				{
-					"name": "orders.customer.authorize",
+					"name": "orders.line-quantities.validate",
 					"owner": "orders",
-					"versions": [
-						"1.0.0"
-					]
-				},
-				{
-					"name": "inventory.checkout",
-					"owner": "inventory",
 					"versions": [
 						"1.0.0"
 					]
 				}
 			],
-			"emitsDurableEvents": [],
+			"emitsDurableEvents": [
+				{
+					"name": "return.requested",
+					"owner": "returns",
+					"version": 1
+				}
+			],
 			"handlesDurableEvents": []
 		},
 		"revenue": {
@@ -2024,9 +2189,9 @@
 			"hasStoreComponents": true,
 			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-b06a0a6711372fcfa4fbc857ecebbf5b1969b70b5b33425c3ff42e4dcc38563c",
-			"subtreeIntegrity": "sha256-5149f61dc38757e23b9b7d484bfe79165470043b6af3658dc4c604a288753e22",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-1a2c462b5b989168bdf5d8eaf77b3b7cfb95b53a544a47aea5a98d8b72d45e43",
+			"subtreeIntegrity": "sha256-bf6fe84a2fa351686256ddb904762c99984b630571eb42057ae9d5a2245b98ac",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -2054,11 +2219,11 @@
 			"path": "modules/reviews",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-e41af968f012e245c93355a0e1ffb9dfec7126ad94c50c792836a8c932eb996a",
-			"subtreeIntegrity": "sha256-6c515a75246ff0cbe7cd748591e2b89039890ea627b07c495fd0eae145abead0",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-73aabb12b029e5ba5baf108153ca5ae3907c30a5258fef6548897522f4cfa5cf",
+			"subtreeIntegrity": "sha256-29f6ddbb7ae743059f0041e2f5842b8a0003275c80b6709f42edc641e27cea11",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -2086,11 +2251,11 @@
 			"path": "modules/saved-addresses",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-b7a3092f6e69051ab8852f6a7fb9ff11684a85080203226ae740965cf61f81f3",
-			"subtreeIntegrity": "sha256-277fc6b4309642d59c4c0301ebc58e75eda92199837ee5136f86874b5f9f8746",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-a84df64519a86c8b83a12c450ae20440e00d2080892c9bc8308f6953e5f1d302",
+			"subtreeIntegrity": "sha256-a7d609f8a64aa4e22fd939ae58ada2bd6ad46c4327922441cba9e497cc795fee",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -2110,11 +2275,11 @@
 			"path": "modules/search",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-81ceb313dc3329cf9323e68bc8a241c16eb9c132aab036263c8014a82f107847",
-			"subtreeIntegrity": "sha256-bcb928325cbfca95785d61e6c6b178c142cedf2a737f6280d0fc7c4fcc452bb9",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-d2b8cfea200c1862a70ec7a7ed82e49cd10e95ef6b9bcd5a1a6f324fdbc602fd",
+			"subtreeIntegrity": "sha256-00bcae9be4a940817330521e1b7f1243d6b3ba51d42f16b3004d1f153d94df42",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -2134,11 +2299,11 @@
 			"path": "modules/seo",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-d001614096a3b68f53bde70c839d32fb9ec639a9691910a7a8190d0de2929e31",
-			"subtreeIntegrity": "sha256-9cac745d0a40dce62ce81a3d19ac43e039593d2c2acaf9ea9703e2e6c67cd453",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-795984a5aa9f6fdb5c71fe50c16f2af0dd32fc959c285b385a4e1dd1b2821c32",
+			"subtreeIntegrity": "sha256-45c963f4678330903046c8135fb10b6ba840c68647c2f83d992d1db1efc4db59",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -2158,18 +2323,26 @@
 			"path": "modules/settings",
 			"requires": [],
 			"hasStoreComponents": false,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-2ac996dbf6eb2588dcfcf58879886f668ab0fc34e36fb4cad2de8d97e5a4e4d3",
-			"subtreeIntegrity": "sha256-e5f1c586c71432728a2b9b1663324afe6048cca9f365871498e7a6caf4cefcf3",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-b295a18f889f9649b747dd5f1efb2956dbf4ad0ff60e19c846ed85892def5fd1",
+			"subtreeIntegrity": "sha256-1e0e3069a84d579b68c0aa82d0011d5c2233d9f9d2c51e9f8f242473c5995d5b",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
 				"storeRuntime": "0.0.4",
 				"moduleContract": 1
 			},
-			"providesCapabilities": [],
+			"providesCapabilities": [
+				{
+					"name": "settings.presentation.resolve",
+					"owner": "settings",
+					"versions": [
+						"1.0.0"
+					]
+				}
+			],
 			"acceptsCapabilities": [],
 			"emitsDurableEvents": [],
 			"handlesDurableEvents": []
@@ -2182,11 +2355,11 @@
 			"path": "modules/shipping",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-71595ff6914c273d03a809a3b42d4b3ba0354a84f8259d6c66ee0fd882d5494d",
-			"subtreeIntegrity": "sha256-69c202d5a364844b416c529d2fcccffb622720a7b964a4ffcfb871e168cfb7b0",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-5cf9c9887950eff7f1bb52b8275d09cc1811088f527b5cc3a1a2a16333db4ec3",
+			"subtreeIntegrity": "sha256-5f51578d2e9ece6aead12ed8608b5eef32472c4e157b65949126f2a82abf2a23",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -2222,11 +2395,11 @@
 			"path": "modules/sitemap",
 			"requires": [],
 			"hasStoreComponents": false,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-68f0c1ddae9213fff6fb98d3b2c1103ae84157c97be3bfa4513f34f49d108cdd",
-			"subtreeIntegrity": "sha256-2cf6a65762a36a95ea2f34821374b3b79751bc183791970548887a51450eef86",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-5d8809f23e0fc9d4a1cd5ae2a35043bacecdeb642d7c667b39c427b982cf0637",
+			"subtreeIntegrity": "sha256-dd2b2de364fe760fe1ee35184579341f7c1fce7a7a64069bb043258f245219f7",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -2246,11 +2419,11 @@
 			"path": "modules/social-proof",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-d932f47eb928cf09a88bb5650aad8c40d1ba8f1bba2b85c4791981bcdb9b13cf",
-			"subtreeIntegrity": "sha256-99f2641f552516087503464b3df83ff3faa646f2ade1dc24e94fa244f6275645",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-fe9d17e8bb9ad492ce5d0878e9075105d84a8a269739e9c17f8cabde663c2282",
+			"subtreeIntegrity": "sha256-54d9767962499fdf6cde36ead3fdd59926058632dcceca19ef9513a0ee832a90",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -2270,11 +2443,11 @@
 			"path": "modules/social-sharing",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-48b14c949463a704bc9a8e73997a12e2844195f5c9611bd15b22779c383bbb87",
-			"subtreeIntegrity": "sha256-a1a410982318b06f1871c25d8bbd2fc3bf8071cff9017ec4c6c356189fbf1e5e",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-72e4dd1a581d6eda3b7b1b6b0459e85792cd4fc9d1c88bd0ffa386e6d453ac5b",
+			"subtreeIntegrity": "sha256-82030d6d0f9333649c938679af04f5464b849d65b82cf48bde1343c43ec0a4aa",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -2294,11 +2467,11 @@
 			"path": "modules/square",
 			"requires": [],
 			"hasStoreComponents": false,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-38369c98025947aa7eb23715bff034dfd8950479d0b1a1d6eda8e82dce2b9ed6",
-			"subtreeIntegrity": "sha256-84bd9e6aecd3ff697bc5ad0e14e5378fd55c39728d5c8e9123804528a220ca58",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-54daf5d724dacad133c31537f67b4b2c59d89297d8a99000ca70b0792f7a4f6d",
+			"subtreeIntegrity": "sha256-aef3730cfe0ec95c1021c62db32051b822cce5f3705d40f64143f90590bfd75f",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -2318,11 +2491,11 @@
 			"path": "modules/store-credits",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-b6588647bcabecdc271c9286d64f1d58cb3dd890398f5964c8cfda560557ba6d",
-			"subtreeIntegrity": "sha256-8b191fb3a91b0418ee37f6f43aa4f3292ef62d1b78993a3c835d6657434fbc10",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-3a550e8b5450b5e1057f7eba2ab376c22af16420f6ae1927fa857e463742f8ff",
+			"subtreeIntegrity": "sha256-87e2303f889c5fbd299f6bf3bc017c6cfd6be9be5216a701d1ccf463a2c01d35",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -2350,11 +2523,11 @@
 			"path": "modules/store-locator",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-78d45aabf0688358b4a3c1510e8f2ddaf6221756eae79267b21af7af352e876f",
-			"subtreeIntegrity": "sha256-98d78532aeaa808d2b15681e89c76f8fa5c180d4f16bd4a0aa244f24535c2bfe",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-0d782355ca7d3edda1e2e8cf39b30e73bd9c324e682faa5282ba523a41eda1e1",
+			"subtreeIntegrity": "sha256-03d5afbb35788b941d4a23905e1e53dc0619ade44437108018ee08f420e921f4",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -2376,11 +2549,11 @@
 				"orders"
 			],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-d9bb6fc4cab7f6f6eef51543ab58f504d5ecdd9a19bd93f06c5000a73a323248",
-			"subtreeIntegrity": "sha256-15c38852991e758532288ed165bdc899645283e3f52677c7885909fff617152e",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-14f465d1ba8b1a19785b4e85f87194fa20b604fd1d87622c099f72c676b6bbe9",
+			"subtreeIntegrity": "sha256-21b3d526d6318d82c9acaa9bf7925c58f231a60f3d42ece4ef72e5eb5506a53e",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -2400,11 +2573,11 @@
 			"path": "modules/stripe",
 			"requires": [],
 			"hasStoreComponents": false,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-a6e1e04b01f167a8613fb5af751db5eda4dd8346c9b10652c3f8d3dad6d36009",
-			"subtreeIntegrity": "sha256-c347abcc858a0793068069580274d0ffa8df1d6792ce0a52e2895436e838334f",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-8a57bcb7a68850aae206cd04ec97c2b211dcb1baa3eab000765f54f429b95b80",
+			"subtreeIntegrity": "sha256-fee6d20be41bfd36f65efcb43383e1d3fa6acd194fbdc702238e49e6b4c4ebba",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -2424,11 +2597,11 @@
 			"path": "modules/subscriptions",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-870371e0e25b06c7afbedba94895bdc5e8c5bbdec80ddc6ea8c58fca50d3469e",
-			"subtreeIntegrity": "sha256-188bba92dcabc4305d874160b74d0027ed95a34010a47073e960ba41dd3a04ac",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-7f47860b78d7b7fe41a4c3f9339854650183ce556dfab2c173f76f5c77f520a0",
+			"subtreeIntegrity": "sha256-72c20cd50c6b2d567787d6295c90af74d78a52e64657342f8c01b6872e30e42c",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -2448,11 +2621,11 @@
 			"path": "modules/tax",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-4813d60d1f78cb3bf009fd5752c1176b8280c99d53ee132684f5481a22397034",
-			"subtreeIntegrity": "sha256-b12e032308ae122ce360ab2d412133617c628f6a62095b0e8fc216c2d04fff8c",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-956c91ab57159d146877ca2d857d7775022f4222fc5e26a627140528d730c80d",
+			"subtreeIntegrity": "sha256-3ebb0c978e7a6a9700a9d2886d882f925419b1d4dd7d9cb6b3cb77ef55043a39",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -2460,6 +2633,13 @@
 				"moduleContract": 1
 			},
 			"providesCapabilities": [
+				{
+					"name": "tax.quote",
+					"owner": "tax",
+					"versions": [
+						"2.0.0"
+					]
+				},
 				{
 					"name": "tax.quote",
 					"owner": "tax",
@@ -2480,11 +2660,11 @@
 			"path": "modules/tickets",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-60ca49febcf9297c1a9fb43ec1dcd6111e4b559f89fc05c1281358425483a537",
-			"subtreeIntegrity": "sha256-20a8446d575ca950cd4082029ef0e9cd0ee89bc3090a0be9da6dd6b7deb92b89",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-0755516d99c328d4ea36ea5704b3fc5d6d8ce1c25cd8079d0776fa6431903f56",
+			"subtreeIntegrity": "sha256-ef886b519487fa607be73c1e39f4fc38a0bf15a363145d6d8bdac5a2cc97e8c1",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -2504,11 +2684,11 @@
 			"path": "modules/tiktok-shop",
 			"requires": [],
 			"hasStoreComponents": false,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-693c09e1bbb408685fc6dbc256e6a2b89528f39187054a9afe44eaac2b0c7171",
-			"subtreeIntegrity": "sha256-ecd13dd37b062498b5bd6513607d4b3f8b003cb3e4f86470c65ad2612d830dfb",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-e60d33ceeeb13406b8fc600f69a2eda35ae8368e85d668969f70b0d99cde6579",
+			"subtreeIntegrity": "sha256-5169daa5de579958c08ae7376f6ed2317267d15b62df862b0d8b91b4c7e966e9",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -2528,11 +2708,11 @@
 			"path": "modules/tipping",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-bb81dca65eb59dac634eaac8a5792241017238b3c1974e86ee1aa4db54977980",
-			"subtreeIntegrity": "sha256-d00df4f09b9deca03ecd1fde5740508d860b52960d21691948b6210d3dcc7943",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-fea86a46d513f916c487607c3d932c651bde7bf4433881671267e6f29eb00f1c",
+			"subtreeIntegrity": "sha256-8328bba448c12a253854a2f94333948c6ce795b47ebf5f2a8a1532d2371339ba",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -2560,11 +2740,11 @@
 			"path": "modules/toast",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-60697bf8cefab575d617986c0b817c765fa36091a8e55a4a0e675b2dd921b8e9",
-			"subtreeIntegrity": "sha256-0ba3c4187e580b1c47a315cc6f7fd99cd9954d780f77e9236aa5df8a11196745",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-f68b710e3333c3e9f845e300119c4c8ea5b4f57a7ff0e7465b30831be9a87acd",
+			"subtreeIntegrity": "sha256-ac8a9cdf8ba8b801f0166cdb1879ef340ba7432638358fd4ecc255c576edf185",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -2584,11 +2764,11 @@
 			"path": "modules/uber-direct",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-f70f1893e26872a81ee6111a7e138f9a2f8ecf61b38e5648e8e1df01f02715dd",
-			"subtreeIntegrity": "sha256-f054ea5bfda9d88bb15a58758ad877d226df2945ce1f43de8120f9b8181a421f",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-fc823db7f1688a8686e6c30d6138114710cd04c9570f15a46bdf9c5e11d05920",
+			"subtreeIntegrity": "sha256-ca67c028401b18c354504748f07e4aca4fe682c54f4322cf8169b7e777e4ab6c",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -2608,11 +2788,11 @@
 			"path": "modules/uber-eats",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-423bd773df2c39c8f67131518fedcd730f88b6a7c7833095bc8504c911c99af5",
-			"subtreeIntegrity": "sha256-3133867338917a801cb8f8f7d4a6cefcd46e4f5439b66197d95e8d80bf4398f3",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-b7ce2ba9153b51a136e0b22147d425c482e2256639cd1fb6edfa1dffe94cd736",
+			"subtreeIntegrity": "sha256-b3a435d52d71c23a6b83d4aa53b7e4a97687129ff0160429d8d484e1b78c0203",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -2634,11 +2814,11 @@
 				"products"
 			],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-098f2ecca1c0a594a31100d0ebcac6828db060e9b9ca1c85d4eccc456bf25475",
-			"subtreeIntegrity": "sha256-edbc7fd36f57ed042a3b4d93d6cd99b33d19872cb1df0308af99fe9fc7232a90",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-8ab34a23247db136c874cd6cc3ecf9b570a405182b626e3d6f8c27c9f4acc768",
+			"subtreeIntegrity": "sha256-7da7ea1b537aed7b9c40901e403c751fdf94c4563b4c755b2996ae97a10a56a4",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -2660,11 +2840,11 @@
 				"inventory"
 			],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-e33e73f14fab18f4b48985aca6a2833a9c42678c38bf4548002f2171279b207f",
-			"subtreeIntegrity": "sha256-c0e425580f1a221f834a6fece450cfc967e0de132606aaf0a1840c51b18e5789",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-5bff60dae8304354537bb0251b2d700f0abbf8a44dca80538e8e2ca84d79e38f",
+			"subtreeIntegrity": "sha256-2eee15b9729bcbfb929230ed35127cf0ea0058ba1fb1a47f417cf741ab62873e",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -2684,11 +2864,11 @@
 			"path": "modules/walmart",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-f2ffcce3f428cfb39c2ff6895d03766203848bd092dfb146cfc3d7378ec66154",
-			"subtreeIntegrity": "sha256-5670072f72a6f51cf56d0dce422d04a1ab6ea6f5f10c4f23400ac866506013d9",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-05f812b2403fd0acce575b2054031bf8d96c7b919ab4b020f763bfe76f0e8ebf",
+			"subtreeIntegrity": "sha256-eb8995b9dcce3e901fbb2ad9d36928b21f2dd831168e97f1af6a360c4019c007",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -2708,11 +2888,11 @@
 			"path": "modules/warranties",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-0bef9fa66f5852e604fe122c6305ed83679758160e0804a4f4bd632d06c8b852",
-			"subtreeIntegrity": "sha256-0d6023842ef0e49e1cd8f20af7de22367049aabff1f137bd5452176eb08e3f43",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-bb3d4b5fa3a45945d5f60ee8db330a89f50aeaa8ac1e9fdc4799b139f16e6770",
+			"subtreeIntegrity": "sha256-66dfe3eec0413fca97d55f14c1d3d2445beba44751f66c8c3e4f1b9b19f76d29",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -2732,11 +2912,11 @@
 			"path": "modules/wish",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-8920a6a464a4e682484679ff6f607aec07f48037a509b5ff8a45b36bde19dcaf",
-			"subtreeIntegrity": "sha256-fb73f98ae68691a86b604844d59e48fe520cccabab7fc5967217928b712f6d9c",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-0eac5ce516b16b9354b2dd32d15d493c4a8f621b71bba3cb5fc191402a1a050b",
+			"subtreeIntegrity": "sha256-c8506b6bb7bb5a726ab0ca78d6c6ecf83e34d7745f94b6e661e4cf54cc46fcff",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -2758,11 +2938,11 @@
 				"cart"
 			],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": true,
-			"integrity": "sha256-1504ca3247fd36061930bd04701e731c5ede44d86190391cfcde525fd1e88b3f",
-			"subtreeIntegrity": "sha256-5405341d3f7ace140a58b92b7423c0399c22af3cd857f8e5303b3b5a2d95b923",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-21ddca16518daf5dad39a43942a75bf0ad4fe5f6d4dae86a039f6c54a0922a67",
+			"subtreeIntegrity": "sha256-c72988e380ae2f9b4abfbe7cf1d85f0019313c376baa28e01dadb36c62ead499",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {
@@ -2782,11 +2962,11 @@
 			"path": "modules/x-shop",
 			"requires": [],
 			"hasStoreComponents": true,
-			"hasAdminComponents": true,
+			"hasAdminComponents": false,
 			"hasStorePages": false,
-			"integrity": "sha256-f56f0087f6919056420976dd2a5b4f48036604ccbbc3791369a523d62e00576b",
-			"subtreeIntegrity": "sha256-d9fab0891865a5b4b03cabb54b7121409b3df54d847eb7b152c4540308d53ecb",
-			"commit": "b09848850201195ff3c74c4564e7bb4570bce576",
+			"integrity": "sha256-b6d0f2d1704311455e9da7959712dcea79550e5d1ccee2e0c59dd1436e29dfdc",
+			"subtreeIntegrity": "sha256-1aca686531fc880f620edba5292a277e8cd4a71808e10efd5006d867feaebbfb",
+			"commit": "fc20502ba96307a245788332e2bc389765e8c06d",
 			"maturity": "experimental",
 			"maturityEvidence": [],
 			"runtime": {

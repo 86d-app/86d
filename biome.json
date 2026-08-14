@@ -142,7 +142,7 @@
 		{
 			"includes": [
 				"internals/generators/**",
-				"internals/registry/**",
+				"apps/registry/**",
 				"internals/lib/**",
 				"**/*.config.ts",
 				"packages/env/**",

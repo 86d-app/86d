@@ -29,7 +29,7 @@ The registry provides the module resolution layer for 86d stores. When a store's
 - Resolve modules and templates from local workspace, GitHub repos, or npm
 - Generate and consume `registry.json` manifests with integrity verification
 - Discover available modules with `"*"` without auto-enabling Experimental entries
-- **Lock file** (`registry.lock.json`) for reproducible builds with `--frozen` CI support
+- **Lock file** (`apps/registry/registry.lock.json`) for reproducible builds with `--frozen` CI support
 - **Circular dependency detection** — throws on cycles with descriptive error messages
 - Template resolution — fetch store templates from GitHub or npm
 - Graceful handling of missing modules/templates with warnings
@@ -187,7 +187,7 @@ Template specifiers use the same formats as modules:
 
 ## Registry Manifest
 
-The `registry.json` file at the repo root indexes all available modules and templates:
+The `apps/registry/registry.json` file indexes all available modules and templates:
 
 ```json
 {
@@ -255,7 +255,7 @@ Scan all modules in a manifest for circular dependencies. Returns an array of cy
 Generate a lock file from resolved modules, capturing source, version, integrity hash, and location.
 
 ### `writeLockfile(root, lockfile): void`
-Write the lock file to `registry.lock.json` at the project root.
+Write the lock file to `apps/registry/registry.lock.json`.
 
 ### `readLockfile(root): Lockfile | undefined`
 Read the lock file from the project root. Returns undefined if not found or invalid.
@@ -296,7 +296,7 @@ This means `bun run generate:modules` pulls missing admitted Modules before gene
 
 ## Lock File
 
-The `registry.lock.json` file captures the exact resolved state of all modules for reproducible builds. It is generated automatically by `bun run generate:modules`.
+The `apps/registry/registry.lock.json` file captures the exact resolved state of all modules for reproducible builds. It is generated automatically by `bun run generate:modules`.
 
 ```json
 {

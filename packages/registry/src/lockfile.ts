@@ -1,7 +1,8 @@
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { join, relative } from "node:path";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, join, relative } from "node:path";
 import { z } from "zod";
 import { computeIntegrity } from "./fetcher.js";
+import { registryLockfilePath } from "./paths.js";
 import type { ResolvedModule } from "./types.js";
 
 // ── Lock File Schema ─────────────────────────────────────────────────
@@ -38,8 +39,6 @@ const lockfileSchema = z.object({
 
 export type Lockfile = z.infer<typeof lockfileSchema>;
 
-const LOCKFILE_NAME = "registry.lock.json";
-
 // ── Read / Write ─────────────────────────────────────────────────────
 
 /**
@@ -47,7 +46,7 @@ const LOCKFILE_NAME = "registry.lock.json";
  * Returns undefined if the file doesn't exist or is invalid.
  */
 export function readLockfile(root: string): Lockfile | undefined {
-	const lockPath = join(root, LOCKFILE_NAME);
+	const lockPath = registryLockfilePath(root);
 	if (!existsSync(lockPath)) return undefined;
 
 	try {
@@ -62,7 +61,8 @@ export function readLockfile(root: string): Lockfile | undefined {
  * Write a lock file to the project root.
  */
 export function writeLockfile(root: string, lockfile: Lockfile): void {
-	const lockPath = join(root, LOCKFILE_NAME);
+	const lockPath = registryLockfilePath(root);
+	mkdirSync(dirname(lockPath), { recursive: true });
 	writeFileSync(lockPath, `${JSON.stringify(lockfile, null, 2)}\n`);
 }
 

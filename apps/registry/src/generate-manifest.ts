@@ -3,7 +3,7 @@
 /**
  * Registry Manifest Generator
  *
- * Scans the modules/ directory and generates registry.json at the repo root.
+ * Scans the modules/ directory and generates apps/registry/registry.json.
  * This manifest indexes all available modules for the git-based registry system.
  *
  * Module metadata comes from each Module's own declaration, loaded here, rather
@@ -16,17 +16,18 @@
 
 import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import type { Module } from "@86d-app/core/types/module";
 import {
 	buildManifest,
 	type ModuleDeclarations,
 } from "@86d-app/registry/manifest";
-import { workspaceRootFromImportMeta } from "../../lib/workspace-root.ts";
+import { registryManifestPath } from "@86d-app/registry/paths";
+import { workspaceRootFromImportMeta } from "../../../internals/lib/workspace-root.ts";
 
 const WORKSPACE_ROOT = workspaceRootFromImportMeta(import.meta.url);
-const OUTPUT_PATH = resolve(WORKSPACE_ROOT, "registry.json");
+const OUTPUT_PATH = registryManifestPath(WORKSPACE_ROOT);
 const MODULES_ROOT = join(WORKSPACE_ROOT, "modules");
 
 /** The Module contract version the Store Runtime must understand. */

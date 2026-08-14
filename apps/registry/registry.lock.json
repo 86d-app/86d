@@ -1,6 +1,6 @@
 {
   "lockfileVersion": 1,
-  "generatedAt": "2026-08-14T07:35:54.239Z",
+  "generatedAt": "2026-08-14T07:42:49.872Z",
   "modules": {
     "abandoned-carts": {
       "source": "local",
@@ -538,7 +538,7 @@
       "source": "local",
       "packageName": "@86d-app/shipping",
       "version": "0.0.41",
-      "integrity": "sha256-7690c7683d40692a3595bfea3420533f14b49e79d5dfc569bd13be0684e63ac2",
+      "integrity": "sha256-5f51578d2e9ece6aead12ed8608b5eef32472c4e157b65949126f2a82abf2a23",
       "localPath": "modules/shipping"
     },
     "sitemap": {

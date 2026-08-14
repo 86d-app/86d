@@ -38,6 +38,10 @@
 			"types": "./src/maturity.ts",
 			"default": "./src/maturity.ts"
 		},
+		"./paths": {
+			"types": "./src/paths.ts",
+			"default": "./src/paths.ts"
+		},
 		"./resolver": {
 			"types": "./src/resolver.ts",
 			"default": "./src/resolver.ts"

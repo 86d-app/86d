@@ -39,7 +39,9 @@ bun run bump-version         # shared version bump (see Version policy)
 ## Repository structure
 
 ```
-apps/store/          Next.js storefront + per-store admin
+apps/
+  store/             Next.js storefront + per-store admin
+  registry/          registry.json manifest generator and lock file
 modules/             100 modules (cart, products, orders, checkout, collections, brands, ...)
 packages/
   core/              Module system: isolation boundary, contracts, types, sanitization, test-utils
@@ -61,7 +63,6 @@ internals/
   github/            CI composite Actions
   docker/            Docker entrypoint + legacy init.sql
   docs/              generated component-api.md
-  registry/          registry.json manifest generator
   generators/        generate-modules, generate-component-docs, bump-version
 packages/db/seed/    demo seed catalog, assets, and fetch tooling
 Dockerfile           Multi-stage build (deps → build → runtime)
@@ -108,7 +109,7 @@ Templates live in `templates/<name>/`. The store app resolves them via tsconfig 
 
 ## Registry
 
-`registry.json` carries per-Module metadata (description, version, category, `requires`, `hasStoreComponents`, `hasAdminComponents`, `hasStorePages`, integrity hash). The resolver loads the manifest locally or from `https://raw.githubusercontent.com/86d-app/86d/main/registry.json`, which is the canonical source. Never assume a local copy is authoritative. The fetcher retries with exponential backoff (maximum 3 attempts, 500 to 2,000 milliseconds). A wildcard includes all registry Modules plus local workspace Modules. `registry.lock.json` caches resolved versions and integrity hashes.
+`apps/registry/registry.json` carries per-Module metadata (description, version, category, `requires`, `hasStoreComponents`, `hasAdminComponents`, `hasStorePages`, integrity hash). The resolver loads the manifest locally or from `https://raw.githubusercontent.com/86d-app/86d/main/apps/registry/registry.json`, which is the canonical source. Never assume a local copy is authoritative. The fetcher retries with exponential backoff (maximum 3 attempts, 500 to 2,000 milliseconds). A wildcard includes all registry Modules plus local workspace Modules. `apps/registry/registry.lock.json` caches resolved versions and integrity hashes.
 
 ## Deployment modes
 

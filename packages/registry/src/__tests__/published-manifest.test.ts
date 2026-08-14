@@ -1,9 +1,12 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { registryManifestPath } from "../paths.js";
 import { registryManifestSchema } from "../types.js";
 
-const manifestPath = resolve(import.meta.dirname, "../../../../registry.json");
+const manifestPath = registryManifestPath(
+	resolve(import.meta.dirname, "../../../.."),
+);
 
 describe("published registry manifest", () => {
 	const raw = existsSync(manifestPath)

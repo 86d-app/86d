@@ -2,6 +2,10 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { evaluateModuleAdmission } from "./admission.js";
 import { fetchWithRetry } from "./fetcher.js";
+import {
+	DEFAULT_REGISTRY_URL,
+	registryManifestPath,
+} from "./paths.js";
 import { parseSpecifier } from "./specifier.js";
 import type {
 	ModuleSpecifier,
@@ -10,9 +14,6 @@ import type {
 	StoreConfig,
 } from "./types.js";
 import { registryManifestSchema } from "./types.js";
-
-const DEFAULT_REGISTRY_URL =
-	"https://raw.githubusercontent.com/86d-app/86d/main/registry.json";
 
 export interface ResolverOptions {
 	/** Absolute path to the monorepo / project root. */
@@ -212,7 +213,7 @@ function resolveOne(
 
 /**
  * Load a registry manifest from (in order):
- * 1. Local `registry.json` at the project root
+ * 1. Local `apps/registry/registry.json`
  * 2. Remote URL (config or default)
  */
 async function loadManifest(
@@ -220,7 +221,7 @@ async function loadManifest(
 	registryUrl?: string,
 ): Promise<RegistryManifest | undefined> {
 	// 1. Try local file
-	const localPath = join(root, "registry.json");
+	const localPath = registryManifestPath(root);
 	if (existsSync(localPath)) {
 		try {
 			const raw = JSON.parse(readFileSync(localPath, "utf-8"));

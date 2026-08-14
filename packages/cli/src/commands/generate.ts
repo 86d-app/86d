@@ -83,10 +83,10 @@ function runModuleGeneration() {
 
 function runRegistryGeneration() {
 	const root = findProjectRoot();
-	const script = join(root, "internals/registry/src/generate-manifest.ts");
+	const script = join(root, "apps/registry/src/generate-manifest.ts");
 
 	if (!existsSync(script)) {
-		info("internals/registry/src/generate-manifest.ts not found, skipping");
+		info("apps/registry/src/generate-manifest.ts not found, skipping");
 		return;
 	}
 

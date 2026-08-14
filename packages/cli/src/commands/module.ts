@@ -7,6 +7,7 @@ import {
 	getModuleDependencies,
 	readLocalManifest,
 } from "@86d-app/registry/resolver";
+import { registryManifestPath } from "@86d-app/registry/paths";
 import { parseSpecifier } from "@86d-app/registry/specifier";
 import type { RegistryManifest, RegistryModule } from "@86d-app/registry/types";
 import {
@@ -80,7 +81,7 @@ ${c.dim("Module specifiers (for 'add'):")}
 // ── Registry Helpers ──────────────────────────────────────────────────
 
 function loadManifest(root: string): RegistryManifest | undefined {
-	return readLocalManifest(join(root, "registry.json"));
+	return readLocalManifest(registryManifestPath(root));
 }
 
 // ── Add Module ────────────────────────────────────────────────────────

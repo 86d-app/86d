@@ -124,8 +124,8 @@ for (const pkgPath of packageJsonPaths) {
 
 console.log(`\nUpdated ${updated} packages to ${targetVersion}`);
 
-// Regenerate registry.json so versions and integrity hashes stay in sync.
-execSync("tsx internals/registry/src/generate-manifest.ts", {
+// Regenerate apps/registry/registry.json so versions and integrity hashes stay in sync.
+execSync("tsx apps/registry/src/generate-manifest.ts", {
 	cwd: ROOT,
 	stdio: "inherit",
 });
