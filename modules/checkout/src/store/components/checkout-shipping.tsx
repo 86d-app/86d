@@ -111,18 +111,6 @@ export const CheckoutShipping = observer(() => {
 		},
 	});
 
-	const selectMethodMutation = api.updateSession.useMutation({
-		onSuccess: (result) => {
-			if ("session" in result && typeof result.session?.revision === "number") {
-				setRevision(result.session.revision);
-			}
-			checkoutState.setStep("payment");
-		},
-		onError: () => {
-			setRatesError("Failed to save shipping method. Please try again.");
-		},
-	});
-
 	const updateField = (field: keyof CheckoutAddress, value: string) => {
 		setAddress((prev) => ({ ...prev, [field]: value }));
 	};
@@ -191,29 +179,12 @@ export const CheckoutShipping = observer(() => {
 
 		if (!sessionId || revision === null) return;
 
-		// If no rates available (shipping module not installed), proceed with $0 shipping
 		if (rates.length === 0) {
-			selectMethodMutation.mutate({
-				params: { id: sessionId },
-				expectedRevision: revision,
-				shippingAmount: 0,
-				shippingMethodName: "Free Shipping",
-			});
+			setRatesError("Shipping is unavailable for this address.");
 			return;
 		}
 
-		const selected = rates.find((r) => r.id === selectedRateId);
-		if (!selected) {
-			setRatesError("Please select a shipping method.");
-			return;
-		}
-
-		selectMethodMutation.mutate({
-			params: { id: sessionId },
-			expectedRevision: revision,
-			shippingAmount: selected.price,
-			shippingMethodName: selected.name,
-		});
+		checkoutState.setStep("payment");
 	};
 
 	const handleBack = () => {
@@ -234,7 +205,7 @@ export const CheckoutShipping = observer(() => {
 			selectedRateId={selectedRateId}
 			loadingRates={loadingRates}
 			ratesError={ratesError}
-			selectingRate={selectMethodMutation.isPending}
+			selectingRate={false}
 			formatPrice={formatPrice}
 			onFieldChange={updateField}
 			onSubmit={phase === "address" ? handleAddressSubmit : handleRateSubmit}

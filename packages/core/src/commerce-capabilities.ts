@@ -486,6 +486,24 @@ export const orderCustomerAuthorizeCapability = defineCapability({
 		.strict(),
 });
 
+export const orderGuestProofAuthorizeCapability = defineCapability({
+	name: "orders.guest.authorize",
+	version: "1.0.0",
+	owner: "orders",
+	request: z
+		.object({
+			orderId: z.string().min(1).max(200),
+			proofs: z.array(z.string().min(16).max(200)).max(8),
+		})
+		.strict(),
+	decision: z.object({ authorized: z.literal(true) }).strict(),
+	failure: z
+		.object({
+			code: z.enum(["order_not_found", "proof_invalid", "lookup_failed"]),
+		})
+		.strict(),
+});
+
 /**
  * Orders validates immutable commercial line quantities for delivery owners.
  * Consumers receive only the bounded quantities they asked to allocate; the

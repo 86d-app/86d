@@ -52,111 +52,135 @@ function capabilityInvoker(options?: {
 	productFailure?: string;
 	variantId?: string;
 	taxStatus?: "CALCULATED" | "REVIEW_REQUIRED" | "UNAVAILABLE";
+	storeCustomerId?: string;
 }) {
 	return {
-		invoke: vi.fn(async (definition: { name: string; version?: string }) => {
-			if (definition.name === "cart.snapshot") {
-				if (options?.cartFailure) {
+		invoke: vi.fn(
+			async (
+				definition: { name: string; version?: string },
+				request?: { identity?: { subject?: string } },
+			) => {
+				if (definition.name === "cart.snapshot") {
+					if (options?.cartFailure) {
+						return {
+							ok: false,
+							failure: { code: options.cartFailure },
+						};
+					}
 					return {
-						ok: false,
-						failure: { code: options.cartFailure },
+						ok: true,
+						decision: {
+							cartId: "cart-1",
+							revision: "2026-08-13T12:00:00.000Z",
+							items: [
+								{
+									productId: "product-1",
+									...(options?.variantId
+										? { variantId: options.variantId }
+										: {}),
+									quantity: 2,
+								},
+							],
+						},
 					};
 				}
-				return {
-					ok: true,
-					decision: {
-						cartId: "cart-1",
-						revision: "2026-08-13T12:00:00.000Z",
-						items: [
-							{
-								productId: "product-1",
-								...(options?.variantId ? { variantId: options.variantId } : {}),
-								quantity: 2,
+				if (definition.name === "catalog.product.resolve") {
+					if (options?.productFailure) {
+						return {
+							ok: false,
+							failure: { code: options.productFailure },
+						};
+					}
+					return {
+						ok: true,
+						decision: {
+							product: {
+								id: "product-1",
+								name: "Authoritative Product",
+								slug: "authoritative-product",
+								status: "active",
+								price: 1_250,
+								sku: "REAL-SKU",
+								images: [],
 							},
-						],
-					},
-				};
-			}
-			if (definition.name === "catalog.product.resolve") {
-				if (options?.productFailure) {
-					return {
-						ok: false,
-						failure: { code: options.productFailure },
-					};
-				}
-				return {
-					ok: true,
-					decision: {
-						product: {
-							id: "product-1",
-							name: "Authoritative Product",
-							slug: "authoritative-product",
-							status: "active",
-							price: 1_250,
-							sku: "REAL-SKU",
-							images: [],
-						},
-					},
-				};
-			}
-			if (definition.name === "tax.quote") {
-				if (options?.taxStatus === "UNAVAILABLE") {
-					return {
-						ok: false,
-						failure: {
-							code: "CAPABILITY_UNAVAILABLE",
-							capability: "tax.quote",
-							version: "2.0.0",
 						},
 					};
 				}
-				const review = options?.taxStatus === "REVIEW_REQUIRED";
-				return {
-					ok: true,
-					decision: {
-						quoteId: "quote-1",
-						jurisdictionDecision: review ? "BLOCKED" : "COLLECT",
-						status: review ? "REVIEW_REQUIRED" : "CALCULATED",
-						reason: review ? "RATE_NOT_CONFIGURED" : "TAX_CALCULATED",
-						policyVersion: "policy-v1",
-						sourceVersion: "rates-v1",
-						issuedAt: "2026-08-14T00:00:00.000Z",
-						expiresAt: "2026-08-14T00:10:00.000Z",
-						currency: "USD",
-						totals: {
-							subtotal: 2_500,
-							discount: 0,
-							shipping: 0,
-							taxable: 2_500,
-							lineTax: review ? null : 206,
-							shippingTax: review ? null : 0,
-							tax: review ? null : 206,
-							grandTotal: review ? null : 2_706,
-						},
-						lineAllocations: [
-							{
-								lineId: "product-1::0",
-								productId: "product-1",
-								taxCategoryId: "general",
-								quantity: 2,
-								grossAmount: 2_500,
-								discountAmount: 0,
-								taxableAmount: 2_500,
-								taxAmount: review ? null : 206,
+				if (definition.name === "tax.quote") {
+					if (options?.taxStatus === "UNAVAILABLE") {
+						return {
+							ok: false,
+							failure: {
+								code: "CAPABILITY_UNAVAILABLE",
+								capability: "tax.quote",
+								version: "2.0.0",
 							},
-						],
+						};
+					}
+					const review = options?.taxStatus === "REVIEW_REQUIRED";
+					return {
+						ok: true,
+						decision: {
+							quoteId: "quote-1",
+							jurisdictionDecision: review ? "BLOCKED" : "COLLECT",
+							status: review ? "REVIEW_REQUIRED" : "CALCULATED",
+							reason: review ? "RATE_NOT_CONFIGURED" : "TAX_CALCULATED",
+							policyVersion: "policy-v1",
+							sourceVersion: "rates-v1",
+							issuedAt: "2026-08-14T00:00:00.000Z",
+							expiresAt: "2026-08-14T00:10:00.000Z",
+							currency: "USD",
+							totals: {
+								subtotal: 2_500,
+								discount: 0,
+								shipping: 0,
+								taxable: 2_500,
+								lineTax: review ? null : 206,
+								shippingTax: review ? null : 0,
+								tax: review ? null : 206,
+								grandTotal: review ? null : 2_706,
+							},
+							lineAllocations: [
+								{
+									lineId: "product-1::0",
+									productId: "product-1",
+									taxCategoryId: "general",
+									quantity: 2,
+									grossAmount: 2_500,
+									discountAmount: 0,
+									taxableAmount: 2_500,
+									taxAmount: review ? null : 206,
+								},
+							],
+						},
+					};
+				}
+				if (definition.name === "customers.identity.resolve") {
+					return {
+						ok: true,
+						decision: {
+							customerId:
+								options?.storeCustomerId ??
+								request?.identity?.subject ??
+								"store-customer-1",
+							bindingId: "binding-1",
+							verifiedEmail: "ada@example.com",
+							createdCustomer: false,
+							createdBinding: false,
+							boundAt: "2026-08-14T12:00:00.000Z",
+						},
+					};
+				}
+				return {
+					ok: false,
+					failure: {
+						code: "CAPABILITY_UNAVAILABLE",
+						capability: definition.name,
+						version: "1.0.0",
 					},
 				};
-			}
-			return {
-				ok: false,
-				failure: {
-					code: "CAPABILITY_UNAVAILABLE",
-					capability: definition.name,
-					version: "1.0.0",
-				},
-			};
-		}),
+			},
+		),
 	};
 }
 
@@ -337,6 +361,30 @@ describe("checkout activation containment", () => {
 		expect(update).not.toHaveBeenCalled();
 	});
 
+	it("persists the Store Customer ID instead of the authentication subject", async () => {
+		const create = vi
+			.fn()
+			.mockResolvedValue(checkoutSession({ customerId: "store-customer-1" }));
+		const result = await createSession({
+			body: { cartId: "cart-1" },
+			context: {
+				controllers: { checkout: { create } },
+				capabilities: capabilityInvoker({
+					storeCustomerId: "store-customer-1",
+				}),
+				session: createMockSession({ userId: "auth-subject-1" }),
+			},
+		});
+
+		expect(result).toHaveProperty("session");
+		expect(create).toHaveBeenCalledWith(
+			expect.objectContaining({ customerId: "store-customer-1" }),
+		);
+		expect(create).not.toHaveBeenCalledWith(
+			expect.objectContaining({ customerId: "auth-subject-1" }),
+		);
+	});
+
 	it("rejects a caller-supplied shipping amount before reading or mutating a session", async () => {
 		const getById = vi.fn();
 		const update = vi.fn();
@@ -411,9 +459,12 @@ describe("checkout activation containment", () => {
 			context: {
 				controllers: {
 					checkout: {
-						getById: vi
-							.fn()
-							.mockResolvedValue(checkoutSession({ metadata: proof.metadata })),
+						getById: vi.fn().mockResolvedValue(
+							checkoutSession({
+								shippingAddress,
+								metadata: proof.metadata,
+							}),
+						),
 						getLineItems,
 					},
 				},
@@ -453,6 +504,184 @@ describe("checkout activation containment", () => {
 			error: "Checkout session not found",
 			status: 404,
 		});
+	});
+
+	it("returns a CALCULATED USPS Priority Mail option from Shipping v2", async () => {
+		const proof = await createGuestProofMetadata();
+		const session = checkoutSession({
+			shippingAddress,
+			metadata: proof.metadata,
+		});
+		const bound = {
+			...session,
+			shippingAmount: 1101,
+			shippingMethodName: "USPS Priority Mail",
+			taxAmount: 206,
+			total: 3_807,
+			metadata: {
+				...proof.metadata,
+				shippingQuoteId: "shipquote_1",
+				shippingOptionId: "shipoption_1",
+				shippingQuoteStatus: "CALCULATED",
+			},
+		};
+		const createQuote = vi.fn().mockResolvedValue({
+			quote: {
+				id: "shipquote_1",
+				expiresAt: new Date("2026-08-14T12:15:00.000Z"),
+			},
+			options: [
+				{
+					id: "shipoption_1",
+					carrier: "USPS",
+					service: "usps.priority_mail",
+					amountMinor: 1101,
+					currency: "USD",
+					deliveryDays: 2,
+				},
+			],
+		});
+		const update = vi.fn().mockResolvedValue(bound);
+		const getLineItems = vi.fn().mockResolvedValue([
+			{
+				productId: "product-1",
+				name: "Authoritative Product",
+				price: 1_250,
+				quantity: 2,
+			},
+		]);
+		const first = await getShippingRates({
+			params: { id: "session-1" },
+			headers: new Headers({
+				cookie: `checkout_guest_session-1=${proof.proof}`,
+			}),
+			context: {
+				controllers: {
+					checkout: {
+						getById: vi.fn().mockResolvedValue(session),
+						update,
+						getLineItems,
+					},
+					shippingV2: {
+						listConnections: vi.fn().mockResolvedValue([
+							{
+								id: "shipping_easypost_default",
+								lifecycle: "enabled",
+								health: "healthy",
+								capabilities: ["quote"],
+							},
+						]),
+						createQuote,
+					},
+				},
+				capabilities: capabilityInvoker({ taxStatus: "CALCULATED" }),
+				session: null,
+			},
+		});
+		const replay = await getShippingRates({
+			params: { id: "session-1" },
+			headers: new Headers({
+				cookie: `checkout_guest_session-1=${proof.proof}`,
+			}),
+			context: {
+				controllers: {
+					checkout: {
+						getById: vi.fn().mockResolvedValue(session),
+						update,
+						getLineItems,
+					},
+					shippingV2: {
+						listConnections: vi.fn().mockResolvedValue([
+							{
+								id: "shipping_easypost_default",
+								lifecycle: "enabled",
+								health: "healthy",
+								capabilities: ["quote"],
+							},
+						]),
+						createQuote,
+					},
+				},
+				capabilities: capabilityInvoker({ taxStatus: "CALCULATED" }),
+				session: null,
+			},
+		});
+
+		expect(first).toMatchObject({
+			rates: [
+				expect.objectContaining({
+					id: "shipoption_1",
+					name: "USPS Priority Mail",
+					price: 1101,
+					service: "usps.priority_mail",
+					quoteId: "shipquote_1",
+				}),
+			],
+		});
+		expect(replay).toMatchObject({
+			rates: [expect.objectContaining({ id: "shipoption_1", price: 1101 })],
+		});
+		expect(createQuote).toHaveBeenCalledTimes(2);
+		expect(createQuote).toHaveBeenNthCalledWith(
+			1,
+			expect.objectContaining({
+				checkoutId: "session-1",
+				checkoutRevision: 1,
+				idempotencyKey: "checkout-quote:session-1:1",
+				parcelPlan: [
+					expect.objectContaining({
+						parcelReference: "checkout-default-parcel",
+					}),
+				],
+			}),
+		);
+		expect(createQuote.mock.calls[1]?.[0]).toEqual(
+			createQuote.mock.calls[0]?.[0],
+		);
+	});
+
+	it("fails closed when Shipping v2 returns no USPS Priority Mail option", async () => {
+		const proof = await createGuestProofMetadata();
+		const createQuote = vi.fn().mockRejectedValue(new Error("no rate"));
+		const update = vi.fn();
+		const result = await getShippingRates({
+			params: { id: "session-1" },
+			headers: new Headers({
+				cookie: `checkout_guest_session-1=${proof.proof}`,
+			}),
+			context: {
+				controllers: {
+					checkout: {
+						getById: vi.fn().mockResolvedValue(
+							checkoutSession({
+								shippingAddress,
+								metadata: proof.metadata,
+							}),
+						),
+						update,
+					},
+					shippingV2: {
+						listConnections: vi.fn().mockResolvedValue([
+							{
+								id: "shipping_easypost_default",
+								lifecycle: "enabled",
+								health: "healthy",
+								capabilities: ["quote"],
+							},
+						]),
+						createQuote,
+					},
+				},
+				capabilities: capabilityInvoker(),
+				session: null,
+			},
+		});
+
+		expect(result).toMatchObject({
+			code: "CHECKOUT_SHIPPING_QUOTE_UNAVAILABLE",
+			status: 503,
+		});
+		expect(update).not.toHaveBeenCalled();
 	});
 
 	it("returns explicit activation unavailability without downstream effects", async () => {

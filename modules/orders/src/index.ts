@@ -16,6 +16,7 @@ import { adminEndpoints } from "./admin/endpoints/routes";
 import {
 	orderCreateProvider,
 	orderCustomerAuthorizeProvider,
+	orderGuestProofAuthorizeProvider,
 	orderLineQuantityValidateProvider,
 	orderPurchaseVerifyProvider,
 } from "./capabilities";
@@ -102,6 +103,7 @@ export default function orders(options?: OrdersOptions): Module {
 			provides: [
 				orderCreateProvider,
 				orderCustomerAuthorizeProvider,
+				orderGuestProofAuthorizeProvider,
 				orderLineQuantityValidateProvider,
 				orderPurchaseVerifyProvider,
 			],

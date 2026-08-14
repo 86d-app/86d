@@ -1,15 +1,16 @@
+import { cancelMyOrder } from "./cancel-order";
+import { claimGuestOrder } from "./claim-guest-order";
 import { confirmOrder } from "./confirm-order";
 import { createMyReturn } from "./create-return";
 import {
-	cancelMyOrderUnavailable as cancelMyOrder,
-	getMyInvoiceUnavailable as getMyInvoice,
-	getMyOrderUnavailable as getMyOrder,
-	getMyOrderFulfillmentsUnavailable as getMyOrderFulfillments,
 	getMyOrderReturnsUnavailable as getMyOrderReturns,
-	listMyOrdersUnavailable as listMyOrders,
 	listMyReturnsUnavailable as listMyReturns,
-	reorderUnavailable as reorder,
 } from "./customer-continuity-unavailable";
+import { getMyOrderFulfillments } from "./get-fulfillments";
+import { getMyInvoice } from "./get-invoice";
+import { getMyOrder } from "./get-order";
+import { listMyOrders } from "./list-orders";
+import { reorder } from "./reorder";
 import { storeSearch } from "./store-search";
 import { trackOrder } from "./track-order";
 
@@ -17,6 +18,7 @@ export const storeEndpoints = {
 	"/orders/store-search": storeSearch,
 	"/orders/track": trackOrder,
 	"/orders/confirm": confirmOrder,
+	"/orders/claim": claimGuestOrder,
 	"/orders/me": listMyOrders,
 	"/orders/me/returns": listMyReturns,
 	"/orders/me/:id": getMyOrder,

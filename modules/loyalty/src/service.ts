@@ -23,6 +23,7 @@ export type LoyaltyTransaction = {
 	points: number;
 	description: string;
 	orderId?: string | undefined;
+	ledgerKey?: string | undefined;
 	metadata?: Record<string, unknown> | undefined;
 	createdAt: Date;
 };

@@ -1,16 +1,10 @@
 import { customerIdentityResolveCapability } from "@86d-app/core/commerce-capabilities";
 import { sanitizeText } from "@86d-app/core/sanitize";
 import type { ModuleContext } from "@86d-app/core/types/module";
-import { createOrderController } from "../../service-impl";
 
-type OrderEndpointController = ReturnType<typeof createOrderController>;
-
-type OrderCustomerContext =
-	| {
-			ok: true;
-			customerId: string;
-			controller: OrderEndpointController;
-	  }
+export type StoreCustomerResolution =
+	| { ok: true; customerId?: undefined }
+	| { ok: true; customerId: string }
 	| {
 			ok: false;
 			response: { code: string; error: string; status: number };
@@ -28,19 +22,16 @@ function profileNames(displayName: string): {
 	};
 }
 
-export async function resolveOrderCustomerContext(
-	context: ModuleContext,
-): Promise<OrderCustomerContext> {
+/**
+ * Map a verified authentication principal to a Store Customer ID.
+ * Guests resolve to no customer. Auth identity is never persisted as customerId.
+ */
+export async function resolveStoreCustomer(
+	context: Pick<ModuleContext, "session" | "capabilities">,
+): Promise<StoreCustomerResolution> {
 	const session = context.session;
 	if (!session) {
-		return {
-			ok: false,
-			response: {
-				code: "CUSTOMER_AUTHENTICATION_REQUIRED",
-				error: "Unauthorized",
-				status: 401,
-			},
-		};
+		return { ok: true };
 	}
 
 	const resolved = await context.capabilities.invoke(
@@ -60,29 +51,18 @@ export async function resolveOrderCustomerContext(
 		},
 	);
 	if (resolved.ok) {
-		const controller = createOrderController(context.data);
-		await controller.adoptLegacySubjectOrders(
-			session.user.id,
-			resolved.decision.customerId,
-		);
-		return {
-			ok: true,
-			customerId: resolved.decision.customerId,
-			controller,
-		};
+		return { ok: true, customerId: resolved.decision.customerId };
 	}
-
 	if (resolved.failure.code === "AUTH_IDENTITY_UNVERIFIED") {
 		return {
 			ok: false,
 			response: {
 				code: "CUSTOMER_EMAIL_VERIFICATION_REQUIRED",
-				error: "Verify your email before accessing order history.",
+				error: "Verify your email before continuing checkout.",
 				status: 403,
 			},
 		};
 	}
-
 	return {
 		ok: false,
 		response: {

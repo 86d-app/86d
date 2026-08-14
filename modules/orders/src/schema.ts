@@ -374,4 +374,21 @@ export const ordersSchema = {
 			},
 		},
 	},
+	orderCustomerAttribution: {
+		fields: {
+			id: { type: "string", required: true },
+			orderId: { type: "string", required: true, index: true },
+			fromCustomerId: { type: "string", required: false },
+			toCustomerId: { type: "string", required: true },
+			reason: {
+				type: ["legacy_subject_rewrite", "guest_claim"],
+				required: true,
+			},
+			createdAt: {
+				type: "date",
+				required: true,
+				defaultValue: () => new Date(),
+			},
+		},
+	},
 } satisfies ModuleSchema;

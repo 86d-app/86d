@@ -4,9 +4,11 @@ import {
 	type CreateShippingQuoteInput,
 	createShippingFoundationController,
 	createShippingQuoteInputSchema,
+	isUspsPriorityMailRate,
 	type ShippingAddress,
 	type ShippingConnectionProvider,
 	type ShippingParcel,
+	USPS_PRIORITY_MAIL_SERVICE,
 } from "../foundation-v2";
 
 const origin = {
@@ -51,6 +53,7 @@ function provider() {
 	}));
 	const quote = vi.fn(async () => ({
 		providerQuoteReference: "easypost-shipment-1",
+		verifiedDestinationAddress: destination,
 		options: [
 			{
 				providerRateReference: "easypost-rate-usps-priority",
@@ -270,5 +273,65 @@ describe("Shipping v2 authority", () => {
 				providerOccurredAt: new Date("2026-08-13T16:00:00.000Z"),
 			}),
 		).rejects.toMatchObject({ code: "original_connection_mismatch" });
+	});
+
+	it("persists the verified destination fingerprint instead of raw shopper input", async () => {
+		const activeProvider = provider();
+		const verified = {
+			...destination,
+			street1: "500 Customer Ln",
+			postalCode: "53703",
+		};
+		activeProvider.quote.mockResolvedValue({
+			providerQuoteReference: "easypost-shipment-verified",
+			verifiedDestinationAddress: verified,
+			options: [
+				{
+					providerRateReference: "easypost-rate-usps-priority",
+					carrier: "USPS",
+					service: USPS_PRIORITY_MAIL_SERVICE,
+					amountMinor: 895,
+					currency: "USD",
+					deliveryDays: 2,
+					deliveryDate: null,
+					deliveryDateGuaranteed: false,
+				},
+			],
+		});
+		const { controller } = await enabledController(activeProvider);
+		const { quote, options } = await controller.createQuote(quoteInput());
+
+		expect(quote.destinationAddress).toEqual(verified);
+		expect(quote.addressFingerprint).not.toBe(
+			await crypto.subtle
+				.digest(
+					"SHA-256",
+					new TextEncoder().encode(JSON.stringify(destination)),
+				)
+				.then((digest) =>
+					[...new Uint8Array(digest)]
+						.map((byte) => byte.toString(16).padStart(2, "0"))
+						.join(""),
+				),
+		);
+		expect(options[0]?.service).toBe(USPS_PRIORITY_MAIL_SERVICE);
+	});
+
+	it("recognizes EasyPost USPS Priority names and rejects adjacent services", () => {
+		expect(
+			isUspsPriorityMailRate({ carrier: "USPS", service: "Priority" }),
+		).toBe(true);
+		expect(
+			isUspsPriorityMailRate({ carrier: "usps", service: "PriorityMail" }),
+		).toBe(true);
+		expect(
+			isUspsPriorityMailRate({
+				carrier: "USPS",
+				service: "Priority Mail International",
+			}),
+		).toBe(false);
+		expect(
+			isUspsPriorityMailRate({ carrier: "UPS", service: "Priority" }),
+		).toBe(false);
 	});
 });

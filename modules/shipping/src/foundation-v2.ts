@@ -582,6 +582,47 @@ function decimalCurrencyToMinor(value: string): number {
 	return amount;
 }
 
+function toEasyPostAddress(address: ShippingAddress) {
+	return {
+		...(address.name ? { name: address.name } : {}),
+		...(address.company ? { company: address.company } : {}),
+		street1: address.street1,
+		...(address.street2 ? { street2: address.street2 } : {}),
+		city: address.city,
+		state: address.state,
+		zip: address.postalCode,
+		country: address.country,
+		...(address.phone ? { phone: address.phone } : {}),
+	};
+}
+
+function toVerifiedShippingAddress(
+	address: {
+		name?: string | undefined;
+		company?: string | undefined;
+		street1: string;
+		street2?: string | undefined;
+		city: string;
+		state: string;
+		zip: string;
+		country: string;
+		phone?: string | undefined;
+	},
+	fallback: ShippingAddress,
+) {
+	return shippingAddressSchema.parse({
+		name: address.name || fallback.name,
+		company: address.company || fallback.company,
+		street1: address.street1,
+		...(address.street2 ? { street2: address.street2 } : {}),
+		city: address.city,
+		state: address.state,
+		postalCode: address.zip,
+		country: address.country,
+		phone: address.phone || fallback.phone,
+	});
+}
+
 export function createEasyPostShippingConnectionProvider(input: {
 	connectionId: string;
 	apiKey: string;
@@ -603,45 +644,16 @@ export function createEasyPostShippingConnectionProvider(input: {
 			}
 			const parcel = request.parcelPlan[0];
 			if (!parcel) throw new Error("A parcel is required.");
+			const verified = await provider.verifyAddress(
+				toEasyPostAddress(request.destinationAddress),
+			);
+			const verifiedDestinationAddress = toVerifiedShippingAddress(
+				verified,
+				request.destinationAddress,
+			);
 			const response = await provider.getRates({
-				fromAddress: {
-					...(request.originAddress.name
-						? { name: request.originAddress.name }
-						: {}),
-					...(request.originAddress.company
-						? { company: request.originAddress.company }
-						: {}),
-					street1: request.originAddress.street1,
-					...(request.originAddress.street2
-						? { street2: request.originAddress.street2 }
-						: {}),
-					city: request.originAddress.city,
-					state: request.originAddress.state,
-					zip: request.originAddress.postalCode,
-					country: request.originAddress.country,
-					...(request.originAddress.phone
-						? { phone: request.originAddress.phone }
-						: {}),
-				},
-				toAddress: {
-					...(request.destinationAddress.name
-						? { name: request.destinationAddress.name }
-						: {}),
-					...(request.destinationAddress.company
-						? { company: request.destinationAddress.company }
-						: {}),
-					street1: request.destinationAddress.street1,
-					...(request.destinationAddress.street2
-						? { street2: request.destinationAddress.street2 }
-						: {}),
-					city: request.destinationAddress.city,
-					state: request.destinationAddress.state,
-					zip: request.destinationAddress.postalCode,
-					country: request.destinationAddress.country,
-					...(request.destinationAddress.phone
-						? { phone: request.destinationAddress.phone }
-						: {}),
-				},
+				fromAddress: toEasyPostAddress(request.originAddress),
+				toAddress: toEasyPostAddress(verifiedDestinationAddress),
 				parcel: {
 					length: parcel.lengthInches,
 					width: parcel.widthInches,
@@ -649,18 +661,37 @@ export function createEasyPostShippingConnectionProvider(input: {
 					weight: parcel.weightOunces,
 				},
 			});
+			const priorityRates = response.rates.filter(isUspsPriorityMailRate);
+			const cheapest = priorityRates.reduce<
+				(typeof priorityRates)[number] | undefined
+			>((current, rate) => {
+				if (!current) return rate;
+				return decimalCurrencyToMinor(rate.rate) <
+					decimalCurrencyToMinor(current.rate)
+					? rate
+					: current;
+			}, undefined);
+			if (!cheapest) {
+				throw new Error(
+					"EasyPost did not return a USPS Priority Mail option for this destination.",
+				);
+			}
 			return providerQuoteResultSchema.parse({
 				providerQuoteReference: response.id,
-				options: response.rates.map((rate) => ({
-					providerRateReference: rate.id,
-					carrier: rate.carrier,
-					service: rate.service,
-					amountMinor: decimalCurrencyToMinor(rate.rate),
-					currency: rate.currency.toUpperCase(),
-					deliveryDays: rate.delivery_days ?? rate.est_delivery_days ?? null,
-					deliveryDate: rate.delivery_date,
-					deliveryDateGuaranteed: rate.delivery_date_guaranteed,
-				})),
+				verifiedDestinationAddress,
+				options: [
+					{
+						providerRateReference: cheapest.id,
+						carrier: "USPS",
+						service: USPS_PRIORITY_MAIL_SERVICE,
+						amountMinor: decimalCurrencyToMinor(cheapest.rate),
+						currency: cheapest.currency.toUpperCase(),
+						deliveryDays:
+							cheapest.delivery_days ?? cheapest.est_delivery_days ?? null,
+						deliveryDate: cheapest.delivery_date,
+						deliveryDateGuaranteed: cheapest.delivery_date_guaranteed,
+					},
+				],
 			});
 		},
 	};
@@ -1115,6 +1146,8 @@ export function createShippingFoundationController(
 				) {
 					throw new Error("Provider quote currency does not match Checkout.");
 				}
+				const destinationAddress =
+					providerQuote.verifiedDestinationAddress ?? parsed.destinationAddress;
 				const now = new Date();
 				const expiresAt = new Date(now.getTime() + quoteTtlSeconds * 1_000);
 				const quote = shippingQuoteSchema.parse({
@@ -1123,11 +1156,9 @@ export function createShippingFoundationController(
 					checkoutRevision: parsed.checkoutRevision,
 					connectionId: connection.id,
 					providerQuoteReference: providerQuote.providerQuoteReference,
-					destinationAddress: parsed.destinationAddress,
+					destinationAddress,
 					originAddress: connection.originAddress,
-					addressFingerprint: await sha256(
-						JSON.stringify(parsed.destinationAddress),
-					),
+					addressFingerprint: await sha256(JSON.stringify(destinationAddress)),
 					parcelPlan: parsed.parcelPlan,
 					parcelPlanFingerprint: await sha256(
 						JSON.stringify(parsed.parcelPlan),

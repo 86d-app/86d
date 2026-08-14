@@ -50,6 +50,7 @@ export const loyaltySchema = {
 			points: { type: "number", required: true },
 			description: { type: "string", required: true },
 			orderId: { type: "string", required: false },
+			ledgerKey: { type: "string", required: false, unique: true },
 			metadata: { type: "json", required: false },
 			createdAt: {
 				type: "date",

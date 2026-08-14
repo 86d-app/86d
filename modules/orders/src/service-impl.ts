@@ -19,6 +19,7 @@ import type {
 	ReturnStatus,
 	UpdateReturnParams,
 } from "./service";
+import { orderAcceptsGuestProof } from "./store/endpoints/guest-proof";
 
 /** Generate a sequential-looking order number */
 function generateOrderNumber(): string {
@@ -86,6 +87,35 @@ function inferTrackingUrl(
 export function createOrderController(
 	data: ModuleDataService,
 ): OrderController {
+	async function recordAttribution(
+		order: Order,
+		input: {
+			toCustomerId: string;
+			reason: "legacy_subject_rewrite" | "guest_claim";
+		},
+	): Promise<Order | null> {
+		if (order.customerId === input.toCustomerId) return order;
+		const attributionId = `order-attr:${order.id}:${input.reason}:${input.toCustomerId}`;
+		const existing = await data.get("orderCustomerAttribution", attributionId);
+		const updated: Order = {
+			...order,
+			customerId: input.toCustomerId,
+			updatedAt: new Date(),
+		};
+		await data.upsert("order", order.id, updated as Record<string, unknown>);
+		if (!existing) {
+			await data.upsert("orderCustomerAttribution", attributionId, {
+				id: attributionId,
+				orderId: order.id,
+				fromCustomerId: order.customerId,
+				toCustomerId: input.toCustomerId,
+				reason: input.reason,
+				createdAt: new Date(),
+			});
+		}
+		return updated;
+	}
+
 	return {
 		async create(params: CreateOrderParams): Promise<Order> {
 			if (params.items.length === 0) {
@@ -306,6 +336,53 @@ export function createOrderController(
 				orders: all.slice(offset, offset + limit),
 				total: all.length,
 			};
+		},
+
+		async adoptLegacySubjectOrders(authSubject, storeCustomerId) {
+			if (authSubject === storeCustomerId) return 0;
+			const legacy = (await data.findMany("order", {
+				where: { customerId: authSubject },
+			})) as Order[];
+			let adopted = 0;
+			for (const order of legacy) {
+				const result = await recordAttribution(order, {
+					toCustomerId: storeCustomerId,
+					reason: "legacy_subject_rewrite",
+				});
+				if (result) adopted += 1;
+			}
+			return adopted;
+		},
+
+		async claimGuestOrder(params) {
+			const order = (await data.get("order", params.orderId)) as Order | null;
+			if (!order) {
+				return { ok: false as const, code: "order_not_found" as const };
+			}
+			if (order.customerId === params.storeCustomerId) {
+				return { ok: true as const, order, claimed: false };
+			}
+			if (order.customerId) {
+				return { ok: false as const, code: "already_attributed" as const };
+			}
+			if (!order.guestEmail) {
+				return { ok: false as const, code: "not_guest_order" as const };
+			}
+			if (!(await orderAcceptsGuestProof(order, params.proofs))) {
+				return { ok: false as const, code: "proof_invalid" as const };
+			}
+			const claimed = await recordAttribution(order, {
+				toCustomerId: params.storeCustomerId,
+				reason: "guest_claim",
+			});
+			if (!claimed) {
+				return { ok: false as const, code: "order_not_found" as const };
+			}
+			return { ok: true as const, order: claimed, claimed: true };
+		},
+
+		async guestProofMatches(order, proofs) {
+			return orderAcceptsGuestProof(order, proofs);
 		},
 
 		async hasCustomerPurchasedProduct(

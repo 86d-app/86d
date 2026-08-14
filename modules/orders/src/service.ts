@@ -356,6 +356,35 @@ export type OrderController = ModuleController & {
 	): Promise<{ orders: Order[]; total: number }>;
 
 	/**
+	 * Rewrite legacy auth-subject customerId values onto the Store Customer.
+	 */
+	adoptLegacySubjectOrders(
+		authSubject: string,
+		storeCustomerId: string,
+	): Promise<number>;
+
+	/**
+	 * Bind a guest Order to a Store Customer after proof verification.
+	 */
+	claimGuestOrder(params: {
+		orderId: string;
+		storeCustomerId: string;
+		proofs: readonly string[];
+	}): Promise<
+		| { ok: true; order: Order; claimed: boolean }
+		| {
+				ok: false;
+				code:
+					| "order_not_found"
+					| "proof_invalid"
+					| "already_attributed"
+					| "not_guest_order";
+		  }
+	>;
+
+	guestProofMatches(order: Order, proofs: readonly string[]): Promise<boolean>;
+
+	/**
 	 * Check if a customer has ever purchased a specific product.
 	 * Used for verified-purchase review gating.
 	 */

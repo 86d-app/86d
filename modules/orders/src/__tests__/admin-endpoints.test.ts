@@ -138,6 +138,12 @@ function makeController(
 		getById: vi.fn().mockResolvedValue(null),
 		getByOrderNumber: vi.fn().mockResolvedValue(null),
 		listForCustomer: vi.fn().mockResolvedValue({ orders: [], total: 0 }),
+		adoptLegacySubjectOrders: vi.fn().mockResolvedValue(0),
+		claimGuestOrder: vi.fn().mockResolvedValue({
+			ok: false,
+			code: "order_not_found",
+		}),
+		guestProofMatches: vi.fn().mockResolvedValue(false),
 		hasCustomerPurchasedProduct: vi.fn().mockResolvedValue(false),
 		list: vi.fn().mockResolvedValue({ orders: [], total: 0 }),
 		listForExport: vi.fn().mockResolvedValue({ orders: [], total: 0 }),

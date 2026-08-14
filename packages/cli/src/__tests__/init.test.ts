@@ -189,12 +189,12 @@ describe("init", () => {
 		expect(calls.some((c) => c.includes("migrate deploy"))).toBe(true);
 		expect(calls.some((c) => c.includes("seed.ts"))).toBe(true);
 
-		// Seed call should pass ADMIN_EMAIL and ADMIN_PASSWORD env vars
+		// Seed call should pass APP_ADMIN_EMAIL and APP_ADMIN_PASSWORD env vars
 		const seedCall = execSyncMock.mock.calls.find(
 			(c: unknown[]) => typeof c[0] === "string" && c[0].includes("seed.ts"),
 		);
 		const seedEnv = (seedCall?.[1] as { env?: Record<string, string> })?.env;
-		expect(seedEnv?.ADMIN_EMAIL).toBe("admin@example.com");
-		expect(seedEnv?.ADMIN_PASSWORD).toBe("password123");
+		expect(seedEnv?.APP_ADMIN_EMAIL).toBe("admin@example.com");
+		expect(seedEnv?.APP_ADMIN_PASSWORD).toBe("password123");
 	});
 });

@@ -135,7 +135,7 @@ describe("Checkout guest proof", () => {
 		expect(await canAccessCheckout(context(null), session)).toBe(false);
 	});
 
-	it("binds authenticated Checkouts to the exact session principal", async () => {
+	it("binds authenticated Checkouts to the Store Customer, not the auth subject", async () => {
 		const storage = createTransactionTestStore();
 		const controller = createCheckoutController(
 			storage.data,
@@ -143,15 +143,43 @@ describe("Checkout guest proof", () => {
 		);
 		const session = await controller.create({
 			...sessionInput(),
-			customerId: "customer-1",
+			customerId: "store-customer-1",
 		});
-		const context = (userId: string | undefined) => ({
-			context: {
-				session: userId ? createMockSession({ userId }) : null,
-			},
-			getCookie: () => null,
-			setCookie: () => "",
-		});
+		const context = (
+			userId: string | undefined,
+			storeCustomerId = "store-customer-1",
+		) =>
+			({
+				context: {
+					session: userId ? createMockSession({ userId }) : null,
+					capabilities: {
+						invoke: vi.fn(async () => {
+							if (!userId) {
+								return {
+									ok: false,
+									failure: { code: "INVALID_IDENTITY_INPUT" },
+								};
+							}
+							return {
+								ok: true,
+								decision: {
+									customerId:
+										userId === "customer-1"
+											? storeCustomerId
+											: "store-customer-2",
+									bindingId: "binding-1",
+									verifiedEmail: "shopper@example.com",
+									createdCustomer: false,
+									createdBinding: false,
+									boundAt: "2026-08-14T12:00:00.000Z",
+								},
+							};
+						}),
+					},
+				},
+				getCookie: () => null,
+				setCookie: () => "",
+			}) as Parameters<typeof canAccessCheckout>[0];
 
 		expect(await canAccessCheckout(context("customer-1"), session)).toBe(true);
 		expect(await canAccessCheckout(context("customer-2"), session)).toBe(false);
@@ -179,7 +207,7 @@ describe("Checkout guest proof", () => {
 			expect.objectContaining({
 				httpOnly: true,
 				sameSite: "lax",
-				path: "/api/checkout/sessions",
+				path: "/api",
 				maxAge: expect.any(Number),
 			}),
 		);

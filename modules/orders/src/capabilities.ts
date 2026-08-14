@@ -8,6 +8,7 @@ import {
 import {
 	orderCreateCapability,
 	orderCustomerAuthorizeCapability,
+	orderGuestProofAuthorizeCapability,
 	orderLineQuantityValidateCapability,
 	orderPurchaseVerifyCapability,
 } from "@86d-app/core/commerce-capabilities";
@@ -16,6 +17,7 @@ import { createOrderController } from "./service-impl";
 export {
 	orderCreateCapability,
 	orderCustomerAuthorizeCapability,
+	orderGuestProofAuthorizeCapability,
 	orderLineQuantityValidateCapability,
 	orderPurchaseVerifyCapability,
 };
@@ -71,6 +73,28 @@ export const orderCustomerAuthorizeProvider = provideCapability(
 				return { ok: false, failure: { code: "not_owner" as const } };
 			}
 			return { ok: true, decision: { authorized: true as const } };
+		} catch {
+			return { ok: false, failure: { code: "lookup_failed" as const } };
+		}
+	},
+);
+
+export const orderGuestProofAuthorizeProvider = provideCapability(
+	orderGuestProofAuthorizeCapability,
+	async (ctx, request) => {
+		try {
+			const controller = createOrderController(ctx.data);
+			const order = await controller.getById(request.orderId);
+			if (!order) {
+				return {
+					ok: false,
+					failure: { code: "order_not_found" as const },
+				};
+			}
+			if (await controller.guestProofMatches(order, request.proofs)) {
+				return { ok: true, decision: { authorized: true as const } };
+			}
+			return { ok: false, failure: { code: "proof_invalid" as const } };
 		} catch {
 			return { ok: false, failure: { code: "lookup_failed" as const } };
 		}

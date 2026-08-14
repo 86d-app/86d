@@ -278,8 +278,9 @@ Full-page loyalty dashboard composing PointsBalance, TierProgress, and PointsHis
 
 ## Notes
 
-- Automatically earns points when an `order.placed` event fires, using `calculateOrderPoints()` based on active rules.
+- Disabled by default. Setting `enabled: true` exposes admin and Store surfaces, but earn/redeem remain unattached to Order facts until a durable, idempotent ledger write is wired.
 - Loyalty accounts are auto-provisioned on first interaction via `getOrCreateAccount()`.
 - Requires the `customers` module.
 - Rule types: `per_dollar` (points per dollar spent), `fixed_bonus` (flat points above min order), `multiplier` (multiply base points), `signup` (one-time signup bonus).
 - Configuration values are strings for module config compatibility.
+- Ledger writes with an `orderId` are unique on `(accountId, orderId, type)` via `ledgerKey`.

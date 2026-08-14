@@ -140,6 +140,17 @@ export function createLoyaltyController(
 				throw new Error("Cannot earn points on a non-active account");
 			}
 
+			const ledgerKey = params.orderId
+				? `${account.id}:${params.orderId}:earn`
+				: undefined;
+			if (ledgerKey) {
+				const existing = (await data.findMany("loyaltyTransaction", {
+					where: { ledgerKey },
+					take: 1,
+				})) as LoyaltyTransaction[];
+				if (existing[0]) return existing[0];
+			}
+
 			const updated: LoyaltyAccount = {
 				...account,
 				balance: account.balance + params.points,
@@ -160,6 +171,7 @@ export function createLoyaltyController(
 				points: params.points,
 				description: params.description,
 				orderId: params.orderId,
+				...(ledgerKey ? { ledgerKey } : {}),
 				createdAt: new Date(),
 			};
 			await data.upsert(
@@ -177,6 +189,18 @@ export function createLoyaltyController(
 			if (account.status !== "active") {
 				throw new Error("Cannot redeem points on a non-active account");
 			}
+
+			const ledgerKey = params.orderId
+				? `${account.id}:${params.orderId}:redeem`
+				: undefined;
+			if (ledgerKey) {
+				const existing = (await data.findMany("loyaltyTransaction", {
+					where: { ledgerKey },
+					take: 1,
+				})) as LoyaltyTransaction[];
+				if (existing[0]) return existing[0];
+			}
+
 			if (account.balance < params.points) {
 				throw new Error("Insufficient points balance");
 			}
@@ -201,6 +225,7 @@ export function createLoyaltyController(
 				points: params.points,
 				description: params.description,
 				orderId: params.orderId,
+				...(ledgerKey ? { ledgerKey } : {}),
 				createdAt: new Date(),
 			};
 			await data.upsert(

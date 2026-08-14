@@ -243,6 +243,7 @@ describe("EasyPostProvider", () => {
 
 			const body = JSON.parse(fetchCall[1]?.body as string);
 			expect(body.shipment.from_address.street1).toBe("417 Montgomery Street");
+			expect(body.shipment.to_address.verify).toBe(true);
 			expect(body.shipment.parcel.weight).toBe(65.9);
 		});
 
@@ -534,6 +535,62 @@ describe("EasyPostProvider", () => {
 				ok: false,
 				error: "Network request failed",
 			});
+		});
+	});
+
+	describe("verifyAddress", () => {
+		it("posts the destination with verify true", async () => {
+			globalThis.fetch = vi.fn().mockResolvedValue({
+				ok: true,
+				json: () =>
+					Promise.resolve({
+						street1: "500 Customer Ln",
+						city: "Madison",
+						state: "WI",
+						zip: "53703",
+						country: "US",
+						verifications: { delivery: { success: true } },
+					}),
+			});
+
+			const result = await provider.verifyAddress({
+				street1: "500 Customer Lane",
+				city: "Madison",
+				state: "WI",
+				zip: "53703",
+				country: "US",
+			});
+
+			expect(result.street1).toBe("500 Customer Ln");
+			const body = JSON.parse(
+				vi.mocked(globalThis.fetch).mock.calls[0]?.[1]?.body as string,
+			);
+			expect(body.verify).toBe(true);
+		});
+
+		it("fails closed when delivery verification rejects the address", async () => {
+			globalThis.fetch = vi.fn().mockResolvedValue({
+				ok: true,
+				json: () =>
+					Promise.resolve({
+						street1: "500 Customer Lane",
+						city: "Madison",
+						state: "WI",
+						zip: "53703",
+						country: "US",
+						verifications: { delivery: { success: false } },
+					}),
+			});
+
+			await expect(
+				provider.verifyAddress({
+					street1: "500 Customer Lane",
+					city: "Madison",
+					state: "WI",
+					zip: "53703",
+					country: "US",
+				}),
+			).rejects.toThrow("could not verify");
 		});
 	});
 });

@@ -129,8 +129,8 @@ export async function init(args: string[]) {
 							env: {
 								...process.env,
 								DATABASE_URL: dbUrl,
-								ADMIN_EMAIL: adminEmail,
-								ADMIN_PASSWORD: adminPassword,
+								APP_ADMIN_EMAIL: adminEmail,
+								APP_ADMIN_PASSWORD: adminPassword,
 							},
 						});
 						success("Demo data seeded");

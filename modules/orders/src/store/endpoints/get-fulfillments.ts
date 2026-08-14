@@ -5,7 +5,7 @@ import {
 	projectOrderFulfillmentStatus,
 	projectOwnerFulfillments,
 } from "../../fulfillment-projection";
-import type { OrderController } from "../../service";
+import { resolveOrderCustomerContext } from "./customer-context";
 
 export const getMyOrderFulfillments = createStoreEndpoint(
 	"/orders/me/:id/fulfillments",
@@ -14,9 +14,11 @@ export const getMyOrderFulfillments = createStoreEndpoint(
 		params: z.object({ id: z.string().max(128) }),
 	},
 	async (ctx) => {
-		const controller = ctx.context.controllers.order as OrderController;
-		const order = await controller.getById(ctx.params.id);
-		if (!order) {
+		const customerContext = await resolveOrderCustomerContext(ctx.context);
+		if (!customerContext.ok) return customerContext.response;
+
+		const order = await customerContext.controller.getById(ctx.params.id);
+		if (!order || order.customerId !== customerContext.customerId) {
 			return { error: "Order not found", status: 404 };
 		}
 
@@ -34,7 +36,7 @@ export const getMyOrderFulfillments = createStoreEndpoint(
 
 		const [ownerFulfillments, orderItems] = await Promise.all([
 			fulfillmentController.listByOrder(ctx.params.id),
-			controller.getItems(ctx.params.id),
+			customerContext.controller.getItems(ctx.params.id),
 		]);
 
 		return {

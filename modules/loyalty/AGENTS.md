@@ -6,7 +6,7 @@ Points-based loyalty program with tiered rewards, earning rules, and order-event
 
 ```
 src/
-  index.ts          Factory: loyalty(options?) => Module + order.placed event listener
+  index.ts          Factory: loyalty(options?) => Module. Order facts are not attached.
   schema.ts         Zod models: loyaltyAccount, loyaltyTransaction, loyaltyRule, loyaltyTier
   service.ts        LoyaltyController interface + types
   service-impl.ts   LoyaltyController implementation

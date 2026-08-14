@@ -371,6 +371,13 @@ async function handleOrder(
 		acceptedOfferId: finalization.acceptedInput.acceptedOfferId,
 		catalogRevision: finalization.acceptedInput.catalogRevisionId,
 		priceSourceVersion: finalization.acceptedInput.pricingDecisionId,
+		...(typeof session.metadata?.guestProofDigest === "string"
+			? {
+					metadata: {
+						guestProofDigest: session.metadata.guestProofDigest,
+					},
+				}
+			: {}),
 		...(finalization.acceptedInput.taxQuoteId
 			? { taxQuoteId: finalization.acceptedInput.taxQuoteId }
 			: typeof session.metadata?.taxQuoteId === "string"

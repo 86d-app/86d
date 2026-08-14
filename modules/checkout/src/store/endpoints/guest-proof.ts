@@ -1,10 +1,12 @@
 import type { ModuleContext } from "@86d-app/core/types/module";
 import type { CheckoutSession } from "../../service";
+import { resolveStoreCustomer } from "./store-customer";
 
 const PROOF_METADATA_KEY = "guestProofDigest";
 
-type CheckoutAccessContext = {
-	context: Pick<ModuleContext, "session">;
+export type CheckoutAccessContext = {
+	context: Pick<ModuleContext, "session"> &
+		Partial<Pick<ModuleContext, "capabilities">>;
 	getCookie: (key: string) => string | null;
 	setCookie: (
 		key: string,
@@ -60,17 +62,27 @@ export function setGuestProofCookie(
 		httpOnly: true,
 		sameSite: "lax",
 		secure: process.env.NODE_ENV === "production",
-		path: "/api/checkout/sessions",
+		path: "/api",
 		maxAge,
 	});
 }
+
+export const GUEST_PROOF_METADATA_KEY = PROOF_METADATA_KEY;
+
+export { digest as digestGuestProof, matches as guestProofMatches };
 
 export async function canAccessCheckout(
 	ctx: CheckoutAccessContext,
 	session: CheckoutSession,
 ): Promise<boolean> {
-	const userId = ctx.context.session?.user.id;
-	if (session.customerId) return session.customerId === userId;
+	if (session.customerId) {
+		if (!ctx.context.capabilities) return false;
+		const resolved = await resolveStoreCustomer({
+			session: ctx.context.session,
+			capabilities: ctx.context.capabilities,
+		});
+		return resolved.ok && resolved.customerId === session.customerId;
+	}
 
 	const expected = session.metadata?.[PROOF_METADATA_KEY];
 	if (typeof expected !== "string") return false;

@@ -1,6 +1,7 @@
 import { acceptCapability } from "@86d-app/core/capabilities";
 import {
 	cartSnapshotCapability,
+	customerIdentityResolveCapability,
 	discountCodeCapability,
 	giftCardCheckoutCapability,
 	inventoryCheckoutCapability,
@@ -194,6 +195,7 @@ export default function checkout(options?: CheckoutOptions): Module {
 				}),
 				acceptCapability(priceListResolveCapability, { optional: true }),
 				acceptCapability(productPriceConversionCapability, { optional: true }),
+				acceptCapability(customerIdentityResolveCapability, { optional: true }),
 			],
 		},
 		exports: {

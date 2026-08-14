@@ -714,6 +714,15 @@ if (process.env.EASYPOST_API_KEY) {
     easypostApiKey: process.env.EASYPOST_API_KEY,
     easypostTestMode: process.env.EASYPOST_TEST_MODE !== "false",
     easypostWebhookSecret: process.env.EASYPOST_WEBHOOK_SECRET ?? "",
+    easypostOriginName: process.env.EASYPOST_ORIGIN_NAME,
+    easypostOriginCompany: process.env.EASYPOST_ORIGIN_COMPANY,
+    easypostOriginStreet1: process.env.EASYPOST_ORIGIN_STREET1,
+    easypostOriginStreet2: process.env.EASYPOST_ORIGIN_STREET2,
+    easypostOriginCity: process.env.EASYPOST_ORIGIN_CITY,
+    easypostOriginState: process.env.EASYPOST_ORIGIN_STATE,
+    easypostOriginPostalCode: process.env.EASYPOST_ORIGIN_POSTAL_CODE,
+    easypostOriginCountry: process.env.EASYPOST_ORIGIN_COUNTRY,
+    easypostOriginPhone: process.env.EASYPOST_ORIGIN_PHONE,
   };
 }
 `;

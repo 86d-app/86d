@@ -10,7 +10,7 @@
  *   DATABASE_URL=... bun run db:seed
  *
  * What it creates:
- *   - Admin user (ADMIN_EMAIL / ADMIN_PASSWORD env vars, or admin@example.com / password123)
+ *   - Admin user (APP_ADMIN_EMAIL / APP_ADMIN_PASSWORD env vars, or admin@example.com / password123)
  *   - 16 luxury products with variants across 6 categories
  *   - 6 mirrored collections in both products + collections modules
  *   - 1 house brand, 3 customers, 1 demo order, and supporting module data
@@ -74,8 +74,8 @@ if (!DATABASE_URL) {
 }
 
 const STORE_ID = process.env.STORE_ID || "de005b9d-c517-4c65-896e-8edef5cf5a94";
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@example.com";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "password123";
+const ADMIN_EMAIL = process.env.APP_ADMIN_EMAIL || "admin@example.com";
+const ADMIN_PASSWORD = process.env.APP_ADMIN_PASSWORD || "password123";
 const now = new Date().toISOString();
 const ASSET_ROOT = resolve(process.cwd(), "scripts/seed-assets/luxury-house");
 const ASSET_KEY_PREFIX = `stores/${STORE_ID}/seed/luxury-house`;

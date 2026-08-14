@@ -125,6 +125,25 @@ describe("createLoyaltyController", () => {
 			expect(txn.orderId).toBe("order_123");
 		});
 
+		it("replays the same accountId, orderId, and type without a second ledger row", async () => {
+			const first = await controller.earnPoints({
+				customerId: "cust_1",
+				points: 50,
+				description: "Order reward",
+				orderId: "order_123",
+			});
+			const replay = await controller.earnPoints({
+				customerId: "cust_1",
+				points: 50,
+				description: "Order reward retry",
+				orderId: "order_123",
+			});
+			const account = await controller.getAccount("cust_1");
+			expect(replay).toEqual(first);
+			expect(account?.balance).toBe(50);
+			expect(account?.lifetimeEarned).toBe(50);
+		});
+
 		it("throws on suspended account", async () => {
 			await controller.suspendAccount("cust_1");
 			await expect(

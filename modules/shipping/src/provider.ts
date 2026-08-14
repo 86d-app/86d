@@ -173,7 +173,9 @@ export class EasyPostProvider {
 	 * Verify a destination through EasyPost Address before quoting.
 	 * Fails closed when delivery verification explicitly rejects the address.
 	 */
-	async verifyAddress(address: EasyPostAddress): Promise<EasyPostVerifiedAddress> {
+	async verifyAddress(
+		address: EasyPostAddress,
+	): Promise<EasyPostVerifiedAddress> {
 		const created = await this.request<EasyPostVerifiedAddress>(
 			"POST",
 			"/addresses",

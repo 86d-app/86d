@@ -1,5 +1,10 @@
 import { acceptCapability } from "@86d-app/core/capabilities";
-import { orderLineQuantityValidateCapability } from "@86d-app/core/commerce-capabilities";
+import {
+	customerIdentityResolveCapability,
+	orderCustomerAuthorizeCapability,
+	orderGuestProofAuthorizeCapability,
+	orderLineQuantityValidateCapability,
+} from "@86d-app/core/commerce-capabilities";
 import type {
 	Module,
 	ModuleConfig,
@@ -32,7 +37,12 @@ export default function fulfillment(options?: FulfillmentOptions): Module {
 		version: "0.0.1",
 		schema: fulfillmentSchema,
 		capabilities: {
-			accepts: [acceptCapability(orderLineQuantityValidateCapability)],
+			accepts: [
+				acceptCapability(orderLineQuantityValidateCapability),
+				acceptCapability(orderCustomerAuthorizeCapability),
+				acceptCapability(orderGuestProofAuthorizeCapability, { optional: true }),
+				acceptCapability(customerIdentityResolveCapability, { optional: true }),
+			],
 		},
 		events: {
 			emits: [

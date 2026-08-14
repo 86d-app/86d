@@ -13,6 +13,7 @@ import {
 	createShippingConnectionInputSchema,
 	createShippingFoundationController,
 	createShippingQuoteInputSchema,
+	isUspsPriorityMailRate,
 	recordShippingLabelInputSchema,
 	recordShippingLabelRefundInputSchema,
 	recordShippingPostageAdjustmentInputSchema,
@@ -31,6 +32,7 @@ import {
 	shippingPostageAdjustmentSchema,
 	shippingQuoteSchema,
 	shippingTrackingSchema,
+	USPS_PRIORITY_MAIL_SERVICE,
 } from "./foundation-v2";
 import { shippingSchema } from "./schema";
 import { createShippingController } from "./service-impl";
@@ -77,6 +79,7 @@ export {
 	createShippingConnectionInputSchema,
 	createShippingFoundationController,
 	createShippingQuoteInputSchema,
+	isUspsPriorityMailRate,
 	recordShippingLabelInputSchema,
 	recordShippingLabelRefundInputSchema,
 	recordShippingPostageAdjustmentInputSchema,
@@ -95,6 +98,7 @@ export {
 	shippingPostageAdjustmentSchema,
 	shippingQuoteSchema,
 	shippingTrackingSchema,
+	USPS_PRIORITY_MAIL_SERVICE,
 };
 
 export interface ShippingOptions extends ModuleConfig {
@@ -241,6 +245,10 @@ export default function shipping(options?: ShippingOptions): Module {
 					secretReference: "module-option:easypostApiKey",
 					originAddress: easypostOrigin,
 				});
+				const checked = await foundation.checkConnection(easypostConnectionId);
+				if (checked.health === "healthy" && checked.lifecycle !== "enabled") {
+					await foundation.enableConnection(easypostConnectionId);
+				}
 			}
 			return {
 				controllers: { shipping: controller, shippingV2: foundation },

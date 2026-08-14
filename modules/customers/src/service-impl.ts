@@ -515,223 +515,48 @@ export function createCustomerController(
 			return { created, updated, errors };
 		},
 
-		// --- Loyalty Points ---
+		// --- Loyalty Points (quarantined; Loyalty module owns the ledger) ---
 
 		async getLoyaltyBalance(customerId: string): Promise<LoyaltyBalance> {
-			const transactions = (await data.findMany("loyaltyTransaction", {
-				where: { customerId },
-			})) as LoyaltyTransaction[];
-
-			let totalEarned = 0;
-			let totalRedeemed = 0;
-			for (const t of transactions) {
-				if (t.type === "earn" || (t.type === "adjust" && t.points > 0)) {
-					totalEarned += t.points;
-				} else if (
-					t.type === "redeem" ||
-					(t.type === "adjust" && t.points < 0)
-				) {
-					totalRedeemed += Math.abs(t.points);
-				}
-			}
-
 			return {
 				customerId,
-				totalEarned,
-				totalRedeemed,
-				balance: totalEarned - totalRedeemed,
-				transactionCount: transactions.length,
+				totalEarned: 0,
+				totalRedeemed: 0,
+				balance: 0,
+				transactionCount: 0,
 			};
 		},
 
 		async getLoyaltyHistory(
-			customerId: string,
-			params?: {
+			_customerId: string,
+			_params?: {
 				limit?: number | undefined;
 				offset?: number | undefined;
 			},
 		): Promise<{ transactions: LoyaltyTransaction[]; total: number }> {
-			const limit = params?.limit ?? 20;
-			const offset = params?.offset ?? 0;
-
-			const all = (await data.findMany("loyaltyTransaction", {
-				where: { customerId },
-			})) as LoyaltyTransaction[];
-
-			// Sort by createdAt descending (newest first)
-			all.sort(
-				(a, b) =>
-					new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-			);
-
-			return {
-				transactions: all.slice(offset, offset + limit),
-				total: all.length,
-			};
+			return { transactions: [], total: 0 };
 		},
 
-		async earnPoints(params): Promise<LoyaltyTransaction> {
-			if (params.points <= 0) {
-				throw new Error("Points to earn must be positive");
-			}
-
-			// Get current balance
-			const balance = await this.getLoyaltyBalance(params.customerId);
-
-			const transaction: LoyaltyTransaction = {
-				id: crypto.randomUUID(),
-				customerId: params.customerId,
-				type: "earn",
-				points: params.points,
-				balance: balance.balance + params.points,
-				reason: params.reason,
-				orderId: params.orderId,
-				createdAt: new Date(),
-			};
-
-			await data.upsert(
-				"loyaltyTransaction",
-				transaction.id,
-				transaction as Record<string, unknown>,
-			);
-			return transaction;
+		async earnPoints(): Promise<LoyaltyTransaction> {
+			throw new Error("Loyalty writes belong to the Loyalty module.");
 		},
 
-		async redeemPoints(params): Promise<LoyaltyTransaction> {
-			if (params.points <= 0) {
-				throw new Error("Points to redeem must be positive");
-			}
-
-			const balance = await this.getLoyaltyBalance(params.customerId);
-			if (balance.balance < params.points) {
-				throw new Error("Insufficient loyalty points");
-			}
-
-			const transaction: LoyaltyTransaction = {
-				id: crypto.randomUUID(),
-				customerId: params.customerId,
-				type: "redeem",
-				points: -params.points,
-				balance: balance.balance - params.points,
-				reason: params.reason,
-				orderId: params.orderId,
-				createdAt: new Date(),
-			};
-
-			await data.upsert(
-				"loyaltyTransaction",
-				transaction.id,
-				transaction as Record<string, unknown>,
-			);
-			return transaction;
+		async redeemPoints(): Promise<LoyaltyTransaction> {
+			throw new Error("Loyalty writes belong to the Loyalty module.");
 		},
 
-		async adjustPoints(params): Promise<LoyaltyTransaction> {
-			if (params.points === 0) {
-				throw new Error("Adjustment points cannot be zero");
-			}
-
-			const balance = await this.getLoyaltyBalance(params.customerId);
-			const newBalance = balance.balance + params.points;
-
-			if (newBalance < 0) {
-				throw new Error("Adjustment would result in negative balance");
-			}
-
-			const transaction: LoyaltyTransaction = {
-				id: crypto.randomUUID(),
-				customerId: params.customerId,
-				type: "adjust",
-				points: params.points,
-				balance: newBalance,
-				reason: params.reason,
-				createdAt: new Date(),
-			};
-
-			await data.upsert(
-				"loyaltyTransaction",
-				transaction.id,
-				transaction as Record<string, unknown>,
-			);
-			return transaction;
+		async adjustPoints(): Promise<LoyaltyTransaction> {
+			throw new Error("Loyalty writes belong to the Loyalty module.");
 		},
 
 		async getLoyaltyStats(): Promise<LoyaltyStats> {
-			const allTransactions = (await data.findMany(
-				"loyaltyTransaction",
-				{},
-			)) as LoyaltyTransaction[];
-			const allCustomers = (await data.findMany("customer", {})) as Customer[];
-
-			// Group transactions by customer
-			const byCustomer = new Map<string, LoyaltyTransaction[]>();
-			for (const t of allTransactions) {
-				const existing = byCustomer.get(t.customerId) ?? [];
-				existing.push(t);
-				byCustomer.set(t.customerId, existing);
-			}
-
-			let totalPointsIssued = 0;
-			let totalPointsRedeemed = 0;
-			const customerBalances: {
-				customerId: string;
-				balance: number;
-			}[] = [];
-
-			for (const [customerId, transactions] of byCustomer) {
-				let earned = 0;
-				let redeemed = 0;
-				for (const t of transactions) {
-					if (t.type === "earn" || (t.type === "adjust" && t.points > 0)) {
-						earned += t.points;
-					} else if (
-						t.type === "redeem" ||
-						(t.type === "adjust" && t.points < 0)
-					) {
-						redeemed += Math.abs(t.points);
-					}
-				}
-				totalPointsIssued += earned;
-				totalPointsRedeemed += redeemed;
-				customerBalances.push({
-					customerId,
-					balance: earned - redeemed,
-				});
-			}
-
-			const totalOutstanding = totalPointsIssued - totalPointsRedeemed;
-			const customersWithPoints = customerBalances.filter((c) => c.balance > 0);
-
-			// Build customer lookup for top customers
-			const customerMap = new Map<string, Customer>();
-			for (const c of allCustomers) {
-				customerMap.set(c.id, c);
-			}
-
-			// Sort by balance descending and take top 10
-			customerBalances.sort((a, b) => b.balance - a.balance);
-			const topCustomers = customerBalances.slice(0, 10).map((cb) => {
-				const customer = customerMap.get(cb.customerId);
-				return {
-					customerId: cb.customerId,
-					email: customer?.email ?? "",
-					name: customer
-						? `${customer.firstName} ${customer.lastName}`
-						: "Unknown",
-					balance: cb.balance,
-				};
-			});
-
 			return {
-				totalCustomersWithPoints: customersWithPoints.length,
-				totalPointsIssued,
-				totalPointsRedeemed,
-				totalPointsOutstanding: totalOutstanding,
-				averageBalance:
-					customersWithPoints.length > 0
-						? Math.round(totalOutstanding / customersWithPoints.length)
-						: 0,
-				topCustomers,
+				totalCustomersWithPoints: 0,
+				totalPointsIssued: 0,
+				totalPointsRedeemed: 0,
+				totalPointsOutstanding: 0,
+				averageBalance: 0,
+				topCustomers: [],
 			};
 		},
 	};

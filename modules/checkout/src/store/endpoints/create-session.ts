@@ -11,6 +11,7 @@ import { isCapabilityUnavailable } from "../../capability-failures";
 import type { CheckoutController, CheckoutLineItem } from "../../service";
 import { createGuestProofMetadata, setGuestProofCookie } from "./guest-proof";
 import { recalculateTax, taxRecalculationError } from "./recalculate-tax";
+import { resolveStoreCustomer } from "./store-customer";
 
 const addressSchema = z.object({
 	firstName: z.string().min(1).max(200).transform(sanitizeText),
@@ -49,16 +50,21 @@ export const createSession = createStoreEndpoint(
 		}),
 	},
 	async (ctx) => {
-		const customerId = ctx.context.session?.user.id;
+		const authSubject = ctx.context.session?.user.id;
 		const controller = ctx.context.controllers.checkout as CheckoutController;
-		const guestId = customerId ? undefined : ctx.getCookie("cart_guest_id");
-		const cartOwner = customerId
-			? { customerId }
+		const guestId = authSubject ? undefined : ctx.getCookie("cart_guest_id");
+		const cartOwner = authSubject
+			? { customerId: authSubject }
 			: guestId
 				? { guestId }
 				: undefined;
 		if (!cartOwner) {
 			return { error: "Cart not found", status: 404 };
+		}
+
+		const storeCustomer = await resolveStoreCustomer(ctx.context);
+		if (!storeCustomer.ok) {
+			return storeCustomer.response;
 		}
 
 		const snapshot = await ctx.context.capabilities.invoke(
@@ -251,12 +257,14 @@ export const createSession = createStoreEndpoint(
 		);
 		const total = subtotal;
 
-		const guestProof = customerId
+		const guestProof = storeCustomer.customerId
 			? undefined
 			: await createGuestProofMetadata();
 		const session = await controller.create({
 			cartId: snapshot.decision.cartId,
-			...(customerId ? { customerId } : {}),
+			...(storeCustomer.customerId
+				? { customerId: storeCustomer.customerId }
+				: {}),
 			...(ctx.body.guestEmail ? { guestEmail: ctx.body.guestEmail } : {}),
 			...(ctx.body.currency ? { currency: ctx.body.currency } : {}),
 			subtotal,

@@ -20,22 +20,21 @@ export const applyStoreCredit = createStoreEndpoint(
 			return { error: "Checkout session not found", status: 404 };
 		}
 
-		// Store credits require an authenticated customer
-		const userId = ctx.context.session?.user.id;
-		if (!userId) {
+		// Store credits require an authenticated Store Customer
+		if (!ctx.context.session) {
 			return { error: "Must be signed in to use store credits", status: 401 };
 		}
 
-		if (
-			session.customerId !== userId ||
-			!(await canAccessCheckout(ctx, session))
-		) {
+		if (!(await canAccessCheckout(ctx, session))) {
 			return { error: "Checkout session not found", status: 404 };
+		}
+		if (!session.customerId) {
+			return { error: "Must be signed in to use store credits", status: 401 };
 		}
 
 		const result = await ctx.context.capabilities.invoke(
 			storeCreditCheckoutCapability,
-			{ operation: "balance", customerId: userId },
+			{ operation: "balance", customerId: session.customerId },
 		);
 		if (!result.ok) {
 			return {

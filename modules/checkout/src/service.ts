@@ -95,6 +95,56 @@ export type InventoryCheckController = {
 };
 
 /**
+ * Minimal Shipping v2 quote surface. Checkout binds an expiring, revision-keyed
+ * option from the Store-owned Connection without importing Shipping.
+ */
+export type ShippingQuoteV2Controller = {
+	listConnections(): Promise<
+		Array<{
+			id: string;
+			lifecycle: string;
+			health: string;
+			capabilities: readonly string[];
+		}>
+	>;
+	createQuote(input: {
+		checkoutId: string;
+		checkoutRevision: number;
+		connectionId: string;
+		idempotencyKey: string;
+		destinationAddress: {
+			name?: string | undefined;
+			company?: string | undefined;
+			street1: string;
+			street2?: string | undefined;
+			city: string;
+			state: string;
+			postalCode: string;
+			country: string;
+			phone?: string | undefined;
+		};
+		parcelPlan: Array<{
+			parcelReference: string;
+			lengthInches: number;
+			widthInches: number;
+			heightInches: number;
+			weightOunces: number;
+		}>;
+		currency: string;
+	}): Promise<{
+		quote: { id: string; expiresAt: Date };
+		options: Array<{
+			id: string;
+			carrier: string;
+			service: string;
+			amountMinor: number;
+			currency: string;
+			deliveryDays: number | null;
+		}>;
+	}>;
+};
+
+/**
  * Minimal interface for store credit balance checks and debits.
  * Checkout accesses the store-credits controller through the runtime context —
  * no direct module import, just a structural contract.
