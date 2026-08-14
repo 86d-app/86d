@@ -1,3 +1,4 @@
+import { createMockDataService } from "@86d-app/core/test-utils";
 import { describe, expect, it } from "vitest";
 import {
 	adminCreateTaxPolicyV2,
@@ -8,6 +9,7 @@ import {
 	taxPolicyV2CreateBodySchema,
 	taxRatePackV2CreateBodySchema,
 } from "../admin/endpoints/policy-v2";
+import { handleTaxQuoteV2 } from "../capabilities-v2";
 
 function extractHandler(
 	endpoint: unknown,
@@ -415,5 +417,77 @@ describe("tax v2 configuration contracts", () => {
 				rates: [withoutShipping],
 			}).success,
 		).toBe(false);
+	});
+});
+
+describe("admin configuration round-trips through the quote engine", () => {
+	it("produces a CALCULATED quote from a pack and policy created by the admin surface", async () => {
+		// The admin endpoints and the engine share storage but validated
+		// independently, so a record the surface wrote could be one the engine
+		// refuses. Only invoking the engine on admin-written rows proves the two
+		// agree; asserting on the endpoint response alone cannot.
+		const data = createMockDataService();
+		const store = { tables: new Map(), data } as unknown as ReturnType<
+			typeof dataService
+		>;
+
+		await call(adminCreateTaxRatePackV2, store)({ body: ratePack });
+		await call(adminCreateTaxPolicyV2, store)({ body: policy });
+
+		const result = await handleTaxQuoteV2(
+			data,
+			{
+				currency: "USD",
+				address: {
+					country: "US",
+					state: "TX",
+					city: "Austin",
+					postalCode: "78701",
+					normalizationVersion: "test-v1",
+				},
+				lineItems: [
+					{
+						lineId: "line-a",
+						productId: "product-a",
+						taxCategoryId: "standard",
+						quantity: 1,
+						unitAmount: 1_000,
+					},
+				],
+				shippingAmount: 0,
+				marketplaceStatus: "NOT_MARKETPLACE" as const,
+			},
+			{
+				now: () => new Date("2026-08-13T12:00:00.000Z"),
+				createQuoteId: () => "tax-quote-round-trip",
+			},
+		);
+
+		expect(result).toMatchObject({
+			ok: true,
+			decision: {
+				status: "CALCULATED",
+				jurisdictionDecision: "COLLECT",
+				// 8.25% of 1000 minor units, rounded half up.
+				lineAllocations: [{ lineId: "line-a", taxAmount: 83 }],
+			},
+		});
+	});
+
+	it("refuses a TaxJar policy that does not state its source version", () => {
+		const { ratePackId: _unused, ...base } = policy;
+		expect(
+			taxPolicyV2CreateBodySchema.safeParse({
+				...base,
+				calculationSource: "TAXJAR",
+			}).success,
+		).toBe(false);
+		expect(
+			taxPolicyV2CreateBodySchema.safeParse({
+				...base,
+				calculationSource: "TAXJAR",
+				sourceVersion: "2026-08-01",
+			}).success,
+		).toBe(true);
 	});
 });

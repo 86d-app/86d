@@ -40,7 +40,7 @@ interface StorageProvider {
 
 | Env Var | Config Field | Default |
 |---|---|---|
-| `STORAGE_PROVIDER` | `provider` | `"local"` |
+| `STORAGE_CLIENT` | `provider` | `"local"` |
 | `STORAGE_LOCAL_DIR` | `localDir` | `"./uploads"` |
 | `STORAGE_LOCAL_BASE_URL` | `localBaseUrl` | `"/uploads"` |
 | `S3_ENDPOINT` | `s3Endpoint` | — |

@@ -211,7 +211,10 @@ export function isUspsPriorityMailRate(rate: {
 	service: string;
 }): boolean {
 	const carrier = rate.carrier.trim().toUpperCase();
-	const service = rate.service.trim().replace(/[\s_-]+/g, "").toLowerCase();
+	const service = rate.service
+		.trim()
+		.replace(/[\s_-]+/g, "")
+		.toLowerCase();
 	return (
 		carrier === "USPS" && (service === "priority" || service === "prioritymail")
 	);

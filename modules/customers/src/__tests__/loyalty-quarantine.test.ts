@@ -26,9 +26,11 @@ describe("Customers loyalty quarantine", () => {
 				reason: "manual",
 			}),
 		).rejects.toThrow("Loyalty writes belong to the Loyalty module.");
-		await expect(controller.getLoyaltyBalance("cust-1")).resolves.toMatchObject({
-			balance: 0,
-			transactionCount: 0,
-		});
+		await expect(controller.getLoyaltyBalance("cust-1")).resolves.toMatchObject(
+			{
+				balance: 0,
+				transactionCount: 0,
+			},
+		);
 	});
 });

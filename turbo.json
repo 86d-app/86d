@@ -16,7 +16,7 @@
         "86D_API_URL",
         "86D_API_KEY",
         "86D_WORKLOAD_CREDENTIAL",
-        "STORAGE_PROVIDER",
+        "STORAGE_CLIENT",
         "STORAGE_LOCAL_DIR",
         "STORAGE_LOCAL_BASE_URL"
     ],

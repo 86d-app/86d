@@ -173,8 +173,12 @@ describe("store endpoint: calculate tax — jurisdiction matching", () => {
 
 		// Both rates apply: 10000 * (0.0725 + 0.095) = 1675
 		expect(expectTaxCalculation(result).totalTax).toBe(1675);
-		expect(expectTaxCalculation(result).lines[0].rateNames).toContain("LA City");
-		expect(expectTaxCalculation(result).lines[0].rateNames).toContain("CA State");
+		expect(expectTaxCalculation(result).lines[0].rateNames).toContain(
+			"LA City",
+		);
+		expect(expectTaxCalculation(result).lines[0].rateNames).toContain(
+			"CA State",
+		);
 	});
 
 	it("calculates tax on multiple line items", async () => {

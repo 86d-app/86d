@@ -173,8 +173,17 @@ function topologicalSort(
 	return result;
 }
 
-function capabilityBindingKey(moduleId: string, capability: string): string {
-	return `${moduleId}\u0000${capability}`;
+// A consumer may accept several versions of one capability name while it
+// migrates. Keying a binding by name alone lets the last resolved acceptance
+// overwrite the earlier one, so which binding survives depends on the order of
+// the accepts array, and every invoke of the shadowed version fails as
+// unavailable even though its provider is installed.
+function capabilityBindingKey(
+	moduleId: string,
+	capability: string,
+	version: string,
+): string {
+	return `${moduleId}\u0000${capability}\u0000${version}`;
 }
 
 function capabilityFailure(
@@ -307,7 +316,11 @@ export class ModuleRegistry {
 		}
 
 		for (const consumer of this.modules) {
-			const acceptedNames = new Set<string>();
+			// Accepting one capability name at two versions is how a consumer
+			// migrates, and bindings are keyed by version, so only an overlapping
+			// version is ambiguous. Rejecting the name outright refused a legitimate
+			// migration and stopped the whole runtime from booting.
+			const acceptedVersions = new Map<string, Set<string>>();
 			for (const acceptance of consumer.capabilities?.accepts ?? []) {
 				if (
 					acceptance.name !== acceptance.definition.name ||
@@ -319,13 +332,19 @@ export class ModuleRegistry {
 					);
 					continue;
 				}
-				if (acceptedNames.has(acceptance.name)) {
+				const seenVersions =
+					acceptedVersions.get(acceptance.name) ?? new Set<string>();
+				const overlapping = acceptance.versions.filter((version) =>
+					seenVersions.has(version),
+				);
+				if (overlapping.length > 0) {
 					errors.push(
-						`Module "${consumer.id}" accepts "${acceptance.name}" more than once.`,
+						`Module "${consumer.id}" accepts "${acceptance.name}" version ${overlapping.join(", ")} more than once.`,
 					);
 					continue;
 				}
-				acceptedNames.add(acceptance.name);
+				for (const version of acceptance.versions) seenVersions.add(version);
+				acceptedVersions.set(acceptance.name, seenVersions);
 
 				const versions = new Set(acceptance.versions);
 				if (
@@ -383,7 +402,11 @@ export class ModuleRegistry {
 				const provider = compatible[0];
 				if (!provider) continue;
 				this.capabilityBindings.set(
-					capabilityBindingKey(consumer.id, acceptance.name),
+					capabilityBindingKey(
+						consumer.id,
+						acceptance.name,
+						provider.provider.definition.version,
+					),
 					provider,
 				);
 				const dependencies =
@@ -434,7 +457,7 @@ export class ModuleRegistry {
 		}
 
 		const registered = this.capabilityBindings.get(
-			capabilityBindingKey(consumerId, definition.name),
+			capabilityBindingKey(consumerId, definition.name, definition.version),
 		);
 		if (
 			!registered ||

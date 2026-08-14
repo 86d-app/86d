@@ -36,7 +36,10 @@ export const claimGuestOrder = createStoreEndpoint(
 			proofs: collectGuestProofs(ctx.headers?.get("cookie") ?? null),
 		});
 		if (!result.ok) {
-			if (result.code === "order_not_found" || result.code === "proof_invalid") {
+			if (
+				result.code === "order_not_found" ||
+				result.code === "proof_invalid"
+			) {
 				return { error: "Order not found", status: 404 };
 			}
 			if (result.code === "already_attributed") {

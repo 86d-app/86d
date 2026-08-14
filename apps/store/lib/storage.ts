@@ -1,6 +1,6 @@
 /**
  * Storage singleton for the store app.
- * Reads STORAGE_PROVIDER from env to select the backend.
+ * Reads STORAGE_CLIENT from env to select the backend.
  * Defaults to "local" unless the environment overrides it.
  */
 

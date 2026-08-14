@@ -519,6 +519,53 @@ describe("ModuleRegistry capability invocation", () => {
 		).toMatch(/^checkout-/);
 	});
 
+	it("keeps both versions invocable when a consumer accepts two of one name", async () => {
+		// A consumer migrating between versions accepts both for a while. Binding
+		// by capability name alone let the later acceptance overwrite the earlier,
+		// so which one survived depended on the order of the accepts array and
+		// every invoke of the shadowed version failed as unavailable.
+		const v1Handler = vi.fn(async () => ({
+			ok: true as const,
+			decision: { available: true },
+		}));
+		const v2Handler = vi.fn(async () => ({
+			ok: true as const,
+			decision: { available: true, quantity: 4 },
+		}));
+		const registry = new ModuleRegistry(
+			[
+				module("inventory", {
+					capabilities: {
+						provides: [
+							provideCapability(availabilityV1, v1Handler),
+							provideCapability(availabilityV2, v2Handler),
+						],
+					},
+				}),
+				module("checkout", {
+					capabilities: {
+						accepts: [
+							acceptCapability(availabilityV1),
+							acceptCapability(availabilityV2),
+						],
+					},
+				}),
+			],
+			"store-1",
+			config(),
+		);
+		await registry.boot();
+		const capabilities = registry.createRequestContext("checkout").capabilities;
+
+		const v1 = await capabilities.invoke(availabilityV1, { sku: "sku-1" });
+		const v2 = await capabilities.invoke(availabilityV2, { sku: "sku-1" });
+
+		expect(v1).toMatchObject({ ok: true, decision: { available: true } });
+		expect(v2).toMatchObject({ ok: true, decision: { quantity: 4 } });
+		expect(v1Handler).toHaveBeenCalledTimes(1);
+		expect(v2Handler).toHaveBeenCalledTimes(1);
+	});
+
 	it("invokes a provider with only its owner's transaction runner", async () => {
 		const inventoryTransactions = unusedTransactionRunner();
 		const checkoutTransactions = unusedTransactionRunner();

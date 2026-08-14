@@ -1,4 +1,6 @@
-export default {
+import { defineConfig } from "prisma/config";
+
+export default defineConfig({
 	schema: "prisma",
 	migrations: {
 		path: "prisma/migrations",
@@ -9,4 +11,4 @@ export default {
 			process.env.DATABASE_URL ||
 			"postgresql://postgres:postgres@localhost:5434/postgres",
 	},
-};
+});

@@ -114,8 +114,7 @@ function createMockTaxCapabilities(
 						lineTax: tax,
 						shippingTax: status === "REVIEW_REQUIRED" ? null : 0,
 						tax,
-						grandTotal:
-							tax === null ? null : taxable + shipping + tax,
+						grandTotal: tax === null ? null : taxable + shipping + tax,
 					},
 					lineAllocations: request.lineItems.map((item) => {
 						const grossAmount = item.unitAmount * item.quantity;
@@ -131,9 +130,7 @@ function createMockTaxCapabilities(
 							discountAmount,
 							taxableAmount: lineTaxable,
 							taxAmount:
-								tax === null
-									? null
-									: Math.round(lineTaxable * taxRate),
+								tax === null ? null : Math.round(lineTaxable * taxRate),
 						};
 					}),
 				} satisfies TaxQuoteV2Decision,
@@ -494,9 +491,7 @@ describe("apply/remove discount tax recalculation flow", () => {
 		expect(step2.ok && step2.session.taxAmount).toBe(350);
 		expect(step2.ok && step2.session.total).toBe(4350);
 
-		const removed = await ctrl.removeDiscount(
-			step2.ok ? step2.session.id : "",
-		);
+		const removed = await ctrl.removeDiscount(step2.ok ? step2.session.id : "");
 		const step3 = await recalculateTax(
 			removed as CheckoutSession,
 			ctrl,

@@ -36,10 +36,7 @@ const envSchema = z.object({
 	SENTRY_DSN: z.string().optional(),
 	NEXT_PUBLIC_SENTRY_DSN: z.string().optional(),
 	VERCEL_BLOB_STORAGE_HOSTNAME: z.string().optional(),
-	STORAGE_PROVIDER: z
-		.enum(["local", "vercel", "s3"])
-		.optional()
-		.default("local"),
+	STORAGE_CLIENT: z.enum(["local", "vercel", "s3"]).optional().default("local"),
 	STORAGE_LOCAL_DIR: z.string().optional(),
 	STORAGE_LOCAL_BASE_URL: z.string().optional(),
 	GA4_MEASUREMENT_ID: z.string().optional(),

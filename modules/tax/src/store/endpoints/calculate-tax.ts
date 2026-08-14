@@ -42,7 +42,10 @@ export const calculateTax = createStoreEndpoint(
 
 		// Absence of a matching rate is not a sellable zero. Fail closed so
 		// clients cannot treat an unresolved jurisdiction as tax-free.
-		if (calculation.lines.some((line) => line.unresolved)) {
+		if (
+			calculation.shippingUnresolved ||
+			calculation.lines.some((line) => line.unresolved)
+		) {
 			return {
 				code: "TAX_REVIEW_REQUIRED",
 				error: "Tax requires merchant review before payment.",

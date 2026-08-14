@@ -40,7 +40,9 @@ export default function fulfillment(options?: FulfillmentOptions): Module {
 			accepts: [
 				acceptCapability(orderLineQuantityValidateCapability),
 				acceptCapability(orderCustomerAuthorizeCapability),
-				acceptCapability(orderGuestProofAuthorizeCapability, { optional: true }),
+				acceptCapability(orderGuestProofAuthorizeCapability, {
+					optional: true,
+				}),
 				acceptCapability(customerIdentityResolveCapability, { optional: true }),
 			],
 		},

@@ -1,8 +1,8 @@
 {
 	"name": "github",
 	"version": "0.0.0",
-	"license": "MIT",
 	"private": true,
+	"license": "MIT",
 	"scripts": {
 		"check": "biome check .",
 		"check:fix": "biome check --write --unsafe .",

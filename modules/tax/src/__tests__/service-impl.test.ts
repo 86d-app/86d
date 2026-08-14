@@ -334,6 +334,31 @@ describe("TaxController", () => {
 			expect(result.lines[0].unresolved).toBe(true);
 		});
 
+		it("marks shipping with no configured rate as unresolved", async () => {
+			// Rates configured only under a specific category leave shipping with no
+			// match. The item lines resolve, so a caller checking only lines would
+			// sell a zero shipping tax that nothing decided.
+			await controller.createRate({
+				name: "TX standard",
+				country: "US",
+				state: "TX",
+				rate: 0.0825,
+				categoryId: "clothing",
+			});
+
+			const result = await controller.calculate({
+				address: { country: "US", state: "TX" },
+				lineItems: [
+					{ productId: "p1", amount: 100, quantity: 1, categoryId: "clothing" },
+				],
+				shippingAmount: 10,
+			});
+
+			expect(result.shippingTax).toBe(0);
+			expect(result.shippingUnresolved).toBe(true);
+			expect(result.lines[0].unresolved).toBeUndefined();
+		});
+
 		it("still returns zero where the merchant declared no nexus", async () => {
 			await controller.createNexus({ country: "US", state: "NY" });
 

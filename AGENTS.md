@@ -51,7 +51,7 @@ packages/
   db/                Prisma client singleton (PrismaPg adapter)
   auth/              Better Auth (sessions, admin role, 86d.app SSO)
   emails/            React Email + Resend templates
-  env/               Zod env validation (includes STORAGE_PROVIDER)
+  env/               Zod env validation (includes STORAGE_CLIENT)
   utils/             Logger, rate-limit, url, sanitize (text + HTML)
   lib/               API keys, webhooks, carrier tracking, LLM content
   sdk/               Store config, template loading, API client
@@ -110,14 +110,14 @@ Templates live in `templates/<name>/`. The store app resolves them via tsconfig 
 
 - **Docker (self-hosted):** `docker compose up` starts PostgreSQL + store, auto-runs migrations, seeds demo data, creates the admin user, uses local-filesystem blob storage. Set `BETTER_AUTH_SECRET` to a secure random string in production.
 - **Managed (Railway or legacy Vercel + Neon):** the Control Plane within 86d.app provisions a dedicated instance with its own database, hosting, and blob storage. The current implementation sets `86D_API_KEY` plus `STORE_ID`; with `86D_API_KEY` present, the Store Runtime pulls managed configuration and enables 86d.app SSO for Store Admin. This static key is migration state. The target uses `86D_STORE_ID`, `86D_API_URL`, and an opaque workload credential exchanged for short-lived scoped tokens.
-- **Storage providers:** `STORAGE_PROVIDER` = `local` (Docker default), `vercel`, or `s3` (MinIO, AWS S3, R2). See `.env.example`.
+- **Storage providers:** `STORAGE_CLIENT` = `local` (Docker default), `vercel`, or `s3` (MinIO, AWS S3, R2). See `.env.example`.
 
 ## API endpoints
 
 - `GET /api/health`: database connectivity and Store status (Docker `HEALTHCHECK`).
 - `POST /api/upload`: file upload (admin only; JPEG, PNG, WebP, GIF, SVG, and PDF; magic-byte validation; SVG XSS checks).
 - `DELETE /api/upload`: file deletion (admin only, Store-isolated).
-- `GET /uploads/[...path]`: serve local-storage files when `STORAGE_PROVIDER=local` (SVGs use restrictive CSP).
+- `GET /uploads/[...path]`: serve local-storage files when `STORAGE_CLIENT=local` (SVGs use restrictive CSP).
 - `GET/POST /api/auth/[...all]`: Better Auth handlers (sign-in, sign-up, SSO).
 - `ALL /api/[...path]`: Module endpoints (rate-limited, session-authenticated).
 

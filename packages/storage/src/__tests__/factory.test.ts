@@ -70,9 +70,9 @@ describe("createStorageFromEnv", () => {
 		process.env = originalEnv;
 	});
 
-	it("defaults to local provider when STORAGE_PROVIDER is not set", () => {
+	it("defaults to local provider when STORAGE_CLIENT is not set", () => {
 		process.env = { ...originalEnv };
-		delete process.env.STORAGE_PROVIDER;
+		delete process.env.STORAGE_CLIENT;
 		const storage = createStorageFromEnv();
 		expect(storage).toBeInstanceOf(LocalStorageProvider);
 	});
@@ -80,7 +80,7 @@ describe("createStorageFromEnv", () => {
 	it("creates local provider from env", () => {
 		process.env = {
 			...originalEnv,
-			STORAGE_PROVIDER: "local",
+			STORAGE_CLIENT: "local",
 			STORAGE_LOCAL_DIR: "/tmp/test-env",
 			STORAGE_LOCAL_BASE_URL: "/files",
 		};
@@ -90,7 +90,7 @@ describe("createStorageFromEnv", () => {
 	});
 
 	it("creates vercel provider from env", () => {
-		process.env = { ...originalEnv, STORAGE_PROVIDER: "vercel" };
+		process.env = { ...originalEnv, STORAGE_CLIENT: "vercel" };
 		const storage = createStorageFromEnv();
 		expect(storage).toBeInstanceOf(VercelBlobProvider);
 	});
@@ -98,7 +98,7 @@ describe("createStorageFromEnv", () => {
 	it("creates S3 provider from env", () => {
 		process.env = {
 			...originalEnv,
-			STORAGE_PROVIDER: "s3",
+			STORAGE_CLIENT: "s3",
 			S3_ENDPOINT: "https://minio.local:9000",
 			S3_BUCKET: "store-uploads",
 			S3_REGION: "us-west-2",
@@ -110,7 +110,7 @@ describe("createStorageFromEnv", () => {
 	});
 
 	it("throws when S3 env vars are missing", () => {
-		process.env = { ...originalEnv, STORAGE_PROVIDER: "s3" };
+		process.env = { ...originalEnv, STORAGE_CLIENT: "s3" };
 		expect(() => createStorageFromEnv()).toThrow("S3 storage requires");
 	});
 });

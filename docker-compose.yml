@@ -88,7 +88,7 @@ services:
       APP_ADMIN_EMAIL: "${APP_ADMIN_EMAIL:-admin@example.com}"
       APP_ADMIN_PASSWORD: "${APP_ADMIN_PASSWORD:-password123}"
       # Storage — MinIO bucket by default in Docker
-      STORAGE_PROVIDER: "s3"
+      STORAGE_CLIENT: "s3"
       STORAGE_PUBLIC_URL_MODE: "proxy"
       S3_ENDPOINT: "http://minio:9000"
       S3_BUCKET: "${S3_BUCKET:-86d-uploads}"

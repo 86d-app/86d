@@ -28,8 +28,7 @@ export const getMyOrderFulfillments = createStoreEndpoint(
 		if (!fulfillmentController?.listByOrder) {
 			return {
 				code: "FULFILLMENT_OWNER_OPERATION_REQUIRED",
-				error:
-					"Fulfillment reads belong to the standalone Fulfillment module.",
+				error: "Fulfillment reads belong to the standalone Fulfillment module.",
 				status: 503,
 			};
 		}

@@ -159,6 +159,17 @@ export const taxPolicyV2CreateBodySchema = z
 				path: ["ratePackId"],
 			});
 		}
+		// The engine refuses a TaxJar policy with no source version
+		// (PROVIDER_NOT_CONFIGURED), so accepting one here would publish a
+		// configuration that returns REVIEW_REQUIRED on every quote in that
+		// jurisdiction until a merchant notices and recreates it.
+		if (policy.calculationSource === "TAXJAR" && !policy.sourceVersion) {
+			context.addIssue({
+				code: "custom",
+				message: "A TaxJar policy must state its source version.",
+				path: ["sourceVersion"],
+			});
+		}
 		if (
 			policy.jurisdictionDecision === "COLLECT" &&
 			!policy.calculationSource

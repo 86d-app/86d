@@ -1,8 +1,8 @@
 {
 	"name": "@86d-app/sdk",
 	"version": "0.0.4",
-	"license": "MIT",
 	"private": true,
+	"license": "MIT",
 	"type": "module",
 	"exports": {
 		"./fetch-from-api": {

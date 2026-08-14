@@ -40,7 +40,7 @@ export function createStorage(config: StorageConfig): StorageProvider {
 
 /** Create a storage provider from environment variables. */
 export function createStorageFromEnv(): StorageProvider {
-	const provider = (process.env.STORAGE_PROVIDER ?? "local") as
+	const provider = (process.env.STORAGE_CLIENT ?? "local") as
 		| "local"
 		| "vercel"
 		| "s3";

@@ -514,6 +514,7 @@ export function createTaxController(
 
 			// Calculate shipping tax (use "default" category for shipping)
 			let shippingTax = 0;
+			let shippingUnresolved = false;
 			if (
 				params.shippingAmount &&
 				params.shippingAmount > 0 &&
@@ -524,6 +525,10 @@ export function createTaxController(
 					params.address,
 					"default",
 				);
+				// Rates may all be configured under a specific category, leaving
+				// shipping with no match. That is an undetermined amount, not a
+				// zero the Checkout may sell on.
+				shippingUnresolved = shippingRates.length === 0;
 
 				if (inclusive && shippingRates.length > 0) {
 					const { effectiveRate: shippingCombinedRate } = applyRates(
@@ -544,6 +549,7 @@ export function createTaxController(
 			return {
 				totalTax,
 				shippingTax,
+				...(shippingUnresolved ? { shippingUnresolved: true as const } : {}),
 				lines,
 				effectiveRate,
 				inclusive,

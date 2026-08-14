@@ -1,11 +1,11 @@
 <p align="center">
   <a href="https://86d.app">
-    <img src="https://86d.app/logo" height="96" alt="86d" />
+    <img src="https://86d.app/icon" height="96" alt="86d" />
   </a>
 </p>
 
 <p align="center">
-  Dynamic Commerce
+  Commerce contracts between merchants, agents, and customers
 </p>
 
 <p align="center">

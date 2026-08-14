@@ -190,12 +190,17 @@ export function createOrderController(
 			// rather than a second Order. Without this, retrying after a lost
 			// response renumbers the Order the shopper was shown and writes a second
 			// full set of line items and addresses against the same identifier.
-			if (params.id) {
-				const existing = await data.get("order", id);
-				if (existing) return existing as unknown as Order;
-			}
+			//
+			// A replay must still finish the writes. The first attempt can fail
+			// after the Order row commits but before its items and addresses do, so
+			// returning here on the strength of the row alone would hand back an
+			// Order that permanently lost its line truth. Every write below is keyed
+			// deterministically, so repeating them converges instead of duplicating.
+			const existing = params.id
+				? ((await data.get("order", id)) as Order | null)
+				: null;
 
-			const orderNumber = generateOrderNumber();
+			const orderNumber = existing?.orderNumber ?? generateOrderNumber();
 			const now = new Date();
 
 			const order: Order = {
@@ -225,11 +230,16 @@ export function createOrderController(
 				paymentOperationId: params.paymentOperationId,
 				notes: params.notes,
 				metadata: params.metadata ?? {},
-				createdAt: now,
+				createdAt: existing?.createdAt ?? now,
 				updatedAt: now,
 			};
 
-			await data.upsert("order", id, order as Record<string, unknown>);
+			// Only write the Order row when it is absent. A replay may arrive after
+			// the Order has legitimately advanced, and rewriting it from the original
+			// request would roll a later status or Payment transition backwards.
+			if (!existing) {
+				await data.upsert("order", id, order as Record<string, unknown>);
+			}
 
 			// Create order items. Their identifiers derive from the Order and the
 			// line position so a partial write that is retried overwrites the same
@@ -284,7 +294,7 @@ export function createOrderController(
 				);
 			}
 
-			return order;
+			return existing ?? order;
 		},
 
 		async getById(id: string): Promise<OrderWithDetails | null> {

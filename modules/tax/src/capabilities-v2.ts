@@ -35,6 +35,9 @@ const taxPolicyV2Schema = z
 		effectiveTo: z.coerce.date().optional(),
 		quoteTtlSeconds: z.number().int().positive().max(86_400),
 		enabled: z.literal(true),
+		// Written by the admin surface for list ordering. Declared here so a
+		// stored record still parses; .strict() keeps rejecting unknown keys.
+		createdAt: z.coerce.date().optional(),
 	})
 	.strict();
 
@@ -62,6 +65,9 @@ const taxRatePackV2Schema = z
 		effectiveTo: z.coerce.date().optional(),
 		enabled: z.literal(true),
 		rates: z.array(taxRateV2Schema).min(1).max(10_000),
+		// Written by the admin surface for list ordering. Declared here so a
+		// stored record still parses; .strict() keeps rejecting unknown keys.
+		createdAt: z.coerce.date().optional(),
 	})
 	.strict();
 

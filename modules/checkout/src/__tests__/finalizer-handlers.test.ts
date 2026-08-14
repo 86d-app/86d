@@ -246,7 +246,10 @@ describe("Checkout finalization handlers", () => {
 		});
 
 		const capabilities = {
-			async invoke(definition: { name: string; version: string }, request: unknown) {
+			async invoke(
+				definition: { name: string; version: string },
+				request: unknown,
+			) {
 				if (definition === taxQuoteV2Capability) {
 					return {
 						ok: true as const,

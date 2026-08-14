@@ -1,4 +1,8 @@
-import type { FulfillmentWithItems, OrderFulfillmentStatus, OrderItem } from "./service";
+import type {
+	FulfillmentWithItems,
+	OrderFulfillmentStatus,
+	OrderItem,
+} from "./service";
 
 export type OwnerFulfillment = Readonly<{
 	id: string;

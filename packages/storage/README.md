@@ -111,7 +111,7 @@ Requires `@vercel/blob` as a peer dependency and the `BLOB_READ_WRITE_TOKEN` env
 
 | Variable | Description | Default |
 |---|---|---|
-| `STORAGE_PROVIDER` | Provider to use: `local`, `s3`, or `vercel` | `local` |
+| `STORAGE_CLIENT` | Provider to use: `local`, `s3`, or `vercel` | `local` |
 | `STORAGE_LOCAL_DIR` | Directory for local file storage | `./uploads` |
 | `STORAGE_LOCAL_BASE_URL` | Base URL for serving local files | `/uploads` |
 | `S3_ENDPOINT` | S3-compatible endpoint URL | -- |

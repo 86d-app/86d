@@ -27,7 +27,7 @@ export const removeDiscount = createStoreEndpoint(
 			controller.removeDiscount(ctx.params.id, ctx.body.expectedRevision),
 		);
 		if (!mutation.ok) return mutation.response;
-		let session = mutation.value;
+		const session = mutation.value;
 		if (!session) {
 			return { error: "Cannot modify this checkout session", status: 422 };
 		}

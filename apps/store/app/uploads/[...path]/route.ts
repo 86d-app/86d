@@ -48,7 +48,7 @@ function buildResponseHeaders(
 }
 
 /**
- * Serve locally-stored files when STORAGE_PROVIDER=local.
+ * Serve locally-stored files when STORAGE_CLIENT=local.
  * Only serves files from the uploads directory — rejects path traversal.
  */
 export async function GET(
@@ -62,7 +62,7 @@ export async function GET(
 		return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 	}
 
-	if (process.env.STORAGE_PROVIDER === "s3" && isProxyingUploadUrls()) {
+	if (process.env.STORAGE_CLIENT === "s3" && isProxyingUploadUrls()) {
 		try {
 			const storage = getStorage();
 			const response = await fetch(storage.getUrl(key));
@@ -96,7 +96,7 @@ export async function GET(
 		}
 	}
 
-	if (process.env.STORAGE_PROVIDER !== "local") {
+	if (process.env.STORAGE_CLIENT !== "local") {
 		return NextResponse.json({ error: "Not found" }, { status: 404 });
 	}
 

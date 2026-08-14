@@ -2039,6 +2039,60 @@ describe("createOrderController replay safety", () => {
 		expect(addresses).toHaveLength(1);
 	});
 
+	it("completes line items when the first attempt wrote only the Order row", async () => {
+		// The first attempt can commit the Order row and then fail before its
+		// items land. Treating the row alone as proof of a finished write would
+		// hand back an Order that permanently lost its line truth, so the replay
+		// re-runs the deterministic child writes instead of returning early.
+		const { data, controller } = controllerWith();
+		const originalUpsert = data.upsert.bind(data);
+		let failed = false;
+		data.upsert = (async (
+			name: string,
+			id: string,
+			record: Record<string, unknown>,
+		) => {
+			if (name === "orderItem" && !failed) {
+				failed = true;
+				throw new Error("connection lost");
+			}
+			return originalUpsert(name, id, record);
+		}) as typeof data.upsert;
+
+		await expect(controller.create(replayable)).rejects.toThrow(
+			"connection lost",
+		);
+		const partial = await data.findMany("orderItem", {
+			where: { orderId: replayable.id },
+		});
+		expect(partial).toHaveLength(0);
+
+		const replayed = await controller.create(replayable);
+
+		expect(replayed.id).toBe(replayable.id);
+		const items = await data.findMany("orderItem", {
+			where: { orderId: replayable.id },
+		});
+		expect(items).toHaveLength(sampleItems.length);
+	});
+
+	it("does not roll a later status transition back to the original request", async () => {
+		// A duplicate delivery can arrive after the Order legitimately advanced.
+		// Rewriting the row from the original payload would undo that transition.
+		const { data, controller } = controllerWith();
+		const first = await controller.create(replayable);
+		await data.upsert("order", first.id, {
+			...(first as unknown as Record<string, unknown>),
+			status: "paid",
+			paymentStatus: "paid",
+		});
+
+		const replayed = await controller.create(replayable);
+
+		expect(replayed.status).toBe("paid");
+		expect(replayed.paymentStatus).toBe("paid");
+	});
+
 	it("keeps the Order number stable across a replay", async () => {
 		const { controller } = controllerWith();
 		const first = await controller.create(replayable);

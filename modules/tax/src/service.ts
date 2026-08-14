@@ -80,6 +80,12 @@ export type TaxCalculation = {
 	totalTax: number;
 	/** Tax on the shipping amount */
 	shippingTax: number;
+	/**
+	 * Set when shipping was taxable at this address but no rate was configured
+	 * to calculate it. Carries the same meaning as `unresolved` on a line: the
+	 * zero is an absent decision, not a decision that nothing is due.
+	 */
+	shippingUnresolved?: true;
 	/** Per-line-item tax breakdown */
 	lines: TaxLineResult[];
 	/** Effective combined rate */

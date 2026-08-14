@@ -40,8 +40,10 @@ logs/
 # Registry cache
 .86d/
 
+# Storage
+# uploads/
+
 # Misc
 bak/
 tmp 
-
 claude.sh.version-bump-timestamp

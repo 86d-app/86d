@@ -1,12 +1,5 @@
 import { defineConfig } from "vitest/config";
 
-/**
- * Root Vitest config for workspace coverage.
- * Use with: bun run test:coverage
- *
- * Coverage is configured at root; individual package configs
- * define test environment and other per-package settings.
- */
 export default defineConfig({
 	test: {
 		exclude: ["**/node_modules/**", "**/dist/**", "tests/e2e/**"],
