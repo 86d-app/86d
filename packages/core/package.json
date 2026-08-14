@@ -1,6 +1,6 @@
 {
 	"name": "@86d-app/core",
-	"version": "0.0.41",
+	"version": "1.0.0",
 	"description": "Core package for 86d dynamic commerce platform",
 	"homepage": "https://86d.app",
 	"repository": {
