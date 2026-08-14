@@ -286,7 +286,7 @@ Compute SHA-256 integrity hash for a module's `package.json`.
 
 ## Buildtime Integration
 
-The registry is used at buildtime by `scripts/generate-modules.ts`:
+The registry is used at buildtime by `internals/generators/src/generate-modules.ts`:
 
 1. Reads `config.json` and resolves all module specifiers
 2. For missing modules (registry/GitHub/npm), fetches them automatically

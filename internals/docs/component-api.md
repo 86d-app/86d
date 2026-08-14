@@ -1,8 +1,8 @@
 # Component API Reference
 
-Auto-generated from module source files. Run `bun scripts/generate-component-docs.ts` to regenerate.
+Auto-generated from module source files. Run `bun run generate:docs` to regenerate.
 
-Generated: 2026-08-13  
+Generated: 2026-08-14  
 Modules with components: 100
 
 ---

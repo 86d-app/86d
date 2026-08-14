@@ -31,7 +31,7 @@ bun run test                 # Vitest unit tests
 bun run test:e2e             # Playwright E2E (needs a running, seeded store)
 bun run generate:modules     # regenerate generated/components.ts + module imports
 bun run generate:registry    # regenerate registry.json from module metadata
-bun run generate:docs        # regenerate docs/component-api.md
+bun run generate:docs        # regenerate internals/docs/component-api.md
 bun run 86d <command>        # the CLI (see below)
 bun run bump-version         # shared version bump (see Version policy)
 ```
@@ -40,7 +40,6 @@ bun run bump-version         # shared version bump (see Version policy)
 
 ```
 apps/store/          Next.js storefront + per-store admin
-docker/              Docker entrypoint + config
 modules/             100 modules (cart, products, orders, checkout, collections, brands, ...)
 packages/
   core/              Module system: isolation boundary, contracts, types, sanitization, test-utils
@@ -58,8 +57,13 @@ packages/
 templates/
   brisa/             Default store template (config.json, MDX pages, global.css)
 tests/e2e/           Playwright E2E (storefront, admin, checkout, dashboard, accessibility, performance, visual)
-scripts/             generate-modules.ts, generate-registry.ts, generate-component-docs.ts, seed.ts
-internals/github/    CI setup action
+internals/
+  github/            CI composite Actions
+  docker/            Docker entrypoint + legacy init.sql
+  docs/              generated component-api.md
+  registry/          registry.json manifest generator
+  generators/        generate-modules, generate-component-docs, bump-version
+packages/db/seed/    demo seed catalog, assets, and fetch tooling
 Dockerfile           Multi-stage build (deps → build → runtime)
 docker-compose.yml   One-command local deployment (postgres + store)
 ```
@@ -174,7 +178,7 @@ Beta shows one clear warning on first enablement. Experimental requires explicit
 
 All five must pass before committing:
 1. `bun run typecheck`: zero errors
-2. `bun run check`: zero Biome errors. This lints the whole repo in one pass so `scripts/`, `tests/`, `templates/`, `internals/`, and root config files are covered, not just package `src/`.
+2. `bun run check`: zero Biome errors. This lints the whole repo in one pass so `internals/`, `tests/`, `templates/`, and root config files are covered, not just package `src/`.
 3. `bun run test`: all unit tests pass
 4. `bun run build`: successful build
 5. `bun run test:e2e`: Playwright E2E against an already running, seeded store

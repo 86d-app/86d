@@ -67,7 +67,8 @@ packages/
   cli/               CLI tool
 templates/
   brisa/             Default store template
-scripts/             Code generation
+internals/           Repo tooling (generators, registry, CI actions)
+packages/db/         Prisma client + demo seed
 ```
 
 ## CLI

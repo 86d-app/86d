@@ -58,7 +58,10 @@ export async function init(args: string[]) {
 	// 4. Run code generation
 	info("Running code generation...");
 	const tsxPath = join(root, "node_modules", ".bin", "tsx");
-	const generateScript = join(root, "scripts/generate-modules.ts");
+	const generateScript = join(
+		root,
+		"internals/generators/src/generate-modules.ts",
+	);
 
 	if (existsSync(generateScript)) {
 		try {
@@ -104,7 +107,7 @@ export async function init(args: string[]) {
 			// 5b. Seed demo data
 			const runSeed = yes || (await confirm("Seed demo data?"));
 			if (runSeed) {
-				const seedScript = join(root, "scripts/seed.ts");
+				const seedScript = join(root, "packages/db/src/seed.ts");
 				if (existsSync(seedScript)) {
 					let adminEmail = "admin@example.com";
 					let adminPassword = "password123";
@@ -123,7 +126,7 @@ export async function init(args: string[]) {
 					}
 
 					try {
-						execSync(`bun run ${seedScript}`, {
+						execSync("bun run --filter db seed", {
 							cwd: root,
 							stdio: "inherit",
 							env: {
@@ -147,7 +150,7 @@ export async function init(args: string[]) {
 						warn("Seeding failed — retry with: bun run db:seed");
 					}
 				} else {
-					warn("scripts/seed.ts not found, skipping seed");
+					warn("packages/db/src/seed.ts not found, skipping seed");
 				}
 			}
 		} else {

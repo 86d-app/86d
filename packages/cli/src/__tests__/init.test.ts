@@ -169,7 +169,8 @@ describe("init", () => {
 		}));
 
 		// Seed script exists
-		writeFileSync(join(tempDir, "scripts/seed.ts"), "// seed");
+		mkdirSync(join(tempDir, "packages/db/src"), { recursive: true });
+		writeFileSync(join(tempDir, "packages/db/src/seed.ts"), "// seed");
 		// packages/db with migration directory
 		mkdirSync(join(tempDir, "packages/db/prisma/migrations"), {
 			recursive: true,
@@ -187,11 +188,12 @@ describe("init", () => {
 		const calls = execSyncMock.mock.calls.map((c: unknown[]) => String(c[0]));
 		expect(calls.some((c) => c.includes("bun install"))).toBe(true);
 		expect(calls.some((c) => c.includes("migrate deploy"))).toBe(true);
-		expect(calls.some((c) => c.includes("seed.ts"))).toBe(true);
+		expect(calls.some((c) => c.includes("--filter db seed"))).toBe(true);
 
 		// Seed call should pass APP_ADMIN_EMAIL and APP_ADMIN_PASSWORD env vars
 		const seedCall = execSyncMock.mock.calls.find(
-			(c: unknown[]) => typeof c[0] === "string" && c[0].includes("seed.ts"),
+			(c: unknown[]) =>
+				typeof c[0] === "string" && c[0].includes("--filter db seed"),
 		);
 		const seedEnv = (seedCall?.[1] as { env?: Record<string, string> })?.env;
 		expect(seedEnv?.APP_ADMIN_EMAIL).toBe("admin@example.com");

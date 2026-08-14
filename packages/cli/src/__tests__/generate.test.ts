@@ -11,12 +11,17 @@ describe("generate", () => {
 		vi.resetModules();
 
 		tempDir = join(tmpdir(), `86d-cli-generate-test-${Date.now()}`);
-		mkdirSync(join(tempDir, "scripts"), { recursive: true });
+		mkdirSync(join(tempDir, "internals/generators/src"), { recursive: true });
 		mkdirSync(join(tempDir, "node_modules/.bin"), { recursive: true });
 
-		// Create generate scripts
-		writeFileSync(join(tempDir, "scripts/generate-modules.ts"), "");
-		writeFileSync(join(tempDir, "scripts/generate-component-docs.ts"), "");
+		writeFileSync(
+			join(tempDir, "internals/generators/src/generate-modules.ts"),
+			"",
+		);
+		writeFileSync(
+			join(tempDir, "internals/generators/src/generate-component-docs.ts"),
+			"",
+		);
 
 		// Create tsx binary stub
 		writeFileSync(join(tempDir, "node_modules/.bin/tsx"), "");
@@ -75,7 +80,7 @@ describe("generate", () => {
 	});
 
 	it("exits with error when module script is missing", async () => {
-		rmSync(join(tempDir, "scripts/generate-modules.ts"));
+		rmSync(join(tempDir, "internals/generators/src/generate-modules.ts"));
 
 		const exit = vi.spyOn(process, "exit").mockImplementation(() => {
 			throw new Error("exit");
@@ -86,7 +91,9 @@ describe("generate", () => {
 	});
 
 	it("skips component docs gracefully when script missing", async () => {
-		rmSync(join(tempDir, "scripts/generate-component-docs.ts"));
+		rmSync(
+			join(tempDir, "internals/generators/src/generate-component-docs.ts"),
+		);
 
 		// Should not throw
 		await runGenerate(["components"]);

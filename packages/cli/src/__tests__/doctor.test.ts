@@ -18,7 +18,7 @@ describe("doctor", () => {
 		mkdirSync(join(tempDir, "modules/products/src"), { recursive: true });
 		mkdirSync(join(tempDir, "modules/cart/src"), { recursive: true });
 		mkdirSync(join(tempDir, "node_modules"), { recursive: true });
-		mkdirSync(join(tempDir, "scripts"), { recursive: true });
+		mkdirSync(join(tempDir, "internals/generators/src"), { recursive: true });
 
 		// turbo.json (project root detection)
 		writeFileSync(join(tempDir, "turbo.json"), "{}");
@@ -74,8 +74,14 @@ describe("doctor", () => {
 		writeFileSync(join(tempDir, "bun.lock"), "");
 
 		// Generation scripts
-		writeFileSync(join(tempDir, "scripts/generate-modules.ts"), "");
-		writeFileSync(join(tempDir, "scripts/generate-component-docs.ts"), "");
+		writeFileSync(
+			join(tempDir, "internals/generators/src/generate-modules.ts"),
+			"",
+		);
+		writeFileSync(
+			join(tempDir, "internals/generators/src/generate-component-docs.ts"),
+			"",
+		);
 
 		logs = [];
 		vi.spyOn(console, "log").mockImplementation((...args: unknown[]) => {
@@ -280,7 +286,7 @@ describe("doctor", () => {
 	});
 
 	it("warns about missing generation scripts", async () => {
-		rmSync(join(tempDir, "scripts/generate-modules.ts"));
+		rmSync(join(tempDir, "internals/generators/src/generate-modules.ts"));
 		vi.resetModules();
 
 		await runDoctor();
@@ -299,7 +305,7 @@ describe("doctor", () => {
 
 	it("reports error count and warning count", async () => {
 		rmSync(join(tempDir, ".env"));
-		rmSync(join(tempDir, "scripts/generate-modules.ts"));
+		rmSync(join(tempDir, "internals/generators/src/generate-modules.ts"));
 		vi.resetModules();
 
 		await runDoctor();

@@ -4,11 +4,11 @@
  * Component Documentation Generator
  *
  * Scans all modules for store and admin components and generates a
- * comprehensive component API reference at docs/component-api.md.
+ * comprehensive component API reference at internals/docs/component-api.md.
  *
  * Usage:
- *   bun scripts/generate-component-docs.ts
- *   bun scripts/generate-component-docs.ts --out docs/component-api.md
+ *   bun run generate:docs
+ *   bun run generate:docs -- --out internals/docs/component-api.md
  *
  * Output format:
  *   - One section per module
@@ -24,9 +24,10 @@ import {
 	readFileSync,
 	writeFileSync,
 } from "node:fs";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
+import { workspaceRootFromImportMeta } from "../../lib/workspace-root.ts";
 
-const WORKSPACE_ROOT = resolve(import.meta.dirname, "..");
+const WORKSPACE_ROOT = workspaceRootFromImportMeta(import.meta.url);
 const MODULES_DIR = join(WORKSPACE_ROOT, "modules");
 
 // Parse --out flag
@@ -34,7 +35,7 @@ const outFlagIdx = process.argv.indexOf("--out");
 const OUTPUT_PATH =
 	outFlagIdx !== -1 && process.argv[outFlagIdx + 1]
 		? join(WORKSPACE_ROOT, process.argv[outFlagIdx + 1])
-		: join(WORKSPACE_ROOT, "docs/component-api.md");
+		: join(WORKSPACE_ROOT, "internals/docs/component-api.md");
 
 interface ComponentInfo {
 	name: string;
@@ -387,7 +388,7 @@ async function main() {
 	const sections: string[] = [
 		"# Component API Reference",
 		"",
-		"Auto-generated from module source files. Run `bun scripts/generate-component-docs.ts` to regenerate.",
+		"Auto-generated from module source files. Run `bun run generate:docs` to regenerate.",
 		"",
 		`Generated: ${new Date().toISOString().slice(0, 10)}  `,
 		`Modules with components: ${docs.length}`,

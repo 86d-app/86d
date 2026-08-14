@@ -58,10 +58,10 @@ function getRunner(root: string): string {
 
 function runModuleGeneration() {
 	const root = findProjectRoot();
-	const script = join(root, "scripts/generate-modules.ts");
+	const script = join(root, "internals/generators/src/generate-modules.ts");
 
 	if (!existsSync(script)) {
-		error("scripts/generate-modules.ts not found");
+		error("internals/generators/src/generate-modules.ts not found");
 		process.exit(1);
 	}
 
@@ -83,10 +83,10 @@ function runModuleGeneration() {
 
 function runRegistryGeneration() {
 	const root = findProjectRoot();
-	const script = join(root, "scripts/generate-registry.ts");
+	const script = join(root, "internals/registry/src/generate-manifest.ts");
 
 	if (!existsSync(script)) {
-		info("scripts/generate-registry.ts not found, skipping");
+		info("internals/registry/src/generate-manifest.ts not found, skipping");
 		return;
 	}
 
@@ -107,10 +107,15 @@ function runRegistryGeneration() {
 
 function runComponentDocs() {
 	const root = findProjectRoot();
-	const script = join(root, "scripts/generate-component-docs.ts");
+	const script = join(
+		root,
+		"internals/generators/src/generate-component-docs.ts",
+	);
 
 	if (!existsSync(script)) {
-		info("scripts/generate-component-docs.ts not found, skipping");
+		info(
+			"internals/generators/src/generate-component-docs.ts not found, skipping",
+		);
 		return;
 	}
 

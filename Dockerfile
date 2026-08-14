@@ -17,6 +17,8 @@ ENV NODE_ENV=production
 COPY package.json bun.lock ./
 # Workspace members referenced by bun.lock (frozen install requires manifests on disk)
 COPY internals/github/package.json internals/github/
+COPY internals/registry/package.json internals/registry/
+COPY internals/generators/package.json internals/generators/
 COPY packages/cli/package.json packages/cli/
 COPY apps/store/package.json apps/store/
 COPY packages/core/package.json packages/core/
@@ -69,7 +71,7 @@ RUN for attempt in 1 2 3; do \
 RUN cd packages/core && bunx prisma generate --schema prisma
 
 # Generate module imports (run directly with bun — tsx has CJS issues under bun on Linux)
-RUN bun scripts/generate-modules.ts
+RUN bun internals/generators/src/generate-modules.ts
 
 # Build the store app
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -140,9 +142,10 @@ RUN set -e; \
     rm -rf /tmp/prisma-only /tmp/pg-export
 
 # Copy seed script and its dependencies
-COPY --from=builder /app/scripts/seed.ts ./scripts/seed.ts
-COPY --from=builder /app/scripts/seed ./scripts/seed
-COPY --from=builder /app/scripts/seed-assets ./scripts/seed-assets
+COPY --from=builder /app/packages/db/src/seed.ts ./packages/db/src/seed.ts
+COPY --from=builder /app/packages/db/seed ./packages/db/seed
+COPY --from=builder /app/packages/db/package.json ./packages/db/package.json
+COPY --from=builder /app/internals/lib ./internals/lib
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/packages/storage ./packages/storage
 COPY --from=builder /app/packages/storage/node_modules/zod ./packages/storage/node_modules/zod
@@ -151,7 +154,7 @@ RUN \
     ln -sfn ../../packages/storage ./node_modules/@86d-app/storage
 
 # Copy entrypoint
-COPY docker/entrypoint.sh /app/entrypoint.sh
+COPY internals/docker/entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
 # Create uploads directory for local storage

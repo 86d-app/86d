@@ -306,8 +306,12 @@ export async function doctor(options: DoctorOptions = {}) {
 	}
 
 	// 9a. Generation scripts
-	const genModules = existsSync(join(root, "scripts/generate-modules.ts"));
-	const genDocs = existsSync(join(root, "scripts/generate-component-docs.ts"));
+	const genModules = existsSync(
+		join(root, "internals/generators/src/generate-modules.ts"),
+	);
+	const genDocs = existsSync(
+		join(root, "internals/generators/src/generate-component-docs.ts"),
+	);
 	if (genModules && genDocs) {
 		checks.push({
 			label: "Code generation",
@@ -322,7 +326,7 @@ export async function doctor(options: DoctorOptions = {}) {
 			label: "Code generation",
 			status: "warn",
 			message: `missing: ${missing.join(", ")}`,
-			fix: "These scripts should be in scripts/",
+			fix: "These scripts should be in internals/generators/",
 		});
 	}
 

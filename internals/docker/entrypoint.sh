@@ -70,9 +70,9 @@ if [ "$SKIP_MIGRATIONS" != "true" ] && [ -d "packages/db/prisma" ]; then
 fi
 
 # ── Seed database (only on first run) ─────────────────────────────────────
-if [ "$AUTO_SEED" = "true" ] && [ -f "scripts/seed.ts" ]; then
+if [ "$AUTO_SEED" = "true" ] && [ -f "packages/db/src/seed.ts" ]; then
   echo "→ Seeding database..."
-  if ! bun run scripts/seed.ts 2>&1; then
+  if ! (cd packages/db && bun run seed) 2>&1; then
     echo "✗ Seed failed"
     exit 1
   fi

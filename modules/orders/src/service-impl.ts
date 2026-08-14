@@ -372,13 +372,13 @@ export function createOrderController(
 			if (order.customerId === params.storeCustomerId) {
 				return { ok: true as const, order, claimed: false };
 			}
-			if (order.customerId) {
-				return { ok: false as const, code: "already_attributed" as const };
-			}
 			if (!order.guestEmail) {
-				return { ok: false as const, code: "not_guest_order" as const };
+				return { ok: false as const, code: "proof_invalid" as const };
 			}
 			if (!(await orderAcceptsGuestProof(order, params.proofs))) {
+				return { ok: false as const, code: "proof_invalid" as const };
+			}
+			if (order.customerId) {
 				return { ok: false as const, code: "proof_invalid" as const };
 			}
 			const claimed = await recordAttribution(order, {

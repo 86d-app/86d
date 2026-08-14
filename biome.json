@@ -57,7 +57,9 @@
 				"useFilenamingConvention": {
 					"level": "error",
 					"options": {
-						"filenameCases": ["kebab-case"]
+						"filenameCases": [
+							"kebab-case"
+						]
 					}
 				},
 				"useThrowOnlyError": "error"
@@ -66,7 +68,10 @@
 				"noConsole": {
 					"level": "warn",
 					"options": {
-						"allow": ["error", "warn"]
+						"allow": [
+							"error",
+							"warn"
+						]
 					}
 				},
 				"noArrayIndexKey": "warn",
@@ -91,7 +96,9 @@
 	},
 	"overrides": [
 		{
-			"includes": ["apps/store/components/ui/**"],
+			"includes": [
+				"apps/store/components/ui/**"
+			],
 			"linter": {
 				"rules": {
 					"a11y": {
@@ -134,7 +141,9 @@
 		},
 		{
 			"includes": [
-				"scripts/**",
+				"internals/generators/**",
+				"internals/registry/**",
+				"internals/lib/**",
 				"**/*.config.ts",
 				"packages/env/**",
 				"packages/utils/src/logger.ts"
@@ -156,7 +165,6 @@
 			"apps/**/*",
 			"modules/**/*",
 			"packages/**/*",
-			"scripts/**/*",
 			"tests/**/*",
 			"templates/**/*",
 			"internals/**/*",

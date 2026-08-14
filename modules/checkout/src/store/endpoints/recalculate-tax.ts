@@ -130,8 +130,15 @@ export async function recalculateTax(
 
 export function taxRecalculationError(
 	tax: Extract<RecalculateTaxResult, { ok: false }>,
+	session?: CheckoutSession,
 ) {
-	return {
+	const response: {
+		code: string;
+		error: string;
+		status: 422 | 503;
+		currentRevision?: number;
+		session?: CheckoutSession;
+	} = {
 		code: tax.code,
 		error:
 			tax.code === "TAX_REVIEW_REQUIRED"
@@ -139,4 +146,9 @@ export function taxRecalculationError(
 				: "An authoritative tax decision is unavailable.",
 		status: tax.code === "TAX_REVIEW_REQUIRED" ? 422 : 503,
 	};
+	if (session) {
+		response.session = session;
+		response.currentRevision = session.revision ?? 1;
+	}
+	return response;
 }

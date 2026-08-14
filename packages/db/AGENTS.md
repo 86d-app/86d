@@ -7,7 +7,11 @@ Prisma client singleton for the 86d platform, using PrismaPg adapter with Postgr
 ```
 src/
   index.ts        Prisma client singleton (global cache for HMR)
-  seed.ts         Database seed script (commented out, WIP)
+  seed.ts         Active demo seed script (luxury-house catalog)
+seed/
+  catalog/        Seed data definitions
+  assets/         Local seed image assets
+  fetch-luxury-stock-assets.ts
 prisma/
   schema.prisma   Base Prisma schema (datasource, generator)
   modules.prisma  Module data models
@@ -22,6 +26,12 @@ prisma/
 
 - `db` — lazy-initialized `PrismaClient` proxy (cached on `globalThis` in non-production)
 - `Prisma` — re-exported Prisma namespace for types and utilities
+
+## Seed
+
+- `bun run seed` from this package (or `bun run db:seed` from repo root)
+- `bun run seed:fetch-luxury-assets` refreshes stock photo assets under `seed/assets/luxury-house/`
+- `prisma.config.ts` wires `prisma db seed` to `tsx src/seed.ts`
 
 ## How it works
 
@@ -43,4 +53,3 @@ prisma/
 ## Gotchas
 
 - Do NOT import PrismaClient directly — always use the `db` singleton from this package
-- `seed.ts` is currently commented out but structured for upsert-based seeding

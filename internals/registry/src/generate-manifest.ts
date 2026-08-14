@@ -11,20 +11,21 @@
  * Module's recorded evidence and is never inferred from package presence.
  *
  * Usage:
- *   tsx scripts/generate-registry.ts
+ *   bun run generate:registry
  */
 
 import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import type { Module } from "../packages/core/src/types/module.js";
+import type { Module } from "@86d-app/core/types/module";
 import {
 	buildManifest,
 	type ModuleDeclarations,
-} from "../packages/registry/src/manifest.js";
+} from "@86d-app/registry/manifest";
+import { workspaceRootFromImportMeta } from "../../lib/workspace-root.ts";
 
-const WORKSPACE_ROOT = resolve(import.meta.dirname, "..");
+const WORKSPACE_ROOT = workspaceRootFromImportMeta(import.meta.url);
 const OUTPUT_PATH = resolve(WORKSPACE_ROOT, "registry.json");
 const MODULES_ROOT = join(WORKSPACE_ROOT, "modules");
 

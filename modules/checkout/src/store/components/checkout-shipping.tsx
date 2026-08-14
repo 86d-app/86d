@@ -1,5 +1,6 @@
 "use client";
 
+import { ModuleClientError } from "@86d-app/core/client/hooks";
 import { observer } from "@86d-app/core/state";
 import { type FormEvent, useEffect, useState } from "react";
 import type { CheckoutAddress } from "../../service";
@@ -24,6 +25,25 @@ const emptyAddress: CheckoutAddress = {
 	postalCode: "",
 	country: "US",
 };
+
+function syncRevisionFromBody(
+	body: Record<string, unknown> | undefined,
+	setRevision: (value: number) => void,
+): void {
+	if (!body) return;
+	if (typeof body.currentRevision === "number") {
+		setRevision(body.currentRevision);
+		return;
+	}
+	const session = body.session;
+	if (
+		session &&
+		typeof session === "object" &&
+		typeof (session as { revision?: unknown }).revision === "number"
+	) {
+		setRevision((session as { revision: number }).revision);
+	}
+}
 
 /** Step 2: Collect shipping address and select shipping method. */
 export const CheckoutShipping = observer(() => {
@@ -52,6 +72,7 @@ export const CheckoutShipping = observer(() => {
 		data?.session?.revision ?? null,
 	);
 	const [error, setError] = useState("");
+	const [taxReviewRequired, setTaxReviewRequired] = useState(false);
 
 	// Shipping rate selection state
 	const [phase, setPhase] = useState<"address" | "rates">("address");
@@ -77,16 +98,52 @@ export const CheckoutShipping = observer(() => {
 		data: ratesData,
 		isLoading: loadingRates,
 		isError: ratesFetchError,
+		error: ratesQueryError,
 	} = api.getShippingRates.useQuery(
 		sessionId ? { params: { id: sessionId } } : undefined,
 		{ enabled: !!sessionId && phase === "rates" },
 	) as {
-		data: { rates: ShippingRate[] } | undefined;
+		data:
+			| {
+					session?: { revision?: number };
+					rates: ShippingRate[];
+			  }
+			| undefined;
 		isLoading: boolean;
 		isError: boolean;
+		error: unknown;
 	};
 
 	const rates = ratesData?.rates ?? [];
+
+	useEffect(() => {
+		syncRevisionFromBody(
+			ratesData as Record<string, unknown> | undefined,
+			setRevision,
+		);
+	}, [ratesData]);
+
+	useEffect(() => {
+		if (ratesFetchError && ratesQueryError instanceof ModuleClientError) {
+			syncRevisionFromBody(ratesQueryError.body, setRevision);
+			if (ratesQueryError.body?.code === "TAX_REVIEW_REQUIRED") {
+				setTaxReviewRequired(true);
+				setRatesError(
+					"Tax requires merchant review before checkout can continue.",
+				);
+				return;
+			}
+			if (ratesQueryError.body?.code === "CHECKOUT_REVISION_CONFLICT") {
+				setRatesError(
+					"This checkout changed after it was loaded. Please try again.",
+				);
+				return;
+			}
+		}
+		if (ratesFetchError) {
+			setRatesError("Could not load shipping rates. Please try again.");
+		}
+	}, [ratesFetchError, ratesQueryError]);
 
 	// Pre-select first rate or previously selected rate when rates load
 	useEffect(() => {
@@ -99,14 +156,25 @@ export const CheckoutShipping = observer(() => {
 		}
 	}, [rates, selectedRateId, data?.session?.shippingMethodName]);
 
-	useEffect(() => {
-		if (ratesFetchError) {
-			setRatesError("Could not load shipping rates. Please try again.");
-		}
-	}, [ratesFetchError]);
-
 	const updateMutation = api.updateSession.useMutation({
-		onError: () => {
+		onError: (err) => {
+			setTaxReviewRequired(false);
+			if (err instanceof ModuleClientError) {
+				syncRevisionFromBody(err.body, setRevision);
+				if (err.body?.code === "TAX_REVIEW_REQUIRED") {
+					setTaxReviewRequired(true);
+					setError(
+						"Your address was saved, but tax requires merchant review before payment.",
+					);
+					return;
+				}
+				if (err.body?.code === "CHECKOUT_REVISION_CONFLICT") {
+					setError(
+						"This checkout changed after it was loaded. Please try again.",
+					);
+					return;
+				}
+			}
 			setError("Failed to save shipping address. Please try again.");
 		},
 	});
@@ -118,6 +186,7 @@ export const CheckoutShipping = observer(() => {
 	const handleAddressSubmit = (e: FormEvent) => {
 		e.preventDefault();
 		setError("");
+		setTaxReviewRequired(false);
 
 		if (
 			!address.firstName.trim() ||
@@ -156,12 +225,10 @@ export const CheckoutShipping = observer(() => {
 			},
 			{
 				onSuccess: (result) => {
-					if (
-						"session" in result &&
-						typeof result.session?.revision === "number"
-					) {
-						setRevision(result.session.revision);
-					}
+					syncRevisionFromBody(
+						result as Record<string, unknown> | undefined,
+						setRevision,
+					);
 					setSelectedRateId(null);
 					setPhase("rates");
 				},
@@ -178,6 +245,13 @@ export const CheckoutShipping = observer(() => {
 		setRatesError("");
 
 		if (!sessionId || revision === null) return;
+
+		if (taxReviewRequired) {
+			setRatesError(
+				"Tax requires merchant review before checkout can continue.",
+			);
+			return;
+		}
 
 		if (rates.length === 0) {
 			setRatesError("Shipping is unavailable for this address.");

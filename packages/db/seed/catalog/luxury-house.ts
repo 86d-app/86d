@@ -184,10 +184,6 @@ function pageImagePath(slug: string): string {
 	return `pages/${slug}.webp`;
 }
 
-function _totalInventory(variants: SeedVariant[]): number {
-	return variants.reduce((sum, variant) => sum + variant.inventory, 0);
-}
-
 function shoeVariants(args: {
 	productKey: string;
 	productName: string;

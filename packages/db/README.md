@@ -92,4 +92,5 @@ Re-exported Prisma namespace providing access to types, enums, and utilities lik
 
 - The Prisma client is generated in `packages/core/src/prisma/` (gitignored) and imported via `@86d-app/core/prisma`.
 - Always use the `db` export from this package rather than instantiating `PrismaClient` directly.
-- The seed script (`src/seed.ts`) is currently a work-in-progress placeholder.
+- The seed script (`src/seed.ts`) seeds the luxury-house demo catalog for development and E2E.
+- Run `bun run seed` from this package or `bun run db:seed` from the repo root.

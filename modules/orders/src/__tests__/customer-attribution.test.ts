@@ -72,7 +72,7 @@ describe("Orders customer attribution", () => {
 
 		expect(claimed).toMatchObject({ ok: true, claimed: true });
 		expect(replay).toMatchObject({ ok: true, claimed: false });
-		expect(other).toMatchObject({ ok: false, code: "already_attributed" });
+		expect(other).toMatchObject({ ok: false, code: "proof_invalid" });
 	});
 
 	it("rejects a guest claim without matching proof", async () => {

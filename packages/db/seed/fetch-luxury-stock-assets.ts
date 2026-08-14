@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 /**
  * Downloads pinned Unsplash / Pexels stock photos, resizes to seed dimensions, writes WebP
- * under scripts/seed-assets/luxury-house/ and refreshes manifest.json attribution.
+ * under packages/db/seed/assets/luxury-house/ and refreshes manifest.json attribution.
  *
  * Run from public/: bun run seed:fetch-luxury-assets
  */
@@ -13,9 +13,8 @@ import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
-const PUBLIC_ROOT = resolve(SCRIPT_DIR, "../..");
 const SOURCES_PATH = resolve(SCRIPT_DIR, "luxury-stock-sources.json");
-const OUTPUT_ROOT = resolve(PUBLIC_ROOT, "scripts/seed-assets/luxury-house");
+const OUTPUT_ROOT = resolve(SCRIPT_DIR, "assets/luxury-house");
 const MANIFEST_PATH = resolve(OUTPUT_ROOT, "manifest.json");
 
 const PRODUCT_SIZE = { width: 1600, height: 2000 };

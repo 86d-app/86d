@@ -86,6 +86,42 @@ export const getShippingRates = createStoreEndpoint(
 		}
 
 		const revision = session.revision ?? 1;
+		const metadata = session.metadata ?? {};
+		const existingQuoteId =
+			typeof metadata.shippingQuoteId === "string"
+				? metadata.shippingQuoteId
+				: undefined;
+		const existingOptionId =
+			typeof metadata.shippingOptionId === "string"
+				? metadata.shippingOptionId
+				: undefined;
+		if (
+			existingQuoteId &&
+			existingOptionId &&
+			session.shippingAmount !== undefined &&
+			session.shippingMethodName === USPS_PRIORITY_MAIL_NAME &&
+			metadata.shippingQuoteStatus === "CALCULATED"
+		) {
+			return {
+				session,
+				rates: [
+					{
+						id: existingOptionId,
+						name: USPS_PRIORITY_MAIL_NAME,
+						zoneName: "USPS",
+						price: session.shippingAmount,
+						carrier: "USPS",
+						service: USPS_PRIORITY_MAIL_SERVICE,
+						quoteId: existingQuoteId,
+						expiresAt:
+							typeof metadata.shippingQuoteExpiresAt === "string"
+								? new Date(metadata.shippingQuoteExpiresAt)
+								: new Date(),
+					},
+				],
+			};
+		}
+
 		let quoted: Awaited<ReturnType<ShippingQuoteV2Controller["createQuote"]>>;
 		try {
 			quoted = await shippingV2.createQuote({
@@ -138,7 +174,7 @@ export const getShippingRates = createStoreEndpoint(
 			ctx.context.capabilities,
 		);
 		if (!tax.ok) {
-			return taxRecalculationError(tax);
+			return taxRecalculationError(tax, bound);
 		}
 
 		return {

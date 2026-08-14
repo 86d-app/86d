@@ -36,24 +36,7 @@ export const claimGuestOrder = createStoreEndpoint(
 			proofs: collectGuestProofs(ctx.headers?.get("cookie") ?? null),
 		});
 		if (!result.ok) {
-			if (
-				result.code === "order_not_found" ||
-				result.code === "proof_invalid"
-			) {
-				return { error: "Order not found", status: 404 };
-			}
-			if (result.code === "already_attributed") {
-				return {
-					code: "ORDER_ALREADY_ATTRIBUTED",
-					error: "This order already belongs to another customer.",
-					status: 409,
-				};
-			}
-			return {
-				code: "ORDER_GUEST_CLAIM_UNAVAILABLE",
-				error: "This order cannot be claimed.",
-				status: 422,
-			};
+			return { error: "Order not found", status: 404 };
 		}
 
 		return { order: result.order, claimed: result.claimed };

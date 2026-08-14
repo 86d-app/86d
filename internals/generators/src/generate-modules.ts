@@ -26,7 +26,7 @@ import {
 	readFileSync,
 	writeFileSync,
 } from "node:fs";
-import { join, relative, resolve } from "node:path";
+import { join, relative } from "node:path";
 import { pathToFileURL } from "node:url";
 import { readStoreConfig } from "@86d-app/registry/config";
 import { fetchModule } from "@86d-app/registry/fetcher";
@@ -111,7 +111,9 @@ interface Module {
 	search?: { admin?: string; store?: string };
 }
 
-const WORKSPACE_ROOT = resolve(import.meta.dirname, "..");
+import { workspaceRootFromImportMeta } from "../../lib/workspace-root.ts";
+
+const WORKSPACE_ROOT = workspaceRootFromImportMeta(import.meta.url);
 const STORE_ROOT = join(WORKSPACE_ROOT, "apps/store");
 const CONFIG_PATH = join(WORKSPACE_ROOT, "templates/brisa/config.json");
 const GENERATED_DIR = join(STORE_ROOT, "generated");
@@ -645,6 +647,11 @@ if (process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_CLIENT_SECRET && process.
     clientId: process.env.PAYPAL_CLIENT_ID,
     clientSecret: process.env.PAYPAL_CLIENT_SECRET,
     mode: process.env.PAYPAL_SANDBOX === "true" ? "test" : "live",
+    // The payer returns to this Store, never to a caller-supplied address. The
+    // provider rejects a non-HTTPS or credential-bearing URL, so a misconfigured
+    // APP_URL fails closed at construction instead of redirecting a payer off-Store.
+    returnUrl: (process.env.APP_URL ?? "") + "/checkout/confirmation",
+    cancelUrl: (process.env.APP_URL ?? "") + "/checkout",
   });
   moduleOptions["@86d-app/payments"] = {
     ...moduleOptions["@86d-app/payments"],
@@ -1586,7 +1593,7 @@ async function generateStoreLoaders() {
 		.join("\n");
 
 	const content = `// Auto-generated file - do not edit manually
-// Run 'bun scripts/generate-modules.ts' to regenerate
+// Run 'bun run generate:modules' to regenerate
 // Generated from: ${CONFIG_PATH}
 
 import type { ComponentType } from "react";

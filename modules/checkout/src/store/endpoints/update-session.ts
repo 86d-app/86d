@@ -97,7 +97,7 @@ export const updateSession = createStoreEndpoint(
 			ctx.context.capabilities,
 		);
 		if (!tax.ok) {
-			return taxRecalculationError(tax);
+			return taxRecalculationError(tax, session);
 		}
 
 		return { session: tax.session };

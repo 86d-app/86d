@@ -194,9 +194,32 @@
         "typescript": "catalog:",
       },
     },
+    "internals/generators": {
+      "name": "@86d-app/internals-generators",
+      "version": "0.0.0",
+      "dependencies": {
+        "@86d-app/registry": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "tsx": "catalog:",
+      },
+    },
     "internals/github": {
       "name": "github",
       "version": "0.0.0",
+    },
+    "internals/registry": {
+      "name": "@86d-app/internals-registry",
+      "version": "0.0.0",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+        "@86d-app/registry": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "tsx": "catalog:",
+      },
     },
     "modules/abandoned-carts": {
       "name": "@86d-app/abandoned-carts",
@@ -983,8 +1006,6 @@
       "version": "0.0.41",
       "dependencies": {
         "@86d-app/core": "workspace:*",
-        "@86d-app/managed-payments": "workspace:*",
-        "@86d-app/sdk": "workspace:*",
       },
       "devDependencies": {
         "@biomejs/biome": "catalog:",
@@ -1717,13 +1738,17 @@
       "version": "0.0.4",
       "dependencies": {
         "@86d-app/core": "workspace:*",
+        "@86d-app/storage": "workspace:*",
         "@prisma/adapter-pg": "7.8.0",
+        "pg": "8.21.0",
         "prisma": "catalog:prisma",
       },
       "devDependencies": {
         "@biomejs/biome": "catalog:",
         "@electric-sql/pglite": "0.4.1",
         "@types/node": "catalog:node",
+        "sharp": "0.35.1",
+        "tsx": "catalog:",
         "typescript": "catalog:",
         "vitest": "catalog:vite",
       },
@@ -1978,6 +2003,10 @@
     "@86d-app/import-export": ["@86d-app/import-export@workspace:modules/import-export"],
 
     "@86d-app/instagram-shop": ["@86d-app/instagram-shop@workspace:modules/instagram-shop"],
+
+    "@86d-app/internals-generators": ["@86d-app/internals-generators@workspace:internals/generators"],
+
+    "@86d-app/internals-registry": ["@86d-app/internals-registry@workspace:internals/registry"],
 
     "@86d-app/inventory": ["@86d-app/inventory@workspace:modules/inventory"],
 
