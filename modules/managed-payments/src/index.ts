@@ -1,0 +1,73 @@
+import type { Module, ModuleContext } from "@86d-app/core/types/module";
+import type { PaymentAggregateStore } from "@86d-app/payments";
+import {
+	createManagedPaymentClient,
+} from "./managed-payment-client";
+import {
+	createManagedPaymentOutcomeConsumer,
+	type ManagedPaymentOutcomeConsumer,
+} from "./outcome-consumer";
+import { createPrepareManagedPaymentEndpoint } from "./store/endpoints/prepare-managed-payment";
+import { readManagedWorkloadConfig } from "@86d-app/sdk/workload-token-client";
+
+export type {
+	ManagedPaymentOperationSnapshot,
+	ManagedPaymentPrepareInput,
+	ManagedPaymentPrepareResponse,
+	ManagedPaymentStoreOutcome,
+	SubmitManagedPaymentOperationInput,
+} from "./contracts";
+export {
+	MANAGED_PAYMENT_WORKLOAD_SCOPES,
+	STORE_RUNTIME_WORKLOAD_AUDIENCE,
+} from "./contracts";
+export { createManagedPaymentClient, type ManagedPaymentClient } from "./managed-payment-client";
+export type { ManagedPaymentOutcomeConsumerResult } from "./outcome-consumer";
+export {
+	consumeManagedPaymentOutcomes,
+	createManagedPaymentOutcomeConsumer,
+} from "./outcome-consumer";
+
+export interface ManagedPaymentsOptions {
+	/** Override managed workload configuration instead of reading env vars. */
+	workloadConfig?: Parameters<typeof createManagedPaymentClient>[0]["config"];
+}
+
+export default function managedPayments(
+	options?: ManagedPaymentsOptions,
+): Module {
+	return {
+		id: "managed-payments",
+		version: "0.0.1",
+		schema: {},
+		requires: {
+			payments: {
+				read: ["paymentStatus", "paymentAmount"],
+			},
+		},
+		init: async (ctx: ModuleContext) => {
+			const config =
+				options?.workloadConfig ?? readManagedWorkloadConfig();
+			const client = createManagedPaymentClient({ config });
+			const paymentAggregates = ctx.controllers
+				.paymentAggregates as PaymentAggregateStore | undefined;
+			const outcomeConsumer: ManagedPaymentOutcomeConsumer | undefined =
+				paymentAggregates
+					? createManagedPaymentOutcomeConsumer({
+							client,
+							paymentAggregates,
+						})
+					: undefined;
+			const controllers: Record<string, ManagedPaymentOutcomeConsumer> = {};
+			if (outcomeConsumer) {
+				controllers.managedPaymentOutcomes = outcomeConsumer;
+			}
+			return { controllers };
+		},
+		endpoints: {
+			store: {
+				"/payments/managed/prepare": createPrepareManagedPaymentEndpoint(),
+			},
+		},
+	};
+}

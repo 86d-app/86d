@@ -564,9 +564,19 @@ export type Router = typeof router;
 	}
 
 	// Generate module imports
-	const moduleImports = modules
-		.map((moduleName, idx) => `import module${idx} from "${moduleName}";`)
-		.join("\n");
+	const hasStripe = modules.includes("@86d-app/stripe");
+	const hasPayPal = modules.includes("@86d-app/paypal");
+	const hasSquare = modules.includes("@86d-app/square");
+	const hasBraintree = modules.includes("@86d-app/braintree");
+
+	const moduleImports = [
+		...modules.map(
+			(moduleName, idx) => `import module${idx} from "${moduleName}";`,
+		),
+		...(hasPayPal
+			? [`import { PayPalPaymentConnectionProvider } from "@86d-app/paypal";`]
+			: []),
+	].join("\n");
 
 	const pathPatterns: Array<{ pattern: string; moduleId: string }> = [];
 	for (const source of pathSources) {
@@ -597,10 +607,6 @@ export type Router = typeof router;
 		.join("\n");
 
 	// Detect which payment provider modules are present so we can generate wiring code
-	const hasStripe = modules.includes("@86d-app/stripe");
-	const hasPayPal = modules.includes("@86d-app/paypal");
-	const hasSquare = modules.includes("@86d-app/square");
-	const hasBraintree = modules.includes("@86d-app/braintree");
 	const hasAnyProvider = hasStripe || hasPayPal || hasSquare || hasBraintree;
 
 	// Configure provider Integration modules only. Payments intentionally receives
@@ -628,6 +634,24 @@ if (process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_CLIENT_SECRET && process.
     clientSecret: process.env.PAYPAL_CLIENT_SECRET,
     sandbox: process.env.PAYPAL_SANDBOX ?? "",
     webhookId: process.env.PAYPAL_WEBHOOK_ID,
+    ...(process.env.PAYPAL_CONNECTION_ID ? { connectionId: process.env.PAYPAL_CONNECTION_ID } : {}),
+    ...(process.env["86D_STORE_ID"] ? { storeId: process.env["86D_STORE_ID"] } : {}),
+  };
+}
+if (process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_CLIENT_SECRET && process.env.PAYPAL_CONNECTION_ID && process.env.PAYPAL_PROVIDER_ACCOUNT_ID) {
+  const paypalConnection = new PayPalPaymentConnectionProvider({
+    connectionId: process.env.PAYPAL_CONNECTION_ID,
+    providerAccountId: process.env.PAYPAL_PROVIDER_ACCOUNT_ID,
+    clientId: process.env.PAYPAL_CLIENT_ID,
+    clientSecret: process.env.PAYPAL_CLIENT_SECRET,
+    mode: process.env.PAYPAL_SANDBOX === "true" ? "test" : "live",
+  });
+  moduleOptions["@86d-app/payments"] = {
+    ...moduleOptions["@86d-app/payments"],
+    connectionProviders: [
+      ...((moduleOptions["@86d-app/payments"]?.connectionProviders as unknown[]) ?? []),
+      paypalConnection,
+    ],
   };
 }`);
 		}

@@ -12,6 +12,9 @@ export interface PayPalOptions extends ModuleConfig {
 	clientSecret: string;
 	sandbox?: string | undefined;
 	webhookId?: string | undefined;
+	connectionId?: string | undefined;
+	storeId?: string | undefined;
+	verificationKeyReference?: string | undefined;
 }
 
 export default function paypal(options: PayPalOptions): Module {
@@ -20,6 +23,11 @@ export default function paypal(options: PayPalOptions): Module {
 		clientSecret: options.clientSecret,
 		...(options.webhookId != null && { webhookId: options.webhookId }),
 		...(options.sandbox != null && { sandbox: options.sandbox }),
+		...(options.connectionId != null && { connectionId: options.connectionId }),
+		...(options.storeId != null && { storeId: options.storeId }),
+		...(options.verificationKeyReference != null && {
+			verificationKeyReference: options.verificationKeyReference,
+		}),
 	};
 
 	return {

@@ -5,11 +5,15 @@ import {
 	taxQuoteV2Capability,
 } from "@86d-app/core/commerce-capabilities";
 import { inventoryCheckoutV2Capability } from "@86d-app/core/inventory-reservation-capability";
+import { createMockTransactionRunner } from "@86d-app/core/test-utils";
+import { createPaymentAggregateStore } from "@86d-app/payments";
 import { describe, expect, it } from "vitest";
 import { createCheckoutFinalizationStore } from "../finalization";
 import {
 	createCheckoutFinalizationHandlers,
 	createCheckoutFinalizationTransport,
+	handlePaymentConnection,
+	isPaymentLiveActivated,
 } from "../finalizer-handlers";
 import { createCheckoutController } from "../service-impl";
 import { createTransactionTestStore } from "./transaction-test-utils";
@@ -23,6 +27,42 @@ const address = {
 	postalCode: "78701",
 	country: "US",
 };
+
+function paypalConnection(
+	overrides: Partial<{
+		id: string;
+		health: "unknown" | "healthy" | "degraded" | "unhealthy";
+		lifecycle: "draft" | "enabled" | "disabled" | "revoked";
+	}> = {},
+) {
+	return {
+		id: overrides.id ?? "payment-connection-1",
+		providerAccountId: "PAYPAL-1",
+		name: "PayPal",
+		normalizedName: "paypal",
+		provider: "paypal",
+		mode: "test" as const,
+		capabilities: ["authorization", "capture"] as (
+			| "authorization"
+			| "capture"
+		)[],
+		health: overrides.health ?? "unknown",
+		lifecycle: overrides.lifecycle ?? "draft",
+		secretReference: "secret/paypal",
+		createdAt: new Date("2026-08-13T00:00:00.000Z"),
+		updatedAt: new Date("2026-08-13T00:00:00.000Z"),
+	};
+}
+
+function paymentConnectionsMock(
+	connection: ReturnType<typeof paypalConnection> | null = paypalConnection(),
+) {
+	return {
+		async getConnection(id: string) {
+			return connection && connection.id === id ? connection : null;
+		},
+	};
+}
 
 function admission(overrides?: {
 	taxQuoteId?: string;
@@ -210,6 +250,9 @@ describe("Checkout finalization handlers", () => {
 		const handlers = createCheckoutFinalizationHandlers({
 			checkout,
 			capabilities: taxOnlyInvoker("CALCULATED"),
+			paymentConnections: paymentConnectionsMock(
+				paypalConnection({ lifecycle: "draft", health: "unknown" }),
+			),
 		});
 
 		const run = await createCheckoutFinalizationTransport({
@@ -313,6 +356,9 @@ describe("Checkout finalization handlers", () => {
 		const handlers = createCheckoutFinalizationHandlers({
 			checkout,
 			capabilities,
+			paymentConnections: paymentConnectionsMock(
+				paypalConnection({ lifecycle: "enabled", health: "healthy" }),
+			),
 		});
 		const run = await createCheckoutFinalizationTransport({
 			store,
@@ -324,5 +370,150 @@ describe("Checkout finalization handlers", () => {
 		const completed = await checkout.getById("checkout-1");
 		expect(completed?.status).toBe("completed");
 		expect(completed?.orderId).toBe(run.finalization.result.orderId);
+	});
+
+	it("rejects unknown payment connections at payment_connection", async () => {
+		const storage = createTransactionTestStore();
+		const checkout = createCheckoutController(storage.data);
+		await checkout.create({
+			id: "checkout-1",
+			subtotal: 1000,
+			total: 1083,
+			taxAmount: 83,
+			lineItems: [
+				{ productId: "p1", name: "Widget", price: 1000, quantity: 1 },
+			],
+			shippingAddress: address,
+		});
+		const store = createCheckoutFinalizationStore(storage.transactions);
+		const admitted = await store.admit(admission());
+		const finalization = admitted.finalization;
+
+		const outcome = await handlePaymentConnection(
+			{
+				checkout,
+				capabilities: taxOnlyInvoker("CALCULATED"),
+				paymentConnections: {
+					async getConnection() {
+						return null;
+					},
+				},
+			},
+			finalization,
+		);
+
+		expect(outcome.outcome).toMatchObject({
+			type: "needs_attention",
+			reason: { code: "PAYMENT_CONNECTION_NOT_FOUND" },
+		});
+	});
+
+	it("advances managed payment outcome when the v2 aggregate is authorized", async () => {
+		const storage = createTransactionTestStore();
+		const checkout = createCheckoutController(storage.data);
+		await checkout.create({
+			id: "checkout-1",
+			subtotal: 1000,
+			total: 1083,
+			taxAmount: 83,
+			lineItems: [
+				{ productId: "p1", name: "Widget", price: 1000, quantity: 1 },
+			],
+			shippingAddress: address,
+			metadata: { paymentV2Id: "payment-1" },
+		});
+
+		const paymentStorage = createMockTransactionRunner({ storeId: "store-1" });
+		await paymentStorage.data.upsert("paymentConnection", "payment-connection-1", {
+			id: "payment-connection-1",
+			providerAccountId: "MERCHANT-1",
+			name: "86d Payments",
+			normalizedName: "86d payments",
+			provider: "86d_payments",
+			mode: "test",
+			capabilities: ["authorization", "capture", "void"],
+			health: "healthy",
+			lifecycle: "enabled",
+			secretReference: "secret/managed-1",
+			enabledAt: new Date("2026-08-13T00:00:00.000Z"),
+			createdAt: new Date("2026-08-13T00:00:00.000Z"),
+			updatedAt: new Date("2026-08-13T00:00:00.000Z"),
+		});
+		const paymentAggregates = createPaymentAggregateStore(
+			paymentStorage.data,
+			paymentStorage,
+		);
+		await paymentAggregates.create({
+			paymentId: "payment-1",
+			idempotencyKey: "create-payment-1",
+			checkoutId: "checkout-1",
+			connectionId: "payment-connection-1",
+			paymentOption: "card",
+			expectedAmount: 1_083,
+			eligibleMerchandiseAmount: 1_000,
+			currency: "USD",
+		});
+		await paymentAggregates.recordConfirmedOperation({
+			paymentId: "payment-1",
+			connectionId: "payment-connection-1",
+			operationId: "authorization-1",
+			operation: "authorization",
+			amount: 1_083,
+			currency: "USD",
+			requestDigest: "a".repeat(64),
+			providerReference: "provider-auth-1",
+			confirmedAt: new Date("2026-08-14T00:00:00.000Z"),
+		});
+
+		const store = createCheckoutFinalizationStore(storage.transactions);
+		const admitted = await store.admit(admission());
+		const handlers = createCheckoutFinalizationHandlers({
+			checkout,
+			capabilities: taxOnlyInvoker("CALCULATED"),
+			paymentConnections: {
+				async getConnection(id) {
+					return paymentStorage.data.get("paymentConnection", id) as never;
+				},
+			},
+			paymentAggregates,
+		});
+
+		const previousActivation = process.env["86D_PAYMENTS_LIVE_ACTIVATION"];
+		process.env["86D_PAYMENTS_LIVE_ACTIVATION"] = "true";
+		try {
+			const run = await createCheckoutFinalizationTransport({
+				store,
+				handlers,
+			}).run({ finalizationId: admitted.finalization.id });
+			expect(run.finalization.currentStep).not.toBe("payment_outcome");
+			expect(run.finalization.needsAttention?.code).not.toBe(
+				"PAYMENT_ACTIVATION_REQUIRED",
+			);
+		} finally {
+			if (previousActivation === undefined) {
+				delete process.env["86D_PAYMENTS_LIVE_ACTIVATION"];
+			} else {
+				process.env["86D_PAYMENTS_LIVE_ACTIVATION"] = previousActivation;
+			}
+		}
+	});
+
+	it("treats enabled healthy connections as live activated", () => {
+		expect(
+			isPaymentLiveActivated({
+				id: "connection-1",
+				providerAccountId: "acct-1",
+				name: "PayPal",
+				normalizedName: "paypal",
+				provider: "paypal",
+				mode: "test",
+				capabilities: ["authorization", "capture"],
+				health: "healthy",
+				lifecycle: "enabled",
+				secretReference: "secret/paypal",
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			}),
+		).toBe(true);
 	});
 });

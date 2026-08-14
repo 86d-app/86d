@@ -16,6 +16,12 @@ interface PayPalWebhookOptions {
 	webhookId?: string | undefined;
 	/** Use sandbox environment. Pass "true" to enable. */
 	sandbox?: string | undefined;
+	/** Immutable Payment Connection bound to this webhook ingress. */
+	connectionId?: string | undefined;
+	/** Store identity for durable webhook receipts. */
+	storeId?: string | undefined;
+	/** Opaque verification key locator persisted with each receipt. */
+	verificationKeyReference?: string | undefined;
 }
 
 // ── PayPal signature verification ─────────────────────────────────────────────
@@ -229,7 +235,250 @@ function extractRefundDetails(event: Record<string, unknown>):
 	};
 }
 
+function extractPaymentId(event: Record<string, unknown>): string | undefined {
+	const resource = event.resource as { custom_id?: string } | undefined;
+	if (typeof resource?.custom_id === "string" && resource.custom_id.length > 0) {
+		return resource.custom_id;
+	}
+	return undefined;
+}
+
+function extractCaptureAmount(event: Record<string, unknown>):
+	| { amount: number; currency: string }
+	| undefined {
+	const resource = event.resource as PayPalResource | undefined;
+	if (typeof resource?.amount?.value !== "string") return undefined;
+	const amount = Math.round(Number(resource.amount.value) * 100);
+	const currency = (resource.amount as { currency_code?: string }).currency_code;
+	if (
+		!Number.isSafeInteger(amount) ||
+		amount <= 0 ||
+		typeof currency !== "string"
+	) {
+		return undefined;
+	}
+	return { amount, currency };
+}
+
 // ── Endpoint factory ──────────────────────────────────────────────────────────
+
+/**
+ * Durable PayPal webhook endpoint using Payment v2 webhook receipts.
+ */
+export function createDurablePayPalWebhook(opts: PayPalWebhookOptions) {
+	const baseUrl =
+		opts.sandbox === "true"
+			? "https://api-m.sandbox.paypal.com"
+			: "https://api-m.paypal.com";
+	const withReceipt = createReceiptGuard();
+
+	return createStoreEndpoint(
+		"/paypal/webhook",
+		{
+			exposure: "provider_webhook",
+			method: "POST",
+			requireRequest: true,
+		},
+		async (ctx) => {
+			const clientId = opts.clientId?.trim();
+			const clientSecret = opts.clientSecret?.trim();
+			const webhookId = opts.webhookId?.trim();
+			const connectionId = opts.connectionId?.trim();
+			const storeId =
+				opts.storeId?.trim() ?? process.env["86D_STORE_ID"]?.trim();
+			if (!clientId || !clientSecret || !webhookId) {
+				return Response.json(
+					{ error: "PayPal webhook verification is not configured." },
+					{ status: 503 },
+				);
+			}
+			if (!connectionId || !storeId) {
+				return Response.json(
+					{
+						code: "PAYMENT_WEBHOOK_DURABILITY_REQUIRED",
+						error:
+							"PayPal webhook processing requires a durable Connection binding.",
+					},
+					{ status: 503, headers: { "Retry-After": "60" } },
+				);
+			}
+
+			const rawBody = await ctx.request.text();
+			const valid = await verifyPayPalSignature(
+				rawBody,
+				ctx.request.headers,
+				webhookId,
+				clientId,
+				clientSecret,
+				baseUrl,
+			);
+			if (!valid) {
+				return Response.json(
+					{ error: "Invalid or unverifiable webhook signature." },
+					{ status: 401 },
+				);
+			}
+
+			let event: Record<string, unknown>;
+			try {
+				event = JSON.parse(rawBody) as Record<string, unknown>;
+			} catch {
+				return Response.json({ error: "Invalid JSON body." }, { status: 400 });
+			}
+
+			const eventType = event.event_type as string | undefined;
+			if (!eventType) {
+				return Response.json({ error: "Missing event type." }, { status: 400 });
+			}
+			const providerEventId =
+				typeof event.id === "string" ? event.id : await sha256Hex(rawBody);
+			const receiptKey = providerEventId;
+
+			return withReceipt(
+				receiptKey,
+				{ received: true, type: eventType },
+				async () => {
+					const webhookReceipts = ctx.context?.controllers?.paymentWebhookReceipts as
+						| {
+								recordVerified(input: unknown): Promise<{ receipt: { id: string } }>;
+								process(id: string): Promise<{ acknowledge: boolean }>;
+						  }
+						| undefined;
+					if (!webhookReceipts) {
+						return Response.json(
+							{
+								code: "PAYMENT_WEBHOOK_DURABILITY_REQUIRED",
+								error:
+									"PayPal webhook processing requires a durable provider receipt.",
+							},
+							{ status: 503, headers: { "Retry-After": "60" } },
+						);
+					}
+
+					const paymentId = extractPaymentId(event);
+					const providerReference = extractProviderIntentId(event);
+					const payloadDigest = await sha256Hex(rawBody);
+					const verificationKeyReference =
+						opts.verificationKeyReference?.trim() ??
+						`secret/paypal/${webhookId}`;
+
+					if (PAYPAL_REFUND_EVENTS.has(eventType) && paymentId && providerReference) {
+						const refundDetails = extractRefundDetails(event);
+						if (!refundDetails) {
+							return Response.json(
+								{ error: "Missing stable PayPal refund ID." },
+								{ status: 400 },
+							);
+						}
+						const recorded = await webhookReceipts.recordVerified({
+							storeId,
+							connectionId,
+							provider: "paypal",
+							providerEventId,
+							providerEventType: eventType,
+							payloadDigest,
+							verificationKeyReference,
+							fact: {
+								kind: "confirmed_operation",
+								paymentId,
+								operationId: `paypal-refund:${providerEventId}`,
+								operation: "refund",
+								sourceOperationId: providerReference,
+								amount: refundDetails.amount,
+								currency: "USD",
+								requestDigest: payloadDigest,
+								providerReference: refundDetails.providerRefundId,
+								occurredAt: new Date(),
+							},
+						});
+						await webhookReceipts.process(recorded.receipt.id);
+						return Response.json({
+							received: true,
+							type: eventType,
+							handled: true,
+						});
+					}
+
+					if (
+						eventType === "PAYMENT.CAPTURE.COMPLETED" &&
+						paymentId &&
+						providerReference
+					) {
+						const capture = extractCaptureAmount(event);
+						if (!capture) {
+							return Response.json(
+								{ error: "Missing stable PayPal capture amount." },
+								{ status: 400 },
+							);
+						}
+						const recorded = await webhookReceipts.recordVerified({
+							storeId,
+							connectionId,
+							provider: "paypal",
+							providerEventId,
+							providerEventType: eventType,
+							payloadDigest,
+							verificationKeyReference,
+							fact: {
+								kind: "confirmed_operation",
+								paymentId,
+								operationId: `paypal-capture:${providerEventId}`,
+								operation: "capture",
+								sourceOperationId: providerReference,
+								amount: capture.amount,
+								currency: capture.currency,
+								requestDigest: payloadDigest,
+								providerReference,
+								occurredAt: new Date(),
+							},
+						});
+						await webhookReceipts.process(recorded.receipt.id);
+						return Response.json({
+							received: true,
+							type: eventType,
+							handled: true,
+						});
+					}
+
+					if (
+						eventType === "CHECKOUT.ORDER.APPROVED" &&
+						paymentId &&
+						providerReference
+					) {
+						const recorded = await webhookReceipts.recordVerified({
+							storeId,
+							connectionId,
+							provider: "paypal",
+							providerEventId,
+							providerEventType: eventType,
+							payloadDigest,
+							verificationKeyReference,
+							fact: {
+								kind: "confirmed_operation",
+								paymentId,
+								operationId: `paypal-authorization:${providerEventId}`,
+								operation: "authorization",
+								amount: 1,
+								currency: "USD",
+								requestDigest: payloadDigest,
+								providerReference,
+								occurredAt: new Date(),
+							},
+						});
+						await webhookReceipts.process(recorded.receipt.id);
+						return Response.json({
+							received: true,
+							type: eventType,
+							handled: true,
+						});
+					}
+
+					return Response.json({ received: true, type: eventType });
+				},
+			);
+		},
+	);
+}
 
 /**
  * Create the PayPal webhook endpoint.

@@ -1,5 +1,5 @@
 # Nixpacks config for Railway and other Nixpacks hosts (monorepo root = 86d store platform).
-# Template: https://railway.com/deploy/WKYLrk
+# Template: https://railway.com/deploy/86d
 [phases.setup]
 nixPkgs = ["...", "bun"]
 

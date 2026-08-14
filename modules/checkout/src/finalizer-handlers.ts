@@ -4,6 +4,12 @@ import {
 	paymentCheckoutCapability,
 } from "@86d-app/core/commerce-capabilities";
 import { inventoryCheckoutV2Capability } from "@86d-app/core/inventory-reservation-capability";
+import type { PaymentConnection } from "@86d-app/payments";
+import type {
+	PaymentAggregate,
+	PaymentAggregateStore,
+} from "@86d-app/payments";
+import type { ManagedPaymentClient } from "@86d-app/managed-payments";
 import type {
 	CheckoutFinalization,
 	CheckoutFinalizationStore,
@@ -16,6 +22,14 @@ import {
 } from "./finalizer";
 import type { CheckoutController } from "./service";
 import { recalculateTax } from "./store/endpoints/recalculate-tax";
+
+const MANAGED_PAYMENT_PROVIDER = "86d_payments";
+const THIRD_PARTY_PAYMENT_PROVIDERS = new Set([
+	"paypal",
+	"stripe",
+	"braintree",
+	"square",
+]);
 
 const NEXT_STEP = {
 	checkout_revision: "accepted_offer",
@@ -61,11 +75,37 @@ function retryable(
 	};
 }
 
+export function isManagedPaymentProvider(provider: string): boolean {
+	return provider === MANAGED_PAYMENT_PROVIDER;
+}
+
+export function isThirdPartyPaymentProvider(provider: string): boolean {
+	return THIRD_PARTY_PAYMENT_PROVIDERS.has(provider);
+}
+
+export function isPaymentLiveActivated(connection: PaymentConnection): boolean {
+	if (process.env["86D_PAYMENTS_LIVE_ACTIVATION"] === "true") {
+		return true;
+	}
+	return (
+		connection.lifecycle === "enabled" && connection.health === "healthy"
+	);
+}
+
 export type CheckoutFinalizationHandlerDependencies = Readonly<{
 	capabilities: CapabilityInvoker;
 	checkout: CheckoutController;
 	/** Lease duration for inventory reservations created during finalization. */
 	reservationLeaseSeconds?: number | undefined;
+	paymentConnections?: {
+		getConnection(id: string): Promise<PaymentConnection | null>;
+	} | undefined;
+	paymentAggregates?: PaymentAggregateStore | undefined;
+	managedPaymentClient?: ManagedPaymentClient | undefined;
+	resolvePaymentAggregate?: (
+		checkoutId: string,
+		connectionId: string,
+	) => Promise<PaymentAggregate | null>;
 }>;
 
 /**
@@ -116,13 +156,7 @@ export function createCheckoutFinalizationHandlers(
 		},
 
 		async payment_connection({ finalization }) {
-			if (!finalization.acceptedInput.paymentConnectionId) {
-				return needsAttention(
-					"PAYMENT_CONNECTION_REQUIRED",
-					"Finalization cannot advance without a Payment Connection identity.",
-				);
-			}
-			return advance("payment_connection");
+			return handlePaymentConnection(deps, finalization);
 		},
 
 		async payment_outcome({ finalization }) {
@@ -137,8 +171,8 @@ export function createCheckoutFinalizationHandlers(
 			return advance("commerce_commit");
 		},
 
-		async payment_settlement() {
-			return advance("payment_settlement");
+		async payment_settlement({ finalization }) {
+			return handlePaymentSettlement(deps, finalization);
 		},
 
 		async checkout_completion({ finalization }) {
@@ -157,6 +191,75 @@ export function createCheckoutFinalizationTransport(options: {
 	maxAttemptsPerRun?: number | undefined;
 }): CheckoutFinalizer {
 	return createCheckoutFinalizer(options);
+}
+
+async function resolveConnection(
+	deps: CheckoutFinalizationHandlerDependencies,
+	connectionId: string,
+): Promise<PaymentConnection | null> {
+	return deps.paymentConnections?.getConnection(connectionId) ?? null;
+}
+
+async function resolvePayment(
+	deps: CheckoutFinalizationHandlerDependencies,
+	finalization: CheckoutFinalization,
+	connectionId: string,
+): Promise<PaymentAggregate | null> {
+	if (finalization.result.payment?.paymentId && deps.paymentAggregates) {
+		return deps.paymentAggregates.get(finalization.result.payment.paymentId);
+	}
+	if (deps.resolvePaymentAggregate) {
+		return deps.resolvePaymentAggregate(finalization.checkoutId, connectionId);
+	}
+	const session = await deps.checkout.getById(finalization.checkoutId);
+	const paymentId =
+		typeof session?.metadata?.paymentV2Id === "string"
+			? session.metadata.paymentV2Id
+			: undefined;
+	if (paymentId && deps.paymentAggregates) {
+		return deps.paymentAggregates.get(paymentId);
+	}
+	return null;
+}
+
+export async function handlePaymentConnection(
+	deps: CheckoutFinalizationHandlerDependencies,
+	finalization: CheckoutFinalization,
+): Promise<CheckoutFinalizationStepOutcome> {
+	const connectionId = finalization.acceptedInput.paymentConnectionId;
+	if (!connectionId) {
+		return needsAttention(
+			"PAYMENT_CONNECTION_REQUIRED",
+			"Finalization cannot advance without a Payment Connection identity.",
+		);
+	}
+
+	const connection = await resolveConnection(deps, connectionId);
+	if (!connection) {
+		return needsAttention(
+			"PAYMENT_CONNECTION_NOT_FOUND",
+			"The accepted Payment Connection does not exist.",
+		);
+	}
+
+	if (
+		!isManagedPaymentProvider(connection.provider) &&
+		!isThirdPartyPaymentProvider(connection.provider)
+	) {
+		return needsAttention(
+			"PAYMENT_CONNECTION_UNSUPPORTED",
+			`Provider '${connection.provider}' is not routable for Checkout finalization.`,
+		);
+	}
+
+	if (connection.lifecycle === "revoked" || connection.lifecycle === "disabled") {
+		return needsAttention(
+			"PAYMENT_CONNECTION_NOT_USABLE",
+			"The accepted Payment Connection is not enabled.",
+		);
+	}
+
+	return advance("payment_connection");
 }
 
 async function handleShippingAndTax(
@@ -213,7 +316,6 @@ async function handleInventory(
 
 	const existing = finalization.acceptedInput.inventoryReservationIds;
 	if (existing.length > 0 && existing.length === lineItems.length) {
-		// Reservations were admitted with the Finalization; do not double-reserve.
 		return advance("inventory");
 	}
 
@@ -250,7 +352,17 @@ async function handleInventory(
 	return advance("inventory");
 }
 
-async function handlePaymentOutcome(
+function paymentOutcomeSatisfied(
+	payment: PaymentAggregate,
+	policyId: string | undefined,
+): boolean {
+	if (policyId === "authorize-then-capture-v1") {
+		return payment.authorizedAmount > 0 || payment.capturedAmount > 0;
+	}
+	return payment.capturedAmount >= payment.expectedAmount;
+}
+
+export async function handlePaymentOutcome(
 	deps: CheckoutFinalizationHandlerDependencies,
 	finalization: CheckoutFinalization,
 ): Promise<CheckoutFinalizationStepOutcome> {
@@ -261,6 +373,88 @@ async function handlePaymentOutcome(
 
 	if (session.total <= 0) {
 		return advance("payment_outcome");
+	}
+
+	const connectionId = finalization.acceptedInput.paymentConnectionId;
+	if (!connectionId) {
+		return needsAttention("PAYMENT_CONNECTION_REQUIRED");
+	}
+
+	const connection = await resolveConnection(deps, connectionId);
+	if (!connection) {
+		return needsAttention("PAYMENT_CONNECTION_NOT_FOUND");
+	}
+
+	if (!isPaymentLiveActivated(connection)) {
+		return needsAttention(
+			"PAYMENT_ACTIVATION_REQUIRED",
+			"Live payment activation remains contained until production evidence exists.",
+		);
+	}
+
+	if (isManagedPaymentProvider(connection.provider)) {
+		const payment = await resolvePayment(deps, finalization, connectionId);
+		if (!payment) {
+			return needsAttention(
+				"PAYMENT_NOT_FOUND",
+				"No managed Payment aggregate exists for this Checkout.",
+			);
+		}
+		if (
+			!paymentOutcomeSatisfied(
+				payment,
+				finalization.acceptedInput.paymentPolicyId,
+			)
+		) {
+			return needsAttention(
+				"PAYMENT_NOT_COMPLETED",
+				"The managed Payment outcome has not confirmed authorization.",
+			);
+		}
+		return {
+			outcome: { type: "advanced", nextStep: "order" },
+			result: {
+				payment: {
+					connectionId,
+					paymentId: payment.id,
+					...(payment.providerReferences.find(
+						(reference) => reference.operation === "authorization",
+					)
+						? {
+								authorizationOperationId: payment.providerReferences.find(
+									(reference) => reference.operation === "authorization",
+								)?.operationId,
+							}
+						: {}),
+				},
+			},
+		};
+	}
+
+	if (isThirdPartyPaymentProvider(connection.provider) && deps.paymentAggregates) {
+		const payment = await resolvePayment(deps, finalization, connectionId);
+		if (payment) {
+			if (
+				!paymentOutcomeSatisfied(
+					payment,
+					finalization.acceptedInput.paymentPolicyId,
+				)
+			) {
+				return needsAttention(
+					"PAYMENT_NOT_COMPLETED",
+					"The Payment aggregate has not reached an authoritative state.",
+				);
+			}
+			return {
+				outcome: { type: "advanced", nextStep: "order" },
+				result: {
+					payment: {
+						connectionId,
+						paymentId: payment.id,
+					},
+				},
+			};
+		}
 	}
 
 	if (
@@ -288,6 +482,90 @@ async function handlePaymentOutcome(
 	}
 
 	return advance("payment_outcome");
+}
+
+export async function handlePaymentSettlement(
+	deps: CheckoutFinalizationHandlerDependencies,
+	finalization: CheckoutFinalization,
+): Promise<CheckoutFinalizationStepOutcome> {
+	const session = await deps.checkout.getById(finalization.checkoutId);
+	if (!session || session.total <= 0) {
+		return advance("payment_settlement");
+	}
+
+	const connectionId = finalization.acceptedInput.paymentConnectionId;
+	if (!connectionId) {
+		return advance("payment_settlement");
+	}
+
+	const connection = await resolveConnection(deps, connectionId);
+	if (!connection) {
+		return needsAttention("PAYMENT_CONNECTION_NOT_FOUND");
+	}
+
+	if (
+		finalization.acceptedInput.paymentPolicyId !== "authorize-then-capture-v1"
+	) {
+		return advance("payment_settlement");
+	}
+
+	const payment = await resolvePayment(deps, finalization, connectionId);
+	if (!payment) {
+		return needsAttention(
+			"PAYMENT_NOT_FOUND",
+			"Settlement requires the Payment aggregate from prior checkpoints.",
+		);
+	}
+
+	if (payment.capturedAmount >= payment.expectedAmount) {
+		return advance("payment_settlement");
+	}
+
+	if (isManagedPaymentProvider(connection.provider)) {
+		if (!deps.managedPaymentClient?.configured) {
+			return retryable(
+				"MANAGED_PAYMENT_UNAVAILABLE",
+				"Managed Payment capture requires Control Plane workload identity.",
+			);
+		}
+		const authorization = payment.providerReferences.find(
+			(reference) => reference.operation === "authorization",
+		);
+		if (!authorization) {
+			return needsAttention(
+				"PAYMENT_AUTHORIZATION_REQUIRED",
+				"Capture requires a confirmed authorization operation.",
+			);
+		}
+		try {
+			await deps.managedPaymentClient.submitOperation({
+				idempotencyKey: `finalize:${finalization.id}:capture`,
+				provider: connection.provider,
+				mode: connection.mode === "test" ? "sandbox" : "live",
+				kind: "capture",
+				businessId: "managed-business",
+				merchantPaymentAccountId: connection.providerAccountId,
+				bindingId: "managed-binding",
+				connectionId,
+				paymentId: payment.id,
+				checkoutId: finalization.checkoutId,
+				option:
+					payment.paymentOption === "card" ||
+					payment.paymentOption === "apple_pay" ||
+					payment.paymentOption === "google_pay"
+						? payment.paymentOption
+						: "card",
+				amountMinorUnits: payment.expectedAmount - payment.capturedAmount,
+				currency: payment.currency,
+				sourceOperationId: authorization.operationId,
+			});
+		} catch {
+			return retryable("PAYMENT_CAPTURE_UNAVAILABLE");
+		}
+		return advance("payment_settlement");
+	}
+
+	return advance("payment_settlement");
 }
 
 async function handleOrder(
@@ -400,10 +678,15 @@ async function handleOrder(
 					paymentConnectionId: finalization.acceptedInput.paymentConnectionId,
 				}
 			: {}),
-		...(session.paymentIntentId &&
-		session.paymentIntentId !== "no_payment_required"
-			? { paymentOperationId: session.paymentIntentId }
-			: {}),
+		...(finalization.result.payment?.authorizationOperationId
+			? {
+					paymentOperationId:
+						finalization.result.payment.authorizationOperationId,
+				}
+			: session.paymentIntentId &&
+					session.paymentIntentId !== "no_payment_required"
+				? { paymentOperationId: session.paymentIntentId }
+				: {}),
 	});
 
 	if (!created.ok) {

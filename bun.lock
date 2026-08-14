@@ -439,6 +439,8 @@
       "version": "0.0.41",
       "dependencies": {
         "@86d-app/core": "workspace:*",
+        "@86d-app/managed-payments": "workspace:*",
+        "@86d-app/payments": "workspace:*",
       },
       "devDependencies": {
         "@biomejs/biome": "catalog:",
@@ -831,6 +833,20 @@
         "vitest": "catalog:vite",
       },
     },
+    "modules/managed-payments": {
+      "name": "@86d-app/managed-payments",
+      "version": "0.0.1",
+      "dependencies": {
+        "@86d-app/core": "workspace:*",
+        "@86d-app/payments": "workspace:*",
+        "@86d-app/sdk": "workspace:*",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "typescript": "catalog:",
+        "vitest": "catalog:vite",
+      },
+    },
     "modules/media": {
       "name": "@86d-app/media",
       "version": "0.0.41",
@@ -967,6 +983,8 @@
       "version": "0.0.41",
       "dependencies": {
         "@86d-app/core": "workspace:*",
+        "@86d-app/managed-payments": "workspace:*",
+        "@86d-app/sdk": "workspace:*",
       },
       "devDependencies": {
         "@biomejs/biome": "catalog:",
@@ -1968,6 +1986,8 @@
     "@86d-app/kiosk": ["@86d-app/kiosk@workspace:modules/kiosk"],
 
     "@86d-app/loyalty": ["@86d-app/loyalty@workspace:modules/loyalty"],
+
+    "@86d-app/managed-payments": ["@86d-app/managed-payments@workspace:modules/managed-payments"],
 
     "@86d-app/media": ["@86d-app/media@workspace:modules/media"],
 

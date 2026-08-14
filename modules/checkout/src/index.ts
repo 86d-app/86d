@@ -87,6 +87,14 @@ export type {
 	CheckoutFinalizerRunSummary,
 } from "./finalizer";
 export type { CheckoutFinalizationHandlerDependencies } from "./finalizer-handlers";
+export {
+	handlePaymentConnection,
+	handlePaymentOutcome,
+	handlePaymentSettlement,
+	isManagedPaymentProvider,
+	isPaymentLiveActivated,
+	isThirdPartyPaymentProvider,
+} from "./finalizer-handlers";
 export type {
 	CheckoutAddress,
 	CheckoutController,
