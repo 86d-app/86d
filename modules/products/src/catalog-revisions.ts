@@ -426,6 +426,30 @@ const catalogRevisionHeadSchema = z
 		}
 	});
 
+export const catalogDraftCommandInputSchema = z
+	.object({
+		operationId: operationIdentifierSchema,
+		revisionId: resourceIdentifierSchema,
+		baseRevisionId: resourceIdentifierSchema.optional(),
+		content: catalogRevisionContentSchema,
+	})
+	.strict();
+
+export const catalogTransitionCommandInputSchema = z
+	.object({
+		operationId: operationIdentifierSchema,
+		revisionId: resourceIdentifierSchema,
+		expectedContentDigest: contentDigestSchema,
+	})
+	.strict();
+
+export const catalogTransitionTransportSchema = z
+	.object({
+		operationId: operationIdentifierSchema,
+		expectedContentDigest: contentDigestSchema,
+	})
+	.strict();
+
 export const catalogRevisionOperationInputSchema = z.discriminatedUnion(
 	"action",
 	[
@@ -1045,9 +1069,9 @@ async function publishRevision(
 
 /**
  * Products-owned adapter for Catalog revision Commands. The caller supplies the
- * owner-local transaction used by Command persistence, so the state change,
- * audit row, replay receipt, and `catalog.published@1` outbox fact share one
- * commit. No HTTP endpoint invokes this adapter until review transport exists.
+ * owner-local transaction used by Command persistence, so Command identity,
+ * the state change, audit row, replay receipt, and `catalog.published@1`
+ * outbox fact share one commit. HTTP is a thin Store Admin transport.
  */
 export async function applyCatalogRevisionOperation(
 	transaction: ModuleDataTransaction,

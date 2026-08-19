@@ -2,6 +2,7 @@
 
 import { useModuleClient } from "@86d-app/core/client/provider";
 import { useStoreContext } from "@86d-app/core/client/store-context";
+import { SearchIcon as LucideSearchIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -13,6 +14,13 @@ import {
 	useRef,
 	useState,
 } from "react";
+import {
+	Empty,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyMedia,
+	EmptyTitle,
+} from "~/components/ui/empty";
 import { Skeleton } from "~/components/ui/skeleton";
 import type { RootStore } from "~/lib/store";
 
@@ -413,18 +421,18 @@ function SearchResults() {
 
 			{/* No query state */}
 			{!urlQuery && (
-				<div className="flex flex-col items-center justify-center py-16 text-center">
-					<div className="mb-4 flex size-16 items-center justify-center rounded-2xl bg-muted">
-						<SearchIcon className="size-7 text-muted-foreground" />
-					</div>
-					<h2 className="font-display font-semibold text-foreground text-lg">
-						Search our store
-					</h2>
-					<p className="mt-1.5 max-w-sm text-muted-foreground text-sm">
-						Find products by name, description, or tags. Try searching for a
-						category or keyword.
-					</p>
-				</div>
+				<Empty>
+					<EmptyHeader>
+						<EmptyMedia variant="icon">
+							<LucideSearchIcon />
+						</EmptyMedia>
+						<EmptyTitle>Search our store</EmptyTitle>
+						<EmptyDescription>
+							Find products by name, description, or tags. Try searching for a
+							category or keyword.
+						</EmptyDescription>
+					</EmptyHeader>
+				</Empty>
 			)}
 
 			{/* Results with filters */}
@@ -504,23 +512,19 @@ function SearchResults() {
 
 					{/* No results */}
 					{!isLoading && !isError && products.length === 0 && (
-						<div className="flex flex-col items-center justify-center py-16 text-center">
-							<div className="mb-4 flex size-14 items-center justify-center rounded-2xl bg-muted">
-								<SearchIcon className="size-6 text-muted-foreground" />
-							</div>
-							<h3 className="font-medium text-foreground">No results found</h3>
-							<p className="mt-1.5 max-w-sm text-muted-foreground text-sm">
-								We couldn&apos;t find any products matching &ldquo;{urlQuery}
-								&rdquo;. Try a different search term or browse our{" "}
-								<Link
-									href="/products"
-									className="text-foreground underline underline-offset-2"
-								>
-									full catalog
-								</Link>
-								.
-							</p>
-						</div>
+						<Empty>
+							<EmptyHeader>
+								<EmptyMedia variant="icon">
+									<LucideSearchIcon />
+								</EmptyMedia>
+								<EmptyTitle>No results found</EmptyTitle>
+								<EmptyDescription>
+									We couldn&apos;t find any products matching &ldquo;{urlQuery}
+									&rdquo;. Try a different search term or browse our{" "}
+									<Link href="/products">full catalog</Link>.
+								</EmptyDescription>
+							</EmptyHeader>
+						</Empty>
 					)}
 
 					{/* Product grid */}

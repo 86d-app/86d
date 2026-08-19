@@ -19,8 +19,6 @@ export default function storePickup(options?: StorePickupOptions): Module {
 		version: "0.0.1",
 		schema: storePickupSchema,
 
-		requires: ["orders"],
-
 		exports: {
 			read: [
 				"availableWindows",

@@ -1,6 +1,6 @@
 # 86d.store Store Runtime (public)
 
-Modular, open-source commerce Store Runtime. Each Store is single-tenant with its own Storefront, Store Admin, and authoritative commerce data. The Control Plane within 86d.app can provision and operate this product from the sibling `private/` repo; it also runs fully standalone via Docker. See the root `AGENTS.md` for how the areas fit together.
+Modular, MIT-licensed commerce Store Runtime. Each Store is single-tenant with its own Storefront, Store Admin, and authoritative commerce data. The Control Plane within 86d.app can provision and operate this product from the sibling `private/` repo; it also runs fully standalone via Docker. See the root `AGENTS.md` for how the areas fit together.
 
 Bun monorepo orchestrated by Turborepo. TypeScript everywhere, strict mode.
 
@@ -129,15 +129,17 @@ Templates live in `templates/<name>/`. The store app resolves them via tsconfig 
 ## Terminology
 
 - **86d.store** or **Store Runtime** means the deployed open-source product.
-- **Storefront** means its shopper experience.
-- **Store Admin** means its merchant operating interface.
+- **storefront** means its shopper experience.
+- **store admin** means its merchant operating interface.
 - **86d.app** means the optional managed product.
 - **86d Console** means its human-facing interface.
 - **Control Plane** means the architectural authority within 86d.app.
-- **Feature** describes merchant-facing product behavior.
-- **Integration** describes a connection to an external provider.
-- **Module** is the technical packaging unit used in this repository.
+- **feature** describes merchant-facing product behavior.
+- **integration** describes a connection to an external provider.
+- **module** is the technical packaging unit used in this repository.
 - **Connection** is a configured provider relationship used by an Integration.
+
+In merchant copy and published docs, store, business, storefront, store admin, module, feature, and integration are ordinary nouns (sentence case). If a sentence, heading, or nav/title label begins with one of them, capitalize only the first letter of the first word: **Store admin**, **Storefront**, not **Store Admin**. Keep **Store Runtime**, **86d Console**, and code identifiers as written.
 
 Do not use bare “dashboard” or “console” in product language. Use **86d Console** in product copy and `console` for its app, package, and code identifiers.
 
@@ -158,7 +160,7 @@ Do not use bare “dashboard” or “console” in product language. Use **86d 
 - **Constrain records:** `z.record(z.string().max(100), z.unknown())` with `.refine()` to limit key count on arbitrary metadata.
 - **Admin endpoints** are auth-protected at the framework level through `createAdminEndpoint`; no per-endpoint checks are needed.
 - **Rate limiting** at the route handler: 120 req/min public, 300 req/min admin, stricter on sensitive endpoints.
-- **Rich HTML** fields (page content, blog posts) use `sanitizeHtml()` instead of `sanitizeText()`.
+- **Rich HTML** fields (page content, blog posts) use `sanitizeHtml()` instead of `sanitizeText()`, in the admin endpoint that accepts the field. Storing sanitized content keeps the render path free of a second pass.
 - **Return errors, don't throw:** store endpoints `return { error: "...", status: 404 }` to avoid stack-trace leakage.
 - **Never trust client identity:** derive `customerId`/email from `ctx.context.session.user`, never the request body. Never accept trust-elevation flags (e.g. `isVerifiedPurchase`) from clients.
 - **Verify ownership** before mutating user-scoped resources (`resource.customerId === session.user.id`); return 404, not 403, to avoid leaking existence.

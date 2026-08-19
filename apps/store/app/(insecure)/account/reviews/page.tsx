@@ -1,9 +1,18 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client/provider";
+import { StarIcon } from "lucide-react";
 import { useState } from "react";
 import { StatusBadge } from "~/components/status-badge";
 import { buttonVariants } from "~/components/ui/button";
+import {
+	Empty,
+	EmptyContent,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyMedia,
+	EmptyTitle,
+} from "~/components/ui/empty";
 import { Skeleton } from "~/components/ui/skeleton";
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -164,38 +173,26 @@ export default function MyReviewsPage() {
 					))}
 				</div>
 			) : reviews.length === 0 ? (
-				<div className="rounded-xl border border-border bg-muted/30 py-16 text-center">
-					<div className="mb-4 flex justify-center">
-						<div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								width="24"
-								height="24"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								strokeWidth="1.5"
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								className="text-muted-foreground"
-								aria-hidden="true"
-							>
-								<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-							</svg>
-						</div>
-					</div>
-					<p className="font-medium text-foreground text-sm">
-						{statusFilter ? "No matching reviews" : "No reviews yet"}
-					</p>
-					<p className="mt-1 text-muted-foreground text-sm">
-						{statusFilter
-							? "Try adjusting your filter."
-							: "Share your thoughts on products you've purchased."}
-					</p>
-					<a href="/products" className={buttonVariants({ className: "mt-4" })}>
-						Browse products
-					</a>
-				</div>
+				<Empty>
+					<EmptyHeader>
+						<EmptyMedia variant="icon">
+							<StarIcon />
+						</EmptyMedia>
+						<EmptyTitle>
+							{statusFilter ? "No matching reviews" : "No reviews yet"}
+						</EmptyTitle>
+						<EmptyDescription>
+							{statusFilter
+								? "Try adjusting your filter."
+								: "Share your thoughts on products you've purchased."}
+						</EmptyDescription>
+					</EmptyHeader>
+					<EmptyContent>
+						<a href="/products" className={buttonVariants()}>
+							Browse products
+						</a>
+					</EmptyContent>
+				</Empty>
 			) : (
 				<>
 					<div className="flex flex-col gap-3">

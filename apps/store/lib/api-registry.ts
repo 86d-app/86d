@@ -190,10 +190,10 @@ export async function ensureBooted(): Promise<ModuleRegistry> {
 					let enabledEvents: Set<string> | undefined;
 
 					if (storeId) {
+						// The workload identity names the Store; a caller-supplied id
+						// would let a request choose whose configuration it reads.
 						const config = await getStoreConfig({
-							storeId,
 							templatePath: resolveTemplatePath(),
-							fallbackToTemplateOnError: true,
 						});
 						storeName = config.name ?? "Our Store";
 						const localNotificationSettings =
@@ -250,17 +250,6 @@ export async function ensureBooted(): Promise<ModuleRegistry> {
 			}
 		}
 		subscribersRegistered = true;
-	}
-
-	try {
-		const { backfillLegacyOrderFulfillments } = await import(
-			"./legacy-fulfillment-backfill"
-		);
-		await backfillLegacyOrderFulfillments(reg);
-	} catch (err) {
-		logger.warn("Legacy fulfillment backfill skipped", {
-			reason: err instanceof Error ? err.message : String(err),
-		});
 	}
 
 	return reg;

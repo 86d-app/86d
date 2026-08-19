@@ -32,39 +32,41 @@ if [ "$SKIP_MIGRATIONS" != "true" ] && [ -d "packages/db/prisma" ]; then
   echo "→ Running database migrations..."
   cd packages/db
   if [ -d "prisma/migrations" ]; then
-    # Production: use migrate deploy when migration files exist
-    deploy_out=$(bunx prisma migrate deploy --schema prisma 2>&1) || deploy_ok=1
-    if [ -n "${deploy_ok:-}" ]; then
-      printf '%s\n' "$deploy_out"
-      # init.sql (nanoid, extensions) leaves public non-empty; migrate deploy then returns P3005
+    # Migrations carry every model, so deploy is the whole schema story here.
+    deploy_out=$(bunx prisma migrate deploy --schema prisma 2>&1) || deploy_failed=1
+    printf '%s\n' "$deploy_out"
+    if [ -n "${deploy_failed:-}" ]; then
+      # Docker's init.sql creates pgcrypto and nanoid(), so `public` is already
+      # non-empty on the first deploy and Prisma reports P3005. Migration 0 is
+      # that same nanoid function: record it as applied and deploy the rest.
+      # Baseline, never `db push` — db push reconciles a difference by dropping
+      # whatever the schema does not declare, and a store's data is that
+      # difference on every start after the first.
       if printf '%s' "$deploy_out" | grep -q 'P3005'; then
-        echo "→ Baseline conflict (P3005); syncing schema with db push"
-        bunx prisma db push --schema prisma --accept-data-loss 2>&1 || {
-          echo "✗ db push failed"
+        echo "→ Baselining migration 0 (nanoid already present from init.sql)"
+        bunx prisma migrate resolve --applied 0 --schema prisma || {
+          echo "✗ Baseline failed"
+          exit 1
+        }
+        bunx prisma migrate deploy --schema prisma || {
+          echo "✗ Migration failed after baseline"
           exit 1
         }
       else
         echo "✗ Migration failed"
         exit 1
       fi
-    else
-      printf '%s\n' "$deploy_out"
     fi
   else
-    # Development: use db push when no migration files exist
-    # --accept-data-loss is safe here: Docker starts with an empty database
+    # No migrations directory: a scratch database being built from the models.
+    # This branch never runs from a checkout of this repository, which ships
+    # prisma/migrations, and the Dockerfile copies the directory into the image.
+    echo "→ No migrations found; building schema from models"
     bunx prisma db push --schema prisma --accept-data-loss 2>&1 || {
       echo "✗ Schema push failed"
       exit 1
     }
   fi
-  # Migration files may only ship SQL helpers (e.g. nanoid); ORM models still need db push.
-  # --accept-data-loss: Prisma may warn on constraint changes over an already-migrated DB (Docker dev).
-  echo "→ Syncing Prisma schema to database..."
-  bunx prisma db push --schema prisma --accept-data-loss 2>&1 || {
-    echo "✗ db push failed"
-    exit 1
-  }
   cd /app
   echo "✓ Migrations complete"
 fi

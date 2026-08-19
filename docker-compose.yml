@@ -97,7 +97,6 @@ services:
       S3_SECRET_KEY: "${MINIO_ROOT_PASSWORD:-minioadmin}"
       # Optional: 86d API integration (quoted to allow digit-prefixed names)
       "86D_API_URL": ""
-      "86D_API_KEY": ""
     depends_on:
       postgres:
         condition: service_healthy

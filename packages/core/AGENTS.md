@@ -29,7 +29,7 @@ src/
 - `defineCapability`, `provideCapability`, `acceptCapability` — versioned, runtime-validated synchronous Module decisions
 - Client hooks auto-derive from endpoints: GET becomes query, POST/PUT/DELETE becomes mutation
 - `sanitizeText(input)` — strip all HTML tags and normalize whitespace (for plain-text fields)
-- `sanitizeHtml(input)` — strip dangerous HTML (script, style, iframe, event handlers, javascript: URLs) while preserving safe markup (for rich-text content rendered via `dangerouslySetInnerHTML`)
+- `sanitizeHtml(input)` — rebuild rich text from an allow-list of tags and attributes, for content rendered via `dangerouslySetInnerHTML`. Apply it where content is accepted, not where it is rendered: the output is safe to store, and a second pass is wasted work
 - `escapeScriptContent(input)` — escape `</` and `<!--` for safe embedding inside `<script>` tags (for JSON-LD etc.)
 
 ## Isolation boundary

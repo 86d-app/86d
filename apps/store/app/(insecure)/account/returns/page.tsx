@@ -1,9 +1,18 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client/provider";
+import { Undo2Icon } from "lucide-react";
 import { useState } from "react";
 import { StatusBadge } from "~/components/status-badge";
 import { buttonVariants } from "~/components/ui/button";
+import {
+	Empty,
+	EmptyContent,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyMedia,
+	EmptyTitle,
+} from "~/components/ui/empty";
 import { Skeleton } from "~/components/ui/skeleton";
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -213,42 +222,26 @@ export default function ReturnsPage() {
 					))}
 				</div>
 			) : returns.length === 0 ? (
-				<div className="rounded-xl border border-border bg-muted/30 py-16 text-center">
-					<div className="mb-4 flex justify-center">
-						<div className="flex size-14 items-center justify-center rounded-full bg-muted">
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								width="24"
-								height="24"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								strokeWidth="1.5"
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								className="text-muted-foreground"
-								aria-hidden="true"
-							>
-								<path d="M9 14 4 9l5-5" />
-								<path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11" />
-							</svg>
-						</div>
-					</div>
-					<p className="font-medium text-foreground text-sm">
-						{statusFilter ? "No matching returns" : "No returns yet"}
-					</p>
-					<p className="mt-1 text-muted-foreground text-sm">
-						{statusFilter
-							? "Try adjusting your filter."
-							: "Return requests will appear here when you submit them."}
-					</p>
-					<a
-						href="/account/orders"
-						className={buttonVariants({ className: "mt-4" })}
-					>
-						View orders
-					</a>
-				</div>
+				<Empty>
+					<EmptyHeader>
+						<EmptyMedia variant="icon">
+							<Undo2Icon />
+						</EmptyMedia>
+						<EmptyTitle>
+							{statusFilter ? "No matching returns" : "No returns yet"}
+						</EmptyTitle>
+						<EmptyDescription>
+							{statusFilter
+								? "Try adjusting your filter."
+								: "Return requests will appear here when you submit them."}
+						</EmptyDescription>
+					</EmptyHeader>
+					<EmptyContent>
+						<a href="/account/orders" className={buttonVariants()}>
+							View orders
+						</a>
+					</EmptyContent>
+				</Empty>
 			) : (
 				<>
 					{/* Returns list */}

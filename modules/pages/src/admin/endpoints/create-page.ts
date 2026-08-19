@@ -1,5 +1,5 @@
 import { createAdminEndpoint } from "@86d-app/core/api";
-import { sanitizeText } from "@86d-app/core/sanitize";
+import { sanitizeHtml, sanitizeText } from "@86d-app/core/sanitize";
 import { z } from "@86d-app/core/zod";
 import type { PagesController } from "../../service";
 
@@ -10,7 +10,7 @@ export const createPageEndpoint = createAdminEndpoint(
 		body: z.object({
 			title: z.string().min(1).max(500).transform(sanitizeText),
 			slug: z.string().max(500).transform(sanitizeText).optional(),
-			content: z.string().min(1),
+			content: z.string().min(1).transform(sanitizeHtml),
 			excerpt: z.string().max(1000).transform(sanitizeText).optional(),
 			status: z.enum(["draft", "published"]).optional(),
 			template: z.string().max(200).optional(),

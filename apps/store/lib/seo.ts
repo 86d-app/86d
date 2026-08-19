@@ -13,7 +13,6 @@ import { resolveTemplatePath } from "./template-path";
 const getStoreConfigCached = cache(async () =>
 	getStoreConfig({
 		templatePath: resolveTemplatePath(),
-		fallbackToTemplateOnError: true,
 	}),
 );
 

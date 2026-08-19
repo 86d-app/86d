@@ -56,7 +56,9 @@ describe("template", () => {
 		vi.spyOn(console, "log").mockImplementation((...args: unknown[]) => {
 			logs.push(args.map(String).join(" "));
 		});
-		vi.spyOn(console, "error").mockImplementation(() => {});
+		vi.spyOn(console, "error").mockImplementation((...args: unknown[]) => {
+			logs.push(args.map(String).join(" "));
+		});
 	});
 
 	afterEach(() => {
@@ -76,6 +78,7 @@ describe("template", () => {
 				success: boolean;
 				localPath?: string;
 				error?: string;
+				config?: Record<string, unknown>;
 			};
 		},
 	) {
@@ -95,6 +98,12 @@ describe("template", () => {
 				// Simulate what the real fetchTemplate does: create the directory
 				if (options.fetchResult?.success && options.fetchResult.localPath) {
 					mkdirSync(options.fetchResult.localPath, { recursive: true });
+					if (options.fetchResult.config) {
+						writeFileSync(
+							join(options.fetchResult.localPath, "config.json"),
+							`${JSON.stringify(options.fetchResult.config, null, "\t")}\n`,
+						);
+					}
 				}
 				return Promise.resolve(options.fetchResult);
 			});
@@ -250,40 +259,41 @@ describe("template", () => {
 		it("adds a template from a GitHub specifier", async () => {
 			const targetDir = join(tempDir, "templates/my-theme");
 
-			// Mock fetchTemplate to simulate downloading the template
 			await runTemplate("add", ["github:owner/repo/templates/my-theme"], {
 				fetchResult: {
 					success: true,
 					localPath: targetDir,
-					// The real fetchTemplate creates the dir; simulate that in beforeResolve
+					config: {
+						theme: "my-theme",
+						modules: ["@86d-app/cart"],
+					},
 				},
 			});
 
-			// fetchTemplate is called, and since the dir doesn't exist yet,
-			// addTemplate proceeds. But the mock doesn't create the dir,
-			// so config.json won't exist — addTemplate creates a minimal one.
 			const output = logs.join("\n");
 			expect(output).toContain("Added template");
 			expect(output).toContain("my-theme");
 			expect(existsSync(join(targetDir, "config.json"))).toBe(true);
 		});
 
-		it("creates minimal config.json when template lacks one", async () => {
+		it("refuses to add a template that does not ship config.json", async () => {
 			const targetDir = join(tempDir, "templates/repo");
-
-			await runTemplate("add", ["github:owner/repo"], {
-				fetchResult: { success: true, localPath: targetDir },
+			const exit = vi.spyOn(process, "exit").mockImplementation(() => {
+				throw new Error("exit");
 			});
 
-			expect(existsSync(join(targetDir, "config.json"))).toBe(true);
-			const config = JSON.parse(
-				readFileSync(join(targetDir, "config.json"), "utf-8"),
-			);
-			expect(config.theme).toBe("repo");
-			expect(config.modules).toBe("*");
+			await expect(
+				runTemplate("add", ["github:owner/repo"], {
+					fetchResult: { success: true, localPath: targetDir },
+				}),
+			).rejects.toThrow("exit");
+			expect(exit).toHaveBeenCalledWith(1);
+			expect(existsSync(join(targetDir, "config.json"))).toBe(false);
 
 			const output = logs.join("\n");
-			expect(output).toContain("created minimal config");
+			expect(output).toMatch(/config\.json/);
+			expect(output).toContain("templates/brisa/config.json");
+			expect(output).not.toContain("created minimal config");
 		});
 
 		it("skips when template already exists locally", async () => {
@@ -331,7 +341,14 @@ describe("template", () => {
 				"install",
 				["github:owner/repo/templates/alias-theme"],
 				{
-					fetchResult: { success: true, localPath: targetDir },
+					fetchResult: {
+						success: true,
+						localPath: targetDir,
+						config: {
+							theme: "alias-theme",
+							modules: ["@86d-app/cart"],
+						},
+					},
 				},
 			);
 

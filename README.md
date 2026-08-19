@@ -122,6 +122,10 @@ bun run 86d template create minimal
 
 This copies the brisa template to `templates/minimal/` with updated config. Customize the MDX files, colors, and layout to create a new design.
 
+## License
+
+86d.store is licensed under the [MIT License](./LICENSE). 86d.app and the Control Plane remain proprietary.
+
 ## Known Issues
 
 The store app has import references to packages that were part of the original proprietary codebase and have been removed. See [AGENTS.md](AGENTS.md) for the full list of packages that need reimplementation.

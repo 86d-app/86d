@@ -43,6 +43,7 @@ describe("UniversalDataService", () => {
 			expect(db.moduleData.findMany).toHaveBeenCalledWith({
 				where: { moduleId: MODULE_ID, entityType: "product" },
 				orderBy: { createdAt: "desc" },
+				take: 100,
 			});
 		});
 
@@ -67,14 +68,40 @@ describe("UniversalDataService", () => {
 			);
 		});
 
-		it("does not include take/skip when not specified", async () => {
+		it("bounds an unlimited read to the default page size", async () => {
 			db.moduleData.findMany.mockResolvedValue([]);
 
 			await service.findMany("product", {});
 
 			const call = db.moduleData.findMany.mock.calls[0][0];
-			expect(call).not.toHaveProperty("take");
+			expect(call.take).toBe(100);
 			expect(call).not.toHaveProperty("skip");
+		});
+
+		it("refuses a page larger than the ceiling", async () => {
+			await expect(
+				service.findMany("product", { take: 5_000 }),
+			).rejects.toThrow(/at most 1000/);
+		});
+
+		it("refuses a take that is not a positive integer", async () => {
+			await expect(service.findMany("product", { take: 0 })).rejects.toThrow(
+				/positive integer/,
+			);
+		});
+
+		it("warns once when asked to order by something that is not a column", async () => {
+			db.moduleData.findMany.mockResolvedValue([]);
+			const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+			await service.findMany("product", { orderBy: { sortOrder: "asc" } });
+
+			const call = db.moduleData.findMany.mock.calls[0][0];
+			expect(call.orderBy).toEqual({ createdAt: "desc" });
+			expect(warn).toHaveBeenCalledWith(
+				expect.stringContaining('order product by "sortOrder"'),
+			);
+			warn.mockRestore();
 		});
 
 		it("builds single-key where as direct JSONB path filter", async () => {
@@ -336,6 +363,7 @@ describe("UniversalDataService", () => {
 
 			expect(db.moduleData.findMany).toHaveBeenCalledWith({
 				where: { moduleId: MODULE_ID, parentId: "parent_id" },
+				take: 1_000,
 			});
 			expect(results).toEqual([
 				{

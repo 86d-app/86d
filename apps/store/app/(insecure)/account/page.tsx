@@ -1,9 +1,18 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client/provider";
+import { ShoppingBagIcon } from "lucide-react";
 import { useState } from "react";
 import { StatusBadge } from "~/components/status-badge";
 import { buttonVariants } from "~/components/ui/button";
+import {
+	Empty,
+	EmptyContent,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyMedia,
+	EmptyTitle,
+} from "~/components/ui/empty";
 import { Skeleton } from "~/components/ui/skeleton";
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -144,18 +153,22 @@ export default function AccountPage() {
 						))}
 					</div>
 				) : orders.length === 0 ? (
-					<div className="rounded-xl border border-border bg-muted/30 py-12 text-center">
-						<p className="font-medium text-foreground text-sm">No orders yet</p>
-						<p className="mt-1 text-muted-foreground text-sm">
-							Your order history will appear here after your first purchase.
-						</p>
-						<a
-							href="/products"
-							className={buttonVariants({ className: "mt-4" })}
-						>
-							Start shopping
-						</a>
-					</div>
+					<Empty>
+						<EmptyHeader>
+							<EmptyMedia variant="icon">
+								<ShoppingBagIcon />
+							</EmptyMedia>
+							<EmptyTitle>No orders yet</EmptyTitle>
+							<EmptyDescription>
+								Your order history will appear here after your first purchase.
+							</EmptyDescription>
+						</EmptyHeader>
+						<EmptyContent>
+							<a href="/products" className={buttonVariants()}>
+								Start shopping
+							</a>
+						</EmptyContent>
+					</Empty>
 				) : (
 					<>
 						<div className="overflow-hidden rounded-xl border border-border">

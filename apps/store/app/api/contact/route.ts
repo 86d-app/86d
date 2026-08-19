@@ -87,7 +87,6 @@ export async function POST(req: NextRequest) {
 	// Fetch store name for email branding
 	const config = await getStoreConfig({
 		templatePath: resolveTemplatePath(),
-		fallbackToTemplateOnError: true,
 	});
 	const storeName = config.name ?? "Our Store";
 

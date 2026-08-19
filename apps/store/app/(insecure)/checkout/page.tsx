@@ -5,8 +5,18 @@ import { useModuleClient } from "@86d-app/core/client/provider";
 import { observer } from "@86d-app/core/state";
 import { useAnalytics } from "hooks/use-analytics";
 import { useStore } from "hooks/use-store";
+import { ShoppingBagIcon } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { buttonVariants } from "~/components/ui/button";
+import {
+	Empty,
+	EmptyContent,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyMedia,
+	EmptyTitle,
+} from "~/components/ui/empty";
 
 const StripePaymentForm = dynamic(
 	() =>
@@ -1427,39 +1437,22 @@ const CheckoutPage = observer(function CheckoutPage() {
 	// ── Empty cart state
 	if (cart && cart.items.length === 0 && !co.sessionId) {
 		return (
-			<div className="mx-auto flex min-h-[60vh] max-w-7xl flex-col items-center justify-center px-4 py-16">
-				<div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="28"
-						height="28"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="1.5"
-						strokeLinecap="round"
-						strokeLinejoin="round"
-						className="text-muted-foreground"
-						aria-hidden="true"
-					>
-						<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
-						<path d="M3 6h18" />
-						<path d="M16 10a4 4 0 0 1-8 0" />
-					</svg>
-				</div>
-				<h1 className="mb-2 font-bold text-foreground text-lg">
-					Your cart is empty
-				</h1>
-				<p className="mb-6 text-muted-foreground text-sm">
-					Add some items to your cart before checking out.
-				</p>
-				<a
-					href="/products"
-					className="rounded-lg bg-foreground px-5 py-2.5 font-semibold text-background text-sm transition-opacity hover:opacity-90"
-				>
-					Browse products
-				</a>
-			</div>
+			<Empty>
+				<EmptyHeader>
+					<EmptyMedia variant="icon">
+						<ShoppingBagIcon />
+					</EmptyMedia>
+					<EmptyTitle>Your cart is empty</EmptyTitle>
+					<EmptyDescription>
+						Add some items to your cart before checking out.
+					</EmptyDescription>
+				</EmptyHeader>
+				<EmptyContent>
+					<a href="/products" className={buttonVariants()}>
+						Browse products
+					</a>
+				</EmptyContent>
+			</Empty>
 		);
 	}
 

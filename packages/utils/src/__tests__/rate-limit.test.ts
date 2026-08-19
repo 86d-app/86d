@@ -95,4 +95,26 @@ describe("createRateLimiter", () => {
 		}
 		expect(limiter.check("key").allowed).toBe(false);
 	});
+
+	describe("key bound", () => {
+		it("stays bounded when every caller presents a new identity", () => {
+			const limiter = createRateLimiter({
+				limit: 5,
+				window: 600_000,
+				maxKeys: 100,
+			});
+			for (let i = 0; i < 5_000; i += 1) limiter.check(`spoofed-${i}`);
+			expect(limiter.size()).toBeLessThanOrEqual(100);
+		});
+
+		it("keeps limiting a real caller after an eviction sweep", () => {
+			const limiter = createRateLimiter({
+				limit: 3,
+				window: 600_000,
+				maxKeys: 50,
+			});
+			for (let i = 0; i < 4; i += 1) limiter.check("steady");
+			expect(limiter.check("steady").allowed).toBe(false);
+		});
+	});
 });

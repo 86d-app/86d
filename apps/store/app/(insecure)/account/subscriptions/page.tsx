@@ -1,9 +1,17 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client/provider";
+import { CircleCheckIcon } from "lucide-react";
 import { useState } from "react";
 import { StatusBadge } from "~/components/status-badge";
 import { Button } from "~/components/ui/button";
+import {
+	Empty,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyMedia,
+	EmptyTitle,
+} from "~/components/ui/empty";
 import { Skeleton } from "~/components/ui/skeleton";
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -116,34 +124,17 @@ export default function SubscriptionsPage() {
 					))}
 				</div>
 			) : subscriptions.length === 0 ? (
-				<div className="rounded-xl border border-border bg-muted/30 py-12 text-center">
-					<div className="mb-4 flex justify-center">
-						<div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								width="24"
-								height="24"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								strokeWidth="1.5"
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								className="text-muted-foreground"
-								aria-hidden="true"
-							>
-								<path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
-								<path d="m9 12 2 2 4-4" />
-							</svg>
-						</div>
-					</div>
-					<p className="font-medium text-foreground text-sm">
-						No subscriptions
-					</p>
-					<p className="mt-1 text-muted-foreground text-sm">
-						You don&apos;t have any active subscriptions.
-					</p>
-				</div>
+				<Empty>
+					<EmptyHeader>
+						<EmptyMedia variant="icon">
+							<CircleCheckIcon />
+						</EmptyMedia>
+						<EmptyTitle>No subscriptions</EmptyTitle>
+						<EmptyDescription>
+							You don&apos;t have any active subscriptions.
+						</EmptyDescription>
+					</EmptyHeader>
+				</Empty>
 			) : (
 				<div className="flex flex-col gap-3">
 					{subscriptions.map((sub) => {

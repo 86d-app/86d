@@ -1,7 +1,5 @@
 "use client";
 
-import { sanitizeHtml } from "@86d-app/core/sanitize";
-import { useMemo } from "react";
 import { usePagesApi } from "./_hooks";
 import PageDetailTemplate from "./page-detail.mdx";
 
@@ -30,12 +28,10 @@ export function PageDetail(props: {
 		isLoading: boolean;
 	};
 
+	// Content is sanitized where it is accepted, in the admin create and update
+	// endpoints, so what is stored is what is safe to render. Sanitizing again
+	// here would double-escape every character reference the author wrote.
 	const page = data?.page ?? null;
 
-	const sanitizedPage = useMemo(() => {
-		if (!page) return null;
-		return { ...page, content: sanitizeHtml(page.content) };
-	}, [page]);
-
-	return <PageDetailTemplate isLoading={isLoading} page={sanitizedPage} />;
+	return <PageDetailTemplate isLoading={isLoading} page={page} />;
 }

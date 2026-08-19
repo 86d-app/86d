@@ -139,7 +139,7 @@ describe("sanitizeHtml", () => {
 
 	it("removes event handler attributes", () => {
 		expect(sanitizeHtml('<img src="x.jpg" onerror="alert(1)">')).toBe(
-			'<img src="x.jpg">',
+			'<img src="x.jpg" />',
 		);
 	});
 
@@ -149,9 +149,9 @@ describe("sanitizeHtml", () => {
 		);
 	});
 
-	it("removes javascript: URLs", () => {
+	it("drops an unsafe href rather than blanking it", () => {
 		expect(sanitizeHtml('<a href="javascript:alert(1)">Click</a>')).toBe(
-			'<a href="">Click</a>',
+			"<a>Click</a>",
 		);
 	});
 
@@ -162,8 +162,53 @@ describe("sanitizeHtml", () => {
 	});
 
 	it("preserves safe attributes", () => {
-		const safe = '<img src="photo.jpg" alt="A photo" class="rounded">';
-		expect(sanitizeHtml(safe)).toBe(safe);
+		expect(
+			sanitizeHtml('<img src="photo.jpg" alt="A photo" class="rounded">'),
+		).toBe('<img src="photo.jpg" alt="A photo" class="rounded" />');
+	});
+
+	// Each of these defeated the previous pattern-replacement sanitizer. The
+	// allow-list emits only attributes it recognizes, so the separator, casing,
+	// or encoding an author reaches for no longer decides the outcome.
+	it.each([
+		["attribute separated by a slash", "<img src=x/onerror=alert(1)>"],
+		["tag and attribute both slashed", "<img/src=x/onerror=alert(1)>"],
+		["newline separator", "<img src=x\nonerror=alert(1)>"],
+		["tab separator", "<img src=x\tonerror=alert(1)>"],
+		["uppercase handler", "<IMG SRC=x ONERROR=alert(1)>"],
+		["newline before equals", "<img src=x onerror\n=alert(1)>"],
+		["svg with slashed handler", "<svg/onload=alert(1)>"],
+		["nested script tags", "<scr<script>ipt>alert(1)</script>"],
+		["hex-encoded scheme", '<a href="jav&#x61;script:alert(1)">x</a>'],
+		["decimal-encoded scheme", '<a href="&#106;avascript:alert(1)">x</a>'],
+		["entity-encoded colon", '<a href="javascript&colon;alert(1)">x</a>'],
+		["backtick handler value", '<img src="x" onerror=`alert(1)`>'],
+		[
+			"iframe srcdoc",
+			'<iframe srcdoc="&lt;script&gt;alert(1)&lt;/script&gt;">',
+		],
+		["form action", "<form action=javascript:alert(1)></form>"],
+		[
+			"mXSS through foreign content",
+			"<math><mtext><table><mglyph><style><img src=x onerror=alert(1)>",
+		],
+		["comment breakout", "<!--><img src=x onerror=alert(1)>"],
+	])("neutralizes %s", (_label, payload) => {
+		expect(sanitizeHtml(payload)).not.toMatch(
+			/on[a-z]+\s*=|javascript:|<script|<iframe|<svg|<math|srcdoc/i,
+		);
+	});
+
+	it("adds rel to a new browsing context", () => {
+		expect(
+			sanitizeHtml('<a href="https://x.com" target="_blank">out</a>'),
+		).toBe(
+			'<a href="https://x.com" target="_blank" rel="noopener noreferrer">out</a>',
+		);
+	});
+
+	it("escapes text that is not markup", () => {
+		expect(sanitizeHtml("2 < 3 and 5 > 4")).toBe("2 &lt; 3 and 5 &gt; 4");
 	});
 
 	it("handles empty string", () => {
@@ -199,6 +244,29 @@ describe("isSafeUrl", () => {
 	it("rejects obfuscated javascript: URIs with control chars", () => {
 		expect(isSafeUrl("java\tscript:alert(1)")).toBe(false);
 		expect(isSafeUrl("java\nscript:alert(1)")).toBe(false);
+	});
+
+	// Each of these returned true from the previous scheme check, which compared
+	// the raw string while the browser compares the decoded one.
+	it.each([
+		["hex character reference", "jav&#x61;script:alert(1)"],
+		["decimal character reference", "&#106;avascript:alert(1)"],
+		["entity-encoded colon", "javascript&colon;alert(1)"],
+		["double-encoded reference", "jav&amp;#x61;script:alert(1)"],
+	])("rejects a scheme hidden behind a %s", (_label, url) => {
+		expect(isSafeUrl(url)).toBe(false);
+	});
+
+	it("rejects a scheme it has never heard of", () => {
+		expect(isSafeUrl("chrome://settings")).toBe(false);
+		expect(isSafeUrl("file:///etc/passwd")).toBe(false);
+	});
+
+	it("accepts relative and protocol-relative URLs", () => {
+		expect(isSafeUrl("products/1")).toBe(true);
+		expect(isSafeUrl("//cdn.example.com/x.png")).toBe(true);
+		expect(isSafeUrl("?q=1")).toBe(true);
+		expect(isSafeUrl("tel:+15551234")).toBe(true);
 	});
 
 	it("accepts empty string", () => {

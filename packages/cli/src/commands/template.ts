@@ -153,18 +153,18 @@ async function addTemplate(specifier: string | undefined) {
 		process.exit(1);
 	}
 
-	// Validate the downloaded template has config.json
+	// A downloaded theme with no config.json has no module contract.
+	// Do not invent `{ modules: "*" }` or copy Brisa's Experimental opt-in.
 	const localPath = result.localPath as string;
 	const configPath = join(localPath, "config.json");
 	if (!existsSync(configPath)) {
-		// Create a minimal config so the template is usable
-		const minimalConfig = {
-			theme: spec.name,
-			name: `86d ${spec.name.charAt(0).toUpperCase() + spec.name.slice(1)} Theme`,
-			modules: "*" as const,
-		};
-		writeFileSync(configPath, `${JSON.stringify(minimalConfig, null, "\t")}\n`);
-		warn("Template missing config.json — created minimal config");
+		error(
+			`Template "${spec.name}" is missing config.json. The theme must ship an explicit modules array.`,
+		);
+		console.log(
+			`\n  Copy the shape of ${c.cyan("templates/brisa/config.json")}, then run ${c.bold("86d module enable")} for named selection.\n`,
+		);
+		process.exit(1);
 	}
 
 	success(`Added template ${c.bold(spec.name)}`);

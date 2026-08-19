@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import { addCollectionProduct } from "../admin/endpoints/add-collection-product";
 import { bulkAction } from "../admin/endpoints/bulk-action";
+import {
+	createCatalogRevisionDraft,
+	publishCatalogRevision,
+	reviewCatalogRevision,
+} from "../admin/endpoints/catalog-revisions";
 import { createCategory } from "../admin/endpoints/create-category";
 import { createCollection } from "../admin/endpoints/create-collection";
 import { createProduct } from "../admin/endpoints/create-product";
@@ -249,6 +254,11 @@ const updateCollectionHandler = extractHandler(updateCollection);
 const deleteCollectionHandler = extractHandler(deleteCollection);
 const addCollectionProductHandler = extractHandler(addCollectionProduct);
 const removeCollectionProductHandler = extractHandler(removeCollectionProduct);
+const createCatalogRevisionDraftHandler = extractHandler(
+	createCatalogRevisionDraft,
+);
+const reviewCatalogRevisionHandler = extractHandler(reviewCatalogRevision);
+const publishCatalogRevisionHandler = extractHandler(publishCatalogRevision);
 
 // ── createProduct ─────────────────────────────────────────────────────────────
 
@@ -872,5 +882,63 @@ describe("admin DELETE /products/collections/:id/products/:productId/remove", ()
 			controllers,
 		});
 		expect(controllers.collection.removeProduct).toHaveBeenCalled();
+	});
+});
+
+const catalogDraftBody = {
+	operationId: "catalog-draft-0001",
+	revisionId: "revision-1",
+	content: {
+		version: 1,
+		currency: "USD",
+		categories: [],
+		products: [
+			{
+				id: "product-leash",
+				name: "Trail Leash",
+				slug: "trail-leash",
+				price: 2500,
+				status: "active",
+				images: [],
+				tags: [],
+				metadata: {},
+				isFeatured: false,
+			},
+		],
+		variants: [],
+	},
+};
+
+describe("admin Catalog revision writes", () => {
+	it("requires the authenticated Store Command transport for draft", async () => {
+		const result = (await call(createCatalogRevisionDraftHandler, {
+			body: catalogDraftBody,
+		})) as { code: string; error: string; status: number };
+		expect(result.status).toBe(503);
+		expect(result.code).toBe("CATALOG_COMMAND_TRANSPORT_REQUIRED");
+	});
+
+	it("requires the authenticated Store Command transport for review", async () => {
+		const result = (await call(reviewCatalogRevisionHandler, {
+			params: { id: "revision-1" },
+			body: {
+				operationId: "catalog-review-0001",
+				expectedContentDigest: "a".repeat(64),
+			},
+		})) as { code: string; error: string; status: number };
+		expect(result.status).toBe(503);
+		expect(result.code).toBe("CATALOG_COMMAND_TRANSPORT_REQUIRED");
+	});
+
+	it("requires the authenticated Store Command transport for publish", async () => {
+		const result = (await call(publishCatalogRevisionHandler, {
+			params: { id: "revision-1" },
+			body: {
+				operationId: "catalog-publish-0001",
+				expectedContentDigest: "a".repeat(64),
+			},
+		})) as { code: string; error: string; status: number };
+		expect(result.status).toBe(503);
+		expect(result.code).toBe("CATALOG_COMMAND_TRANSPORT_REQUIRED");
 	});
 });

@@ -1,16 +1,11 @@
 import { createAdminEndpoint } from "@86d-app/core/api";
-import type { ActorReference, AuthoritySnapshot } from "@86d-app/core/commands";
-import type { ModuleTransactionRunner } from "@86d-app/core/durable-events";
-import type { Session } from "@86d-app/core/types/module";
 import { z } from "@86d-app/core/zod";
 import {
-	applyCatalogRevisionOperation,
-	type CatalogRevisionOperationInput,
-	type CatalogRevisionOperationResult,
 	type CatalogRevisionRecord,
-	catalogRevisionContentSchema,
+	catalogDraftCommandInputSchema,
 	catalogRevisionRecordSchema,
 	catalogRevisionStateSchema,
+	catalogTransitionTransportSchema,
 } from "../../catalog-revisions";
 
 const resourceIdentifierSchema = z
@@ -18,103 +13,6 @@ const resourceIdentifierSchema = z
 	.min(1)
 	.max(200)
 	.regex(/^[A-Za-z0-9][A-Za-z0-9._:-]*$/);
-const operationIdentifierSchema = z
-	.string()
-	.min(8)
-	.max(180)
-	.regex(/^[A-Za-z0-9][A-Za-z0-9._:-]*$/);
-const contentDigestSchema = z.string().regex(/^[a-f0-9]{64}$/);
-
-const createDraftBodySchema = z
-	.object({
-		operationId: operationIdentifierSchema,
-		revisionId: resourceIdentifierSchema,
-		baseRevisionId: resourceIdentifierSchema.optional(),
-		content: catalogRevisionContentSchema,
-	})
-	.strict();
-
-const transitionBodySchema = z
-	.object({
-		operationId: operationIdentifierSchema,
-		expectedContentDigest: contentDigestSchema,
-	})
-	.strict();
-
-type CatalogAdminWriteContext = Readonly<{
-	transactions?: ModuleTransactionRunner | undefined;
-	session: Session;
-	storeId: string;
-}>;
-
-type CatalogRevisionFailure = Extract<
-	CatalogRevisionOperationResult,
-	{ ok: false }
->;
-
-function failureStatus(code: CatalogRevisionFailure["failure"]["code"]) {
-	switch (code) {
-		case "invalid_request":
-			return 400;
-		case "revision_not_found":
-		case "base_revision_not_found":
-			return 404;
-		case "locking_unavailable":
-			return 503;
-		case "invalid_stored_state":
-			return 500;
-		default:
-			return 409;
-	}
-}
-
-function failureResponse(result: CatalogRevisionFailure) {
-	return {
-		code: result.failure.code.toUpperCase(),
-		error: result.failure.message,
-		status: failureStatus(result.failure.code),
-	};
-}
-
-function unavailableResponse() {
-	return {
-		code: "CATALOG_REVISION_UNAVAILABLE",
-		error:
-			"Catalog revision writes require owner-local locking and durable-event storage.",
-		status: 503,
-	};
-}
-
-async function executeWrite(
-	context: CatalogAdminWriteContext,
-	input: CatalogRevisionOperationInput,
-): Promise<CatalogRevisionOperationResult | null> {
-	if (!context.transactions || context.session.user.role !== "admin")
-		return null;
-	const actor = {
-		type: "account",
-		id: context.session.user.id,
-	} satisfies ActorReference;
-	const authority = {
-		id: `store-admin:${context.storeId}:${context.session.user.id}`,
-		type: "custom_role",
-		role: "admin",
-		permissions: ["catalog:write"],
-		storeId: context.storeId,
-	} satisfies AuthoritySnapshot;
-
-	try {
-		return await context.transactions.transaction((transaction) =>
-			applyCatalogRevisionOperation(transaction, input, {
-				actor,
-				authority,
-				occurredAt: new Date(),
-			}),
-		);
-	} catch {
-		return null;
-	}
-}
 
 function revisionSummary(revision: CatalogRevisionRecord) {
 	return {
@@ -144,26 +42,19 @@ function revisionSummary(revision: CatalogRevisionRecord) {
 	};
 }
 
+function commandTransportRequired() {
+	return {
+		code: "CATALOG_COMMAND_TRANSPORT_REQUIRED",
+		error:
+			"Catalog revision writes must be executed by the authenticated Store Command transport.",
+		status: 503,
+	};
+}
+
 export const createCatalogRevisionDraft = createAdminEndpoint(
 	"/admin/catalog/revisions/create",
-	{ method: "POST", body: createDraftBodySchema },
-	async (ctx) => {
-		const result = await executeWrite(ctx.context, {
-			action: "create_draft",
-			operationId: ctx.body.operationId,
-			revisionId: ctx.body.revisionId,
-			...(ctx.body.baseRevisionId === undefined
-				? {}
-				: { baseRevisionId: ctx.body.baseRevisionId }),
-			content: ctx.body.content,
-		});
-		if (!result) return unavailableResponse();
-		if (!result.ok) return failureResponse(result);
-		return {
-			revision: result.decision,
-			status: result.decision.replayed ? 200 : 201,
-		};
-	},
+	{ method: "POST", body: catalogDraftCommandInputSchema },
+	async () => commandTransportRequired(),
 );
 
 export const reviewCatalogRevision = createAdminEndpoint(
@@ -171,19 +62,9 @@ export const reviewCatalogRevision = createAdminEndpoint(
 	{
 		method: "POST",
 		params: z.object({ id: resourceIdentifierSchema }).strict(),
-		body: transitionBodySchema,
+		body: catalogTransitionTransportSchema,
 	},
-	async (ctx) => {
-		const result = await executeWrite(ctx.context, {
-			action: "review",
-			operationId: ctx.body.operationId,
-			revisionId: ctx.params.id,
-			expectedContentDigest: ctx.body.expectedContentDigest,
-		});
-		if (!result) return unavailableResponse();
-		if (!result.ok) return failureResponse(result);
-		return { revision: result.decision };
-	},
+	async () => commandTransportRequired(),
 );
 
 export const publishCatalogRevision = createAdminEndpoint(
@@ -191,19 +72,9 @@ export const publishCatalogRevision = createAdminEndpoint(
 	{
 		method: "POST",
 		params: z.object({ id: resourceIdentifierSchema }).strict(),
-		body: transitionBodySchema,
+		body: catalogTransitionTransportSchema,
 	},
-	async (ctx) => {
-		const result = await executeWrite(ctx.context, {
-			action: "publish",
-			operationId: ctx.body.operationId,
-			revisionId: ctx.params.id,
-			expectedContentDigest: ctx.body.expectedContentDigest,
-		});
-		if (!result) return unavailableResponse();
-		if (!result.ok) return failureResponse(result);
-		return { revision: result.decision };
-	},
+	async () => commandTransportRequired(),
 );
 
 export const getCatalogRevision = createAdminEndpoint(

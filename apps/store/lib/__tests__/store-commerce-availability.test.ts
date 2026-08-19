@@ -49,10 +49,9 @@ afterEach(() => {
 });
 
 describe("managed Store Runtime detection", () => {
-	it.each([
+		it.each([
 		["86D_STORE_ID", "store_123"],
 		["86D_WORKLOAD_CREDENTIAL", "workload-secret"],
-		["86D_API_KEY", "legacy-secret"],
 	])("treats %s as an explicit managed signal", (name, value) => {
 		expect(isManagedStoreRuntime({ [name]: value })).toBe(true);
 	});
@@ -66,7 +65,6 @@ describe("managed Store Runtime detection", () => {
 			isManagedStoreRuntime({
 				"86D_STORE_ID": " ",
 				"86D_WORKLOAD_CREDENTIAL": "\t",
-				"86D_API_KEY": "",
 			}),
 		).toBe(false);
 	});
@@ -150,7 +148,6 @@ describe("Store Runtime commerce gate resolution", () => {
 	it("does not contact 86d.app for a standalone Store Runtime", async () => {
 		vi.stubEnv("86D_STORE_ID", "");
 		vi.stubEnv("86D_WORKLOAD_CREDENTIAL", "");
-		vi.stubEnv("86D_API_KEY", "");
 
 		await expect(resolveStoreCommerceGate()).resolves.toEqual({
 			managed: false,

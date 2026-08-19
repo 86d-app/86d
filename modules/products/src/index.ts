@@ -7,6 +7,7 @@ import { productResolveProvider } from "./capabilities";
 import { catalogPresentationConsumer } from "./catalog-presentation";
 import {
 	applyCatalogRevisionOperation,
+	catalogDraftCommandInputSchema,
 	catalogRevisionCategorySchema,
 	catalogRevisionContentSchema,
 	catalogRevisionOperationDecisionSchema,
@@ -16,6 +17,8 @@ import {
 	catalogRevisionRecordSchema,
 	catalogRevisionStateSchema,
 	catalogRevisionVariantSchema,
+	catalogTransitionCommandInputSchema,
+	catalogTransitionTransportSchema,
 	digestCatalogRevisionContent,
 } from "./catalog-revisions";
 import { controllers } from "./controllers";
@@ -40,6 +43,7 @@ export type {
 } from "./catalog-revisions";
 export {
 	applyCatalogRevisionOperation,
+	catalogDraftCommandInputSchema,
 	catalogRevisionCategorySchema,
 	catalogRevisionContentSchema,
 	catalogRevisionOperationDecisionSchema,
@@ -49,6 +53,8 @@ export {
 	catalogRevisionRecordSchema,
 	catalogRevisionStateSchema,
 	catalogRevisionVariantSchema,
+	catalogTransitionCommandInputSchema,
+	catalogTransitionTransportSchema,
 	digestCatalogRevisionContent,
 };
 

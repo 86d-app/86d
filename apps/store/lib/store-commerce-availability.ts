@@ -34,7 +34,6 @@ export function isManagedStoreRuntime(
 	return [
 		environment["86D_STORE_ID"],
 		environment["86D_WORKLOAD_CREDENTIAL"],
-		environment["86D_API_KEY"],
 	].some((value) => typeof value === "string" && value.trim().length > 0);
 }
 

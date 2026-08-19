@@ -147,11 +147,20 @@ function topologicalSort(
 	}
 
 	const visited = new Set<string>();
+	// Marking a module visited on entry rather than on exit hides a cycle: the
+	// second visit returns early and the module is ordered before the dependency
+	// it is waiting on, so boot succeeds and a capability resolves against a
+	// half-initialized provider. Tracking the current path turns that into an error.
+	const visiting = new Set<string>();
 	const result: Module[] = [];
 
-	function visit(mod: Module) {
+	function visit(mod: Module, path: string[]) {
 		if (visited.has(mod.id)) return;
-		visited.add(mod.id);
+		if (visiting.has(mod.id)) {
+			const cycle = [...path.slice(path.indexOf(mod.id)), mod.id].join(" → ");
+			throw new Error(`Circular module dependency detected: ${cycle}`);
+		}
+		visiting.add(mod.id);
 
 		// Visit dependencies first
 		const deps = getRequiredModuleIds(mod.requires);
@@ -160,14 +169,16 @@ function topologicalSort(
 		}
 		for (const depId of deps) {
 			const dep = moduleMap.get(depId);
-			if (dep) visit(dep);
+			if (dep) visit(dep, [...path, mod.id]);
 		}
 
+		visiting.delete(mod.id);
+		visited.add(mod.id);
 		result.push(mod);
 	}
 
 	for (const mod of modules) {
-		visit(mod);
+		visit(mod, []);
 	}
 
 	return result;
@@ -531,7 +542,13 @@ export class ModuleRegistry {
 				ok: false,
 				failure: consumerFailure.data as CapabilityFailure<D>,
 			};
-		} catch {
+		} catch (error) {
+			// Without this the caller sees CAPABILITY_PROVIDER_FAILED whether the
+			// provider rejected the request or crashed, and the stack is gone.
+			console.error(
+				`[86d] capability ${definition.name}@${definition.version} threw in provider ${registered.moduleId}:`,
+				error,
+			);
 			return capabilityFailure(definition, "CAPABILITY_PROVIDER_FAILED");
 		}
 	}

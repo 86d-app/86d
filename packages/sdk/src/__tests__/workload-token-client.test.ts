@@ -178,7 +178,6 @@ describe("workload token client", () => {
 			readManagedWorkloadConfig({
 				STORE_ID: managedConfig.storeId,
 				"86D_API_URL": managedConfig.apiBaseUrl,
-				"86D_API_KEY": "legacy-key-is-not-a-workload-credential",
 			}),
 		).toBeUndefined();
 		expect(

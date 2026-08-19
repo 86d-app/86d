@@ -36,7 +36,6 @@ export default function appointments(options?: AppointmentsOptions): Module {
 		id: "appointments",
 		version: "0.0.1",
 		schema: appointmentsSchema,
-		requires: ["customers"],
 		exports: {
 			read: [
 				"availableSlots",

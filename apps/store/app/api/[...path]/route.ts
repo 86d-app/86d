@@ -5,6 +5,7 @@ import {
 import type { Session } from "auth";
 import { getSession } from "auth/actions";
 import { verifyStoreAdminAccess } from "auth/store-access";
+import env from "env";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { logger } from "utils/logger";
@@ -62,12 +63,35 @@ const SENSITIVE_PATHS = new Set([
 	"/payments/intents",
 ]);
 
+function isIpAddress(value: string): boolean {
+	if (value.includes(":")) return /^[0-9a-fA-F:.]{2,45}$/.test(value);
+	return /^(\d{1,3}\.){3}\d{1,3}$/.test(value);
+}
+
+/**
+ * Identify the caller for rate limiting.
+ *
+ * `x-forwarded-for` is a list the client starts and each proxy appends to, so
+ * its leftmost entry is whatever the client typed. Reading that entry lets one
+ * caller mint a fresh rate-limit bucket per request and never reach a limit.
+ * Count back from the right instead, to the hop our own edge appended.
+ *
+ * A caller whose address cannot be established shares one bucket, so stripping
+ * headers buys stricter limiting rather than looser.
+ */
 function getClientIp(req: NextRequest): string {
-	return (
-		req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-		req.headers.get("x-real-ip") ??
-		"127.0.0.1"
-	);
+	const forwarded = req.headers.get("x-forwarded-for");
+	if (forwarded) {
+		const hops = forwarded
+			.split(",")
+			.map((hop) => hop.trim())
+			.filter(Boolean);
+		const candidate = hops[hops.length - env.TRUSTED_PROXY_HOPS];
+		if (candidate && isIpAddress(candidate)) return candidate;
+	}
+	const real = req.headers.get("x-real-ip")?.trim();
+	if (real && isIpAddress(real)) return real;
+	return "unattributed";
 }
 
 // ── Error response normalization ──────────────────────────────────────────────
@@ -308,6 +332,49 @@ async function handleAuthedRequest(
 			const commandResponse = await handleInventoryStockAdjustCommand(
 				req,
 				session,
+			);
+			if (commandResponse.status < 400) {
+				await drainDurableEvents(await ensureBooted());
+			}
+			return commandResponse;
+		}
+
+		if (
+			req.method === "POST" &&
+			(fullPath === "/admin/catalog/revisions/create" ||
+				/^\/admin\/catalog\/revisions\/[^/]+\/(?:review|publish)$/.test(
+					fullPath,
+				))
+		) {
+			if (!session) {
+				return NextResponse.json(
+					{
+						error: {
+							code: "UNAUTHORIZED",
+							message: "Admin access required.",
+						},
+					},
+					{ status: 401 },
+				);
+			}
+			const { handleCatalogRevisionCommand, matchCatalogRevisionCommandPath } =
+				await import("~/lib/catalog-command-route");
+			const catalogCommand = matchCatalogRevisionCommandPath(fullPath);
+			if (!catalogCommand) {
+				return NextResponse.json(
+					{
+						error: {
+							code: "NOT_FOUND",
+							message: "Module endpoint not found.",
+						},
+					},
+					{ status: 404 },
+				);
+			}
+			const commandResponse = await handleCatalogRevisionCommand(
+				req,
+				session,
+				catalogCommand,
 			);
 			if (commandResponse.status < 400) {
 				await drainDurableEvents(await ensureBooted());

@@ -3,9 +3,19 @@
 import { useModuleClient } from "@86d-app/core/client/provider";
 import { observer } from "@86d-app/core/state";
 import { useStore } from "hooks/use-store";
+import { ShoppingCartIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect } from "react";
+import { buttonVariants } from "~/components/ui/button";
+import {
+	Empty,
+	EmptyContent,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyMedia,
+	EmptyTitle,
+} from "~/components/ui/empty";
 import { Skeleton } from "~/components/ui/skeleton";
 
 // ─── Types ──────────────────────────────────────────────────────────
@@ -76,40 +86,23 @@ function CartSkeleton() {
 
 function CartEmpty() {
 	return (
-		<div className="mx-auto flex w-full max-w-4xl flex-col items-center justify-center px-4 py-24 text-center sm:px-6">
-			<div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-muted">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="32"
-					height="32"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					strokeWidth="1.5"
-					strokeLinecap="round"
-					strokeLinejoin="round"
-					className="text-muted-foreground/50"
-					aria-hidden="true"
-				>
-					<circle cx="8" cy="21" r="1" />
-					<circle cx="19" cy="21" r="1" />
-					<path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
-				</svg>
-			</div>
-			<h1 className="mb-2 font-display text-2xl text-foreground">
-				Your cart is empty
-			</h1>
-			<p className="mb-8 max-w-sm text-muted-foreground text-sm">
-				Looks like you haven&apos;t added anything yet. Browse our products to
-				find something you&apos;ll love.
-			</p>
-			<Link
-				href="/products"
-				className="rounded-lg bg-foreground px-6 py-2.5 font-medium text-background text-sm transition-opacity hover:opacity-85"
-			>
-				Continue shopping
-			</Link>
-		</div>
+		<Empty>
+			<EmptyHeader>
+				<EmptyMedia variant="icon">
+					<ShoppingCartIcon />
+				</EmptyMedia>
+				<EmptyTitle>Your cart is empty</EmptyTitle>
+				<EmptyDescription>
+					Looks like you haven&apos;t added anything yet. Browse our products to
+					find something you&apos;ll love.
+				</EmptyDescription>
+			</EmptyHeader>
+			<EmptyContent>
+				<Link href="/products" className={buttonVariants()}>
+					Continue shopping
+				</Link>
+			</EmptyContent>
+		</Empty>
 	);
 }
 

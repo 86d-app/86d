@@ -32,9 +32,7 @@ describe("getStoreConfig", () => {
 
 	beforeEach(() => {
 		for (const key of [
-			"STORE_ID",
 			"86D_API_URL",
-			"86D_API_KEY",
 			"86D_STORE_ID",
 			"86D_WORKLOAD_CREDENTIAL",
 		] as const) {
@@ -47,7 +45,7 @@ describe("getStoreConfig", () => {
 		process.env = { ...originalEnv };
 	});
 
-	it("loads from template when no storeId", async () => {
+	it("loads from template when no managed workload is configured", async () => {
 		const configPath = join(TMP_DIR, "template-config.json");
 		writeFileSync(
 			configPath,
@@ -66,84 +64,10 @@ describe("getStoreConfig", () => {
 		expect(config.name).toBe("Template Store");
 	});
 
-	it("throws when no storeId and no templatePath", async () => {
+	it("throws when no managed workload and no templatePath", async () => {
 		await expect(getStoreConfig()).rejects.toThrow(
-			"Store config requires either a valid STORE_ID",
+			"Store config requires a managed workload credential trio or templatePath",
 		);
-	});
-
-	it("throws when storeId is not a valid UUID", async () => {
-		await expect(getStoreConfig({ storeId: "not-a-uuid" })).rejects.toThrow(
-			"Store config requires either a valid STORE_ID",
-		);
-	});
-
-	it("fetches from API when valid UUID storeId and apiKey provided", async () => {
-		const apiResponse = {
-			theme: "remote",
-			name: "Remote Store",
-			favicon: "/remote.ico",
-			icon: DEFAULT_CONFIG.icon,
-			logo: DEFAULT_CONFIG.logo,
-			variables: DEFAULT_CONFIG.variables,
-		};
-		globalThis.fetch = vi.fn().mockResolvedValue({
-			ok: true,
-			json: () => Promise.resolve(apiResponse),
-		});
-
-		const config = await getStoreConfig({
-			storeId: VALID_UUID,
-			apiKey: "test-key",
-		});
-		expect(config.name).toBe("Remote Store");
-	});
-
-	it("uses env STORE_ID and 86D_API_KEY when options not provided", async () => {
-		process.env.STORE_ID = VALID_UUID;
-		process.env["86D_API_KEY"] = "env-key";
-		globalThis.fetch = vi.fn().mockResolvedValue({
-			ok: true,
-			json: () =>
-				Promise.resolve({
-					theme: "env-store",
-					name: "Env Store",
-					favicon: "/env.ico",
-					icon: DEFAULT_CONFIG.icon,
-					logo: DEFAULT_CONFIG.logo,
-					variables: DEFAULT_CONFIG.variables,
-				}),
-		});
-
-		const config = await getStoreConfig();
-		expect(config.name).toBe("Env Store");
-	});
-
-	it("fails closed on a compromised legacy Control Plane config response", async () => {
-		const secretCanary = "legacy-provider-secret-must-not-escape";
-		globalThis.fetch = vi.fn().mockResolvedValue(
-			Response.json({
-				theme: "remote",
-				name: "Compromised Store",
-				favicon: "/remote.ico",
-				icon: DEFAULT_CONFIG.icon,
-				logo: DEFAULT_CONFIG.logo,
-				moduleOptions: {
-					"@86d-app/stripe": { secretKey: secretCanary },
-				},
-			}),
-		);
-
-		let failure: unknown;
-		try {
-			await getStoreConfig({ storeId: VALID_UUID, apiKey: "legacy-key" });
-		} catch (error) {
-			failure = error;
-		}
-
-		expect(failure).toBeInstanceOf(Error);
-		expect(String(failure)).toContain("Invalid store config from 86d API");
-		expect(String(failure)).not.toContain(secretCanary);
 	});
 
 	it("uses managed workload exchange for a newly provisioned Store", async () => {
@@ -153,8 +77,6 @@ describe("getStoreConfig", () => {
 		process.env["86D_API_URL"] = "https://api.86d.app";
 		process.env["86D_WORKLOAD_CREDENTIAL"] =
 			`${credentialId}.${credentialSecret}`;
-		process.env.STORE_ID = "784d078d-9202-43e7-9624-63a92f479331";
-		process.env["86D_API_KEY"] = "legacy-key-must-not-be-used";
 		globalThis.fetch = vi
 			.fn()
 			.mockResolvedValueOnce(
@@ -190,9 +112,6 @@ describe("getStoreConfig", () => {
 		expect(configRequest?.[0].toString()).toBe(
 			`https://api.86d.app/api/v1/stores/${VALID_UUID}`,
 		);
-		expect(configRequest?.[1]).toEqual(
-			expect.objectContaining({ headers: expect.any(Headers) }),
-		);
 		const requestHeaders = new Headers(
 			(globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[1]?.[1]
 				?.headers,
@@ -200,9 +119,6 @@ describe("getStoreConfig", () => {
 		expect(requestHeaders.get("Authorization")).toBe(
 			"Bearer scoped-config-token",
 		);
-		expect(
-			JSON.stringify((globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls),
-		).not.toContain("legacy-key-must-not-be-used");
 	});
 
 	it("fails closed on a compromised managed Control Plane config response", async () => {
@@ -285,66 +201,6 @@ describe("getStoreConfig", () => {
 		expect(globalThis.fetch).toHaveBeenCalledTimes(3);
 	});
 
-	it("coalesces concurrent managed config token exchanges", async () => {
-		process.env["86D_STORE_ID"] = VALID_UUID;
-		process.env["86D_API_URL"] = "https://api.86d.app";
-		process.env["86D_WORKLOAD_CREDENTIAL"] =
-			`86d_wc_concurrentcacheclient001.${"r".repeat(43)}`;
-		globalThis.fetch = vi.fn(async (input: string | URL | Request) => {
-			const url = input instanceof Request ? input.url : input.toString();
-			if (url.endsWith("/api/oauth/token")) {
-				await new Promise((resolve) => setTimeout(resolve, 0));
-				return Response.json({
-					access_token: "shared-concurrent-token",
-					token_type: "Bearer",
-					expires_in: 300,
-					scope: "runtime.config:read",
-				});
-			}
-			return Response.json({
-				theme: "managed",
-				name: "Managed Store",
-				favicon: "/managed.ico",
-				icon: DEFAULT_CONFIG.icon,
-				logo: DEFAULT_CONFIG.logo,
-				variables: DEFAULT_CONFIG.variables,
-			});
-		});
-
-		await Promise.all([getStoreConfig(), getStoreConfig()]);
-
-		const tokenExchanges = (
-			globalThis.fetch as ReturnType<typeof vi.fn>
-		).mock.calls.filter(([input]) =>
-			input.toString().endsWith("/api/oauth/token"),
-		);
-		expect(tokenExchanges).toHaveLength(1);
-		expect(globalThis.fetch).toHaveBeenCalledTimes(3);
-	});
-
-	it("uses the local template without a Control Plane call when no managed API key exists", async () => {
-		const configPath = join(TMP_DIR, "no-key-config.json");
-		writeFileSync(
-			configPath,
-			JSON.stringify({
-				theme: "local",
-				name: "Local Store",
-				favicon: "/local.ico",
-				icon: DEFAULT_CONFIG.icon,
-				logo: DEFAULT_CONFIG.logo,
-				variables: DEFAULT_CONFIG.variables,
-			}),
-		);
-		globalThis.fetch = vi.fn();
-
-		const config = await getStoreConfig({
-			storeId: VALID_UUID,
-			templatePath: configPath,
-		});
-		expect(config.name).toBe("Local Store");
-		expect(globalThis.fetch).not.toHaveBeenCalled();
-	});
-
 	it.each([
 		[
 			"revoked",
@@ -378,43 +234,9 @@ describe("getStoreConfig", () => {
 			await expect(
 				getStoreConfig({
 					templatePath: configPath,
-					fallbackToTemplateOnError: true,
 				}),
 			).rejects.toThrow();
 			expect(globalThis.fetch).toHaveBeenCalledTimes(1);
 		},
 	);
-
-	it("falls back to template on API error when configured", async () => {
-		const configPath = join(TMP_DIR, "fallback-config.json");
-		writeFileSync(
-			configPath,
-			JSON.stringify({
-				theme: "fallback",
-				name: "Fallback Store",
-				favicon: "/fallback.ico",
-				icon: DEFAULT_CONFIG.icon,
-				logo: DEFAULT_CONFIG.logo,
-				variables: DEFAULT_CONFIG.variables,
-			}),
-		);
-
-		globalThis.fetch = vi.fn().mockRejectedValue(new Error("Network error"));
-
-		const config = await getStoreConfig({
-			storeId: VALID_UUID,
-			apiKey: "test-key",
-			templatePath: configPath,
-			fallbackToTemplateOnError: true,
-		});
-		expect(config.name).toBe("Fallback Store");
-	});
-
-	it("throws on API error without fallback", async () => {
-		globalThis.fetch = vi.fn().mockRejectedValue(new Error("Network error"));
-
-		await expect(
-			getStoreConfig({ storeId: VALID_UUID, apiKey: "test-key" }),
-		).rejects.toThrow("Network error");
-	});
 });

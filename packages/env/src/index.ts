@@ -24,7 +24,6 @@ const envSchema = z.object({
 		.optional()
 		.transform((v) => v || "de005b9d-c517-4c65-896e-8edef5cf5a94"),
 	"86D_API_URL": z.url().optional().default("https://api.86d.app"),
-	"86D_API_KEY": z.string().optional(),
 	"86D_STORE_ID": z.string().uuid().optional(),
 	"86D_WORKLOAD_CREDENTIAL": z.string().optional(),
 	"86D_TELEMETRY": z.literal("managed-runtime-diagnostics-v1").optional(),
@@ -43,6 +42,12 @@ const envSchema = z.object({
 	GA4_API_SECRET: z.string().optional(),
 	RESEND_API_KEY: z.string().optional(),
 	BETTER_AUTH_SECRET: z.string().optional(),
+	/**
+	 * Proxy hops between the shopper and this process. Rate limiting reads the
+	 * hop our own edge appended rather than the leftmost `x-forwarded-for`
+	 * entry, which the client controls.
+	 */
+	TRUSTED_PROXY_HOPS: z.coerce.number().int().min(1).default(1),
 });
 
 type ParsedEnv = z.infer<typeof envSchema>;

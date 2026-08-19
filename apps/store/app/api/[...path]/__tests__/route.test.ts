@@ -37,6 +37,27 @@ vi.mock("../../../../generated/api", () => ({
 	getModuleIdForPath: mockGetModuleIdForPath,
 }));
 
+const mockHandleCatalogRevisionCommand = vi.hoisted(() => vi.fn());
+vi.mock("~/lib/catalog-command-route", () => ({
+	handleCatalogRevisionCommand: mockHandleCatalogRevisionCommand,
+	matchCatalogRevisionCommandPath: (path: string) => {
+		if (path === "/admin/catalog/revisions/create") {
+			return { action: "draft" };
+		}
+		if (path === "/admin/catalog/revisions/revision-1/review") {
+			return { action: "review", revisionId: "revision-1" };
+		}
+		if (path === "/admin/catalog/revisions/revision-1/publish") {
+			return { action: "publish", revisionId: "revision-1" };
+		}
+		return null;
+	},
+}));
+
+vi.mock("~/lib/durable-events", () => ({
+	drainDurableEvents: vi.fn(),
+}));
+
 // ── Import after mocks ────────────────────────────────────────────────────────
 
 import type { NextRequest } from "next/server";
@@ -125,6 +146,36 @@ beforeEach(() => {
 				moduleId: "products",
 				surface: "admin",
 				path: "/admin/products",
+				exposure: "admin",
+			},
+			{
+				moduleId: "products",
+				surface: "admin",
+				path: "/admin/catalog/revisions/create",
+				exposure: "admin",
+			},
+			{
+				moduleId: "products",
+				surface: "admin",
+				path: "/admin/catalog/revisions/:id/review",
+				exposure: "admin",
+			},
+			{
+				moduleId: "products",
+				surface: "admin",
+				path: "/admin/catalog/revisions/:id/publish",
+				exposure: "admin",
+			},
+			{
+				moduleId: "products",
+				surface: "admin",
+				path: "/admin/catalog/revisions/list",
+				exposure: "admin",
+			},
+			{
+				moduleId: "products",
+				surface: "admin",
+				path: "/admin/catalog/revisions/:id",
 				exposure: "admin",
 			},
 			{
@@ -496,6 +547,62 @@ describe("GET|POST /api/[...path]", () => {
 			expect(mockResolveStoreCommerceGate).not.toHaveBeenCalled();
 			expect(mockGetSession).not.toHaveBeenCalled();
 			expect(mockCreateRequestContext).toHaveBeenCalledWith("stripe", null);
+		});
+	});
+
+	describe("Catalog Command Admin transport", () => {
+		it("refuses unauthenticated catalog publish", async () => {
+			mockGetSession.mockResolvedValue(null);
+
+			const response = await POST(
+				makeRequest("/admin/catalog/revisions/revision-1/publish", "POST"),
+				makeCtx(["admin", "catalog", "revisions", "revision-1", "publish"]),
+			);
+
+			expect(response.status).toBe(401);
+			expect(mockHandleCatalogRevisionCommand).not.toHaveBeenCalled();
+			expect(mockCreateApiRouter).not.toHaveBeenCalled();
+		});
+
+		it("refuses a non-admin session on catalog review", async () => {
+			mockVerifyStoreAdminAccess.mockReturnValue({
+				hasAccess: false,
+				role: "customer",
+			});
+
+			const response = await POST(
+				makeRequest("/admin/catalog/revisions/revision-1/review", "POST"),
+				makeCtx(["admin", "catalog", "revisions", "revision-1", "review"]),
+			);
+
+			expect(response.status).toBe(403);
+			expect(mockHandleCatalogRevisionCommand).not.toHaveBeenCalled();
+		});
+
+		it("does not intercept catalog revision reads", async () => {
+			const response = await GET(
+				makeRequest("/admin/catalog/revisions/list"),
+				makeCtx(["admin", "catalog", "revisions", "list"]),
+			);
+
+			expect(response.status).toBe(200);
+			expect(mockHandleCatalogRevisionCommand).not.toHaveBeenCalled();
+			expect(mockCreateApiRouter).toHaveBeenCalled();
+		});
+
+		it("executes catalog draft through the Command transport", async () => {
+			mockHandleCatalogRevisionCommand.mockResolvedValue(
+				makeHandlerResponse(201, { revision: { state: "draft" } }),
+			);
+
+			const response = await POST(
+				makeRequest("/admin/catalog/revisions/create", "POST"),
+				makeCtx(["admin", "catalog", "revisions", "create"]),
+			);
+
+			expect(response.status).toBe(201);
+			expect(mockHandleCatalogRevisionCommand).toHaveBeenCalled();
+			expect(mockCreateApiRouter).not.toHaveBeenCalled();
 		});
 	});
 

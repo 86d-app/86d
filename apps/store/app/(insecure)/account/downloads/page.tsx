@@ -1,9 +1,18 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client/provider";
+import { DownloadIcon } from "lucide-react";
 import { useState } from "react";
 import { StatusBadge } from "~/components/status-badge";
 import { Button, buttonVariants } from "~/components/ui/button";
+import {
+	Empty,
+	EmptyContent,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyMedia,
+	EmptyTitle,
+} from "~/components/ui/empty";
 import { Skeleton } from "~/components/ui/skeleton";
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -139,38 +148,22 @@ export default function DownloadsPage() {
 					))}
 				</div>
 			) : tokens.length === 0 ? (
-				<div className="rounded-xl border border-border bg-muted/30 py-12 text-center">
-					<div className="mb-4 flex justify-center">
-						<div className="flex size-14 items-center justify-center rounded-full bg-muted">
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								width="24"
-								height="24"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								strokeWidth="1.5"
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								className="text-muted-foreground"
-								aria-hidden="true"
-							>
-								<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-								<polyline points="7 10 12 15 17 10" />
-								<line x1="12" y1="15" x2="12" y2="3" />
-							</svg>
-						</div>
-					</div>
-					<p className="font-medium text-foreground text-sm">
-						No downloads yet
-					</p>
-					<p className="mt-1 text-muted-foreground text-sm">
-						Your digital purchases will appear here.
-					</p>
-					<a href="/products" className={buttonVariants({ className: "mt-4" })}>
-						Browse products
-					</a>
-				</div>
+				<Empty>
+					<EmptyHeader>
+						<EmptyMedia variant="icon">
+							<DownloadIcon />
+						</EmptyMedia>
+						<EmptyTitle>No downloads yet</EmptyTitle>
+						<EmptyDescription>
+							Your digital purchases will appear here.
+						</EmptyDescription>
+					</EmptyHeader>
+					<EmptyContent>
+						<a href="/products" className={buttonVariants()}>
+							Browse products
+						</a>
+					</EmptyContent>
+				</Empty>
 			) : (
 				<div className="flex flex-col gap-3">
 					{tokens.map((token) => {

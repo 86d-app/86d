@@ -1,9 +1,17 @@
 "use client";
 
 import { useModuleClient } from "@86d-app/core/client/provider";
+import { MapPinIcon } from "lucide-react";
 import { useState } from "react";
 import { StatusBadge } from "~/components/status-badge";
 import { Button } from "~/components/ui/button";
+import {
+	Empty,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyMedia,
+	EmptyTitle,
+} from "~/components/ui/empty";
 import { Skeleton } from "~/components/ui/skeleton";
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -500,34 +508,17 @@ export default function AddressesPage() {
 						))}
 					</div>
 				) : addresses.length === 0 ? (
-					<div className="rounded-xl border border-border bg-muted/30 py-12 text-center">
-						<div className="mb-4 flex justify-center">
-							<div className="flex size-14 items-center justify-center rounded-full bg-muted">
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									width="24"
-									height="24"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="currentColor"
-									strokeWidth="1.5"
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									className="text-muted-foreground"
-									aria-hidden="true"
-								>
-									<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
-									<circle cx="12" cy="10" r="3" />
-								</svg>
-							</div>
-						</div>
-						<p className="font-medium text-foreground text-sm">
-							No addresses yet
-						</p>
-						<p className="mt-1 text-muted-foreground text-sm">
-							Add a shipping or billing address to speed up checkout.
-						</p>
-					</div>
+					<Empty>
+						<EmptyHeader>
+							<EmptyMedia variant="icon">
+								<MapPinIcon />
+							</EmptyMedia>
+							<EmptyTitle>No addresses yet</EmptyTitle>
+							<EmptyDescription>
+								Add a shipping or billing address to speed up checkout.
+							</EmptyDescription>
+						</EmptyHeader>
+					</Empty>
 				) : (
 					<div className="flex flex-col gap-3">
 						{addresses.map((addr) => (

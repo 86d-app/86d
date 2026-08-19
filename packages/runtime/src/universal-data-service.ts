@@ -19,6 +19,48 @@ export interface DataServiceConfig {
 
 type PrismaLikeTransaction = DataServiceConfig["db"];
 
+/** Rows returned when a caller names no limit. */
+const DEFAULT_PAGE_SIZE = 100;
+/** Ceiling on any single read, so one Module cannot pull a whole table into memory. */
+const MAX_PAGE_SIZE = 1_000;
+
+/** Columns that exist on the table and can therefore order a query in Postgres. */
+const ORDERABLE_COLUMNS = new Set(["createdAt", "updatedAt"]);
+
+const reportedSortDrops = new Set<string>();
+
+/**
+ * A sort key that is not a real column cannot reach the database, so the query
+ * comes back in `createdAt` order while the caller believes it is sorted. Say so
+ * once per key rather than returning quietly wrong data. Ordering by a declared
+ * field becomes possible when that field becomes a column.
+ */
+function reportUnsupportedSort(
+	moduleId: string,
+	entityType: string,
+	column: string,
+): void {
+	const key = `${moduleId}:${entityType}:${column}`;
+	if (reportedSortDrops.has(key)) return;
+	reportedSortDrops.add(key);
+	console.warn(
+		`[86d] ${moduleId} asked to order ${entityType} by "${column}", which is not a column. Results are ordered by createdAt.`,
+	);
+}
+
+function boundedTake(take: number | undefined): number {
+	if (take === undefined) return DEFAULT_PAGE_SIZE;
+	if (!Number.isInteger(take) || take < 1) {
+		throw new Error("take must be a positive integer.");
+	}
+	if (take > MAX_PAGE_SIZE) {
+		throw new Error(
+			`take must be at most ${MAX_PAGE_SIZE}. Page through larger result sets with skip.`,
+		);
+	}
+	return take;
+}
+
 function boundedText(value: string, label: string, maximum: number): void {
 	if (value.length === 0 || value.length > maximum) {
 		throw new Error(
@@ -70,18 +112,23 @@ function buildJsonWhereFilters(
  * Only allows access to module's own data within a specific store
  */
 export class UniversalDataService {
-	private config: DataServiceConfig;
+	/**
+	 * A `#` field, not `private`: TypeScript erases `private` at compile time, so
+	 * `(service as any).config.db` would hand a Module the raw database client and
+	 * with it every table in the Store. The engine enforces this one.
+	 */
+	readonly #config: DataServiceConfig;
 
 	constructor(config: DataServiceConfig) {
-		this.config = config;
+		this.#config = config;
 	}
 
 	private get moduleDbId(): string {
-		return this.config.moduleDbId ?? this.config.moduleId;
+		return this.#config.moduleDbId ?? this.#config.moduleId;
 	}
 
 	private scoped(db: PrismaLikeTransaction): UniversalDataService {
-		return new UniversalDataService({ ...this.config, db });
+		return new UniversalDataService({ ...this.#config, db });
 	}
 
 	/**
@@ -115,7 +162,7 @@ export class UniversalDataService {
 			},
 		} satisfies Prisma.ModuleDataUpsertArgs;
 
-		return this.config.db.moduleData.upsert(args);
+		return this.#config.db.moduleData.upsert(args);
 	}
 
 	/**
@@ -131,7 +178,7 @@ export class UniversalDataService {
 				},
 			},
 		} satisfies Prisma.ModuleDataFindUniqueArgs;
-		const result = await this.config.db.moduleData.findUnique(args);
+		const result = await this.#config.db.moduleData.findUnique(args);
 		// biome-ignore lint/suspicious/noExplicitAny: Prisma JSONB data field
 		return (result?.data as Record<string, any>) ?? null;
 	}
@@ -145,17 +192,18 @@ export class UniversalDataService {
 		entityType: string,
 		entityId: string,
 	): Promise<Record<string, unknown> | null> {
-		const rows: Array<{ data: unknown }> = await this.config.db.$queryRawUnsafe(
-			`SELECT "data"
+		const rows: Array<{ data: unknown }> =
+			await this.#config.db.$queryRawUnsafe(
+				`SELECT "data"
 			 FROM "ModuleData"
 			 WHERE "moduleId" = $1::uuid
 			   AND "entityType" = $2
 			   AND "entityId" = $3
 			 FOR UPDATE`,
-			this.moduleDbId,
-			entityType,
-			entityId,
-		);
+				this.moduleDbId,
+				entityType,
+				entityId,
+			);
 		const value = rows[0]?.data;
 		return isRecord(value) ? { ...value } : null;
 	}
@@ -187,27 +235,25 @@ export class UniversalDataService {
 			Object.assign(whereClause, buildJsonWhereFilters(options.where));
 		}
 
-		// Support ordering by DB columns; default to createdAt desc
-		const dbColumns = new Set(["createdAt", "updatedAt"]);
 		// biome-ignore lint/suspicious/noExplicitAny: Prisma orderBy clause
 		let orderBy: Record<string, any> = { createdAt: "desc" };
 		if (options?.orderBy) {
-			const supported = Object.entries(options.orderBy).filter(([k]) =>
-				dbColumns.has(k),
-			);
-			if (supported.length > 0) {
-				orderBy = Object.fromEntries(supported);
+			const supported: [string, "asc" | "desc"][] = [];
+			for (const [column, direction] of Object.entries(options.orderBy)) {
+				if (ORDERABLE_COLUMNS.has(column)) supported.push([column, direction]);
+				else reportUnsupportedSort(this.#config.moduleId, entityType, column);
 			}
+			if (supported.length > 0) orderBy = Object.fromEntries(supported);
 		}
 
 		const args = {
 			where: whereClause,
-			...(options?.take !== undefined ? { take: options.take } : {}),
+			take: boundedTake(options?.take),
 			...(options?.skip !== undefined ? { skip: options.skip } : {}),
 			orderBy,
 		};
 
-		const results = await this.config.db.moduleData.findMany(args);
+		const results = await this.#config.db.moduleData.findMany(args);
 		// biome-ignore lint/suspicious/noExplicitAny: Prisma result contains JSONB data field
 		return results.map((r: any) => r.data as Record<string, any>);
 	}
@@ -221,8 +267,9 @@ export class UniversalDataService {
 				moduleId: this.moduleDbId,
 				parentId: parentInternalId,
 			},
+			take: MAX_PAGE_SIZE,
 		} satisfies Prisma.ModuleDataFindManyArgs;
-		const results = await this.config.db.moduleData.findMany(args);
+		const results = await this.#config.db.moduleData.findMany(args);
 		// biome-ignore lint/suspicious/noExplicitAny: Prisma result row
 		return results.map((r: any) => ({
 			id: r.id,
@@ -246,7 +293,7 @@ export class UniversalDataService {
 				},
 			},
 		} satisfies Prisma.ModuleDataDeleteArgs;
-		return this.config.db.moduleData.delete(args);
+		return this.#config.db.moduleData.delete(args);
 	}
 
 	/**
@@ -264,7 +311,7 @@ export class UniversalDataService {
 			Object.assign(whereClause, buildJsonWhereFilters(where));
 		}
 
-		return this.config.db.moduleData.count({ where: whereClause });
+		return this.#config.db.moduleData.count({ where: whereClause });
 	}
 
 	/**
@@ -305,10 +352,10 @@ export class UniversalDataService {
 			}) satisfies Prisma.ModuleDataUpsertArgs;
 
 		const operations = entities.map((entity) =>
-			this.config.db.moduleData.upsert(args(entity)),
+			this.#config.db.moduleData.upsert(args(entity)),
 		);
 
-		return this.config.db.$transaction(operations);
+		return this.#config.db.$transaction(operations);
 	}
 
 	/**
@@ -319,7 +366,7 @@ export class UniversalDataService {
 	async transaction<T>(
 		work: (transaction: ModuleDataTransaction) => Promise<T>,
 	): Promise<T> {
-		return this.config.db.$transaction(async (db: PrismaLikeTransaction) => {
+		return this.#config.db.$transaction(async (db: PrismaLikeTransaction) => {
 			return work(this.transactionContext(db));
 		});
 	}
@@ -329,7 +376,7 @@ export class UniversalDataService {
 	 * opened by the Store Runtime Command persistence layer.
 	 */
 	currentTransaction(): LockingModuleDataTransaction {
-		return this.transactionContext(this.config.db);
+		return this.transactionContext(this.#config.db);
 	}
 
 	private transactionContext(
@@ -350,9 +397,9 @@ export class UniversalDataService {
 		definition: D,
 		input: DurableEventInput<D>,
 	): Promise<DurableEventEnvelope<D>> {
-		if (definition.owner !== this.config.moduleId) {
+		if (definition.owner !== this.#config.moduleId) {
 			throw new Error(
-				`Durable event "${definition.name}" is owned by Module "${definition.owner}", not "${this.config.moduleId}".`,
+				`Durable event "${definition.name}" is owned by Module "${definition.owner}", not "${this.#config.moduleId}".`,
 			);
 		}
 		boundedText(definition.name, "Durable event name", 200);
@@ -383,8 +430,8 @@ export class UniversalDataService {
 			ON CONFLICT ("storeId", "sourceModule", "aggregateType", "aggregateId")
 			DO UPDATE SET "lastSequence" = "ModuleEventSequence"."lastSequence" + 1
 			RETURNING "lastSequence" AS "sequence"`,
-			this.config.storeId,
-			this.config.moduleId,
+			this.#config.storeId,
+			this.#config.moduleId,
 			input.aggregate.type,
 			input.aggregate.id,
 		)) as Array<{ sequence: bigint }>;
@@ -400,8 +447,8 @@ export class UniversalDataService {
 			id: eventId,
 			eventType: definition.name,
 			schemaVersion: definition.version,
-			storeId: this.config.storeId,
-			sourceModule: this.config.moduleId,
+			storeId: this.#config.storeId,
+			sourceModule: this.#config.moduleId,
 			moduleId: this.moduleDbId,
 			aggregateType: input.aggregate.type,
 			aggregateId: input.aggregate.id,
@@ -417,7 +464,7 @@ export class UniversalDataService {
 			id: eventId,
 			name: definition.name,
 			version: definition.version,
-			storeId: this.config.storeId,
+			storeId: this.#config.storeId,
 			sourceModule: definition.owner,
 			aggregate: {
 				type: input.aggregate.type,
