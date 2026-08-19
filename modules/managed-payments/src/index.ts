@@ -1,14 +1,12 @@
+import type { PaymentOutcomeRecorderPort } from "@86d-app/core/payment-checkout-ports";
 import type { Module, ModuleContext } from "@86d-app/core/types/module";
-import type { PaymentAggregateStore } from "@86d-app/payments";
-import {
-	createManagedPaymentClient,
-} from "./managed-payment-client";
+import { readManagedWorkloadConfig } from "@86d-app/sdk/workload-token-client";
+import { createManagedPaymentClient } from "./managed-payment-client";
 import {
 	createManagedPaymentOutcomeConsumer,
 	type ManagedPaymentOutcomeConsumer,
 } from "./outcome-consumer";
 import { createPrepareManagedPaymentEndpoint } from "./store/endpoints/prepare-managed-payment";
-import { readManagedWorkloadConfig } from "@86d-app/sdk/workload-token-client";
 
 export type {
 	ManagedPaymentOperationSnapshot,
@@ -21,7 +19,10 @@ export {
 	MANAGED_PAYMENT_WORKLOAD_SCOPES,
 	STORE_RUNTIME_WORKLOAD_AUDIENCE,
 } from "./contracts";
-export { createManagedPaymentClient, type ManagedPaymentClient } from "./managed-payment-client";
+export {
+	createManagedPaymentClient,
+	type ManagedPaymentClient,
+} from "./managed-payment-client";
 export type { ManagedPaymentOutcomeConsumerResult } from "./outcome-consumer";
 export {
 	consumeManagedPaymentOutcomes,
@@ -46,11 +47,11 @@ export default function managedPayments(
 			},
 		},
 		init: async (ctx: ModuleContext) => {
-			const config =
-				options?.workloadConfig ?? readManagedWorkloadConfig();
+			const config = options?.workloadConfig ?? readManagedWorkloadConfig();
 			const client = createManagedPaymentClient({ config });
-			const paymentAggregates = ctx.controllers
-				.paymentAggregates as PaymentAggregateStore | undefined;
+			const paymentAggregates = ctx.controllers.paymentAggregates as
+				| unknown
+				| undefined as PaymentOutcomeRecorderPort | undefined;
 			const outcomeConsumer: ManagedPaymentOutcomeConsumer | undefined =
 				paymentAggregates
 					? createManagedPaymentOutcomeConsumer({

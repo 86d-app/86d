@@ -1,11 +1,11 @@
+import type { PaymentOutcomeRecorderPort } from "@86d-app/core/payment-checkout-ports";
 import type { ModuleController } from "@86d-app/core/types/module";
-import type { PaymentAggregateStore } from "@86d-app/payments";
-import type { ManagedPaymentClient } from "./managed-payment-client";
 import type { ManagedPaymentStoreOutcome } from "./contracts";
+import type { ManagedPaymentClient } from "./managed-payment-client";
 
 export interface ManagedPaymentOutcomeConsumerOptions {
 	client: ManagedPaymentClient;
-	paymentAggregates: PaymentAggregateStore;
+	paymentAggregates: PaymentOutcomeRecorderPort;
 	now?: (() => Date) | undefined;
 }
 

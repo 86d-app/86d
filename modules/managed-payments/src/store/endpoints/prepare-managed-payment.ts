@@ -1,7 +1,7 @@
 import { createStoreEndpoint } from "@86d-app/core/api";
 import { z } from "@86d-app/core/zod";
-import { createManagedPaymentClient } from "../../managed-payment-client";
 import { readManagedWorkloadConfig } from "@86d-app/sdk/workload-token-client";
+import { createManagedPaymentClient } from "../../managed-payment-client";
 
 const prepareInputSchema = z
 	.object({

@@ -6,7 +6,6 @@ import {
 } from "@86d-app/core/commerce-capabilities";
 import { inventoryCheckoutV2Capability } from "@86d-app/core/inventory-reservation-capability";
 import { createMockTransactionRunner } from "@86d-app/core/test-utils";
-import { createPaymentAggregateStore } from "@86d-app/payments";
 import { describe, expect, it } from "vitest";
 import { createCheckoutFinalizationStore } from "../finalization";
 import {
@@ -424,46 +423,50 @@ describe("Checkout finalization handlers", () => {
 		});
 
 		const paymentStorage = createMockTransactionRunner({ storeId: "store-1" });
-		await paymentStorage.data.upsert("paymentConnection", "payment-connection-1", {
-			id: "payment-connection-1",
-			providerAccountId: "MERCHANT-1",
-			name: "86d Payments",
-			normalizedName: "86d payments",
-			provider: "86d_payments",
-			mode: "test",
-			capabilities: ["authorization", "capture", "void"],
-			health: "healthy",
-			lifecycle: "enabled",
-			secretReference: "secret/managed-1",
-			enabledAt: new Date("2026-08-13T00:00:00.000Z"),
-			createdAt: new Date("2026-08-13T00:00:00.000Z"),
-			updatedAt: new Date("2026-08-13T00:00:00.000Z"),
-		});
-		const paymentAggregates = createPaymentAggregateStore(
-			paymentStorage.data,
-			paymentStorage,
+		await paymentStorage.data.upsert(
+			"paymentConnection",
+			"payment-connection-1",
+			{
+				id: "payment-connection-1",
+				providerAccountId: "MERCHANT-1",
+				name: "86d Payments",
+				normalizedName: "86d payments",
+				provider: "86d_payments",
+				mode: "test",
+				capabilities: ["authorization", "capture", "void"],
+				health: "healthy",
+				lifecycle: "enabled",
+				secretReference: "secret/managed-1",
+				enabledAt: new Date("2026-08-13T00:00:00.000Z"),
+				createdAt: new Date("2026-08-13T00:00:00.000Z"),
+				updatedAt: new Date("2026-08-13T00:00:00.000Z"),
+			},
 		);
-		await paymentAggregates.create({
-			paymentId: "payment-1",
-			idempotencyKey: "create-payment-1",
-			checkoutId: "checkout-1",
-			connectionId: "payment-connection-1",
-			paymentOption: "card",
-			expectedAmount: 1_083,
-			eligibleMerchandiseAmount: 1_000,
-			currency: "USD",
-		});
-		await paymentAggregates.recordConfirmedOperation({
-			paymentId: "payment-1",
-			connectionId: "payment-connection-1",
-			operationId: "authorization-1",
-			operation: "authorization",
-			amount: 1_083,
-			currency: "USD",
-			requestDigest: "a".repeat(64),
-			providerReference: "provider-auth-1",
-			confirmedAt: new Date("2026-08-14T00:00:00.000Z"),
-		});
+		// A fake satisfying PaymentAggregateReaderPort. Building a real aggregate
+		// here would make payments a build dependency of checkout, which is the
+		// undeclared edge the Module isolation guard rejects.
+		const paymentAggregates = {
+			async get(paymentId: string) {
+				if (paymentId !== "payment-1") return null;
+				return {
+					id: "payment-1",
+					paymentOption: "card",
+					currency: "USD",
+					expectedAmount: 1_083,
+					authorizedAmount: 1_083,
+					capturedAmount: 0,
+					providerReferences: [
+						{
+							operationId: "authorization-1",
+							operation: "authorization",
+							providerReference: "provider-auth-1",
+							amount: 1_083,
+							currency: "USD",
+						},
+					],
+				};
+			},
+		};
 
 		const store = createCheckoutFinalizationStore(storage.transactions);
 		const admitted = await store.admit(admission());
@@ -503,16 +506,10 @@ describe("Checkout finalization handlers", () => {
 			isPaymentLiveActivated({
 				id: "connection-1",
 				providerAccountId: "acct-1",
-				name: "PayPal",
-				normalizedName: "paypal",
 				provider: "paypal",
 				mode: "test",
-				capabilities: ["authorization", "capture"],
 				health: "healthy",
 				lifecycle: "enabled",
-				secretReference: "secret/paypal",
-				createdAt: new Date(),
-				updatedAt: new Date(),
 			}),
 		).toBe(true);
 	});

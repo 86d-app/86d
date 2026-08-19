@@ -1,5 +1,5 @@
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
 	generateLockfile,
@@ -133,7 +133,7 @@ describe("readLockfile / writeLockfile", () => {
 
 	it("returns undefined for invalid lockfile", () => {
 		const badRoot = join(TMP_ROOT, "bad-lock");
-		mkdirSync(badRoot, { recursive: true });
+		mkdirSync(dirname(registryLockfilePath(badRoot)), { recursive: true });
 		writeFileSync(registryLockfilePath(badRoot), "not json{{{");
 		expect(readLockfile(badRoot)).toBeUndefined();
 	});

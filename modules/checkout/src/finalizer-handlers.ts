@@ -4,12 +4,12 @@ import {
 	paymentCheckoutCapability,
 } from "@86d-app/core/commerce-capabilities";
 import { inventoryCheckoutV2Capability } from "@86d-app/core/inventory-reservation-capability";
-import type { PaymentConnection } from "@86d-app/payments";
 import type {
-	PaymentAggregate,
-	PaymentAggregateStore,
-} from "@86d-app/payments";
-import type { ManagedPaymentClient } from "@86d-app/managed-payments";
+	ManagedPaymentClientPort,
+	PaymentAggregatePort,
+	PaymentAggregateReaderPort,
+	PaymentConnectionPort,
+} from "@86d-app/core/payment-checkout-ports";
 import type {
 	CheckoutFinalization,
 	CheckoutFinalizationStore,
@@ -83,13 +83,13 @@ export function isThirdPartyPaymentProvider(provider: string): boolean {
 	return THIRD_PARTY_PAYMENT_PROVIDERS.has(provider);
 }
 
-export function isPaymentLiveActivated(connection: PaymentConnection): boolean {
+export function isPaymentLiveActivated(
+	connection: PaymentConnectionPort,
+): boolean {
 	if (process.env["86D_PAYMENTS_LIVE_ACTIVATION"] === "true") {
 		return true;
 	}
-	return (
-		connection.lifecycle === "enabled" && connection.health === "healthy"
-	);
+	return connection.lifecycle === "enabled" && connection.health === "healthy";
 }
 
 export type CheckoutFinalizationHandlerDependencies = Readonly<{
@@ -97,15 +97,17 @@ export type CheckoutFinalizationHandlerDependencies = Readonly<{
 	checkout: CheckoutController;
 	/** Lease duration for inventory reservations created during finalization. */
 	reservationLeaseSeconds?: number | undefined;
-	paymentConnections?: {
-		getConnection(id: string): Promise<PaymentConnection | null>;
-	} | undefined;
-	paymentAggregates?: PaymentAggregateStore | undefined;
-	managedPaymentClient?: ManagedPaymentClient | undefined;
+	paymentConnections?:
+		| {
+				getConnection(id: string): Promise<PaymentConnectionPort | null>;
+		  }
+		| undefined;
+	paymentAggregates?: PaymentAggregateReaderPort | undefined;
+	managedPaymentClient?: ManagedPaymentClientPort | undefined;
 	resolvePaymentAggregate?: (
 		checkoutId: string,
 		connectionId: string,
-	) => Promise<PaymentAggregate | null>;
+	) => Promise<PaymentAggregatePort | null>;
 }>;
 
 /**
@@ -196,7 +198,7 @@ export function createCheckoutFinalizationTransport(options: {
 async function resolveConnection(
 	deps: CheckoutFinalizationHandlerDependencies,
 	connectionId: string,
-): Promise<PaymentConnection | null> {
+): Promise<PaymentConnectionPort | null> {
 	return deps.paymentConnections?.getConnection(connectionId) ?? null;
 }
 
@@ -204,7 +206,7 @@ async function resolvePayment(
 	deps: CheckoutFinalizationHandlerDependencies,
 	finalization: CheckoutFinalization,
 	connectionId: string,
-): Promise<PaymentAggregate | null> {
+): Promise<PaymentAggregatePort | null> {
 	if (finalization.result.payment?.paymentId && deps.paymentAggregates) {
 		return deps.paymentAggregates.get(finalization.result.payment.paymentId);
 	}
@@ -252,7 +254,10 @@ export async function handlePaymentConnection(
 		);
 	}
 
-	if (connection.lifecycle === "revoked" || connection.lifecycle === "disabled") {
+	if (
+		connection.lifecycle === "revoked" ||
+		connection.lifecycle === "disabled"
+	) {
 		return needsAttention(
 			"PAYMENT_CONNECTION_NOT_USABLE",
 			"The accepted Payment Connection is not enabled.",
@@ -353,7 +358,7 @@ async function handleInventory(
 }
 
 function paymentOutcomeSatisfied(
-	payment: PaymentAggregate,
+	payment: PaymentAggregatePort,
 	policyId: string | undefined,
 ): boolean {
 	if (policyId === "authorize-then-capture-v1") {
@@ -431,7 +436,10 @@ export async function handlePaymentOutcome(
 		};
 	}
 
-	if (isThirdPartyPaymentProvider(connection.provider) && deps.paymentAggregates) {
+	if (
+		isThirdPartyPaymentProvider(connection.provider) &&
+		deps.paymentAggregates
+	) {
 		const payment = await resolvePayment(deps, finalization, connectionId);
 		if (payment) {
 			if (

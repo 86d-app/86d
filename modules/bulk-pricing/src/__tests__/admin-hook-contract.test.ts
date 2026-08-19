@@ -9,7 +9,7 @@ import { adminEndpoints } from "../admin/endpoints/routes";
  * break when the components were split into one file per component.
  */
 function adminEndpointReferences(): string[] {
-	const dir = join(process.cwd(), "src/admin/components");
+	const dir = join(import.meta.dirname, "../admin/components");
 	const refs: string[] = [];
 	for (const file of readdirSync(dir)) {
 		if (!file.endsWith(".tsx") && !file.endsWith(".ts")) continue;

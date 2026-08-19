@@ -8,12 +8,12 @@ import {
 	type ManagedPaymentOperationSnapshot,
 	type ManagedPaymentPrepareInput,
 	type ManagedPaymentPrepareResponse,
+	type ManagedPaymentStoreOutcome,
 	managedPaymentOperationSnapshotSchema,
 	managedPaymentPrepareResponseSchema,
 	managedPaymentStoreOutcomeSchema,
-	type ManagedPaymentStoreOutcome,
-	type SubmitManagedPaymentOperationInput,
 	STORE_RUNTIME_WORKLOAD_AUDIENCE,
+	type SubmitManagedPaymentOperationInput,
 	submitManagedPaymentOperationInputSchema,
 } from "./contracts";
 
@@ -68,7 +68,8 @@ export function createManagedPaymentClient(
 	return {
 		configured: tokenClient.configured,
 		async submitOperation(inputValue) {
-			const parsed = submitManagedPaymentOperationInputSchema.safeParse(inputValue);
+			const parsed =
+				submitManagedPaymentOperationInputSchema.safeParse(inputValue);
 			if (!parsed.success) {
 				throw new Error("Managed Payment operation input is invalid.");
 			}
@@ -92,10 +93,7 @@ export function createManagedPaymentClient(
 			const operation = managedPaymentOperationSnapshotSchema.safeParse(
 				payload.operation,
 			);
-			if (
-				typeof payload.replayed !== "boolean" ||
-				!operation.success
-			) {
+			if (typeof payload.replayed !== "boolean" || !operation.success) {
 				throw new Error("Managed Payment operation response was invalid.");
 			}
 			return { replayed: payload.replayed, operation: operation.data };
@@ -131,9 +129,13 @@ export function createManagedPaymentClient(
 				replayed?: unknown;
 				outcome?: unknown;
 			};
-			const outcome = managedPaymentStoreOutcomeSchema.safeParse(payload.outcome);
+			const outcome = managedPaymentStoreOutcomeSchema.safeParse(
+				payload.outcome,
+			);
 			if (typeof payload.replayed !== "boolean" || !outcome.success) {
-				throw new Error("Managed Payment acknowledgement response was invalid.");
+				throw new Error(
+					"Managed Payment acknowledgement response was invalid.",
+				);
 			}
 			return { replayed: payload.replayed, outcome: outcome.data };
 		},

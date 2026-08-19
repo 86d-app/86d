@@ -24,6 +24,7 @@
 		"@86d-app/core": "workspace:*",
 		"@86d-app/storage": "workspace:*",
 		"@prisma/adapter-pg": "7.8.0",
+		"drizzle-orm": "0.45.2",
 		"pg": "8.21.0",
 		"prisma": "catalog:prisma"
 	},
@@ -31,6 +32,7 @@
 		"@biomejs/biome": "catalog:",
 		"@electric-sql/pglite": "0.4.1",
 		"@types/node": "catalog:node",
+		"drizzle-kit": "0.31.10",
 		"sharp": "0.35.1",
 		"tsx": "catalog:",
 		"typescript": "catalog:",

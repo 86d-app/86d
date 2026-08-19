@@ -6,7 +6,7 @@ import { adminEndpoints } from "../admin/endpoints/routes";
 describe("wish admin hook contract", () => {
 	it("binds all required endpoints in the admin component", () => {
 		const source = readFileSync(
-			join(process.cwd(), "src/admin/components/wish-admin.tsx"),
+			join(import.meta.dirname, "../admin/components/wish-admin.tsx"),
 			"utf-8",
 		);
 		const requiredEndpoints = [

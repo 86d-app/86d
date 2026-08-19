@@ -50,9 +50,7 @@
 		"typecheck": "tsc --noEmit --emitDeclarationOnly false"
 	},
 	"dependencies": {
-		"@86d-app/core": "workspace:*",
-		"@86d-app/managed-payments": "workspace:*",
-		"@86d-app/payments": "workspace:*"
+		"@86d-app/core": "workspace:*"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "catalog:",

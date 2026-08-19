@@ -1,7 +1,6 @@
 import { createMockTransactionRunner } from "@86d-app/core/test-utils";
-import { createPaymentAggregateStore } from "@86d-app/payments";
 import { describe, expect, it, vi } from "vitest";
-import { createManagedPaymentClient } from "../managed-payment-client";
+import type { createManagedPaymentClient } from "../managed-payment-client";
 import { consumeManagedPaymentOutcomes } from "../outcome-consumer";
 
 describe("managed payment outcome consumer", () => {
@@ -22,20 +21,23 @@ describe("managed payment outcome consumer", () => {
 			createdAt: new Date("2026-08-13T00:00:00.000Z"),
 			updatedAt: new Date("2026-08-13T00:00:00.000Z"),
 		});
-		const paymentAggregates = createPaymentAggregateStore(
-			transactions.data,
-			transactions,
-		);
-		await paymentAggregates.create({
-			paymentId: "payment-1",
-			idempotencyKey: "create-payment-1",
-			checkoutId: "checkout-1",
-			connectionId: "connection-1",
-			paymentOption: "card",
-			expectedAmount: 1_000,
-			eligibleMerchandiseAmount: 800,
-			currency: "USD",
-		});
+		// A spy satisfying PaymentOutcomeRecorderPort. Driving the real payments
+		// aggregate here would make payments a build dependency of this Module,
+		// and it would test the payments state machine from outside the Module
+		// that owns it. What belongs here is the call this consumer makes.
+		const recordConfirmedOperation = vi.fn(async () => ({
+			payment: {
+				id: "payment-1",
+				paymentOption: "card",
+				currency: "USD",
+				expectedAmount: 1_000,
+				authorizedAmount: 1_000,
+				capturedAmount: 0,
+				providerReferences: [],
+			},
+			replayed: false,
+		}));
+		const paymentAggregates = { recordConfirmedOperation };
 
 		const client = {
 			configured: true,
@@ -98,10 +100,14 @@ describe("managed payment outcome consumer", () => {
 		});
 
 		expect(result).toMatchObject({ processed: 1, acknowledged: 1, failed: 0 });
-		expect(await paymentAggregates.get("payment-1")).toMatchObject({
-			authorizedAmount: 1_000,
-			state: "authorized",
-		});
+		expect(recordConfirmedOperation).toHaveBeenCalledWith(
+			expect.objectContaining({
+				paymentId: "payment-1",
+				operation: "authorization",
+				amount: 1_000,
+				currency: "USD",
+			}),
+		);
 		expect(client.acknowledgeOutcome).toHaveBeenCalledWith({
 			eventId: "event-1",
 			acknowledgementKey: `outcome:event-1:${"a".repeat(64)}`,

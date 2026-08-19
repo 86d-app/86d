@@ -1,6 +1,6 @@
 {
   "lockfileVersion": 1,
-  "generatedAt": "2026-08-14T07:42:49.872Z",
+  "generatedAt": "2026-08-19T22:27:52.013Z",
   "modules": {
     "abandoned-carts": {
       "source": "local",
@@ -41,7 +41,7 @@
       "source": "local",
       "packageName": "@86d-app/appointments",
       "version": "0.0.41",
-      "integrity": "sha256-9d8240d447e2d7fba260a9320de0f0c9eeb94e31c999d6d0acf9f37a5fa86241",
+      "integrity": "sha256-6ac926c459bea8d3d5a6d07a0407db1c4cea1e53f5cc4b0d10702652f83e4ea5",
       "localPath": "modules/appointments"
     },
     "auctions": {
@@ -370,7 +370,7 @@
       "source": "local",
       "packageName": "@86d-app/pages",
       "version": "0.0.41",
-      "integrity": "sha256-ccaf81d18258f46f34708bb8d2bba68a63409ef99d37428e096917f8c525df8c",
+      "integrity": "sha256-81730b800463c31f6ae17b506a21beac6e1dd6778285c6b91ed605679e22bb04",
       "localPath": "modules/pages"
     },
     "payments": {
@@ -440,7 +440,7 @@
       "source": "local",
       "packageName": "@86d-app/products",
       "version": "0.0.41",
-      "integrity": "sha256-bb1eacd80609b51650de8292a381c254dd887ad0ad124b8ec584026e3cba8947",
+      "integrity": "sha256-5097f153a8987302b14025527fc2129c6174b44a22ce928f76478bbb26d65ff6",
       "localPath": "modules/products"
     },
     "qr-code": {
@@ -587,7 +587,7 @@
       "source": "local",
       "packageName": "@86d-app/store-pickup",
       "version": "0.0.41",
-      "integrity": "sha256-21b3d526d6318d82c9acaa9bf7925c58f231a60f3d42ece4ef72e5eb5506a53e",
+      "integrity": "sha256-7ae1320fbf94b747478c2adea4b78af8a041f8631ece7419f74d5d7933d38ccc",
       "localPath": "modules/store-pickup"
     },
     "stripe": {
@@ -608,7 +608,7 @@
       "source": "local",
       "packageName": "@86d-app/tax",
       "version": "0.0.41",
-      "integrity": "sha256-3ebb0c978e7a6a9700a9d2886d882f925419b1d4dd7d9cb6b3cb77ef55043a39",
+      "integrity": "sha256-905f28b266be14578fb001566dfd936659dfef29175c7e873249475f96a7381c",
       "localPath": "modules/tax"
     },
     "tickets": {

@@ -96,6 +96,10 @@
 			"types": "./src/payment-connection-provider.ts",
 			"default": "./src/payment-connection-provider.ts"
 		},
+		"./payment-checkout-ports": {
+			"types": "./src/payment-checkout-ports.ts",
+			"default": "./src/payment-checkout-ports.ts"
+		},
 		"./payment-provider": {
 			"types": "./src/payment-provider.ts",
 			"default": "./src/payment-provider.ts"

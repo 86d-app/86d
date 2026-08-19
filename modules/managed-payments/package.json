@@ -36,7 +36,6 @@
 	},
 	"dependencies": {
 		"@86d-app/core": "workspace:*",
-		"@86d-app/payments": "workspace:*",
 		"@86d-app/sdk": "workspace:*"
 	},
 	"devDependencies": {
