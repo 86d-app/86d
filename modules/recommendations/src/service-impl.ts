@@ -444,6 +444,7 @@ export function createRecommendationController(
 			}
 
 			return Array.from(productScores.values())
+				.filter((p) => p.productSlug && p.productName)
 				.sort((a, b) => b.score - a.score)
 				.slice(0, take)
 				.map((p) => ({ ...p, strategy: "trending" as const }));

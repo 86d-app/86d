@@ -2,12 +2,12 @@ import { execSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { computeIntegrity, fetchModule } from "@86d-app/registry/fetcher";
+import { registryManifestPath } from "@86d-app/registry/paths";
 import {
 	getLocalModuleNames,
 	getModuleDependencies,
 	readLocalManifest,
 } from "@86d-app/registry/resolver";
-import { registryManifestPath } from "@86d-app/registry/paths";
 import { parseSpecifier } from "@86d-app/registry/specifier";
 import type { RegistryManifest, RegistryModule } from "@86d-app/registry/types";
 import {

@@ -578,7 +578,7 @@ export function ProductDetail(props: ProductDetailProps) {
 					<Link
 						key={t}
 						href={`/products?tag=${encodeURIComponent(t)}`}
-						className="rounded-md bg-muted px-2 py-0.5 text-muted-foreground text-xs transition-colors hover:bg-muted-foreground/20 hover:text-foreground"
+						className="rounded-md bg-muted px-2 py-0.5 text-foreground text-xs transition-colors hover:bg-muted-foreground/20"
 					>
 						{t}
 					</Link>

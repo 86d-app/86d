@@ -6,7 +6,7 @@ import * as AspectRatio from "./aspect-ratio";
 import * as Avatar from "./avatar";
 import * as Badge from "./badge";
 import * as Breadcrumb from "./breadcrumb";
-import * as Button from "./button";
+import { Button } from "./button";
 import * as ButtonGroup from "./button-group";
 import * as Calendar from "./calendar";
 import * as Card from "./card";
@@ -61,7 +61,7 @@ export default {
 	...Avatar,
 	...Badge,
 	...Breadcrumb,
-	...Button,
+	Button,
 	...ButtonGroup,
 	...Calendar,
 	...Card,

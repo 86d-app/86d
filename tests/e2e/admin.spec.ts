@@ -31,7 +31,7 @@ test.describe("Store Admin — Authentication", () => {
 	test("sign-in with valid credentials reaches admin dashboard", async ({
 		admin,
 	}) => {
-		await admin.signIn();
+		await admin.signInWithForm();
 		/* Should be on the admin page now */
 		expect(admin.page.url()).toContain("/admin");
 		await expect(admin.heading).toBeVisible({ timeout: 10_000 });

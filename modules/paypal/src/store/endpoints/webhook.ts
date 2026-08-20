@@ -237,19 +237,23 @@ function extractRefundDetails(event: Record<string, unknown>):
 
 function extractPaymentId(event: Record<string, unknown>): string | undefined {
 	const resource = event.resource as { custom_id?: string } | undefined;
-	if (typeof resource?.custom_id === "string" && resource.custom_id.length > 0) {
+	if (
+		typeof resource?.custom_id === "string" &&
+		resource.custom_id.length > 0
+	) {
 		return resource.custom_id;
 	}
 	return undefined;
 }
 
-function extractCaptureAmount(event: Record<string, unknown>):
-	| { amount: number; currency: string }
-	| undefined {
+function extractCaptureAmount(
+	event: Record<string, unknown>,
+): { amount: number; currency: string } | undefined {
 	const resource = event.resource as PayPalResource | undefined;
 	if (typeof resource?.amount?.value !== "string") return undefined;
 	const amount = Math.round(Number(resource.amount.value) * 100);
-	const currency = (resource.amount as { currency_code?: string }).currency_code;
+	const currency = (resource.amount as { currency_code?: string })
+		.currency_code;
 	if (
 		!Number.isSafeInteger(amount) ||
 		amount <= 0 ||
@@ -338,9 +342,12 @@ export function createDurablePayPalWebhook(opts: PayPalWebhookOptions) {
 				receiptKey,
 				{ received: true, type: eventType },
 				async () => {
-					const webhookReceipts = ctx.context?.controllers?.paymentWebhookReceipts as
+					const webhookReceipts = ctx.context?.controllers
+						?.paymentWebhookReceipts as
 						| {
-								recordVerified(input: unknown): Promise<{ receipt: { id: string } }>;
+								recordVerified(
+									input: unknown,
+								): Promise<{ receipt: { id: string } }>;
 								process(id: string): Promise<{ acknowledge: boolean }>;
 						  }
 						| undefined;
@@ -362,7 +369,11 @@ export function createDurablePayPalWebhook(opts: PayPalWebhookOptions) {
 						opts.verificationKeyReference?.trim() ??
 						`secret/paypal/${webhookId}`;
 
-					if (PAYPAL_REFUND_EVENTS.has(eventType) && paymentId && providerReference) {
+					if (
+						PAYPAL_REFUND_EVENTS.has(eventType) &&
+						paymentId &&
+						providerReference
+					) {
 						const refundDetails = extractRefundDetails(event);
 						if (!refundDetails) {
 							return Response.json(

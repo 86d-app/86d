@@ -12,8 +12,26 @@ export function LoyaltyPointsSection({
 	priceInCents: number;
 }) {
 	const api = useLoyaltyApi();
+	const calculatePoints = api.calculatePoints;
+	if (!calculatePoints?.useQuery) return null;
+	return (
+		<LoyaltyPointsQuery
+			calculatePoints={calculatePoints}
+			priceInCents={priceInCents}
+		/>
+	);
+}
 
-	const { data, isError } = api.calculatePoints.useQuery(
+function LoyaltyPointsQuery({
+	calculatePoints,
+	priceInCents,
+}: {
+	calculatePoints: NonNullable<
+		ReturnType<typeof useLoyaltyApi>["calculatePoints"]
+	>;
+	priceInCents: number;
+}) {
+	const { data, isError } = calculatePoints.useQuery(
 		{ amount: priceInCents },
 		{ enabled: priceInCents > 0 },
 	) as {

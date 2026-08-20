@@ -494,7 +494,7 @@ describe("Checkout finalization handlers", () => {
 			);
 		} finally {
 			if (previousActivation === undefined) {
-				delete process.env["86D_PAYMENTS_LIVE_ACTIVATION"];
+				process.env["86D_PAYMENTS_LIVE_ACTIVATION"] = undefined;
 			} else {
 				process.env["86D_PAYMENTS_LIVE_ACTIVATION"] = previousActivation;
 			}

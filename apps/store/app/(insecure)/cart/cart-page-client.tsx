@@ -127,7 +127,9 @@ function CartRecommendations() {
 		isLoading: boolean;
 	};
 
-	const items = data?.recommendations ?? [];
+	const items = (data?.recommendations ?? []).filter(
+		(item) => item.productSlug && item.productName,
+	);
 
 	if (!isLoading && items.length === 0) return null;
 

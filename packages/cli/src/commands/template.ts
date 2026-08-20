@@ -7,8 +7,8 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
-import { readLocalManifest } from "@86d-app/registry/resolver";
 import { registryManifestPath } from "@86d-app/registry/paths";
+import { readLocalManifest } from "@86d-app/registry/resolver";
 import { parseSpecifier } from "@86d-app/registry/specifier";
 import { fetchTemplate } from "@86d-app/registry/template";
 import type { RegistryManifest } from "@86d-app/registry/types";

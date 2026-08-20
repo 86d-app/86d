@@ -1,4 +1,6 @@
-import { test as base, expect, type Page } from "@playwright/test";
+import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { test as base, type Cookie, expect, type Page } from "@playwright/test";
 
 /* ------------------------------------------------------------------ */
 /* Constants                                                           */
@@ -6,6 +8,10 @@ import { test as base, expect, type Page } from "@playwright/test";
 
 export const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL || "admin@example.com";
 export const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD || "password123";
+export const ADMIN_STORAGE_STATE_PATH = resolve(
+	process.cwd(),
+	"test-results/e2e-admin-storage.json",
+);
 
 /* ------------------------------------------------------------------ */
 /* Page-object helpers                                                 */
@@ -101,6 +107,21 @@ export class AdminPage {
 	}
 
 	async signIn(email = ADMIN_EMAIL, password = ADMIN_PASSWORD) {
+		if (
+			email === ADMIN_EMAIL &&
+			password === ADMIN_PASSWORD &&
+			(await this.applyStoredAdminSession())
+		) {
+			await this.page.goto("/admin");
+			await this.page.waitForURL((url) => url.pathname.startsWith("/admin"), {
+				timeout: 15_000,
+			});
+			return;
+		}
+		await this.signInWithForm(email, password);
+	}
+
+	async signInWithForm(email = ADMIN_EMAIL, password = ADMIN_PASSWORD) {
 		await this.page.goto("/auth/signin?redirect=/admin");
 		/* Fill the sign-in form — scope to main to avoid newsletter footer form */
 		const form = this.page.locator("main form");
@@ -112,6 +133,16 @@ export class AdminPage {
 		await this.page.waitForURL((url) => url.pathname.startsWith("/admin"), {
 			timeout: 15_000,
 		});
+	}
+
+	private async applyStoredAdminSession(): Promise<boolean> {
+		if (!existsSync(ADMIN_STORAGE_STATE_PATH)) return false;
+		const state = JSON.parse(
+			readFileSync(ADMIN_STORAGE_STATE_PATH, "utf8"),
+		) as { cookies?: Cookie[] };
+		if (!state.cookies?.length) return false;
+		await this.page.context().addCookies(state.cookies);
+		return true;
 	}
 
 	get heading() {

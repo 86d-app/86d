@@ -106,7 +106,7 @@ function CollapsibleSubGroup({
 						className="size-3 shrink-0 text-muted-foreground/70"
 					/>
 				) : null}
-				<span className="flex-1 font-medium text-muted-foreground/80 text-xs">
+				<span className="flex-1 font-medium text-muted-foreground text-xs">
 					{subgroup.label}
 				</span>
 				<Icon

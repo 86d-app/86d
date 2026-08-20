@@ -15,7 +15,10 @@ export default function StorefrontError({
 
 	return (
 		<div className="mx-auto flex min-h-[50vh] max-w-md flex-col items-center justify-center px-4 py-16 text-center">
-			<p className="font-bold font-mono text-6xl text-muted-foreground/40">
+			<p
+				className="font-bold font-mono text-6xl text-muted-foreground"
+				aria-hidden="true"
+			>
 				500
 			</p>
 			<h1 className="mt-4 font-semibold text-foreground text-xl tracking-tight">

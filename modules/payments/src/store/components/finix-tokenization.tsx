@@ -28,7 +28,10 @@ declare global {
 					environment: string,
 					applicationId: string,
 					formId: string,
-					callback: (error: unknown, response: { data?: { id?: string } }) => void,
+					callback: (
+						error: unknown,
+						response: { data?: { id?: string } },
+					) => void,
 				) => void;
 			};
 		};
@@ -80,11 +83,9 @@ export function FinixTokenization({
 			return;
 		}
 		finix.Auth(environment, applicationId, () => {
-			finix.Auth(environment, applicationId, () => {}).submit(
-				environment,
-				applicationId,
-				formId,
-				(error, response) => {
+			finix
+				.Auth(environment, applicationId, () => {})
+				.submit(environment, applicationId, formId, (error, response) => {
 					if (error) {
 						onError?.("Managed Payment tokenization failed.");
 						return;
@@ -95,8 +96,7 @@ export function FinixTokenization({
 						return;
 					}
 					onInstrumentReady?.(instrumentReference);
-				},
-			);
+				});
 		});
 	};
 

@@ -23,11 +23,9 @@ import { createHash, randomBytes, scryptSync } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import pg from "pg";
-import {
-	createStorageFromEnv,
-} from "@86d-app/storage/factory";
+import { createStorageFromEnv } from "@86d-app/storage/factory";
 import type { StorageProvider } from "@86d-app/storage/types";
+import pg from "pg";
 import { workspaceRootFromImportMeta } from "../../../internals/lib/workspace-root.ts";
 import {
 	activityEvents,
@@ -3816,6 +3814,7 @@ async function seedRecommendations(client: pg.PoolClient) {
 	];
 	for (const interaction of interactions) {
 		const interactionId = uuid(`rec-interaction:${interaction.key}`);
+		const product = productByKey[interaction.productKey];
 		await insertModuleData(
 			client,
 			"recommendations",
@@ -3828,6 +3827,9 @@ async function seedRecommendations(client: pg.PoolClient) {
 				customerId:
 					customerIds[interaction.customerKey as keyof typeof customerIds],
 				type: interaction.type,
+				productName: product?.name ?? interaction.productKey,
+				productSlug: product?.slug ?? interaction.productKey,
+				productPrice: product?.price,
 				createdAt: now,
 			},
 		);

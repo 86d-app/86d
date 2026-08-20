@@ -49,7 +49,7 @@ afterEach(() => {
 });
 
 describe("managed Store Runtime detection", () => {
-		it.each([
+	it.each([
 		["86D_STORE_ID", "store_123"],
 		["86D_WORKLOAD_CREDENTIAL", "workload-secret"],
 	])("treats %s as an explicit managed signal", (name, value) => {

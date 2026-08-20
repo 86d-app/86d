@@ -2,10 +2,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { evaluateModuleAdmission } from "./admission.js";
 import { fetchWithRetry } from "./fetcher.js";
-import {
-	DEFAULT_REGISTRY_URL,
-	registryManifestPath,
-} from "./paths.js";
+import { DEFAULT_REGISTRY_URL, registryManifestPath } from "./paths.js";
 import { parseSpecifier } from "./specifier.js";
 import type {
 	ModuleSpecifier,

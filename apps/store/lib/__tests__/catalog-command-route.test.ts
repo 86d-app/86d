@@ -2,9 +2,9 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { catalogDraftCommandReference } from "../catalog-command-executor";
-import { afterEach, describe, expect, it, vi } from "vitest";
 import type { NextRequest } from "next/server";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { catalogDraftCommandReference } from "../catalog-command-executor";
 
 const mockEnv = vi.hoisted(() => ({
 	STORE_ID: "store-1",
@@ -149,22 +149,30 @@ describe("Catalog Command transport", () => {
 	});
 
 	it("matches Admin Command paths and ignores catalog reads", () => {
-		expect(matchCatalogRevisionCommandPath("/admin/catalog/revisions/create")).toEqual({
+		expect(
+			matchCatalogRevisionCommandPath("/admin/catalog/revisions/create"),
+		).toEqual({
 			action: "draft",
 		});
 		expect(
-			matchCatalogRevisionCommandPath("/admin/catalog/revisions/revision-1/review"),
+			matchCatalogRevisionCommandPath(
+				"/admin/catalog/revisions/revision-1/review",
+			),
 		).toEqual({ action: "review", revisionId: "revision-1" });
 		expect(
 			matchCatalogRevisionCommandPath(
 				"/admin/catalog/revisions/revision-1/publish",
 			),
 		).toEqual({ action: "publish", revisionId: "revision-1" });
-		expect(matchCatalogRevisionCommandPath("/admin/catalog/revisions/list")).toBeNull();
+		expect(
+			matchCatalogRevisionCommandPath("/admin/catalog/revisions/list"),
+		).toBeNull();
 		expect(
 			matchCatalogRevisionCommandPath("/admin/catalog/revisions/revision-1"),
 		).toBeNull();
-		expect(matchCatalogRevisionCommandPath("/catalog/revisions/create")).toBeNull();
+		expect(
+			matchCatalogRevisionCommandPath("/catalog/revisions/create"),
+		).toBeNull();
 	});
 
 	it("does not import 86d.app or Control Plane clients", () => {

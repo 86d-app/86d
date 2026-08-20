@@ -54,6 +54,12 @@ import { createCheckoutFinalizer } from "./finalizer";
 import {
 	createCheckoutFinalizationHandlers,
 	createCheckoutFinalizationTransport,
+	handlePaymentConnection,
+	handlePaymentOutcome,
+	handlePaymentSettlement,
+	isManagedPaymentProvider,
+	isPaymentLiveActivated,
+	isThirdPartyPaymentProvider,
 } from "./finalizer-handlers";
 import { checkoutSchema } from "./schema";
 import { createCheckoutController } from "./service-impl";
@@ -87,14 +93,6 @@ export type {
 	CheckoutFinalizerRunSummary,
 } from "./finalizer";
 export type { CheckoutFinalizationHandlerDependencies } from "./finalizer-handlers";
-export {
-	handlePaymentConnection,
-	handlePaymentOutcome,
-	handlePaymentSettlement,
-	isManagedPaymentProvider,
-	isPaymentLiveActivated,
-	isThirdPartyPaymentProvider,
-} from "./finalizer-handlers";
 export type {
 	CheckoutAddress,
 	CheckoutController,
@@ -130,6 +128,12 @@ export {
 	createCheckoutFinalizationTransport,
 	createCheckoutFinalizer,
 	createCheckoutRequestStore,
+	handlePaymentConnection,
+	handlePaymentOutcome,
+	handlePaymentSettlement,
+	isManagedPaymentProvider,
+	isPaymentLiveActivated,
+	isThirdPartyPaymentProvider,
 	recordCheckoutFinalizationAttemptInputSchema,
 	recordCheckoutFinalizationCompensationInputSchema,
 	storedCheckoutFinalizationAttemptSchema,

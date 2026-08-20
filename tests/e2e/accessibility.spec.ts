@@ -1,5 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test } from "@playwright/test";
+import { AdminPage, expect, test } from "./fixtures/test-fixtures";
 
 /**
  * Accessibility tests using axe-core.
@@ -220,17 +220,8 @@ test.describe("Storefront — Forms", () => {
 // Admin pages use dynamic MDX rendering. Sign in before each test so the
 // admin session is established and the full admin UI renders.
 
-const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL || "admin@example.com";
-const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD || "password123";
-
 async function signInAsAdmin(page: import("@playwright/test").Page) {
-	await page.goto("/auth/signin");
-	const form = page.locator("main form");
-	await form.locator('input[type="email"]').fill(ADMIN_EMAIL);
-	await form.locator('input[type="password"]').fill(ADMIN_PASSWORD);
-	await form.locator('button[type="submit"]').click();
-	await page.waitForURL(/\/admin/, { timeout: 15_000 });
-	await page.waitForLoadState("networkidle");
+	await new AdminPage(page).signIn();
 }
 
 test.describe("Admin — Accessibility (axe-core)", () => {
@@ -307,9 +298,10 @@ test.describe("Admin — Accessibility (axe-core)", () => {
 			`Admin customers page axe violations:\n${criticalOrSerious.map((v) => `  [${v.impact}] ${v.id}: ${v.description}\n    ${v.nodes[0]?.target}`).join("\n")}`,
 		).toHaveLength(0);
 	});
+});
 
+test.describe("Admin — Accessibility (axe-core, unauthenticated)", () => {
 	test("admin sign-in page passes axe", async ({ page }) => {
-		// Sign out first so we can check the sign-in page
 		await page.goto("/auth/signin");
 		await page.waitForLoadState("networkidle");
 

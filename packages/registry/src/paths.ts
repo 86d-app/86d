@@ -4,7 +4,8 @@ import { join } from "node:path";
 export const REGISTRY_MANIFEST_RELATIVE_PATH = "apps/registry/registry.json";
 
 /** Relative path from the monorepo root to the module lock file. */
-export const REGISTRY_LOCKFILE_RELATIVE_PATH = "apps/registry/registry.lock.json";
+export const REGISTRY_LOCKFILE_RELATIVE_PATH =
+	"apps/registry/registry.lock.json";
 
 /** Default remote URL for the published registry manifest. */
 export const DEFAULT_REGISTRY_URL =

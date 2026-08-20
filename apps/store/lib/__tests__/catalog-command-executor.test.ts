@@ -86,9 +86,7 @@ function principal() {
 	};
 }
 
-function createHarness(options?: {
-	beforeEmit?: () => void;
-}) {
+function createHarness(options?: { beforeEmit?: () => void }) {
 	const runner = createMockTransactionRunner({
 		storeId,
 		...(options?.beforeEmit === undefined

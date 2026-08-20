@@ -28,6 +28,7 @@ const htmlReporter: ["html", { outputFolder: string }] = [
 export default defineConfig({
 	testDir: "e2e",
 	outputDir: "../test-results",
+	globalSetup: "./e2e/global-setup.ts",
 	snapshotPathTemplate:
 		"{testDir}/{testFilePath}-snapshots/{arg}{-projectName}{ext}",
 	fullyParallel: true,
