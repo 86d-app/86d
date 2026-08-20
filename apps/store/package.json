@@ -128,7 +128,7 @@
 		"@next/mdx": "catalog:mdx",
 		"@next/third-parties": "catalog:next",
 		"@paypal/react-paypal-js": "9.2.0",
-		"@sentry/nextjs": "10.53.1",
+		"@sentry/nextjs": "10.70.0",
 		"@stripe/react-stripe-js": "6.3.0",
 		"@stripe/stripe-js": "9.5.0",
 		"@vercel/analytics": "catalog:vercel",
